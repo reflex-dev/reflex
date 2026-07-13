@@ -76,8 +76,16 @@ class BaselineSocketServer:
                 log_level="warning",
             )
         )
-        self._thread = threading.Thread(target=self._server.run, daemon=True)
+        self._thread = threading.Thread(target=self._run_server, daemon=True)
+        self._exception: BaseException | None = None
         self.url = ""
+
+    def _run_server(self) -> None:
+        """Run the uvicorn server, capturing a crash for the startup path."""
+        try:
+            self._server.run()
+        except BaseException as exception:  # surfaced by __enter__
+            self._exception = exception
 
     def __enter__(self) -> BaselineSocketServer:
         """Start the server and resolve its ephemeral URL.
@@ -86,11 +94,12 @@ class BaselineSocketServer:
             The running server.
 
         Raises:
-            TimeoutError: If the server does not bind within ten seconds.
+            TimeoutError: If the server crashes or does not bind within ten
+                seconds; a crash is chained and quoted in the message.
         """
         self._thread.start()
         deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
+        while time.monotonic() < deadline and self._thread.is_alive():
             if (
                 self._server.started
                 and (servers := self._server.servers)
@@ -101,8 +110,13 @@ class BaselineSocketServer:
                 return self
             time.sleep(0.01)
         self._server.should_exit = True
-        msg = "Baseline socket server did not start within 10 seconds."
-        raise TimeoutError(msg)
+        self._thread.join(timeout=1)
+        msg = (
+            f"Baseline socket server crashed during startup: {self._exception!r}"
+            if self._exception is not None
+            else "Baseline socket server did not start within 10 seconds."
+        )
+        raise TimeoutError(msg) from self._exception
 
     def __exit__(self, *exc_info) -> None:
         """Stop the server and join its thread.

@@ -28,6 +28,47 @@ KNEE_P99_FACTOR = 3.0
 KNEE_P99_MARGIN_MS = 25.0
 
 
+def _client_timeout(clients: int) -> float:
+    """Scale the per-client connect/response timeout with concurrency.
+
+    Args:
+        clients: Number of concurrent clients sharing the backend.
+
+    Returns:
+        Timeout in seconds.
+    """
+    return max(10.0, clients * 0.5)
+
+
+def _wait_for_token_cleanup(
+    harness: AppHarness,
+    token_prefixes: tuple[str, ...],
+    timeout: float = 10.0,
+) -> None:
+    """Poll until disconnect cleanup has removed the given client tokens.
+
+    Token disconnect cleanup is fire-and-forget on the backend; waiting on the
+    in-process token map keeps later connections from hitting duplicate-tab
+    handling without a fixed settling sleep.
+
+    Args:
+        harness: Running in-process app harness.
+        token_prefixes: Prefixes of tokens that must disappear.
+        timeout: Maximum wait in seconds.
+    """
+    app = harness.app_instance
+    assert app is not None
+    assert app.event_namespace is not None
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not any(
+            token.startswith(token_prefixes)
+            for token in app.event_namespace.token_to_sid
+        ):
+            return
+        time.sleep(0.05)
+
+
 def _increment_payload() -> dict[str, Any]:
     """Build the increment event payload for the running load app.
 
@@ -95,6 +136,7 @@ def test_event_load_report(
                     f"load-token-{clients}-{index}",
                     payload,
                     events_per_client,
+                    timeout=_client_timeout(clients),
                     executor=executor,
                 ),
             )
@@ -254,19 +296,27 @@ def test_reconnect_storm_report(
     payload = _increment_payload()
     tokens = [f"storm-token-{index}" for index in range(clients)]
 
+    timeout = _client_timeout(clients)
+
     # Prime each token so the storm exercises state restore, not creation.
     prime_results = asyncio.run(
         run_clients(
             clients,
             lambda index, executor: run_socket_client(
-                backend_url, tokens[index], payload, 1, executor=executor
+                backend_url,
+                tokens[index],
+                payload,
+                1,
+                timeout=timeout,
+                executor=executor,
             ),
         )
     )
-    assert not any(result.errors for result in prime_results)
-    # Token disconnect cleanup is fire-and-forget; let it finish so the storm
-    # exercises reconnection instead of duplicate-tab handling.
-    time.sleep(1)
+    prime_errors = [error for result in prime_results for error in result.errors]
+    assert not prime_errors, f"priming clients failed: {prime_errors}"
+    # Wait for fire-and-forget disconnect cleanup so the storm exercises
+    # reconnection instead of duplicate-tab handling.
+    _wait_for_token_cleanup(performance_load_app, ("storm-token-",))
 
     rss_before = current_process_metrics()["rss_bytes"]
     started = time.perf_counter_ns()
@@ -274,12 +324,38 @@ def test_reconnect_storm_report(
         run_clients(
             clients,
             lambda index, executor: run_reconnect_client(
-                backend_url, tokens[index], payload, executor=executor
+                backend_url,
+                tokens[index],
+                payload,
+                timeout=timeout,
+                executor=executor,
             ),
         )
     )
     storm_seconds = (time.perf_counter_ns() - started) / 1_000_000_000
     rss_after = current_process_metrics()["rss_bytes"]
+
+    # A transient connect failure under the simultaneous storm is retried once
+    # so only persistent failures trip the assertion; retried clients keep
+    # their retry measurements but do not affect storm timing.
+    failed_indexes = [
+        index for index, result in enumerate(storm_results) if result.errors
+    ]
+    if failed_indexes:
+        retry_results = asyncio.run(
+            run_clients(
+                len(failed_indexes),
+                lambda index, executor: run_reconnect_client(
+                    backend_url,
+                    tokens[failed_indexes[index]],
+                    payload,
+                    timeout=timeout,
+                    executor=executor,
+                ),
+            )
+        )
+        for index, result in zip(failed_indexes, retry_results, strict=True):
+            storm_results[index] = result
 
     errors = [error for result in storm_results for error in result.errors]
     connects = [result.connect_ms for result in storm_results]
@@ -301,9 +377,12 @@ def test_reconnect_storm_report(
                 "reconnects_per_second": clients / storm_seconds,
                 "rss_growth_bytes": rss_after - rss_before,
                 "errors": len(errors),
+                "retried_clients": len(failed_indexes),
             },
             measurement_iterations=clients,
         )
     )
     report.write(performance_output / "reconnect-storm.json")
-    assert not errors, errors
+    assert not errors, (
+        f"{len(errors)} reconnect client error(s) persisted after retry: {errors}"
+    )

@@ -12,7 +12,6 @@ from typing import Any
 from unittest import mock
 
 import pytest
-import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
@@ -25,8 +24,8 @@ from reflex.istate.manager.token import BaseStateToken
 from .fixtures import BenchmarkState
 
 
-@pytest_asyncio.fixture
-async def event_processing_harness():
+@pytest.fixture
+def event_processing_harness():
     """Set up the full event processing pipeline for benchmarking.
 
     Creates a ``BaseStateEventProcessor`` wired to a real
@@ -34,8 +33,10 @@ async def event_processing_harness():
     enqueued directly and deltas are collected via the emit callback.
 
     Yields:
-        An async event runner and a helper that purges token state between
-        explicitly cold benchmark rounds.
+        An async event runner, a helper that purges token state between
+        explicitly cold benchmark rounds, and the state manager's async
+        ``close``, which each test must run on its own event loop before
+        closing it.
     """
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]] = []
 
@@ -104,9 +105,7 @@ async def event_processing_harness():
                     BaseStateToken(ident=token, cls=BenchmarkState)
                 )
 
-        yield run_events, purge_tokens
-
-        await state_manager.close()
+        yield run_events, purge_tokens, state_manager.close
 
 
 def test_process_event(
@@ -119,17 +118,22 @@ def test_process_event(
     the existing state (warm path).  Only event processing is timed.
 
     Args:
-        event_processing_harness: The event runner and token purge helpers.
+        event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, _ = event_processing_harness
-    loop = asyncio.get_event_loop()
+    run_events, _, shutdown = event_processing_harness
+    loop = asyncio.new_event_loop()
 
-    # Each event handler (increment) does a single state mutation with
-    # no yields, so we expect 1 delta per event = 3 total.
-    @benchmark
-    def _():
-        loop.run_until_complete(run_events(["benchmark-token"] * 3))
+    try:
+        # Each event handler (increment) does a single state mutation with
+        # no yields, so we expect 1 delta per event = 3 total.
+        @benchmark
+        def _():
+            loop.run_until_complete(run_events(["benchmark-token"] * 3))
+
+    finally:
+        loop.run_until_complete(shutdown())
+        loop.close()
 
 
 def test_process_event_cold(
@@ -139,11 +143,11 @@ def test_process_event_cold(
     """Benchmark one event whose token has no existing state.
 
     Args:
-        event_processing_harness: The event runner and token purge helpers.
+        event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, purge_tokens = event_processing_harness
-    loop = asyncio.get_event_loop()
+    run_events, purge_tokens, shutdown = event_processing_harness
+    loop = asyncio.new_event_loop()
     iteration = 0
 
     def setup():
@@ -160,7 +164,11 @@ def test_process_event_cold(
         """Discard the measured token so cold rounds do not retain state."""
         purge_tokens([token])
 
-    benchmark.pedantic(run_cold, setup=setup, teardown=teardown)
+    try:
+        benchmark.pedantic(run_cold, setup=setup, teardown=teardown)
+    finally:
+        loop.run_until_complete(shutdown())
+        loop.close()
 
 
 def test_process_event_warm(
@@ -170,17 +178,22 @@ def test_process_event_warm(
     """Benchmark one event for a token whose state is already initialized.
 
     Args:
-        event_processing_harness: The event runner and token purge helpers.
+        event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, _ = event_processing_harness
-    loop = asyncio.get_event_loop()
-    token = "warm-token"
-    loop.run_until_complete(run_events([token]))
-
-    @benchmark
-    def _():
+    run_events, _, shutdown = event_processing_harness
+    loop = asyncio.new_event_loop()
+    try:
+        token = "warm-token"
         loop.run_until_complete(run_events([token]))
+
+        @benchmark
+        def _():
+            loop.run_until_complete(run_events([token]))
+
+    finally:
+        loop.run_until_complete(shutdown())
+        loop.close()
 
 
 @pytest.mark.parametrize("num_events", [1, 10, 100])
@@ -193,17 +206,22 @@ def test_process_event_burst_same_token(
 
     Args:
         num_events: Number of events in the burst.
-        event_processing_harness: The event runner and token purge helpers.
+        event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, _ = event_processing_harness
-    loop = asyncio.get_event_loop()
-    tokens = ["burst-token"] * num_events
-    loop.run_until_complete(run_events([tokens[0]]))
+    run_events, _, shutdown = event_processing_harness
+    loop = asyncio.new_event_loop()
+    try:
+        tokens = ["burst-token"] * num_events
+        loop.run_until_complete(run_events([tokens[0]]))
 
-    @benchmark
-    def _():
-        loop.run_until_complete(run_events(tokens))
+        @benchmark
+        def _():
+            loop.run_until_complete(run_events(tokens))
+
+    finally:
+        loop.run_until_complete(shutdown())
+        loop.close()
 
 
 @pytest.mark.parametrize("num_events", [1, 10, 100])
@@ -216,14 +234,19 @@ def test_process_event_burst_independent_tokens(
 
     Args:
         num_events: Number of independent tokens and events.
-        event_processing_harness: The event runner and token purge helpers.
+        event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, _ = event_processing_harness
-    loop = asyncio.get_event_loop()
-    tokens = [f"independent-token-{index}" for index in range(num_events)]
-    loop.run_until_complete(run_events(tokens))
-
-    @benchmark
-    def _():
+    run_events, _, shutdown = event_processing_harness
+    loop = asyncio.new_event_loop()
+    try:
+        tokens = [f"independent-token-{index}" for index in range(num_events)]
         loop.run_until_complete(run_events(tokens))
+
+        @benchmark
+        def _():
+            loop.run_until_complete(run_events(tokens))
+
+    finally:
+        loop.run_until_complete(shutdown())
+        loop.close()

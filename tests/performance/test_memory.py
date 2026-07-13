@@ -40,20 +40,32 @@ def _var_workload() -> None:
         assert ((left + right) * right - left)._js_expr
 
 
+# Untraced warmup cycles run before the leak gate observes retention so
+# lazily populated caches (compiler memos, Var expression caches) fill first.
+WARMUP_CYCLES = 3
+
+
 def _measure_allocations(
     workload: Callable[[], None],
     cycles: int,
 ) -> tuple[list[float], dict[str, float | int]]:
     """Measure elapsed time, peak allocation, and retained-memory trend.
 
+    Runs ``WARMUP_CYCLES`` untraced cycles first so one-time lazy allocations
+    settle, then traces ``cycles`` measured cycles. ``monotonic_growth`` is
+    only set when retention grows strictly on every measured cycle after
+    warmup — the signature of a per-invocation leak, which a warmed cache
+    cannot produce because it plateaus.
+
     Args:
         workload: Workload invoked once per cycle.
-        cycles: Measurement cycles after one warmup.
+        cycles: Measurement cycles after warmup.
 
     Returns:
         Cycle latencies and allocation metrics.
     """
-    workload()
+    for _ in range(WARMUP_CYCLES):
+        workload()
     gc.collect()
     tracemalloc.start()
     baseline, _ = tracemalloc.get_traced_memory()
@@ -87,6 +99,11 @@ def _measure_allocations(
 def test_memory_report(performance_output: Path, performance_scale: str):
     """Profile allocation and retention across compiler and runtime workloads.
 
+    The leak gate fails only when a workload shows strictly monotonic retained
+    growth on every post-warmup cycle and accumulates more than 1 MB — lazily
+    populated caches are filled during the untraced warmup cycles, so
+    sustained growth here indicates a real per-invocation leak.
+
     Args:
         performance_output: Artifact directory.
         performance_scale: Selected scenario scale.
@@ -105,15 +122,17 @@ def test_memory_report(performance_output: Path, performance_scale: str):
                 parameters={"cycles": cycles},
                 observations_ms=observations,
                 metrics=metrics,
-                warmup_iterations=1,
+                warmup_iterations=WARMUP_CYCLES,
                 measurement_iterations=cycles,
             )
         )
 
     report.write(performance_output / "memory.json")
     assert all(result.metrics["peak_traced_bytes"] >= 0 for result in report.results)
-    assert not any(
-        result.metrics["monotonic_growth"]
-        and result.metrics["retained_growth_bytes"] > 1_000_000
+    leaks = [
+        (result.name, result.metrics["retained_growth_bytes"])
         for result in report.results
-    )
+        if result.metrics["monotonic_growth"]
+        and result.metrics["retained_growth_bytes"] > 1_000_000
+    ]
+    assert not leaks, f"sustained post-warmup retained-memory growth: {leaks}"
