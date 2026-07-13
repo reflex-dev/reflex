@@ -395,6 +395,10 @@ def test_compiler_lifecycle_report(
         )
     )
 
+    # Keep zipping enabled: with --no-zip a backend-only export does no work
+    # (export() runs frontend build and zip only, both gated off), so the timing
+    # would measure CLI startup alone. Zipping exercises the real backend export
+    # path — archiving the app source tree.
     export_ms = _run(
         [
             executable,
@@ -402,7 +406,6 @@ def test_compiler_lifecycle_report(
             "reflex",
             "export",
             "--backend-only",
-            "--no-zip",
         ],
         app_root,
     )

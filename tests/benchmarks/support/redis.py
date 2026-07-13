@@ -65,9 +65,18 @@ async def real_redis_state_manager() -> AsyncIterator[StateManagerRedis]:
         try:
             yield manager
         finally:
+            # Close the manager before flushing: with oplock enabled, close()
+            # cancels lease-breaker tasks that re-persist cached states, so
+            # flushing first would leave those write-backs behind and the next
+            # run's empty-database guard would fail. close() also disposes the
+            # shared connection pool, so flush through a fresh client.
             try:
-                await redis.flushdb()
-            finally:
                 await manager.close()
+            finally:
+                cleanup = Redis.from_url(url)
+                try:
+                    await cleanup.flushdb()
+                finally:
+                    await cleanup.aclose()
     finally:
         await redis.aclose()

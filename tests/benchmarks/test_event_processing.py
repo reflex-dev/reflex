@@ -117,20 +117,31 @@ def test_process_event(
     The first event creates fresh state (cold path), the next two reuse
     the existing state (warm path).  Only event processing is timed.
 
+    The token is purged in per-round setup so the cold path is exercised on
+    every measured round. Without it, CodSpeed's warmup invocation hydrates the
+    shared token and every subsequent round would measure three warm events,
+    silently duplicating ``test_process_event_warm``.
+
     Args:
         event_processing_harness: The event runner, token purge, and shutdown helpers.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events, _, shutdown = event_processing_harness
+    run_events, purge_tokens, shutdown = event_processing_harness
     loop = asyncio.new_event_loop()
 
-    try:
+    def setup():
+        """Return the batch args after purging the token for a cold round."""
+        purge_tokens(["benchmark-token"])
         # Each event handler (increment) does a single state mutation with
         # no yields, so we expect 1 delta per event = 3 total.
-        @benchmark
-        def _():
-            loop.run_until_complete(run_events(["benchmark-token"] * 3))
+        return ((["benchmark-token"] * 3,), {})
 
+    def run_batch(tokens):
+        """Process one cold-then-warm batch for the given tokens."""
+        loop.run_until_complete(run_events(tokens))
+
+    try:
+        benchmark.pedantic(run_batch, setup=setup)
     finally:
         loop.run_until_complete(shutdown())
         loop.close()
