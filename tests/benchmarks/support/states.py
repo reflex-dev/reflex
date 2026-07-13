@@ -52,6 +52,26 @@ class PerformanceState(rx.State):
         return self.total * 2
 
 
+@contextmanager
+def isolated_performance_registry() -> Iterator[None]:
+    """Register only ``PerformanceState`` for deterministic cold construction.
+
+    A state manager builds a token's root state by instantiating the whole
+    substate tree recorded in the ambient ``RegistrationContext``. Without
+    isolation that tree includes every module-level state in the collected
+    benchmark session, so adding or removing a state anywhere shifts a cold
+    ``get_state`` result on CodSpeed. Entering a fresh context registered with
+    only ``PerformanceState`` fixes the tree to this state's subtree regardless
+    of the rest of the session.
+
+    Yields:
+        None, with the isolated registration context active.
+    """
+    with RegistrationContext():
+        RegistrationContext.register_base_state(PerformanceState)
+        yield
+
+
 def initialized_state(size: int) -> PerformanceState:
     """Create a state with deterministic mutable values.
 
