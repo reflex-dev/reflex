@@ -70,6 +70,21 @@ def initialized_state(size: int) -> PerformanceState:
     return state
 
 
+def get_performance_state(root_state: BaseState) -> PerformanceState:
+    """Return the performance state from a managed root hierarchy.
+
+    Args:
+        root_state: Root state returned by a state manager.
+
+    Returns:
+        Performance substate used by benchmark workloads.
+    """
+    return cast(
+        PerformanceState,
+        root_state.get_substate(PerformanceState.get_full_name().split(".")),
+    )
+
+
 @contextmanager
 def computed_fanout_state(fanout: int) -> Iterator[tuple[BaseState, tuple[str, ...]]]:
     """Create a state whose scalar value feeds a requested number of vars.

@@ -1,5 +1,6 @@
 """Tests for shared performance benchmark support."""
 
+import asyncio
 import json
 
 import pytest
@@ -11,6 +12,7 @@ from tests.benchmarks.support.report import (
     PerformanceReport,
     percentile,
 )
+from tests.benchmarks.support.socket_client import run_clients
 
 
 def test_percentile_interpolates_and_validates():
@@ -72,3 +74,32 @@ def test_pipeline_trace_durations_and_chrome_output(tmp_path):
         "enqueued",
         "dequeued",
     ]
+
+
+def test_pipeline_trace_preserves_repeated_stage_pairs():
+    """Repeated streaming stages produce one duration per occurrence."""
+    trace = PipelineTrace()
+    trace.extend([
+        StageEvent("token", "delta_started", 1_000_000),
+        StageEvent("token", "delta_finished", 2_000_000),
+        StageEvent("token", "delta_started", 3_000_000),
+        StageEvent("token", "delta_finished", 5_000_000),
+    ])
+
+    assert trace.durations_ms([("delta_started", "delta_finished")]) == {
+        "delta_started_to_delta_finished": [1.0, 2.0]
+    }
+
+
+@pytest.mark.asyncio
+async def test_run_clients_leaves_default_executor_usable():
+    """The load helper does not close the event loop's default executor."""
+    results = await run_clients(
+        2,
+        lambda index, executor: asyncio.get_running_loop().run_in_executor(
+            executor, lambda: index
+        ),
+    )
+
+    assert results == [0, 1]
+    assert await asyncio.to_thread(lambda: "still-usable") == "still-usable"

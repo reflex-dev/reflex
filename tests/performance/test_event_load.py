@@ -74,11 +74,12 @@ def test_event_load_report(
         results = asyncio.run(
             run_clients(
                 clients,
-                lambda index, clients=clients: run_socket_client(
+                lambda index, executor, clients=clients: run_socket_client(
                     backend_url,
                     f"load-token-{clients}-{index}",
                     payload,
                     events_per_client,
+                    executor=executor,
                 ),
             )
         )
