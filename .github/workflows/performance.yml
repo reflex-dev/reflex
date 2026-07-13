@@ -45,6 +45,14 @@ jobs:
           mode: instrumentation
           run: uv run pytest -v tests/benchmarks --codspeed
 
+      - name: Run event-loop smoke
+        run: >-
+          uv run pytest tests/performance/test_event_loop.py
+          --run-performance
+          --performance-scale smoke
+          --performance-output .pytest-tmp/performance
+          -q
+
   lighthouse:
     name: Run Lighthouse benchmark
     runs-on: ubuntu-22.04
@@ -71,6 +79,14 @@ jobs:
         run: |
           mkdir -p .pytest-tmp/lighthouse
           uv run pytest tests/integration/test_lighthouse.py -q -s --tb=no --basetemp=.pytest-tmp/lighthouse
+
+      - name: Run browser performance smoke and bundle budget
+        run: >-
+          uv run pytest tests/performance/test_browser.py
+          --run-performance
+          --performance-scale smoke
+          --performance-output .pytest-tmp/performance
+          -q
 
       - name: Upload Lighthouse artifacts
         if: always()

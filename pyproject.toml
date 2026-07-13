@@ -257,6 +257,9 @@ preview = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
+]
 
 [tool.codespell]
 skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, uv.lock, */bun.lock, node_modules"

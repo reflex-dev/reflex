@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from tests.benchmarks.loop_probe import EventLoopProbe
+from tests.benchmarks.support.loop_probe import EventLoopProbe
 
 
 @pytest.mark.asyncio

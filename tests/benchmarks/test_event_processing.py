@@ -183,19 +183,22 @@ def test_process_event_warm(
         loop.run_until_complete(run_events([token]))
 
 
+@pytest.mark.parametrize("num_events", [1, 10, 100])
 def test_process_event_burst_same_token(
+    num_events: int,
     event_processing_harness,
     benchmark: BenchmarkFixture,
 ):
-    """Benchmark ten queued events serialized through one token.
+    """Benchmark queued events serialized through one token.
 
     Args:
+        num_events: Number of events in the burst.
         event_processing_harness: The event runner and token purge helpers.
         benchmark: The codspeed benchmark fixture.
     """
     run_events, _ = event_processing_harness
     loop = asyncio.get_event_loop()
-    tokens = ["burst-token"] * 10
+    tokens = ["burst-token"] * num_events
     loop.run_until_complete(run_events([tokens[0]]))
 
     @benchmark
@@ -203,19 +206,22 @@ def test_process_event_burst_same_token(
         loop.run_until_complete(run_events(tokens))
 
 
+@pytest.mark.parametrize("num_events", [1, 10, 100])
 def test_process_event_burst_independent_tokens(
+    num_events: int,
     event_processing_harness,
     benchmark: BenchmarkFixture,
 ):
-    """Benchmark ten queued events distributed across independent tokens.
+    """Benchmark queued events distributed across independent tokens.
 
     Args:
+        num_events: Number of independent tokens and events.
         event_processing_harness: The event runner and token purge helpers.
         benchmark: The codspeed benchmark fixture.
     """
     run_events, _ = event_processing_harness
     loop = asyncio.get_event_loop()
-    tokens = [f"independent-token-{index}" for index in range(10)]
+    tokens = [f"independent-token-{index}" for index in range(num_events)]
     loop.run_until_complete(run_events(tokens))
 
     @benchmark
