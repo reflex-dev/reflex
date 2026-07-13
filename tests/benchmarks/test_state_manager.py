@@ -7,7 +7,11 @@ from pytest_codspeed import BenchmarkFixture
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 
-from .support.states import PerformanceState, get_performance_state
+from .support.states import (
+    PerformanceState,
+    get_performance_state,
+    isolated_performance_registry,
+)
 
 
 def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
@@ -39,11 +43,14 @@ def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
         """Purge the measured state."""
         manager._purge_token(token)  # pyright: ignore [reportPrivateUsage]
 
-    try:
-        benchmark.pedantic(get_state, setup=setup, teardown=teardown)
-    finally:
-        loop.run_until_complete(manager.close())
-        loop.close()
+    # Isolate the registry so the measured cold construction instantiates only
+    # PerformanceState's subtree, not every state in the collected session.
+    with isolated_performance_registry():
+        try:
+            benchmark.pedantic(get_state, setup=setup, teardown=teardown)
+        finally:
+            loop.run_until_complete(manager.close())
+            loop.close()
 
 
 def test_state_manager_memory_warm_get(benchmark: BenchmarkFixture):

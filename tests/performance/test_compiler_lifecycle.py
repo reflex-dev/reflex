@@ -39,7 +39,14 @@ def _run(command: list[str], cwd: Path, timeout: float = 300) -> float:
         capture_output=True,
         text=True,
         timeout=timeout,
-        env=os.environ | {"REFLEX_TELEMETRY_ENABLED": "false"},
+        # Disable the live PyPI latest-version check so `init` timing is not
+        # contaminated by a network round-trip (and its 2s timeout on a slow or
+        # offline runner). Telemetry is off for the same reason.
+        env=os.environ
+        | {
+            "REFLEX_TELEMETRY_ENABLED": "false",
+            "REFLEX_CHECK_LATEST_VERSION": "false",
+        },
     )
     return (time.perf_counter_ns() - started) / 1_000_000
 
