@@ -45,9 +45,9 @@ jobs:
           mode: instrumentation
           run: uv run pytest -v tests/benchmarks --codspeed
 
-      - name: Run event-loop smoke
+      - name: Run event-loop and wire-size smoke
         run: >-
-          uv run pytest tests/performance/test_event_loop.py
+          uv run pytest tests/performance/test_event_loop.py tests/performance/test_wire_size.py
           --run-performance
           --performance-scale smoke
           --performance-output .pytest-tmp/performance

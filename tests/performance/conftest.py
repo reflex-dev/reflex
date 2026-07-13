@@ -1,8 +1,12 @@
 """Configuration for scheduled performance suites."""
 
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+
+from reflex.testing import AppHarness, AppHarnessProd
+from tests.benchmarks.support.apps import load_app_source
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -62,6 +66,27 @@ def performance_output(request: pytest.FixtureRequest) -> Path:
     output = Path(request.config.getoption("--performance-output")).resolve()
     output.mkdir(parents=True, exist_ok=True)
     return output
+
+
+@pytest.fixture(scope="session")
+def performance_load_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+    """Build and run the representative production load application once.
+
+    Shared session-wide because a production build takes minutes; consumers
+    isolate through distinct client tokens.
+
+    Args:
+        tmp_path_factory: Pytest temporary directory factory.
+
+    Yields:
+        Running production app harness.
+    """
+    with AppHarnessProd.create(
+        root=tmp_path_factory.mktemp("performance_load"),
+        app_source=load_app_source(),
+        app_name="performance_load",
+    ) as harness:
+        yield harness
 
 
 @pytest.fixture

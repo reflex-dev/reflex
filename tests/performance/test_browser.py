@@ -4,35 +4,15 @@ from __future__ import annotations
 
 import gzip
 import time
-from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness, AppHarnessProd
+from reflex.testing import AppHarness
 from tests.benchmarks.support import BenchmarkResult, PerformanceReport
-from tests.benchmarks.support.apps import load_app_source
 
 MAX_JAVASCRIPT_GZIP_BYTES = 14_000_000
-
-
-@pytest.fixture(scope="module")
-def performance_browser_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Build and serve the representative application in production mode.
-
-    Args:
-        tmp_path_factory: Pytest temporary directory factory.
-
-    Yields:
-        Running production app harness.
-    """
-    with AppHarnessProd.create(
-        root=tmp_path_factory.mktemp("performance_browser"),
-        app_source=load_app_source(),
-        app_name="performance_browser",
-    ) as harness:
-        yield harness
 
 
 def _bundle_metrics(root: Path) -> dict[str, int]:
@@ -79,7 +59,7 @@ def _browser_heap(page: Page) -> int:
 
 @pytest.mark.performance
 def test_browser_report(
-    performance_browser_app: AppHarness,
+    performance_load_app: AppHarness,
     page: Page,
     performance_output: Path,
     performance_scale: str,
@@ -87,12 +67,12 @@ def test_browser_report(
     """Measure hydration, state-to-DOM updates, large lists, navigation, and heap.
 
     Args:
-        performance_browser_app: Running production app.
+        performance_load_app: Running production app.
         page: Playwright browser page.
         performance_output: Artifact directory.
         performance_scale: Selected scenario scale.
     """
-    assert performance_browser_app.frontend_url is not None
+    assert performance_load_app.frontend_url is not None
     page.add_init_script(
         """
         window.__reflexLongTasks = [];
@@ -102,7 +82,7 @@ def test_browser_report(
         """
     )
     started = time.perf_counter_ns()
-    page.goto(performance_browser_app.frontend_url)
+    page.goto(performance_load_app.frontend_url)
     expect(page.locator("#count")).to_have_text("0")
     hydration_ms = (time.perf_counter_ns() - started) / 1_000_000
     heap_before = _browser_heap(page)
@@ -128,7 +108,7 @@ def test_browser_report(
     assert isinstance(long_tasks, list)
 
     metrics: dict[str, float | int] = dict(
-        _bundle_metrics(performance_browser_app.app_path)
+        _bundle_metrics(performance_load_app.app_path)
     )
     metrics.update({
         "heap_before_bytes": heap_before,
@@ -162,3 +142,91 @@ def test_browser_report(
     assert metrics["javascript_modules"] > 0
     assert metrics["javascript_gzip_bytes"] <= MAX_JAVASCRIPT_GZIP_BYTES
     assert heap_after > 0
+
+
+def _timed_through_paint(page: Page, action, expectation) -> float:
+    """Time an interaction from click through the following paint.
+
+    Args:
+        page: Playwright browser page.
+        action: Callable triggering the interaction.
+        expectation: Callable asserting the resulting DOM change.
+
+    Returns:
+        Elapsed milliseconds including a double requestAnimationFrame flush.
+    """
+    started = time.perf_counter_ns()
+    action()
+    expectation()
+    page.evaluate(
+        "() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))"
+    )
+    return (time.perf_counter_ns() - started) / 1_000_000
+
+
+@pytest.mark.performance
+def test_browser_rows_report(
+    performance_load_app: AppHarness,
+    page: Page,
+    performance_output: Path,
+    performance_scale: str,
+):
+    """Measure keyed-list DOM operations: create, partial update, select, swap.
+
+    The discriminating js-framework-benchmark operations for a keyed list
+    rendered through ``rx.foreach``: full create, every-tenth-row update, a
+    selection that must not re-render other rows, and a two-row swap that
+    stresses keyed reconciliation. Durations include the following paint.
+
+    Args:
+        performance_load_app: Running production app.
+        page: Playwright browser page.
+        performance_output: Artifact directory.
+        performance_scale: Selected scenario scale.
+    """
+    assert performance_load_app.frontend_url is not None
+    page.goto(performance_load_app.frontend_url.rstrip("/") + "/rows")
+    expect(page.locator("#rows-hydrated")).to_have_text("hydrated")
+    expect(page.locator("#selected-row")).to_have_text("-1")
+
+    create_ms = _timed_through_paint(
+        page,
+        lambda: page.locator("#create-rows").click(),
+        lambda: expect(page.locator(".row")).to_have_count(1000),
+    )
+    partial_ms = _timed_through_paint(
+        page,
+        lambda: page.locator("#partial-update").click(),
+        lambda: expect(page.locator("#row-990")).to_have_text("row 990 !!!"),
+    )
+    select_ms = _timed_through_paint(
+        page,
+        lambda: page.locator("#row-500").click(),
+        lambda: expect(page.locator("#selected-row")).to_have_text("500"),
+    )
+    swap_ms = _timed_through_paint(
+        page,
+        lambda: page.locator("#swap-rows").click(),
+        lambda: expect(page.locator("#row-1")).to_have_text("row 998"),
+    )
+
+    report = PerformanceReport(
+        "browser-rows",
+        metadata={"scale": performance_scale, "rows": 1000},
+    )
+    for name, duration in [
+        ("create_1000_rows", create_ms),
+        ("partial_update_every_10th", partial_ms),
+        ("select_row", select_ms),
+        ("swap_rows", swap_ms),
+    ]:
+        report.add(
+            BenchmarkResult(
+                name,
+                {"rows": 1000},
+                [duration],
+                {},
+                measurement_iterations=1,
+            )
+        )
+    report.write(performance_output / "browser-rows.json")

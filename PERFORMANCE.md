@@ -7,8 +7,17 @@ Reflex uses separate performance tiers because deterministic CPU work, asynchron
 | Tier | Location | Runs | Purpose |
 | --- | --- | --- | --- |
 | Deterministic CPU | `tests/benchmarks/` | Every pull request | CodSpeed regression detection and flamegraphs |
-| Component wall time | `tests/performance/` | Manual | Event-loop, task, queue, Redis, and allocation behavior |
-| Load and lifecycle | `tests/performance/` | Manual | Tail latency, saturation, compiles, hot reload, browser metrics |
+| Component wall time | `tests/performance/` | Pull-request smoke, nightly release scale | Event-loop, task, queue, Redis, and allocation behavior |
+| Load and lifecycle | `tests/performance/` | Nightly release scale | Tail latency, saturation curve, compiles, hot reload, browser metrics |
+
+Scheduled coverage beyond timing:
+
+- `test_wire_size.py` records serialized delta bytes (raw and gzip) per canonical interaction — wire-size regressions are invisible to local-network timing but dominate update latency on real links.
+- `test_event_load.py` publishes the latency-throughput curve with a saturation knee, a framework-overhead comparison against a bare Starlette + python-socketio echo server, and a reconnect-storm scenario (simultaneous reconnection after all clients drop).
+- `test_session_memory.py` reports marginal backend memory per connected session at small and large per-session state, holding clients in a subprocess so client memory stays out of the measurement.
+- `test_browser.py` includes keyed-list DOM operations (create, partial update, select row, swap rows) timed through the following paint.
+
+The nightly workflow (`performance-nightly.yml`) runs the whole `tests/performance/` suite at release scale and compares against the previous night via `scripts/compare_performance_results.py`, which warns at +25% and fails at +50% with absolute floors (5 ms latency, 1 KB deterministic bytes, 5 MB process-memory metrics). Cross-environment comparisons are informational only.
 
 Do not add sleep, network, filesystem, browser, or subprocess timings to a CodSpeed instrumentation benchmark. Put those in a wall-time suite and emit a versioned JSON report.
 

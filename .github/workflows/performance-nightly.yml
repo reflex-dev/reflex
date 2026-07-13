@@ -1,0 +1,83 @@
+name: performance-nightly
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=8192"
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  release-scale:
+    name: Release-scale performance suite
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    services:
+      redis:
+        image: redis:7.4
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+          node-version: "22"
+          run-uv-sync: true
+
+      - name: Install playwright
+        run: uv run playwright install chromium --only-shell
+
+      - name: Restore previous baseline
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .performance-baseline
+          key: performance-baseline-${{ github.run_id }}
+          restore-keys: performance-baseline-
+
+      - name: Run release-scale performance suite
+        run: >-
+          uv run pytest tests/performance
+          --run-performance
+          --performance-scale release
+          --performance-output .pytest-tmp/performance
+          -q
+
+      - name: Compare against previous nightly
+        if: ${{ hashFiles('.performance-baseline/**') != '' }}
+        continue-on-error: true
+        run: >-
+          uv run python scripts/compare_performance_results.py
+          .performance-baseline
+          .pytest-tmp/performance
+
+      - name: Promote current results to baseline
+        run: |
+          rm -rf .performance-baseline
+          mkdir -p .performance-baseline
+          cp .pytest-tmp/performance/*.json .performance-baseline/
+
+      - name: Save baseline
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .performance-baseline
+          key: performance-baseline-${{ github.run_id }}
+
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: performance-release-scale
+          path: .pytest-tmp/performance/**
+          if-no-files-found: warn
