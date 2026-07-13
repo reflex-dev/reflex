@@ -935,7 +935,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         # ``_args``, so the tag round-trip (and its permanent ``_global_vars``
         # entry) is pure overhead there. See ``var_operation``.
         if self.__dict__.get("_format_without_tagging"):
-            return self._js_expr
+            return str(self)
 
         hashed_var = hash(self)
 
