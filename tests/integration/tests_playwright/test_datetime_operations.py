@@ -7,7 +7,7 @@ from reflex.testing import AppHarness
 
 
 def DatetimeOperationsApp():
-    from datetime import datetime
+    from datetime import datetime, timedelta, timezone
 
     import reflex as rx
 
@@ -15,6 +15,9 @@ def DatetimeOperationsApp():
         date1: datetime = datetime(2021, 1, 1)
         date2: datetime = datetime(2031, 1, 1)
         date3: datetime = datetime(2021, 1, 1)
+        date4: datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+        date5: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=1)))
+        date6: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=2)))
 
     app = rx.App(_state=DtOperationsState)
 
@@ -38,6 +41,13 @@ def DatetimeOperationsApp():
             rx.text(DtOperationsState.date1 <= DtOperationsState.date3, id="1_le_3"),
             rx.text(DtOperationsState.date1 > DtOperationsState.date3, id="1_gt_3"),
             rx.text(DtOperationsState.date1 >= DtOperationsState.date3, id="1_ge_3"),
+            rx.text("Operations with timezone offsets"),
+            rx.text(DtOperationsState.date4 == DtOperationsState.date5, id="4_eq_5"),
+            rx.text(DtOperationsState.date4 != DtOperationsState.date5, id="4_neq_5"),
+            rx.text(DtOperationsState.date6 < DtOperationsState.date4, id="6_lt_4"),
+            rx.text(DtOperationsState.date4 <= DtOperationsState.date5, id="4_le_5"),
+            rx.text(DtOperationsState.date4 > DtOperationsState.date6, id="4_gt_6"),
+            rx.text(DtOperationsState.date4 >= DtOperationsState.date5, id="4_ge_5"),
         )
 
 
@@ -85,3 +95,11 @@ def test_datetime_operations(datetime_operations_app: AppHarness, page: Page):
     expect(page.locator("id=1_le_3")).to_have_text("true")
     expect(page.locator("id=1_gt_3")).to_have_text("false")
     expect(page.locator("id=1_ge_3")).to_have_text("true")
+
+    # Check comparisons normalize timezone offsets
+    expect(page.locator("id=4_eq_5")).to_have_text("true")
+    expect(page.locator("id=4_neq_5")).to_have_text("false")
+    expect(page.locator("id=6_lt_4")).to_have_text("true")
+    expect(page.locator("id=4_le_5")).to_have_text("true")
+    expect(page.locator("id=4_gt_6")).to_have_text("true")
+    expect(page.locator("id=4_ge_5")).to_have_text("true")
