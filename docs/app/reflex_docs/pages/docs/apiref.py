@@ -40,7 +40,11 @@ for module in modules:
     docs = generate_docs(name, module, extra_fields=extra_fields)
     title = name.replace("_", " ").title()
     page_data = docpage(f"/api-reference/{name}/", title)(docs)
-    page_data.title = page_data.title.split("·")[0].strip()
+    # Keep the short sidebar/nav label (e.g. "App"), but emit a descriptive HTML
+    # <title> for SEO. Use the real class name (e.g. "ComponentState") so it
+    # reads as a proper API symbol.
+    page_data.title = title
+    page_data.seo_title = f"{module.__name__} API Reference · Reflex Docs"
     pages.append(page_data)
 
 pages.append(env_vars_doc)

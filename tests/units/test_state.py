@@ -4337,6 +4337,19 @@ async def test_deserialize_gc_state_disk(token):
     await dsm2.close()
 
 
+@pytest.mark.asyncio
+async def test_state_manager_disk_close_resets_write_queue_task():
+    """Test that closing the disk state manager clears its write queue task."""
+    state_manager = StateManagerDisk()
+    await state_manager._schedule_process_write_queue()
+
+    assert state_manager._write_queue_task is not None
+
+    await state_manager.close()
+
+    assert state_manager._write_queue_task is None
+
+
 class Obj(Base):
     """A object containing a callable for testing fallback pickle."""
 

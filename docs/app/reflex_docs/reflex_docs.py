@@ -124,10 +124,15 @@ for route in routes:
         # issue), makes OG/Twitter values page-specific (docs pages previously
         # had no description/og/twitter/canonical at all), and adds the missing
         # canonical link.
-        if isinstance(route.title, str) and "[" not in route.path:
+        # Prefer an explicit SEO title for the HTML <title>/meta; the sidebar
+        # and nav keep using the shorter `route.title`. This lets API-reference
+        # and CLI-reference pages emit a descriptive, >=30 char <title> while
+        # their sidebar label stays short (e.g. "App", "Deploy").
+        head_title = route.seo_title or route.title
+        if isinstance(head_title, str) and "[" not in route.path:
             canonical = _canonical_url(route.path)
             meta = create_meta_tags(
-                title=route.title,
+                title=head_title,
                 description=route.description or ONE_LINE_DESCRIPTION,
                 image=image_url,
                 url=canonical,
@@ -166,7 +171,7 @@ for route in routes:
         page_args = {
             "component": route.component,
             "route": route.path,
-            "title": route.title,
+            "title": head_title,
             "image": image_url,
             "meta": meta,
             "on_load": route.on_load,

@@ -1,9 +1,11 @@
 ---
 components:
   - rx.plotly
+title: Plotly
+meta_description: "Use Plotly in Python with Reflex. The rx.plotly component renders interactive Plotly and Plotly Express figures — line charts, scatter plots, heatmaps, and histograms — in your web app, all in pure Python."
 ---
 
-# Plotly
+# Plotly in Python: Interactive Charts with Reflex
 
 ```python exec
 import reflex as rx
@@ -12,7 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 ```
 
-Plotly is a graphing library that can be used to create interactive graphs. Use the rx.plotly component to wrap Plotly as a component for use in your web page. Checkout [Plotly](https://plotly.com/graphing-libraries/) for more information.
+[Plotly](https://plotly.com/graphing-libraries/) is a popular Python graphing library for creating interactive, publication-quality charts. Reflex wraps it with the `rx.plotly` component so you can embed any Plotly or Plotly Express figure — line charts, scatter plots, histograms, heatmaps, or 3D surface plots — directly into a Python web app with no JavaScript. Because Reflex compiles to a full-stack web app, these charts stay interactive in the browser and can update live from your app state.
 
 ```md alert info
 # When integrating Plotly graphs into your UI code, note that the method for displaying the graph differs from a regular Python script. Instead of using `fig.show()`, use `rx.plotly(data=fig)` within your UI code to ensure the graph is properly rendered and displayed within the user interface
@@ -33,6 +35,100 @@ def line_chart():
     return rx.center(
         rx.plotly(data=fig),
     )
+```
+
+## Plotly Express Chart Types
+
+[Plotly Express](https://plotly.com/python/plotly-express/) (`plotly.express`, imported as `px`) builds common chart types in a single line of Python, and every figure renders in Reflex with `rx.plotly`.
+
+### Bar Chart
+
+Create a Plotly Express bar chart with `px.bar`:
+
+```python demo exec
+oceania = px.data.gapminder().query("continent == 'Oceania'")
+bar_fig = px.bar(
+    oceania, x="year", y="pop", color="country", title="Population of Oceania"
+)
+
+
+def plotly_bar_chart():
+    return rx.center(rx.plotly(data=bar_fig))
+```
+
+### Scatter Plot
+
+Create a Plotly scatter plot with `px.scatter`:
+
+```python demo exec
+iris = px.data.iris()
+scatter_fig = px.scatter(
+    iris,
+    x="sepal_width",
+    y="sepal_length",
+    color="species",
+    title="Iris sepal dimensions",
+)
+
+
+def plotly_scatter_plot():
+    return rx.center(rx.plotly(data=scatter_fig))
+```
+
+### Pie Chart
+
+Create a Plotly pie chart with `px.pie`:
+
+```python demo exec
+tips = px.data.tips()
+pie_fig = px.pie(tips, values="tip", names="day", title="Tips by day")
+
+
+def plotly_pie_chart():
+    return rx.center(rx.plotly(data=pie_fig))
+```
+
+### Heatmap
+
+Create a Plotly heatmap with `px.density_heatmap`:
+
+```python demo exec
+tips_data = px.data.tips()
+heatmap_fig = px.density_heatmap(
+    tips_data, x="total_bill", y="tip", title="Bill vs tip density heatmap"
+)
+
+
+def plotly_heatmap():
+    return rx.center(rx.plotly(data=heatmap_fig))
+```
+
+### Histogram
+
+Create a Plotly histogram with `px.histogram`:
+
+```python demo exec
+hist_data = px.data.tips()
+histogram_fig = px.histogram(
+    hist_data, x="total_bill", nbins=20, title="Distribution of total bills"
+)
+
+
+def plotly_histogram():
+    return rx.center(rx.plotly(data=histogram_fig))
+```
+
+### Box Plot
+
+Create a Plotly box plot with `px.box`:
+
+```python demo exec
+box_data = px.data.tips()
+box_fig = px.box(box_data, x="day", y="total_bill", title="Total bill by day")
+
+
+def plotly_box_plot():
+    return rx.center(rx.plotly(data=box_fig))
 ```
 
 ## Locale Configuration
