@@ -656,6 +656,13 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     return f"({lhs} ** {rhs})"
 
 
+_PY_ROUND_IMPORT: ImportDict = {
+    "$/utils/helpers/round.js": [
+        ImportVar(tag="pyRound", is_default=True, install=False)
+    ],
+}
+
+
 @var_operation
 def number_round_operation(value: NumberVar, ndigits: NumberVar | int):
     """Round the number.
@@ -670,9 +677,13 @@ def number_round_operation(value: NumberVar, ndigits: NumberVar | int):
     if (isinstance(ndigits, LiteralNumberVar) and ndigits._var_value == 0) or (
         isinstance(ndigits, int) and ndigits == 0
     ):
-        return var_operation_return(js_expression=f"Math.round({value})", var_type=int)
+        var_type = int
+    else:
+        var_type = float
     return var_operation_return(
-        js_expression=f"(+{value}.toFixed({ndigits}))", var_type=float
+        js_expression=f"pyRound({value}, {ndigits})",
+        var_type=var_type,
+        var_data=VarData(imports=_PY_ROUND_IMPORT),
     )
 
 
