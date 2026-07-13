@@ -1,21 +1,37 @@
 """Wall-time probes for asyncio performance benchmarks."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from types import TracebackType
+
+from .report import percentile
 
 
 @dataclass
 class EventLoopProbe:
-    """Sample event-loop lag and live task count during a workload."""
+    """Sample event-loop lag, tasks, and benchmark-specific gauges."""
 
     interval: float = 0.01
+    gauges: Mapping[str, Callable[[], int]] = field(default_factory=dict)
     lag_samples: list[float] = field(default_factory=list, init=False)
-    peak_tasks: int = field(default=0, init=False)
+    task_samples: list[int] = field(default_factory=list, init=False)
+    gauge_samples: dict[str, list[int]] = field(default_factory=dict, init=False)
     _task: asyncio.Task[None] | None = field(default=None, init=False, repr=False)
 
-    async def __aenter__(self) -> "EventLoopProbe":
+    @property
+    def peak_tasks(self) -> int:
+        """Return the largest observed live-task count.
+
+        Returns:
+            Peak live tasks.
+        """
+        return max(self.task_samples, default=0)
+
+    async def __aenter__(self) -> EventLoopProbe:
         """Start sampling and allow the sampler task to initialize.
 
         Returns:
@@ -25,7 +41,8 @@ class EventLoopProbe:
             msg = "Event-loop probe interval must be greater than zero."
             raise ValueError(msg)
         self.lag_samples.clear()
-        self.peak_tasks = 0
+        self.task_samples.clear()
+        self.gauge_samples = {name: [] for name in self.gauges}
         self._task = asyncio.create_task(
             self._sample(),
             name="reflex_benchmark_event_loop_probe",
@@ -54,47 +71,34 @@ class EventLoopProbe:
         self._task = None
 
     async def _sample(self) -> None:
-        """Record scheduling delay and the number of live tasks."""
+        """Record scheduling delay, tasks, and custom gauges."""
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self.interval
         while True:
             await asyncio.sleep(max(0.0, deadline - loop.time()))
             now = loop.time()
             self.lag_samples.append(max(0.0, now - deadline))
-            self.peak_tasks = max(self.peak_tasks, len(asyncio.all_tasks(loop)))
+            self.task_samples.append(len(asyncio.all_tasks(loop)))
+            for name, gauge in self.gauges.items():
+                self.gauge_samples[name].append(gauge())
             deadline = max(deadline + self.interval, now + self.interval)
 
     def summary(self) -> dict[str, float | int]:
         """Return stable summary fields for benchmark JSON output.
 
         Returns:
-            Sample count, peak tasks, and event-loop lag percentiles in milliseconds.
+            Sample count, peak tasks, custom gauge peaks, and lag percentiles.
         """
-        return {
+        summary: dict[str, float | int] = {
             "sample_count": len(self.lag_samples),
             "peak_tasks": self.peak_tasks,
-            "lag_p50_ms": self._percentile(50) * 1000,
-            "lag_p95_ms": self._percentile(95) * 1000,
-            "lag_p99_ms": self._percentile(99) * 1000,
+            "lag_p50_ms": percentile(self.lag_samples, 50) * 1000,
+            "lag_p95_ms": percentile(self.lag_samples, 95) * 1000,
+            "lag_p99_ms": percentile(self.lag_samples, 99) * 1000,
             "lag_max_ms": max(self.lag_samples, default=0.0) * 1000,
         }
-
-    def _percentile(self, percentile: float) -> float:
-        """Calculate a linearly interpolated lag percentile.
-
-        Args:
-            percentile: Percentile in the inclusive range 0 through 100.
-
-        Returns:
-            The percentile lag in seconds, or zero when there are no samples.
-        """
-        if not self.lag_samples:
-            return 0.0
-        values = sorted(self.lag_samples)
-        position = (len(values) - 1) * percentile / 100
-        lower_index = int(position)
-        upper_index = min(lower_index + 1, len(values) - 1)
-        fraction = position - lower_index
-        return (
-            values[lower_index] + (values[upper_index] - values[lower_index]) * fraction
-        )
+        summary.update({
+            f"peak_{name}": max(samples, default=0)
+            for name, samples in self.gauge_samples.items()
+        })
+        return summary
