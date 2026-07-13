@@ -12,6 +12,7 @@ def render_image():
     return rx.el.div(
         rx.image(
             src="https://web.reflex-assets.dev/ai_builder/app_lifecycle/copy_light.avif",
+            alt="Copying an app in Reflex AI Builder",
             class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),

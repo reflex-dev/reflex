@@ -30,7 +30,7 @@ def component_grid():
         sidebar.append(
             rx.box(
                 rx.box(
-                    rx.el.h1(
+                    rx.el.h2(
                         rx.utils.format.to_title_case(category),
                         class_name="font-large text-secondary-12",
                     ),

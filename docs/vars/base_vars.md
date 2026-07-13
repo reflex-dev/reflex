@@ -30,7 +30,7 @@ class TickerState(rx.State):
 def ticker_example():
     return rx.center(
         rx.vstack(
-            rx.heading(TickerState.ticker, size="3"),
+            rx.heading(TickerState.ticker, as_="h2", size="3"),
             rx.text(f"Current Price: {TickerState.price}", font_size="md"),
             rx.text("Change: 4%", color="green"),
         ),
@@ -66,7 +66,7 @@ from .state import TickerState
 def ticker_example():
     return rx.center(
         rx.vstack(
-            rx.heading(TickerState.ticker, size="3"),
+            rx.heading(TickerState.ticker, as_="h2", size="3"),
             rx.text(f"Current Price: {TickerState.price}", font_size="md"),
             rx.text("Change: 4%", color="green"),
         ),

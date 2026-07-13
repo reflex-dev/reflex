@@ -78,7 +78,7 @@ ColorPickerState = ClientStateVar.create(default="#db114b", var_name="color")
 rx.box(
     ColorPickerState,
     rx.vstack(
-        rx.heading(ColorPickerState.value, color="white"),
+        rx.heading(ColorPickerState.value, as_="h2", color="white"),
         color_picker(on_change=ColorPickerState.set_value),
     ),
     background_color=ColorPickerState.value,
@@ -113,7 +113,7 @@ class ColorPickerState(rx.State):
 def index():
     return rx.box(
         rx.vstack(
-            rx.heading(ColorPickerState.color, color="white"),
+            rx.heading(ColorPickerState.color, as_="h2", color="white"),
             color_picker(on_change=ColorPickerState.set_color),
         ),
         background_color=ColorPickerState.color,

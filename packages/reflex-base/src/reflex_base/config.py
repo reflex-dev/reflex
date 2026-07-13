@@ -13,12 +13,13 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex_base import constants
-from reflex_base.constants.base import LogLevel
+from reflex_base.constants.base import LiteralColorMode, LogLevel
 from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
 from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
     ExistingPath,
     SequenceOptions,
+    _InvalidPlugin,
     _load_dotenv_from_files,
     _paths_from_env_files,
     interpret_env_var_value,
@@ -28,7 +29,7 @@ from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.utils import console
-from reflex_base.utils.exceptions import ConfigError
+from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -176,6 +177,7 @@ class BaseConfig:
         redis_token_expiration: Token expiration time for redis state manager.
         env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
@@ -249,6 +251,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    default_color_mode: LiteralColorMode = "system"
 
     show_built_with_reflex: bool | None = None
 
@@ -368,6 +372,10 @@ class Config(BaseConfig):
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
+        # Append any plugins declared via the REFLEX_EXTRA_PLUGINS env var (honoring
+        # disable_plugins, which is normalized above).
+        self._add_extra_plugins()
+
         # Add builtin plugins if not disabled.
         if not self._skip_plugins_checks:
             self._add_builtin_plugins()
@@ -404,6 +412,14 @@ class Config(BaseConfig):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             raise ConfigError(msg)
 
+        allowed_color_modes = constants.LiteralColorMode.__args__
+        if self.default_color_mode not in allowed_color_modes:
+            msg = (
+                f"default_color_mode must be one of "
+                f"{allowed_color_modes}, but got {self.default_color_mode!r}."
+            )
+            raise ConfigError(msg)
+
     def _normalize_plugins(self):
         """Normalize ``plugins`` entries to Plugin instances.
 
@@ -413,10 +429,22 @@ class Config(BaseConfig):
         subclass nor a Plugin instance raises ``ConfigError`` with a message
         that names the offending value, instead of failing later in the
         compiler with a confusing ``TypeError`` about a missing ``self``.
+
+        An ``_InvalidPlugin`` (produced when a ``REFLEX_PLUGINS`` import path
+        cannot be resolved) is fatal here: ``plugins`` is an explicit list of
+        plugins the app needs, so a bad entry raises ``InvalidPluginConfigError``
+        and the app cannot start.
+
+        Raises:
+            ConfigError: If an entry is neither a Plugin instance nor subclass.
+            InvalidPluginConfigError: If an entry could not be loaded.
         """
         normalized: list[Plugin] = []
+        invalid: list[_InvalidPlugin] = []
         for entry in self.plugins:
-            if isinstance(entry, Plugin):
+            if isinstance(entry, _InvalidPlugin):
+                invalid.append(entry)
+            elif isinstance(entry, Plugin):
                 normalized.append(entry)
             elif isinstance(entry, type) and issubclass(entry, Plugin):
                 try:
@@ -427,25 +455,80 @@ class Config(BaseConfig):
                         f"instantiated and may require arguments; pass an instance "
                         f"instead, e.g. plugins=[{entry.__name__}(...)]."
                     )
-                    raise ConfigError(msg) from exc
+                    raise InvalidPluginConfigError(msg) from exc
             else:
                 msg = (
                     f"reflex.Config.plugins must contain Plugin instances, but got "
                     f"{entry!r} of type {type(entry).__name__}. "
                     f"Pass an instance, e.g. plugins=[SitemapPlugin()]."
                 )
-                raise ConfigError(msg)
+                raise InvalidPluginConfigError(msg)
+        if invalid:
+            details = ", ".join(p.describe() for p in invalid)
+            msg = (
+                f"reflex.Config.plugins contains plugin(s) that could not be loaded "
+                f"(check REFLEX_PLUGINS import paths): {details}."
+            )
+            raise InvalidPluginConfigError(msg)
         self.plugins = normalized
+
+    def _add_extra_plugins(self):
+        """Append plugins declared via the ``REFLEX_EXTRA_PLUGINS`` env var.
+
+        Unlike ``REFLEX_PLUGINS``, which *replaces* ``plugins`` entirely, this env
+        var appends to the existing list so plugins configured in ``rxconfig.py``
+        are preserved. Each entry is a fully qualified import path resolved to a
+        Plugin *subclass* (not instantiated by the env machinery). For each class:
+
+        - An invalid import path is warned about and skipped (a bad env entry is
+          never fatal, since the app still has its configured plugins).
+        - A type listed in ``disable_plugins`` is skipped *without* instantiating
+          it, so a disabled plugin never runs its constructor.
+        - A type already present in ``plugins`` is skipped, so a plugin is never
+          run twice.
+        - Otherwise the class is instantiated and appended; a constructor failure
+          is warned about and skipped.
+        """
+        for plugin_class in environment.REFLEX_EXTRA_PLUGINS.get():
+            if isinstance(plugin_class, _InvalidPlugin):
+                console.warn(
+                    f"Ignoring invalid REFLEX_EXTRA_PLUGINS entry {plugin_class.describe()}."
+                )
+                continue
+            if any(
+                issubclass(plugin_class, disabled) for disabled in self.disable_plugins
+            ):
+                console.debug(
+                    f"Skipping REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
+                    "because its type is listed in disable_plugins.",
+                )
+                continue
+            if any(isinstance(existing, plugin_class) for existing in self.plugins):
+                continue
+            try:
+                self.plugins.append(plugin_class())
+            except Exception as exc:
+                console.warn(
+                    f"Ignoring REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
+                    f"that could not be instantiated: {exc}"
+                )
 
     def _normalize_disable_plugins(self):
         """Normalize disable_plugins list entries to Plugin subclasses.
 
         Handles backward compatibility by converting strings (fully qualified
-        import paths) and Plugin instances to their associated classes.
+        import paths) and Plugin instances to their associated classes. An
+        ``_InvalidPlugin`` (from an unresolvable ``REFLEX_DISABLE_PLUGINS`` import
+        path) is warned about and dropped rather than crashing config load.
         """
         normalized: list[type[Plugin]] = []
         for entry in self.disable_plugins:
-            if isinstance(entry, type) and issubclass(entry, Plugin):
+            if isinstance(entry, _InvalidPlugin):
+                console.warn(
+                    f"Ignoring invalid disable_plugins entry {entry.describe()}. "
+                    "Check the REFLEX_DISABLE_PLUGINS import path(s)."
+                )
+            elif isinstance(entry, type) and issubclass(entry, Plugin):
                 normalized.append(entry)
             elif isinstance(entry, Plugin):
                 normalized.append(type(entry))
@@ -522,13 +605,6 @@ class Config(BaseConfig):
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
-
-        for disabled_plugin in self.disable_plugins:
-            if disabled_plugin not in _PLUGINS_ENABLED_BY_DEFAULT:
-                console.warn(
-                    f"`{disabled_plugin!r}` is disabled in the config, but it is not a built-in plugin. "
-                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
-                )
 
     @classmethod
     def class_fields(cls) -> set[str]:

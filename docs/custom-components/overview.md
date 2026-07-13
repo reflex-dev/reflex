@@ -14,6 +14,7 @@ Check out the custom components gallery [here](/docs/custom-components/overview)
 rx.center(
     rx.image(
         src="https://web.reflex-assets.dev/custom_components/pypi_reflex_custom_components.webp",
+        alt="PyPI page listing Reflex custom components",
         width="400px",
         border_radius="15px",
         border="1px solid",

@@ -876,6 +876,21 @@ def render_markdown(text: str) -> rx.Component:
     return transformer.transform(doc)
 
 
+def render_markdown_with_toc(text: str) -> tuple[list[tuple[int, str]], rx.Component]:
+    """Render a plain markdown text string, also extracting its TOC headings.
+
+    Args:
+        text: The markdown source.
+
+    Returns:
+        A ``(toc, body)`` tuple where ``toc`` is a list of ``(level, text)``
+        heading tuples and ``body`` is the rendered component.
+    """
+    doc = parse_document(text)
+    toc = [(h.level, _spans_to_plaintext(h.children)) for h in doc.headings]
+    return toc, ReflexDocTransformer().transform(doc)
+
+
 def render_inline_markdown(text: str, class_name: str = "") -> rx.Component:
     """Render a short markdown string inline (links, code spans, emphasis).
 

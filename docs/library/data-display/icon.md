@@ -130,7 +130,7 @@ class DynamicIconState(rx.State):
 
 ```python demo
 rx.vstack(
-    rx.heading("Dynamic Icon Example"),
+    rx.heading("Dynamic Icon Example", as_="h2"),
     rx.icon(DynamicIconState.current_icon, size=30, color="red"),
     rx.button("Change Icon", on_click=DynamicIconState.change_icon),
     spacing="4",

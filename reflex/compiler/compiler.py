@@ -31,12 +31,12 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
 from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
@@ -176,6 +176,30 @@ def _compile_theme(theme: str) -> str:
     return templates.theme_template(theme=theme)
 
 
+def _resolve_default_color_mode(theme: Component | None) -> str:
+    """Resolve the app's compile-time default color mode.
+
+    An explicit theme appearance ("light"/"dark") takes precedence over the
+    ``Config.default_color_mode`` option; "inherit", no appearance, or a
+    non-literal appearance Var falls back to the config value.
+
+    Args:
+        theme: The top-level app theme, if any.
+
+    Returns:
+        One of "system", "light", or "dark".
+    """
+    appearance = getattr(theme, "appearance", None)
+    if appearance is not None:
+        appearance_var = LiteralVar.create(appearance)
+        if (
+            isinstance(appearance_var, LiteralStringVar)
+            and appearance_var._var_value != "inherit"
+        ):
+            return appearance_var._var_value
+    return get_config().default_color_mode
+
+
 def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
@@ -186,9 +210,7 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     Returns:
         The compiled context file.
     """
-    appearance = getattr(theme, "appearance", None)
-    if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
-        appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
+    default_color_mode = str(LiteralVar.create(_resolve_default_color_mode(theme)))
 
     return (
         templates.context_template(
@@ -196,12 +218,12 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=str(appearance),
+            default_color_mode=default_color_mode,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=str(appearance),
+            default_color_mode=default_color_mode,
         )
     )
 
@@ -595,6 +617,7 @@ def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -602,6 +625,8 @@ def compile_document_root(
         head_components: The components to include in the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The path and code of the compiled document root.
@@ -613,7 +638,10 @@ def compile_document_root(
 
     # Create the document root.
     document_root = utils.create_document_root(
-        head_components, html_lang=html_lang, html_custom_attrs=html_custom_attrs
+        head_components,
+        html_lang=html_lang,
+        html_custom_attrs=html_custom_attrs,
+        default_color_mode=default_color_mode,
     )
 
     # Compile the document root.
@@ -1187,6 +1215,7 @@ def compile_app(
             raise TypeError(msg)
         app._pages[route] = page_ctx.root_component
 
+    app._evaluated_pages.update(compile_ctx.compiled_pages)
     app._stateful_pages.update(compile_ctx.stateful_routes)
     app._write_stateful_pages_marker()
     app._add_optional_endpoints()
@@ -1267,6 +1296,9 @@ def compile_app(
                 {"suppressHydrationWarning": True, **app.html_custom_attrs}
                 if app.html_custom_attrs
                 else {"suppressHydrationWarning": True}
+            ),
+            default_color_mode=_resolve_default_color_mode(
+                radix_themes_plugin.get_theme()
             ),
         )
     )

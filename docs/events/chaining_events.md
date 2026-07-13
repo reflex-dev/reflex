@@ -17,6 +17,10 @@ class CallHandlerState(rx.State):
     progress: int = 0
 
     @rx.event
+    def set_progress(self, value: int):
+        self.progress = value
+
+    @rx.event
     async def run(self):
         # Reset the count.
         self.set_progress(0)

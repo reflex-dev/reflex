@@ -1,6 +1,8 @@
 ---
 components:
   - pyplot
+title: Pyplot
+meta_description: "Render interactive Matplotlib charts in a Python web app with Reflex. The pyplot component embeds any matplotlib.pyplot figure — line, bar, scatter, or contour — directly in the browser, with light and dark mode support and no Flask or HTML boilerplate."
 ---
 
 ```python exec
@@ -13,9 +15,13 @@ from matplotlib.figure import Figure
 from reflex.style import toggle_color_mode
 ```
 
-# Pyplot
+# Pyplot: Display Matplotlib Charts in a Python Web App
 
-Pyplot (`reflex-pyplot`) is a graphing library that wraps Matplotlib. Use the `pyplot` component to display any Matplotlib plot in your app. Check out [Matplotlib](https://matplotlib.org/) for more information.
+Pyplot (`reflex-pyplot`) lets you render any [Matplotlib](https://matplotlib.org/) figure inside a Reflex web app. Matplotlib's `pyplot` interface is the most popular way to create plots in Python, but on its own it renders to a static window or an image file. The `pyplot` component takes a `matplotlib.pyplot` figure and displays it directly in the browser — no Flask routes, HTML templating, or manual image encoding required — so you can turn plotting scripts and notebooks into interactive, stateful dashboards in pure Python.
+
+## What is pyplot?
+
+`matplotlib.pyplot` is a collection of functions that make Matplotlib behave like MATLAB: each call (`plt.plot`, `plt.scatter`, `plt.bar`, and so on) builds up a figure by adding lines, bars, labels, or legends. In a normal script you would finish with `plt.show()` to open a window. In a Reflex app you instead pass the `Figure` object to the `pyplot` component, which serves it to the frontend and re-renders it whenever your state changes.
 
 ## Installation
 
@@ -59,6 +65,66 @@ def pyplot_simple_example():
 # You must close the figure after creating
 
 Not closing the figure could cause memory issues.
+```
+
+## Line Plot
+
+A line plot is the most common Matplotlib chart. Build it with `plt.subplots()` and `ax.plot()` exactly as you would in a script, then hand the figure to `pyplot` to show it in the browser.
+
+```python demo exec
+import matplotlib.pyplot as plt
+import reflex as rx
+from reflex_pyplot import pyplot
+import numpy as np
+
+
+def create_line_plot():
+    x = np.linspace(0, 10, 100)
+    fig, ax = plt.subplots()
+    ax.plot(x, np.sin(x), label="sin(x)")
+    ax.plot(x, np.cos(x), label="cos(x)")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.legend()
+    plt.close(fig)
+    return fig
+
+
+def pyplot_line_example():
+    return rx.card(
+        pyplot(create_line_plot(), width="100%", height="400px"),
+        bg_color="#ffffff",
+        width="100%",
+    )
+```
+
+## Bar Chart
+
+The same pattern works for a Matplotlib bar chart — call `ax.bar()` with your categories and values, then render the figure with `pyplot`.
+
+```python demo exec
+import matplotlib.pyplot as plt
+import reflex as rx
+from reflex_pyplot import pyplot
+
+
+def create_bar_chart():
+    fruits = ["apples", "oranges", "bananas", "pears"]
+    counts = [23, 17, 35, 29]
+    fig, ax = plt.subplots()
+    ax.bar(fruits, counts, color="#4e79a7")
+    ax.set_ylabel("count")
+    ax.set_title("Fruit inventory")
+    plt.close(fig)
+    return fig
+
+
+def pyplot_bar_example():
+    return rx.card(
+        pyplot(create_bar_chart(), width="100%", height="400px"),
+        bg_color="#ffffff",
+        width="100%",
+    )
 ```
 
 ## Stateful Example
@@ -161,3 +227,17 @@ def pyplot_example():
         width="100%",
     )
 ```
+
+## Common Questions
+
+### How do I display a Matplotlib plot in a website?
+
+Create the figure with `matplotlib.pyplot` as usual, then pass the `Figure` object to Reflex's `pyplot` component. Reflex renders it in the browser for you — you don't need Flask, a REST endpoint, or manual base64 image encoding.
+
+### Can I make Matplotlib interactive in Reflex?
+
+Yes. Compute the figure inside an `rx.var` that depends on your state, then update the state from buttons, sliders, or other events. The chart re-renders automatically, as shown in the Stateful Example above.
+
+### Do I need to call `plt.show()`?
+
+No. `plt.show()` opens a desktop window and is not used in a web app. Instead, return the figure to the `pyplot` component and call `plt.close(fig)` after creating it to free memory.

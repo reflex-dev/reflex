@@ -42,7 +42,7 @@ class TextfieldBlur(rx.State):
 
 def blur_example():
     return rx.vstack(
-        rx.heading(TextfieldBlur.text),
+        rx.heading(TextfieldBlur.text, as_="h2"),
         rx.input(
             placeholder="Search here...",
             on_blur=TextfieldBlur.set_text,
@@ -63,7 +63,7 @@ class TextfieldControlled(rx.State):
 
 def controlled_example():
     return rx.vstack(
-        rx.heading(TextfieldControlled.text),
+        rx.heading(TextfieldControlled.text, as_="h2"),
         rx.input(
             placeholder="Search here...",
             value=TextfieldControlled.text,
@@ -123,7 +123,7 @@ class FormInputState(rx.State):
 def form_input1():
     return rx.card(
         rx.vstack(
-            rx.heading("Example Form"),
+            rx.heading("Example Form", as_="h2"),
             rx.form.root(
                 rx.hstack(
                     rx.input(
@@ -140,7 +140,7 @@ def form_input1():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(FormInputState.form_data.to_string()),
             ),
             align_items="left",

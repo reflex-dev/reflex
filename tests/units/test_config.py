@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 from reflex_base.constants import Endpoint, Env
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
-from reflex_base.utils.exceptions import ConfigError
+from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 import reflex as rx
 from reflex.environment import (
@@ -38,6 +38,16 @@ def test_set_app_name(base_config_values):
     assert config.app_name == base_config_values["app_name"]
 
 
+def test_default_color_mode_default(base_config_values):
+    """Test that default_color_mode defaults to "system".
+
+    Args:
+        base_config_values: Config values.
+    """
+    config = rx.Config(**base_config_values)
+    assert config.default_color_mode == "system"
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -53,6 +63,7 @@ def test_set_app_name(base_config_values):
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
+        ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )
 def test_update_from_env(
@@ -583,6 +594,22 @@ class TestDisablePlugins:
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
 
+    def test_disable_non_builtin_plugin_does_not_warn(self, mocker: MockerFixture):
+        """Disabling a non-builtin plugin emits no warning.
+
+        Non-builtin plugins (e.g. ones added via REFLEX_EXTRA_PLUGINS) can be
+        disabled through this same mechanism, so disabling a plugin that is not
+        enabled-by-default must not warn.
+        """
+
+        class CustomPlugin(Plugin): ...
+
+        warn = mocker.patch("reflex_base.config.console.warn")
+        rx.Config(app_name="test", disable_plugins=[CustomPlugin])
+        assert not any(
+            "not a built-in plugin" in str(call.args[0]) for call in warn.call_args_list
+        )
+
 
 def test_plugins_instance_passthrough():
     """A Plugin instance is kept as-is (issue #6440)."""
@@ -615,3 +642,187 @@ def test_plugins_class_requiring_args_raises_config_error():
 
     with pytest.raises(ConfigError, match="NeedsArgs"):
         rx.Config(app_name="test", plugins=[NeedsArgs])  # pyright: ignore[reportArgumentType]
+
+
+# Module-level plugins so REFLEX_EXTRA_PLUGINS can resolve them by import path.
+class ExtraPluginA(Plugin):
+    """First plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+class ExtraPluginB(Plugin):
+    """Second plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+# Records every instantiation so tests can assert a disabled plugin is never built.
+_extra_plugin_instantiations: list[str] = []
+
+
+class TrackedExtraPlugin(Plugin):
+    """Plugin that records when its constructor runs."""
+
+    def __init__(self):
+        """Record that this plugin was instantiated."""
+        _extra_plugin_instantiations.append(type(self).__name__)
+
+
+class NeedsArgsExtraPlugin(Plugin):
+    """Plugin whose constructor requires an argument, so it cannot be auto-built."""
+
+    def __init__(self, required):
+        """Initialize, requiring an argument.
+
+        Args:
+            required: A required positional argument.
+        """
+        self.required = required
+
+
+_EXTRA_PLUGIN_A = "tests.units.test_config.ExtraPluginA"
+_EXTRA_PLUGIN_B = "tests.units.test_config.ExtraPluginB"
+_TRACKED_EXTRA_PLUGIN = "tests.units.test_config.TrackedExtraPlugin"
+_NEEDS_ARGS_EXTRA_PLUGIN = "tests.units.test_config.NeedsArgsExtraPlugin"
+_BAD_PLUGIN_SPEC = "tests.units.test_config.NoSuchPlugin"
+
+
+def test_extra_plugins_appends_single_plugin(monkeypatch: pytest.MonkeyPatch):
+    """A single extra plugin is appended to the plugins list."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_multiple_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Multiple colon-separated extra plugins are all appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_EXTRA_PLUGIN_A}:{_EXTRA_PLUGIN_B}")
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_preserves_config_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Extra plugins are appended without replacing plugins from the config."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    instance = ExtraPluginA()
+    config = rx.Config(app_name="test", plugins=[instance])
+    # The config-provided instance is preserved...
+    assert instance in config.plugins
+    # ...and the extra plugin from the env var is appended.
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_unset_appends_nothing(monkeypatch: pytest.MonkeyPatch):
+    """When unset, no extra plugins leak into the plugins list."""
+    monkeypatch.delenv("REFLEX_EXTRA_PLUGINS", raising=False)
+    config = rx.Config(app_name="test")
+    assert not any(isinstance(p, (ExtraPluginA, ExtraPluginB)) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_duplicate_existing_type(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An extra plugin whose type is already configured is not added twice."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginA()])
+    instances = [p for p in config.plugins if isinstance(p, ExtraPluginA)]
+    assert len(instances) == 1
+
+
+def test_extra_plugins_respects_disable_plugins(monkeypatch: pytest.MonkeyPatch):
+    """An extra plugin disabled via disable_plugins is not appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", disable_plugins=[ExtraPluginA])
+    assert not any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_replace_like_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_PLUGINS replaces config plugins, unlike REFLEX_EXTRA_PLUGINS."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginB()])
+    # The config plugin is dropped by the REFLEX_PLUGINS replacement.
+    assert not any(isinstance(p, ExtraPluginB) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_on_top_of_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_EXTRA_PLUGINS appends on top of the REFLEX_PLUGINS replacement."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    config = rx.Config(app_name="test", plugins=[SitemapPlugin()])
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_enabled_is_instantiated(monkeypatch: pytest.MonkeyPatch):
+    """A non-disabled extra plugin has its constructor run exactly once."""
+    _extra_plugin_instantiations.clear()
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _TRACKED_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, TrackedExtraPlugin) for p in config.plugins)
+    assert _extra_plugin_instantiations == ["TrackedExtraPlugin"]
+
+
+def test_extra_plugins_disabled_is_never_instantiated(monkeypatch: pytest.MonkeyPatch):
+    """A disabled extra plugin is imported but its constructor never runs."""
+    _extra_plugin_instantiations.clear()
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _TRACKED_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test", disable_plugins=[TrackedExtraPlugin])
+    assert not any(isinstance(p, TrackedExtraPlugin) for p in config.plugins)
+    # The constructor must never have run for the disabled plugin.
+    assert _extra_plugin_instantiations == []
+
+
+def test_extra_plugins_bad_spec_warns_and_keeps_valid(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """A bad REFLEX_EXTRA_PLUGINS entry warns but valid entries are still added."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_BAD_PLUGIN_SPEC}:{_EXTRA_PLUGIN_A}")
+    config = rx.Config(app_name="test")
+    # The valid entry survives despite the bad one (no all-or-nothing failure).
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(
+        "REFLEX_EXTRA_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+    )
+
+
+def test_extra_plugins_uninstantiable_warns_and_skips(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An extra plugin that cannot be instantiated warns and is skipped, not fatal."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _NEEDS_ARGS_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test")
+    assert not any(isinstance(p, NeedsArgsExtraPlugin) for p in config.plugins)
+    assert any(
+        "could not be instantiated" in str(call.args[0]) for call in warn.call_args_list
+    )
+
+
+def test_plugins_bad_env_spec_raises_invalid_plugin_config_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An invalid REFLEX_PLUGINS import path raises InvalidPluginConfigError.
+
+    The dedicated subclass lets error tracking catch plugin-load failures
+    specifically, while still subclassing ConfigError for existing handlers.
+    """
+    monkeypatch.setenv("REFLEX_PLUGINS", _BAD_PLUGIN_SPEC)
+    with pytest.raises(InvalidPluginConfigError, match="could not be loaded"):
+        rx.Config(app_name="test")
+    assert issubclass(InvalidPluginConfigError, ConfigError)
+
+
+def test_disable_plugins_bad_env_spec_warns(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An invalid REFLEX_DISABLE_PLUGINS import path warns but does not crash."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_DISABLE_PLUGINS", _BAD_PLUGIN_SPEC)
+    rx.Config(app_name="test")
+    assert any(
+        "REFLEX_DISABLE_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+    )

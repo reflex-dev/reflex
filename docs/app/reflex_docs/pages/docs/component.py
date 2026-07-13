@@ -26,7 +26,8 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
-from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
+from reflex_docs.pages.docs.metadata import truncate_meta_description
+from reflex_docs.templates.docpage import docpage, h2_comp
 
 
 def get_code_style(color: str):
@@ -506,6 +507,13 @@ def generate_props(
     }
     skip_props = per_component_skip.get(component.__name__, set())
 
+    # Default props to apply to a component's interactive preview when the user
+    # hasn't overridden them via a control. E.g. rx.heading defaults to <h1>;
+    # force <h2> so the Heading docs page keeps a single (title) <h1> for SEO.
+    preview_prop_defaults = {
+        "Heading": {"as_": "h2"},
+    }
+
     interactive_controls: list[tuple[PropDocumentation, rx.Component]] = []
     if is_interactive:
         for prop in prop_list:
@@ -549,7 +557,10 @@ def generate_props(
 
         else:
             try:
-                comp = rx.vstack(component.create("Preview", **prop_dict))
+                defaults = preview_prop_defaults.get(component.__name__, {})
+                # prop_dict (user-selected controls) wins over defaults.
+                preview_props = {**defaults, **prop_dict}
+                comp = rx.vstack(component.create("Preview", **preview_props))
             except Exception:
                 comp = rx.fragment()
             if "data" in component.__name__.lower():
@@ -920,6 +931,8 @@ def multi_docs(
     component_list: list,
     title: str,
     ll_component_list: list | None = None,
+    description: str | None = None,
+    source: str | None = None,
 ):
     components = [
         component_docs(component_tuple, previews)
@@ -980,10 +993,15 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title)
+    @docpage(set_path=path, t=title, description=description)
     def out():
         toc = get_docgen_toc(actual_path)
-        doc_content = Path(actual_path).read_text(encoding="utf-8")
+        # Reuse the source already read by the caller to avoid a second read.
+        doc_content = (
+            source
+            if source is not None
+            else Path(actual_path).read_text(encoding="utf-8")
+        )
         # Append API Reference headings for the component list
         if components:
             toc.append((1, "API Reference"))
@@ -991,7 +1009,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*components, class_name="flex flex-col"),
             ]
             if components
@@ -1008,7 +1026,19 @@ def multi_docs(
             class_name="flex flex-col w-full",
         )
 
-    @docpage(set_path=path + "low", t=title + " (Low Level)")
+    # Differentiate the low-level page's meta description so search engines
+    # don't see it as a duplicate of the high-level page's description. Truncate
+    # the base first so the differentiating suffix always survives the cap.
+    ll_suffix = " (low-level API reference)"
+    ll_description = (
+        f"{truncate_meta_description(description, max_len=155 - len(ll_suffix))}{ll_suffix}"
+        if description
+        else None
+    )
+
+    @docpage(
+        set_path=path + "low", t=title + " (Low Level)", description=ll_description
+    )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
@@ -1019,7 +1049,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*ll_components, class_name="flex flex-col"),
             ]
             if ll_components
