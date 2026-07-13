@@ -91,6 +91,10 @@ class State(rx.State):
 
 def index():
     return rx.vstack(
+        rx.text(
+            rx.cond(State.is_hydrated, "hydrated", "loading"),
+            id="hydrated",
+        ),
         rx.text(State.count, id="count"),
         rx.button("increment", id="increment", on_click=State.increment),
         rx.button("async", id="async-io", on_click=State.async_io),

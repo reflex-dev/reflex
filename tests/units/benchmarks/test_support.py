@@ -228,7 +228,7 @@ async def test_real_redis_state_manager_refuses_nonempty_database(monkeypatch):
 
 
 async def test_real_redis_state_manager_cleanup_survives_close_failure(monkeypatch):
-    """The database is flushed before close and the pool closes regardless."""
+    """The manager closes before the flush, which runs despite a close failure."""
     pytest.importorskip("redis")
     from tests.benchmarks.support import redis as redis_support
 
@@ -266,7 +266,10 @@ async def test_real_redis_state_manager_cleanup_survives_close_failure(monkeypat
         async with redis_support.real_redis_state_manager():
             pass
 
-    assert calls == ["ping", "dbsize", "flushdb", "close", "aclose"]
+    # The manager is closed first so any oplock lease write-backs land before
+    # the flush; the flush then runs on a fresh client even though close()
+    # raised, and both the fresh client and the original connection are closed.
+    assert calls == ["ping", "dbsize", "close", "flushdb", "aclose", "aclose"]
 
 
 async def test_capture_async_diagnostics_formats_each_frame_once(tmp_path):

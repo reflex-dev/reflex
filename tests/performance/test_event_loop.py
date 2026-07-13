@@ -402,11 +402,16 @@ async def _run_scenario(
             scenario=handler.fn.__name__,
         )
         await asyncio.sleep(probe_interval * 2)
+        # Capture leak counts while the processor is still running. stop()
+        # cancels and clears both dicts on block exit, so checking after the
+        # block would always see zero and never catch an undrained task/future.
+        orphan_tasks = len(processor._tasks)
+        orphan_futures = len(processor._futures)
 
     for token, expected in expected_order.items():
         assert _ORDER_LOG[token] == expected
-    assert not processor._tasks
-    assert not processor._futures
+    assert not orphan_tasks
+    assert not orphan_futures
     durations = processor.trace.durations_ms([
         ("received", "enqueued"),
         ("enqueued", "dequeued"),
@@ -427,8 +432,8 @@ async def _run_scenario(
             "tasks_created": sum(
                 event.stage == "task_created" for event in processor.trace.events
             ),
-            "orphan_tasks": len(processor._tasks),
-            "orphan_futures": len(processor._futures),
+            "orphan_tasks": orphan_tasks,
+            "orphan_futures": orphan_futures,
         }
     )
     return latencies, metrics, processor.trace
@@ -512,6 +517,8 @@ async def _run_failed_state_pipeline() -> None:
     processor.configure(state_manager=manager)
     event = Event.from_event_type(AttributionState.failure())[0]
     event = dataclasses.replace(event, router_data={"path": "/", "query": {}})
+    orphan_tasks = 0
+    orphan_futures = 0
     try:
         async with processor:
             future = await processor.enqueue("failure-token", event)
@@ -519,12 +526,22 @@ async def _run_failed_state_pipeline() -> None:
                 await _wait_events_bounded(
                     future.wait_all(), events=1, scenario="failed_state_pipeline"
                 )
+            # The failing handler schedules a backend-exception task after the
+            # future resolves, so wait for that task to run and its finish
+            # callback to pop it before capturing counts. Checking after the
+            # block would only see stop()'s forced teardown, not real cleanup.
+            for _ in range(200):
+                await asyncio.sleep(0.01)
+                if exceptions and not processor._tasks:
+                    break
+            orphan_tasks = len(processor._tasks)
+            orphan_futures = len(processor._futures)
     finally:
         await manager.close()
         _ACTIVE_STATE_TRACE = None
     assert exceptions
-    assert not processor._tasks
-    assert not processor._futures
+    assert not orphan_tasks
+    assert not orphan_futures
 
 
 @pytest.mark.performance

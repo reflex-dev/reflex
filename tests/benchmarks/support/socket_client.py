@@ -15,6 +15,10 @@ from urllib.parse import quote
 import socketio
 from socketio.exceptions import TimeoutError as SocketTimeoutError
 
+# Silence window that marks the connection quiescent while draining the extra
+# deltas the first event on a fresh token emits (hydrate + on_load_internal).
+_PRIME_DRAIN_TIMEOUT = 0.5
+
 
 @dataclasses.dataclass(frozen=True)
 class ClientLoadResult:
@@ -74,6 +78,44 @@ def _connect(
         namespace=namespace,
         wait_timeout=max(1, int(timeout)),
     )
+
+
+def _drain(client: socketio.SimpleClient, timeout: float) -> None:
+    """Consume buffered responses until the socket is quiet for ``timeout``.
+
+    Args:
+        client: Blocking Socket.IO client.
+        timeout: Silence window that marks the connection quiescent.
+    """
+    while True:
+        try:
+            client.receive(timeout=timeout)
+        except SocketTimeoutError:
+            return
+
+
+def _prime(
+    client: socketio.SimpleClient,
+    event_name: str,
+    payload: Mapping[str, Any],
+    timeout: float,
+) -> None:
+    """Hydrate a fresh token so later events observe a clean 1:1 response.
+
+    The first application event on a fresh token triggers the rehydrate path,
+    which emits extra full-state and ``on_load_internal`` deltas under the same
+    ``event`` message name. Sending one warmup event and draining every response
+    keeps the measured loop from reading those deltas as if they answered later
+    events, which would otherwise report each latency pipelined two events deep.
+
+    Args:
+        client: Blocking Socket.IO client.
+        event_name: Socket event name used for requests.
+        payload: Event payload emitted to trigger hydration.
+        timeout: Maximum wait bounding the drain silence window.
+    """
+    client.emit(event_name, dict(payload))
+    _drain(client, min(timeout, _PRIME_DRAIN_TIMEOUT))
 
 
 async def run_socket_client(
@@ -153,6 +195,7 @@ def _run_socket_client_sync(
 
     try:
         _connect(client, url, token, namespace, timeout)
+        _prime(client, event_name, payload, timeout)
         for _ in range(events):
             started = time.perf_counter_ns()
             client.emit(event_name, dict(payload))
