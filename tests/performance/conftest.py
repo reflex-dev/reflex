@@ -68,12 +68,12 @@ def performance_output(request: pytest.FixtureRequest) -> Path:
     return output
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def performance_load_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Build and run the representative production load application once.
+    """Build and run the representative production load application per module.
 
-    Shared session-wide because a production build takes minutes; consumers
-    isolate through distinct client tokens.
+    Module scope amortizes the production build within related scenarios while
+    stopping the in-process servers before unrelated benchmark modules run.
 
     Args:
         tmp_path_factory: Pytest temporary directory factory.
