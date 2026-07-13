@@ -101,7 +101,46 @@ def index():
 def second():
     return rx.heading("Second page", id="second-heading")
 
+class RowState(rx.State):
+    rows: list[str] = []
+    selected: int = -1
+
+    def create_rows(self):
+        self.rows = [f"row {index}" for index in range(1000)]
+
+    def partial_update(self):
+        for index in range(0, len(self.rows), 10):
+            self.rows[index] += " !!!"
+
+    def select_row(self, index: int):
+        self.selected = index
+
+    def swap_rows(self):
+        self.rows[1], self.rows[998] = self.rows[998], self.rows[1]
+
+def rows():
+    return rx.vstack(
+        rx.text(
+            rx.cond(RowState.is_hydrated, "hydrated", "loading"),
+            id="rows-hydrated",
+        ),
+        rx.text(RowState.selected, id="selected-row"),
+        rx.button("create", id="create-rows", on_click=RowState.create_rows),
+        rx.button("partial", id="partial-update", on_click=RowState.partial_update),
+        rx.button("swap", id="swap-rows", on_click=RowState.swap_rows),
+        rx.foreach(
+            RowState.rows,
+            lambda row, index: rx.text(
+                row,
+                id=f"row-{index}",
+                class_name=rx.cond(index == RowState.selected, "row selected", "row"),
+                on_click=RowState.select_row(index),
+            ),
+        ),
+    )
+
 app = rx.App()
 app.add_page(index)
 app.add_page(second, route="/second")
+app.add_page(rows, route="/rows")
 """
