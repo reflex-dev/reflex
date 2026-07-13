@@ -19,8 +19,26 @@ async def test_event_loop_probe_detects_blocking_work():
 
     summary = probe.summary()
     assert summary["sample_count"] >= 2
-    assert summary["peak_tasks"] >= 2
+    assert summary["peak_tasks"] >= 1
     assert summary["lag_max_ms"] >= 10
+
+
+@pytest.mark.asyncio
+async def test_event_loop_probe_detects_terminal_blocking_work():
+    """A block immediately before context exit still produces a lag sample."""
+    async with EventLoopProbe(interval=0.001) as probe:
+        time.sleep(0.02)  # noqa: ASYNC251 - intentional event-loop blocking
+
+    assert probe.summary()["lag_max_ms"] >= 10
+
+
+@pytest.mark.asyncio
+async def test_event_loop_probe_excludes_sampler_task():
+    """Task metrics exclude the probe's own sampler task."""
+    async with EventLoopProbe(interval=0.001) as probe:
+        await asyncio.sleep(0.003)
+
+    assert probe.peak_tasks == 1
 
 
 @pytest.mark.asyncio
