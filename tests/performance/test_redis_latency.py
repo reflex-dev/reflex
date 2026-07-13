@@ -10,10 +10,10 @@ from typing import Any
 
 import pytest
 
-from reflex.istate.manager.token import StateToken
+from reflex.istate.manager.token import BaseStateToken
 from tests.benchmarks.support import BenchmarkResult, EventLoopProbe, PerformanceReport
 from tests.benchmarks.support.redis import real_redis_state_manager
-from tests.benchmarks.support.states import PerformanceState
+from tests.benchmarks.support.states import PerformanceState, get_performance_state
 
 
 async def _measure(
@@ -96,18 +96,32 @@ async def test_redis_state_manager_report(
             """
             nonlocal cold_iteration
             cold_iteration += 1
-            token = StateToken(
+            token = BaseStateToken(
                 ident=f"cold-{cold_iteration}",
                 cls=PerformanceState,
             )
-            return await manager.get_state(token)
+            return get_performance_state(await manager.get_state(token))
 
         cold = await _measure(cold_get, iterations)
-        warm_token = StateToken(ident="warm", cls=PerformanceState)
-        await manager.get_state(warm_token)
-        warm = await _measure(lambda: manager.get_state(warm_token), iterations)
+        warm_token = BaseStateToken(ident="warm", cls=PerformanceState)
+        warm_root = await manager.get_state(warm_token)
+        warm_state = get_performance_state(warm_root)
+        warm_state.counter += 1
+        await manager.set_state(warm_token, warm_root)
+        warm_key = str(warm_token.with_cls(type(warm_state)))
+        assert await manager.redis.exists(warm_key)
 
-        async def modify(token: StateToken[PerformanceState]) -> int:
+        async def warm_get() -> PerformanceState:
+            """Fetch and resolve an existing persisted state.
+
+            Returns:
+                Persisted performance state.
+            """
+            return get_performance_state(await manager.get_state(warm_token))
+
+        warm = await _measure(warm_get, iterations)
+
+        async def modify(token: BaseStateToken) -> int:
             """Modify one token under its Redis lock.
 
             Args:
@@ -116,7 +130,8 @@ async def test_redis_state_manager_report(
             Returns:
                 Updated counter.
             """
-            async with manager.modify_state(token) as state:
+            async with manager.modify_state_with_links(token) as root_state:
+                state = get_performance_state(root_state)
                 state.counter += 1
                 return state.counter
 
@@ -126,20 +141,21 @@ async def test_redis_state_manager_report(
             Returns:
                 Stage timings and serialized byte count.
             """
-            context = manager.modify_state(warm_token)
+            context = manager.modify_state_with_links(warm_token)
             lock_started = time.perf_counter_ns()
-            state = await context.__aenter__()
+            root_state = await context.__aenter__()
             lock_read_ms = (time.perf_counter_ns() - lock_started) / 1_000_000
+            state = get_performance_state(root_state)
             state.counter += 1
-            pickle_started = time.perf_counter_ns()
-            serialized = StateToken.serialize(state)
-            pickle_ms = (time.perf_counter_ns() - pickle_started) / 1_000_000
+            serialize_started = time.perf_counter_ns()
+            serialized = BaseStateToken.serialize(state)
+            serialize_ms = (time.perf_counter_ns() - serialize_started) / 1_000_000
             flush_started = time.perf_counter_ns()
             await context.__aexit__(None, None, None)
             flush_write_ms = (time.perf_counter_ns() - flush_started) / 1_000_000
             return {
                 "lock_and_read_ms": lock_read_ms,
-                "pickle_ms": pickle_ms,
+                "state_serialize_ms": serialize_ms,
                 "serialized_bytes": len(serialized),
                 "flush_and_write_ms": flush_write_ms,
             }
@@ -147,7 +163,7 @@ async def test_redis_state_manager_report(
         stage_metrics = await diagnose_modify()
         writes = await _measure(lambda: modify(warm_token), iterations)
 
-        async def concurrent(tokens: list[StateToken[PerformanceState]]) -> list[float]:
+        async def concurrent(tokens: list[BaseStateToken]) -> list[float]:
             """Measure a concurrent batch.
 
             Args:
@@ -158,7 +174,7 @@ async def test_redis_state_manager_report(
             """
             started = time.perf_counter_ns()
 
-            async def timed(token: StateToken[PerformanceState]) -> float:
+            async def timed(token: BaseStateToken) -> float:
                 """Measure one concurrent modification.
 
                 Args:
@@ -176,11 +192,11 @@ async def test_redis_state_manager_report(
         async with probe:
             same_token = await concurrent([warm_token] * concurrency)
             independent_tokens = await concurrent([
-                StateToken(ident=f"independent-{index}", cls=PerformanceState)
+                BaseStateToken(ident=f"independent-{index}", cls=PerformanceState)
                 for index in range(concurrency)
             ])
 
-        large_token = StateToken(ident="large", cls=PerformanceState)
+        large_token = BaseStateToken(ident="large", cls=PerformanceState)
 
         async def large_write() -> int:
             """Write a state large enough to exercise serialization offloading.
@@ -188,7 +204,8 @@ async def test_redis_state_manager_report(
             Returns:
                 Number of stored elements.
             """
-            async with manager.modify_state(large_token) as state:
+            async with manager.modify_state_with_links(large_token) as root_state:
+                state = get_performance_state(root_state)
                 state.numbers = list(range(100_000))
                 return len(state.numbers)
 

@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import contextlib
+import json
 import os
+import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import TextIO
+from urllib.request import urlopen
 
+import psutil
 import pytest
 
 from tests.benchmarks.support import BenchmarkResult, PerformanceReport
@@ -58,6 +64,119 @@ def _generated_metrics(root: Path) -> dict[str, int]:
         "generated_bytes": sum(path.stat().st_size for path in files),
         "javascript_bytes": sum(path.stat().st_size for path in javascript),
     }
+
+
+def _free_port() -> int:
+    """Reserve and release an available local TCP port.
+
+    Returns:
+        Available port number for the development backend.
+    """
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+def _start_dev_backend(
+    executable: str,
+    app_root: Path,
+    port: int,
+) -> tuple[subprocess.Popen[str], TextIO, Path]:
+    """Start a persistent reload-capable development backend.
+
+    Args:
+        executable: Python executable running Reflex.
+        app_root: Generated application root.
+        port: Backend port.
+
+    Returns:
+        Backend process, open log stream, and log path.
+    """
+    log_path = app_root / "hot-reload.log"
+    log_stream = log_path.open("w+", encoding="utf-8")
+    try:
+        process = subprocess.Popen(
+            [
+                executable,
+                "-m",
+                "reflex",
+                "run",
+                "--backend-only",
+                "--backend-port",
+                str(port),
+                "--loglevel",
+                "error",
+            ],
+            cwd=app_root,
+            env=os.environ | {"REFLEX_TELEMETRY_ENABLED": "false"},
+            stdout=log_stream,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    except OSError:
+        log_stream.close()
+        raise
+    return process, log_stream, log_path
+
+
+def _wait_for_reload_version(
+    process: subprocess.Popen[str],
+    log_path: Path,
+    port: int,
+    expected: int,
+    timeout: float = 120,
+) -> None:
+    """Wait until the live backend exposes an expected source version.
+
+    Args:
+        process: Development backend process.
+        log_path: Backend log used for failure context.
+        port: Backend port.
+        expected: Source version expected after reload.
+        timeout: Maximum wait in seconds.
+
+    Raises:
+        RuntimeError: If the backend exits before serving the version.
+        TimeoutError: If the reload does not complete in time.
+    """
+    deadline = time.monotonic() + timeout
+    url = f"http://127.0.0.1:{port}/reload-version"
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            log = log_path.read_text(encoding="utf-8")[-4000:]
+            msg = f"Development backend exited during reload:\n{log}"
+            raise RuntimeError(msg)
+        try:
+            with urlopen(url, timeout=0.5) as response:
+                payload = json.load(response)
+            if payload.get("version") == expected:
+                return
+        except (OSError, ValueError):
+            pass
+        time.sleep(0.05)
+    log = log_path.read_text(encoding="utf-8")[-4000:]
+    msg = f"Timed out waiting for reload version {expected}:\n{log}"
+    raise TimeoutError(msg)
+
+
+def _stop_dev_backend(process: subprocess.Popen[str]) -> None:
+    """Terminate a development backend and all reload workers.
+
+    Args:
+        process: Development backend process.
+    """
+    try:
+        parent = psutil.Process(process.pid)
+        processes = [parent, *parent.children(recursive=True)]
+    except psutil.NoSuchProcess:
+        return
+    for running in reversed(processes):
+        with contextlib.suppress(psutil.NoSuchProcess):
+            running.terminate()
+    _, alive = psutil.wait_procs(processes, timeout=10)
+    for running in alive:
+        with contextlib.suppress(psutil.NoSuchProcess):
+            running.kill()
 
 
 @pytest.mark.performance
@@ -165,16 +284,40 @@ def test_compiler_lifecycle_report(
     report.add(BenchmarkResult("compile_state_edit", {}, [state_edit_ms], {}))
 
     reload_observations = []
-    for cycle in range(reload_cycles):
-        app_source.write_text(
-            source + f"\n# reload cycle {cycle}\n",
-            encoding="utf-8",
+    backend_port = _free_port()
+    backend, backend_log, backend_log_path = _start_dev_backend(
+        executable,
+        app_root,
+        backend_port,
+    )
+    try:
+        _wait_for_reload_version(
+            backend,
+            backend_log_path,
+            backend_port,
+            expected=0,
         )
-        reload_observations.append(_run(compile_command, app_root))
+        for cycle in range(1, reload_cycles + 1):
+            cycle_source = source.replace(
+                "RELOAD_VERSION = 0",
+                f"RELOAD_VERSION = {cycle}",
+            )
+            started = time.perf_counter_ns()
+            app_source.write_text(cycle_source, encoding="utf-8")
+            _wait_for_reload_version(
+                backend,
+                backend_log_path,
+                backend_port,
+                expected=cycle,
+            )
+            reload_observations.append((time.perf_counter_ns() - started) / 1_000_000)
+    finally:
+        _stop_dev_backend(backend)
+        backend_log.close()
     report.add(
         BenchmarkResult(
-            "hot_reload_cycles",
-            {"cycles": reload_cycles},
+            "backend_hot_reload",
+            {"cycles": reload_cycles, "watcher": "reflex run"},
             reload_observations,
             _generated_metrics(app_root),
             measurement_iterations=reload_cycles,

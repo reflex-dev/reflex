@@ -5,9 +5,9 @@ import asyncio
 from pytest_codspeed import BenchmarkFixture
 
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.istate.manager.token import StateToken
+from reflex.istate.manager.token import BaseStateToken
 
-from .support.states import PerformanceState
+from .support.states import PerformanceState, get_performance_state
 
 
 def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
@@ -24,18 +24,18 @@ def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
         """Return a unique token for one cold measurement."""
         nonlocal iteration
         iteration += 1
-        token = StateToken(ident=f"cold-{iteration}", cls=PerformanceState)
+        token = BaseStateToken(ident=f"cold-{iteration}", cls=PerformanceState)
         return ((token,), {})
 
-    def get_state(token: StateToken[PerformanceState]) -> PerformanceState:
+    def get_state(token: BaseStateToken) -> PerformanceState:
         """Fetch a state through the async manager API.
 
         Returns:
             Managed state.
         """
-        return loop.run_until_complete(manager.get_state(token))
+        return get_performance_state(loop.run_until_complete(manager.get_state(token)))
 
-    def teardown(token: StateToken[PerformanceState]) -> None:
+    def teardown(token: BaseStateToken) -> None:
         """Purge the measured state."""
         manager._purge_token(token)  # pyright: ignore [reportPrivateUsage]
 
@@ -54,11 +54,15 @@ def test_state_manager_memory_warm_get(benchmark: BenchmarkFixture):
     """
     manager = StateManagerMemory()
     loop = asyncio.new_event_loop()
-    token = StateToken(ident="warm", cls=PerformanceState)
+    token = BaseStateToken(ident="warm", cls=PerformanceState)
     loop.run_until_complete(manager.get_state(token))
 
     try:
-        state = benchmark(lambda: loop.run_until_complete(manager.get_state(token)))
+        state = benchmark(
+            lambda: get_performance_state(
+                loop.run_until_complete(manager.get_state(token))
+            )
+        )
         assert isinstance(state, PerformanceState)
     finally:
         loop.run_until_complete(manager.close())
@@ -73,7 +77,7 @@ def test_state_manager_memory_modify(benchmark: BenchmarkFixture):
     """
     manager = StateManagerMemory()
     loop = asyncio.new_event_loop()
-    token = StateToken(ident="modify", cls=PerformanceState)
+    token = BaseStateToken(ident="modify", cls=PerformanceState)
 
     async def modify() -> int:
         """Increment one state under the manager lock.
@@ -81,7 +85,8 @@ def test_state_manager_memory_modify(benchmark: BenchmarkFixture):
         Returns:
             Updated counter.
         """
-        async with manager.modify_state(token) as state:
+        async with manager.modify_state_with_links(token) as root_state:
+            state = get_performance_state(root_state)
             state.counter += 1
             return state.counter
 
@@ -100,7 +105,7 @@ def test_state_manager_memory_read_only_modify(benchmark: BenchmarkFixture):
     """
     manager = StateManagerMemory()
     loop = asyncio.new_event_loop()
-    token = StateToken(ident="read-only", cls=PerformanceState)
+    token = BaseStateToken(ident="read-only", cls=PerformanceState)
 
     async def read_only() -> int:
         """Read one field under the manager lock.
@@ -108,7 +113,8 @@ def test_state_manager_memory_read_only_modify(benchmark: BenchmarkFixture):
         Returns:
             Current counter.
         """
-        async with manager.modify_state(token) as state:
+        async with manager.modify_state_with_links(token) as root_state:
+            state = get_performance_state(root_state)
             return state.counter
 
     try:
