@@ -21,6 +21,7 @@ class EventLoopProbe:
     task_samples: list[int] = field(default_factory=list, init=False)
     gauge_samples: dict[str, list[int]] = field(default_factory=dict, init=False)
     _task: asyncio.Task[None] | None = field(default=None, init=False, repr=False)
+    _deadline: float | None = field(default=None, init=False, repr=False)
 
     @property
     def peak_tasks(self) -> int:
@@ -43,6 +44,7 @@ class EventLoopProbe:
         self.lag_samples.clear()
         self.task_samples.clear()
         self.gauge_samples = {name: [] for name in self.gauges}
+        self._deadline = None
         self._task = asyncio.create_task(
             self._sample(),
             name="reflex_benchmark_event_loop_probe",
@@ -65,6 +67,9 @@ class EventLoopProbe:
         """
         if self._task is None:
             return
+        loop = asyncio.get_running_loop()
+        if self._deadline is not None and loop.time() >= self._deadline:
+            self._record_sample(loop, self._deadline)
         self._task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await self._task
@@ -75,13 +80,26 @@ class EventLoopProbe:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self.interval
         while True:
+            self._deadline = deadline
             await asyncio.sleep(max(0.0, deadline - loop.time()))
-            now = loop.time()
-            self.lag_samples.append(max(0.0, now - deadline))
-            self.task_samples.append(len(asyncio.all_tasks(loop)))
-            for name, gauge in self.gauges.items():
-                self.gauge_samples[name].append(gauge())
+            now = self._record_sample(loop, deadline)
             deadline = max(deadline + self.interval, now + self.interval)
+
+    def _record_sample(self, loop: asyncio.AbstractEventLoop, deadline: float) -> float:
+        """Record one probe sample and return its observation time.
+
+        Returns:
+            Event-loop clock time used for the sample.
+        """
+        now = loop.time()
+        self.lag_samples.append(max(0.0, now - deadline))
+        tasks = asyncio.all_tasks(loop)
+        if self._task is not None:
+            tasks.discard(self._task)
+        self.task_samples.append(len(tasks))
+        for name, gauge in self.gauges.items():
+            self.gauge_samples[name].append(gauge())
+        return now
 
     def summary(self) -> dict[str, float | int]:
         """Return stable summary fields for benchmark JSON output.
