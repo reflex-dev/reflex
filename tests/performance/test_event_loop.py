@@ -39,7 +39,34 @@ from tests.benchmarks.support.report import (
 )
 
 _ORDER_LOG: dict[str, list[int]] = defaultdict(list)
+# Handlers active per token right now, and the peak seen during a scenario. The
+# per-token queue must serialize same-token events, so the peak must stay 1; a
+# regression to concurrent same-token dispatch would push it to 2+.
+_ACTIVE_PER_TOKEN: dict[str, int] = defaultdict(int)
+_PEAK_ACTIVE_PER_TOKEN: dict[str, int] = defaultdict(int)
 _ACTIVE_STATE_TRACE: PipelineTrace | None = None
+
+
+def _record_active(token: str) -> None:
+    """Mark a handler as active for a token and update the peak.
+
+    Args:
+        token: The token whose handler is entering.
+    """
+    _ACTIVE_PER_TOKEN[token] += 1
+    _PEAK_ACTIVE_PER_TOKEN[token] = max(
+        _PEAK_ACTIVE_PER_TOKEN[token], _ACTIVE_PER_TOKEN[token]
+    )
+
+
+def _clear_active(token: str) -> None:
+    """Mark a handler as no longer active for a token.
+
+    Args:
+        token: The token whose handler is exiting.
+    """
+    _ACTIVE_PER_TOKEN[token] -= 1
+
 
 # Deliberate synchronous block injected by the blocking scenario. Detection is
 # asserted at >=2ms of measured loop lag, so 10ms leaves a 5x margin even on a
@@ -206,8 +233,13 @@ async def _cooperative_handler(sequence: int) -> None:
     Args:
         sequence: Per-token event sequence.
     """
-    await asyncio.sleep(0.001)
-    _ORDER_LOG[EventContext.get().token].append(sequence)
+    token = EventContext.get().token
+    _record_active(token)
+    try:
+        await asyncio.sleep(0.001)
+        _ORDER_LOG[token].append(sequence)
+    finally:
+        _clear_active(token)
 
 
 async def _blocking_handler(sequence: int) -> None:  # noqa: RUF029
@@ -216,8 +248,13 @@ async def _blocking_handler(sequence: int) -> None:  # noqa: RUF029
     Args:
         sequence: Per-token event sequence.
     """
-    time.sleep(_BLOCKING_SLEEP_SECONDS)  # noqa: ASYNC251 - intentional benchmark scenario
-    _ORDER_LOG[EventContext.get().token].append(sequence)
+    token = EventContext.get().token
+    _record_active(token)
+    try:
+        time.sleep(_BLOCKING_SLEEP_SECONDS)  # noqa: ASYNC251 - intentional benchmark scenario
+        _ORDER_LOG[token].append(sequence)
+    finally:
+        _clear_active(token)
 
 
 COOPERATIVE_EVENT = EventHandler(fn=_cooperative_handler)
@@ -341,6 +378,8 @@ async def _run_scenario(
         Latencies, probe/resource metrics, and pipeline trace.
     """
     _ORDER_LOG.clear()
+    _ACTIVE_PER_TOKEN.clear()
+    _PEAK_ACTIVE_PER_TOKEN.clear()
     processor = TracingEventProcessor(graceful_shutdown_timeout=2)
     processor.configure()
 
@@ -410,6 +449,13 @@ async def _run_scenario(
 
     for token, expected in expected_order.items():
         assert _ORDER_LOG[token] == expected
+    # Completion order alone cannot catch concurrent same-token dispatch (equal
+    # sleeps still finish in order), so assert no token ever had two handlers
+    # active at once — the guarantee the per-token queue exists to provide.
+    overlapping = {
+        token: peak for token, peak in _PEAK_ACTIVE_PER_TOKEN.items() if peak > 1
+    }
+    assert not overlapping, f"same-token handlers overlapped: {overlapping}"
     assert not orphan_tasks
     assert not orphan_futures
     durations = processor.trace.durations_ms([

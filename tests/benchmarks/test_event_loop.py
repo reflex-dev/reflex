@@ -105,40 +105,47 @@ def test_event_queue_dispatch(benchmark: BenchmarkFixture):
     registry = _register_handlers()
     ctx = contextvars.copy_context()
 
-    async def dispatch(processor: EventProcessor) -> None:
+    async def dispatch(processor: EventProcessor, event: Event) -> None:
         """Enqueue one no-op event and await its completion.
 
         Args:
             processor: The started processor.
+            event: The pre-built event to enqueue.
         """
-        future = await processor.enqueue(
-            "token", Event.from_event_type(NOOP_EVENT())[0]
-        )
+        future = await processor.enqueue("token", event)
         await future.wait_all()
 
     def setup():
         """Construct and start a processor for the next measured round.
 
         Returns:
-            Pedantic (args, kwargs) holding the started processor.
+            Pedantic (args, kwargs) holding the started processor and event.
         """
         processor = _make_processor()
         _run_in_context(loop, ctx, processor.start())
-        return ((processor,), {})
+        # Build the event in setup so only queueing and dispatch are measured.
+        event = Event.from_event_type(NOOP_EVENT())[0]
+        return ((processor, event), {})
 
-    def run(processor: EventProcessor) -> None:
+    def run(processor: EventProcessor, event: Event) -> None:
         """Dispatch one event through the started processor.
+
+        Runs inside ``ctx`` where ``start`` attached the ``EventContext``, so
+        enqueue takes the production ``EventContext.get().fork()`` path rather
+        than the ``LookupError`` fallback a bare loop context would trigger.
 
         Args:
             processor: The started processor.
+            event: The pre-built event to enqueue.
         """
-        loop.run_until_complete(dispatch(processor))
+        _run_in_context(loop, ctx, dispatch(processor, event))
 
-    def teardown(processor: EventProcessor) -> None:
+    def teardown(processor: EventProcessor, event: Event) -> None:
         """Stop the measured round's processor.
 
         Args:
             processor: The started processor.
+            event: The event dispatched this round (unused at teardown).
         """
         _run_in_context(loop, ctx, processor.stop())
 
@@ -163,40 +170,47 @@ def test_event_future_tree(benchmark: BenchmarkFixture):
     registry = _register_handlers()
     ctx = contextvars.copy_context()
 
-    async def dispatch(processor: EventProcessor) -> None:
+    async def dispatch(processor: EventProcessor, event: Event) -> None:
         """Enqueue one chaining event and await the whole future tree.
 
         Args:
             processor: The started processor.
+            event: The pre-built parent event to enqueue.
         """
-        future = await processor.enqueue(
-            "token", Event.from_event_type(CHAIN_EVENT())[0]
-        )
+        future = await processor.enqueue("token", event)
         await future.wait_all()
 
     def setup():
         """Construct and start a processor for the next measured round.
 
         Returns:
-            Pedantic (args, kwargs) holding the started processor.
+            Pedantic (args, kwargs) holding the started processor and event.
         """
         processor = _make_processor()
         _run_in_context(loop, ctx, processor.start())
-        return ((processor,), {})
+        # Build the event in setup so only dispatch and chaining are measured.
+        event = Event.from_event_type(CHAIN_EVENT())[0]
+        return ((processor, event), {})
 
-    def run(processor: EventProcessor) -> None:
+    def run(processor: EventProcessor, event: Event) -> None:
         """Dispatch the parent event through the started processor.
+
+        Runs inside ``ctx`` where ``start`` attached the ``EventContext``, so
+        enqueue takes the production ``EventContext.get().fork()`` path rather
+        than the ``LookupError`` fallback a bare loop context would trigger.
 
         Args:
             processor: The started processor.
+            event: The pre-built parent event to enqueue.
         """
-        loop.run_until_complete(dispatch(processor))
+        _run_in_context(loop, ctx, dispatch(processor, event))
 
-    def teardown(processor: EventProcessor) -> None:
+    def teardown(processor: EventProcessor, event: Event) -> None:
         """Stop the measured round's processor.
 
         Args:
             processor: The started processor.
+            event: The event dispatched this round (unused at teardown).
         """
         _run_in_context(loop, ctx, processor.stop())
 
