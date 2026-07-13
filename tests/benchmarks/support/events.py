@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class PayloadKind(enum.StrEnum):
+class PayloadKind(str, enum.Enum):
     """Payload shapes exercised by serialization and event benchmarks."""
 
     SCALAR = "scalar"

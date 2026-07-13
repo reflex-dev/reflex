@@ -5,6 +5,7 @@ import json
 
 import pytest
 
+from tests.benchmarks.support.events import PayloadKind
 from tests.benchmarks.support.pipeline_trace import PipelineTrace, StageEvent
 from tests.benchmarks.support.report import (
     BenchmarkEnvironment,
@@ -13,6 +14,7 @@ from tests.benchmarks.support.report import (
     percentile,
 )
 from tests.benchmarks.support.socket_client import run_clients
+from tests.performance import conftest as performance_conftest
 
 
 def test_percentile_interpolates_and_validates():
@@ -21,6 +23,21 @@ def test_percentile_interpolates_and_validates():
     assert percentile([1, 2, 3, 4, 5], 95) == pytest.approx(4.8)
     with pytest.raises(ValueError, match="between 0 and 100"):
         percentile([1], 101)
+
+
+def test_payload_kind_uses_python_310_compatible_enum_base():
+    """Payload enums avoid bases that were added after Python 3.10."""
+    assert not any(
+        base.__module__ == "enum" and base.__name__ == "StrEnum"
+        for base in PayloadKind.__mro__
+    )
+
+
+def test_production_harness_is_module_scoped():
+    """The in-process production harness stops before unrelated modules run."""
+    fixture = performance_conftest.performance_load_app
+    marker = fixture._fixture_function_marker  # pyright: ignore[reportPrivateUsage]
+    assert marker.scope == "module"
 
 
 def test_performance_report_round_trip(tmp_path):
