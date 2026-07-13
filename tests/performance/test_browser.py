@@ -3,20 +3,32 @@
 from __future__ import annotations
 
 import gzip
+import os
 import time
 from pathlib import Path
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from reflex import constants
 from reflex.testing import AppHarness
 from tests.benchmarks.support import BenchmarkResult, PerformanceReport
 
-MAX_JAVASCRIPT_GZIP_BYTES = 14_000_000
+# Gzip budget for the shipped client bundle. A fresh production export of the
+# load app measured 238,635 gzip bytes (2026-07-13); the default budget is
+# roughly double so only a real bundle regression trips it. CI can tune the
+# budget without a code change via the environment variable.
+MAX_JAVASCRIPT_GZIP_BYTES = int(
+    os.environ.get("REFLEX_PERFORMANCE_JS_GZIP_BUDGET", 500_000)
+)
 
 
 def _bundle_metrics(root: Path) -> dict[str, int]:
-    """Calculate bundle module and compressed-size metrics.
+    """Calculate shipped client-bundle module and compressed-size metrics.
+
+    Only the exported client build (``.web/build/client``) is measured; the
+    rest of ``.web`` is the build toolchain (``node_modules``, server bundles)
+    that never reaches a browser.
 
     Args:
         root: Reflex application root.
@@ -24,9 +36,10 @@ def _bundle_metrics(root: Path) -> dict[str, int]:
     Returns:
         JavaScript module, raw byte, and gzip byte counts.
     """
+    client = root / constants.Dirs.WEB / constants.Dirs.STATIC
     files = [
         path
-        for path in (root / ".web").rglob("*")
+        for path in client.rglob("*")
         if path.is_file() and path.suffix in {".js", ".mjs"}
     ]
     return {
@@ -140,7 +153,11 @@ def test_browser_report(
     report.write(performance_output / "browser.json")
 
     assert metrics["javascript_modules"] > 0
-    assert metrics["javascript_gzip_bytes"] <= MAX_JAVASCRIPT_GZIP_BYTES
+    assert metrics["javascript_gzip_bytes"] <= MAX_JAVASCRIPT_GZIP_BYTES, (
+        f"shipped client bundle is {metrics['javascript_gzip_bytes']} gzip bytes, "
+        f"over the {MAX_JAVASCRIPT_GZIP_BYTES} budget "
+        "(override via REFLEX_PERFORMANCE_JS_GZIP_BUDGET)"
+    )
     assert heap_after > 0
 
 

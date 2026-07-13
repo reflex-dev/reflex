@@ -23,7 +23,9 @@ def lifecycle_app_source(
         for index in range(pages)
     )
     return f"""import reflex as rx
+from starlette.applications import Starlette
 from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 RELOAD_VERSION = {reload_version}
 
@@ -46,10 +48,11 @@ def index(label: str = "index"):
 async def reload_version(_request):
     return JSONResponse({{"version": RELOAD_VERSION}})
 
-app = rx.App()
+app = rx.App(
+    api_transformer=Starlette(routes=[Route("/reload-version", reload_version)]),
+)
 app.add_page(index, route="/")
 {page_registrations}
-app._api.add_route("/reload-version", reload_version)
 """
 
 

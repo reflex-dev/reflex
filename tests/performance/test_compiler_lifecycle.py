@@ -69,6 +69,10 @@ def _generated_metrics(root: Path) -> dict[str, int]:
 def _free_port() -> int:
     """Reserve and release an available local TCP port.
 
+    The port must be released before the backend can bind it, so another
+    process may steal it in between; ``_start_dev_backend_with_retry``
+    handles that race by retrying on a fresh port.
+
     Returns:
         Available port number for the development backend.
     """
@@ -159,24 +163,97 @@ def _wait_for_reload_version(
     raise TimeoutError(msg)
 
 
-def _stop_dev_backend(process: subprocess.Popen[str]) -> None:
+def _collect_children(
+    process: subprocess.Popen[str],
+    known: dict[int, psutil.Process],
+) -> None:
+    """Snapshot the backend's current child processes for later cleanup.
+
+    Reload workers reparent to init if the backend dies first, so children
+    must be collected while the parent is still alive to guarantee teardown.
+
+    Args:
+        process: Development backend process.
+        known: Accumulated child processes keyed by pid.
+    """
+    with contextlib.suppress(psutil.NoSuchProcess):
+        for child in psutil.Process(process.pid).children(recursive=True):
+            known.setdefault(child.pid, child)
+
+
+def _stop_dev_backend(
+    process: subprocess.Popen[str],
+    known_children: dict[int, psutil.Process],
+) -> None:
     """Terminate a development backend and all reload workers.
 
     Args:
         process: Development backend process.
+        known_children: Children collected while the parent was alive, swept
+            even when the parent has already exited. Stale entries whose pid
+            was recycled are skipped by psutil's create-time check.
     """
-    try:
-        parent = psutil.Process(process.pid)
-        processes = [parent, *parent.children(recursive=True)]
-    except psutil.NoSuchProcess:
-        return
-    for running in reversed(processes):
+    _collect_children(process, known_children)
+    processes = list(known_children.values())
+    with contextlib.suppress(psutil.NoSuchProcess):
+        processes.append(psutil.Process(process.pid))
+    for running in processes:
         with contextlib.suppress(psutil.NoSuchProcess):
             running.terminate()
     _, alive = psutil.wait_procs(processes, timeout=10)
     for running in alive:
         with contextlib.suppress(psutil.NoSuchProcess):
             running.kill()
+
+
+def _start_dev_backend_with_retry(
+    executable: str,
+    app_root: Path,
+    known_children: dict[int, psutil.Process],
+    attempts: int = 3,
+) -> tuple[subprocess.Popen[str], TextIO, Path, int]:
+    """Start the dev backend, retrying on a lost port-reservation race.
+
+    ``_free_port`` must release its probe socket before the backend can bind,
+    so another process can grab the port in between; that surfaces as the
+    backend exiting with "address already in use" and is retried on a fresh
+    port.
+
+    Args:
+        executable: Python executable running Reflex.
+        app_root: Generated application root.
+        known_children: Accumulated backend children for teardown.
+        attempts: Maximum start attempts.
+
+    Returns:
+        Serving backend process, open log stream, log path, and bound port.
+
+    Raises:
+        RuntimeError: If the backend exits for a reason other than a port
+            collision, or every attempt loses the port race.
+        TimeoutError: If a started backend never serves the initial version.
+    """
+    error: RuntimeError | None = None
+    for _ in range(attempts):
+        port = _free_port()
+        process, log_stream, log_path = _start_dev_backend(executable, app_root, port)
+        try:
+            _wait_for_reload_version(process, log_path, port, expected=0)
+        except (RuntimeError, TimeoutError) as exc:
+            _stop_dev_backend(process, known_children)
+            log_stream.close()
+            # Only a lost port race is retried, matching both reflex's
+            # pre-flight "port ... is already in use" and the server's
+            # bind-time "address already in use".
+            if not isinstance(exc, RuntimeError) or (
+                "already in use" not in str(exc).lower()
+            ):
+                raise
+            error = exc
+        else:
+            return process, log_stream, log_path, port
+    assert error is not None
+    raise error
 
 
 @pytest.mark.performance
@@ -284,19 +361,12 @@ def test_compiler_lifecycle_report(
     report.add(BenchmarkResult("compile_state_edit", {}, [state_edit_ms], {}))
 
     reload_observations = []
-    backend_port = _free_port()
-    backend, backend_log, backend_log_path = _start_dev_backend(
-        executable,
-        app_root,
-        backend_port,
+    known_children: dict[int, psutil.Process] = {}
+    backend, backend_log, backend_log_path, backend_port = (
+        _start_dev_backend_with_retry(executable, app_root, known_children)
     )
     try:
-        _wait_for_reload_version(
-            backend,
-            backend_log_path,
-            backend_port,
-            expected=0,
-        )
+        _collect_children(backend, known_children)
         for cycle in range(1, reload_cycles + 1):
             cycle_source = source.replace(
                 "RELOAD_VERSION = 0",
@@ -311,8 +381,9 @@ def test_compiler_lifecycle_report(
                 expected=cycle,
             )
             reload_observations.append((time.perf_counter_ns() - started) / 1_000_000)
+            _collect_children(backend, known_children)
     finally:
-        _stop_dev_backend(backend)
+        _stop_dev_backend(backend, known_children)
         backend_log.close()
     report.add(
         BenchmarkResult(

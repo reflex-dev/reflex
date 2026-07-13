@@ -31,11 +31,9 @@ def capture_async_diagnostics(
             "name": task.get_name(),
             "done": task.done(),
             "cancelled": task.cancelled(),
-            "stack": [
-                line
-                for frame in task.get_stack()
-                for line in traceback.format_stack(frame)
-            ],
+            "stack": traceback.StackSummary.extract(
+                (frame, frame.f_lineno) for frame in task.get_stack()
+            ).format(),
         })
     frames = sys._current_frames()  # pyright: ignore [reportPrivateUsage]
     threads = []
