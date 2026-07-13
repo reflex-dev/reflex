@@ -68,7 +68,13 @@ def test_wire_size_report(performance_output: Path, performance_scale: str):
     for name, interaction in INTERACTIONS.items():
         state = initialized_state(STATE_SIZE)
         interaction(state)
-        wire = json_dumps(StateUpdate(delta=state.get_delta())).encode()
+        # Match the compact separators python-socketio uses when it encodes the
+        # event packet (Packet.encode calls dumps(..., separators=(",", ":"))),
+        # so wire_bytes equals the real payload size rather than json's spaced
+        # default, which overstates it by roughly a fifth.
+        wire = json_dumps(
+            StateUpdate(delta=state.get_delta()), separators=(",", ":")
+        ).encode()
         sizes[name] = len(wire)
         report.add(
             BenchmarkResult(

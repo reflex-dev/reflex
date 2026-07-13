@@ -1,12 +1,43 @@
 """Benchmarks for route construction and hot-path matching."""
 
 import re
+import sys
+import types
+from collections.abc import Iterator
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base import constants
+from reflex_base.config import get_config
 
 from reflex.route import get_route_args, get_router
+
+
+@pytest.fixture
+def cached_rxconfig() -> Iterator[None]:
+    """Seed a cached ``rxconfig`` module so matching hits the config cache.
+
+    In production ``rxconfig`` is imported into ``sys.modules`` and every
+    ``get_config()`` call (invoked once per ``router(path)`` match) is a dict
+    lookup. Without a cached module the benchmark environment rebuilds a fresh
+    ``Config`` on every call — a sys.path scan and full env parse that dominates
+    the measured region and hides real route-matching regressions.
+
+    Yields:
+        None, with the cached module installed for the test's duration.
+    """
+    module_name = constants.Config.MODULE
+    saved = sys.modules.get(module_name)
+    stub = types.ModuleType(module_name)
+    stub.config = get_config()  # pyright: ignore [reportAttributeAccessIssue]
+    sys.modules[module_name] = stub
+    try:
+        yield
+    finally:
+        if saved is not None:
+            sys.modules[module_name] = saved
+        else:
+            sys.modules.pop(module_name, None)
 
 
 def _routes(count: int) -> list[str]:
@@ -24,6 +55,7 @@ def _routes(count: int) -> list[str]:
 
 
 @pytest.mark.parametrize("count", [10, 100, 1000])
+@pytest.mark.usefixtures("cached_rxconfig")
 def test_route_matching(count: int, benchmark: BenchmarkFixture):
     """Benchmark repeated matching through representative route tables.
 

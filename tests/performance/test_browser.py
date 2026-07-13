@@ -96,6 +96,10 @@ def test_browser_report(
     )
     started = time.perf_counter_ns()
     page.goto(performance_load_app.frontend_url)
+    # Gate on the websocket-driven is_hydrated marker, not the prerendered
+    # #count text (which the static export already ships as "0"), so the timing
+    # spans real hydration: connect, initial delta, and client state attach.
+    expect(page.locator("#hydrated")).to_have_text("hydrated")
     expect(page.locator("#count")).to_have_text("0")
     hydration_ms = (time.perf_counter_ns() - started) / 1_000_000
     heap_before = _browser_heap(page)
