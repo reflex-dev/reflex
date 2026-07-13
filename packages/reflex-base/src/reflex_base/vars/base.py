@@ -11,6 +11,7 @@ import inspect
 import json
 import re
 import string
+import time
 import uuid
 import warnings
 from abc import ABCMeta
@@ -91,6 +92,7 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
 _PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+_MONOTONIC_CLOCK_ID = uuid.uuid4()
 
 
 def _pydantic_validator(*args, **kwargs):
@@ -2488,9 +2490,14 @@ class ComputedVar(Var[RETURN_TYPE]):
         if self._update_interval is None:
             return False
         last_updated = getattr(instance, self._last_updated_attr, None)
-        if last_updated is None:
+        if (
+            not isinstance(last_updated, tuple)
+            or len(last_updated) != 2
+            or last_updated[0] != _MONOTONIC_CLOCK_ID
+        ):
             return True
-        return datetime.datetime.now() - last_updated > self._update_interval
+        elapsed = time.monotonic() - last_updated[1]
+        return elapsed < 0 or elapsed > self._update_interval.total_seconds()
 
     @overload
     def __get__(
@@ -2594,7 +2601,11 @@ class ComputedVar(Var[RETURN_TYPE]):
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
                 # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                setattr(
+                    instance,
+                    self._last_updated_attr,
+                    (_MONOTONIC_CLOCK_ID, time.monotonic()),
+                )
             value = getattr(instance, self._cache_attr)
 
         self._check_deprecated_return_type(instance, value)
@@ -2856,7 +2867,11 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
                 # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                setattr(
+                    instance,
+                    self._last_updated_attr,
+                    (_MONOTONIC_CLOCK_ID, time.monotonic()),
+                )
             value = getattr(instance, self._cache_attr)
             self._check_deprecated_return_type(instance, value)
             return value
