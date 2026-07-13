@@ -41,6 +41,34 @@ from tests.benchmarks.support.report import (
 _ORDER_LOG: dict[str, list[int]] = defaultdict(list)
 _ACTIVE_STATE_TRACE: PipelineTrace | None = None
 
+# Deliberate synchronous block injected by the blocking scenario. Detection is
+# asserted at >=2ms of measured loop lag, so 10ms leaves a 5x margin even on a
+# loaded CI runner.
+_BLOCKING_SLEEP_SECONDS = 0.01
+
+# Generous stall guard for event-future waits: a stuck future is the exact
+# regression class this suite exists to catch and must fail fast, not hang CI.
+_EVENT_WAIT_BASE_TIMEOUT_SECONDS = 60.0
+_EVENT_WAIT_PER_EVENT_SECONDS = 0.1
+
+
+async def _wait_events_bounded(awaitable: Any, *, events: int, scenario: str) -> None:
+    """Await event-future completion with a stall-detecting timeout.
+
+    Args:
+        awaitable: The future wait (or gather of waits) to bound.
+        events: Number of in-flight events, scaling the allowance.
+        scenario: Scenario name for the failure message.
+    """
+    timeout = _EVENT_WAIT_BASE_TIMEOUT_SECONDS + events * _EVENT_WAIT_PER_EVENT_SECONDS
+    try:
+        await asyncio.wait_for(awaitable, timeout=timeout)
+    except asyncio.TimeoutError:
+        pytest.fail(
+            f"{scenario}: {events} event future(s) still pending after "
+            f"{timeout:.0f}s; the event pipeline is stuck"
+        )
+
 
 def _record_state_stage(stage: str) -> None:
     """Record a stage for the active state event.
@@ -188,7 +216,7 @@ async def _blocking_handler(sequence: int) -> None:  # noqa: RUF029
     Args:
         sequence: Per-token event sequence.
     """
-    time.sleep(0.005)  # noqa: ASYNC251 - intentional benchmark scenario
+    time.sleep(_BLOCKING_SLEEP_SECONDS)  # noqa: ASYNC251 - intentional benchmark scenario
     _ORDER_LOG[EventContext.get().token].append(sequence)
 
 
@@ -368,7 +396,11 @@ async def _run_scenario(
                 )
             )
             futures.append(future)
-        await asyncio.gather(*(future.wait_all() for future in futures))
+        await _wait_events_bounded(
+            asyncio.gather(*(future.wait_all() for future in futures)),
+            events=len(futures),
+            scenario=handler.fn.__name__,
+        )
         await asyncio.sleep(probe_interval * 2)
 
     for token, expected in expected_order.items():
@@ -444,7 +476,9 @@ async def _run_state_pipeline(
                 StageEvent(future.txid, "received", received),
                 StageEvent(future.txid, "enqueued", time.perf_counter_ns()),
             ])
-            await future.wait_all()
+            await _wait_events_bounded(
+                future.wait_all(), events=1, scenario="state_pipeline"
+            )
     finally:
         await manager.close()
         _ACTIVE_STATE_TRACE = None
@@ -482,7 +516,9 @@ async def _run_failed_state_pipeline() -> None:
         async with processor:
             future = await processor.enqueue("failure-token", event)
             with contextlib.suppress(RuntimeError):
-                await future.wait_all()
+                await _wait_events_bounded(
+                    future.wait_all(), events=1, scenario="failed_state_pipeline"
+                )
     finally:
         await manager.close()
         _ACTIVE_STATE_TRACE = None
@@ -594,6 +630,9 @@ async def test_event_loop_component_report(
     blocking = next(
         result for result in report.results if result.name == "blocking_handler"
     )
+    # The probe must detect the deliberately induced block: each blocking event
+    # stalls the loop for _BLOCKING_SLEEP_SECONDS (10ms), so 2ms of measured
+    # lag is a 5x-margin detection bound, not a performance threshold.
     assert blocking.metrics["lag_max_ms"] >= 2
     capture_async_diagnostics(
         performance_output / "event-loop-blocking-diagnostics.json",

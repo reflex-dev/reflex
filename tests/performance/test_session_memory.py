@@ -61,6 +61,10 @@ def _held_sessions(
 
     Yields:
         While the sessions are connected and primed.
+
+    Raises:
+        RuntimeError: If the holder had to be killed; a holder outliving its
+            batch would leak client memory into the next RSS measurement.
     """
     process = subprocess.Popen(
         [
@@ -87,7 +91,16 @@ def _held_sessions(
         if process.stdin is not None:
             with contextlib.suppress(OSError):
                 process.stdin.close()
-        process.wait(timeout=30)
+        try:
+            process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            msg = (
+                f"session holder {token_prefix!r} did not exit and was killed; "
+                "subsequent RSS measurements would have been invalid"
+            )
+            raise RuntimeError(msg) from None
 
 
 def _settled_rss() -> int:

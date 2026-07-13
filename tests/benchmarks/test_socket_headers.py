@@ -3,10 +3,12 @@
 import pytest
 from pytest_codspeed import BenchmarkFixture
 
+from reflex.app import _decode_asgi_headers
+
 
 @pytest.mark.parametrize("count", [0, 4, 16, 64])
 def test_decode_event_headers(count: int, benchmark: BenchmarkFixture):
-    """Benchmark decoding the ASGI header representation used by socket events.
+    """Benchmark the header decoding used by ``EventNamespace.on_event``.
 
     Args:
         count: Number of headers.
@@ -16,7 +18,5 @@ def test_decode_event_headers(count: int, benchmark: BenchmarkFixture):
         (f"x-performance-{index}".encode(), f"value-{index}".encode())
         for index in range(count)
     ]
-    decoded = benchmark(
-        lambda: {key.decode("utf-8"): value.decode("utf-8") for key, value in headers}
-    )
+    decoded = benchmark(lambda: _decode_asgi_headers(headers))
     assert len(decoded) == count

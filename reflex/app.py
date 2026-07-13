@@ -20,6 +20,7 @@ from collections.abc import (
     Callable,
     Collection,
     Coroutine,
+    Iterable,
     Mapping,
     Sequence,
 )
@@ -1599,6 +1600,18 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
+    """Decode raw ASGI scope header pairs into a str-keyed dict.
+
+    Args:
+        headers: Raw (name, value) byte pairs from the ASGI scope.
+
+    Returns:
+        A dict mapping decoded header names to decoded values.
+    """
+    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -1781,12 +1794,9 @@ class EventNamespace(AsyncNamespace):
         # they are fixed for the lifetime of a sid.
         client_info = self._sid_client_info.get(sid)
         if client_info is None:
-            cached_headers = {
-                k.decode("utf-8"): v.decode("utf-8")
-                for (k, v) in environ["asgi.scope"]["headers"]
-            }
+            cached_headers = _decode_asgi_headers(environ["asgi.scope"]["headers"])
             try:
-                client_ip = environ["asgi.scope"]["client"][0]
+                client_ip: str = environ["asgi.scope"]["client"][0]
                 cached_headers["asgi-scope-client"] = client_ip
             except (KeyError, IndexError):
                 client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")

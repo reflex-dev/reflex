@@ -70,23 +70,38 @@ class PipelineTrace:
     def chrome_trace(self) -> dict[str, Any]:
         """Convert observations to Chrome instant trace events.
 
+        Chrome trace format requires integer pid/tid, so each token maps to a
+        stable small tid, named via ``thread_name`` metadata events.
+
         Returns:
             A Chrome trace JSON mapping.
         """
-        return {
-            "traceEvents": [
-                {
-                    "name": event.stage,
-                    "cat": "reflex.event_pipeline",
-                    "ph": "i",
-                    "s": "t",
-                    "pid": 1,
-                    "tid": event.token,
-                    "ts": event.timestamp_ns / 1000,
-                }
-                for event in self.events
-            ]
-        }
+        tids: dict[str, int] = {}
+        for event in self.events:
+            tids.setdefault(event.token, len(tids) + 1)
+        thread_names: list[dict[str, Any]] = [
+            {
+                "name": "thread_name",
+                "ph": "M",
+                "pid": 1,
+                "tid": tid,
+                "args": {"name": token},
+            }
+            for token, tid in tids.items()
+        ]
+        instants: list[dict[str, Any]] = [
+            {
+                "name": event.stage,
+                "cat": "reflex.event_pipeline",
+                "ph": "i",
+                "s": "t",
+                "pid": 1,
+                "tid": tids[event.token],
+                "ts": event.timestamp_ns / 1000,
+            }
+            for event in self.events
+        ]
+        return {"traceEvents": thread_names + instants}
 
     def write_chrome_trace(self, path: str | Path) -> Path:
         """Write Chrome trace JSON.
