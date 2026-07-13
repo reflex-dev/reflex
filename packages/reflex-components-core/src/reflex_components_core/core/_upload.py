@@ -14,7 +14,7 @@ from collections.abc import (
     Callable,
     MutableMapping,
 )
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
@@ -73,6 +73,35 @@ class UploadFile(StarletteUploadFile):
         if self.path:
             return self.path.name
         return None
+
+
+def _sanitize_upload_filename(filename: str) -> str:
+    """Strip client-supplied path segments from an upload filename.
+
+    Args:
+        filename: The raw multipart filename.
+
+    Returns:
+        The basename of the uploaded file.
+    """
+    return PureWindowsPath(PurePosixPath(filename.lstrip("/\\")).name).name
+
+
+def _upload_file_from_starlette(file: StarletteUploadFile) -> UploadFile:
+    """Create a Reflex upload file from a Starlette upload file.
+
+    Args:
+        file: The Starlette upload file.
+
+    Returns:
+        The Reflex upload file.
+    """
+    return UploadFile(
+        file=file.file,
+        path=Path(_sanitize_upload_filename(file.filename)) if file.filename else None,
+        size=file.size,
+        headers=file.headers,
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -371,8 +400,9 @@ class _UploadChunkMultipartParser:
             # phantom file upload; reject it instead of silently dropping it.
             msg = "Upload event args must be a text field, not a file."
             raise MultiPartException(msg)
-        filename = _user_safe_decode(options[b"filename"], self._charset)
-        filename = Path(filename.lstrip("/")).name
+        filename = _sanitize_upload_filename(
+            _user_safe_decode(options[b"filename"], self._charset)
+        )
 
         content_type = ""
         for header_name, header_value in self._current_part.item_headers:
@@ -587,14 +617,7 @@ async def _upload_buffered_file(
                 raise UploadValueError(
                     "Uploaded file is not an UploadFile." + str(file)
                 )
-            file_uploads.append(
-                UploadFile(
-                    file=file.file,
-                    path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    size=file.size,
-                    headers=file.headers,
-                )
-            )
+            file_uploads.append(_upload_file_from_starlette(file))
 
         return Event(
             name=handler_name,
