@@ -48,11 +48,14 @@ async def test_event_loop_probe_resets_between_runs():
     async with probe:
         await asyncio.sleep(0.005)
     first_sample_count = len(probe.lag_samples)
+    probe.lag_samples.append(-1)
 
     async with probe:
         await asyncio.sleep(0.003)
 
-    assert first_sample_count > len(probe.lag_samples)
+    assert first_sample_count > 0
+    assert probe.lag_samples
+    assert -1 not in probe.lag_samples
 
 
 def test_event_loop_probe_summary_percentiles():

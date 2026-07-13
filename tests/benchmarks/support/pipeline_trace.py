@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
@@ -54,12 +54,17 @@ class PipelineTrace:
             f"{start}_to_{end}": [] for start, end in stages
         }
         for token_events in grouped.values():
-            timestamps = {event.stage: event.timestamp_ns for event in token_events}
+            ordered_events = sorted(token_events, key=lambda event: event.timestamp_ns)
             for start, end in stages:
-                if start in timestamps and end in timestamps:
-                    durations[f"{start}_to_{end}"].append(
-                        (timestamps[end] - timestamps[start]) / 1_000_000
-                    )
+                pending_starts: deque[int] = deque()
+                for event in ordered_events:
+                    if event.stage == start:
+                        pending_starts.append(event.timestamp_ns)
+                    elif event.stage == end and pending_starts:
+                        started_at = pending_starts.popleft()
+                        durations[f"{start}_to_{end}"].append(
+                            (event.timestamp_ns - started_at) / 1_000_000
+                        )
         return durations
 
     def chrome_trace(self) -> dict[str, Any]:

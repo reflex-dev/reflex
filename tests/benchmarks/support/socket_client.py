@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import dataclasses
+import functools
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -33,6 +34,7 @@ async def run_socket_client(
     response_name: str = "event",
     namespace: str = "/_event",
     timeout: float = 10,
+    executor: concurrent.futures.Executor | None = None,
 ) -> ClientLoadResult:
     """Send events sequentially and measure matching socket responses.
 
@@ -45,20 +47,25 @@ async def run_socket_client(
         response_name: Socket event name carrying state updates.
         namespace: Reflex Socket.IO namespace.
         timeout: Maximum response wait per operation.
+        executor: Optional executor that owns the blocking socket client.
 
     Returns:
         Per-operation latency and error observations.
     """
-    return await asyncio.to_thread(
-        _run_socket_client_sync,
-        url,
-        token,
-        payload,
-        events,
-        event_name,
-        response_name,
-        namespace,
-        timeout,
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        executor,
+        functools.partial(
+            _run_socket_client_sync,
+            url,
+            token,
+            payload,
+            events,
+            event_name,
+            response_name,
+            namespace,
+            timeout,
+        ),
     )
 
 
@@ -123,21 +130,23 @@ def _run_socket_client_sync(
 
 async def run_clients(
     clients: int,
-    factory: Callable[[int], Any],
+    factory: Callable[[int, concurrent.futures.Executor], Any],
 ) -> list[Any]:
     """Run a parameterized set of clients concurrently.
 
     Args:
         clients: Number of clients.
-        factory: Callable returning an awaitable for a client index.
+        factory: Callable returning an awaitable for a client index and executor.
 
     Returns:
         Client results in index order.
     """
-    loop = asyncio.get_running_loop()
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(1, clients))
-    loop.set_default_executor(executor)
     try:
-        return list(await asyncio.gather(*(factory(index) for index in range(clients))))
+        return list(
+            await asyncio.gather(
+                *(factory(index, executor) for index in range(clients))
+            )
+        )
     finally:
         executor.shutdown(wait=True)

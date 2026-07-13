@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 
-def lifecycle_app_source(rows: int = 100, pages: int = 1) -> str:
+def lifecycle_app_source(
+    rows: int = 100,
+    pages: int = 1,
+    reload_version: int = 0,
+) -> str:
     """Create a deterministic multi-page application source.
 
     Args:
         rows: Number of stateful rows per page.
         pages: Number of routes.
+        reload_version: Value exposed by the backend reload probe.
 
     Returns:
         Python source for a Reflex application.
@@ -18,6 +23,9 @@ def lifecycle_app_source(rows: int = 100, pages: int = 1) -> str:
         for index in range(pages)
     )
     return f"""import reflex as rx
+from starlette.responses import JSONResponse
+
+RELOAD_VERSION = {reload_version}
 
 class State(rx.State):
     count: int = 0
@@ -35,9 +43,13 @@ def index(label: str = "index"):
         *[row(index) for index in range({rows})],
     )
 
+async def reload_version(_request):
+    return JSONResponse({{"version": RELOAD_VERSION}})
+
 app = rx.App()
 app.add_page(index, route="/")
 {page_registrations}
+app._api.add_route("/reload-version", reload_version)
 """
 
 
