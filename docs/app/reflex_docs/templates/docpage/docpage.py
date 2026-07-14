@@ -89,13 +89,24 @@ class FeedbackState(rx.State):
         pass
 
 
-def footer_link(text: str, href: str):
-    return rx.link(
-        text,
-        class_name="font-small text-secondary-9 hover:!text-secondary-11 transition-color",
-        href=href,
-        underline="none",
+def footer_link(text: str, href: str, *, root_site: bool = False) -> rx.Component:
+    """Create a footer link, optionally bypassing the docs router basename.
+
+    Args:
+        text: The visible link label.
+        href: The link destination.
+        root_site: Whether the destination is outside the docs router basename.
+
+    Returns:
+        The styled footer link.
+    """
+    class_name = (
+        "font-small text-secondary-9 hover:!text-secondary-11 "
+        "transition-color no-underline"
     )
+    if root_site:
+        return rx.el.elements.a(text, href=href, class_name=class_name)
+    return rx.link(text, href=href, class_name=class_name, underline="none")
 
 
 def footer_link_flex(heading: str, links):
@@ -360,10 +371,8 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                     "Links",
                     [
                         footer_link("Home", "/"),
-                        footer_link("Blog", "/blog"),
-                        footer_link(
-                            "Changelog", "https://github.com/reflex-dev/reflex/releases"
-                        ),
+                        footer_link("Blog", "/blog/", root_site=True),
+                        footer_link("Changelog", "/changelog/"),
                     ],
                 ),
                 footer_link_flex(
@@ -378,7 +387,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                 footer_link_flex(
                     "Resources",
                     [
-                        footer_link("FAQ", "/faq/"),
+                        footer_link("FAQ", "/faq/", root_site=True),
                         footer_link("Roadmap", ROADMAP_URL),
                         footer_link("Forum", FORUM_URL),
                     ],
@@ -782,6 +791,7 @@ def docpage(
     right_sidebar: bool = True,
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
+    description: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -793,6 +803,9 @@ def docpage(
         right_sidebar: Whether to show the right sidebar.
         page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
         pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        description: The meta description for the page. If None, a descriptive
+            fallback derived from the page title is used so the page always has
+            a non-empty, page-specific meta description.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -1033,23 +1046,57 @@ def docpage(
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
-        components = path.split("/")
+        # Section is the first path segment (these routes are mounted under
+        # /docs at runtime, so the path itself has no "docs" prefix).
+        segments = [c for c in path.split("/") if c]
+        section = segments[0] if len(segments) > 1 else None
         category = (
-            " ".join(
-                word.capitalize() for word in components[2].replace("-", " ").split()
-            )
-            if len(components) > 2
+            " ".join(word.capitalize() for word in section.replace("-", " ").split())
+            if section
             else None
         )
+        # Drop the section if it just repeats the page title (avoids titles like
+        # "Introduction · Introduction · Reflex Docs").
+        if category and category.lower() == title.lower():
+            category = None
+
+        # Build a descriptive, length-appropriate <title>. Nested docs pages
+        # previously used the bare title (e.g. "Styling"), which is too short
+        # for search engines; suffix the section and site so every doc title is
+        # unique and substantial, dropping the section if it would push the
+        # title past the ~60 char SERP truncation point.
         if page_title:
-            return Route(
-                path=path,
-                title=page_title,
-                component=wrapper,
+            seo_title = page_title
+        else:
+            with_category = (
+                f"{title} · {category} · Reflex Docs"
+                if category
+                else f"{title} · Reflex Docs"
             )
+            fallback = f"{title} · Reflex Docs"
+            seo_title = (
+                with_category
+                if len(with_category) <= 60
+                else (fallback if len(fallback) <= 60 else title)
+            )
+
+        # Always provide a non-empty, page-specific meta description. Real
+        # descriptions come from the doc (see make_docpage); otherwise fall back
+        # to a concise, title-derived sentence so the page is never description-less.
+        from reflex_docs.pages.docs.metadata import truncate_meta_description
+
+        seo_description = truncate_meta_description(
+            description
+            or (
+                f"{title} — Reflex docs. Reflex is the open-source Python framework "
+                "for building full-stack web apps and internal tools."
+            )
+        )
+
         return Route(
             path=path,
-            title=f"{title} · Reflex Docs" if category is None else title,
+            title=seo_title,
+            description=seo_description,
             component=wrapper,
         )
 

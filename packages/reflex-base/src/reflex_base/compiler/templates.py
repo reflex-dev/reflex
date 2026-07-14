@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -733,6 +734,40 @@ def dynamic_components_module_template(
     return f"{imports_str}\n{memoized_code}"
 
 
+# Wrapper expressions that are unambiguous JS callees — identifier or member
+# chains like ``memo`` / ``React.memo``. Anything else (an inline arrow
+# function, a call expression, bracket access) is parenthesized before the
+# component function is appended, so the parens bind as the wrapper's call
+# rather than being swallowed by the wrapper expression's own grammar (e.g.
+# ``(c) => track(c)`` followed by ``(...)`` would otherwise parse the call as
+# part of the arrow body).
+_MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
+
+
+def _render_memo_component(component: dict[str, Any]) -> str:
+    """Render the ``export const`` statement for one memoized component.
+
+    Args:
+        component: The component render dict (name, signature, render, hooks,
+            and the optional ``wrapper`` JS expression the function component
+            is wrapped in).
+
+    Returns:
+        Rendered component export as string.
+    """
+    function_expr = f"""(({component["signature"]}) => {{
+    {_render_hooks(component.get("hooks", {}))}
+    return(
+        {_RenderUtils.render(component["render"])}
+    )
+}})"""
+    wrapper = component.get("wrapper")
+    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        wrapper = f"({wrapper})"
+    export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
+    return f"\nexport const {component['name']} = {export_expr};\n"
+
+
 def memo_components_template(
     imports: list[_ImportDict],
     components: list[dict[str, Any]],
@@ -756,16 +791,7 @@ def memo_components_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
-    components_code = ""
-    for component in components:
-        components_code += f"""
-export const {component["name"]} = memo(({component["signature"]}) => {{
-    {_render_hooks(component.get("hooks", {}))}
-    return(
-        {_RenderUtils.render(component["render"])}
-    )
-}});
-"""
+    components_code = "".join(map(_render_memo_component, components))
 
     functions_code = ""
     for function in functions:
@@ -806,14 +832,7 @@ def memo_single_component_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
-    component_code = f"""
-export const {component["name"]} = memo(({component["signature"]}) => {{
-    {_render_hooks(component.get("hooks", {}))}
-    return(
-        {_RenderUtils.render(component["render"])}
-    )
-}});
-"""
+    component_code = _render_memo_component(component)
 
     return f"""
 {imports_str}

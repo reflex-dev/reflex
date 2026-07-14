@@ -31,7 +31,7 @@ class DemoState(rx.State):
 @rx.memo
 def expensive_component(label: rx.Var[str]) -> rx.Component:
     return rx.vstack(
-        rx.heading(label),
+        rx.heading(label, as_="h2"),
         rx.text("This component only re-renders when props change."),
         rx.divider(),
     )
@@ -58,7 +58,7 @@ class AppState(rx.State):
 
 @rx.memo
 def greeting(name: rx.Var[str]) -> rx.Component:
-    return rx.heading("Hello, " + name)
+    return rx.heading("Hello, " + name, as_="h2")
 
 
 def index():
@@ -128,7 +128,7 @@ def card(
     title: rx.Var[str],
 ) -> rx.Component:
     return rx.box(
-        rx.heading(title),
+        rx.heading(title, as_="h2"),
         children,
         class_name="border border-secondary-5 rounded-lg p-4",
     )
@@ -164,6 +164,29 @@ def index():
 ```
 
 The body of a `Var`-returning memo runs at compile time and is restricted to Var operations — no hooks, no Python branching on the Vars.
+
+## Customizing the JavaScript Wrapper
+
+By default the compiled function component is wrapped in React's [`memo`](https://react.dev/reference/react/memo) helper. Pass `wrapper=` to swap it for a different function — any `Var` whose JavaScript expression is callable, typically an `rx.vars.FunctionStringVar` carrying its own imports — or pass `wrapper=None` to export the bare function component with no wrapper at all.
+
+```python
+observer = rx.vars.FunctionStringVar(
+    "observer",
+    _var_data=rx.vars.VarData(imports={"mobx-react-lite": "observer"}),
+)
+
+
+@rx.memo(wrapper=observer)
+def observed_panel(label: rx.Var[str]) -> rx.Component:
+    return rx.text(label)
+
+
+@rx.memo(wrapper=None)
+def custom_sankey_node(x: rx.Var[int], y: rx.Var[int]) -> rx.Component:
+    return rx.box(width=x.to_string(), height=y.to_string())
+```
+
+The wrapper's imports ride along with the `Var`, so a custom wrapper brings its own import statement and `wrapper=None` pulls in nothing. `wrapper=` only applies to component-returning memos — a `Var`-returning memo compiles to a plain function and rejects the argument.
 
 ## Performance Considerations
 
@@ -201,10 +224,12 @@ The old `rx._x.memo` alias still resolves to the new memo and prints a one-time 
 
 ```python
 rx.memo(component_fn)
+rx.memo(wrapper=...)(component_fn)
 ```
 
-Wraps a function whose parameters are all `rx.Var[...]` or `rx.RestProp`. Returns a callable that constructs the memoized component (or a `Var` if the function's return annotation is `rx.Var[T]`).
+Wraps a function whose parameters are all `rx.Var[...]` or `rx.RestProp`. Returns a callable that constructs the memoized component (or a `Var` if the function's return annotation is `rx.Var[T]`). Called with only keyword arguments, it returns a decorator applying them.
 
 | Argument | Type | Description |
 | --- | --- | --- |
 | `component_fn` | `Callable[..., rx.Component \| rx.Var]` | The function to memoize. All parameters must be `rx.Var[...]` or `rx.RestProp`. |
+| `wrapper` | `rx.Var \| None` | The JS function the compiled function component is wrapped in. Defaults to React's `memo`; pass `None` to omit the wrapper. Only supported on component-returning memos. |

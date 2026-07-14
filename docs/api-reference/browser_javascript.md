@@ -219,7 +219,7 @@ def global_key_demo():
             ),
         ),
         rx.text("Press a, s, d or w to trigger an event"),
-        rx.heading(f"Last watched key pressed: {GlobalHotkeyState.key}"),
+        rx.heading(f"Last watched key pressed: {GlobalHotkeyState.key}", as_="h2"),
     )
 ```
 
