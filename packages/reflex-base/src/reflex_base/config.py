@@ -165,6 +165,7 @@ class BaseConfig:
         redis_url: The redis url.
         telemetry_enabled: Telemetry opt-in.
         bun_path: The bun path.
+        frozen_lockfile: Whether to run the package manager in lockfile-enforcing mode, making it an error when the lockfile and package.json are out of sync. Reflex still creates, manages, and syncs the lockfile regardless of this setting; it only controls whether a mismatch is fatal. Currently only honored by bun.
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
@@ -216,6 +217,8 @@ class BaseConfig:
     telemetry_enabled: bool = True
 
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
+
+    frozen_lockfile: bool = True
 
     static_page_generation_timeout: int = 60
 

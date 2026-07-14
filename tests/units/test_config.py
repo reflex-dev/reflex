@@ -48,6 +48,16 @@ def test_default_color_mode_default(base_config_values):
     assert config.default_color_mode == "system"
 
 
+def test_frozen_lockfile_default(base_config_values):
+    """Test that frozen_lockfile defaults to True (lockfile enforcement on).
+
+    Args:
+        base_config_values: Config values.
+    """
+    config = rx.Config(**base_config_values)
+    assert config.frozen_lockfile is True
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -63,6 +73,8 @@ def test_default_color_mode_default(base_config_values):
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
+        ("REFLEX_FROZEN_LOCKFILE", False),
+        ("REFLEX_FROZEN_LOCKFILE", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )
