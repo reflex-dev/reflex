@@ -6,12 +6,10 @@ import asyncio
 import contextlib
 import copy
 import dataclasses
-import decimal
 import functools
 import importlib
 import inspect
 import json
-import math
 import operator
 import sys
 import time
@@ -46,7 +44,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths, serializers
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -116,87 +114,6 @@ else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
-
-try:
-    import orjson
-
-    # Match stdlib json + reflex serializers semantics: datetimes and
-    # dataclasses route through the default hook (reflex serializers) instead
-    # of orjson's native formats, and non-str keys are coerced like stdlib.
-    _ORJSON_OPTIONS = (
-        orjson.OPT_NON_STR_KEYS
-        | orjson.OPT_PASSTHROUGH_DATETIME
-        | orjson.OPT_PASSTHROUGH_DATACLASS
-    )
-except ImportError:  # pragma: no cover
-    orjson = None
-
-
-def _contains_non_finite(value: Any) -> bool:
-    """Check if a payload value contains non-finite floats or Decimals.
-
-    The stdlib encoder emits the non-standard NaN/Infinity/-Infinity tokens,
-    which the frontend understands; orjson would silently emit null instead.
-
-    Args:
-        value: The payload value to scan.
-
-    Returns:
-        Whether a non-finite float or Decimal is reachable in the payload.
-    """
-    cls = type(value)
-    if cls is float:
-        return not math.isfinite(value)
-    if cls is list or cls is tuple or cls is set or cls is frozenset:
-        return any(_contains_non_finite(item) for item in value)
-    if cls is dict:
-        # items() pairs are tuples, covering non-str float keys as well.
-        return any(_contains_non_finite(item) for item in value.items())
-    if isinstance(value, float):
-        return not math.isfinite(value)
-    if isinstance(value, decimal.Decimal):
-        return not value.is_finite()
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        return any(
-            _contains_non_finite(getattr(value, field.name))
-            for field in dataclasses.fields(value)
-        )
-    return False
-
-
-def _socket_json_dumps(obj: Any, **kwargs) -> str:
-    """Serialize an outgoing socket.io payload to a JSON string.
-
-    Uses orjson when available (~3x faster on large deltas), falling back to
-    the stdlib encoder for payloads orjson cannot represent faithfully:
-    integers beyond 64 bits, non-finite floats (the frontend expects the
-    stdlib NaN/Infinity tokens), or kwargs other than the compact separators
-    that python-socketio/engineio pass.
-
-    Args:
-        obj: The object to serialize.
-        kwargs: Additional keyword arguments for stdlib json.dumps.
-
-    Returns:
-        The serialized JSON string.
-    """
-    if orjson is not None and (
-        not kwargs or (len(kwargs) == 1 and kwargs.get("separators") == (",", ":"))
-    ):
-        try:
-            encoded = orjson.dumps(
-                obj, default=serializers.serialize, option=_ORJSON_OPTIONS
-            )
-        except TypeError:
-            pass
-        else:
-            # orjson writes non-finite floats as null; only outputs that
-            # contain null anywhere can be affected, so the payload scan
-            # is skipped entirely for most updates.
-            if b"null" not in encoded or not _contains_non_finite(obj):
-                return encoded.decode("utf-8")
-    kwargs.setdefault("separators", (",", ":"))
-    return format.json_dumps(obj, **kwargs)
 
 
 def default_frontend_exception_handler(exception: Exception) -> None:
@@ -634,7 +551,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(_socket_json_dumps),
+                    dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
                 ),
                 allow_upgrades=False,

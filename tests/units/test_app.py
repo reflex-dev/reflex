@@ -3,9 +3,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import contextvars
-import datetime
-import decimal
-import enum
 import functools
 import io
 import json
@@ -45,12 +42,7 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import (
-    App,
-    ComponentCallable,
-    _socket_json_dumps,
-    default_overlay_component,
-)
+from reflex.app import App, ComponentCallable, default_overlay_component
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -65,13 +57,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    State,
-    StateUpdate,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
@@ -3882,49 +3868,3 @@ def test_call_ignores_stale_marker_without_dev_backend_reload(
 
     compile_mock.assert_called_once()
     assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
-
-
-class _AppEnum(enum.Enum):
-    A = 1
-    B = "two"
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {"state": {"var" + FIELD_MARKER: [1, 2.5, True, None, "x"]}},
-        {"nested": {"a": [{"b": {"c": "déjà vu ❤"}}]}},
-        datetime.datetime(2026, 1, 2, 3, 4, 5, 123456),
-        [datetime.date(2026, 1, 2), datetime.timedelta(seconds=90)],
-        {"id": uuid.UUID("12345678-1234-5678-1234-567812345678")},
-        {"dec": decimal.Decimal("1.25"), "set": {1, 2, 3} & {1}},
-        {1: "int key", 2.5: "float key", None: "none key"},
-        {"big": 2**100},
-        StateUpdate(delta={"s": {"v" + FIELD_MARKER: 1}}),
-        ["42", _AppEnum.A, _AppEnum.B],
-    ],
-)
-def test_socket_json_dumps_matches_stdlib(payload):
-    """The socket wire encoder produces the same JSON as the stdlib encoder.
-
-    Args:
-        payload: A representative outgoing socket payload.
-    """
-    expected = format.json_dumps(payload, separators=(",", ":"))
-    assert json.loads(_socket_json_dumps(payload)) == json.loads(expected)
-    assert json.loads(_socket_json_dumps(payload, separators=(",", ":"))) == json.loads(
-        expected
-    )
-
-
-def test_socket_json_dumps_special_floats():
-    """Non-finite floats keep stdlib's NaN/Infinity wire tokens."""
-    payload = {"vals": [42.9, float("nan"), float("inf"), float("-inf")], "opt": None}
-    expected = format.json_dumps(payload, separators=(",", ":"))
-    assert _socket_json_dumps(payload) == expected
-
-    update = StateUpdate(delta={"s": {"v" + FIELD_MARKER: float("nan")}})
-    assert "NaN" in _socket_json_dumps(update)
-
-    dec = {"d": decimal.Decimal("nan")}
-    assert _socket_json_dumps(dec) == format.json_dumps(dec, separators=(",", ":"))
