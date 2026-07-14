@@ -1486,6 +1486,7 @@ def test_computed_var_recompute_after_mid_cycle_read_across_states():
 
     parent = FrontierParentState()
     child = parent.substates[FrontierChildState.get_name()]
+    assert isinstance(child, FrontierChildState)
     parent.v = 1
     assert child.doubled == 2
     parent.v = 2
