@@ -437,6 +437,12 @@ class BaseState(EvenMoreBasicBaseState):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = field(default=False, is_var=False)
 
+    # Per-field cache of the MutableProxy wrapping each mutable var, so
+    # repeated reads don't rebuild the proxy. Never pickled.
+    _mutable_proxy_cache: builtins.dict[str, MutableProxy] = field(
+        default_factory=builtins.dict, is_var=False
+    )
+
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
@@ -1474,14 +1480,9 @@ class BaseState(EvenMoreBasicBaseState):
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
-            cache = super().__getattribute__("__dict__").get("_mutable_proxy_cache")
-            if cache is None:
-                cache = {}
-                object.__setattr__(self, "_mutable_proxy_cache", cache)
+            cache = super().__getattribute__("_mutable_proxy_cache")
             proxy = cache.get(name)
-            # isinstance also rejects entries degraded by deepcopy, which
-            # copies a MutableProxy as its unwrapped value.
-            if not isinstance(proxy, MutableProxy) or proxy.__wrapped__ is not value:
+            if proxy is None or proxy.__wrapped__ is not value:
                 proxy = MutableProxy(wrapped=value, state=self, field_name=name)
                 cache[name] = proxy
             return proxy
@@ -1519,9 +1520,8 @@ class BaseState(EvenMoreBasicBaseState):
 
         if name in self.backend_vars:
             self._backend_vars.__setitem__(name, value)
-            if (cache := self.__dict__.get("_mutable_proxy_cache")) is not None:
-                # Drop the proxy wrapping the replaced value.
-                cache.pop(name, None)
+            # Drop the proxy wrapping the replaced value.
+            self.__dict__["_mutable_proxy_cache"].pop(name, None)
             self.dirty_vars.add(name)
             self._mark_dirty()
             return
@@ -1555,9 +1555,8 @@ class BaseState(EvenMoreBasicBaseState):
         # Set the attribute.
         object.__setattr__(self, name, value)
 
-        if (cache := self.__dict__.get("_mutable_proxy_cache")) is not None:
-            # Drop the proxy wrapping the replaced value.
-            cache.pop(name, None)
+        # Drop the proxy wrapping the replaced value.
+        self.__dict__["_mutable_proxy_cache"].pop(name, None)
 
         # Add the var to the dirty list.
         if name in self.base_vars:
@@ -2101,6 +2100,8 @@ class BaseState(EvenMoreBasicBaseState):
         """
         state["parent_state"] = None
         state["substates"] = {}
+        # The proxy cache is never pickled; recreate it on the restored instance.
+        state.setdefault("_mutable_proxy_cache", {})
         for key, value in state.items():
             object.__setattr__(self, key, value)
 

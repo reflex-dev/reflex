@@ -98,11 +98,12 @@ def test_mutable_proxy_cache_not_serialized():
     """The per-instance proxy cache never leaks into pickles or copies."""
     state = ProxyTestState()
     state.items.append(Item(1))  # populate the proxy cache
-    assert "_mutable_proxy_cache" in state.__dict__
+    assert state.__dict__["_mutable_proxy_cache"]
     assert "_mutable_proxy_cache" not in state.__getstate__()
 
     restored = pickle.loads(pickle.dumps(state))
-    assert "_mutable_proxy_cache" not in restored.__dict__
+    # The cache is recreated empty on the restored instance.
+    assert restored.__dict__["_mutable_proxy_cache"] == {}
     restored_items = restored.items
     assert isinstance(restored_items, MutableProxy)
     # The restored proxy tracks the restored state, not the original.
