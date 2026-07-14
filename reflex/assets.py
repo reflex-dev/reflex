@@ -2,12 +2,14 @@
 
 import hashlib
 import inspect
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
+from reflex_base.utils import console
 
 _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
@@ -126,7 +128,6 @@ def _short_content_hash(path: Path) -> str:
     Returns:
         The first 8 hex characters of the file's SHA-256 hash.
     """
-    digest = hashlib.sha256()
     for _ in range(_MAX_HASH_ATTEMPTS):
         digest = hashlib.sha256()
         start_stat = path.stat()
@@ -139,6 +140,11 @@ def _short_content_hash(path: Path) -> str:
             and start_stat.st_mtime_ns == end_stat.st_mtime_ns
         ):
             break
+    else:
+        console.warn(
+            f"{path} was modified {_MAX_HASH_ATTEMPTS} times while calculating hash."
+        )
+        return str(time.time())
     return digest.hexdigest()[:8]
 
 

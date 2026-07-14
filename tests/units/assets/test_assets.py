@@ -207,6 +207,45 @@ def test_asset_hash_retries_when_file_changes(
     )
 
 
+def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing falls back to a timestamp if every read sees a file change.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    @dataclass
+    class _Stat:
+        st_size: int
+        st_mtime_ns: int
+
+    class _ChangingPath:
+        stat_calls = 0
+
+        def stat(self) -> _Stat:
+            self.stat_calls += 1
+            return _Stat(st_size=1, st_mtime_ns=self.stat_calls)
+
+        def open(self, mode: str):
+            assert mode == "rb"
+            return io.BytesIO(b"x")
+
+    warn_calls: list[str] = []
+    monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
+    monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
+
+    result = assets_module._short_content_hash(cast(Path, _ChangingPath()))
+
+    assert result == "1234.5"
+    assert len(warn_calls) == 1
+    assert warn_calls[0].endswith(
+        f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+    )
+
+
 def test_asset_importable_path_local(custom_script_in_asset_dir: Path) -> None:
     """A local asset path exposes an `importable_path` prefixed with $/public.
 
