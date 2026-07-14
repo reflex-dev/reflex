@@ -14,7 +14,7 @@ from collections.abc import (
     Callable,
     MutableMapping,
 )
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
@@ -76,15 +76,23 @@ class UploadFile(StarletteUploadFile):
 
 
 def _sanitize_upload_filename(filename: str) -> str:
-    """Strip client-supplied path segments from an upload filename.
+    """Normalize a client-supplied upload filename or relative path.
 
     Args:
         filename: The raw multipart filename.
 
     Returns:
-        The basename of the uploaded file.
+        A safe relative upload path.
     """
-    return PureWindowsPath(PurePosixPath(filename.lstrip("/\\")).name).name
+    windows_path = PureWindowsPath(filename)
+    normalized = filename.replace("\\", "/")
+    if normalized.startswith("/") or windows_path.drive:
+        return windows_path.name
+
+    safe_parts = [part for part in normalized.split("/") if part not in {"", ".", ".."}]
+    if safe_parts:
+        return "/".join(safe_parts)
+    return windows_path.name
 
 
 def _upload_file_from_starlette(file: StarletteUploadFile) -> UploadFile:

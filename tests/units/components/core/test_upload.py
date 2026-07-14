@@ -340,24 +340,33 @@ def test_buffered_upload_args_file_rejected():
     [
         ("plain.txt", "plain.txt"),
         ("../secret.txt", "secret.txt"),
-        ("nested/path/report.csv", "report.csv"),
+        ("nested/path/report.csv", "nested/path/report.csv"),
         (r"..\secret.txt", "secret.txt"),
         (r"C:\Users\name\report.csv", "report.csv"),
     ],
 )
 def test_upload_filename_sanitization_drops_path_segments(filename: str, expected: str):
-    """Uploaded filenames are normalized to a basename on every platform."""
+    """Unsafe path segments are removed from uploaded filenames."""
     assert _sanitize_upload_filename(filename) == expected
 
 
-def test_buffered_upload_file_path_drops_path_segments():
-    """Buffered uploads expose the same sanitized filename as streamed uploads."""
-    upload = StarletteUploadFile(file=io.BytesIO(b"data"), filename="../secret.txt")
+def test_upload_filename_sanitization_preserves_relative_directory():
+    """Directory uploads retain safe relative path segments."""
+    assert _sanitize_upload_filename("photos/2026/image.png") == (
+        "photos/2026/image.png"
+    )
+
+
+def test_buffered_upload_file_path_preserves_relative_directory():
+    """Buffered uploads expose safe relative directory paths."""
+    upload = StarletteUploadFile(
+        file=io.BytesIO(b"data"), filename="photos/2026/image.png"
+    )
     reflex_upload = _upload_file_from_starlette(upload)
 
     assert reflex_upload.path is not None
-    assert str(reflex_upload.path) == "secret.txt"
-    assert reflex_upload.name == "secret.txt"
+    assert str(reflex_upload.path).replace("\\", "/") == "photos/2026/image.png"
+    assert reflex_upload.name == "image.png"
 
 
 def _multipart_body(
@@ -476,12 +485,12 @@ async def test_chunk_parser_args_after_file_rejected():
         await _run_chunk_parser(body, "BOUNDARY")
 
 
-async def test_chunk_parser_sanitizes_uploaded_filename():
-    """Streaming uploads drop client-supplied path segments from filenames."""
+async def test_chunk_parser_preserves_relative_directory_filename():
+    """Streaming uploads retain safe relative directory paths."""
     _, _, filenames = await _run_chunk_parser(
-        _multipart_body("BOUNDARY", filename="../secret.txt"), "BOUNDARY"
+        _multipart_body("BOUNDARY", filename="photos/2026/image.png"), "BOUNDARY"
     )
-    assert filenames == ["secret.txt"]
+    assert filenames == ["photos/2026/image.png"]
 
 
 async def test_chunk_parser_args_as_file_rejected():
