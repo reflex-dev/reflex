@@ -3470,6 +3470,11 @@ if TYPE_CHECKING:
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
+# Custom attrs never copied from a source field: get_field_type duck-types
+# pydantic fields on `.annotation`, so carrying it over would shadow the
+# real class annotation.
+_RESERVED_FIELD_ATTRS = frozenset({"annotation"})
+
 
 class Field(Generic[FIELD_TYPE]):
     """A field for a state."""
@@ -3486,6 +3491,7 @@ class Field(Generic[FIELD_TYPE]):
         is_var: bool = True,
         annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
         | _MISSING_TYPE = MISSING,
+        source_field: Field | None = None,
     ) -> None:
         """Initialize the field.
 
@@ -3494,6 +3500,8 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
             annotated_type: The annotated type for the field.
+            source_field: If given, deep-copy custom (non-reserved) attributes
+                from this field that the new field did not compute itself.
         """
         self.default = default
         self.default_factory = default_factory
@@ -3524,6 +3532,10 @@ class Field(Generic[FIELD_TYPE]):
             self.type_ = self.type_origin = type_origin
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
+        if source_field is not None:
+            for key, value in source_field.__dict__.items():
+                if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
+                    self.__dict__[key] = copy.deepcopy(value)
 
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.
@@ -3770,12 +3782,14 @@ class BaseStateMeta(ABCMeta):
                         default=value.default,
                         is_var=value.is_var,
                         annotated_type=figure_out_type(value.default),
+                        source_field=value,
                     )
                 else:
                     new_value = Field(
                         default_factory=value.default_factory,
                         is_var=value.is_var,
                         annotated_type=Any,
+                        source_field=value,
                     )
             elif (
                 not key.startswith("__")
@@ -3825,6 +3839,7 @@ class BaseStateMeta(ABCMeta):
                     default_factory=value.default_factory,
                     is_var=value.is_var,
                     annotated_type=annotation,
+                    source_field=value,
                 )
 
             own_fields[key] = value
