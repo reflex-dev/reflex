@@ -168,6 +168,8 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_was_touched",
     "_mixin",
     "_mutable_proxy_cache",
+    "_propagated_dirty_vars",
+    "_propagated_generation",
 }
 
 
