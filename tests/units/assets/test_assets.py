@@ -4,7 +4,6 @@ import io
 import pickle
 import shutil
 from collections.abc import Generator
-from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -18,23 +17,6 @@ from reflex.assets import AssetPathStr, remove_stale_external_asset_symlinks
 def _asset_hash(path: Path) -> str:
     """Return the expected short content hash for an asset."""
     return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
-
-
-@dataclass
-class _FakeStat:
-    st_size: int
-    st_mtime_ns: int
-    st_dev: int
-    st_ino: int
-
-
-class _FakeOpenFile(io.BytesIO):
-    def __init__(self, content: bytes, fd: int):
-        super().__init__(content)
-        self._fd = fd
-
-    def fileno(self) -> int:
-        return self._fd
 
 
 @pytest.fixture
@@ -197,35 +179,22 @@ def test_asset_hash_retries_when_file_changes(
 
     class _ChangingPath:
         open_calls = 0
-        stat_calls = 0
 
-        def stat(self) -> _FakeStat:
-            self.stat_calls += 1
-            if self.stat_calls == 1:
-                return _FakeStat(st_size=5, st_mtime_ns=2, st_dev=1, st_ino=2)
-            return _FakeStat(st_size=5, st_mtime_ns=1, st_dev=1, st_ino=2)
-
-        def open(self, mode: str) -> _FakeOpenFile:
+        def open(self, mode: str) -> io.BytesIO:
             assert mode == "rb"
             self.open_calls += 1
             if self.open_calls == 1:
-                return _FakeOpenFile(b"old", fd=1)
-            return _FakeOpenFile(b"final", fd=2)
-
-    def fake_fstat(fd: int) -> _FakeStat:
-        if fd == 1:
-            return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=1)
-        return _FakeStat(st_size=5, st_mtime_ns=1, st_dev=1, st_ino=2)
+                return io.BytesIO(b"old")
+            return io.BytesIO(b"final")
 
     monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
-    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
     changing_path = _ChangingPath()
 
     assert (
         assets_module._short_content_hash(cast(Path, changing_path))
         == hashlib.sha256(b"final").hexdigest()[:8]
     )
-    assert changing_path.open_calls == 2
+    assert changing_path.open_calls == 4
 
 
 def test_asset_hash_retries_after_atomic_replacement(
@@ -241,28 +210,50 @@ def test_asset_hash_retries_after_atomic_replacement(
     class _ReplacingPath:
         open_calls = 0
 
-        def stat(self) -> _FakeStat:
-            return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=2)
-
-        def open(self, mode: str) -> _FakeOpenFile:
+        def open(self, mode: str) -> io.BytesIO:
             assert mode == "rb"
             self.open_calls += 1
             if self.open_calls == 1:
-                return _FakeOpenFile(b"old", fd=1)
-            return _FakeOpenFile(b"new", fd=2)
-
-    def fake_fstat(fd: int) -> _FakeStat:
-        return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=fd)
+                return io.BytesIO(b"old")
+            return io.BytesIO(b"new")
 
     monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
-    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
     replacing_path = _ReplacingPath()
 
     assert (
         assets_module._short_content_hash(cast(Path, replacing_path))
         == hashlib.sha256(b"new").hexdigest()[:8]
     )
-    assert replacing_path.open_calls == 2
+    assert replacing_path.open_calls == 4
+
+
+def test_asset_hash_retries_after_in_place_rewrite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries if an in-place rewrite changes bytes but preserves metadata.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _RewritingPath:
+        open_calls = 0
+        reads = [b"oldnew", b"newnew", b"newnew", b"newnew"]
+
+        def open(self, mode: str) -> io.BytesIO:
+            assert mode == "rb"
+            self.open_calls += 1
+            return io.BytesIO(self.reads[self.open_calls - 1])
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 3)
+    rewriting_path = _RewritingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, rewriting_path))
+        == hashlib.sha256(b"newnew").hexdigest()[:8]
+    )
+    assert rewriting_path.open_calls == 4
 
 
 def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
@@ -277,27 +268,13 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
 
     class _ChangingPath:
         open_calls = 0
-        current_fd = 0
 
-        def stat(self) -> _FakeStat:
-            return _FakeStat(
-                st_size=1,
-                st_mtime_ns=1,
-                st_dev=1,
-                st_ino=self.current_fd + 10,
-            )
-
-        def open(self, mode: str) -> _FakeOpenFile:
+        def open(self, mode: str) -> io.BytesIO:
             assert mode == "rb"
             self.open_calls += 1
-            self.current_fd = self.open_calls
-            return _FakeOpenFile(b"x", fd=self.current_fd)
-
-    def fake_fstat(fd: int) -> _FakeStat:
-        return _FakeStat(st_size=1, st_mtime_ns=1, st_dev=1, st_ino=fd)
+            return io.BytesIO(str(self.open_calls).encode())
 
     warn_calls: list[str] = []
-    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
     monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
     monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
 

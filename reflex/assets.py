@@ -2,7 +2,6 @@
 
 import hashlib
 import inspect
-import os
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
@@ -130,37 +129,31 @@ def _short_content_hash(path: Path) -> str:
         The first 8 hex characters of the file's SHA-256 hash.
     """
     for _ in range(_MAX_HASH_ATTEMPTS):
-        digest = hashlib.sha256()
-        with path.open("rb") as file:
-            start_stat = os.fstat(file.fileno())
-            while chunk := file.read(_HASH_CHUNK_SIZE):
-                digest.update(chunk)
-            read_stat = os.fstat(file.fileno())
-        end_stat = path.stat()
-        if (
-            _asset_stat_key(start_stat)
-            == _asset_stat_key(read_stat)
-            == _asset_stat_key(end_stat)
-        ):
+        digest = _content_digest(path)
+        if digest == _content_digest(path):
             break
     else:
         console.warn(
             f"{path} was modified {_MAX_HASH_ATTEMPTS} times while calculating hash."
         )
         return str(time.time())
-    return digest.hexdigest()[:8]
+    return digest[:8]
 
 
-def _asset_stat_key(stat: os.stat_result) -> tuple[int, int, int, int]:
-    """Return stat fields that identify a stable asset snapshot.
+def _content_digest(path: Path) -> str:
+    """Get the SHA-256 digest for the current file content.
 
     Args:
-        stat: Stat information for a file.
+        path: The file to hash.
 
     Returns:
-        Size, mtime, device, and inode/file-index fields.
+        The full SHA-256 digest for the file content.
     """
-    return (stat.st_size, stat.st_mtime_ns, stat.st_dev, stat.st_ino)
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        while chunk := file.read(_HASH_CHUNK_SIZE):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:
