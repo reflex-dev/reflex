@@ -1299,6 +1299,8 @@ class BaseState(EvenMoreBasicBaseState):
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
+            # inherited_vars may alias this class's vars dict.
+            substate_class._skip_var_names = None
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
