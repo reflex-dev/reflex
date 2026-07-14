@@ -1851,12 +1851,15 @@ class BaseState(EvenMoreBasicBaseState):
         # Recomputing any cached var re-materializes a cache that a later
         # mutation must invalidate again, so the frontier is only valid for
         # the recompute generation it was built in.
+        # Go through __dict__ (not setattr) so this also works when self is a
+        # StateProxy: the proxy exposes the wrapped state's __dict__, while
+        # object.__setattr__ is rejected by wrapt's C ObjectProxy.
         instance_dict = self.__dict__
         propagated = instance_dict["_propagated_dirty_vars"]
         current_gen = reflex_base_vars_base._computed_var_recompute_generation
         if instance_dict["_propagated_generation"] != current_gen:
             propagated.clear()
-            object.__setattr__(self, "_propagated_generation", current_gen)
+            instance_dict["_propagated_generation"] = current_gen
 
         new_dirty = self.dirty_vars - propagated
         while new_dirty:
