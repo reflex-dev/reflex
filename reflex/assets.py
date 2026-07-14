@@ -2,6 +2,7 @@
 
 import hashlib
 import inspect
+import os
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
@@ -130,14 +131,16 @@ def _short_content_hash(path: Path) -> str:
     """
     for _ in range(_MAX_HASH_ATTEMPTS):
         digest = hashlib.sha256()
-        start_stat = path.stat()
         with path.open("rb") as file:
+            start_stat = os.fstat(file.fileno())
             while chunk := file.read(_HASH_CHUNK_SIZE):
                 digest.update(chunk)
+            read_stat = os.fstat(file.fileno())
         end_stat = path.stat()
         if (
-            start_stat.st_size == end_stat.st_size
-            and start_stat.st_mtime_ns == end_stat.st_mtime_ns
+            _asset_stat_key(start_stat)
+            == _asset_stat_key(read_stat)
+            == _asset_stat_key(end_stat)
         ):
             break
     else:
@@ -146,6 +149,18 @@ def _short_content_hash(path: Path) -> str:
         )
         return str(time.time())
     return digest.hexdigest()[:8]
+
+
+def _asset_stat_key(stat: os.stat_result) -> tuple[int, int, int, int]:
+    """Return stat fields that identify a stable asset snapshot.
+
+    Args:
+        stat: Stat information for a file.
+
+    Returns:
+        Size, mtime, device, and inode/file-index fields.
+    """
+    return (stat.st_size, stat.st_mtime_ns, stat.st_dev, stat.st_ino)
 
 
 def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:

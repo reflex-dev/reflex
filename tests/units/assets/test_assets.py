@@ -20,6 +20,23 @@ def _asset_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
 
 
+@dataclass
+class _FakeStat:
+    st_size: int
+    st_mtime_ns: int
+    st_dev: int
+    st_ino: int
+
+
+class _FakeOpenFile(io.BytesIO):
+    def __init__(self, content: bytes, fd: int):
+        super().__init__(content)
+        self._fd = fd
+
+    def fileno(self) -> int:
+        return self._fd
+
+
 @pytest.fixture
 def mock_asset_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Create a mock asset file and patch the current working directory.
@@ -178,33 +195,74 @@ def test_asset_hash_retries_when_file_changes(
     """
     import reflex.assets as assets_module
 
-    @dataclass
-    class _Stat:
-        st_size: int
-        st_mtime_ns: int
-
     class _ChangingPath:
-        content = b"old"
+        open_calls = 0
         stat_calls = 0
 
-        def stat(self) -> _Stat:
+        def stat(self) -> _FakeStat:
             self.stat_calls += 1
-            if self.stat_calls == 2:
-                self.content = b"final"
-                return _Stat(st_size=3, st_mtime_ns=1)
-            return _Stat(st_size=len(self.content), st_mtime_ns=2)
+            if self.stat_calls == 1:
+                return _FakeStat(st_size=5, st_mtime_ns=2, st_dev=1, st_ino=2)
+            return _FakeStat(st_size=5, st_mtime_ns=1, st_dev=1, st_ino=2)
 
-        def open(self, mode: str):
+        def open(self, mode: str) -> _FakeOpenFile:
             assert mode == "rb"
-            return io.BytesIO(self.content)
+            self.open_calls += 1
+            if self.open_calls == 1:
+                return _FakeOpenFile(b"old", fd=1)
+            return _FakeOpenFile(b"final", fd=2)
+
+    def fake_fstat(fd: int) -> _FakeStat:
+        if fd == 1:
+            return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=1)
+        return _FakeStat(st_size=5, st_mtime_ns=1, st_dev=1, st_ino=2)
 
     monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
+    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
     changing_path = _ChangingPath()
 
     assert (
         assets_module._short_content_hash(cast(Path, changing_path))
         == hashlib.sha256(b"final").hexdigest()[:8]
     )
+    assert changing_path.open_calls == 2
+
+
+def test_asset_hash_retries_after_atomic_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries if the file is replaced with the same size and mtime.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _ReplacingPath:
+        open_calls = 0
+
+        def stat(self) -> _FakeStat:
+            return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=2)
+
+        def open(self, mode: str) -> _FakeOpenFile:
+            assert mode == "rb"
+            self.open_calls += 1
+            if self.open_calls == 1:
+                return _FakeOpenFile(b"old", fd=1)
+            return _FakeOpenFile(b"new", fd=2)
+
+    def fake_fstat(fd: int) -> _FakeStat:
+        return _FakeStat(st_size=3, st_mtime_ns=1, st_dev=1, st_ino=fd)
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
+    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
+    replacing_path = _ReplacingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, replacing_path))
+        == hashlib.sha256(b"new").hexdigest()[:8]
+    )
+    assert replacing_path.open_calls == 2
 
 
 def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
@@ -217,23 +275,29 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
     """
     import reflex.assets as assets_module
 
-    @dataclass
-    class _Stat:
-        st_size: int
-        st_mtime_ns: int
-
     class _ChangingPath:
-        stat_calls = 0
+        open_calls = 0
+        current_fd = 0
 
-        def stat(self) -> _Stat:
-            self.stat_calls += 1
-            return _Stat(st_size=1, st_mtime_ns=self.stat_calls)
+        def stat(self) -> _FakeStat:
+            return _FakeStat(
+                st_size=1,
+                st_mtime_ns=1,
+                st_dev=1,
+                st_ino=self.current_fd + 10,
+            )
 
-        def open(self, mode: str):
+        def open(self, mode: str) -> _FakeOpenFile:
             assert mode == "rb"
-            return io.BytesIO(b"x")
+            self.open_calls += 1
+            self.current_fd = self.open_calls
+            return _FakeOpenFile(b"x", fd=self.current_fd)
+
+    def fake_fstat(fd: int) -> _FakeStat:
+        return _FakeStat(st_size=1, st_mtime_ns=1, st_dev=1, st_ino=fd)
 
     warn_calls: list[str] = []
+    monkeypatch.setattr(assets_module.os, "fstat", fake_fstat)
     monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
     monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
 
