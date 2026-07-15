@@ -372,8 +372,12 @@ When a single `@rx.memo` component renders more than one draggable or drop targe
 ```python
 @rx.memo
 def dual_drop_zones() -> rx.Component:
-    left_params = rxe.dnd.DropTarget.collected_params._replace(_js_expr="leftZoneParams")
-    right_params = rxe.dnd.DropTarget.collected_params._replace(_js_expr="rightZoneParams")
+    left_params = rxe.dnd.DropTarget.collected_params._replace(
+        _js_expr="leftZoneParams"
+    )
+    right_params = rxe.dnd.DropTarget.collected_params._replace(
+        _js_expr="rightZoneParams"
+    )
     return rx.hstack(
         rxe.dnd.drop_target(
             rx.box("Left", bg=rx.cond(left_params.is_over, "green.100", "gray.100")),
