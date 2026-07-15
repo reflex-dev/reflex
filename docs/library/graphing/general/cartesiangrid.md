@@ -79,6 +79,42 @@ def cgrid_hidden():
     )
 ```
 
+## Styling the Grid
+
+The opacity and color of the grid lines can be customized with the `class_name` prop. Lowering the opacity keeps the grid available as a visual reference without competing with the data itself. Combined with showing only horizontal lines, this gives charts a subtle, modern look.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def cgrid_styled():
+    return rx.recharts.area_chart(
+        rx.recharts.area(
+            data_key="uv",
+            stroke=rx.color("accent", 9),
+            fill=rx.color("accent", 8),
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        rx.recharts.cartesian_grid(
+            horizontal=True,
+            vertical=False,
+            class_name="opacity-25",
+        ),
+        data=data,
+        width="100%",
+        height=300,
+    )
+```
+
 ## Custom Grid Lines
 
 The `horizontal_points` and `vertical_points` props allow you to specify custom grid lines on the chart, offering fine-grained control over the grid's appearance.

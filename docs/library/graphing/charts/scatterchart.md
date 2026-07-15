@@ -210,6 +210,54 @@ def scatter_shape():
     )
 ```
 
+## Distinguishing Series with Shapes
+
+When plotting several series on one chart, each `rx.recharts.scatter()` can be given its own `shape` in addition to its own `fill`, so the series stay distinguishable even where their points overlap. Available shapes include `"circle"`, `"square"`, `"triangle"`, `"diamond"`, `"star"`, `"cross"`, and `"wye"`.
+
+```python demo graphing
+data01 = [
+    {"x": 100, "y": 200},
+    {"x": 120, "y": 100},
+    {"x": 170, "y": 300},
+    {"x": 140, "y": 250},
+    {"x": 150, "y": 400},
+    {"x": 110, "y": 280},
+]
+
+data02 = [
+    {"x": 200, "y": 260},
+    {"x": 240, "y": 290},
+    {"x": 190, "y": 290},
+    {"x": 198, "y": 250},
+    {"x": 180, "y": 280},
+    {"x": 210, "y": 220},
+]
+
+data03 = [
+    {"x": 130, "y": 150},
+    {"x": 160, "y": 180},
+    {"x": 220, "y": 170},
+    {"x": 250, "y": 200},
+    {"x": 175, "y": 130},
+    {"x": 205, "y": 160},
+]
+
+
+def scatter_shapes():
+    return rx.recharts.scatter_chart(
+        rx.recharts.scatter(data=data01, fill="#8884d8", name="A"),
+        rx.recharts.scatter(data=data02, fill="#82ca9d", name="B", shape="triangle"),
+        rx.recharts.scatter(data=data03, fill="#ffc658", name="C", shape="star"),
+        rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
+        rx.recharts.x_axis(data_key="x", type_="number"),
+        rx.recharts.y_axis(data_key="y"),
+        rx.recharts.legend(),
+        rx.recharts.graphing_tooltip(),
+        width="100%",
+        height=300,
+    )
+```
+
 ## Bubble Chart
 
 Adding an `rx.recharts.z_axis()` turns a scatter chart into a bubble chart: the `z` value of each point controls the bubble size, mapped to a pixel `range`. This lets you encode a third dimension of data alongside the x and y position.
