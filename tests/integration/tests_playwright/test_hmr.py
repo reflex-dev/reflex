@@ -43,6 +43,21 @@ def hmr_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
+def _find_route(route_dir: Path, marker: str) -> Path:
+    """Locate the generated route module containing a marker string.
+
+    Args:
+        route_dir: Directory of generated route modules.
+        marker: Source text unique to one route.
+
+    Returns:
+        The route module containing the marker.
+    """
+    matches = [path for path in route_dir.glob("*.jsx") if marker in path.read_text()]
+    assert len(matches) == 1, f"expected one route containing {marker!r}, got {matches}"
+    return matches[0]
+
+
 def _replace_once(path: Path, old: str, new: str) -> None:
     """Replace one occurrence in a generated route module.
 
@@ -71,9 +86,12 @@ def _wait_for_hmr_manifest(
         AssertionError: If the expected update is not received.
     """
     deadline = time.monotonic() + 10
+    scan_pos = start_index
     while time.monotonic() < deadline:
         page.wait_for_timeout(100)
-        for frame in frames[start_index:]:
+        while scan_pos < len(frames):
+            frame = frames[scan_pos]
+            scan_pos += 1
             if "react-router:hmr" not in frame:
                 continue
             payload = json.loads(frame)
@@ -94,8 +112,10 @@ def test_unloaded_route_update_does_not_wedge_hmr(
     """
     assert hmr_app.frontend_url is not None
     route_dir = hmr_app.app_path / ".web" / "app" / "routes"
-    index_route = route_dir / "_index.jsx"
-    unloaded_route = route_dir / "[unloaded]._index.jsx"
+    index_route = _find_route(route_dir, "index-v0")
+    unloaded_route = _find_route(route_dir, "unloaded-v0")
+    # React Router route ids are the app-relative module path without extension.
+    unloaded_route_id = f"routes/{unloaded_route.stem}"
     frames: list[str] = []
 
     def capture_websocket(websocket: WebSocket) -> None:
@@ -110,12 +130,7 @@ def test_unloaded_route_update_does_not_wedge_hmr(
 
     frame_index = len(frames)
     _replace_once(unloaded_route, "unloaded-v0", "unloaded-v1")
-    _wait_for_hmr_manifest(
-        page,
-        frames,
-        "routes/[unloaded]._index",
-        frame_index,
-    )
+    _wait_for_hmr_manifest(page, frames, unloaded_route_id, frame_index)
 
     _replace_once(index_route, "index-v0", "index-v1")
     expect(page.locator("#version")).to_have_text("index-v1", timeout=10_000)
