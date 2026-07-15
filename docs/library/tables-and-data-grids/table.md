@@ -188,6 +188,7 @@ rx.table.root(
 
 ```md alert info
 # Set the table `width` to fit within its container and prevent it from overflowing.
+If the table has too many columns to fit, wrap the `rx.table.root` in a container with `overflow_x="auto"` (e.g. `rx.box(rx.table.root(...), overflow_x="auto", width="100%")`) so the table scrolls horizontally inside the container instead of stretching the page.
 ```
 
 ## Showing State data (using foreach)
@@ -342,7 +343,7 @@ def database_table_example():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState.filter_values(value),
+            on_change=DatabaseTableState.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -607,6 +608,11 @@ For filtering the `rx.input` component is used. The data is filtered based on th
 
 The `%` character before and after `search_value` makes it a wildcard pattern that matches any sequence of characters before or after the `search_value`. `query.where(...)` modifies the existing query to include a filtering condition. The `or_` operator is a logical OR operator that combines multiple conditions. The query will return results that match any of these conditions. `Customer.name.ilike(search_value)` checks if the `name` column of the `Customer` table matches the `search_value` pattern in a case-insensitive manner (`ilike` stands for "case-insensitive like").
 
+```md alert info
+# Debounce the search input
+`on_change` fires on every keystroke, and each event here runs a database query. Chaining `.debounce(500)` on the event handler waits until the user pauses typing for 500ms, so one query runs per search instead of one per character. See [event actions](/docs/events/event-actions) for details.
+```
+
 ```python
 class Customer(rx.Model, table=True):
     """The customer model."""
@@ -712,7 +718,7 @@ def loading_data_table_example_2():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState2.filter_values(value),
+            on_change=DatabaseTableState2.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -802,7 +808,7 @@ def loading_data_table_example2():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState2.filter_values(value),
+            on_change=DatabaseTableState2.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -1042,6 +1048,11 @@ def loading_data_table_example3():
         ),
         width="100%",
     )
+```
+
+```md alert info
+# Combining pagination with search and sorting
+Give each paginated table its own state vars (`offset`, `limit`, `total_items`) so multiple tables on a page paginate independently, and reset `offset` to `0` whenever the search or sort value changes — otherwise the user may be left on a page number beyond the end of the newly filtered results.
 ```
 
 ## More advanced examples
