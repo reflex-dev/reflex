@@ -15,7 +15,7 @@ from reflex_base.vars.base import (
     Var,
     VarData,
     VarSubclassEntry,
-    _var_subclasses,
+    _register_var_subclass_entry,
     cached_property_no_lock,
 )
 from reflex_base.vars.object import ObjectItemOperation, ObjectVar
@@ -333,7 +333,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
 # than ToOperation so _js_expr can render as {original}?.["href"]. The registry
 # entry still accepts it because .to()/guess_type() only call .create(...),
 # which has a compatible signature.
-_var_subclasses.append(
+_register_var_subclass_entry(
     VarSubclassEntry(ReflexURLVar, ReflexURLCastedVar, (ReflexURL,))  # pyright: ignore[reportArgumentType]
 )
 

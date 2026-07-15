@@ -13,7 +13,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex_base import constants
-from reflex_base.constants.base import LogLevel
+from reflex_base.constants.base import LiteralColorMode, LogLevel
 from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
 from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
@@ -165,6 +165,7 @@ class BaseConfig:
         redis_url: The redis url.
         telemetry_enabled: Telemetry opt-in.
         bun_path: The bun path.
+        frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
@@ -177,6 +178,7 @@ class BaseConfig:
         redis_token_expiration: Token expiration time for redis state manager.
         env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
@@ -216,6 +218,8 @@ class BaseConfig:
 
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
+    frozen_lockfile: bool = True
+
     static_page_generation_timeout: int = 60
 
     cors_allowed_origins: Annotated[
@@ -250,6 +254,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    default_color_mode: LiteralColorMode = "system"
 
     show_built_with_reflex: bool | None = None
 
@@ -407,6 +413,14 @@ class Config(BaseConfig):
             and not self.redis_url
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
+
+        allowed_color_modes = constants.LiteralColorMode.__args__
+        if self.default_color_mode not in allowed_color_modes:
+            msg = (
+                f"default_color_mode must be one of "
+                f"{allowed_color_modes}, but got {self.default_color_mode!r}."
+            )
             raise ConfigError(msg)
 
     def _normalize_plugins(self):

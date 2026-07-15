@@ -49,9 +49,9 @@ def _patch_frontend_package_manager(
 
     # Forward the initial-install helper through the same stub so tests can
     # inspect the install args without mocking subprocess primitives.
-    def _stub_initial_install(primary_pm, env):
+    def _stub_initial_install(primary_pm, env, frozen_lockfile):
         args = [primary_pm, "install", "--legacy-peer-deps"]
-        if js_runtimes._is_bun_package_manager(primary_pm):
+        if frozen_lockfile and js_runtimes._is_bun_package_manager(primary_pm):
             args.append("--frozen-lockfile")
         run_package_manager(
             args,
@@ -874,6 +874,23 @@ def test_install_frontend_packages_bun_keeps_frozen_lockfile(
     assert any("--frozen-lockfile" in c for c in install_calls)
 
 
+def test_install_frontend_packages_bun_skips_frozen_lockfile_when_disabled(
+    install_packages_env: InstallPackagesEnv,
+):
+    """``frozen_lockfile=False`` drops ``--frozen-lockfile`` even for bun."""
+    env = install_packages_env
+    env.config.frozen_lockfile = False
+    env.root_lock.write_text("bun-lock")
+    calls = _record_calls_with_pm(env, "bun")
+
+    env.install({"some-pkg"})
+
+    install_calls = [c for c in calls if "install" in c]
+    assert install_calls, "expected an initial `bun install` call"
+    for call in install_calls:
+        assert "--frozen-lockfile" not in call
+
+
 def test_install_frontend_packages_persists_package_json_to_root(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -1297,7 +1314,7 @@ def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, 
     )
 
     with pytest.raises(SystemExit):
-        js_runtimes._run_initial_install("bun", env={})
+        js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
     captured = capsys.readouterr()
     output = captured.out + captured.err
@@ -1326,7 +1343,7 @@ def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
     )
 
     with pytest.raises(SystemExit):
-        js_runtimes._run_initial_install("bun", env={})
+        js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
     captured = capsys.readouterr()
     assert "network unreachable" in captured.out + captured.err
