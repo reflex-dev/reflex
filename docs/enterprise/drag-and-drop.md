@@ -13,6 +13,8 @@ Reflex Enterprise provides comprehensive drag and drop functionality for creatin
 
 ```md alert warning
 # Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
+
+Parameters passed to an `@rx.memo` component are Vars, not plain Python values. Access fields with indexing (`item["name"]`) and render sequences with `rx.foreach` — iterating over them with a Python `for` loop does not work.
 ```
 
 ## Basic Usage
@@ -335,6 +337,8 @@ The `rxe.dnd.draggable` component makes any element draggable:
 - `item`: Data object passed to drop handlers
 - `on_end`: Called when drag operation ends
 
+There is no `on_drag_start` event — use `on_end` to react to the completion of a drag operation.
+
 ### Drop Target
 
 The `rxe.dnd.drop_target` component creates areas that accept draggable items:
@@ -343,6 +347,8 @@ The `rxe.dnd.drop_target` component creates areas that accept draggable items:
 - `accept`: List of drag types this target accepts
 - `on_drop`: Called when item is dropped
 - `on_hover`: Called when item hovers over target
+
+When drop targets are nested, a drop fires an event for each layer under the cursor, so deduplicate in the state handler (for example, with a timestamp or flag). To support dropping at the root level — such as the background of a file explorer — wrap the root container itself in a drop target.
 
 ### Collected Parameters
 
@@ -354,6 +360,33 @@ Access real-time drag/drop state:
 **Drop Target Parameters (`rxe.dnd.DropTarget.collected_params`):**
 - `is_over`: Boolean indicating if draggable is hovering
 - `can_drop`: Boolean indicating if drop is allowed
+
+```md alert warning
+# Assign collected params to a variable first
+
+Do not read fields directly off the class (e.g. `rxe.dnd.DropTarget.is_over`). Assign `collected_params` to a variable, then access fields through it: `params = rxe.dnd.DropTarget.collected_params`, then `params.is_over`.
+```
+
+When a single `@rx.memo` component renders more than one draggable or drop target, give each its own collected params name to avoid JavaScript name collisions. Use `_replace(_js_expr=...)` to create a uniquely named params Var and pass it via `_collected_params`:
+
+```python
+@rx.memo
+def dual_drop_zones() -> rx.Component:
+    left_params = rxe.dnd.DropTarget.collected_params._replace(_js_expr="leftZoneParams")
+    right_params = rxe.dnd.DropTarget.collected_params._replace(_js_expr="rightZoneParams")
+    return rx.hstack(
+        rxe.dnd.drop_target(
+            rx.box("Left", bg=rx.cond(left_params.is_over, "green.100", "gray.100")),
+            accept=["MyDraggable"],
+            _collected_params=left_params,
+        ),
+        rxe.dnd.drop_target(
+            rx.box("Right", bg=rx.cond(right_params.is_over, "green.100", "gray.100")),
+            accept=["MyDraggable"],
+            _collected_params=right_params,
+        ),
+    )
+```
 
 ## API Reference
 
@@ -570,6 +603,12 @@ def app():
         your_app_content(),
         backend="HTML5",  # or "Touch" for mobile
     )
+```
+
+```md alert warning
+# Do not add a second provider
+
+Because the provider is added automatically when `draggable` or `drop_target` components are used, wrapping the app in an additional `rxe.dnd.provider` results in duplicate providers and breaks drag and drop. Only use manual control when the automatic provider does not fit (e.g. to select the touch backend), and make sure it is the only provider in the tree.
 ```
 
 ## Best Practices

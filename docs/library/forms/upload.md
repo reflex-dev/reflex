@@ -57,6 +57,8 @@ event args:
 - `rx.upload_files(upload_id=id)` for uploads
 - `rx.upload_files_chunk(upload_id=id)` for larger files that should be processed incrementally
 
+The `id` links the upload component to these special Vars and event args, so they must all reference the same value. Pass it as a string literal or module-level constant — a state var cannot be used as an upload `id`.
+
 ## File Storage Functions
 
 Reflex provides two key functions for handling uploaded files:
@@ -70,10 +72,12 @@ Reflex provides two key functions for handling uploaded files:
 
 ### rx.get_upload_url(filename)
 
-- **Purpose**: Returns the URL string that can be used in frontend components to access uploaded files
+- **Purpose**: Returns the URL that can be used in frontend components to access uploaded files
 - **Usage**: Used in frontend components (like `rx.image`, `rx.video`) to display uploaded files
 - **URL Format**: `/_upload/filename`
-- **Type**: Returns `str`
+- **Type**: Returns a frontend `Var` (a JavaScript expression), not a Python `str`
+
+Because it returns a frontend Var, `rx.get_upload_url` is frontend-only: use it in component code and event triggers, not in backend event handlers or computed vars, where the value would not resolve to a usable string. If you genuinely need the upload URL as a plain string on the backend, construct it from `self.router.headers.host` instead.
 
 ### Key Differences
 
@@ -435,11 +439,25 @@ rx.upload.root(
 
 ## Handling the Upload
 
-For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
+
+```md alert warning
+# Upload handlers are regular event handlers.
+Do not declare a standard upload handler with `@rx.event(background=True)`, and do not use `async with self` inside it — those apply only to chunked upload handlers (see below). A standard handler is a plain `@rx.event` async function.
+```
 
 In your UI, you can bind the event handler to a trigger, such as a button
 `on_click` event or upload `on_drop` event, and pass in the files using
 `rx.upload_files()`.
+
+```md alert warning
+# Keep the upload trigger button outside the upload component.
+The dropzone treats any click inside `rx.upload` / `rx.upload.root` as a request to open the file picker. If the button that triggers the upload event is placed inside, each click both opens the picker and starts the upload. Buttons inside the dropzone (like "Select File" in the examples above) should be purely visual.
+```
+
+### Uploading from a Form
+
+A form's `on_submit` event never includes uploaded file data. When an upload component lives inside a form, trigger the upload from a separate button with `type="button"` (or from the dropzone's `on_drop` trigger) using `rx.upload_files()`, and handle the remaining form fields in `on_submit` as usual.
 
 ### Saving the File
 
@@ -469,6 +487,8 @@ The files are automatically served at:
 - `/_upload/image1.png` ← `rx.get_upload_url("image1.png")`
 - `/_upload/document.pdf` ← `rx.get_upload_url("document.pdf")`
 - `/_upload/video.mp4` ← `rx.get_upload_url("video.mp4")`
+
+These paths are an implementation detail — avoid hardcoding `/upload/` or `/_upload/` in your app. Go through `rx.get_upload_url(filename)` so URLs remain correct when the frontend and backend are served from different hosts or ports.
 
 ### Chunked Uploads for Large Files
 
