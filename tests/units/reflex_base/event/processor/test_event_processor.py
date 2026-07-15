@@ -5,6 +5,7 @@ import contextlib
 from typing import Any
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -224,6 +225,36 @@ async def test_stop_idempotent(processor: EventProcessor):
     await processor.start()
     await processor.stop()
     await processor.stop()
+
+
+@pytest.mark.skipif(
+    not hasattr(asyncio, "QueueShutDown"),
+    reason="asyncio.Queue.shutdown() requires Python 3.13+",
+)
+async def test_native_queue_shutdown_is_suppressed(
+    processor: EventProcessor, mocker: MockerFixture
+):
+    """Native queue shutdown exceptions do not surface as processor errors.
+
+    Args:
+        processor: The event processor fixture.
+        mocker: The pytest mock fixture.
+    """
+    send_error = mocker.patch("reflex.utils.telemetry.send_error")
+    console_error = mocker.patch("reflex.utils.console.error")
+    queue: asyncio.Queue = asyncio.Queue()
+    queue.shutdown()
+
+    processor._queue = queue
+    await processor._process_queue()
+
+    processor._queue = None
+    processor._queue_task = asyncio.create_task(queue.get())
+    await asyncio.sleep(0)
+    await processor.stop()
+
+    send_error.assert_not_called()
+    console_error.assert_not_called()
 
 
 async def test_async_context_manager(processor: EventProcessor):
