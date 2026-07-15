@@ -440,3 +440,60 @@ def scroll_example():
         width="100%",
     )
 ```
+
+## on_key_down
+
+The on_key_down event handler is called when the user presses a key while the element has focus. The handler receives the name of the key (e.g. `"Enter"`, `"Escape"`, `"a"`, `"ArrowUp"`) and a dictionary describing the active modifier keys (`alt_key`, `ctrl_key`, `meta_key`, `shift_key`).
+
+A handler may accept only the key name if it does not need the modifier info.
+
+```python demo exec
+class KeyDownState(rx.State):
+    message: str = ""
+
+    @rx.event
+    def handle_key_down(self, key: str):
+        if key == "Enter":
+            self.message = "You pressed Enter!"
+        else:
+            self.message = f"Last key pressed: {key}"
+
+
+def key_down_example():
+    return rx.vstack(
+        rx.text(KeyDownState.message),
+        rx.input(
+            placeholder="Focus me and press a key...",
+            on_key_down=KeyDownState.handle_key_down,
+        ),
+    )
+```
+
+## on_key_up
+
+The on_key_up event handler is called when the user releases a key. It receives the same arguments as `on_key_down`.
+
+## Global Keyboard Events
+
+`on_key_down` on an element only fires while that element has focus. To listen for keyboard events anywhere on the page — for example, to implement global hotkeys — attach `on_key_down` to the `rx.window_event_listener` component, which listens on the browser window and renders no visible output.
+
+```python
+class HotkeyState(rx.State):
+    last_key_pressed: str = ""
+
+    @rx.event
+    def on_hotkey_press(self, key: str):
+        if key not in ("w", "a", "s", "d"):
+            return
+        self.last_key_pressed = key
+
+
+def hotkey_example():
+    return rx.vstack(
+        rx.text("Press w, a, s, or d anywhere on the page."),
+        rx.text(f"Last hotkey pressed: {HotkeyState.last_key_pressed}"),
+        rx.window_event_listener(
+            on_key_down=HotkeyState.on_hotkey_press,
+        ),
+    )
+```
