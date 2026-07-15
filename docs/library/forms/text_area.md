@@ -90,3 +90,51 @@ def feedback_form():
         ),
     )
 ```
+
+## Submitting on Enter
+
+By default, pressing Enter in a text area inserts a new line. Set the
+`enter_key_submit` prop to submit the enclosing form when Enter is pressed
+instead. Shift+Enter still inserts a new line, so multi-line input remains
+possible.
+
+```python demo exec
+class EnterSubmitState(rx.State):
+    submitted_text: str = ""
+
+    @rx.event
+    def handle_submit(self, form_data: dict):
+        self.submitted_text = form_data["message"]
+
+
+def enter_key_submit_example():
+    return rx.vstack(
+        rx.cond(
+            EnterSubmitState.submitted_text != "",
+            rx.text("Submitted: ", EnterSubmitState.submitted_text),
+            rx.text("Nothing submitted yet."),
+        ),
+        rx.form(
+            rx.text_area(
+                name="message",
+                placeholder="Type and press Enter to submit",
+                enter_key_submit=True,
+            ),
+            on_submit=EnterSubmitState.handle_submit,
+        ),
+        width="100%",
+    )
+```
+
+`enter_key_submit` accepts a Var, so it can be toggled dynamically — for
+example, disabling Enter-to-submit while a previous submission is still being
+processed: `enter_key_submit=~State.is_loading`.
+
+```md alert warning
+# `enter_key_submit` cannot be combined with `on_key_down`.
+
+The `enter_key_submit` prop is implemented with its own key down handler, so
+passing both to the same component raises an error. If custom key handling is
+needed, implement the Enter-to-submit behavior in your own `on_key_down`
+handler instead.
+```
