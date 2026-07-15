@@ -77,7 +77,7 @@ Reflex provides two key functions for handling uploaded files:
 - **URL Format**: `/_upload/filename`
 - **Type**: Returns a frontend `Var` (a JavaScript expression), not a Python `str`
 
-Because it returns a frontend Var, `rx.get_upload_url` is frontend-only: use it in component code and event triggers, not in backend event handlers or computed vars, where the value would not resolve to a usable string. If you genuinely need the upload URL as a plain string on the backend, construct it from `self.router.headers.host` instead.
+Because it returns a frontend Var, `rx.get_upload_url` is frontend-only: use it in component code and event triggers, not in backend event handlers or computed vars, where the value would not resolve to a usable string. If you genuinely need the upload URL as a plain string on the backend, build it from the configured upload endpoint — `Endpoint.UPLOAD.get_url()` (from `reflex.constants`) joined with the filename — which accounts for the scheme, any `backend_path` prefix, and split frontend/backend deployments.
 
 ### Key Differences
 

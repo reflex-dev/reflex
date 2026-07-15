@@ -14,7 +14,7 @@ Reflex Enterprise provides comprehensive drag and drop functionality for creatin
 ```md alert warning
 # Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
 
-Parameters passed to an `@rx.memo` component are Vars, not plain Python values. Access fields with indexing (`item["name"]`) and render sequences with `rx.foreach` — iterating over them with a Python `for` loop does not work.
+See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
 
 ## Basic Usage
@@ -337,7 +337,7 @@ The `rxe.dnd.draggable` component makes any element draggable:
 - `item`: Data object passed to drop handlers
 - `on_end`: Called when drag operation ends
 
-There is no `on_drag_start` event — use `on_end` to react to the completion of a drag operation.
+There is no event that fires when a drag begins — `on_end`, which fires when the drag completes, is the only drag lifecycle event on the draggable.
 
 ### Drop Target
 
@@ -367,7 +367,7 @@ Access real-time drag/drop state:
 Do not read fields directly off the class (e.g. `rxe.dnd.DropTarget.is_over`). Assign `collected_params` to a variable, then access fields through it: `params = rxe.dnd.DropTarget.collected_params`, then `params.is_over`.
 ```
 
-When a single `@rx.memo` component renders more than one draggable or drop target, give each its own collected params name to avoid JavaScript name collisions. Use `_replace(_js_expr=...)` to create a uniquely named params Var and pass it via `_collected_params`:
+When a single `@rx.memo` component renders more than one draggable or drop target, give each its own collected params name to avoid JavaScript name collisions. Use `_replace(_js_expr=...)` to create a uniquely named params Var and pass it via `_collected_params`. Note that `_replace` and `_js_expr` are internal Reflex APIs and may change between releases:
 
 ```python
 @rx.memo
