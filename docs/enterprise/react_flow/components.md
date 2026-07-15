@@ -19,6 +19,31 @@ The `FlowProvider` component is a context provider that makes it possible to acc
 - `node_origin`: `NodeOrigin` - The origin of the node to use when placing it in the flow or looking up its x and y position.
 - `node_extent`: `CoordinateExtent` - The boundary a node can be moved in.
 
+`rxe.flow.provider` does not accept any event handlers. All event handlers (`on_nodes_change`, `on_edges_change`, `on_connect`, etc.) must be set on the inner `rxe.flow` component.
+
+**Example:**
+
+```python
+rx.box(
+    rxe.flow.provider(
+        rxe.flow(
+            rxe.flow.background(),
+            nodes=FlowState.nodes,
+            edges=FlowState.edges,
+            on_nodes_change=lambda changes: FlowState.set_nodes(
+                rxe.flow.util.apply_node_changes(FlowState.nodes, changes)
+            ),
+            on_edges_change=lambda changes: FlowState.set_edges(
+                rxe.flow.util.apply_edge_changes(FlowState.edges, changes)
+            ),
+            fit_view=True,
+        )
+    ),
+    height="100vh",
+    width="100vw",
+)
+```
+
 ## rxe.flow
 
 The `Flow` component is the main component that renders the flow. It takes in nodes and edges, and provides event handlers for user interactions.

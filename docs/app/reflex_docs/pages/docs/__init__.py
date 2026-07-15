@@ -175,6 +175,8 @@ manual_titles = {
     "docs/enterprise/ag_grid/model-wrapper.md": "AG Grid with a Pandas DataFrame in Python",
     "docs/enterprise/ag_grid/value-transformers.md": "AG Grid Value Transformers in Python",
     "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
+    "docs/enterprise/ag_grid/tree-data.md": "AG Grid Tree Data in Python",
+    "docs/enterprise/ag_grid/master-detail.md": "AG Grid Master Detail in Python",
 }
 
 
