@@ -12,6 +12,6 @@ def test_inkeep_uses_frontend_path_search_icon(monkeypatch) -> None:
         lambda: SimpleNamespace(frontend_path="/docs/product"),
     )
 
-    hooks = "\n".join(Search.create().add_hooks())
+    hooks = "\n".join(str(hook) for hook in Search.create().add_hooks())
 
     assert 'customIcons: {search: {custom: "/docs/product/icons/search.svg"}}' in hooks
