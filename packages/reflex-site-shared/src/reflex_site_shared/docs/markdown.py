@@ -73,6 +73,22 @@ if _PARENT_PKG not in sys.modules:
     sys.modules[_PARENT_PKG] = _pkg
 
 
+def _add_exception_note(error: BaseException, note: str) -> None:
+    """Attach a rendering-context note to an exception.
+
+    Uses PEP 678 notes on Python 3.11+, falling back to setting ``__notes__``
+    directly on Python 3.10 so callers and tests see uniform behavior.
+
+    Args:
+        error: Exception being re-raised.
+        note: Context describing the failing document and block.
+    """
+    if hasattr(error, "add_note"):
+        error.add_note(note)
+    else:
+        error.__notes__ = [*getattr(error, "__notes__", ()), note]
+
+
 def _make_module_name(filename: str) -> str:
     """Create a valid Python module name from a filepath."""
     import re
@@ -436,8 +452,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
-            e.add_note(
-                f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}"
+            _add_exception_note(
+                e,
+                f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}",
             )
             raise
 
@@ -471,8 +488,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
-            e.add_note(
-                f"While rendering demo-only block in {self.virtual_filepath}:\n{content[:200]}"
+            _add_exception_note(
+                e,
+                f"While rendering demo-only block in {self.virtual_filepath}:\n{content[:200]}",
             )
             raise
 
