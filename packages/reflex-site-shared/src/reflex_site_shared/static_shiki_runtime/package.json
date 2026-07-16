@@ -1,0 +1,8 @@
+{
+  "name": "reflex-static-shiki-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "shiki": "3.3.0"
+  }
+}

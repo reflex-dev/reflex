@@ -245,22 +245,26 @@ def feedback_content() -> rx.Component:
 def feedback_button() -> rx.Component:
     thumb_cn = "w-full gap-2 px-3 py-0.5 flex flex-row items-center justify-center whitespace-nowrap border cursor-pointer transition-colors font-small"
     return ui.popover.root(
-        ui.popover.trigger(
-            render_=rx.el.div(
-                feedback_choice_button(
+        rx.el.div(
+            ui.popover.trigger(
+                render_=feedback_choice_button(
                     "Yes",
                     "ThumbsUpIcon",
                     1,
                     ui.cn("rounded-[20px_0_0_20px] border-r-0", thumb_cn),
                 ),
-                feedback_choice_button(
+            ),
+            ui.popover.trigger(
+                render_=feedback_choice_button(
                     "No",
                     "ThumbsDownIcon",
                     0,
                     ui.cn("rounded-[0_20px_20px_0]", thumb_cn),
                 ),
-                class_name="w-full lg:w-auto items-center flex flex-row",
             ),
+            role="group",
+            aria_label="Was this page helpful?",
+            class_name="w-full lg:w-auto items-center flex flex-row",
         ),
         ui.popover.portal(
             ui.popover.positioner(
@@ -757,8 +761,10 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     return rx.box(
         docs_sidebar_drawer(
             nav_sidebar,
-            trigger=rx.box(
-                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex",
+            trigger=rx.el.button(
+                type="button",
+                aria_label="Open docs navigation",
+                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex border-none p-0 cursor-pointer",
             ),
         ),
         rx.box(

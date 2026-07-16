@@ -43,7 +43,7 @@ def link_item(
             description,
             class_name="text-secondary-11 text-sm font-[475] text-start",
         ),
-        rx.el.a(to=href, class_name="absolute inset-0"),
+        rx.el.a(to=href, aria_label=title, class_name="absolute inset-0"),
         class_name=ui.cn(
             "flex flex-col gap-2 pr-8 py-8 group border-r border-b border-secondary-4 relative max-lg:p-6 hover:bg-[linear-gradient(243deg,var(--secondary-2)_0%,var(--secondary-1)_100%)]",
             "lg:pl-8 pl-6" if has_padding_left else "",
