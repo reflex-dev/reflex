@@ -3773,7 +3773,7 @@ requires-dist = [
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", specifier = ">=2.12.0,<3.0" },
-    { name = "rich", specifier = ">=13,<15" },
+    { name = "rich", specifier = ">=13,<16" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
 ]
 
@@ -4087,7 +4087,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
-    { name = "rich", specifier = ">=13,<15" },
+    { name = "rich", specifier = ">=13,<16" },
 ]
 
 [[package]]
@@ -4148,15 +4148,15 @@ wheels = [
 
 [[package]]
 name = "rich"
-version = "14.3.4"
+version = "15.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown-it-py" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/67/cae617f1351490c25a4b8ac3b8b63a4dda609295d8222bad12242dfdc629/rich-14.3.4.tar.gz", hash = "sha256:817e02727f2b25b40ef56f5aa2217f400c8489f79ca8f46ea2b70dd5e14558a9", size = 230524, upload-time = "2026-04-11T02:57:45.419Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/8f/0722ca900cc807c13a6a0c696dacf35430f72e0ec571c4275d2371fca3e9/rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36", size = 230680, upload-time = "2026-04-12T08:24:00.75Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/76/6d163cfac87b632216f71879e6b2cf17163f773ff59c00b5ff4900a80fa3/rich-14.3.4-py3-none-any.whl", hash = "sha256:07e7adb4690f68864777b1450859253bed81a99a31ac321ac1817b2313558952", size = 310480, upload-time = "2026-04-11T02:57:47.484Z" },
+    { url = "https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl", hash = "sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb", size = 310654, upload-time = "2026-04-12T08:24:02.83Z" },
 ]
 
 [[package]]

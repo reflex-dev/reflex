@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.13"
+    VERSION = "1.3.14"
 
     # Min Bun Version
     MIN_VERSION = "1.3.0"
@@ -86,7 +86,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.15.0"
+    default_version = "7.18.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -98,7 +98,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.2.6"
+    default_version = "19.2.7"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -139,20 +139,19 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.40",
+            "isbot": "5.1.43",
             "socket.io-client": "4.8.3",
-            "universal-cookie": "7.2.2",
+            "universal-cookie": "8.1.2",
         }
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.5.0",
-        "postcss": "8.5.14",
+        "postcss": "8.5.15",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
         "vite": "8.0.16",
     }
-    OVERRIDES = {
-        "cookie": "1.1.1",
-    }
+    # Force specific transitive npm deps to a single resolved version when needed.
+    OVERRIDES: dict[str, str] = {}
