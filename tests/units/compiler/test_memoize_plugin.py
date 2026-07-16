@@ -45,6 +45,7 @@ from reflex_components_core.el.elements.metadata import Base, Link, Meta, StyleE
 from reflex_components_core.el.elements.scripts import Noscript, Script
 from reflex_components_core.el.elements.tables import Col
 from reflex_components_core.el.elements.typography import Hr
+from reflex_components_moment.moment import Moment
 from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
@@ -1585,6 +1586,60 @@ def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> Non
     assert "TestState" not in output, (
         "The state-context wiring should live inside the memo body, not the page.\n"
         f"Page output snippet: {output[:2000]}"
+    )
+
+
+def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
+    """``rx.moment(state_var)`` must not produce a Bare component child.
+
+    react-moment feeds its children into ``moment()``; a memo-wrapped child
+    element parses like ``moment({})`` — today at midnight.
+    """
+    moment = Moment.create(STATE_VAR, format="DD.MM.YYYY HH:mm:ss")
+    ctx, page_ctx = _compile_single_page(lambda: moment)
+
+    assert len(ctx.memoize_wrappers) == 1, (
+        "Expected exactly one snapshot wrapper for the moment; got: "
+        f"{list(ctx.memoize_wrappers)}"
+    )
+    wrapper_tag = next(iter(ctx.memoize_wrappers))
+    assert wrapper_tag.lower().startswith("moment_"), (
+        f"Wrapper should be derived from Moment, got: {wrapper_tag!r}"
+    )
+    output = page_ctx.output_code
+    assert output is not None
+    assert f"jsx({wrapper_tag}," in output, (
+        "The page output must call the snapshot wrapper.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+    assert "useTestState" not in output, (
+        "The state-bearing hook should live inside the memo body, not the page.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+    assert "TestState" not in output, (
+        "The state-context wiring should live inside the memo body, not the page.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+
+
+def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
+    """The moment's memo body must interpolate the state Var as text, not a Bare wrapper."""
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Moment.create(STATE_VAR, format="DD.MM.YYYY HH:mm:ss")
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "jsx(Moment" in memo_code, (
+        "Moment snapshot body should contain a literal ``jsx(Moment, …)`` "
+        f"call. Memo code:\n{memo_code[:2000]}"
+    )
+    assert "useTestState" in memo_code, (
+        "Moment memo body should carry the stateful hook so the Bare child is "
+        f"interpolated inline, not lifted out.\nMemo code:\n{memo_code[:2000]}"
+    )
+    assert "Bare_" not in memo_code, (
+        "Moment's child must render as a text interpolation, not a Bare "
+        f"component wrapper.\nMemo code:\n{memo_code[:2000]}"
     )
 
 
