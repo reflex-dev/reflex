@@ -785,6 +785,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
+                    aria_label="Copy code",
                     on_click=[
                         set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),

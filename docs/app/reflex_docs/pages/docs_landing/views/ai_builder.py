@@ -88,7 +88,7 @@ def card(
             class_name="flex flex-col gap-2 p-8",
         ),
         content,
-        rx.el.a(href=href, class_name="absolute inset-0"),
+        rx.el.a(href=href, aria_label=title, class_name="absolute inset-0"),
         class_name="flex flex-col bg-secondary-1/96 backdrop-blur-[16px] rounded-xl relative cursor-pointer transition-colors overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_12px_24px_0_rgba(0,0,0,0.08),0_1px_1px_0_rgba(0,0,0,0.01),0_4px_8px_0_rgba(0,0,0,0.03)] dark:shadow-none dark:border dark:border-secondary-4",
     )
 
