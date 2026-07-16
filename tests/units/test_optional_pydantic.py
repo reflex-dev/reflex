@@ -44,7 +44,10 @@ comp = rx.text(S.val)
 assert "val" in str(comp.render())
 
 assert serializers.serialize(datetime.datetime(2026, 1, 2, 3, 4, 5)) == "2026-01-02 03:04:05"
-assert not any(cls.__name__ == "BaseModel" for cls in serializers.SERIALIZERS)
+assert not any(
+    getattr(cls, "__module__", "").startswith("pydantic")
+    for cls in serializers.SERIALIZERS
+)
 
 print("OK")
 """
