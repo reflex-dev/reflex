@@ -1,5 +1,6 @@
 """Tests for shared documentation content discovery."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -108,5 +109,5 @@ def test_discover_docs_requires_a_directory(tmp_path: Path):
     """Fail clearly when the configured content directory does not exist."""
     content_dir = tmp_path / "missing"
 
-    with pytest.raises(FileNotFoundError, match=str(content_dir)):
+    with pytest.raises(FileNotFoundError, match=re.escape(str(content_dir))):
         discover_docs(DocsSiteConfig(content_dir=content_dir))
