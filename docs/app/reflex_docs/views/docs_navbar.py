@@ -1,6 +1,7 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_site_shared.components.docs_shell import docs_navbar_frame
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.constants import (
@@ -173,17 +174,4 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    from reflex_site_shared.views.hosting_banner import hosting_banner
-
-    return rx.el.div(
-        hosting_banner(),
-        rx.el.header(
-            rx.el.div(
-                logo(),
-                navigation_menu(),
-                class_name="relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row max-w-[108rem]",
-            ),
-            class_name="w-full max-full h-[4.5rem] mx-auto flex flex-row items-center 3xl:px-16 px-6 backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-b dark:border-secondary-4 bg-gradient-to-b from-secondary-2 to-secondary-1",
-        ),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
-    )
+    return docs_navbar_frame(logo(), navigation_menu())

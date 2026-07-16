@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import reflex as rx
-import reflex_components_internal as ui
+from reflex_site_shared.components.docs_shell import (
+    docs_sidebar_category as sidebar_category,
+)
+from reflex_site_shared.components.docs_shell import (
+    docs_sidebar_group,
+    docs_sidebar_section,
+)
+from reflex_site_shared.components.docs_shell import docs_sidebar_leaf as sidebar_leaf
 
 from .sidebar_items.ai import (
     ai_builder_integrations,
@@ -106,62 +113,7 @@ def sidebar_link(*children, **props):
     )
 
 
-def sidebar_leaf_guide(is_active: rx.vars.BooleanVar) -> rx.Component:
-    """Render the active sidebar leaf guide segment."""
-    return rx.cond(
-        is_active,
-        rx.el.div(
-            class_name="absolute left-0 -top-1 -bottom-1 w-px bg-primary-10 pointer-events-none",
-        ),
-        rx.fragment(),
-    )
-
-
-@rx._x.memo
-def sidebar_leaf(
-    item_names: rx.vars.StringVar[str],
-    item_link: rx.vars.StringVar[str],
-    is_active: rx.vars.BooleanVar,
-    guide_margin_class: rx.vars.StringVar[str],
-) -> rx.Component:
-    """Get the leaf node of the sidebar."""
-    return rx.el.li(
-        sidebar_link(
-            rx.cond(
-                is_active,
-                rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
-                ),
-                rx.fragment(),
-            ),
-            rx.flex(
-                sidebar_leaf_guide(is_active),
-                rx.text(
-                    item_names,
-                    class_name=rx.cond(
-                        is_active,
-                        "m-0 text-sm text-primary-10 font-[525] transition-color pl-4",
-                        "m-0 text-sm text-secondary-11 hover:text-secondary-12 transition-color w-full font-[525]",
-                    ),
-                ),
-                class_name=rx.cond(
-                    is_active,
-                    f"relative {guide_margin_class} max-w-[14rem] h-8 flex items-center",
-                    "relative pl-4 h-8 flex items-center",
-                ),
-            ),
-            href=item_link,
-            class_name=rx.cond(
-                is_active,
-                "block w-full relative",
-                f"block w-full {guide_margin_class}",
-            ),
-        ),
-        class_name="m-0 p-0 !overflow-visible w-full relative list-none",
-    )
-
-
-@rx._x.memo
+@rx.memo
 def sidebar_leaf_outer(
     item_names: rx.vars.StringVar[str],
     item_link: rx.vars.StringVar[str],
@@ -208,68 +160,36 @@ def sidebar_item_comp(
             )
         else:
             return sidebar_leaf(
-                item_names=item.names,
-                item_link=item.link,
-                is_active=(url == item.link),
+                title=item.names,
+                href=item.link,
+                active=(url == item.link),
                 guide_margin_class=guide_margin_class,
             )
 
     is_open = (index.length() > 0) & (index[0] == item_index)
     nested_index = rx.cond(is_open, index[1:], []).to(list[int])
-    child_guide_left_class = (
-        "left-[3rem]" if has_sidebar_icon(item.names) else "left-[2.5rem]"
-    )
     child_guide_margin_class = (
         "ml-[3rem]" if has_sidebar_icon(item.names) else "ml-[2.5rem]"
     )
-    return rx.el.li(
-        rx.el.details(
-            rx.el.summary(
-                sidebar_icon(item.names),
-                rx.text(
-                    item.names,
-                    class_name="m-0 text-sm font-[525]",
-                ),
-                rx.box(class_name="flex-grow"),
-                ui.icon(
-                    "ArrowDown01Icon",
-                    class_name="size-4 group-open/details:rotate-180 transition-transform",
-                ),
-                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
-            ),
-            rx.el.ul(
-                rx.el.li(
-                    class_name=f"m-0 p-0 absolute {child_guide_left_class} top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
-                ),
-                *[
-                    sidebar_item_comp(
-                        item_index=child_index,
-                        item=child,
-                        index=nested_index,
-                        url=url,
-                        guide_margin_class=child_guide_margin_class,
-                    )
-                    for child_index, child in enumerate(item.children)
-                ],
-                class_name="!my-1 p-0 flex flex-col items-start gap-1 list-none !bg-transparent !rounded-none !shadow-none relative",
-            ),
-            open=is_open,
-            class_name="group/details m-0 p-0 w-full !bg-transparent border-none",
+    return docs_sidebar_group(
+        item.names,
+        *(
+            sidebar_item_comp(
+                item_index=child_index,
+                item=child,
+                index=nested_index,
+                url=url,
+                guide_margin_class=child_guide_margin_class,
+            )
+            for child_index, child in enumerate(item.children)
         ),
-        class_name="m-0 p-0 border-none w-full !bg-transparent list-none",
+        icon=SIDEBAR_ICON_MAP.get(item.names),
+        open_=is_open,
     )
 
 
 def has_sidebar_icon(name):
     return name in SIDEBAR_ICON_MAP
-
-
-def sidebar_icon(name):
-    return (
-        rx.icon(tag=SIDEBAR_ICON_MAP.get(name), size=16, class_name="mr-4")
-        if has_sidebar_icon(name)
-        else rx.fragment()
-    )
 
 
 def calculate_index(sidebar_items, url: str) -> list[int]:
@@ -347,45 +267,6 @@ def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:
     return [item for item in items if isinstance(item, SideBarItem)]
 
 
-def sidebar_category(
-    name: str,
-    url: str,
-    icon: str,
-    active: rx.Var[bool] | bool,
-) -> rx.Component:
-    """Render a top-level sidebar category entry."""
-    return rx.el.li(
-        rx.link(
-            rx.cond(
-                active,
-                rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
-                ),
-                rx.fragment(),
-            ),
-            rx.box(
-                rx.icon(
-                    tag=icon,
-                    size=16,
-                ),
-                rx.el.h3(
-                    name,
-                    class_name="m-0 w-full font-[525]",
-                ),
-                class_name=ui.cn(
-                    "cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[3rem] text-sm text-secondary-11 hover:text-secondary-12 h-8",
-                    rx.cond(active, "text-primary-10 hover:text-primary-10", ""),
-                ),
-            ),
-            href=url,
-            underline="none",
-            class_name="block w-full relative no-underline",
-            custom_attrs={"aria-label": f"Navigate to {name}"},
-        ),
-        class_name="m-0 p-0 w-full relative list-none",
-    )
-
-
 def create_sidebar_section(
     section_title: str,
     section_url: str,
@@ -395,41 +276,19 @@ def create_sidebar_section(
     connected_line: bool = False,
 ) -> rx.Component:
     """Render a titled section of the sidebar."""
-    return rx.el.li(
-        rx.link(
-            rx.el.h2(
-                section_title,
-                class_name="m-0 font-mono text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 uppercase text-[0.8125rem] leading-6 font-medium",
-            ),
-            underline="none",
-            href=section_url,
-            class_name="h-8 mb-2 flex items-center justify-start ml-[2.5rem]",
+    return docs_sidebar_section(
+        section_title,
+        section_url,
+        *(
+            sidebar_item_comp(
+                item_index=item_index,
+                item=item,
+                index=index,
+                url=url,
+            )
+            for item_index, item in enumerate(items)
         ),
-        rx.el.ul(
-            *(
-                [
-                    rx.el.li(
-                        class_name="m-0 p-0 absolute left-[3rem] top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
-                    )
-                ]
-                if connected_line
-                else []
-            ),
-            *[
-                sidebar_item_comp(
-                    item_index=item_index,
-                    item=item,
-                    index=index,
-                    url=url,
-                )
-                for item_index, item in enumerate(items)
-            ],
-            class_name=ui.cn(
-                "m-0 ml-0 p-0 pl-0 w-full !bg-transparent !shadow-none rounded-[0px] flex flex-col list-none",
-                "gap-0 relative" if connected_line else "gap-1",
-            ),
-        ),
-        class_name="m-0 p-0 flex flex-col items-start ml-0 w-full list-none",
+        connected_line=connected_line,
     )
 
 
@@ -450,7 +309,7 @@ def normalize_url(url: str | None) -> str:
     return path.rstrip("/") + "/"
 
 
-@rx._x.memo
+@rx.memo
 def sidebar_comp(
     url: rx.vars.StringVar[str],
     learn_index: rx.vars.ArrayVar[list[int]],
@@ -473,7 +332,7 @@ def sidebar_comp(
 ) -> rx.Component:
     """Render the docs sidebar.
 
-    The function is decorated with ``rx._x.memo`` so the rendered tree compiles
+    The function is decorated with ``rx.memo`` so the rendered tree compiles
     to a single React component that receives the runtime ``url`` and per-section
     indices as props. ``url`` is expected to be pre-normalized by the caller
     (see ``sidebar`` below).
