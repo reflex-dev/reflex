@@ -819,6 +819,9 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
         return json_dumps(_replace_non_finite_floats(obj))
 
     def _default(o: Any) -> Any:
+        # orjson passes float subclasses (not int/str) to default.
+        if isinstance(o, float):
+            return float(o)
         return _replace_non_finite_floats(serializers.serialize(o))
 
     try:
@@ -827,7 +830,6 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
             default=_default,
             option=(
                 orjson.OPT_NON_STR_KEYS
-                | orjson.OPT_PASSTHROUGH_SUBCLASS
                 | orjson.OPT_PASSTHROUGH_DATACLASS
                 # Route datetimes through default= so they get the same
                 # space-separated format that ``serializers.serialize_datetime``

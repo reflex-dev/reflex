@@ -258,6 +258,55 @@ def test_dict_subclass_style_serializes_equivalently():
     assert json.loads(orjson_dumps_socket(style)) == json.loads(json_dumps(style))
 
 
+# native scalar subclasses serialize as their base value
+
+
+class _IntSubclass(int):
+    pass
+
+
+class _StrSubclass(str):
+    pass
+
+
+class _FloatSubclass(float):
+    pass
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (_IntSubclass(25), 25),
+        (_IntSubclass(0), 0),
+        (_StrSubclass("hello"), "hello"),
+        (_StrSubclass(""), ""),
+        (_FloatSubclass(1.5), 1.5),
+    ],
+)
+def test_native_subclass_serializes_to_base_value(value, expected):
+    assert orjson_loads(orjson_dumps_socket({"v": value})) == {"v": expected}
+
+
+@pytest.mark.parametrize(
+    "value",
+    [_IntSubclass(25), _StrSubclass("hello"), _FloatSubclass(1.5)],
+)
+def test_native_subclass_matches_json_dumps(value):
+    assert json.loads(orjson_dumps_socket({"v": value})) == json.loads(
+        json_dumps({"v": value})
+    )
+
+
+def test_int_subclass_inside_dataclass_field():
+    @dataclasses.dataclass
+    class Pagination:
+        page: int
+        size: int
+
+    out = orjson_dumps_socket({"p": Pagination(_IntSubclass(3), _IntSubclass(25))})
+    assert orjson_loads(out) == {"p": {"page": 3, "size": 25}}
+
+
 def test_datetime_uses_space_separator_not_iso_t():
     """Regression: orjson natively emits 'T'-separated datetimes; we route
     them through ``serializers.serialize_datetime`` to keep the existing
