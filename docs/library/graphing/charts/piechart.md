@@ -148,11 +148,11 @@ gradients = [
 ]
 
 
-def create_gradient(color: str, id: str) -> rx.Component:
+def create_gradient(color: str, gradient_id: str) -> rx.Component:
     return rx.el.svg.radial_gradient(
         rx.el.svg.stop(offset="10%", stop_color=color, stop_opacity=1),
         rx.el.svg.stop(offset="95%", stop_color=color, stop_opacity=0.6),
-        id=id,
+        id=gradient_id,
         cx="50%",
         cy="50%",
         r="50%",
@@ -165,14 +165,20 @@ def pie_gradient():
     return rx.box(
         rx.el.svg(
             rx.el.svg.defs(
-                *[create_gradient(color, id) for color, id in gradients],
+                *[
+                    create_gradient(color, gradient_id)
+                    for color, gradient_id in gradients
+                ],
             ),
             width=0,
             height=0,
         ),
         rx.recharts.pie_chart(
             rx.recharts.pie(
-                *[rx.recharts.cell(fill=f"url(#{id})") for _, id in gradients],
+                *[
+                    rx.recharts.cell(fill=f"url(#{gradient_id})")
+                    for _, gradient_id in gradients
+                ],
                 data=data,
                 data_key="value",
                 name_key="name",
@@ -308,7 +314,9 @@ def pie_hover():
                 rx.foreach(
                     PieHoverState.languages,
                     lambda item, index: rx.recharts.cell(
-                        fill=rx.Var.create(PIE_HOVER_COLORS)[index],
+                        fill=rx.Var.create(PIE_HOVER_COLORS)[
+                            index % len(PIE_HOVER_COLORS)
+                        ],
                         on_mouse_enter=PieHoverState.handle_mouse_enter(index),
                         on_mouse_leave=PieHoverState.handle_mouse_leave,
                     ),
