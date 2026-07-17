@@ -31,6 +31,11 @@ For inline equations, surround the equation with `$`:
 rx.markdown("Pythagorean theorem: $a^2 + b^2 = c^2$.")
 ```
 
+```md alert warning
+# Escaping dollar signs
+Because `$` is used as the math delimiter, any pair of `$` characters in the content is interpreted as an inline LaTeX equation — the text between them may disappear or render as a garbled formula. This commonly affects prices and other monetary values, especially in dynamic content such as streamed LLM output. To render literal dollar signs, escape them before passing the text to `rx.markdown`, e.g. `content.replace("$", "\\$")`.
+```
+
 ## Syntax Highlighting
 
 You can render code blocks with syntax highlighting using the \`\`\`{language} syntax:
