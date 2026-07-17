@@ -348,11 +348,11 @@ data = [
 ]
 
 
-def create_bar_gradient(color: str, id: str) -> rx.Component:
+def create_bar_gradient(color: str, gradient_id: str) -> rx.Component:
     return rx.el.svg.linear_gradient(
         rx.el.svg.stop(offset="5%", stop_color=color, stop_opacity=0.8),
         rx.el.svg.stop(offset="95%", stop_color=color, stop_opacity=0.2),
-        id=id,
+        id=gradient_id,
         x1=0,
         y1=0,
         x2=0,
