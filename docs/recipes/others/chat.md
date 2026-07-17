@@ -102,7 +102,9 @@ class ChatState(rx.State):
         client = openai.AsyncOpenAI()
         stream = await client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": m["role"], "content": m["content"]} for m in self.messages[:-1]],
+            messages=[
+                {"role": m["role"], "content": m["content"]} for m in self.messages[:-1]
+            ],
             stream=True,
         )
         async for chunk in stream:
@@ -138,7 +140,9 @@ class ChatState(rx.State):
         client = openai.AsyncOpenAI()
         stream = await client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": m["role"], "content": m["content"]} for m in self.messages],
+            messages=[
+                {"role": m["role"], "content": m["content"]} for m in self.messages
+            ],
             stream=True,
         )
 
