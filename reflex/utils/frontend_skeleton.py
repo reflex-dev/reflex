@@ -368,6 +368,7 @@ def sync_root_package_json_to_web() -> bool:
         return False
 
     changed = output_path.exists()
+    path_ops.mkdir(output_path.parent)
     output_path.write_text(rendered)
     return changed
 
