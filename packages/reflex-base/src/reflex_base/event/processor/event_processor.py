@@ -580,9 +580,6 @@ class EventProcessor:
             The created asyncio.Task.
         """
         handler = registered_handler.handler
-        # For cancel_previous_task handlers, cancel the still-running prior run
-        # for this same client + handler before starting the new one. The
-        # CancelledError propagates at the next await inside the handler,
         cancel_key: tuple[str, str] | None = None
         if handler.is_background and handler.is_cancel_previous_task:
             cancel_key = (entry.ctx.token, entry.event.name)
@@ -601,8 +598,6 @@ class EventProcessor:
         if sys.version_info < (3, 12):
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         if cancel_key is not None:
-            # Tag the task so a later run of the same handler can find and
-            # cancel it via the _tasks scan above.
             task._cancel_key = cancel_key  # pyright: ignore[reportAttributeAccessIssue]
         self._tasks[entry.ctx.txid] = task
         task.add_done_callback(self._finish_task)

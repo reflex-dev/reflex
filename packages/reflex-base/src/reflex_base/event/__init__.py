@@ -551,11 +551,8 @@ class EventHandler(EventActionsMixin):
 
     @property
     def is_cancel_previous_task(self) -> bool:
-        """Whether starting this handler cancels its previous in-flight run.
-
-        Only meaningful for background handlers. When True, dispatching a new
-        run cancels the still-running task from a prior run of the same handler
-        for the same client token.
+        """Whether starting this handler cancels its previous run.
+        Requires the handler to be a background task.
 
         Returns:
             True if the event handler is marked to cancel its previous run.
