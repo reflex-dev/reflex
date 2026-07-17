@@ -6,6 +6,12 @@ import reflex as rx
 
 Google authentication is added with the `reflex-google-auth` package. Manage your OAuth2 credentials (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`) in the [Google Cloud credentials console](https://console.developers.google.com/apis/credentials).
 
+## Installation
+
+```bash
+pip install reflex-google-auth
+```
+
 ## Environment variables
 
 - `GOOGLE_CLIENT_ID`
@@ -18,7 +24,7 @@ You do not need to check the client ID or client secret yourself — set them in
 Subclass `GoogleAuthState`. It provides a `token_is_valid` var that should be checked before returning any protected content, and a `tokeninfo` dict that contains the user's profile information.
 
 ```python
-from reflex_google_auth import GoogleAuthState, require_google_login
+from reflex_google_auth import GoogleAuthState
 
 
 class State(GoogleAuthState):
@@ -33,7 +39,16 @@ To uniquely identify a user, use `GoogleAuthState.tokeninfo['sub']`.
 
 ## Displaying the login button
 
-The `require_google_login` decorator wraps an existing component and shows the "Sign in with Google" button if the user is not already authenticated. It can be used on a page function or any subcomponent function of the page.
+The `require_google_login` decorator wraps an existing component and shows the "Sign in with Google" button if the user is not already authenticated. It can be used on a page function or any subcomponent function of the page:
+
+```python
+from reflex_google_auth import require_google_login
+
+
+@require_google_login
+def protected_page():
+    return rx.text("This content is only shown to authenticated users.")
+```
 
 The "Sign in with Google" button can also be displayed directly via `google_login()`, wrapped in a `google_oauth_provider`:
 
@@ -92,4 +107,20 @@ class GoogleAuthState(rx.State):
 
     @rx.var(cache=True)
     def user_email(self) -> str: ...
+
+
+# Shows the "Sign in with Google" button.
+def google_login(**props) -> rx.Component: ...
+
+
+# Provides the Google OAuth context; wrap `google_login()` in this.
+def google_oauth_provider(*children, **props) -> rx.Component: ...
+
+
+# Decorator that gates a page/component behind Google login.
+def require_google_login(
+    page: Callable[[], rx.Component] | None = None,
+    *,
+    button: rx.Component | None = None,
+) -> Callable: ...
 ```
