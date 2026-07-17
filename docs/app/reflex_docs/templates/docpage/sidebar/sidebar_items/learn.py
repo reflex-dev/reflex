@@ -192,6 +192,7 @@ def get_sidebar_items_backend():
             "Authentication",
             children=[
                 authentication.authentication_overview,
+                authentication.google,
             ],
         ),
         create_item(
