@@ -15,11 +15,11 @@ from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import rich.markup
+from typing_extensions import Self
+
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
-from typing_extensions import Self
-
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.compat import as_completed
 from reflex_base.event.processor.future import EventFuture

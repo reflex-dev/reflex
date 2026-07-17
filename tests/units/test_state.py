@@ -557,23 +557,19 @@ def test_get_class_substate():
         ChildState.get_class_substate((GrandchildState.get_name(),)) == GrandchildState
     )
     assert (
-        TestState.get_class_substate(
-            (
-                ChildState.get_name(),
-                GrandchildState.get_name(),
-            )
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+        ))
         == GrandchildState
     )
     with pytest.raises(ValueError):
         TestState.get_class_substate(("invalid_child",))
     with pytest.raises(ValueError):
-        TestState.get_class_substate(
-            (
-                ChildState.get_name(),
-                "invalid_child",
-            )
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            "invalid_child",
+        ))
 
 
 def test_get_class_var():
@@ -585,13 +581,11 @@ def test_get_class_var():
     assert TestState.get_class_var((ChildState.get_name(), "value")).equals(
         ChildState.value
     )
-    assert TestState.get_class_var(
-        (
-            ChildState.get_name(),
-            GrandchildState.get_name(),
-            "value2",
-        )
-    ).equals(
+    assert TestState.get_class_var((
+        ChildState.get_name(),
+        GrandchildState.get_name(),
+        "value2",
+    )).equals(
         GrandchildState.value2,
     )
     assert ChildState.get_class_var((GrandchildState.get_name(), "value2")).equals(
@@ -600,12 +594,10 @@ def test_get_class_var():
     with pytest.raises(ValueError):
         TestState.get_class_var(("invalid_var",))
     with pytest.raises(ValueError):
-        TestState.get_class_var(
-            (
-                ChildState.get_name(),
-                "invalid_var",
-            )
-        )
+        TestState.get_class_var((
+            ChildState.get_name(),
+            "invalid_var",
+        ))
 
 
 def test_set_class_var():
@@ -717,13 +709,11 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
     with pytest.raises(ValueError):
         test_state.get_substate((ChildState.get_name(), "invalid"))
     with pytest.raises(ValueError):
-        test_state.get_substate(
-            (
-                ChildState.get_name(),
-                GrandchildState.get_name(),
-                "invalid",
-            )
-        )
+        test_state.get_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+            "invalid",
+        ))
 
 
 def test_set_dirty_var(test_state):
@@ -2320,13 +2310,11 @@ async def test_state_proxy(
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    router_data = RouterData.from_router_data(
-        {
-            "query": {},
-            "token": token,
-            "sid": "test_sid",
-        }
-    )
+    router_data = RouterData.from_router_data({
+        "query": {},
+        "token": token,
+        "sid": "test_sid",
+    })
     grandchild_state.router = router_data
     state_manager = attached_mock_event_context.state_manager
     if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
@@ -3631,9 +3619,9 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
     assert child_state_direct is child_state_get_state
 
     # GrandchildState instance should be the same as the one retrieved from the child_state2.
-    assert grandchild_state is child_state_direct.get_substate(
-        [GrandchildState.get_name()]
-    )
+    assert grandchild_state is child_state_direct.get_substate([
+        GrandchildState.get_name()
+    ])
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
@@ -3857,12 +3845,10 @@ async def test_setvar(
         mock_base_state_event_processor: The event processor.
     """
     # Set Var in same state (with Var type casting)
-    events = Event.from_event_type(
-        [
-            TestState.set_num1(42),
-            TestState.set_num2(4.2),
-        ]
-    )
+    events = Event.from_event_type([
+        TestState.set_num1(42),
+        TestState.set_num2(4.2),
+    ])
     async with mock_base_state_event_processor as processor:
         for fut in asyncio.as_completed(await processor.enqueue_many(token, *events)):
             await fut
@@ -5147,13 +5133,11 @@ async def test_rebind_mutable_proxy(
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
-        state.router = RouterData.from_router_data(
-            {
-                "query": {},
-                "token": token,
-                "sid": "test_sid",
-            }
-        )
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
         assert isinstance(state, MutableProxyState)
         assert isinstance(state.data, MutableProxy)
         assert not isinstance(state.data, ImmutableMutableProxy)
