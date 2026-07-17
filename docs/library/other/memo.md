@@ -72,9 +72,10 @@ def index():
 
 To render a memoized component for each item of a list Var, wrap the call in a
 lambda and pass the props by keyword. Also pass a `key` prop that uniquely
-identifies each item — React uses it to track items across re-renders — but do
-**not** declare `key` in the memo function's signature. It is forwarded
-automatically and consumed by React.
+identifies each item — React uses it to track items across re-renders. For the
+`key` to reach the rendered element, declare an `rx.RestProp` parameter and
+spread it onto the returned component; `key` flows through the `...rest` spread
+and React consumes it. Do **not** declare `key` itself in the memo's signature.
 
 ```python
 from typing import TypedDict
@@ -93,8 +94,8 @@ class TaskState(rx.State):
 
 
 @rx.memo
-def task_card(task: rx.Var[Task]) -> rx.Component:
-    return rx.card(rx.text(task["name"]))
+def task_card(rest: rx.RestProp, *, task: rx.Var[Task]) -> rx.Component:
+    return rx.card(rx.text(task["name"]), rest)
 
 
 def index():
