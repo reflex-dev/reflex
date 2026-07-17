@@ -208,7 +208,7 @@ funnel_data = dict(
 funnel_fig = px.funnel(funnel_data, x="number", y="stage")
 
 
-def funnel_chart():
+def plotly_funnel_chart():
     return rx.center(rx.plotly(data=funnel_fig))
 ```
 
@@ -269,17 +269,30 @@ def mountain_surface():
 The candlestick chart is a financial chart describing the open, high, low, and close values for a given x coordinate (most likely time): boxes show the spread between open and close, and lines show the spread between low and high. Create one with `go.Candlestick`:
 
 ```python demo exec
-candles = pd.read_csv(
-    "https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv"
+candles = pd.DataFrame(
+    {
+        "Date": [
+            "2024-01-02",
+            "2024-01-03",
+            "2024-01-04",
+            "2024-01-05",
+            "2024-01-08",
+            "2024-01-09",
+        ],
+        "Open": [187.15, 184.22, 182.15, 181.99, 182.09, 183.92],
+        "High": [188.44, 185.88, 183.09, 182.76, 185.60, 185.15],
+        "Low": [183.89, 183.43, 180.88, 180.17, 181.50, 182.73],
+        "Close": [185.64, 184.25, 181.91, 181.18, 185.56, 185.14],
+    }
 )
 candlestick_fig = go.Figure(
     data=[
         go.Candlestick(
             x=candles["Date"],
-            open=candles["AAPL.Open"],
-            high=candles["AAPL.High"],
-            low=candles["AAPL.Low"],
-            close=candles["AAPL.Close"],
+            open=candles["Open"],
+            high=candles["High"],
+            low=candles["Low"],
+            close=candles["Close"],
         )
     ]
 )
