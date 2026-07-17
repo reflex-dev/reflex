@@ -293,7 +293,7 @@ import sqlalchemy
 
 with rx.session() as session:
     rows = session.execute(
-        sqlalchemy.text("SELECT * FROM user WHERE id IN :user_ids").bindparams(
+        sqlalchemy.text("SELECT * FROM users WHERE id IN :user_ids").bindparams(
             sqlalchemy.bindparam("user_ids", expanding=True)
         ),
         {"user_ids": [1, 2, 3]},
