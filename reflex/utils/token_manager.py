@@ -314,13 +314,19 @@ class RedisTokenManager(LocalTokenManager):
         new_token = None
 
         try:
-            while not await self.redis.set(
-                self._get_redis_key(token),
-                socket_record_data,
-                ex=self.token_expiration,
-                nx=True,
-            ):
+            for _ in range(3):
+                if await self.redis.set(
+                    self._get_redis_key(token),
+                    socket_record_data,
+                    ex=self.token_expiration,
+                    nx=True,
+                ):
+                    break
                 token = new_token = _get_new_token()
+            else:
+                console.error("Redis failed to claim a unique token after 3 attempts")
+                fallback_token = await super().link_token_to_sid(token, sid)
+                return fallback_token or new_token
         except Exception as e:
             console.error(f"Redis error claiming token: {e}")
             fallback_token = await super().link_token_to_sid(token, sid)

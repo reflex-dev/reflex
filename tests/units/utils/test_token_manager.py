@@ -395,17 +395,6 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         redis_values = {}
-        exists_calls = 0
-        both_checked = asyncio.Event()
-
-        async def exists(key):
-            nonlocal exists_calls
-            result = key in redis_values
-            exists_calls += 1
-            if exists_calls == 2:
-                both_checked.set()
-            await both_checked.wait()
-            return result
 
         def set_value(key, value, *, ex, nx=False):
             if nx and key in redis_values:
@@ -413,7 +402,6 @@ class TestRedisTokenManager:
             redis_values[key] = value
             return True
 
-        mock_redis.exists.side_effect = exists
         mock_redis.set.side_effect = set_value
         with patch("reflex_base.config.get_config") as mock_get_config:
             mock_get_config.return_value.redis_token_expiration = 3600
@@ -431,6 +419,21 @@ class TestRedisTokenManager:
             for manager, sid in zip(managers, ("sid1", "sid2"), strict=True)
         }
         assert len(claimed_tokens) == 2
+
+    async def test_link_token_to_sid_limits_claim_attempts(self, manager, mock_redis):
+        """Test persistent failed claims fall back to local token storage.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        mock_redis.set.return_value = False
+
+        result = await manager.link_token_to_sid("token1", "sid1")
+
+        assert mock_redis.set.await_count == 3
+        assert result is not None
+        assert manager.sid_to_token["sid1"] == result
 
     async def test_disconnect_token_owned_locally(self, manager, mock_redis):
         """Test disconnect cleans up both Redis and local mappings when owned locally.
