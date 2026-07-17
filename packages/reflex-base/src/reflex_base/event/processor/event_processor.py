@@ -21,7 +21,6 @@ from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor.compat import as_completed
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
@@ -238,19 +237,26 @@ class EventProcessor:
                 queue to drain before cancelling tasks. If None, the processor will
                 not wait and will cancel tasks immediately.
         """
-        finished_tasks = set()
         # Graceful drain time, wait for tasks to finish and handle any exceptions.
-        if timeout is not None and self._tasks:
-            with contextlib.suppress(asyncio.TimeoutError):
-                async for task in as_completed(self._tasks.values(), timeout=timeout):
+        if timeout is not None:
+            deadline = time.monotonic() + timeout
+            while self._tasks:
+                remaining_time = deadline - time.monotonic()
+                if remaining_time <= 0:
+                    break
+                finished_tasks, _ = await asyncio.wait(
+                    tuple(self._tasks.values()),
+                    timeout=remaining_time,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not finished_tasks:
+                    break
+                for task in finished_tasks:
                     # Exceptions are handled in _finish_task and ignored here.
-                    with contextlib.suppress(Exception):
+                    with contextlib.suppress(Exception, asyncio.CancelledError):
                         await task
-                    finished_tasks.add(task)
         # Cancel all outstanding event handler tasks.
-        outstanding_tasks = [
-            task for task in self._tasks.values() if task not in finished_tasks
-        ]
+        outstanding_tasks = list(self._tasks.values())
         for task in outstanding_tasks:
             task.cancel()
         # Wait for all tasks to finish and log any exceptions that were raised.
