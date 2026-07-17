@@ -90,7 +90,7 @@ def pie_double():
 
 ## Coloring Slices Individually
 
-Instead of storing a `fill` color in every data entry, you can pass `rx.recharts.cell` components as children of `rx.recharts.pie` — one cell per slice. Using `rx.foreach` with the index argument lets you cycle through a color palette, so the palette lives in one place and works for any number of slices. This example also combines `inner_radius` and `padding_angle` to render the pie as a donut, and uses `stroke` and `stroke_width` to draw a separator around each slice.
+Instead of storing a `fill` color in every data entry, you can pass `rx.recharts.cell` components as children of `rx.recharts.pie` — one cell per slice. Using `rx.foreach` with the index argument lets you cycle through a color palette, so the palette lives in one place and works for any number of slices. This example also combines `inner_radius` and `padding_angle` to render the pie as a donut, and uses `stroke` with `custom_attrs={"strokeWidth": 2}` to draw a separator around each slice. (Passing `stroke_width` directly is not forwarded to the underlying SVG element, so the width goes through `custom_attrs`.)
 
 ```python demo graphing
 data = [
@@ -120,7 +120,7 @@ def pie_cells():
             outer_radius="80%",
             padding_angle=2,
             stroke="#fff",
-            stroke_width=2,
+            custom_attrs={"strokeWidth": 2},
         ),
         rx.recharts.graphing_tooltip(),
         width="100%",
@@ -186,7 +186,7 @@ def pie_gradient():
                 outer_radius="80%",
                 padding_angle=5,
                 stroke="#fff",
-                stroke_width=2,
+                custom_attrs={"strokeWidth": 2},
             ),
             rx.recharts.graphing_tooltip(),
             width="100%",
@@ -300,8 +300,14 @@ class PieHoverState(rx.State):
 def pie_hover():
     return rx.box(
         rx.vstack(
-            rx.heading(PieHoverState.hovered_value, size="8"),
-            rx.text(PieHoverState.hovered_name, size="2"),
+            rx.cond(
+                PieHoverState.hovered_name != "",
+                rx.fragment(
+                    rx.heading(PieHoverState.hovered_value, size="8"),
+                    rx.text(PieHoverState.hovered_name, size="2"),
+                ),
+                rx.text("Hover a slice", size="2", color_scheme="gray"),
+            ),
             align="center",
             spacing="1",
             position="absolute",
