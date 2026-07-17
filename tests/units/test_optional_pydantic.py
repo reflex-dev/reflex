@@ -26,6 +26,11 @@ class _Filter:
 
 sys.meta_path = [_Filter(f) for f in sys.meta_path]
 
+# find_spec consults sys.modules before meta_path — purge anything a .pth or
+# startup hook may have imported eagerly.
+for mod in [m for m in sys.modules if m.partition(".")[0] in BLOCKED]:
+    del sys.modules[mod]
+
 from importlib.util import find_spec
 
 assert find_spec("pydantic") is None
