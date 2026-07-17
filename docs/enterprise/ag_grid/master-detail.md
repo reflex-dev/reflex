@@ -93,20 +93,27 @@ def master_detail_grid():
 
 The detail grid is a full AG Grid instance with its own `column_defs`, independent from the master grid's columns.
 
-## Static vs State Configuration
+## Static vs Stateful Configuration
 
-Both the column definitions and the detail renderer params can be plain module-level objects or state vars, depending on whether they need to change at runtime:
+`row_data` and `column_defs` are plain serializable data, so they can live in state and change at runtime:
 
 ```python
-STATIC_DETAIL_PARAMS = {
+class MasterDetailState(rx.State):
+    master_data: list[dict] = []  # fetch/replace at runtime
+    column_defs: list[dict] = []
+```
+
+`detail_cell_renderer_params` is different because it holds a callback (`get_detail_row_data`). A callable cannot be stored in a state var: Reflex serializes state to the client as JSON, and a Python lambda (or `FunctionStringVar`) has no JSON representation, so syncing that state raises a serialization error at runtime.
+
+Keep the renderer params as a module-level object and pass it to the grid directly — it is compiled into the app once and does not need to change per request:
+
+```python
+DETAIL_PARAMS = {
     "detail_grid_options": {"column_defs": [{"field": "count"}]},
     "get_detail_row_data": lambda params: rx.vars.function.FunctionStringVar(
         "params.successCallback"
     ).call(params.data.counts),
 }
-
-
-class State(rx.State):
-    # Dynamic variant: update these vars to reconfigure the grid
-    detail_cell_renderer_params: dict = STATIC_DETAIL_PARAMS
 ```
+
+Reserve state vars for the serializable pieces (row data, column defs) and leave the callback-bearing renderer params at module level.
