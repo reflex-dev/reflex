@@ -33,6 +33,18 @@ class I18nPlugin(Plugin):
     default_locale: str = "en"
     catalog_dir: str = "locales"
 
+    def _config(self) -> I18nConfig:
+        """Build the i18n configuration from the plugin's fields.
+
+        Returns:
+            The validated configuration.
+        """
+        return I18nConfig(
+            locales=self.locales,
+            default_locale=self.default_locale,
+            catalog_dir=self.catalog_dir,
+        )
+
     def __post_init__(self):
         """Activate the i18n configuration and register framework state.
 
@@ -40,13 +52,7 @@ class I18nPlugin(Plugin):
         app compiles, so ``rx.t`` and server-side translation are wired and
         ``I18nState`` is registered as a substate.
         """
-        set_active_i18n_config(
-            I18nConfig(
-                locales=self.locales,
-                default_locale=self.default_locale,
-                catalog_dir=self.catalog_dir,
-            )
-        )
+        set_active_i18n_config(self._config())
         # Importing registers I18nState (substate), the event-scope locale
         # provider, and the gettext implicit-dependency hook. Import here
         # rather than at module top to keep it lazy until the plugin is used.
@@ -82,11 +88,7 @@ class I18nPlugin(Plugin):
         Returns:
             Pairs of (``.web``-relative path, module code).
         """
-        config = I18nConfig(
-            locales=self.locales,
-            default_locale=self.default_locale,
-            catalog_dir=self.catalog_dir,
-        )
+        config = self._config()
         used_messages = collected_messages()
         catalog_dir = Path.cwd() / self.catalog_dir
 

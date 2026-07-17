@@ -69,16 +69,22 @@ def _resolve_plugin() -> I18nPlugin:
     return plugin
 
 
-def _compile_and_collect() -> tuple[I18nPlugin, tuple[MessageKey, ...]]:
-    """Dry-compile the app to collect every ``rx.t`` message.
+def _extract_template() -> tuple[I18nPlugin, Catalog, Path]:
+    """Dry-compile the app and extract every message into a template catalog.
+
+    Compiling populates the ``rx.t`` registry; the template then unions those
+    static messages with the dynamic gettext calls in the app source.
 
     Returns:
-        The configured plugin and all collected static messages.
+        The configured plugin, the freshly extracted template, and the
+        absolute catalog directory.
     """
     from reflex.utils import prerequisites
 
     prerequisites.get_compiled_app(dry_run=True, use_rich=False)
-    return _resolve_plugin(), collected_messages()
+    plugin = _resolve_plugin()
+    template = extract_catalog(_app_source_dir(), collected_messages())
+    return plugin, template, Path.cwd() / plugin.catalog_dir
 
 
 def extract_catalog(app_dir: Path, used_messages: tuple[MessageKey, ...]) -> Catalog:
@@ -108,8 +114,7 @@ def extract_catalog(app_dir: Path, used_messages: tuple[MessageKey, ...]) -> Cat
 
     # Static content: rx.t messages collected during compilation.
     for key in used_messages:
-        message_id = key.message if key.plural is None else (key.message, key.plural)
-        catalog.add(message_id, context=key.context)
+        catalog.add(key.msgid, context=key.context)
 
     return catalog
 
@@ -217,9 +222,7 @@ def i18n_cli():
 @i18n_cli.command(name="extract")
 def extract_command():
     """Extract messages and update every locale's ``.po`` catalog."""
-    plugin, used_messages = _compile_and_collect()
-    template = extract_catalog(_app_source_dir(), used_messages)
-    catalog_dir = Path.cwd() / plugin.catalog_dir
+    plugin, template, catalog_dir = _extract_template()
 
     _write_catalog(template, catalog_dir / _POT_FILENAME)
     console.info(f"Extracted {len(template)} messages.")
@@ -239,13 +242,12 @@ def init_command(locale: str):
     Raises:
         ClickException: If the catalog already exists.
     """
-    plugin, used_messages = _compile_and_collect()
-    po_path = Path.cwd() / plugin.catalog_dir / f"{locale}.po"
+    plugin, template, catalog_dir = _extract_template()
+    po_path = catalog_dir / f"{locale}.po"
     if po_path.exists():
         msg = f"Catalog already exists: {po_path}. Use `reflex i18n extract`."
         raise click.ClickException(msg)
 
-    template = extract_catalog(_app_source_dir(), used_messages)
     stats = merge_into_locale(template, po_path, locale)
     console.success(f"Created {po_path} with {stats.missing} messages to translate.")
     if locale not in plugin.locales:
@@ -257,9 +259,7 @@ def init_command(locale: str):
 @i18n_cli.command(name="check")
 def check_command():
     """Fail if any non-default locale has untranslated or fuzzy messages."""
-    plugin, used_messages = _compile_and_collect()
-    template = extract_catalog(_app_source_dir(), used_messages)
-    catalog_dir = Path.cwd() / plugin.catalog_dir
+    plugin, template, catalog_dir = _extract_template()
 
     incomplete = False
     for locale in plugin.locales:
