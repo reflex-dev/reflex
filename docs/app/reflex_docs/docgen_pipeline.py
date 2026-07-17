@@ -437,8 +437,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
                 comp = self._exec_and_get_last_callable(content)
-                parts = content.rpartition("def")
-                data, code = parts[0], parts[1] + parts[2]
+                before, sep, after = content.rpartition("\ndef ")
+                data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
@@ -473,8 +473,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
                 comp = self._exec_and_get_last_callable(content)
-                parts = content.rpartition("def")
-                data, code = parts[0], parts[1] + parts[2]
+                before, sep, after = content.rpartition("\ndef ")
+                data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
