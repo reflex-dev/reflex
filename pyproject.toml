@@ -106,6 +106,7 @@ dev = [
   "pytest",
   "python-dotenv",
   "reflex-docgen",
+  "reflex-site-shared",
   "ruff",
   "selenium",
   "sqlalchemy",

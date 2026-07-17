@@ -3673,6 +3673,7 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "reflex-docgen" },
+    { name = "reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
     { name = "sqlalchemy" },
@@ -3750,6 +3751,7 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
+    { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
     { name = "sqlalchemy" },
@@ -4125,6 +4127,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "reflex" },
     { name = "reflex-components-internal" },
+    { name = "reflex-docgen" },
     { name = "reflex-integrations-docs" },
     { name = "ruff-format" },
 ]
@@ -4136,6 +4139,7 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
+    { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "ruff-format" },
 ]
