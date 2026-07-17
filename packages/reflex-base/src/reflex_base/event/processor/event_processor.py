@@ -41,7 +41,7 @@ else:
         """Exception raised when trying to put an item into a shut down queue."""
 
 
-CANCEL_KEY = "_cancel_key"
+CANCEL_KEY = "_reflex_cancel_key"
 _StreamItemT = TypeVar("_StreamItemT")
 
 
