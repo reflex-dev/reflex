@@ -169,6 +169,11 @@ relationship up front. Store the selected id in state and query only the
 related rows for that selection, filtering on the foreign key.
 
 ```python
+from typing import List, Optional
+
+import reflex as rx
+
+
 class PostFlagsState(rx.State):
     posts: List[Post] = []
     selected_post_id: Optional[int] = None
