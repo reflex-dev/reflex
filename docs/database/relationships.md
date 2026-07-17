@@ -44,7 +44,7 @@ class User(rx.Model, table=True):
 
 
 class Flag(rx.Model, table=True):
-    post_id: int = sqlmodel.Field(foreign_key="post.id")
+    post_id: int = sqlmodel.Field(foreign_key="post.id", index=True)
     user_id: int = sqlmodel.Field(foreign_key="user.id")
     message: str
 
@@ -194,7 +194,9 @@ class PostFlagsState(rx.State):
 ```
 
 This runs a single indexed query per selection and avoids holding every child
-row in state. Avoid the inverse pattern of querying children in a Python loop
+row in state — the `index=True` on `Flag.post_id` keeps the foreign-key lookup
+off a full table scan (adding the index to an existing table requires a
+migration). Avoid the inverse pattern of querying children in a Python loop
 over parents (the "N+1" pattern) — when the children of many parents are
 needed at once, use one query with `.in_()` on the foreign key, or one of the
 eager loading options above.
