@@ -245,3 +245,19 @@ rx.badge(
     color_scheme="gray",
 )
 ```
+
+## Coloring Icons with Tailwind
+
+When coloring an `rx.icon` with a Tailwind class, use the `stroke-` classes rather than the `text-` classes. Icons render as SVGs whose color is driven by the stroke, so `text-` color utilities have no effect.
+
+Instead of a `text-` color class:
+
+```python
+rx.icon("arrow_up", class_name="w-4 h-4 text-green-500")
+```
+
+Use a `stroke-` color class:
+
+```python demo
+rx.icon("arrow_up", class_name="w-4 h-4 stroke-green-500")
+```
