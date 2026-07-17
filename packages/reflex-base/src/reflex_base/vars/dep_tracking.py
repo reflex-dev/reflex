@@ -9,6 +9,7 @@ import enum
 import importlib
 import inspect
 import sys
+from collections.abc import Callable, Iterable
 from types import CellType, CodeType, FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
@@ -21,6 +22,26 @@ if TYPE_CHECKING:
 
 
 CellEmpty = object()
+
+# Functions whose mere use inside a computed var getter implies a dependency on
+# a var, even though the getter never reads that var directly (e.g. a gettext
+# helper that reads the active locale from a contextvar). Maps the function to a
+# provider returning the implied dependency Var, or None when inactive.
+_implicit_dependency_providers: dict[Any, Callable[[], Var | None]] = {}
+
+
+def register_implicit_dependency(
+    funcs: Iterable[Any], provider: Callable[[], Var | None]
+) -> None:
+    """Register functions that imply a computed-var dependency when referenced.
+
+    Args:
+        funcs: The functions to detect (matched by object identity).
+        provider: Returns the implied dependency Var, or None when the
+            dependency is not currently applicable.
+    """
+    for func in funcs:
+        _implicit_dependency_providers[func] = provider
 
 
 def get_cell_value(cell: CellType) -> Any:
@@ -215,6 +236,28 @@ class DependencyTracker:
             self.dependencies.setdefault(target_state.get_full_name(), set()).add(
                 instruction.argval
             )
+
+    def _add_implicit_dependency(self, obj: Any) -> None:
+        """Record an implied dependency if ``obj`` is a registered function.
+
+        Args:
+            obj: The object a load instruction resolved to (may be anything).
+        """
+        if not _implicit_dependency_providers:
+            return
+        try:
+            provider = _implicit_dependency_providers.get(obj)
+        except TypeError:
+            return  # unhashable objects can't be registered functions
+        if provider is None:
+            return
+        dep_var = provider()
+        if dep_var is None:
+            return
+        var_data = dep_var._get_all_var_data()
+        if var_data is None or not var_data.state:
+            return
+        self.dependencies.setdefault(var_data.state, set()).add(var_data.field_name)
 
     def _get_globals(self) -> dict[str, Any]:
         """Get the globals of the function.
@@ -453,6 +496,23 @@ class DependencyTracker:
                         state_cls=self.state_cls,
                         tracked_locals=self.tracked_locals,
                     )
+                )
+            elif (
+                instruction.opname == "LOAD_GLOBAL"
+                and self.scan_status == ScanStatus.SCANNING
+            ):
+                # A referenced global may be a function that implies a
+                # dependency (e.g. a gettext helper reading the active locale).
+                self._add_implicit_dependency(
+                    self._get_globals().get(instruction.argval)
+                )
+            elif (
+                instruction.opname == "LOAD_DEREF"
+                and self.scan_status == ScanStatus.SCANNING
+            ):
+                # Same as above for a closure-captured function reference.
+                self._add_implicit_dependency(
+                    self._get_closure().get(instruction.argval)
                 )
             elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
                 self.scan_status = ScanStatus.GETTING_IMPORT

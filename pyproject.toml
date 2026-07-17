@@ -65,6 +65,9 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
+i18n = [
+  "reflex-i18n",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -78,6 +81,7 @@ reflex = "reflex.reflex:cli"
 dev = [
   "alembic",
   "asynctest",
+  "reflex-i18n",
   "codespell",
   "darglint",
   "dill",
@@ -395,6 +399,7 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+reflex-i18n = false
 # Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
 # pinned floor resolves before it ages out of the exclude-newer window.
 starlette = false
@@ -414,6 +419,7 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-i18n.workspace = true
 reflex-docgen.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true

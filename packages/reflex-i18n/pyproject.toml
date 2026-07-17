@@ -1,0 +1,31 @@
+[project]
+name = "reflex-i18n"
+dynamic = ["version"]
+description = "Internationalization (i18n) for Reflex apps."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+    "reflex-base >= 0.9.0",
+    "reflex >= 0.9.0",
+    "babel >= 2.14.0,<3.0",
+]
+
+[project.entry-points."reflex.cli"]
+i18n = "reflex_i18n.cli:i18n_cli"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-i18n-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build]
+artifacts = ["_web/**"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

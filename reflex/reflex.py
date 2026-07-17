@@ -966,5 +966,29 @@ cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
 cli.add_command(custom_components_cli, name="component")
 
+
+def _add_plugin_cli_commands() -> None:
+    """Attach command groups contributed by installed packages.
+
+    Any package can add a subcommand by declaring a ``reflex.cli`` entry point
+    resolving to a ``click.Command`` (e.g. ``reflex-i18n`` provides ``i18n``).
+    A failure to load one plugin's command must not break the whole CLI.
+    """
+    from importlib.metadata import entry_points
+
+    for entry_point in entry_points(group="reflex.cli"):
+        try:
+            command = entry_point.load()
+        except Exception as exc:
+            console.warn(
+                f"Failed to load CLI command {entry_point.name!r} from "
+                f"{entry_point.value!r}: {exc}"
+            )
+            continue
+        cli.add_command(command, name=entry_point.name)
+
+
+_add_plugin_cli_commands()
+
 if __name__ == "__main__":
     cli()
