@@ -109,8 +109,7 @@ class ChatState(rx.State):
             self.messages.append({"role": "assistant", "content": ""})
             self.is_streaming = True
             request_messages = [
-                {"role": m["role"], "content": m["content"]}
-                for m in self.messages[:-1]
+                {"role": m["role"], "content": m["content"]} for m in self.messages[:-1]
             ]
 
         client = openai.AsyncOpenAI()
@@ -152,8 +151,7 @@ class ChatState(rx.State):
             self.messages.append({"role": "user", "content": user_msg})
             self.is_streaming = True
             request_messages = [
-                {"role": m["role"], "content": m["content"]}
-                for m in self.messages
+                {"role": m["role"], "content": m["content"]} for m in self.messages
             ]
         yield  # flush outside the lock so the loading indicator shows now
 
@@ -172,9 +170,7 @@ class ChatState(rx.State):
                     continue
                 async with self:
                     if first_token:
-                        self.messages.append(
-                            {"role": "assistant", "content": delta}
-                        )
+                        self.messages.append({"role": "assistant", "content": delta})
                         self.is_streaming = False  # hide dots on first token
                         first_token = False
                     else:
