@@ -7,12 +7,7 @@ import {
   useState,
 } from "react";
 
-import {
-  cookieName,
-  defaultLocale,
-  loaders,
-  locales,
-} from "$/i18n/index.js";
+import { cookieName, defaultLocale, loaders, locales } from "$/i18n/index.js";
 
 // gettext msgctxt separator; catalog keys are "context\u0004msgid".
 const CONTEXT_SEPARATOR = "\u0004";
@@ -77,7 +72,9 @@ const initialLocale = () => {
   if (fromCookie && locales.includes(fromCookie)) {
     return fromCookie;
   }
-  return negotiate(navigator.languages ?? [navigator.language]) ?? defaultLocale;
+  return (
+    negotiate(navigator.languages ?? [navigator.language]) ?? defaultLocale
+  );
 };
 
 export const I18nContext = createContext({
