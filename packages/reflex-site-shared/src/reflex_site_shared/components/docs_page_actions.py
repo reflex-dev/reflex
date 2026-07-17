@@ -240,6 +240,7 @@ def docs_page_actions(
     markdown_url: str,
     llms_full_txt_url: str,
     *,
+    llms_label: str = "llms-full.txt",
     copy_url: str | None = None,
 ) -> rx.Component:
     """Render copy and LLM actions for one documentation page.
@@ -247,6 +248,7 @@ def docs_page_actions(
     Args:
         markdown_url: Absolute public URL for the current page's Markdown.
         llms_full_txt_url: URL of the site's combined agent-readable docs.
+        llms_label: Visible label for the linked agent-readable docs file.
         copy_url: Optional local Markdown URL fetched by the copy action. When
             omitted, the URL is derived from the current browser path.
 
@@ -298,7 +300,7 @@ def docs_page_actions(
                             ),
                             _menu_item(
                                 icon=ui.icon("DocumentValidationIcon", size=16),
-                                title="llms-full.txt",
+                                title=llms_label,
                                 description="View all docs as Markdown for LLMs",
                                 href=llms_full_txt_url,
                             ),
