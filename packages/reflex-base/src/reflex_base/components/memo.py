@@ -792,7 +792,9 @@ def _var_placeholder(
     """
     if _annotation_inner_type(annotation) is Any and runtime_value is not None:
         runtime_type = (
-            runtime_value._var_type if isinstance(runtime_value, Var) else type(runtime_value)
+            runtime_value._var_type
+            if isinstance(runtime_value, Var)
+            else type(runtime_value)
         )
         return Var(_js_expr=name, _var_type=runtime_type).guess_type()
     return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
