@@ -2618,14 +2618,9 @@ async def test_background_task_no_chain():
         await bts.bad_chain2()
 
 
-# Cross-run bookkeeping for the cancel_previous_task test below. These are
-# plain module-level lists (not state) so a cancelled run can still record that
-# it was cancelled after its state proxy is gone.
 cancel_prev_started: list[int] = []
 cancel_prev_cancelled: list[int] = []
 cancel_prev_completed: list[int] = []
-# Holds a single asyncio.Event, created inside the test on the running loop, that
-# releases the surviving run once the test is ready for it to finish.
 cancel_prev_release: list[asyncio.Event] = []
 
 
@@ -2642,8 +2637,6 @@ class CancelPreviousTaskState(BaseState):
             run_id = self.runs
         cancel_prev_started.append(run_id)
         try:
-            # Stand in for in-flight async work (e.g. a DB query): the await is
-            # where a superseding run's cancellation lands.
             await cancel_prev_release[0].wait()
         except asyncio.CancelledError:
             cancel_prev_cancelled.append(run_id)
