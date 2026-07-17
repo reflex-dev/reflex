@@ -24,11 +24,21 @@ A token can be any string that uniquely identifies a group of clients that shoul
 Underscore characters are currently used as an internal delimiter for tokens and will raise an exception if used for linked states.
 
 This is a temporary restriction and will be removed in a future release.
+
+When deriving a token from user input, such as a query parameter, sanitize it before linking — for example `raw_token.replace("_", "-")` — and fall back to a default value when the parameter is empty or missing.
 ```
 
 ### Linking Shared State
 
 An `rx.SharedState` subclass can be linked to a token using the `_link_to` method, which is async and returns the linked state instance. After linking, subsequent events triggered against the shared state will be executed in the context of the linked state. To unlink from the token, return the result of awaiting the `_unlink` method.
+
+```md alert warning
+# Common linking pitfalls
+
+- `_link_to` is a coroutine — forgetting to `await` it silently skips linking. Any changes made to a shared state before it is linked are not shared; they apply only to the client's private instance.
+- `await self._link_to(...)` returns the newly linked instance. Calling methods on `self` immediately afterwards still mutates the pre-link state, so save the returned instance and use it for any actions that should happen after linking.
+- `_link_to` is only defined on `rx.SharedState` subclasses. To link from a regular `rx.State` event handler, first fetch the shared state with `await self.get_state(SharedStateCls)`, then call `_link_to` on that instance.
+```
 
 To try out the collaborative counter example, open this page in a second or third browser tab and click the "Link" button. You should see the count increment in all tabs when you click the "Increment" button in any of them.
 
@@ -74,6 +84,8 @@ def shared_state_example():
 Computed vars in other states may reference shared state data using `get_state`, just like private states. This allows private states to provide personalized views of shared data.
 
 Whenever the shared state is updated, any computed vars depending on it will be re-evaluated in the context of each client's private state.
+
+Note that a computed var that depends only on shared state vars belongs on the `rx.SharedState` itself — reserve private-state computed vars for values that also depend on per-user data.
 ```
 
 ### Identifying Clients
