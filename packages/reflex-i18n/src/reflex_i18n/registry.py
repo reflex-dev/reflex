@@ -38,6 +38,15 @@ class MessageKey(NamedTuple):
             return f"{self.context}{CONTEXT_SEPARATOR}{self.message}"
         return self.message
 
+    @property
+    def msgid(self) -> str | tuple[str, str]:
+        """The babel catalog msgid: a string, or (singular, plural) tuple.
+
+        Returns:
+            The plural pair if this is a plural message, else the message.
+        """
+        return self.message if self.plural is None else (self.message, self.plural)
+
 
 _collected: dict[MessageKey, None] = {}
 

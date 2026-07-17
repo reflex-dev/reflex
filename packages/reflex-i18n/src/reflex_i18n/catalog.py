@@ -121,8 +121,7 @@ def _lookup_translation(
     """
     if catalog is None:
         return None
-    msgid = key.message if key.plural is None else (key.message, key.plural)
-    message = catalog.get(msgid, key.context)
+    message = catalog.get(key.msgid, key.context)
     if message is None:
         return None
     strings = message.string

@@ -65,9 +65,6 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
-i18n = [
-  "reflex-i18n",
-]
 
 [project.urls]
 homepage = "https://reflex.dev"
