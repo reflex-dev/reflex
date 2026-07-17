@@ -15,11 +15,11 @@ from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import rich.markup
-from typing_extensions import Self
-
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
+from typing_extensions import Self
+
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.compat import as_completed
 from reflex_base.event.processor.future import EventFuture
@@ -41,6 +41,7 @@ else:
         """Exception raised when trying to put an item into a shut down queue."""
 
 
+CANCEL_KEY = "_cancel_key"
 _StreamItemT = TypeVar("_StreamItemT")
 
 
@@ -585,7 +586,7 @@ class EventProcessor:
             cancel_key = (entry.ctx.token, entry.event.name)
             for existing in self._tasks.values():
                 if (
-                    getattr(existing, "_cancel_key", None) == cancel_key
+                    getattr(existing, CANCEL_KEY, None) == cancel_key
                     and not existing.done()
                 ):
                     existing.cancel()
@@ -598,7 +599,7 @@ class EventProcessor:
         if sys.version_info < (3, 12):
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         if cancel_key is not None:
-            task._cancel_key = cancel_key  # pyright: ignore[reportAttributeAccessIssue]
+            setattr(task, CANCEL_KEY, cancel_key)
         self._tasks[entry.ctx.txid] = task
         task.add_done_callback(self._finish_task)
         return task
