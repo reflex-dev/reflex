@@ -2961,7 +2961,7 @@ class EventNamespace:
         Args:
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
-            cancel_previous_task: Whether dispatching this handler cancels its still-running previous run for the same client token. Requires background=True. NOTE: This can cause partial state updates if previous task always modified state before cancelation.
+            cancel_previous_task: Whether dispatching this handler cancels its still-running previous run for the same client token. Requires background=True. NOTE: This can cause partial state updates if previous task always modified state before cancellation.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
