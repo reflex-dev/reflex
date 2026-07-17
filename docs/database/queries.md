@@ -227,9 +227,12 @@ class OrderStats(rx.State):
             self.order_count = session.exec(select(func.count(Order.id))).one()
 
             # One row per group, ready for a chart or summary table.
-            self.orders_by_status = session.exec(
-                select(Order.status, func.count(Order.id)).group_by(Order.status)
-            ).all()
+            self.orders_by_status = [
+                tuple(row)
+                for row in session.exec(
+                    select(Order.status, func.count(Order.id)).group_by(Order.status)
+                ).all()
+            ]
 ```
 
 Related metrics can be computed in a single query with conditional
