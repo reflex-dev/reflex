@@ -1,5 +1,8 @@
 """Reusable building blocks for Markdown-backed documentation sites."""
 
+from reflex_site_shared.components.docs_page_actions import (
+    docs_page_actions as docs_page_actions,
+)
 from reflex_site_shared.components.docs_shell import (
     docs_book_demo_action as docs_book_demo_action,
 )
@@ -78,6 +81,7 @@ __all__ = [
     "docs_footer_shell",
     "docs_left_sidebar",
     "docs_navbar_frame",
+    "docs_page_actions",
     "docs_page_footer",
     "docs_right_sidebar",
     "docs_sidebar_category",
