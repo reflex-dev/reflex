@@ -112,3 +112,11 @@ def test_negotiate_locale_falls_back_to_default():
 
 def test_negotiate_locale_ignores_wildcard():
     assert negotiate_locale("*", ["en", "de"], "en") == "en"
+
+
+def test_negotiate_locale_excludes_q0():
+    # q=0 means "not acceptable" (RFC 7231): de must not be matched even though
+    # it is supported, and negotiation falls back to the default.
+    assert negotiate_locale("de;q=0", ["en", "de"], "en") == "en"
+    # A q=0 locale is excluded even when it is the only supported candidate.
+    assert negotiate_locale("de;q=0,fr;q=0.9", ["en", "de"], "en") == "en"
