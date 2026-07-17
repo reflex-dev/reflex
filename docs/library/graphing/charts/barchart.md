@@ -193,6 +193,81 @@ def bar_with_state():
     )
 ```
 
+## Click Events and Drill-Down
+
+The `on_click` event on `rx.recharts.bar` provides no arguments, so it cannot tell you which bar was clicked. To handle clicks with data — for example, to drill down into a category — render an `rx.recharts.cell` for each data point with `rx.foreach`, so each cell binds its click data at render time from the loop variable.
+
+In this example, clicking a bar filters the chart to that category (zoom in), and clicking the same bar again clears the filter (zoom out). An `rx.cond` on the cell's `fill` highlights the selected bar.
+
+```python demo exec
+drilldown_data = [
+    {"name": "Fiction", "count": 42},
+    {"name": "History", "count": 28},
+    {"name": "Science", "count": 35},
+    {"name": "Biography", "count": 17},
+    {"name": "Fantasy", "count": 24},
+]
+
+DRILLDOWN_COLORS = ["#6366F1", "#8B5CF6", "#A855F7", "#D946EF", "#EC4899"]
+
+
+class BarDrilldownState(rx.State):
+    drilled_genre: str = ""
+
+    @rx.var
+    def genre_data(self) -> list[dict[str, str | int]]:
+        if self.drilled_genre:
+            return [d for d in drilldown_data if d["name"] == self.drilled_genre]
+        return drilldown_data
+
+    @rx.event
+    def toggle_genre(self, genre_name: str):
+        """Click the same bar again to zoom back out."""
+        if self.drilled_genre == genre_name:
+            self.drilled_genre = ""
+        else:
+            self.drilled_genre = genre_name
+
+
+def _drilldown_cell(item: rx.Var, index: rx.Var) -> rx.Component:
+    """Each bar gets its own cell with on_click bound to the item name."""
+    return rx.recharts.cell(
+        on_click=BarDrilldownState.toggle_genre(item["name"].to(str)),
+        cursor="pointer",
+        fill=rx.cond(
+            BarDrilldownState.drilled_genre == item["name"],
+            "#1D4ED8",
+            rx.Var.create(DRILLDOWN_COLORS)[index % len(DRILLDOWN_COLORS)],
+        ),
+    )
+
+
+def bar_drilldown():
+    return rx.recharts.bar_chart(
+        rx.recharts.cartesian_grid(stroke_dasharray="3 3", vertical=False),
+        rx.recharts.x_axis(data_key="name", tick_line=False, axis_line=False),
+        rx.recharts.y_axis(allow_decimals=False, axis_line=False, tick_line=False),
+        rx.recharts.bar(
+            rx.foreach(BarDrilldownState.genre_data, _drilldown_cell),
+            data_key="count",
+            radius=[4, 4, 0, 0],
+        ),
+        rx.recharts.graphing_tooltip(),
+        data=BarDrilldownState.genre_data,
+        width="100%",
+        height=300,
+    )
+```
+
+The key points of the pattern:
+
+1. Define a helper function that takes `(item, index)` from `rx.foreach` and returns an `rx.recharts.cell`.
+2. Bind the click with `on_click=State.handler(item["name"])` — the handler receives a plain value because it is bound at render time, not extracted from the click event.
+3. Use `rx.cond` to highlight the selected item with a different `fill`.
+4. Apply the drill filter to the chart's own data, so only the clicked item remains visible; clearing the filter restores all items.
+
+The same pattern works for pie charts: place the `rx.foreach` of cells inside `rx.recharts.pie`.
+
 ## Example with Props
 
 Here's an example demonstrates how to customize the appearance and layout of bars using the `bar_category_gap`, `bar_gap`, `bar_size`, and `max_bar_size` props. These props accept values in pixels to control the spacing and size of the bars.
@@ -221,6 +296,91 @@ def bar_features():
         bar_gap=6,
         bar_size=100,
         max_bar_size=40,
+        width="100%",
+        height=300,
+    )
+```
+
+## Rounded Bars
+
+The `radius` prop on `rx.recharts.bar` rounds the corners of each bar. Pass a single number to round all four corners, or a list of four values in the order `[top-left, top-right, bottom-right, bottom-left]` — for example `[8, 8, 0, 0]` rounds only the top corners.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def bar_rounded():
+    return rx.recharts.bar_chart(
+        rx.recharts.bar(
+            data_key="uv",
+            fill=rx.color("accent", 8),
+            radius=[8, 8, 0, 0],
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        data=data,
+        width="100%",
+        height=250,
+    )
+```
+
+## Gradient Fill
+
+Bars can be styled with SVG linear gradients. Define one gradient per series inside an `rx.el.svg.defs` block as the first child of the chart, then reference each gradient from the bar's `fill` prop with `"url(#gradient-id)"`.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def create_bar_gradient(color: str, gradient_id: str) -> rx.Component:
+    return rx.el.svg.linear_gradient(
+        rx.el.svg.stop(offset="5%", stop_color=color, stop_opacity=0.8),
+        rx.el.svg.stop(offset="95%", stop_color=color, stop_opacity=0.2),
+        id=gradient_id,
+        x1=0,
+        y1=0,
+        x2=0,
+        y2=1,
+    )
+
+
+def bar_gradient():
+    return rx.recharts.bar_chart(
+        rx.el.svg.defs(
+            create_bar_gradient("#8884d8", "bar_gradient_uv"),
+            create_bar_gradient("#82ca9d", "bar_gradient_pv"),
+        ),
+        rx.recharts.bar(
+            data_key="uv",
+            fill="url(#bar_gradient_uv)",
+            radius=[4, 4, 0, 0],
+        ),
+        rx.recharts.bar(
+            data_key="pv",
+            fill="url(#bar_gradient_pv)",
+            radius=[4, 4, 0, 0],
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        rx.recharts.graphing_tooltip(),
+        rx.recharts.legend(),
+        data=data,
         width="100%",
         height=300,
     )
