@@ -15,11 +15,11 @@ from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import rich.markup
-from typing_extensions import Self
-
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
+from typing_extensions import Self
+
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.compat import as_completed
 from reflex_base.event.processor.future import EventFuture
@@ -99,6 +99,7 @@ class EventProcessor:
         _root_context: The root event context to use for events enqueued without an explicit context.
         _attached_root_context_token: The context variable token for the attached root context, used to reset the context variable on shutdown.
         _tasks: A mapping of active transaction ids to their corresponding event handler tasks, used for tracking and cancellation on shutdown.
+        _cancel_keys: A mapping of ``cancel_previous_task`` keys (token, event name) to the txid of the most recently dispatched task for that key.
     """
 
     middleware: MiddlewareMixin | None = None
@@ -125,6 +126,9 @@ class EventProcessor:
         str,
         collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
     ] = dataclasses.field(default_factory=dict, init=False)
+    _cancel_keys: dict[tuple[str, str], str] = dataclasses.field(
+        default_factory=dict, init=False
+    )
 
     def configure(
         self,
@@ -312,6 +316,7 @@ class EventProcessor:
             self._queue_task = None
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
+        self._cancel_keys.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -584,11 +589,9 @@ class EventProcessor:
         cancel_key: tuple[str, str] | None = None
         if handler.is_background and handler.is_cancel_previous_task:
             cancel_key = (entry.ctx.token, entry.event.name)
-            for existing in self._tasks.values():
-                if (
-                    getattr(existing, CANCEL_KEY, None) == cancel_key
-                    and not existing.done()
-                ):
+            if (existing_txid := self._cancel_keys.get(cancel_key)) is not None:
+                existing = self._tasks.get(existing_txid)
+                if existing is not None and not existing.done():
                     existing.cancel()
         task = asyncio.create_task(
             self._process_event_queue_entry(
@@ -600,6 +603,7 @@ class EventProcessor:
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         if cancel_key is not None:
             setattr(task, CANCEL_KEY, cancel_key)
+            self._cancel_keys[cancel_key] = entry.ctx.txid
         self._tasks[entry.ctx.txid] = task
         task.add_done_callback(self._finish_task)
         return task
@@ -727,6 +731,12 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        cancel_key = getattr(task, CANCEL_KEY, None)
+        if (
+            cancel_key is not None
+            and self._cancel_keys.get(cancel_key) == task_ctx.txid
+        ):
+            del self._cancel_keys[cancel_key]
         # Chain the next sequential event for this token if applicable.
         token_queue = self._token_queues.get(task_ctx.token)
         if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
