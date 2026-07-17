@@ -46,7 +46,8 @@ const readCookie = (name) => {
 };
 
 const writeCookie = (name, value) => {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+  const secure = location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax${secure}`;
 };
 
 // Match a requested locale list against the supported locales: exact tag

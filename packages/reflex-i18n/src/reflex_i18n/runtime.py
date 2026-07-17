@@ -192,6 +192,9 @@ def negotiate_locale(
                 quality = float(params.strip()[2:])
             except ValueError:
                 quality = 0.0
+        if quality <= 0.0:
+            # q=0 means "not acceptable" (RFC 7231 §5.3.1); exclude it.
+            continue
         # Sort by quality descending, then by original order for ties.
         ranked.append((-quality, index, tag))
 
