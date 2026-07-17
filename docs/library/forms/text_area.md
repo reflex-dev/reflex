@@ -134,7 +134,10 @@ processed: `enter_key_submit=~State.is_loading`.
 # `enter_key_submit` cannot be combined with `on_key_down`.
 
 The `enter_key_submit` prop is implemented with its own key down handler, so
-passing both to the same component raises an error. If custom key handling is
-needed, implement the Enter-to-submit behavior in your own `on_key_down`
-handler instead.
+passing both to the same component raises an error. Note that a Python
+`on_key_down` handler receives only the key and modifier flags, not the raw
+event, so it cannot call `preventDefault()` to stop Enter from inserting a
+newline. Replicating Enter-to-submit alongside custom key handling therefore
+needs a client-side handler (e.g. via `rx.call_script`), not a plain
+`on_key_down` event handler.
 ```
