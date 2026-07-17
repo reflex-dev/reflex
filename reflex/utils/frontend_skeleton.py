@@ -345,6 +345,33 @@ def sync_root_lockfile_to_web(filename: str, prune: bool = True) -> bool:
     )
 
 
+def sync_root_package_json_to_web() -> bool:
+    """Render the persisted root package.json into ``.web``.
+
+    ``package.json`` is not a plain lockfile: Reflex owns required fields such
+    as the dev/build scripts, while the persisted root copy carries dependency
+    pins and user-added metadata. Re-render it instead of byte-copying so a
+    damaged root copy cannot remove required framework entries from ``.web``.
+
+    Returns:
+        True if an existing ``.web/package.json`` was meaningfully changed.
+        Initial creation does not count as a meaningful change since no install
+        cache could exist yet.
+    """
+    root_package_json_path = get_root_lockfile_path(constants.PackageJson.PATH)
+    if not root_package_json_path.exists():
+        return sync_root_lockfile_to_web(constants.PackageJson.PATH, prune=False)
+
+    output_path = get_web_lockfile_path(constants.PackageJson.PATH)
+    rendered = _compile_package_json()
+    if output_path.exists() and output_path.read_text() == rendered:
+        return False
+
+    changed = output_path.exists()
+    output_path.write_text(rendered)
+    return changed
+
+
 def sync_root_lockfiles_to_web() -> bool:
     """Mirror every persisted lockfile into ``.web``.
 
@@ -353,7 +380,7 @@ def sync_root_lockfiles_to_web() -> bool:
     """
     # Materialize results so every lockfile is synced
     changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES] + [
-        sync_root_lockfile_to_web(name, prune=False) for name in NO_PRUNE_LOCKFILE_NAMES
+        sync_root_package_json_to_web()
     ]
     return any(changed)
 
