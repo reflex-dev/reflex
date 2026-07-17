@@ -113,7 +113,7 @@ rx.select.root(
 ## Fully controlled
 
 The `on_change` event trigger is fired when the value of the select changes.
-In this example the `rx.select_root` `value` prop specifies which item is selected, and this
+In this example the `rx.select.root` `value` prop specifies which item is selected, and this
 can also be controlled using state and a button without direct interaction with the select component.
 
 ```python demo exec

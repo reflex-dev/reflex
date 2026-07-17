@@ -8,15 +8,17 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from copy import copy
 from enum import Enum
-from functools import cache, update_wrapper
+from functools import cache, partial, update_wrapper
 from types import UnionType
 from typing import (
     Annotated,
     Any,
     ClassVar,
     Generic,
+    Protocol,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
@@ -60,6 +62,15 @@ from reflex_base.vars.object import RestProp
 # in the always-early ``component.py`` would cycle when ``environment`` is the
 # entry point. ``memo.py`` is imported lazily, after ``environment`` is ready.
 EMPTY_VAR_COMPONENT: Var[Component] = LiteralVar.create(Component.create())
+
+# The default JS wrapper applied to a compiled component memo's function
+# definition: React's ``memo``, carrying its own import. ``@rx.memo`` accepts a
+# ``wrapper=`` override to swap it for another helper, or ``None`` to export
+# the bare function component.
+DEFAULT_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
+    "memo",
+    _var_data=VarData(imports={"react": [ImportVar(tag="memo")]}),
+)
 
 # Base ``Component`` props a memo accepts without an ``rx.RestProp`` (with a
 # deprecation warning). Only ``key`` qualifies: React consumes it at the
@@ -295,6 +306,11 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
+    # The JS function the compiled function component is wrapped in — React's
+    # ``memo`` by default. ``None`` exports the bare function component. The
+    # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
+    # its own and ``None`` pulls in nothing.
+    wrapper: Var | None = DEFAULT_MEMO_WRAPPER
 
     @property
     def component(self) -> Component:
@@ -1901,31 +1917,23 @@ def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
     )
 
 
-@overload
-def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
-@overload
-def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
-def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper:
-    """Create a memo from a function.
-
-    The decorated function's body is **not** executed here. Only signature-level
-    analysis — return annotation, parameter kinds, name-collision registration,
-    and the deprecation warning for missing annotations — runs at decoration
-    time. The body is compiled lazily on first read of ``.component`` /
-    ``.function`` — when the component wrapper is instantiated, or when the
-    compiler reads the memo (see ``_LazyBody``). Deferring the body keeps
-    ``@rx.memo`` free of import-time side effects, so a memo whose body
-    references another module no longer forces that module to load during
-    import — sidestepping circular-import ordering issues.
+def _memo_impl(
+    fn: Callable[..., Any],
+    wrapper: Var | None,
+) -> _MemoComponentWrapper | _MemoFunctionWrapper:
+    """Analyze and register a memo definition for a decorated function.
 
     Args:
         fn: The function to memoize.
+        wrapper: The JS wrapper for a component-returning memo, or ``None``
+            for no wrapper.
 
     Returns:
         The wrapped function or component factory.
 
     Raises:
-        TypeError: If the return annotation is not supported.
+        TypeError: If the return annotation is not supported, or a non-default
+            ``wrapper`` is given for a var-returning memo.
     """
     hints = get_type_hints(fn, include_extras=True)
     return_annotation = hints.get("return", inspect.Signature.empty)
@@ -1939,6 +1947,13 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
         msg = (
             f"`@rx.memo` on `{fn.__name__}` must return `rx.Component` or "
             f"`rx.Var[...]`, got `{return_annotation}`."
+        )
+        raise TypeError(msg)
+    if not is_component and wrapper is not DEFAULT_MEMO_WRAPPER:
+        msg = (
+            "`@rx.memo` only supports `wrapper=` on component-returning memos; "
+            f"`{fn.__name__}` returns `rx.Var[...]`, which compiles to a plain "
+            "function."
         )
         raise TypeError(msg)
 
@@ -1959,8 +1974,9 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
     # first read of ``.component`` / ``.function`` (see ``_LazyBody``), not here,
     # so decoration has no import-time side effects. The component placeholder
     # stands in for re-entrant reads during a recursive memo's own evaluation,
-    # where the name resolves to ``wrapper`` (already bound by first use).
+    # where the name resolves to ``memo_callable`` (already bound by first use).
     definition: MemoComponentDefinition | MemoFunctionDefinition
+    memo_callable: _MemoComponentWrapper | _MemoFunctionWrapper
     if is_component:
         runtime_param_values: dict[str, Any] = {}
         definition = MemoComponentDefinition(
@@ -1974,8 +1990,9 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
                 placeholder=Fragment.create(),
             ),
             _runtime_param_values=runtime_param_values,
+            wrapper=wrapper,
         )
-        wrapper = _create_component_wrapper(definition)
+        memo_callable = _create_component_wrapper(definition)
     else:
         definition = MemoFunctionDefinition(
             fn=fn,
@@ -1989,13 +2006,77 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
                 source_module=source_module,
             ),
         )
-        wrapper = _create_function_wrapper(definition)
+        memo_callable = _create_function_wrapper(definition)
 
     _register_memo_definition(definition)
-    return wrapper
+    return memo_callable
+
+
+class _MemoDecorator(Protocol):
+    """The decorator returned by ``rx.memo()`` called with no arguments."""
+
+    @overload
+    def __call__(self, fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
+    @overload
+    def __call__(self, fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
+
+
+@overload
+def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
+@overload
+def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
+@overload
+def memo() -> _MemoDecorator: ...
+@overload
+def memo(
+    *, wrapper: Var | None
+) -> Callable[[Callable[..., Component]], _MemoComponentWrapper]: ...
+def memo(
+    fn: Callable[..., Any] | None = None,
+    *,
+    wrapper: Var | None = DEFAULT_MEMO_WRAPPER,
+) -> (
+    _MemoComponentWrapper
+    | _MemoFunctionWrapper
+    | _MemoDecorator
+    | Callable[[Callable[..., Component]], _MemoComponentWrapper]
+):
+    """Create a memo from a function.
+
+    The decorated function's body is **not** executed here. Only signature-level
+    analysis — return annotation, parameter kinds, name-collision registration,
+    and the deprecation warning for missing annotations — runs at decoration
+    time. The body is compiled lazily on first read of ``.component`` /
+    ``.function`` — when the component wrapper is instantiated, or when the
+    compiler reads the memo (see ``_LazyBody``). Deferring the body keeps
+    ``@rx.memo`` free of import-time side effects, so a memo whose body
+    references another module no longer forces that module to load during
+    import — sidestepping circular-import ordering issues.
+
+    Args:
+        fn: The function to memoize. When omitted, returns a decorator that
+            applies the given keyword arguments (``@rx.memo(wrapper=...)``).
+        wrapper: The JS function the compiled function component is wrapped in.
+            Defaults to React's ``memo``; pass another ``Var`` (typically an
+            ``rx.vars.FunctionStringVar`` carrying its own imports) to swap the
+            wrapper, or ``None`` to export the bare function component. Only
+            supported on component-returning memos.
+
+    Returns:
+        The wrapped function or component factory, or — when ``fn`` is omitted
+        — a decorator applying the keyword arguments.
+
+    Raises:
+        TypeError: If the return annotation is not supported, or a non-default
+            ``wrapper`` is given for a var-returning memo.
+    """
+    if fn is None:
+        return cast("_MemoDecorator", partial(_memo_impl, wrapper=wrapper))
+    return _memo_impl(fn, wrapper)
 
 
 __all__ = [
+    "DEFAULT_MEMO_WRAPPER",
     "EMPTY_VAR_COMPONENT",
     "MEMOS",
     "MemoComponent",

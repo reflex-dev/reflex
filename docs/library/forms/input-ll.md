@@ -75,7 +75,7 @@ def controlled_example1():
     )
 ```
 
-# Real World Example
+## Real World Example
 
 ```python demo exec
 def song(title, initials: str, genre: str):

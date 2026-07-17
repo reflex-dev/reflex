@@ -11,6 +11,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _SPECS,
+    DEFAULT_MEMO_WRAPPER,
     EMPTY_VAR_COMPONENT,
     MEMOS,
     MemoComponent,
@@ -31,7 +32,7 @@ from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, FunctionVar
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -1024,6 +1025,157 @@ def test_compile_memo_components_falls_back_when_no_source_module():
         compiler_utils.get_memo_components_dir(), "LegacyMemo"
     )
     assert any(path == exp_path for path, _ in files)
+
+
+def test_default_memo_wrapper_is_react_memo():
+    """The default wrapper is React's ``memo``, carrying its own import."""
+    assert str(DEFAULT_MEMO_WRAPPER) == "memo"
+    var_data = DEFAULT_MEMO_WRAPPER._get_all_var_data()
+    assert var_data is not None
+    assert [imp.tag for imp in dict(var_data.imports)["react"]] == ["memo"]
+
+
+def test_component_memo_default_wrapper():
+    """Bare ``@rx.memo`` wraps the compiled component in React's ``memo``."""
+
+    @rx.memo
+    def default_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["DefaultWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is DEFAULT_MEMO_WRAPPER
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("DefaultWrapped", __name__)
+    assert f"export const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
+    assert any(imp.tag == "memo" for imp in imports.get("react", []))
+
+
+def test_component_memo_wrapper_none_emits_bare_function():
+    """``@rx.memo(wrapper=None)`` exports the bare function component."""
+
+    @rx.memo(wrapper=None)
+    def unwrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["Unwrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is None
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("Unwrapped", __name__)
+    assert f"export const {sym} = (({{label:labelRxMemo}}) => {{" in code
+    assert " = memo(" not in code
+    assert all(imp.tag != "memo" for imp in imports.get("react", []))
+
+    # The call site is unaffected by the wrapper choice.
+    component = unwrapped(label="hi")
+    assert isinstance(component, MemoComponent)
+
+
+def test_component_memo_custom_wrapper():
+    """``@rx.memo(wrapper=...)`` swaps React's ``memo`` for the given helper."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=track_render)
+    def tracked(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["Tracked", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is track_render
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("Tracked", __name__)
+    assert f"export const {sym} = trackRender(({{label:labelRxMemo}}) => {{" in code
+    assert " = memo(" not in code
+    assert 'import {trackRender} from "my-render-lib"' in code
+    assert all(imp.tag != "memo" for imp in imports.get("react", []))
+    assert any(imp.tag == "trackRender" for imp in imports.get("my-render-lib", []))
+
+
+def test_component_memo_inline_function_wrapper_is_parenthesized():
+    """A wrapper that isn't a bare callee is parenthesized before the call.
+
+    An inline arrow expression concatenated directly against the component
+    function would swallow the call into its own body (``(c) => track(c)((...))``);
+    the emitted code must invoke the wrapper with the component instead.
+    """
+    inline = FunctionStringVar.create(
+        "(Comp) => trackRender(Comp)",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=inline)
+    def inline_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["InlineWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("InlineWrapped", __name__)
+    assert (
+        f"export const {sym} = ((Comp) => trackRender(Comp))(({{label:labelRxMemo}}) => {{"
+        in code
+    )
+
+
+def test_component_memo_wrapper_none_in_unmirrored_module():
+    """The per-name fallback module honors ``wrapper=None`` too."""
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="bare_single",
+        params=(),
+        export_name="BareSingle",
+        _component=_LazyBody.ready(rx.text("hi")),
+        passthrough_hole_child=None,
+        wrapper=None,
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    exp_path = compiler._memo_component_file_path(
+        compiler_utils.get_memo_components_dir(), "BareSingle"
+    )
+    single_code = next(code for path, code in files if path == exp_path)
+    assert "export const BareSingle = ((" in single_code
+    assert " = memo(" not in single_code
+
+
+def test_var_returning_memo_rejects_wrapper():
+    """``wrapper=`` is only supported on component-returning memos."""
+    with pytest.raises(TypeError, match="only supports `wrapper=`"):
+
+        @rx.memo(wrapper=None)  # pyright: ignore[reportArgumentType]
+        def format_id(value: rx.Var[int]) -> rx.Var[str]:
+            return value.to(str)
+
+
+def test_memo_decorator_parens_form_matches_bare_decorator():
+    """``@rx.memo()`` with no arguments behaves like bare ``@rx.memo``."""
+
+    @rx.memo()
+    def parens_component(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["ParensComponent", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is DEFAULT_MEMO_WRAPPER
+    assert isinstance(parens_component(label="hi"), MemoComponent)
+
+    @rx.memo()
+    def parens_function(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    assert isinstance(MEMOS["parens_function", __name__], MemoFunctionDefinition)
 
 
 def test_compile_memo_components_mirrors_underscore_module_without_error():

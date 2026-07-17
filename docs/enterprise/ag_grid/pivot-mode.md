@@ -1,3 +1,7 @@
+---
+meta_description: "Enable pivot mode in AG Grid with Reflex. Build pivot tables in Python — group rows, pivot columns, and aggregate values in an interactive data grid, no JavaScript required."
+---
+
 ```python exec
 import reflex as rx
 import reflex_enterprise as rxe

@@ -1,6 +1,8 @@
 ---
 components:
   - rx.recharts.RadialBarChart
+title: Radial Bar Chart
+meta_description: "Create radial bar and gauge charts in Python with Reflex. Build circular Recharts radial bar charts with custom colors, start and end angles, and legends — all in pure Python."
 ---
 
 # Radial Bar Chart
@@ -9,9 +11,11 @@ components:
 import reflex as rx
 ```
 
+Radial bar charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A radial bar chart is a circular visualization where data categories are represented by bars extending outward from a central point, with the length of each bar proportional to its value.
+
 ## Simple Example
 
-This example demonstrates how to use a `radial_bar_chart` with a `radial_bar`. The `radial_bar_chart` takes in `data` and then the `radial_bar` takes in a `data_key`. A radial bar chart is a circular visualization where data categories are represented by bars extending outward from a central point, with the length of each bar proportional to its value.
+This example demonstrates how to use a `radial_bar_chart` with a `radial_bar`. The `radial_bar_chart` takes in `data` and then the `radial_bar` takes in a `data_key` naming the value each bar represents. The `min_angle` prop sets a minimum sweep for every bar so that even small values stay visible around the circle.
 
 ```md alert info
 # Fill color supports `rx.color()`, which automatically adapts to dark/light mode changes.
@@ -43,7 +47,7 @@ def radial_bar_simple():
 
 ## Advanced Example
 
-The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center.
+The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center. Sweeping a half circle (`start_angle=180`, `end_angle=0`) is a common way to build a gauge chart.
 
 ```python demo graphing
 data_radial_bar = [
@@ -74,3 +78,15 @@ def radial_bar_advanced():
         height=300,
     )
 ```
+
+## When to Use a Radial Bar Chart
+
+A radial bar chart is a compact, eye-catching alternative to a standard bar chart, best suited to comparing a small number of categories or showing progress toward a goal. Because the bars wrap around a circle, it works well for dashboards where space is limited. The key props for shaping the chart are `inner_radius` and `outer_radius` (how far the bars sit from the center), `start_angle` and `end_angle` (the arc the bars span — use `180` to `0` for a half-circle gauge), `min_angle` (the minimum bar length), and `background` (a track drawn behind each bar). For many categories or precise value comparisons, a standard [Bar Chart](/docs/library/graphing/charts/barchart) is usually easier to read.
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Radar Chart](/docs/library/graphing/charts/radarchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)

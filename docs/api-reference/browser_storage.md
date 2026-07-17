@@ -52,7 +52,7 @@ Additionally, updating the cookie value in one state will not automatically
 update the value in the other state without a page refresh or navigation event.
 ```
 
-## rx.remove_cookies
+## rx.remove_cookie
 
 Remove a cookie from the client's browser.
 

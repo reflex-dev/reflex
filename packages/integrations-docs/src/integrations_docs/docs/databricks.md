@@ -113,7 +113,7 @@ Once connected, the AI Builder can execute queries directly against your Databri
 * **Combine with AI:** Use query outputs to power models, summaries, or alerts in real time.
 
 
-# How to Enable Login as an Admin
+## How to Enable Login as an Admin
 
 - Login to Databricks
 - Go to manage account
