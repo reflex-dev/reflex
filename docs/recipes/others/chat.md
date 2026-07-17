@@ -77,12 +77,22 @@ The key rule: **do not pre-append an empty assistant message** before the respon
 begins. Doing so renders a blank bubble alongside the loading dots, producing a broken
 double-indicator experience.
 
+Both snippets below use the [`openai`](https://pypi.org/project/openai/) package and read
+the API key from the `OPENAI_API_KEY` environment variable. They also run as
+[background events](/docs/events/background-events/), so all state mutations happen inside
+`async with self:` and every `yield` is placed **after** the block exits — holding the
+state lock across a `yield` would block every other event handler until the stream
+finishes.
+
 ### Incorrect
 
 An empty assistant bubble appears next to the loading dots because it is appended before
 any content arrives:
 
 ```python
+import openai
+
+
 class ChatState(rx.State):
     messages: list[dict[str, str]] = []
     is_streaming: bool = False
@@ -98,13 +108,15 @@ class ChatState(rx.State):
             # BAD: appending an empty assistant message creates a blank bubble
             self.messages.append({"role": "assistant", "content": ""})
             self.is_streaming = True
+            request_messages = [
+                {"role": m["role"], "content": m["content"]}
+                for m in self.messages[:-1]
+            ]
 
         client = openai.AsyncOpenAI()
         stream = await client.chat.completions.create(
             model="gpt-4o",
-            messages=[
-                {"role": m["role"], "content": m["content"]} for m in self.messages[:-1]
-            ],
+            messages=request_messages,
             stream=True,
         )
         async for chunk in stream:
@@ -119,9 +131,13 @@ class ChatState(rx.State):
 ### Correct
 
 The loading dots show first, and the assistant bubble appears only on the first streamed
-token:
+token. The stream is wrapped in a `try/finally` so `is_streaming` always resets, even if
+the API call raises:
 
 ```python
+import openai
+
+
 class ChatState(rx.State):
     messages: list[dict[str, str]] = []
     is_streaming: bool = False
@@ -135,39 +151,45 @@ class ChatState(rx.State):
         async with self:
             self.messages.append({"role": "user", "content": user_msg})
             self.is_streaming = True
-            yield  # show the loading indicator immediately
+            request_messages = [
+                {"role": m["role"], "content": m["content"]}
+                for m in self.messages
+            ]
+        yield  # flush outside the lock so the loading indicator shows now
 
-        client = openai.AsyncOpenAI()
-        stream = await client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": m["role"], "content": m["content"]} for m in self.messages
-            ],
-            stream=True,
-        )
-
-        # Append the assistant message only after the stream starts producing content
-        first_token = True
-        async for chunk in stream:
-            delta = chunk.choices[0].delta.content or ""
-            if not delta:
-                continue
+        try:
+            client = openai.AsyncOpenAI()
+            stream = await client.chat.completions.create(
+                model="gpt-4o",
+                messages=request_messages,
+                stream=True,
+            )
+            # Append the assistant message only once content starts arriving
+            first_token = True
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if not delta:
+                    continue
+                async with self:
+                    if first_token:
+                        self.messages.append(
+                            {"role": "assistant", "content": delta}
+                        )
+                        self.is_streaming = False  # hide dots on first token
+                        first_token = False
+                    else:
+                        self.messages[-1]["content"] += delta
+        finally:
             async with self:
-                if first_token:
-                    self.messages.append({"role": "assistant", "content": delta})
-                    self.is_streaming = False  # hide loading dots on the first token
-                    first_token = False
-                else:
-                    self.messages[-1]["content"] += delta
-
-        async with self:
-            self.is_streaming = False
+                self.is_streaming = False
 ```
 
 The differences that matter:
 
-1. Set `is_streaming = True` and `yield` to show the loading indicator right away.
+1. Set `is_streaming = True`, then `yield` **after** leaving `async with self:` to flush
+   the loading indicator without holding the state lock.
 2. Build the API request from `self.messages` directly — there is no trailing empty
    message to slice off with `[:-1]`.
 3. Append the assistant message only on the first token from the stream.
 4. Hide the loading indicator on the first token, not at the end of the stream.
+5. Wrap the stream in `try/finally` so `is_streaming` resets even when the API call fails.
