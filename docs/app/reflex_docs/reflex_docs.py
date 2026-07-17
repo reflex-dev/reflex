@@ -41,7 +41,6 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
-    stylesheets=styles.STYLESHEETS,
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),
@@ -49,24 +48,7 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=get_pixel_website_trackers()
-    + favicons_links()
-    + [
-        rx.el.link(
-            rel="preload",
-            href=rx.asset("fonts/instrument-sans.woff2"),
-            custom_attrs={"as": "font"},
-            type="font/woff2",
-            cross_origin="anonymous",
-        ),
-        rx.el.link(
-            rel="preload",
-            href=rx.asset("fonts/jetbrains-mono.woff2"),
-            custom_attrs={"as": "font"},
-            type="font/woff2",
-            cross_origin="anonymous",
-        ),
-    ],
+    head_components=get_pixel_website_trackers() + favicons_links(),
 )
 
 app.register_lifespan_task(monitor_checkly_status)

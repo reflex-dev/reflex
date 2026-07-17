@@ -3,6 +3,7 @@
 from collections import Counter
 
 import pytest
+import reflex as rx
 
 
 @pytest.fixture
@@ -62,3 +63,27 @@ def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
     }
 
     assert overlong == {}
+
+
+@pytest.mark.parametrize(
+    ("label", "href"),
+    [("Blog", "/blog/"), ("FAQ", "/faq/")],
+)
+def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
+    """Root-site footer links should not inherit the /docs router basename."""
+    from reflex_docs.templates.docpage.docpage import docpage_footer
+
+    rendered = docpage_footer.__wrapped__(rx.Var.create("/test")).render()
+
+    def find_link(node: dict) -> dict | None:
+        if any(child.get("contents") == f'"{label}"' for child in node["children"]):
+            return node
+        for child in node["children"]:
+            if "children" in child and (link := find_link(child)) is not None:
+                return link
+        return None
+
+    link = find_link(rendered)
+    assert link is not None
+    assert link["name"] == '"a"'
+    assert f'href:"{href}"' in link["props"]

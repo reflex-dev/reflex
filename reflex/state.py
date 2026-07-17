@@ -31,7 +31,6 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
-    BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
@@ -760,11 +759,8 @@ class BaseState(EvenMoreBasicBaseState):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
-        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
-            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
-        # Preserve event_actions from @rx.event decorator
-        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
-            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
+        newfn.__kwdefaults__ = fn.__kwdefaults__
+        newfn.__dict__.update(fn.__dict__)
         return newfn
 
     @staticmethod

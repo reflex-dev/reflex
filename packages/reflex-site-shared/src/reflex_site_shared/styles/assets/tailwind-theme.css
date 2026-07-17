@@ -1,5 +1,5 @@
 @import 'tailwindcss-scroll-mask';
-@import "tailwindcss-animated";
+@import 'tailwindcss-animated';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -159,8 +159,8 @@
     /* Radius */
     --radius: 0.5rem;
     /* Font */
-    --font-sans: "Instrument Sans", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
+    --font-sans: var(--font-instrument-sans);
+    --font-mono: var(--font-jetbrains);
     --font-instrument-sans: 'Instrument Sans', sans-serif;
     --font-source-code-pro: 'Source Code Pro', monospace;
     --font-jetbrains: "JetBrains Mono", monospace;
@@ -1660,6 +1660,14 @@
     }
 }
 
+#ph-conversations-widget-container button[aria-label^="Open chat"] {
+    display: none !important;
+}
+
+#ph-conversations-widget-container button[aria-label^="Open chat"]+div {
+    display: none !important;
+}
+
 @layer utilities {
     .font-instrument-sans {
         font-family: var(--font-instrument-sans);
@@ -1974,12 +1982,12 @@
         resize: none !important;
         outline: none !important;
         scrollbar-width: thin !important;
-        font-family: "JetBrains Mono" !important;
+        font-family: var(--font-jetbrains) !important;
     }
 
     .demo-code-block>* {
         background: transparent !important;
-        font-family: "JetBrains Mono" !important;
+        font-family: var(--font-jetbrains) !important;
         font-size: 0.8125rem !important;
         font-style: normal !important;
         font-weight: 400 !important;
@@ -2070,7 +2078,7 @@
     }
 
     .font-large {
-        font-family: "Instrument Sans";
+        font-family: var(--font-instrument-sans);
         font-size: 1.5rem;
         font-style: normal;
         font-weight: 600;
@@ -2176,12 +2184,4 @@
     body {
         @apply isolate bg-secondary-1 font-sans antialiased;
     }
-}
-
-#ph-conversations-widget-container button[aria-label^="Open chat"] {
-    display: none !important;
-}
-
-#ph-conversations-widget-container button[aria-label^="Open chat"]+div {
-    display: none !important;
 }
