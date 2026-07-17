@@ -81,9 +81,7 @@ class CartState(rx.State):
 
 
 def cart_label():
-    return rx.text(
-        rx.t("{count} item", plural="{count} items", count=CartState.items)
-    )
+    return rx.text(rx.t("{count} item", plural="{count} items", count=CartState.items))
 ```
 
 ### Disambiguating with context
@@ -92,8 +90,8 @@ When the same source text needs different translations in different places,
 give it a `context`:
 
 ```python
-rx.t("Open", context="verb")     # "to open something"
-rx.t("Open", context="status")   # "currently open"
+rx.t("Open", context="verb")  # "to open something"
+rx.t("Open", context="status")  # "currently open"
 ```
 
 ## Dynamic content with `gettext`
