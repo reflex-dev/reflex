@@ -233,7 +233,7 @@ def _drilldown_cell(item: rx.Var, index: rx.Var) -> rx.Component:
     """Each bar gets its own cell with on_click bound to the item name."""
     return rx.recharts.cell(
         on_click=BarDrilldownState.toggle_genre(item["name"].to(str)),
-        cursor="pointer",
+        custom_attrs={"cursor": "pointer"},
         fill=rx.cond(
             BarDrilldownState.drilled_genre == item["name"],
             "#1D4ED8",
