@@ -248,16 +248,15 @@ rx.badge(
 
 ## Coloring Icons with Tailwind
 
-When coloring an `rx.icon` with a Tailwind class, use the `stroke-` classes rather than the `text-` classes. Icons render as SVGs whose color is driven by the stroke, so `text-` color utilities have no effect.
+`rx.icon` renders a [Lucide](https://lucide.dev) SVG that uses `stroke="currentColor"`, and Reflex applies an inline color style on the element. Because that inline style beats a plain Tailwind color class, `class_name="text-green-500"` often looks like it does nothing.
 
-Instead of a `text-` color class:
-
-```python
-rx.icon("arrow_up", class_name="w-4 h-4 text-green-500")
-```
-
-Use a `stroke-` color class:
+To color an icon with a Tailwind class, either add `!` so the class overrides the inline style, or set the stroke directly with a `stroke-` class:
 
 ```python demo
-rx.icon("arrow_up", class_name="w-4 h-4 stroke-green-500")
+rx.hstack(
+    rx.icon("arrow_up", class_name="w-4 h-4 !text-green-500"),
+    rx.icon("arrow_up", class_name="w-4 h-4 stroke-green-500"),
+)
 ```
+
+You can also skip Tailwind entirely and use the `color` prop: `rx.icon("arrow_up", color="green")`.
