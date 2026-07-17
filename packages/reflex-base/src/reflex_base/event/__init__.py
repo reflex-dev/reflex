@@ -291,6 +291,7 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
+CANCEL_PREVIOUS_TASK_MARKER = "_reflex_cancel_previous_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
@@ -547,6 +548,19 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
+
+    @property
+    def is_cancel_previous_task(self) -> bool:
+        """Whether starting this handler cancels its previous in-flight run.
+
+        Only meaningful for background handlers. When True, dispatching a new
+        run cancels the still-running task from a prior run of the same handler
+        for the same client token.
+
+        Returns:
+            True if the event handler is marked to cancel its previous run.
+        """
+        return getattr(self.fn, CANCEL_PREVIOUS_TASK_MARKER, False)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
@@ -2909,6 +2923,7 @@ class EventNamespace:
         func: None = None,
         *,
         background: bool | None = None,
+        cancel_previous_task: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2924,6 +2939,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
+        cancel_previous_task: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2936,6 +2952,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
+        cancel_previous_task: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2947,6 +2964,7 @@ class EventNamespace:
         Args:
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
+            cancel_previous_task: Whether dispatching this handler cancels its still-running previous run for the same client token. Requires background=True.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
@@ -2958,6 +2976,7 @@ class EventNamespace:
 
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
+            ValueError: If cancel_previous_task is True but background is not True. # noqa: DAR402
         """
 
         def _build_event_actions():
@@ -2998,6 +3017,11 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if cancel_previous_task:
+                if background is not True:
+                    msg = "cancel_previous_task=True requires background=True."
+                    raise ValueError(msg)
+                setattr(func, CANCEL_PREVIOUS_TASK_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)

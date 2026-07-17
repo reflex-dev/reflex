@@ -2618,6 +2618,81 @@ async def test_background_task_no_chain():
         await bts.bad_chain2()
 
 
+# Cross-run bookkeeping for the cancel_previous_task test below. These are
+# plain module-level lists (not state) so a cancelled run can still record that
+# it was cancelled after its state proxy is gone.
+cancel_prev_started: list[int] = []
+cancel_prev_cancelled: list[int] = []
+cancel_prev_completed: list[int] = []
+# Holds a single asyncio.Event, created inside the test on the running loop, that
+# releases the surviving run once the test is ready for it to finish.
+cancel_prev_release: list[asyncio.Event] = []
+
+
+class CancelPreviousTaskState(BaseState):
+    """A state whose background task cancels its own previous in-flight run."""
+
+    runs: int = 0
+
+    @rx.event(background=True, cancel_previous_task=True)
+    async def slow_task(self):
+        """A slow background task that supersedes any still-running prior run."""
+        async with self:
+            self.runs += 1
+            run_id = self.runs
+        cancel_prev_started.append(run_id)
+        try:
+            # Stand in for in-flight async work (e.g. a DB query): the await is
+            # where a superseding run's cancellation lands.
+            await cancel_prev_release[0].wait()
+        except asyncio.CancelledError:
+            cancel_prev_cancelled.append(run_id)
+            raise
+        cancel_prev_completed.append(run_id)
+
+
+@pytest.mark.asyncio
+async def test_background_task_cancel_previous(
+    mock_app: rx.App,
+    token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """Test that cancel_previous_task cancels the still-running prior run.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+        mock_base_state_event_processor: The event processor.
+    """
+    cancel_prev_started.clear()
+    cancel_prev_cancelled.clear()
+    cancel_prev_completed.clear()
+    cancel_prev_release.clear()
+    cancel_prev_release.append(asyncio.Event())
+
+    event_name = f"{CancelPreviousTaskState.get_full_name()}.slow_task"
+    settle = 0.5 if CI else 0.2
+    async with mock_base_state_event_processor as processor:
+        # First run starts and parks in its polling loop.
+        await processor.enqueue(token, Event(name=event_name, payload={}))
+        await asyncio.sleep(settle)
+        assert cancel_prev_started == [1]
+
+        # Second run supersedes the first; run 1 should be cancelled.
+        await processor.enqueue(token, Event(name=event_name, payload={}))
+        await asyncio.sleep(settle)
+        assert cancel_prev_started == [1, 2]
+        assert cancel_prev_cancelled == [1]
+
+        # Let the surviving run finish.
+        cancel_prev_release[0].set()
+        await asyncio.sleep(settle)
+
+    # Only the second run completed; the first was cancelled mid-flight.
+    assert cancel_prev_cancelled == [1]
+    assert cancel_prev_completed == [2]
+
+
 class YieldFromBackgroundState(BaseState):
     """A state used to verify the type of `self` in a yielded event handler."""
 
