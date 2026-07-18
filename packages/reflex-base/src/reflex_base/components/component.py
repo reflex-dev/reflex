@@ -610,6 +610,11 @@ def _hash_str(value: str) -> str:
     return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
 
 
+# Dataclass field names per class, resolved once — ``dataclasses.fields()`` on
+# every VarData/ImportVar instance is measurable inside the hash walk.
+_DATACLASS_FIELD_NAMES: dict[type, tuple[str, ...]] = {}
+
+
 def _update_deterministic_hash(hasher: Any, value: object) -> None:
     """Feed ``value`` into ``hasher`` using a self-delimiting, type-tagged encoding.
 
@@ -617,6 +622,9 @@ def _update_deterministic_hash(hasher: Any, value: object) -> None:
     keeps the encoding injective without building intermediate strings — the
     nested ``str([...])`` approach this replaces was the dominant cost of
     ``_deterministic_hash`` (~4x speedup on synthetic, ~2x on real renders).
+    Exact-type checks front-run the ``isinstance`` ladder because the walk is
+    dominated by plain ``str``/``dict``/``list`` nodes; subclasses (enums,
+    ``Var``s, dataclasses) fall through to the ladder and hash identically.
 
     Args:
         hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
@@ -625,7 +633,24 @@ def _update_deterministic_hash(hasher: Any, value: object) -> None:
     Raises:
         TypeError: If the value is not hashable.
     """
-    if value is None:
+    if type(value) is str:
+        encoded = value.encode()
+        hasher.update(b"s")
+        hasher.update(len(encoded).to_bytes(8, "little"))
+        hasher.update(encoded)
+    elif type(value) is dict:
+        items = sorted(value.items(), key=operator.itemgetter(0))
+        hasher.update(b"d")
+        hasher.update(len(items).to_bytes(8, "little"))
+        for k, v in items:
+            _update_deterministic_hash(hasher, k)
+            _update_deterministic_hash(hasher, v)
+    elif type(value) is list or type(value) is tuple:
+        hasher.update(b"l")
+        hasher.update(len(value).to_bytes(8, "little"))
+        for item in value:
+            _update_deterministic_hash(hasher, item)
+    elif value is None:
         hasher.update(b"N")
     elif isinstance(value, bool):
         hasher.update(b"T" if value else b"F")
@@ -654,12 +679,15 @@ def _update_deterministic_hash(hasher: Any, value: object) -> None:
         _update_deterministic_hash(hasher, value._js_expr)
         _update_deterministic_hash(hasher, value._get_all_var_data())
     elif dataclasses.is_dataclass(value):
-        fields = dataclasses.fields(value)
+        field_names = _DATACLASS_FIELD_NAMES.get(type(value))
+        if field_names is None:
+            field_names = tuple(field.name for field in dataclasses.fields(value))
+            _DATACLASS_FIELD_NAMES[type(value)] = field_names
         hasher.update(b"D")
-        hasher.update(len(fields).to_bytes(8, "little"))
-        for field in fields:
-            hasher.update(field.name.encode())
-            _update_deterministic_hash(hasher, getattr(value, field.name))
+        hasher.update(len(field_names).to_bytes(8, "little"))
+        for field_name in field_names:
+            hasher.update(field_name.encode())
+            _update_deterministic_hash(hasher, getattr(value, field_name))
     elif isinstance(value, BaseComponent):
         hasher.update(b"C")
         _update_deterministic_hash(hasher, value.render())
@@ -1491,27 +1519,41 @@ class Component(BaseComponent, ABC):
         self._cached_render_result = rendered_dict
         return rendered_dict
 
-    def _get_component_hash(self, shallow: bool = False) -> str:
+    def _get_component_hash(
+        self, shallow: bool = False, rendered: dict | None = None
+    ) -> str:
         """Get a stable content hash for this component.
 
         The hash incorporates the rendered JSX dict plus the component's
         recursive imports, hooks (including internal lifecycle hooks),
-        custom code, and app-wrap components, so two components that
-        compile to semantically distinct JS modules hash differently
-        even when their ``render()`` output happens to match (e.g. two
-        components differing only in ``on_mount``, which is excluded
-        from ``_render`` props but lives in the lifecycle hook).
+        custom code, dynamic imports, and app-wrap components, so two
+        components that compile to semantically distinct JS modules hash
+        differently even when their ``render()`` output happens to match
+        (e.g. two components differing only in ``on_mount``, which is
+        excluded from ``_render`` props but lives in the lifecycle hook).
+
+        Coverage contract: auto-memoization dedups memo definitions purely by
+        this hash (see ``create_passthrough_component_memo``), so every input
+        that ``compile_experimental_component_memo`` emits into the memo
+        module must be hashed here — an emitted-but-unhashed input would let
+        two differing bodies collide on one tag.
 
         Args:
             shallow: If True, only hash the component's own render output and
                 directly defined hooks, imports, custom code, and app-wrap
                 components, excluding any of those from child components.
+            rendered: Pre-computed render dict to hash in place of
+                ``self.render()``, for callers hashing a hypothetical render
+                (e.g. the auto-memoize ``{children}``-holed body) without
+                mutating this component's render cache.
 
         Returns:
             The hex digest content hash.
         """
         hasher = md5(usedforsecurity=False)
-        _update_deterministic_hash(hasher, self.render())
+        _update_deterministic_hash(
+            hasher, rendered if rendered is not None else self.render()
+        )
         if shallow:
             # For non-snapshot strategies, we only hash the component's own hooks, imports, custom code, and app-wrap components
             _update_deterministic_hash(hasher, dict(self._get_imports()))
@@ -1519,18 +1561,20 @@ class Component(BaseComponent, ABC):
             _update_deterministic_hash(hasher, dict(self._get_added_hooks()))
             _update_deterministic_hash(hasher, self._get_hooks())
             _update_deterministic_hash(hasher, self._get_custom_code())
+            _update_deterministic_hash(hasher, self._get_dynamic_imports())
             _update_deterministic_hash(hasher, dict(self._get_app_wrap_components()))
         else:
             _update_deterministic_hash(hasher, dict(self._get_all_imports()))
             _update_deterministic_hash(hasher, dict(self._get_all_hooks_internal()))
             _update_deterministic_hash(hasher, dict(self._get_all_hooks()))
             _update_deterministic_hash(hasher, dict(self._get_all_custom_code()))
+            _update_deterministic_hash(hasher, sorted(self._get_all_dynamic_imports()))
             _update_deterministic_hash(
                 hasher, dict(self._get_all_app_wrap_components())
             )
         return hasher.hexdigest()
 
-    def _compute_memo_tag(self) -> str:
+    def _compute_memo_tag(self, rendered: dict | None = None) -> str:
         """Compute a stable tag name for memoizing this component.
 
         The class qualname is encoded directly in the tag prefix so that
@@ -1541,6 +1585,10 @@ class Component(BaseComponent, ABC):
         providers like ``UploadFilesProvider`` that must reach the app
         root).
 
+        Args:
+            rendered: Pre-computed render dict forwarded to
+                ``_get_component_hash`` in place of ``self.render()``.
+
         Returns:
             The stable tag name.
         """
@@ -1550,7 +1598,8 @@ class Component(BaseComponent, ABC):
         )
 
         comp_hash = self._get_component_hash(
-            shallow=get_memoization_strategy(self) == MemoizationStrategy.PASSTHROUGH
+            shallow=get_memoization_strategy(self) == MemoizationStrategy.PASSTHROUGH,
+            rendered=rendered,
         )
         return format.format_state_name(
             f"{type(self).__qualname__}_{self.tag or 'Comp'}_{comp_hash}"

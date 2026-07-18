@@ -360,10 +360,9 @@ class MemoizeStatefulPlugin(Plugin):
     ) -> BaseComponent | None:
         """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
 
-        Rewrites ``comp.event_triggers`` on a page-local clone via
-        :func:`fix_event_triggers_for_memo` so the memo body renders the
-        memoized ``useCallback`` forms, and registers the memo definition on
-        ``compile_context`` so the memo module compile pass emits it.
+        Registers the memo definition on ``compile_context`` so the memo
+        module compile pass emits it; when an identical subtree was already
+        registered this compile, its definition is reused instead.
 
         Args:
             comp: The component being memoized.
@@ -374,23 +373,27 @@ class MemoizeStatefulPlugin(Plugin):
             The wrapper instance, or ``None`` if the component's render is
             empty and has no meaningful tag.
         """
-        comp = fix_event_triggers_for_memo(comp, page_context)
-
         # Passthrough memo definitions capture app-specific event/state vars, so
         # they must be rebuilt for each compile instead of shared globally. The
-        # tag is derived from the rendered memo body inside
-        # ``create_passthrough_component_memo`` after the ``{children}`` hole
-        # is substituted, so passthrough wrappers that differ only in their
-        # children collapse to a single definition.
+        # tag hashes ``comp`` with the ``{children}`` hole standing in for its
+        # children, so wrappers differing only in their children collapse to a
+        # single definition. The registry (keyed by (tag, source_module) so
+        # identical-rendering subtrees from different user modules emit into
+        # the right mirrored memo file) dedups identical subtrees: repeat call
+        # sites reuse the first definition, skipping the event-trigger rewrite
+        # and the body build entirely. ``fix_event_triggers_for_memo`` rewrites
+        # ``comp.event_triggers`` on a page-local clone into memoized
+        # ``useCallback`` forms; it runs only when a body is actually built,
+        # and is deterministic in ``comp``'s content, so equal tags yield
+        # equal bodies regardless of which call site built the definition.
         wrapper_factory, definition = create_passthrough_component_memo(
-            comp, source_module=page_context.source_module
+            comp,
+            source_module=page_context.source_module,
+            registry=compile_context.auto_memo_components,
+            prepare_body=lambda body: fix_event_triggers_for_memo(body, page_context),
         )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
-        # Key by (tag, source_module) so identical-rendering subtrees from
-        # different user modules each get their own entry and emit into the
-        # right mirrored memo file.
-        compile_context.auto_memo_components[tag, definition.source_module] = definition
 
         wrapper = wrapper_factory()
         # The wrapper has no structural children at the page level, but parents
