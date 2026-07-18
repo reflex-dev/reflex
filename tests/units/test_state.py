@@ -56,6 +56,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    reload_state_module,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -3710,6 +3711,54 @@ def test_potentially_dirty_states():
     assert RxState._get_potentially_dirty_states() == set()
     assert State._get_potentially_dirty_states() == set()
     assert C1._get_potentially_dirty_states() == set()
+
+
+def test_reload_scrubs_cross_state_dependency_edges():
+    """Reloading a module drops dependency edges pointing at its states.
+
+    Regression: an edge from an app-module state to a var on a state defined
+    *outside* that module (e.g. a package-level state) must be cleaned on
+    reload, or it dangles and crashes ``_mark_dirty_computed_vars`` on the
+    next app.
+    """
+
+    # Stands in for a long-lived package-level state (e.g. the i18n locale
+    # state): defined in this test module, so reloading the app module below
+    # leaves it in place.
+    class PkgState(RxState):
+        value: str = ""
+
+    # A state in a separate "app" module whose computed var depends on
+    # PkgState.value, so the edge is stored on PkgState.
+    def _computed(self) -> str:
+        return ""
+
+    app_module = "_reload_regression_fake_app"
+    AppState = type(
+        "AppState",
+        (RxState,),
+        {
+            "__module__": app_module,
+            "app_cv": computed_var(deps=[PkgState.value])(_computed),
+        },
+    )
+    app_name = AppState.get_full_name()
+
+    assert app_name in PkgState._potentially_dirty_states
+    assert any(
+        edge[0] == app_name
+        for edges in PkgState._var_dependencies.values()
+        for edge in edges
+    )
+
+    reload_state_module(module=app_module)
+
+    assert app_name not in PkgState._potentially_dirty_states
+    assert not any(
+        edge[0] == app_name
+        for edges in PkgState._var_dependencies.values()
+        for edge in edges
+    )
 
 
 @pytest.mark.asyncio

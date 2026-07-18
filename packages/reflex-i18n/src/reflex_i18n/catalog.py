@@ -68,17 +68,13 @@ def compile_catalog_module(
     *,
     is_default_locale: bool,
 ) -> str:
-    """Render the JS catalog module for one locale.
-
-    Only messages actually used by the app are included (tree-shaking);
-    untranslated messages are omitted so the client falls back to the msgid.
+    """Render the JS catalog module for one locale (used messages only).
 
     Args:
         catalog: The parsed ``.po`` catalog, or None if the locale has none.
         used_messages: All messages collected from ``rx.t`` calls.
         locale: The locale being compiled, for warnings.
-        is_default_locale: Whether this is the app's default locale, in which
-            case missing translations are expected and not warned about.
+        is_default_locale: If True, missing translations are not warned about.
 
     Returns:
         The JS module source code.

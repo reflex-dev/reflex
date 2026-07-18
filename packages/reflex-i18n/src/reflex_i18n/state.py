@@ -25,10 +25,7 @@ from .runtime import gettext, negotiate_locale, ngettext, pgettext, use_locale
 
 
 def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
-    """Resolve a locale from a chosen-locale cookie and Accept-Language.
-
-    Resolution order: the chosen-locale cookie, then the best match for the
-    ``Accept-Language`` header, then the configured default.
+    """Resolve a locale: chosen cookie, then Accept-Language, then default.
 
     Args:
         locale_cookie: The user's chosen locale, or empty if none.
@@ -54,20 +51,14 @@ class I18nState(State):
 
     @computed_var(cache=True, backend=True, auto_deps=False, deps=["locale_cookie"])
     def locale(self) -> str:
-        """The locale in effect for this client.
-
-        Server-side only: the client tracks its own locale via the i18n
-        provider. Exists so user computed vars that translate dynamic content
-        can depend on it and recompute when the locale changes.
-
-        Depends only on ``locale_cookie`` (not ``router``): the accept-language
-        header is read for the initial value but never changes within a
-        session, and tracking ``router`` here would add this substate to the
-        root state's potentially-dirty set on every navigation.
+        """The locale in effect for this client (server-side).
 
         Returns:
             The resolved locale.
         """
+        # Depends only on locale_cookie (not router): accept-language is read
+        # for the initial value but is fixed per session, and depending on
+        # router would dirty this substate on every navigation.
         return _resolve_locale(self.locale_cookie, self.router.headers.accept_language)
 
     def set_locale(self, locale: str) -> None:
@@ -90,17 +81,13 @@ class I18nState(State):
 
 
 def set_locale(locale: str | Var[str]) -> EventType:
-    """Switch the app's locale for static and dynamic content.
-
-    Switches client-side translated (``rx.t``) content immediately and writes
-    the locale cookie, then updates the server so dynamic (state) content is
-    retranslated on the next delta.
+    """Switch the app's locale (static content instantly, dynamic on next delta).
 
     Args:
         locale: The locale to switch to.
 
     Returns:
-        The events performing the client-side and server-side switch.
+        The client-side and server-side switch events.
     """
     switch_client = run_script(
         Var(
@@ -120,20 +107,23 @@ def set_locale(locale: str | Var[str]) -> EventType:
 async def _locale_scope(
     root_state: BaseState,
 ) -> contextlib.AbstractContextManager[None]:
-    """Build the per-event locale context for a client.
-
-    Reads the client's resolved locale from state and returns a context
-    manager activating it, so server-side ``gettext`` translates into it
-    during handler execution and delta resolution.
+    """Per-event locale context, or a no-op when this app has no i18n plugin.
 
     Args:
         root_state: The client's root state instance.
 
     Returns:
-        A context manager activating the client's locale, or a no-op when
-        i18n is not configured.
+        A context manager activating the client's locale.
     """
-    if get_active_i18n_config() is None:
+    from reflex_base.config import get_config
+
+    from .plugin import I18nPlugin
+
+    # Gate on the CURRENT app's plugins rather than the module-global active
+    # config: the provider is registered process-wide once i18n is imported,
+    # but a given app (e.g. a non-i18n app loaded later in the same process,
+    # as in the test suite) must be a no-op so it never touches I18nState.
+    if not any(isinstance(plugin, I18nPlugin) for plugin in get_config().plugins):
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
     locale = _resolve_locale(
