@@ -930,6 +930,13 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The formatted var.
         """
+        # Operands of a running ``var_operation`` body interpolate as their
+        # raw JS expression: their VarData flows through the operation's
+        # ``_args``, so the tag round-trip (and its permanent ``_global_vars``
+        # entry) is pure overhead there. See ``var_operation``.
+        if self.__dict__.get("_format_without_tagging"):
+            return str(self)
+
         hashed_var = hash(self)
 
         _global_vars[hashed_var] = self
@@ -1941,10 +1948,34 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
             for key, value in kwargs.items()
         }
 
+        operands = [*args_vars.values(), *kwargs_vars.values()]
+        # Suppress f-string tagging for the operands while the body runs:
+        # their VarData reaches the operation through ``_args`` below, so the
+        # tag round-trip (hash + permanent ``_global_vars`` entry + regex
+        # decode of the return expression) is pure overhead. The suppression
+        # is ref-counted so a nested operation on the same var cannot clear
+        # an outer suppression early; vars created inside the body still tag
+        # normally and keep contributing VarData via the return expression.
+        for operand in operands:
+            operand_dict = operand.__dict__
+            operand_dict["_format_without_tagging"] = (  # pyright: ignore[reportIndexIssue]
+                operand_dict.get("_format_without_tagging", 0) + 1
+            )
+        try:
+            return_var = func(*args_vars.values(), **kwargs_vars)  # pyright: ignore [reportCallIssue]
+        finally:
+            for operand in operands:
+                operand_dict = operand.__dict__
+                remaining = operand_dict["_format_without_tagging"] - 1
+                if remaining:
+                    operand_dict["_format_without_tagging"] = remaining  # pyright: ignore[reportIndexIssue]
+                else:
+                    del operand_dict["_format_without_tagging"]  # pyright: ignore[reportIndexIssue]
+
         return CustomVarOperation.create(
             name=func.__name__,
             args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
+            return_var=return_var,  # pyright: ignore [reportArgumentType]
         ).guess_type()
 
     return wrapper
