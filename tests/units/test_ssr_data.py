@@ -14,6 +14,39 @@ from reflex.app import App
 from reflex.ssr import ssr_data
 
 
+@pytest.fixture(autouse=True)
+def _isolate_ssr_state(clean_registration_context):
+    """Serialize the /_ssr_data tree against only each test's own states.
+
+    The endpoint calls ``State.dict()``, which walks every registered substate;
+    with a polluted global registry it would serialize (and crash on) unrelated
+    states from other modules (e.g. test_app's DynamicState). ``clean_registration_context``
+    gives an empty substate registry, but the root ``State``'s per-class dependency
+    sets are global — reset them to match the clean context (and restore after),
+    so lookups stay consistent and nothing leaks in or out.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+
+    Yields:
+        None.
+    """
+    from reflex.state import State
+
+    names = ("_potentially_dirty_states", "_always_dirty_substates", "_var_dependencies")
+    original = {name: getattr(State, name) for name in names}
+    State._potentially_dirty_states = set()
+    State._always_dirty_substates = set()
+    State._var_dependencies = {}
+    State.get_class_substate.cache_clear()
+    try:
+        yield
+    finally:
+        for name, value in original.items():
+            setattr(State, name, value)
+        State.get_class_substate.cache_clear()
+
+
 def _make_request(path: str = "/", headers: dict | None = None) -> Mock:
     """Create a mock Starlette Request with the given path and headers.
 
