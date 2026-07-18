@@ -127,9 +127,15 @@ def mock_redis() -> Redis:
             return 1
         return 0
 
-    async def mock_getdel(key: KeyT) -> Any:
-        value = await redis_mock.get(key)
-        await redis_mock.delete(key)
+    async def mock_getdel(key: KeyT) -> Any:  # noqa: RUF029
+        # Self-contained (not delegating to redis_mock.get/delete) so tests
+        # that instrument those methods don't count GETDEL as a GET.
+        _expire_keys()
+        key = _key_bytes(key)
+        value = keys.pop(key, None)
+        if value is not None:
+            expire_times.pop(key, None)
+            _keyspace_event(key, "del")
         return value
 
     async def mock_pexpire(key: KeyT, px: int, xx: bool = False) -> bool:  # noqa: RUF029
