@@ -433,6 +433,14 @@ def compile_experimental_component_memo(
 
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
+    # The wrapper import (``memo`` from React by default) rides on the wrapper
+    # var itself, so a custom wrapper brings its own imports and ``None``
+    # pulls in nothing.
+    wrapper = definition.wrapper
+    if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
+        for lib, fields in wrapper_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
+
     signature_fields = [
         field
         for param in definition.params
@@ -456,6 +464,7 @@ def compile_experimental_component_memo(
                 fields=tuple(signature_fields),
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
+            "wrapper": str(wrapper) if wrapper is not None else None,
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -559,6 +568,7 @@ def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> Component:
     """Create the document root.
 
@@ -566,6 +576,8 @@ def create_document_root(
         head_components: The components to add to the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The document root.
@@ -612,7 +624,7 @@ def create_document_root(
         )
 
     # Add theme preload script as the very first component to prevent FOUC
-    theme_preload_components = [preload_color_theme()]
+    theme_preload_components = [preload_color_theme(default_color_mode)]
 
     head_components = [
         *theme_preload_components,

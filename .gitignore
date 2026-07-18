@@ -30,3 +30,6 @@ package-lock.json
 .claude/.worktrees
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Backups written by scripts/delete_automated_releases.sh
+automated-releases-backup-*.json

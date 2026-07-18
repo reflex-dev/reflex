@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+import functools
 import inspect
 import os
 import shutil
@@ -303,13 +304,30 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     return exclude_roots
 
 
-def _get_first_non_framework_frame() -> FrameType | None:
-    exclude_roots = _exclude_paths_from_frame_info()
+@functools.cache
+def _is_framework_filename(filename: str) -> bool:
+    """Check if a code filename belongs to an excluded framework/stdlib root.
 
+    Cached per filename: module file locations do not move within a process,
+    but resolving a path and comparing it against every exclude root is far
+    too expensive to repeat for each frame on every deprecation check.
+
+    Args:
+        filename: The ``co_filename`` of a frame's code object.
+
+    Returns:
+        Whether the file lives under one of the excluded framework roots.
+    """
+    frame_path = Path(filename).resolve()
+    return any(
+        frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()
+    )
+
+
+def _get_first_non_framework_frame() -> FrameType | None:
     frame = inspect.currentframe()
     while frame := frame and frame.f_back:
-        frame_path = Path(inspect.getfile(frame)).resolve()
-        if not any(frame_path.is_relative_to(root) for root in exclude_roots):
+        if not _is_framework_filename(frame.f_code.co_filename):
             break
     return frame
 

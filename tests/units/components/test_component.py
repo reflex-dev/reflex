@@ -2324,3 +2324,22 @@ def test_deepcopy_produces_independent_children() -> None:
 
     assert len(original.children) == 1
     assert len(clone.children) == 2
+
+
+def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
+    """Collecting subtree hooks must not pollute each node's own hooks cache."""
+    child = Box.create(id="hooks_cache_child")
+    parent = Box.create(child, id="hooks_cache_parent")
+
+    parent_own_hooks = dict(parent._get_hooks_internal())
+    child_own_hooks = dict(child._get_hooks_internal())
+    combined = parent._get_all_hooks_internal()
+
+    # The subtree collection includes both nodes' hooks.
+    for hook in (*parent_own_hooks, *child_own_hooks):
+        assert hook in combined
+
+    # The parent's per-node cache must not absorb the child's hooks.
+    assert dict(parent._get_hooks_internal()) == parent_own_hooks
+    # And repeated collection yields the same result.
+    assert parent._get_all_hooks_internal() == combined

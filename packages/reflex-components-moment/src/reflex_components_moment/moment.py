@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 
-from reflex_base.components.component import NoSSRComponent, field
+from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars.base import LiteralVar, Var
@@ -26,7 +26,7 @@ class MomentDelta:
     milliseconds: int | None = dataclasses.field(default=None)
 
 
-class Moment(NoSSRComponent):
+class Moment(NoSSRComponent, MemoizationLeaf):
     """The Moment component."""
 
     tag: str | None = "Moment"

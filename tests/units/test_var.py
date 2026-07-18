@@ -1,6 +1,7 @@
 import decimal
 import json
 import math
+import re
 import typing
 from collections.abc import Mapping, Sequence
 from typing import cast
@@ -8,12 +9,17 @@ from typing import cast
 import pytest
 from pandas import DataFrame
 from pytest_mock import MockerFixture
-from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.base import (
+    REFLEX_VAR_CLOSING_TAG,
+    REFLEX_VAR_OPENING_TAG,
+    Dirs,
+)
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     ReflexError,
     UntypedComputedVarError,
+    VarTypeError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_default_value_for_type
@@ -776,11 +782,10 @@ def test_computed_var_without_annotation_error(request, fixture):
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
-        full_name = state.var_without_annotation._var_full_name
-        assert (
-            err.value.args[0]
-            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
-        )
+    assert (
+        err.value.args[0]
+        == "Computed var 'var_without_annotation' must have a type annotation."
+    )
 
 
 @pytest.mark.parametrize(
@@ -821,11 +826,9 @@ def test_computed_var_with_annotation_error(request, fixture):
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
-        full_name = state.var_with_annotation._var_full_name
-        assert (
-            err.value.args[0]
-            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
-        )
+    assert err.value.args[0].endswith(
+        "of type <class 'str'> has no attribute 'foo' or may have been annotated wrongly."
+    )
 
 
 @pytest.mark.parametrize(
@@ -1115,6 +1118,125 @@ def test_array_operations():
         str(ArrayVar.range(1, 10, -1))
         == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
     )
+
+
+def _assert_var_imports(var: Var, tag: str):
+    """Assert that the var's VarData includes an import of tag from the state module.
+
+    Args:
+        var: The var to check.
+        tag: The expected import tag.
+    """
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert any(
+        import_var.tag == tag
+        for import_var in dict(var_data.imports).get(f"$/{Dirs.STATE_PATH}", ())
+    )
+
+
+def test_array_map(mocker: MockerFixture):
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    mapped = array_var.map(lambda x: x * 2)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.map\(\(\((\w+)\) => \(\1 \* 2\)\)\)", str(mapped)
+    )
+    assert mapped._var_type == list[typing.Any]
+
+    # 0-argument functions are supported
+    assert str(array_var.map(lambda: 42)) == "[1, 2, 3].map((() => 42))"
+
+    # foreach is a deprecated alias of map
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.map\(\(\((\w+)\) => \(\1 \* 2\)\)\)",
+        str(array_var.foreach(lambda x: x * 2)),  # pyright: ignore[reportDeprecated]
+    )
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "ArrayVar.foreach"
+
+    with pytest.raises(VarTypeError):
+        array_var.map(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.map(42)
+
+
+def test_array_filter():
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    # no predicate: python truthiness of the elements themselves
+    truthy = array_var.filter()
+    assert str(truthy) == "[1, 2, 3].filter(isTrue)"
+    assert truthy._var_type == array_var._var_type
+    _assert_var_imports(truthy, "isTrue")
+
+    # boolean-returning predicates are used as-is
+    predicate = array_var.filter(lambda x: x > 1)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => \(\1 > 1\)\)\)", str(predicate)
+    )
+
+    # non-boolean results are evaluated with python truthiness
+    truthy_predicate = array_var.filter(lambda x: x % 2)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\1 % 2\)\)\)\)",
+        str(truthy_predicate),
+    )
+    _assert_var_imports(truthy_predicate, "isTrue")
+
+    with pytest.raises(VarTypeError):
+        array_var.filter(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.filter(42)
+
+
+def test_array_reduce():
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    summed = array_var.reduce(lambda acc, x: acc + x)  # noqa: FURB118
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \(\1 \+ \2\)\)\)", str(summed)
+    )
+    assert summed._var_type is int
+    assert isinstance(summed, NumberVar)
+
+    with_initial = array_var.reduce(lambda acc, x: acc + x, 10)  # noqa: FURB118
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \(\1 \+ \2\)\), 10\)",
+        str(with_initial),
+    )
+    assert with_initial._var_type is int
+
+    # None is a valid initial value, distinct from no initial
+    with_none_initial = array_var.reduce(lambda acc, x: x, None)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \2\), null\)",
+        str(with_none_initial),
+    )
+
+    with pytest.raises(VarTypeError):
+        array_var.reduce(lambda x: x)
+    with pytest.raises(VarTypeError):
+        array_var.reduce(lambda x, y, z: x)
+    with pytest.raises(VarTypeError):
+        array_var.reduce(42)
+
+
+def test_array_flat_map():
+    array_var = LiteralArrayVar.create([[1, 2], [3]])
+
+    flattened = array_var.flat_map(lambda x: x)
+    assert re.fullmatch(
+        r"pyFlatMap\(\[\[1, 2\], \[3\]\], \(\((\w+)\) => \1\)\)", str(flattened)
+    )
+    assert flattened._var_type == list[typing.Any]
+    _assert_var_imports(flattened, "pyFlatMap")
+
+    with pytest.raises(VarTypeError):
+        array_var.flat_map(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.flat_map(42)
 
 
 def test_object_operations():

@@ -487,6 +487,35 @@ class TestRedisTokenManager:
         assert hasattr(manager, "token_to_sid")
         assert hasattr(manager, "sid_to_token")
 
+    async def test_close_cancels_tasks_and_closes_redis(self, manager, mock_redis):
+        """Test close cancels background pub/sub tasks and closes the Redis client.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        manager._ensure_socket_record_task()
+        task = manager._socket_record_task
+        assert task is not None
+
+        await manager.close()
+
+        assert task.cancelled()
+        assert manager._socket_record_task is None
+        assert manager._lost_and_found_task is None
+        mock_redis.aclose.assert_awaited_once()
+
+    async def test_close_without_tasks(self, manager, mock_redis):
+        """Test close works when no background tasks were started.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        await manager.close()
+
+        mock_redis.aclose.assert_awaited_once()
+
 
 @pytest.fixture
 def redis_url():
