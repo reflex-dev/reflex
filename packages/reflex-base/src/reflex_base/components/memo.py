@@ -493,17 +493,32 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
 
 
 def _reregister_used_memo(definition: MemoDefinition) -> None:
-    """Re-register a user ``@rx.memo`` definition when it is used.
-
-    Keeps ``MEMOS`` populated from actual usage so a cleared registry (e.g. the
-    AppHarness reload, which clears ``MEMOS`` but only reloads the top app
-    module, so submodule ``@rx.memo`` decorators never re-run) still emits every
-    memo the compiled tree references. Passthrough auto-memos are defined in
-    this module and tracked separately by the compiler, so they must stay out of
-    ``MEMOS``.
+    """Re-register a used ``@rx.memo`` so a cleared ``MEMOS`` is repopulated from
+    usage. Passthrough auto-memos (defined in this module) are tracked
+    separately and stay out of ``MEMOS``.
     """
     if definition.fn.__module__ != __name__:
         _register_memo_definition(definition)
+
+
+def materialize_registered_memo_bodies() -> None:
+    """Evaluate every registered memo body, until ``MEMOS`` stops growing.
+
+    Reading a memo body re-registers any nested ``@rx.memo`` it references (see
+    :func:`_reregister_used_memo`), so the compiler must do this before it
+    snapshots ``MEMOS`` — else a dependency surfaced only while compiling a lazy
+    var-memo body is left out. Bodies cache, so re-reading one is a no-op.
+    """
+    evaluated: set[tuple[str, str | None]] = set()
+    while pending := [
+        (key, definition) for key, definition in MEMOS.items() if key not in evaluated
+    ]:
+        for key, definition in pending:
+            evaluated.add(key)
+            if isinstance(definition, MemoFunctionDefinition):
+                _ = definition.function
+            elif isinstance(definition, MemoComponentDefinition):
+                _ = definition.component
 
 
 def _annotation_inner_type(annotation: Any) -> Any:
@@ -2065,5 +2080,6 @@ __all__ = [
     "MemoFunctionDefinition",
     "create_component_memo",
     "create_passthrough_component_memo",
+    "materialize_registered_memo_bodies",
     "memo",
 ]
