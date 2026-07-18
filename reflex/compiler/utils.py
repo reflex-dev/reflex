@@ -418,7 +418,7 @@ def _collect_subtree_artifacts(
         dynamic_imports.add(dynamic_import)
 
     prop_parts = [
-        _collect_subtree_artifacts(prop_component, in_prop_tree=True)
+        _collect_subtree_artifacts(prop_component, in_prop_tree=True)  # pyright: ignore[reportArgumentType]
         for prop_component in component._get_components_in_props()
     ]
     # Custom code pulls prop subtrees in before the component's own
@@ -431,7 +431,7 @@ def _collect_subtree_artifacts(
             custom_code[item] = None
 
     child_parts = [
-        _collect_subtree_artifacts(child, in_prop_tree=in_prop_tree)
+        _collect_subtree_artifacts(child, in_prop_tree=in_prop_tree)  # pyright: ignore[reportArgumentType]
         for child in component.children
     ]
     for child_hooks, child_custom_code, child_dynamic_imports, _ in child_parts:
