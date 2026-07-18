@@ -26,9 +26,13 @@ class RedisTestState(BaseState):
 class SubState1(RedisTestState):
     """A test substate for redis state manager tests."""
 
+    sub1_foo: str = ""
+
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+    sub2_foo: str = ""
 
 
 @pytest.fixture
@@ -772,8 +776,8 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
             BaseStateToken(ident=token, cls=root_state)
         ) as state:
             state.count = 1
-            (await state.get_state(SubState1)).foo = "sub1"
-            (await state.get_state(SubState2)).foo = "sub2"
+            (await state.get_state(SubState1)).sub1_foo = "sub1"
+            (await state.get_state(SubState2)).sub2_foo = "sub2"
             get_calls.clear()
             pttl_calls.clear()
     finally:
@@ -789,8 +793,8 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
         BaseStateToken(ident=token, cls=root_state)
     )
     assert final_state.count == 1
-    assert (await final_state.get_state(SubState1)).foo == "sub1"
-    assert (await final_state.get_state(SubState2)).foo == "sub2"
+    assert (await final_state.get_state(SubState1)).sub1_foo == "sub1"
+    assert (await final_state.get_state(SubState2)).sub2_foo == "sub2"
 
 
 async def test_set_state_resets_touched_flag(
