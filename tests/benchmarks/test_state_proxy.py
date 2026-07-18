@@ -93,3 +93,67 @@ def test_var_access(access_fn, benchmark: BenchmarkFixture):
     """
     state = ProxyBenchmarkState()  # pyright: ignore [reportCallIssue]
     benchmark(lambda: access_fn(state))
+
+
+def test_proxy_list_mutation(benchmark: BenchmarkFixture):
+    """Benchmark a batch of writes through a mutable list proxy.
+
+    Args:
+        benchmark: The CodSpeed benchmark fixture.
+    """
+
+    def setup():
+        """Create a fresh state for one measured write batch.
+
+        Returns:
+            CodSpeed pedantic positional and keyword arguments.
+        """
+        state = ProxyBenchmarkState()  # pyright: ignore [reportCallIssue]
+        return ((state,), {})
+
+    def mutate(state: ProxyBenchmarkState) -> int:
+        """Append one hundred values through the proxy.
+
+        Args:
+            state: Fresh benchmark state.
+
+        Returns:
+            Final list length.
+        """
+        for value in range(100):
+            state.numbers.append(value)
+        return len(state.numbers)
+
+    assert benchmark.pedantic(mutate, setup=setup) == N + 100
+
+
+def test_proxy_mapping_mutation(benchmark: BenchmarkFixture):
+    """Benchmark a batch of writes through a mutable mapping proxy.
+
+    Args:
+        benchmark: The CodSpeed benchmark fixture.
+    """
+
+    def setup():
+        """Create a fresh state for one measured write batch.
+
+        Returns:
+            CodSpeed pedantic positional and keyword arguments.
+        """
+        state = ProxyBenchmarkState()  # pyright: ignore [reportCallIssue]
+        return ((state,), {})
+
+    def mutate(state: ProxyBenchmarkState) -> int:
+        """Update one hundred values through the proxy.
+
+        Args:
+            state: Fresh benchmark state.
+
+        Returns:
+            Final mapping length.
+        """
+        for value in range(100):
+            state.mapping[value] = value
+        return len(state.mapping)
+
+    assert benchmark.pedantic(mutate, setup=setup) == N
