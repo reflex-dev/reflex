@@ -158,6 +158,71 @@ export function I18nProvider({ children }) {
   );
 }
 
+// Cached Intl formatter instances, keyed by locale + serialized options, so a
+// list of many formatted values reuses one formatter per (locale, options).
+const _numberFormatters = new Map();
+const _dateFormatters = new Map();
+
+// In normal use the key set is small (locales x compile-time option sets), but
+// runtime-varying options (a Var in `options=`) could grow it, so cap the cache
+// and evict the oldest entry (Map preserves insertion order).
+const FORMATTER_CACHE_LIMIT = 100;
+
+const getFormatter = (cache, Ctor, locale, options) => {
+  const key = locale + " " + JSON.stringify(options ?? {});
+  let formatter = cache.get(key);
+  if (formatter === undefined) {
+    formatter = new Ctor(locale, options);
+    if (cache.size >= FORMATTER_CACHE_LIMIT) {
+      cache.delete(cache.keys().next().value);
+    }
+    cache.set(key, formatter);
+  }
+  return formatter;
+};
+
+// Turn a value into a Date, normalizing Python's str(date/datetime/time):
+// trim microseconds to milliseconds; parse a date-only value as local midnight
+// (not UTC, which would shift the day in negative offsets); anchor a bare time
+// to the epoch date so Intl can format it (new Date("14:30:00") is invalid).
+const toDate = (value) => {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value);
+  const s = String(value).replace(/(\.\d{3})\d+/, "$1");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00`);
+  if (/^\d{2}:\d{2}/.test(s)) return new Date(`1970-01-01T${s}`);
+  return new Date(s.replace(" ", "T"));
+};
+
+export function useFormat() {
+  const { locale } = useContext(I18nContext);
+  const formatNumber = useCallback(
+    (value, options) =>
+      getFormatter(
+        _numberFormatters,
+        Intl.NumberFormat,
+        locale,
+        options,
+      ).format(value),
+    [locale],
+  );
+  const formatDate = useCallback(
+    (value, options) =>
+      getFormatter(
+        _dateFormatters,
+        Intl.DateTimeFormat,
+        locale,
+        options,
+      ).format(toDate(value)),
+    [locale],
+  );
+  return [formatNumber, formatDate];
+}
+
+export function useLocale() {
+  return useContext(I18nContext).locale;
+}
+
 export function useTranslation() {
   const { catalog } = useContext(I18nContext);
 

@@ -141,6 +141,61 @@ Note: translate at render time (in a computed var) or at the moment you emit a
 message. A translated string stored in a plain var earlier will not
 re-translate on its own when the locale changes.
 
+## Formatting numbers and dates
+
+Numbers, currencies, percentages and dates are formatted differently per locale
+(`1,234.5` vs `1.234,5`, `7/18/2026` vs `18.07.2026`). There are two ways to
+format, mirroring static vs dynamic content.
+
+**In components (client-side).** `rx.i18n.number` / `currency` / `percent` /
+`date` / `time` / `datetime` format a value in the browser using `Intl`, and
+reformat instantly when the locale changes:
+
+```python
+def price_row():
+    return rx.hstack(
+        rx.text(rx.i18n.number(State.quantity, max_fraction_digits=2)),
+        rx.text(rx.i18n.currency(State.total, "EUR")),
+        rx.text(rx.i18n.percent(State.tax_rate, max_fraction_digits=1)),
+        rx.text(rx.i18n.date(State.created, length="long")),
+    )
+```
+
+Curated options — `min_fraction_digits`, `max_fraction_digits`, `grouping`,
+`compact`, and `length` (`"short"`/`"medium"`/`"long"`/`"full"`) — cover the
+common cases; pass `options={...}` for raw
+[`Intl`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat)
+options.
+
+**In state (server-side).** Use the `format_*` helpers, e.g. when building a
+translated string. Like `gettext`, a computed var using one reformats when the
+locale changes:
+
+```python
+from reflex_i18n import gettext as _, format_currency
+
+
+class CartState(rx.State):
+    total: float = 0.0
+
+    @rx.var
+    def summary(self) -> str:
+        return _("Total: {amount}").format(amount=format_currency(self.total, "EUR"))
+```
+
+`rx.i18n.locale` exposes the active locale as a var, e.g. to drive
+`rx.moment(State.created, locale=rx.i18n.locale)`.
+
+Two caveats:
+
+- **Naive datetimes client-side** are shown in the visitor's local time zone (a
+  datetime with no offset has no absolute meaning). For a fixed zone, use a
+  timezone-aware datetime, pass `options={"timeZone": "..."}`, or format
+  server-side with `format_datetime`. (Plain dates and times are unambiguous and
+  render correctly.)
+- Python's `f"{value:,}"` formatting on a numeric var stays `en-US` by design;
+  use `rx.i18n.number` for locale-aware output.
+
 ## Detecting and switching the locale
 
 On a visitor's first load, the locale is negotiated from their browser's

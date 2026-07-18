@@ -64,6 +64,27 @@ def test_gettext_computed_var_gains_locale_dependency():
     assert "name" in named_deps[TranslatedState.get_full_name()]
 
 
+def test_format_computed_var_gains_locale_dependency():
+    from reflex_i18n import format_number
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((format_number,), lambda: I18nState.locale)
+    i18n_name = I18nState.get_full_name()
+
+    class PriceState(rx.State):
+        amount: float = 0.0
+
+        @rx.var
+        def label(self) -> str:
+            return format_number(self.amount)
+
+    deps = PriceState.computed_vars["label"]._deps(objclass=PriceState)
+    assert deps.get(i18n_name) == {"locale"}
+    assert "amount" in deps[PriceState.get_full_name()]
+
+
 def test_no_registration_no_extra_dependency():
     import reflex as rx
 
