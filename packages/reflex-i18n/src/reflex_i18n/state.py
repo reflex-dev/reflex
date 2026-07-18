@@ -130,8 +130,8 @@ async def _locale_scope(
 
     # Gate on the CURRENT app's plugins rather than the module-global active
     # config: the provider is registered process-wide once i18n is imported,
-    # but a given app (e.g. a non-i18n app loaded later in the same process,
-    # as in the test suite) must be a no-op so it never touches I18nState.
+    # but an app not using i18n (possible when several apps share a process)
+    # must be a no-op so it never touches I18nState.
     if not any(isinstance(plugin, I18nPlugin) for plugin in get_config().plugins):
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
