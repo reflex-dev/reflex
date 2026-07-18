@@ -14,8 +14,14 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+from reflex_base.vars.dep_tracking import register_implicit_dependency
 
 from .config import get_active_catalog_dir
+
+if TYPE_CHECKING:
+    from reflex_base.vars.base import Var
 
 # The locale in effect for the current client while an event is processed.
 _active_locale: ContextVar[str | None] = ContextVar(
@@ -205,3 +211,25 @@ def negotiate_locale(
         if language in by_language:
             return by_language[language]
     return default
+
+
+def _locale_dependency() -> Var | None:
+    """The var a gettext-family call implies a dependency on.
+
+    Returns:
+        The active-locale var backing dynamic retranslation.
+    """
+    # Lazy import: registering this provider must not itself import .state (and
+    # register I18nState); state is only needed once a real gettext computed
+    # var invokes this during dependency scanning.
+    from .state import I18nState
+
+    return I18nState.locale
+
+
+# Registered here rather than in :mod:`.state` so a computed var that calls
+# gettext gains its dependency on the active locale as soon as the app imports
+# gettext — before (and independently of) I18nPlugin construction, which in a
+# backend worker can happen after the getter's dependencies are scanned and
+# cached. Registering only populates a dict; the provider imports state lazily.
+register_implicit_dependency((gettext, ngettext, pgettext), _locale_dependency)

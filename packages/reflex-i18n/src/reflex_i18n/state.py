@@ -13,7 +13,6 @@ import contextlib
 from reflex_base.event.processor.scope import register_event_scope_provider
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData, computed_var
-from reflex_base.vars.dep_tracking import register_implicit_dependency
 from reflex_base.vars.function import FunctionVar
 
 from reflex.event import EventType, event, run_script
@@ -21,7 +20,7 @@ from reflex.istate.storage import Cookie
 from reflex.state import BaseState, State
 
 from .config import LOCALE_COOKIE_NAME, get_active_i18n_config
-from .runtime import gettext, negotiate_locale, ngettext, pgettext, use_locale
+from .runtime import negotiate_locale, use_locale
 
 
 def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
@@ -143,12 +142,7 @@ async def _locale_scope(
 
 register_event_scope_provider(_locale_scope)
 
-# A computed var that calls gettext/ngettext/pgettext reads the active locale
-# from a contextvar, which the bytecode dependency tracker cannot see. Register
-# these functions so referencing one implies a dependency on I18nState.locale,
-# making translated computed vars recompute (and re-push) when the locale
-# changes.
-register_implicit_dependency(
-    (gettext, ngettext, pgettext),
-    lambda: I18nState.locale,
-)
+# The implicit dependency of gettext-family calls on I18nState.locale (so
+# translated computed vars recompute when the locale changes) is registered in
+# .runtime, next to those functions, so it takes effect as soon as the app
+# imports gettext — independently of when this module is imported.
