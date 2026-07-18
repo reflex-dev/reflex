@@ -769,8 +769,8 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
         pttl_calls.append(key)
         return await orig_pttl(key, *args, **kwargs)
 
-    redis.get = counting_get
-    redis.pttl = counting_pttl
+    redis.get = counting_get  # pyright: ignore[reportAttributeAccessIssue]
+    redis.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
     try:
         async with state_manager_redis.modify_state(
             BaseStateToken(ident=token, cls=root_state)
@@ -781,8 +781,8 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
             get_calls.clear()
             pttl_calls.clear()
     finally:
-        redis.get = orig_get
-        redis.pttl = orig_pttl
+        redis.get = orig_get  # pyright: ignore[reportAttributeAccessIssue]
+        redis.pttl = orig_pttl  # pyright: ignore[reportAttributeAccessIssue]
 
     # With three touched states, the old implementation issued one lock GET
     # and one PTTL per state in the tree; now the lock is verified once.
@@ -792,6 +792,7 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
     final_state = await state_manager_redis.get_state(
         BaseStateToken(ident=token, cls=root_state)
     )
+    assert isinstance(final_state, root_state)
     assert final_state.count == 1
     assert (await final_state.get_state(SubState1)).sub1_foo == "sub1"
     assert (await final_state.get_state(SubState2)).sub2_foo == "sub2"
@@ -836,6 +837,7 @@ async def test_set_state_resets_touched_flag(
     assert pipelines_created == 0
 
     final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
     assert final_state.count == 5
 
 
@@ -866,6 +868,7 @@ async def test_set_state_offloads_large_pickles(
     assert to_thread.called
 
     final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
     assert final_state.count == 7
 
 
