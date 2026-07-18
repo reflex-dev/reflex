@@ -48,9 +48,10 @@ class I18nPlugin(Plugin):
     def __post_init__(self):
         """Activate the i18n config and register framework state."""
         set_active_i18n_config(self._config())
-        # Registers I18nState (substate), the event-scope locale provider, and
-        # the gettext implicit-dependency hook. Lazy so it only happens when
-        # the plugin is actually used.
+        # Registers I18nState (substate) and the event-scope locale provider.
+        # Imported here rather than at module top so an app opting in triggers
+        # it, but the package's other import paths (e.g. the reflex CLI loading
+        # the i18n entry point) don't register state.
         from . import state  # noqa: F401
 
     def get_static_assets(
