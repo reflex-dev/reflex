@@ -1859,7 +1859,7 @@ class BaseState(EvenMoreBasicBaseState):
         current_gen = reflex_base_vars_base._computed_var_recompute_generation
         if instance_dict["_propagated_generation"] != current_gen:
             propagated.clear()
-            instance_dict["_propagated_generation"] = current_gen
+            instance_dict["_propagated_generation"] = current_gen  # pyright: ignore[reportIndexIssue]
 
         new_dirty = self.dirty_vars - propagated
         while new_dirty:
