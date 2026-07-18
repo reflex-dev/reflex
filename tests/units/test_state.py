@@ -3259,11 +3259,11 @@ def test_set_base_field_via_setter():
     bfss.dirty_vars.clear()
     assert "c1" not in bfss.dirty_vars
 
-    # Assert identity of MutableProxy
+    # Repeated reads reuse the cached MutableProxy for the same field.
     mp = bfss.c1
     assert isinstance(mp, MutableProxy)
     mp3 = bfss.c1
-    assert mp is not mp3
+    assert mp is mp3
     # Since none of these set calls had values, the state should not be dirty
     assert not bfss.dirty_vars
 

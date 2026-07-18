@@ -71,3 +71,51 @@ async def test_state_proxy_recovery(
     # After the exception, we should be able to enter the context again without issues
     async with state_proxy:
         pass
+
+
+def test_mutable_proxy_cached_per_field():
+    """Repeated reads of a mutable var reuse the proxy until reassignment."""
+    state = ProxyTestState()
+    first = state.items
+    assert isinstance(first, MutableProxy)
+    assert state.items is first
+    # Reassignment invalidates the cached proxy.
+    state.items = [Item(2)]
+    second = state.items
+    assert isinstance(second, MutableProxy)
+    assert second is not first
+    assert second[0].id == 2
+    # In-place mutation keeps the same wrapped object, so the proxy is reused.
+    second.append(Item(3))
+    assert state.items is second
+    # Reassignment immediately evicts the cache entry, so no strong reference
+    # to the replaced value lingers until the next read.
+    state.items = [Item(4)]
+    assert "items" not in state.__dict__["_mutable_proxy_cache"]
+
+
+def test_mutable_proxy_cache_not_serialized():
+    """The per-instance proxy cache never leaks into pickles or copies."""
+    state = ProxyTestState()
+    state.items.append(Item(1))  # populate the proxy cache
+    assert state.__dict__["_mutable_proxy_cache"]
+    assert "_mutable_proxy_cache" not in state.__getstate__()
+
+    restored = pickle.loads(pickle.dumps(state))
+    # The cache is recreated empty on the restored instance.
+    assert restored.__dict__["_mutable_proxy_cache"] == {}
+    restored_items = restored.items
+    assert isinstance(restored_items, MutableProxy)
+    # The restored proxy tracks the restored state, not the original.
+    assert restored_items._self_state is restored
+
+
+def test_mutable_proxy_iteration_yields_plain_immutables():
+    """Iterating a proxied container returns immutable elements unwrapped."""
+    state = ProxyTestState()
+    state.items = [Item(1), Item(2)]
+    numbers = [item.id for item in state.items]
+    assert numbers == [1, 2]
+    assert all(type(n) is int for n in numbers)
+    # Mutable elements remain wrapped so nested mutations mark the state dirty.
+    assert all(isinstance(item, MutableProxy) for item in state.items)
