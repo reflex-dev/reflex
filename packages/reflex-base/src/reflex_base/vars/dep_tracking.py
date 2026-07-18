@@ -27,11 +27,11 @@ CellEmpty = object()
 # a var, even though the getter never reads that var directly (e.g. a gettext
 # helper that reads the active locale from a contextvar). Maps the function to a
 # provider returning the implied dependency Var, or None when inactive.
-_implicit_dependency_providers: dict[Any, Callable[[], Var | None]] = {}
+_implicit_dependency_providers: dict[object, Callable[[], Var | None]] = {}
 
 
 def register_implicit_dependency(
-    funcs: Iterable[Any], provider: Callable[[], Var | None]
+    funcs: Iterable[object], provider: Callable[[], Var | None]
 ) -> None:
     """Register functions that imply a computed-var dependency when referenced.
 
@@ -237,7 +237,7 @@ class DependencyTracker:
                 instruction.argval
             )
 
-    def _add_implicit_dependency(self, obj: Any) -> None:
+    def _add_implicit_dependency(self, obj: object) -> None:
         """Record an implied dependency if ``obj`` is a registered function.
 
         Args:

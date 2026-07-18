@@ -16,7 +16,7 @@ from reflex_base.vars.base import Var, VarData, computed_var
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 from reflex_base.vars.function import FunctionVar
 
-from reflex.event import EventType, run_script
+from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
 from reflex.state import BaseState, State
 
@@ -71,6 +71,7 @@ class I18nState(State):
         # router would dirty this substate on every navigation.
         return _resolve_locale(self.locale_cookie, self.router.headers.accept_language)
 
+    @event
     def set_locale(self, locale: str) -> None:
         """Set the client's chosen locale.
 
@@ -109,9 +110,7 @@ def set_locale(locale: str | Var[str]) -> EventType:
         .to(FunctionVar)
         .call(locale)
     )
-    # The State metaclass turns set_locale into an EventHandler at runtime;
-    # pyright still sees the plain method, hence the ignore.
-    return [switch_client, I18nState.set_locale(locale)]  # pyright: ignore[reportCallIssue]
+    return [switch_client, I18nState.set_locale(locale)]
 
 
 async def _locale_scope(
