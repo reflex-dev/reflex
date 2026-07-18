@@ -2250,7 +2250,9 @@ async def test_state_manager_lock_warning_threshold_contend(
         console_warn.assert_not_called()
     else:
         console_warn.assert_called()
-        assert console_warn.call_count == 7
+        # set_state persists the whole tree in one pipelined call, so the
+        # held-too-long warning fires once instead of once per substate.
+        assert console_warn.call_count == 1
 
 
 class CopyingAsyncMock(AsyncMock):
