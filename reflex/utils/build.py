@@ -8,7 +8,7 @@ from pathlib import Path, PosixPath
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
-from reflex import constants
+from reflex import constants, ssr
 from reflex.config import get_config
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
@@ -142,24 +142,16 @@ def zip_app(
 
     if frontend:
         web_dir = prerequisites.get_web_dir()
-        if get_config().ssr_mode != constants.SsrMode.OFF:
+        if ssr.is_enabled():
             # SSR mode: zip build/ (client + server) + ssr-serve.js + package.json.
-            # Use build/ as root and include the extra files via globs from web_dir.
+            # Use the web dir as root and exclude the source-only directories.
             _zip(
                 component_name=constants.ComponentName.FRONTEND,
                 target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
                 root_directory=web_dir,
                 files_to_exclude=files_to_exclude,
                 exclude_venv_directories=False,
-                directory_names_to_exclude={
-                    "node_modules",
-                    "app",
-                    "utils",
-                    "styles",
-                    "components",
-                    "backend",
-                    "public",
-                },
+                directory_names_to_exclude=set(ssr.zip_exclude_dirs()),
             )
         else:
             _zip(
@@ -208,38 +200,6 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             _duplicate_index_html_to_parent_directory(child)
 
 
-def _generate_ssr_shell(wdir: Path):
-    """Generate a static SPA shell (build/client/index.html) after SSR build.
-
-    Runs the generate-shell.mjs script which renders the app with a normal
-    user-agent (so the loader returns empty state) and writes the resulting
-    HTML to build/client/index.html.  The production server (ssr-serve.js)
-    serves this file to non-bot users for zero SSR overhead.
-
-    Args:
-        wdir: The web directory (.web/).
-    """
-    shell_script = wdir / "generate-shell.mjs"
-    if not shell_script.exists():
-        console.warn("generate-shell.mjs not found, skipping SPA shell generation.")
-        return
-
-    console.info("Generating SPA shell for non-bot users...")
-    node_path = str(path_ops.get_node_path() or "node")
-    shell_process = processes.new_process(
-        [node_path, "generate-shell.mjs"],
-        cwd=wdir,
-        shell=constants.IS_WINDOWS,
-    )
-    shell_process.wait()
-    if shell_process.returncode != 0:
-        console.warn(
-            "SPA shell generation failed.  Non-bot users will fall back to SSR."
-        )
-    else:
-        console.info("SPA shell generated successfully.")
-
-
 def build():
     """Build the app for deployment.
 
@@ -281,8 +241,8 @@ def build():
         raise SystemExit(1)
 
     # When SSR is enabled, generate a static SPA shell for non-bot users.
-    if get_config().ssr_mode != constants.SsrMode.OFF:
-        _generate_ssr_shell(wdir)
+    if ssr.is_enabled():
+        ssr.generate_shell(wdir)
 
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
 

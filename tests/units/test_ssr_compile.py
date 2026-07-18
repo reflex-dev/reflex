@@ -122,11 +122,19 @@ class TestTemplateOutput:
     """Tests for the generated template content based on ssr_mode."""
 
     @staticmethod
-    def _render_root(ssr_mode: SsrMode) -> str:
-        """Render root template with minimal valid params.
+    def _set_ssr_mode(mocker: MockerFixture, ssr_mode: SsrMode) -> None:
+        """Patch the config the ssr module reads so templates see ``ssr_mode``.
 
         Args:
-            ssr_mode: The server-side rendering mode.
+            mocker: The pytest-mock fixture.
+            ssr_mode: The server-side rendering mode to configure.
+        """
+        conf = rx.Config(app_name="test", ssr_mode=ssr_mode)
+        mocker.patch("reflex.ssr.get_config", return_value=conf)
+
+    @staticmethod
+    def _render_root() -> str:
+        """Render root template with minimal valid params.
 
         Returns:
             Rendered template string.
@@ -140,12 +148,12 @@ class TestTemplateOutput:
             window_libraries=[],
             render={"contents": "children"},
             dynamic_imports=set(),
-            ssr_mode=ssr_mode,
         )
 
-    def test_root_template_has_loader_when_ssr_enabled(self):
+    def test_root_template_has_loader_when_ssr_enabled(self, mocker: MockerFixture):
         """With ssr_mode=bot_only, root.jsx template contains the SSR loader."""
-        result = self._render_root(ssr_mode=SsrMode.BOT_ONLY)
+        self._set_ssr_mode(mocker, SsrMode.BOT_ONLY)
+        result = self._render_root()
 
         assert "export async function loader" in result
         assert "useLoaderData" in result
@@ -153,35 +161,39 @@ class TestTemplateOutput:
         assert "ssrState" in result
         assert "SSR_DATA" in result
 
-    def test_root_template_loader_checks_shell_gen_header(self):
+    def test_root_template_loader_checks_shell_gen_header(self, mocker: MockerFixture):
         """The SSR loader short-circuits for shell generation requests."""
-        result = self._render_root(ssr_mode=SsrMode.BOT_ONLY)
+        self._set_ssr_mode(mocker, SsrMode.BOT_ONLY)
+        result = self._render_root()
 
         assert "x-reflex-shell-gen" in result
         assert "state: null" in result
         # isbot check should NOT be in the loader — bot routing is in ssr-serve.js.
         assert "isbot" not in result
 
-    def test_root_template_no_loader_when_ssr_off(self):
+    def test_root_template_no_loader_when_ssr_off(self, mocker: MockerFixture):
         """With ssr_mode=off, root.jsx template has no SSR loader."""
-        result = self._render_root(ssr_mode=SsrMode.OFF)
+        self._set_ssr_mode(mocker, SsrMode.OFF)
+        result = self._render_root()
 
         assert "export async function loader" not in result
         assert "useLoaderData" not in result
         assert "getBackendURL" not in result
         assert "ssrState" not in result
 
-    def test_context_template_has_ssr_context_when_ssr_enabled(self):
+    def test_context_template_has_ssr_context_when_ssr_enabled(
+        self, mocker: MockerFixture
+    ):
         """With ssr_mode=bot_only, context.js has SSRContext and ssrHydrated."""
         from reflex.compiler.templates import context_template
 
+        self._set_ssr_mode(mocker, SsrMode.BOT_ONLY)
         result = context_template(
             initial_state={"test_state": {"field_rx_state_": "value"}},
             state_name="test_state",
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            ssr_mode=SsrMode.BOT_ONLY,
         )
 
         assert "SSRContext" in result
@@ -189,50 +201,50 @@ class TestTemplateOutput:
         assert "ssrState = null" in result
         assert "SSRContext.Provider" in result
 
-    def test_context_template_no_ssr_context_when_ssr_off(self):
+    def test_context_template_no_ssr_context_when_ssr_off(self, mocker: MockerFixture):
         """With ssr_mode=off, context.js has no SSR-related code."""
         from reflex.compiler.templates import context_template
 
+        self._set_ssr_mode(mocker, SsrMode.OFF)
         result = context_template(
             initial_state={"test_state": {"field_rx_state_": "value"}},
             state_name="test_state",
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            ssr_mode=SsrMode.OFF,
         )
 
         assert "SSRContext" not in result
         assert "ssrHydrated" not in result
         assert "ssrState" not in result
 
-    def test_context_template_ssr_reducer_uses_ssr_state(self):
+    def test_context_template_ssr_reducer_uses_ssr_state(self, mocker: MockerFixture):
         """With ssr_mode=bot_only, useReducer initializers check ssrState."""
         from reflex.compiler.templates import context_template
 
+        self._set_ssr_mode(mocker, SsrMode.BOT_ONLY)
         result = context_template(
             initial_state={"my_app.state": {"count_rx_state_": 0}},
             state_name="my_app.state",
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            ssr_mode=SsrMode.BOT_ONLY,
         )
 
         # The SSR-aware reducer initialization pattern.
         assert 'ssrState !== null && ssrState["my_app.state"]' in result
 
-    def test_context_template_static_reducer_no_ssr_state(self):
+    def test_context_template_static_reducer_no_ssr_state(self, mocker: MockerFixture):
         """With ssr_mode=off, useReducer uses initialState directly."""
         from reflex.compiler.templates import context_template
 
+        self._set_ssr_mode(mocker, SsrMode.OFF)
         result = context_template(
             initial_state={"my_app.state": {"count_rx_state_": 0}},
             state_name="my_app.state",
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            ssr_mode=SsrMode.OFF,
         )
 
         assert 'useReducer(applyDelta, initialState["my_app.state"]' in result

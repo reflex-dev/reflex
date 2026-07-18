@@ -73,15 +73,11 @@ def _normalize_library_name(lib: str) -> str:
     return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
-def _compile_app(
-    app_root: Component,
-    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
-) -> str:
+def _compile_app(app_root: Component) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
-        ssr_mode: The server-side rendering mode.
 
     Returns:
         The compiled app.
@@ -104,7 +100,6 @@ def _compile_app(
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
-        ssr_mode=ssr_mode,
     )
 
 
@@ -123,14 +118,12 @@ def _compile_theme(theme: str) -> str:
 def _compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
-    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
 ) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
-        ssr_mode: The server-side rendering mode.
 
     Returns:
         The compiled context file.
@@ -146,13 +139,11 @@ def _compile_contexts(
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=str(appearance),
-            ssr_mode=ssr_mode,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=str(appearance),
-            ssr_mode=ssr_mode,
         )
     )
 
@@ -503,15 +494,11 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app(
-    app_root: Component,
-    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
-) -> tuple[str, str]:
+def compile_app(app_root: Component) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
-        ssr_mode: The server-side rendering mode.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -522,7 +509,7 @@ def compile_app(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, ssr_mode=ssr_mode)
+    code = _compile_app(app_root)
     return output_path, code
 
 
@@ -548,14 +535,12 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
-    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
-        ssr_mode: The server-side rendering mode.
 
     Returns:
         The path and code of the compiled context.
@@ -563,7 +548,7 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme, ssr_mode=ssr_mode)
+    return output_path, _compile_contexts(state, theme)
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:

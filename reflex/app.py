@@ -43,7 +43,7 @@ from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
 
-from reflex import constants
+from reflex import constants, ssr
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -86,7 +86,6 @@ from reflex.event import (
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
-    extract_route_params,
     get_route_args,
     replace_brackets_with_keywords,
     verify_route_validity,
@@ -690,10 +689,10 @@ class App(MiddlewareMixin, LifespanMixin):
             health,
             methods=["GET"],
         )
-        if get_config().ssr_mode != constants.SsrMode.OFF:
+        if ssr.is_enabled():
             self._api.add_route(
                 str(constants.Endpoint.SSR_DATA),
-                ssr_data(self),
+                ssr.ssr_data(self),
                 methods=["POST"],
             )
 
@@ -1468,9 +1467,8 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile the contexts.
-        ssr_mode = get_config().ssr_mode
         compile_results.append(
-            compiler.compile_contexts(self._state, self.theme, ssr_mode=ssr_mode),
+            compiler.compile_contexts(self._state, self.theme),
         )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
@@ -1479,7 +1477,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Compile the app root.
         compile_results.append(
-            compiler.compile_app(app_root, ssr_mode=ssr_mode),
+            compiler.compile_app(app_root),
         )
         progress.advance(task)
 
@@ -1499,8 +1497,8 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_skeleton.initialize_package_json()
 
         # Copy SSR scripts when SSR is enabled.
-        if ssr_mode != constants.SsrMode.OFF:
-            frontend_skeleton.copy_ssr_scripts()
+        if ssr.is_enabled():
+            ssr.copy_scripts(prerequisites.get_web_dir())
 
         if is_prod_mode():
             # Empty the .web pages directory.
@@ -1819,21 +1817,6 @@ async def process(
                 if (path := router_data.get(constants.RouteVar.PATH))
                 else "404"
             ).removeprefix("/")
-            # Server-side extraction of dynamic route params as a fallback.
-            # When the SPA shell is served for a direct page visit, the client
-            # may not have route params yet (React Router lazy route discovery
-            # hasn't completed), so extract them from the pathname to ensure
-            # on_load handlers receive correct params like slug, id, etc.
-            if path:
-                server_params = extract_route_params(
-                    path, router_data[constants.RouteVar.PATH]
-                )
-                if server_params:
-                    query = router_data.get(constants.RouteVar.QUERY, {})
-                    for key, value in server_params.items():
-                        if not query.get(key):
-                            query[key] = value
-                    router_data[constants.RouteVar.QUERY] = query
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
@@ -1917,135 +1900,6 @@ async def health(_request: Request) -> JSONResponse:
         status_code = 503
 
     return JSONResponse(content=health_status, status_code=status_code)
-
-
-async def _run_ssr_on_load(state: BaseState, load_event: Any, path: str) -> None:
-    """Execute a single on_load handler on the ephemeral SSR state.
-
-    Args:
-        state: The ephemeral root state instance.
-        load_event: The on_load event handler to execute.
-        path: The URL path (for error logging).
-    """
-    try:
-        handler_fn = (
-            load_event.handler if hasattr(load_event, "handler") else load_event
-        )
-        # Get the full handler name.
-        if hasattr(handler_fn, "fn") and hasattr(handler_fn, "state_full_name"):
-            handler_name = f"{handler_fn.state_full_name}.{handler_fn.fn.__name__}"
-        else:
-            handler_name = str(handler_fn)
-
-        # Find the target substate and event handler.
-        target_state, event_handler = state._get_event_handler(handler_name)
-
-        # Execute the handler on the target substate.
-        result = event_handler.fn(target_state)
-        if asyncio.iscoroutine(result):
-            result = await result
-        # For generators (event chains), consume them but ignore returned events.
-        if inspect.isgenerator(result):
-            for _ in result:
-                pass
-        if inspect.isasyncgen(result):
-            async for _ in result:
-                pass
-    except Exception:
-        console.warn(f"SSR on_load handler failed for {path}: {traceback.format_exc()}")
-
-
-def ssr_data(app: App):
-    """SSR data loader endpoint.
-
-    Creates an ephemeral state, sets route params, runs on_load handlers,
-    and returns the serialized state for server-side rendering.
-
-    Args:
-        app: The app to get SSR data for.
-
-    Returns:
-        The SSR data handler function.
-    """
-
-    async def ssr_data_handler(request: Request) -> Response:
-        """Handle an SSR data request.
-
-        Args:
-            request: The Starlette request object.
-
-        Returns:
-            Response with the serialized state as JSON.
-        """
-        body = await request.json()
-
-        path = body.get("path", "/")
-        headers = body.get("headers", {})
-
-        if not app._state:
-            return Response(
-                content='{"state": null}',
-                media_type="application/json",
-            )
-
-        # Create an ephemeral state instance (no persistent session).
-        # Use State (root) rather than app._state which may be a subclass
-        # with inherited vars that can't be set without a parent.
-        state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
-
-        # Resolve the route pattern from the concrete path.
-        resolved_route = app.router(path) or "404"
-
-        # Extract route params from the path by matching against the route pattern.
-        # e.g. route="blog/[slug]", path="/blog/hello-world" => {"slug": "hello-world"}
-        params = extract_route_params(path, resolved_route)
-
-        # Build router_data dict (same structure as process() uses).
-        router_data = {
-            constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
-            constants.RouteVar.ORIGIN: path,
-            constants.RouteVar.QUERY: {
-                **params,
-            },
-            constants.RouteVar.CLIENT_TOKEN: "__ssr__",
-            constants.RouteVar.SESSION_ID: "__ssr__",
-            constants.RouteVar.HEADERS: {
-                "origin": headers.get(
-                    "origin", headers.get("host", "http://localhost")
-                ),
-                **headers,
-            },
-            constants.RouteVar.CLIENT_IP: (
-                request.client.host if request.client else "0.0.0.0"
-            ),
-        }
-
-        # Set router data on the state — this triggers DynamicRouteVar recomputation.
-        state.router_data = router_data
-        state.router = RouterData.from_router_data(router_data)
-
-        # Get on_load event handlers for this route.
-        load_events = app.get_load_events(path)
-
-        # Execute each on_load handler directly on the ephemeral state.
-        for load_event in load_events:
-            await _run_ssr_on_load(state, load_event, path)
-
-        # Serialize the full state tree for the frontend.
-        full_state = state.dict()
-
-        # Use Reflex's json serializer to handle custom types (RouterData, etc.)
-        json_str = format.json_dumps({"state": full_state})
-
-        return Response(
-            content=json_str,
-            media_type="application/json",
-            headers={
-                "Cache-Control": "no-cache",
-            },
-        )
-
-    return ssr_data_handler
 
 
 class _UploadStreamingResponse(StreamingResponse):

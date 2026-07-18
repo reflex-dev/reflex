@@ -10,7 +10,8 @@ import pytest
 from starlette.responses import Response
 
 import reflex as rx
-from reflex.app import App, ssr_data
+from reflex.app import App
+from reflex.ssr import ssr_data
 from reflex.state import State, all_base_state_classes
 
 

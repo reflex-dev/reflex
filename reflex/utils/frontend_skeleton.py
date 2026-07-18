@@ -5,7 +5,7 @@ import random
 import re
 from pathlib import Path
 
-from reflex import constants
+from reflex import constants, ssr
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.environment import environment
@@ -147,21 +147,6 @@ def update_react_router_config(prerender_routes: bool = False):
         react_router_config_file_path.write_text(new_react_router_config)
 
 
-def copy_ssr_scripts():
-    """Copy SSR-related scripts from the web template to the .web directory.
-
-    Copies ssr-serve.js (production server) and generate-shell.mjs
-    (post-build static shell generator) when SSR is enabled.
-    """
-    import shutil
-
-    web_dir = get_web_dir()
-    for filename in ("ssr-serve.js", "generate-shell.mjs"):
-        src = constants.Templates.Dirs.WEB_TEMPLATE / filename
-        if src.exists():
-            shutil.copy2(str(src), str(web_dir / filename))
-
-
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
     basename = "/" + (config.frontend_path or "").strip("/")
     if not basename.endswith("/"):
@@ -172,7 +157,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": config.ssr_mode != constants.SsrMode.OFF,
+        "ssr": ssr.react_router_ssr(config),
     }
 
     if prerender_routes:
@@ -184,15 +169,10 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 def _compile_package_json():
     config = get_config()
-    ssr_enabled = config.ssr_mode != constants.SsrMode.OFF
-    prod_command = (
-        constants.PackageJson.Commands.PROD_SSR
-        if ssr_enabled
-        else constants.PackageJson.Commands.get_prod_command(config.frontend_path)
-    )
-    deps = dict(constants.PackageJson.DEPENDENCIES)
-    if ssr_enabled:
-        deps.update(constants.PackageJson.SSR_DEPENDENCIES)
+    prod_command = ssr.prod_command(
+        config
+    ) or constants.PackageJson.Commands.get_prod_command(config.frontend_path)
+    deps = {**constants.PackageJson.DEPENDENCIES, **ssr.extra_dependencies(config)}
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
