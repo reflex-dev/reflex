@@ -1118,7 +1118,7 @@ def test_var_returning_memo_rejects_wrapper():
     """``wrapper=`` is only supported on component-returning memos."""
     with pytest.raises(TypeError, match="only supports `wrapper=`"):
 
-        @rx.memo(wrapper=None)  # pyright: ignore[reportArgumentType]
+        @rx.memo(wrapper=None)  # ty:ignore[invalid-argument-type]
         def format_id(value: rx.Var[int]) -> rx.Var[str]:
             return value.to(str)
 

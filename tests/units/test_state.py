@@ -4257,12 +4257,12 @@ class MarkerMixin(State, mixin=True):
         """
         return "marked"
 
-    marked_computed.fget._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+    marked_computed.fget._custom_marker = object()  # ty:ignore[unresolved-attribute]
 
     def marked_handler(self):
         """An event handler tagged with a custom attribute."""
 
-    marked_handler._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+    marked_handler._custom_marker = object()  # ty:ignore[unresolved-attribute]
 
     def kwonly_default_handler(self, *, count: int = 1) -> int:
         """An event handler with a keyword-only default argument.
@@ -4286,8 +4286,8 @@ def test_copy_fn_preserves_custom_function_attributes() -> None:
     copied_computed_fget = UsesMarkerMixin.computed_vars["marked_computed"].fget
     assert copied_computed_fget is not orig_computed_fget
     assert (
-        copied_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
-        is orig_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        copied_computed_fget._custom_marker  # ty:ignore[unresolved-attribute]
+        is orig_computed_fget._custom_marker
     )
 
     orig_handler_fn = MarkerMixin.__dict__["marked_handler"]

@@ -1151,7 +1151,7 @@ def test_array_map(mocker: MockerFixture):
     mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
     assert re.fullmatch(
         r"\[1, 2, 3\]\.map\(\(\((\w+)\) => \(\1 \* 2\)\)\)",
-        str(array_var.foreach(lambda x: x * 2)),  # pyright: ignore[reportDeprecated]
+        str(array_var.foreach(lambda x: x * 2)),  # ty:ignore[deprecated]
     )
     mock_deprecate.assert_called_once()
     assert mock_deprecate.call_args.kwargs["feature_name"] == "ArrayVar.foreach"

@@ -607,7 +607,7 @@ def VarOperations():
                 id="list_map",
             ),
             rx.text(
-                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),
+                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),  # ty:ignore[deprecated]
                 id="list_foreach_alias",
             ),
             rx.text(
