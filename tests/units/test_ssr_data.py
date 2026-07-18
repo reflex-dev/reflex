@@ -33,7 +33,11 @@ def _isolate_ssr_state(clean_registration_context):
     """
     from reflex.state import State
 
-    names = ("_potentially_dirty_states", "_always_dirty_substates", "_var_dependencies")
+    names = (
+        "_potentially_dirty_states",
+        "_always_dirty_substates",
+        "_var_dependencies",
+    )
     original = {name: getattr(State, name) for name in names}
     State._potentially_dirty_states = set()
     State._always_dirty_substates = set()
