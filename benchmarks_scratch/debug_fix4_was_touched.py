@@ -1,7 +1,10 @@
 """Trace _was_touched behavior through app.modify_state (debug for PR #6757)."""
 
 import asyncio
+import os
 from unittest.mock import AsyncMock
+
+os.environ.setdefault("PYTEST_CURRENT_TEST", "debug_fix4_was_touched")
 
 
 def main():
