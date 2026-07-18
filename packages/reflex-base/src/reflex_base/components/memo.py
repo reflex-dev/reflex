@@ -492,6 +492,20 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
     MEMOS[key] = definition
 
 
+def _reregister_used_memo(definition: MemoDefinition) -> None:
+    """Re-register a user ``@rx.memo`` definition when it is used.
+
+    Keeps ``MEMOS`` populated from actual usage so a cleared registry (e.g. the
+    AppHarness reload, which clears ``MEMOS`` but only reloads the top app
+    module, so submodule ``@rx.memo`` decorators never re-run) still emits every
+    memo the compiled tree references. Passthrough auto-memos are defined in
+    this module and tracked separately by the compiler, so they must stay out of
+    ``MEMOS``.
+    """
+    if definition.fn.__module__ != __name__:
+        _register_memo_definition(definition)
+
+
 def _annotation_inner_type(annotation: Any) -> Any:
     """Unwrap a Var-like annotation to its inner type.
 
@@ -1528,6 +1542,7 @@ class _MemoFunctionWrapper:
         Returns:
             The function call var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var.call(
             *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
@@ -1542,6 +1557,7 @@ class _MemoFunctionWrapper:
         Returns:
             The partially applied function var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var.partial(
             *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
@@ -1552,6 +1568,7 @@ class _MemoFunctionWrapper:
         Returns:
             The imported function var.
         """
+        _reregister_used_memo(self._definition)
         return self._imported_var
 
 
@@ -1590,6 +1607,7 @@ class _MemoComponentWrapper:
             The rendered memo component.
         """
         definition = self._definition
+        _reregister_used_memo(definition)
         rest_param = self._rest_param
 
         # Validate positional children usage and reserved keywords.
@@ -1661,6 +1679,7 @@ class _MemoComponentWrapper:
         Returns:
             The imported component var.
         """
+        _reregister_used_memo(self._definition)
         return _component_import_var(
             self._definition.export_name, self._definition.source_module
         )

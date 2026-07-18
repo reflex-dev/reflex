@@ -22,7 +22,9 @@ from reflex_base.components.memo import (
     _analyze_params,
     _LazyBody,
     _MemoCallBinding,
+    _reregister_used_memo,
     _strip_optional,
+    create_passthrough_component_memo,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
@@ -1812,3 +1814,47 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+def test_memo_reregisters_on_use_after_registry_clear():
+    """A used ``@rx.memo`` repopulates ``MEMOS`` after the registry is cleared.
+
+    Regression: ``AppHarness._initialize_app`` clears ``MEMOS`` then reloads only
+    the top app module (``get_app(reload=True)`` -> ``importlib.reload``), so
+    submodule ``@rx.memo`` decorators never re-run. Using the memo must
+    re-register it, otherwise ``compile_memo_components`` emits no file for it
+    while pages still import it (vite "Failed to resolve import ...").
+    """
+
+    @rx.memo
+    def sample_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.heading(title))
+
+    key = ("SampleCard", __name__)
+    assert key in MEMOS  # registered at decoration time
+
+    MEMOS.clear()
+    assert key not in MEMOS
+
+    # Using (rendering) the memo must re-register it.
+    sample_card(title="Hello")
+    assert key in MEMOS
+
+    # ...so the compiler still emits its module.
+    sym = memo_paths.mirrored_symbol("SampleCard", __name__)
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert any(f"export const {sym} = memo(" in code for _, code in files)
+
+
+def test_reregister_used_memo_skips_passthrough_auto_memos():
+    """Passthrough auto-memos must never enter ``MEMOS`` on use.
+
+    The compiler tracks them separately (``auto_memo_components``); registering
+    them too emits the same file twice with conflicting bodies.
+    """
+    _, definition = create_passthrough_component_memo(
+        rx.box(rx.text("x")), source_module=__name__
+    )
+    MEMOS.clear()
+    _reregister_used_memo(definition)
+    assert MEMOS == {}
