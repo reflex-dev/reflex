@@ -1,0 +1,341 @@
+---
+components:
+  - rx.form
+
+FormRoot: |
+  lambda **props: rx.form.root(
+      rx.form.field(
+          rx.flex(
+              rx.form.label("Email"),
+              rx.form.control(
+                  rx.input(
+                      placeholder="Email Address",
+                      # type attribute is required for "typeMismatch" validation
+                      type="email",
+                  ),
+                  as_child=True,
+              ),
+              rx.form.message("Please enter a valid email"),
+              rx.form.submit(
+                  rx.button("Submit"),
+                  as_child=True,
+              ),
+              direction="column",
+              spacing="2",
+              align="stretch",
+          ),
+          name="email",
+      ),
+      **props,
+  )
+
+FormField: |
+  lambda **props: rx.form.root(
+      rx.form.field(
+          rx.flex(
+              rx.form.label("Email"),
+              rx.form.control(
+                  rx.input(
+                      placeholder="Email Address",
+                      # type attribute is required for "typeMismatch" validation
+                      type="email",
+                  ),
+                  as_child=True,
+              ),
+              rx.form.message("Please enter a valid email", match="typeMismatch"),
+              rx.form.submit(
+                  rx.button("Submit"),
+                  as_child=True,
+              ),
+              direction="column",
+              spacing="2",
+              align="stretch",
+          ),
+          **props,
+      ),
+      reset_on_submit=True,
+  )
+
+FormLabel: |
+  lambda **props: rx.form.root(
+      rx.form.field(
+          rx.flex(
+              rx.form.label("Email", **props,),
+              rx.form.control(
+                  rx.input(
+                      placeholder="Email Address",
+                      # type attribute is required for "typeMismatch" validation
+                      type="email",
+                  ),
+                  as_child=True,
+              ),
+              rx.form.message("Please enter a valid email", match="typeMismatch"),
+              rx.form.submit(
+                  rx.button("Submit"),
+                  as_child=True,
+              ),
+              direction="column",
+              spacing="2",
+              align="stretch",
+          ),
+      ),
+      reset_on_submit=True,
+  )
+
+FormMessage: |
+  lambda **props: rx.form.root(
+              rx.form.field(
+                  rx.flex(
+                      rx.form.label("Email"),
+                      rx.form.control(
+                          rx.input(
+                              placeholder="Email Address",
+                              # type attribute is required for "typeMismatch" validation
+                              type="email",
+                          ),
+                          as_child=True,
+                      ),
+                      rx.form.message("Please enter a valid email", **props,),
+                      rx.form.submit(
+                          rx.button("Submit"),
+                          as_child=True,
+                      ),
+                      direction="column",
+                      spacing="2",
+                      align="stretch",
+                  ),
+                  name="email",
+              ),
+              on_submit=lambda form_data: rx.window_alert(form_data.to_string()),
+              reset_on_submit=True,
+          )
+---
+
+```python exec
+import reflex as rx
+```
+
+# Form
+
+Forms are used to collect user input. The `rx.form` component is used to group inputs and submit them together.
+
+The form component's children can be form controls such as `rx.input`, `rx.checkbox`, `rx.slider`, `rx.text_area`, `rx.radio_group`, `rx.select` or `rx.switch`. The controls should have a `name` attribute that is used to identify the control in the form data. The `on_submit` event trigger submits the form data as a dictionary to the `handle_submit` event handler.
+
+The form is submitted when the user clicks the submit button or presses enter on the form controls.
+
+```python demo exec
+class FormState(rx.State):
+    form_data: dict = {}
+
+    @rx.event
+    def handle_submit(self, form_data: dict):
+        """Handle the form submit."""
+        self.form_data = form_data
+
+
+def form_example():
+    return rx.vstack(
+        rx.form(
+            rx.vstack(
+                rx.input(placeholder="First Name", name="first_name"),
+                rx.input(placeholder="Last Name", name="last_name"),
+                rx.hstack(
+                    rx.checkbox("Checked", name="check"),
+                    rx.switch("Switched", name="switch"),
+                ),
+                rx.button("Submit", type="submit"),
+            ),
+            on_submit=FormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results", as_="h2"),
+        rx.text(FormState.form_data.to_string()),
+    )
+```
+
+```md alert warning
+# When using the form you must include a button or input with `type='submit'`.
+```
+
+```md alert info
+# Using `name` vs `id`.
+
+When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected).
+
+If you need these controls to be passed in the form data even when their values are not set, you can use the `id` attribute instead of name. The id attribute ensures that the control is always included in the submitted form data, regardless of whether its value is set or not.
+```
+
+```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
+# Video: Forms
+```
+
+## Validating Form Data with a TypedDict
+
+The `on_submit` handler usually receives the form data as a plain `dict`, which
+means accessing a field is untyped (`form_data["email"]` returns `Any`) and a
+typo in a `name` goes unnoticed until runtime.
+
+Instead, you can annotate the handler's parameter with a
+[`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict).
+This gives you typed, autocompleted access to each field inside the handler, and
+Reflex validates the form **at compile time**: every required key of the
+`TypedDict` must have a matching form control. If a required field has no
+control with that `name` (or `id`), Reflex raises an `EventHandlerValueError`
+before the app starts, pointing out exactly which fields are missing.
+
+```python demo exec
+from typing import TypedDict
+
+from typing_extensions import NotRequired
+
+
+class ContactForm(TypedDict):
+    first_name: str
+    last_name: str
+    email: str
+    message: NotRequired[str]  # optional field
+
+
+class TypedFormState(rx.State):
+    form_data: ContactForm | None = None
+
+    @rx.event
+    def handle_submit(self, form_data: ContactForm):
+        """Handle the form submit."""
+        # form_data is typed: editors autocomplete the keys below.
+        self.form_data = form_data
+
+
+def typed_form_example():
+    return rx.vstack(
+        rx.form(
+            rx.vstack(
+                rx.input(placeholder="First Name", name="first_name"),
+                rx.input(placeholder="Last Name", name="last_name"),
+                rx.input(placeholder="Email", name="email", type="email"),
+                rx.text_area(placeholder="Message", name="message"),
+                rx.button("Submit", type="submit"),
+            ),
+            on_submit=TypedFormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results", as_="h2"),
+        rx.text(TypedFormState.form_data.to_string()),
+    )
+```
+
+### Required and optional fields
+
+By default every key declared in a `TypedDict` is **required** and must be
+backed by a form control. Mark a field as optional with `NotRequired` (or by
+inheriting from a `total=False` base) so Reflex won't require a matching
+control:
+
+```python
+from typing import TypedDict
+
+from typing_extensions import NotRequired
+
+
+class ContactForm(TypedDict):
+    name: str  # required: a control named "name" must exist
+    email: str  # required: a control named "email" must exist
+    message: NotRequired[str]  # optional: no control required
+```
+
+If a required field is missing, creating the form fails fast with a message that
+lists the expected, missing, and matching fields:
+
+```python
+class SignupForm(TypedDict):
+    username: str
+    email: str
+
+
+class SignupState(rx.State):
+    @rx.event
+    def handle_submit(self, form_data: SignupForm): ...
+
+
+# Raises EventHandlerValueError: the form has no control named "email".
+rx.form(
+    rx.input(name="username"),
+    rx.button("Submit", type="submit"),
+    on_submit=SignupState.handle_submit,
+)
+```
+
+```md alert info
+# When is validation skipped?
+
+The check only runs when the form fields are statically known. It is
+automatically skipped when control `name`/`id` values are dynamic (for example,
+built with `rx.foreach`), or when the form has an `id` (since controls can be
+associated from elsewhere via the HTML `form` attribute). In those cases the
+`TypedDict` still provides typed access inside the handler. At runtime
+`form_data` is always a regular dictionary.
+```
+
+## Dynamic Forms
+
+Forms can be dynamically created by iterating through state vars using `rx.foreach`.
+
+This example allows the user to add new fields to the form prior to submit, and all
+fields will be included in the form data passed to the `handle_submit` function.
+
+```python demo exec
+class DynamicFormState(rx.State):
+    form_data: dict = {}
+    form_fields: list[str] = ["first_name", "last_name", "email"]
+
+    @rx.var(cache=True)
+    def form_field_placeholders(self) -> list[str]:
+        return [
+            " ".join(w.capitalize() for w in field.split("_"))
+            for field in self.form_fields
+        ]
+
+    @rx.event
+    def add_field(self, form_data: dict):
+        new_field = form_data.get("new_field")
+        if not new_field:
+            return
+        field_name = new_field.strip().lower().replace(" ", "_")
+        self.form_fields.append(field_name)
+
+    @rx.event
+    def handle_submit(self, form_data: dict):
+        self.form_data = form_data
+
+
+def dynamic_form():
+    return rx.vstack(
+        rx.form(
+            rx.vstack(
+                rx.foreach(
+                    DynamicFormState.form_fields,
+                    lambda field, idx: rx.input(
+                        placeholder=DynamicFormState.form_field_placeholders[idx],
+                        name=field,
+                    ),
+                ),
+                rx.button("Submit", type="submit"),
+            ),
+            on_submit=DynamicFormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.form(
+            rx.hstack(
+                rx.input(placeholder="New Field", name="new_field"),
+                rx.button("+", type="submit"),
+            ),
+            on_submit=DynamicFormState.add_field,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results", as_="h2"),
+        rx.text(DynamicFormState.form_data.to_string()),
+    )
+```

@@ -247,7 +247,7 @@ class TestRedisTokenManager:
             return
 
         @asynccontextmanager
-        async def pubsub():  # noqa: RUF029
+        async def pubsub():
             pubsub_mock = AsyncMock()
             pubsub_mock.listen = listen
             yield pubsub_mock
@@ -265,7 +265,7 @@ class TestRedisTokenManager:
         Returns:
             RedisTokenManager instance for testing.
         """
-        with patch("reflex.config.get_config") as mock_get_config:
+        with patch("reflex_base.config.get_config") as mock_get_config:
             mock_config = Mock()
             mock_config.redis_token_expiration = 3600
             mock_get_config.return_value = mock_config
@@ -486,6 +486,35 @@ class TestRedisTokenManager:
         assert isinstance(manager, LocalTokenManager)
         assert hasattr(manager, "token_to_sid")
         assert hasattr(manager, "sid_to_token")
+
+    async def test_close_cancels_tasks_and_closes_redis(self, manager, mock_redis):
+        """Test close cancels background pub/sub tasks and closes the Redis client.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        manager._ensure_socket_record_task()
+        task = manager._socket_record_task
+        assert task is not None
+
+        await manager.close()
+
+        assert task.cancelled()
+        assert manager._socket_record_task is None
+        assert manager._lost_and_found_task is None
+        mock_redis.aclose.assert_awaited_once()
+
+    async def test_close_without_tasks(self, manager, mock_redis):
+        """Test close works when no background tasks were started.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        await manager.close()
+
+        mock_redis.aclose.assert_awaited_once()
 
 
 @pytest.fixture

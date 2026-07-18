@@ -1,0 +1,109 @@
+[project]
+name = "reflex-docs-app"
+dynamic = ["version"]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "email-validator",
+    "fastapi",
+    "openai",
+    "orjson",
+    "pandas",
+    "plotly-express",
+    "psycopg[binary]",
+    "python-frontmatter",
+    "reflex",
+    "reflex-docgen",
+    "reflex-enterprise>=0.9.1",
+    "reflex-hosting-cli",
+    "reflex-pyplot",
+    "reflex-integrations-docs",
+    "reflex-components-internal",
+    "reflex-site-shared",
+    "alembic",
+    "requests",
+    "ruff-format",
+    "sqlalchemy",
+    "sqlmodel",
+]
+
+[dependency-groups]
+dev = [
+    "playwright",
+    "pre-commit",
+    "pytest-playwright",
+    "pytest",
+    "ruff",
+    "uvicorn",
+]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-docs-app-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["reflex_docs"]
+
+[tool.ruff]
+target-version = "py311"
+output-format = "concise"
+lint.isort.split-on-trailing-comma = false
+lint.select = [
+    "ANN001",
+    "B",
+    "C4",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "FURB",
+    "I",
+    "N",
+    "PERF",
+    "PGH",
+    "RUF",
+    "SIM",
+    "T",
+    "TRY",
+    "W",
+]
+lint.ignore = [
+    "ANN001",
+    "B008",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D107",
+    "D205",
+    "E402",
+    "E501",
+    "ERA001",
+    "F403",
+    "RUF006",
+    "RUF008",
+    "RUF012",
+    "SIM115",
+    "T201",
+    "TRY0",
+    "TRY300",
+]
+lint.pydocstyle.convention = "google"
+lint.allowed-confusables = ['’']
+
+[tool.ruff.format]
+preview = true
+
+[tool.codespell]
+skip = "data/*"
+
+[tool.uv]
+required-version = ">=0.7.0"

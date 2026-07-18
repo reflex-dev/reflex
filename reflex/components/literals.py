@@ -1,34 +1,4 @@
-"""Literal custom type used by Reflex."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base.components.literals."""
 
-from typing import Literal
-
-# Base Literals
-LiteralInputType = Literal[
-    "button",
-    "checkbox",
-    "color",
-    "date",
-    "datetime-local",
-    "email",
-    "file",
-    "hidden",
-    "image",
-    "month",
-    "number",
-    "password",
-    "radio",
-    "range",
-    "reset",
-    "search",
-    "submit",
-    "tel",
-    "text",
-    "time",
-    "url",
-    "week",
-]
-
-
-LiteralRowMarker = Literal[
-    "none", "number", "checkbox", "both", "checkbox-visible", "clickable-number"
-]
+from reflex_base.components.literals import *  # pragma: no cover

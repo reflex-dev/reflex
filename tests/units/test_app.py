@@ -1,66 +1,76 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import contextvars
 import functools
 import io
 import json
+import re
 import unittest.mock
 import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
-from unittest.mock import AsyncMock
+from typing import TYPE_CHECKING, Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import Event
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.registry import RegistrationContext
+from reflex_base.style import Style
+from reflex_base.utils import console, exceptions, format, memo_paths
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import computed_var
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.upload import selected_files
+from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
-from starlette.datastructures import FormData, UploadFile
+from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
+from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import (
-    App,
-    ComponentCallable,
-    default_overlay_component,
-    process,
-    upload,
+from reflex._upload import upload
+from reflex.app import App, ComponentCallable, default_overlay_component
+from reflex.compiler.compiler import (
+    _compile_app,
+    _memoize_stateful_app_wraps,
+    _resolve_app_wrap_components,
 )
-from reflex.components import Component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond
-from reflex.components.radix.themes.typography.text import Text
-from reflex.constants.state import FIELD_MARKER
+from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.event import Event
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.middleware import HydrateMiddleware
+from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    StateUpdate,
-    _substate_key,
-)
-from reflex.style import Style
-from reflex.utils import console, exceptions, format
-from reflex.vars.base import computed_var
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
-    FileStateBase1,
+    ChunkUploadState,
     FileUploadState,
     GrandChildFileUploadState,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine.base import Engine
 
 
 class EmptyState(BaseState):
@@ -171,10 +181,6 @@ def test_get_engine():
     )
 
 
-if TYPE_CHECKING:
-    from starlette_admin.auth import AuthProvider
-
-
 @pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
@@ -211,12 +217,16 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app._middlewares == [HydrateMiddleware()]
+    assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
 
 
-def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
+def test_multiple_states_error(
+    monkeypatch: pytest.MonkeyPatch,
+    test_state: BaseState,
+    redundant_test_state: BaseState,
+):
     """Test that an error is thrown when multiple classes subclass rx.BaseState.
 
     Args:
@@ -229,7 +239,9 @@ def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
         App()
 
 
-def test_add_page_default_route(app: App, index_page, about_page):
+def test_add_page_default_route(
+    app: App, index_page: ComponentCallable, about_page: ComponentCallable
+):
     """Test adding a page to an app.
 
     Args:
@@ -247,7 +259,7 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert app._pages.keys() == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page):
+def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
     Args:
@@ -261,7 +273,7 @@ def test_add_page_set_route(app: App, index_page):
     assert app._pages.keys() == {"test"}
 
 
-def test_add_page_set_route_dynamic(index_page):
+def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
@@ -281,7 +293,7 @@ def test_add_page_set_route_dynamic(index_page):
     assert constants.ROUTER in app._state()._var_dependencies
 
 
-def test_add_page_set_route_nested(app: App, index_page):
+def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
     Args:
@@ -294,7 +306,7 @@ def test_add_page_set_route_nested(app: App, index_page):
     assert app._unevaluated_pages.keys() == {route}
 
 
-def test_add_page_invalid_api_route(app: App, index_page):
+def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 
     Args:
@@ -369,12 +381,17 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_with_admin_dashboard(test_model):
+def test_initialize_with_admin_dashboard(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app = App(admin_dash=AdminDash(models=[test_model]))
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
@@ -388,9 +405,9 @@ def test_initialize_with_admin_dashboard(test_model):
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
 def test_initialize_with_custom_admin_dashboard(
-    test_get_engine,
-    test_custom_auth_admin,
-    test_model_auth,
+    test_get_engine: Engine,
+    test_custom_auth_admin: type[AuthProvider],
+    test_model_auth: Model,
 ):
     """Test setting the custom admin dashboard of an app.
 
@@ -417,16 +434,22 @@ def test_initialize_with_custom_admin_dashboard(
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_admin_dashboard_with_view_overrides(test_model):
+def test_initialize_admin_dashboard_with_view_overrides(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
     from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass
+
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
 
     app = App(
         admin_dash=AdminDash(
@@ -450,7 +473,9 @@ async def test_initialize_with_state(test_state: type[ATestState], token: str):
     assert app._state == test_state
 
     # Get a state for a given token.
-    state = await app.state_manager.get_state(_substate_key(token, test_state))
+    state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=test_state)
+    )
     assert isinstance(state, test_state)
     assert state.var == 0
 
@@ -467,8 +492,8 @@ async def test_set_and_get_state(test_state: type[ATestState]):
     app = App(_state=test_state)
 
     # Create two tokens.
-    token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
-    token2 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
+    token1 = BaseStateToken(ident=str(uuid.uuid4()), cls=test_state)
+    token2 = BaseStateToken(ident=str(uuid.uuid4()), cls=test_state)
 
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
@@ -496,25 +521,42 @@ async def test_set_and_get_state(test_state: type[ATestState]):
 
 
 @pytest.mark.asyncio
-async def test_dynamic_var_event(test_state: type[ATestState], token: str):
+async def test_dynamic_var_event(
+    test_state: type[ATestState],
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+    token: str,
+    clean_registration_context: RegistrationContext,
+):
     """Test that the default handler of a dynamic generated var
     works as expected.
 
     Args:
         test_state: State Fixture.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
         token: a Token.
+        clean_registration_context: The registration context fixture, which is cleared before each test.
     """
+    clean_registration_context.register_base_state(test_state)
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
-    async for result in state._process(
-        Event(
-            token=token,
-            name=f"{test_state.get_name()}.set_int_val",
-            router_data={"pathname": "/", "query": {}},
-            payload={"value": 50},
+
+    def set_int_val(self, value: int):
+        self.int_val = value
+
+    state._add_event_handler("set_int_val", set_int_val)
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            token,
+            Event(
+                name=f"{test_state.get_name()}.set_int_val",
+                payload={"value": 50},
+            ),
         )
-    ):
-        assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
+    assert emitted_deltas == [
+        (token, {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}})
+    ]
 
 
 @pytest.fixture
@@ -689,6 +731,8 @@ async def test_list_mutation_detection__plain_list(
     event_tuples: list[tuple[str, list[str]]],
     list_mutation_state: State,
     token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
@@ -697,19 +741,22 @@ async def test_list_mutation_detection__plain_list(
         event_tuples: From parametrization.
         list_mutation_state: A state with list mutation features.
         token: a Token.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
     """
     for event_name, expected_delta in event_tuples:
-        async for result in list_mutation_state._process(
-            Event(
-                token=token,
-                name=f"{list_mutation_state.get_name()}.{event_name}",
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                Event(
+                    name=f"{list_mutation_state.get_name()}.{event_name}",
+                    payload={},
+                ),
             )
-        ):
-            # prefix keys in expected_delta with the state name
-            expected_delta = {list_mutation_state.get_name(): expected_delta}
-            assert result.delta == expected_delta
+        # prefix keys in expected_delta with the state name
+        expected_delta = {list_mutation_state.get_name(): expected_delta}
+        assert emitted_deltas == [(token, expected_delta)]
+        emitted_deltas.clear()  # Clear emitted deltas for the next iteration
 
 
 @pytest.fixture
@@ -881,6 +928,8 @@ async def test_dict_mutation_detection__plain_list(
     event_tuples: list[tuple[str, list[str]]],
     dict_mutation_state: State,
     token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
 ):
     """Test dict mutation detection
     when reassignment is not explicitly included in the logic.
@@ -889,20 +938,22 @@ async def test_dict_mutation_detection__plain_list(
         event_tuples: From parametrization.
         dict_mutation_state: A state with dict mutation features.
         token: a Token.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
     """
     for event_name, expected_delta in event_tuples:
-        async for result in dict_mutation_state._process(
-            Event(
-                token=token,
-                name=f"{dict_mutation_state.get_name()}.{event_name}",
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                Event(
+                    name=f"{dict_mutation_state.get_name()}.{event_name}",
+                    payload={},
+                ),
             )
-        ):
-            # prefix keys in expected_delta with the state name
-            expected_delta = {dict_mutation_state.get_name(): expected_delta}
-
-            assert result.delta == expected_delta
+        # prefix keys in expected_delta with the state name
+        expected_delta = {dict_mutation_state.get_name(): expected_delta}
+        assert emitted_deltas == [(token, expected_delta)]
+        emitted_deltas.clear()  # Clear emitted deltas for the next iteration
 
 
 @pytest.mark.asyncio
@@ -935,7 +986,16 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFixture):
+async def test_upload_file(
+    tmp_path: Path,
+    state,
+    delta,
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+    clean_registration_context: RegistrationContext,
+):
     """Test that file upload works correctly.
 
     Args:
@@ -944,16 +1004,18 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         delta: Expected delta after processing all files.
         token: a Token.
         mocker: pytest mocker object.
+        attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
+        mock_root_event_context: The mocked root event context, for accessing state_manager.
+        clean_registration_context: Fixture to ensure clean registration context for each test, preventing cross-test contamination of state subclasses.
     """
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {state if state is FileUploadState else FileStateBase1},
+    clean_registration_context.register_base_state(state)
+    app = Mock(
+        event_processor=attached_mock_base_state_event_processor,
     )
-    # The App state must be the "root" of the state tree
-    app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-    async with app.modify_state(_substate_key(token, state)) as root_state:
-        root_state.get_substate(state.get_full_name().split("."))._tmp_path = tmp_path
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=state)
+    ) as root_state:
+        (await root_state.get_state(state))._tmp_path = tmp_path
     data = b"This is binary data"
 
     request_mock = unittest.mock.Mock()
@@ -983,22 +1045,20 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     updates = []
     async for state_update in streaming_response.body_iterator:
         updates.append(json.loads(str(state_update)))
-    # 2 intermediate yields + 1 final
-    assert len(updates) == 3
-    assert all(not u["final"] for u in updates[:-1])
-    assert updates[-1]["final"]
+    # 2 intermediate yields
+    assert len(updates) == 2
 
     # The last intermediate update should contain the full cumulative delta.
     assert updates[1]["delta"] == delta
 
-    await app.state_manager.close()
-
 
 @pytest.mark.asyncio
 async def test_upload_file_keeps_form_open_until_stream_completes(
-    tmp_path,
+    tmp_path: Path,
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that upload files are not eagerly copied into memory.
 
@@ -1010,19 +1070,16 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
         tmp_path: Temporary path.
         token: A token.
         mocker: pytest mocker object.
+        attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
+        mock_root_event_context: The mocked root event context, for accessing state_manager.
     """
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
-    app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     # Set _tmp_path via modify_state instead of setting class attribute directly.
-    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
-        root_state.get_substate(
-            FileUploadState.get_full_name().split(".")
-        )._tmp_path = tmp_path
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
+    ) as root_state:
+        (await root_state.get_state(FileUploadState))._tmp_path = tmp_path
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1056,8 +1113,8 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert not bio1.closed
     assert not bio2.closed
 
-    # Drive the response through the full ASGI lifecycle so that
-    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    # Drive the response through the full ASGI lifecycle so the streaming
+    # response invokes the on_finish callback.
     scope = {"type": "http"}
     done = asyncio.Event()
 
@@ -1081,20 +1138,64 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert (tmp_path / "image1.jpg").read_bytes() == data1
     assert (tmp_path / "image2.jpg").read_bytes() == data2
 
-    await app.state_manager.close()
+
+@pytest.mark.asyncio
+async def test_upload_empty_buffered_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+):
+    """Test that empty uploads still dispatch buffered alias handlers."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
+    ) as root_state:
+        (await root_state.get_state(FileUploadState)).img_list = []
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.upload_alias_handler",
+    }
+
+    async def form():  # noqa: RUF029
+        return FormData()
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
+
+    updates = []
+    async for state_update in streaming_response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+
+    assert len(updates) == 1
+    assert updates[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["count:0"]}
+    }
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
+
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
+    )
+    substate = await state.get_state(FileUploadState)
+    assert isinstance(substate, FileUploadState)
+    assert substate.img_list == ["count:0"]
 
 
 @pytest.mark.asyncio
-async def test_upload_file_closes_form_on_event_creation_cancellation(
+async def test_upload_file_closes_form_on_form_error(
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
 ):
-    """Test that cancellation during upload event creation closes form data."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
-    app = App()
+    """Test that cancellation before form parsing leaves form data untouched."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1108,44 +1209,75 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     form_close = AsyncMock(side_effect=original_close)
     form_data.close = form_close
 
-    async def form():  # noqa: RUF029
-        return form_data
-
-    async def cancelled_get_state(*_args, **_kwargs):
+    async def cancelled_form():
         await asyncio.sleep(0)
         raise asyncio.CancelledError
 
-    request_mock.form = form
-    mocker.patch.object(app.state_manager, "get_state", side_effect=cancelled_get_state)
+    request_mock.form = cancelled_form
 
     upload_fn = upload(app)
     with pytest.raises(asyncio.CancelledError):
         await upload_fn(request_mock)
 
-    assert form_close.await_count == 1
-    assert file1.file.closed
+    assert form_close.await_count == 0
+    assert not file1.file.closed
 
-    await app.state_manager.close()
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_on_event_creation_cancellation(
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """Test that cancellation during event creation closes form data."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"data")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    # Patch getlist on the form_data to raise CancelledError during event
+    # creation (after form is parsed, before streaming begins).
+    form_data.getlist = Mock(side_effect=asyncio.CancelledError)
+
+    upload_fn = upload(app)
+    with pytest.raises(asyncio.CancelledError):
+        await upload_fn(request_mock)
+
+    # Form was parsed, so it should be closed on failure.
+    assert form_close.await_count == 1
+    assert bio.closed
 
 
 @pytest.mark.asyncio
 async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
-    tmp_path,
+    tmp_path: Path,
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that response cancellation before iteration still closes form data."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
-    app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
-    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
-        root_state.get_substate(
-            FileUploadState.get_full_name().split(".")
-        )._tmp_path = tmp_path
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
+    ) as root_state:
+        (await root_state.get_state(FileUploadState))._tmp_path = tmp_path
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1190,7 +1322,73 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     assert form_close.await_count == 1
     assert bio.closed
 
-    await app.state_manager.close()
+
+@pytest.mark.asyncio
+async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
+    token: str,
+):
+    """Buffered uploads close the handler stream when send raises OSError.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    stream_closed = asyncio.Event()
+
+    async def enqueue_stream_delta(_token, _event):
+        try:
+            yield {"state": {"ok": True}}
+            await asyncio.Event().wait()
+        finally:
+            stream_closed.set()
+
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive() -> dict[str, Any]:
+        await asyncio.Event().wait()
+        msg = "receive should not return"
+        raise AssertionError(msg)
+
+    async def send(message):
+        await asyncio.sleep(0)
+        if message.get("type") == "http.response.body":
+            err = "client disconnected"
+            raise OSError(err)
+
+    with pytest.raises(ClientDisconnect):
+        await streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        )
+
+    await asyncio.wait_for(stream_closed.wait(), timeout=1)
+    assert form_close.await_count == 1
+    assert bio.closed
 
 
 @pytest.mark.asyncio
@@ -1198,7 +1396,11 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-async def test_upload_file_without_annotation(state, tmp_path, token):
+async def test_upload_file_without_annotation(
+    state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
+    tmp_path: Path,
+    token: str,
+):
     """Test that an error is thrown when there's no param annotated with rx.UploadFile or list[UploadFile].
 
     Args:
@@ -1237,7 +1439,11 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-async def test_upload_file_background(state, tmp_path, token):
+async def test_upload_file_background(
+    state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
+    tmp_path: Path,
+    token: str,
+):
     """Test that an error is thrown handler is a background task.
 
     Args:
@@ -1271,7 +1477,254 @@ async def test_upload_file_background(state, tmp_path, token):
     await app.state_manager.close()
 
 
-class DynamicState(BaseState):
+def _build_chunk_upload_multipart_body(
+    boundary: str,
+    parts: list[tuple[str, str, str, bytes]],
+) -> bytes:
+    """Build a multipart upload body for chunk upload tests.
+
+    Args:
+        boundary: The multipart boundary string.
+        parts: Tuples of field name, filename, content type, and payload.
+
+    Returns:
+        The encoded multipart body bytes.
+    """
+    body = bytearray()
+    for field_name, filename, content_type, data in parts:
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(
+            (
+                f'Content-Disposition: form-data; name="{field_name}"; '
+                f'filename="{filename}"\r\n'
+            ).encode()
+        )
+        body.extend(f"Content-Type: {content_type}\r\n\r\n".encode())
+        body.extend(data)
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+    return bytes(body)
+
+
+def _make_chunk_upload_request(
+    token: str,
+    handler_name: str,
+    body: bytes,
+    *,
+    content_type: str,
+    stream_chunk_size: int = 17,
+):
+    """Create a mocked request for the chunk upload endpoint.
+
+    Returns:
+        A mocked Starlette request object.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = Headers({
+        "content-type": content_type,
+        "reflex-client-token": token,
+        "reflex-event-handler": handler_name,
+    })
+    request_mock.query_params = {}
+
+    async def stream():
+        for index in range(0, len(body), stream_chunk_size):
+            yield body[index : index + stream_chunk_size]
+        yield b""
+        await asyncio.sleep(0)
+
+    request_mock.stream = stream
+    return request_mock
+
+
+@pytest.mark.asyncio
+async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+):
+    """Test that the standard upload endpoint dispatches chunk handlers."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
+        substate._tmp_path = tmp_path
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-on-upload-endpoint-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            _build_chunk_upload_multipart_body(
+                boundary,
+                [
+                    ("files", "alpha.txt", "text/plain", b"abcde"),
+                    ("files", "beta.txt", "text/plain", b"12345"),
+                ],
+            ),
+            content_type=f"multipart/form-data; boundary={boundary}",
+            stream_chunk_size=1,
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{}]
+
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
+
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    )
+    substate = await state.get_state(ChunkUploadState)
+    assert isinstance(substate, ChunkUploadState)
+    parsed_chunk_records = [
+        (filename, int(offset), int(size), content_type)
+        for filename, offset, size, content_type in (
+            record.rsplit(":", 3) for record in substate.chunk_records
+        )
+    ]
+    assert len(parsed_chunk_records) >= 4
+    assert {filename for filename, *_ in parsed_chunk_records} == {
+        "alpha.txt",
+        "beta.txt",
+    }
+    assert all(
+        content_type == "text/plain" for *_, content_type in parsed_chunk_records
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "alpha.txt"
+        )
+        == 5
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "beta.txt"
+        )
+        == 5
+    )
+    assert parsed_chunk_records[0][0] == "alpha.txt"
+    assert parsed_chunk_records[-1][0] == "beta.txt"
+    assert substate.completed_files == ["alpha.txt", "beta.txt"]
+    assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
+    assert (tmp_path / "beta.txt").read_bytes() == b"12345"
+
+
+@pytest.mark.asyncio
+async def test_upload_empty_chunk_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+):
+    """Test that empty uploads still dispatch chunk alias handlers."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-empty-alias-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload_alias",
+            _build_chunk_upload_multipart_body(boundary, []),
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{}]
+
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
+
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    )
+    substate = await state.get_state(ChunkUploadState)
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == ["chunks:0"]
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_invalid_offset_returns_400(
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+):
+    """Test that malformed chunk metadata fails the standard upload request."""
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+    # The background task is expected to fail with a parse error for malformed input.
+    attached_mock_base_state_event_processor.backend_exception_handler = None
+
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            b"abc",
+            content_type="text/plain",
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(bytes(response.body).decode()) == {
+        "detail": "Missing boundary in multipart."
+    }
+
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
+
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    )
+    substate = await state.get_state(ChunkUploadState)
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == []
+
+
+class DynamicState(State):
     """State class for testing dynamic route var.
 
     This is defined at module level because event handlers cannot be addressed
@@ -1288,7 +1741,6 @@ class DynamicState(BaseState):
     is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
-    _app_ref: ClassVar[Any] = None
 
     @rx.event
     def on_load(self):
@@ -1309,8 +1761,6 @@ class DynamicState(BaseState):
         """
         return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
 
-    on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
-
 
 def test_dynamic_arg_shadow(
     index_page: ComponentCallable,
@@ -1326,7 +1776,6 @@ def test_dynamic_arg_shadow(
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
-    DynamicState._app_ref = None
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
@@ -1357,12 +1806,31 @@ def test_multiple_dynamic_args(
     app.add_page(index_page, route=route2)
 
 
+@pytest.fixture
+def cleanup_dynamic_arg():
+    """Fixture to reset DynamicState class vars after each test."""
+    yield
+    with contextlib.suppress(AttributeError):
+        del State.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+
+    State.computed_vars.pop("dynamic", None)
+    State.vars.pop("dynamic", None)
+    State._var_dependencies = {}
+    State._potentially_dirty_states = set()
+    State._always_dirty_computed_vars = set()
+    reload_state_module(__name__)
+
+
+@pytest.mark.usefixtures("cleanup_dynamic_arg")
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page: ComponentCallable,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker: MockerFixture,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -1373,12 +1841,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         index_page: The index page.
         token: a Token.
         app_module_mock: Mocked app module.
-        mocker: pytest mocker object.
+        mock_root_event_context: Mocked root event context.
+        mock_base_state_event_processor: Mocked BaseStateEventProcessor.
+        emitted_deltas: List to store emitted deltas.
+        emitted_events: List to store emitted events.
     """
-    DynamicState._app_ref = None
+    OnLoadInternalState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
-    app = app_module_mock.app = App(_state=DynamicState)
+    app = app_module_mock.app = App()
+    app._state_manager = mock_root_event_context.state_manager
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
@@ -1390,24 +1862,18 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     }
     assert constants.ROUTER in app._state()._var_dependencies
 
-    substate_token = _substate_key(token, DynamicState)
-    sid = "mock_sid"
-    client_ip = "127.0.0.1"
-    async with app.state_manager.modify_state(substate_token) as state:
-        state.router_data = {"simulate": "hydrated"}
-        assert state.dynamic == ""  # pyright: ignore[reportAttributeAccessIssue]
+    substate_token = BaseStateToken(ident=token, cls=DynamicState)
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
         return Event(
-            token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
                 "router_data",
                 {
                     "pathname": "/" + route,
                     "query": {arg_name: val},
-                    "asPath": "/test/something",
+                    "asPath": f"/test/{val}",
                 },
             ),
             payload=kwargs.pop("payload", {}),
@@ -1424,56 +1890,52 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
+            name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
-        exp_router_data = {
-            "headers": {},
-            "ip": client_ip,
-            "sid": sid,
-            "token": token,
-            **on_load_internal.router_data,
-        }
-        exp_router = RouterData.from_router_data(exp_router_data)
-        process_coro = process(
-            app,
-            event=on_load_internal,
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        update = await process_coro.__anext__()
-        # route change (on_load_internal) triggers: [call on_load events, call set_is_hydrated(True)]
-        assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    arg_name + FIELD_MARKER: exp_val,
-                    f"comp_{arg_name}" + FIELD_MARKER: exp_val,
-                    constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
-                    "router" + FIELD_MARKER: exp_router,
-                }
-            },
-            events=[
-                _dynamic_state_event(
-                    name="on_load",
-                    val=exp_val,
-                ),
-                _event(
-                    name=f"{State.get_name()}.set_is_hydrated",
-                    payload={"value": True},
-                    val=exp_val,
-                    router_data={},
-                ),
-            ],
-        )
+        exp_router = RouterData.from_router_data(on_load_internal.router_data)
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                on_load_internal,
+            )
+            await processor.join()
+        assert emitted_deltas == [
+            (
+                token,
+                {
+                    State.get_full_name(): {
+                        arg_name + FIELD_MARKER: exp_val,
+                        constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
+                        "router" + FIELD_MARKER: exp_router,
+                    },
+                    DynamicState.get_full_name(): {
+                        f"comp_{arg_name}" + FIELD_MARKER: exp_val,
+                    },
+                },
+            ),
+            (
+                token,
+                {
+                    DynamicState.get_full_name(): {
+                        "loaded" + FIELD_MARKER: exp_index + 1,
+                    },
+                },
+            ),
+            (
+                token,
+                {
+                    State.get_full_name(): {
+                        "is_hydrated" + FIELD_MARKER: True,
+                    },
+                },
+            ),
+        ]
+        assert emitted_events == []
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
             assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
-
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
 
         if environment.REFLEX_OPLOCK_ENABLED.get():
             await app.state_manager.close()
@@ -1482,187 +1944,96 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         state = await app.state_manager.get_state(substate_token)
         assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(name="on_load", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        on_load_update = await process_coro.__anext__()
-        assert on_load_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "loaded" + FIELD_MARKER: exp_index + 1,
-                },
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(
-                name="set_is_hydrated", payload={"value": True}, val=exp_val
-            ),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        on_set_is_hydrated_update = await process_coro.__anext__()
-        assert on_set_is_hydrated_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "is_hydrated" + FIELD_MARKER: True,
-                },
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-
         # a simple state update event should NOT trigger on_load or route var side effects
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(name="on_counter", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        update = await process_coro.__anext__()
-        assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "counter" + FIELD_MARKER: exp_index + 1,
-                }
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-
+        emitted_deltas.clear()
+        emitted_events.clear()
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                _dynamic_state_event(name="on_counter", val=exp_val),
+            )
+        assert emitted_deltas == [
+            (
+                token,
+                {
+                    DynamicState.get_full_name(): {
+                        "counter" + FIELD_MARKER: exp_index + 1,
+                    }
+                },
+            )
+        ]
+        assert emitted_events == []
+        emitted_deltas.clear()
+        emitted_events.clear()
         prev_exp_val = exp_val
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
     state = await app.state_manager.get_state(substate_token)
-    assert isinstance(state, DynamicState)
-    assert state.loaded == len(exp_vals)
-    assert state.counter == len(exp_vals)
+    assert isinstance(state, State)
+    dynamic_state = await state.get_state(DynamicState)
+    assert isinstance(dynamic_state, DynamicState)
+    assert dynamic_state.loaded == len(exp_vals)
+    assert dynamic_state.counter == len(exp_vals)
 
     await app.state_manager.close()
 
 
 @pytest.mark.asyncio
-async def test_process_events(mocker: MockerFixture, token: str):
+async def test_process_events(
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
 
     Args:
-        mocker: mocker object.
         token: a Token.
+        app_module_mock: The mock for the app module, used to patch the app instance.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        mock_root_event_context: The mock for the root event context, used to patch the app
+            state manager.
+        emitted_deltas: List to store emitted deltas.
     """
-    router_data = {
-        "pathname": "/",
-        "query": {},
-        "token": token,
-        "sid": "mock_sid",
-        "headers": {},
-        "ip": "127.0.0.1",
-    }
-    app = App(_state=GenState)
-
-    mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
-        token=token,
         name=f"{GenState.get_name()}.go",
         payload={"c": 5},
-        router_data=router_data,
+        router_data={},
     )
-    async with app.state_manager.modify_state(event.substate_token) as state:
-        state.router_data = {"simulate": "hydrated"}
 
-    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
-        pass
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            token,
+            event,
+        )
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
-        await app.state_manager.close()
+        await mock_root_event_context.state_manager.close()
 
-    gen_state = await app.state_manager.get_state(event.substate_token)
+    gen_state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=GenState),
+    )
     assert isinstance(gen_state, GenState)
     assert gen_state.value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
+    assert len(emitted_deltas) == 5
 
-    await app.state_manager.close()
-
-
-@pytest.mark.parametrize(
-    ("state", "overlay_component", "exp_page_child"),
-    [
-        (None, default_overlay_component, Fragment),
-        (None, None, None),
-        (None, Text.create("foo"), Text),
-        (State, default_overlay_component, Fragment),
-        (State, None, None),
-        (State, Text.create("foo"), Text),
-        (State, lambda: Text.create("foo"), Text),
-    ],
-)
-def test_overlay_component(
-    state: type[State] | None,
-    overlay_component: Component | ComponentCallable | None,
-    exp_page_child: type[Component] | None,
-):
-    """Test that the overlay component is set correctly.
-
-    Args:
-        state: The state class to pass to App.
-        overlay_component: The overlay_component to pass to App.
-        exp_page_child: The type of the expected child in the page fragment.
-    """
-    app = App(_state=state, overlay_component=overlay_component)
-    app._setup_overlay_component()
-    if exp_page_child is None:
-        assert app.overlay_component is None
-    elif isinstance(exp_page_child, Fragment):
-        assert app.overlay_component is not None
-        generated_component = app._generate_component(app.overlay_component)
-        assert isinstance(generated_component, Fragment)
-        assert isinstance(
-            generated_component.children[0],
-            Cond,  # ConnectionModal is a Cond under the hood
-        )
-    else:
-        assert app.overlay_component is not None
-        assert isinstance(
-            app._generate_component(app.overlay_component),
-            exp_page_child,
-        )
-
-    app.add_page(rx.box("Index"), route="/test")
-    # overlay components are wrapped during compile only
-    app._compile_page("test")
-    app._setup_overlay_component()
-    page = app._pages["test"]
-
-    if exp_page_child is not None:
-        assert len(page.children) == 4
-        children_types = (type(child) for child in page.children)
-        assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
-    else:
-        assert len(page.children) == 3
+    await mock_root_event_context.state_manager.close()
 
 
 @pytest.fixture
-def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
+def compilable_app(
+    tmp_path: Path,
+    forked_registration_context: RegistrationContext,
+) -> Generator[tuple[App, Path], None, None]:
     """Fixture for an app that can be compiled.
 
     Args:
         tmp_path: Temporary path.
+        forked_registration_context: Isolated state/event registration context.
 
     Yields:
         Tuple containing (app instance, Path to ".web" directory)
@@ -1685,10 +2056,97 @@ module.exports = {
 };
 """,
     )
+    reload_state_module(__name__)
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
+
+
+EVENT_LOOP_CONTEXT_HOOK = (
+    "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+)
+
+
+def _find_error_boundary_memo_tag(app_root_code: str) -> str:
+    """Extract the memoized default-ErrorBoundary wrapper tag from app-root JS.
+
+    The default ``ErrorBoundary`` app wrap carries an ``on_error`` trigger, so
+    the app-root memoize pass extracts it into its own memo module; the
+    wrapper tag embeds a content hash of the memo body.
+
+    Args:
+        app_root_code: The generated app-root source.
+
+    Returns:
+        The memo wrapper tag.
+    """
+    match = re.search(r"Errorboundary_errorboundary_[0-9a-f]{32}", app_root_code)
+    assert match is not None, "memoized ErrorBoundary tag not found in app root"
+    return match.group()
+
+
+def _find_mirrored_memo_symbol(app_root_code: str, name: str) -> str:
+    """Extract a mirrored memo's per-module JS symbol from app-root JS.
+
+    Framework ``@memo`` overlay wraps mirror to their defining module, so their
+    bare export name (e.g. ``DefaultOverlayComponents``) gains a short
+    per-module hash suffix in the compiled output.
+
+    Args:
+        app_root_code: The generated app-root source.
+        name: The memo's bare export name.
+
+    Returns:
+        The mirrored symbol the memo is referenced under in the output.
+    """
+    match = re.search(rf"{re.escape(name)}_[0-9a-f]{{8}}", app_root_code)
+    assert match is not None, f"mirrored memo symbol for {name!r} not found in app root"
+    return match.group()
+
+
+def compile_page_context_for_app_wraps(component: Component):
+    """Compile one component through the page plugin pipeline.
+
+    Args:
+        component: The page root component to compile.
+
+    Returns:
+        The compiled page context.
+    """
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    return page_ctx
+
+
+def compile_app_root_from_page_wraps(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+) -> str:
+    """Render app-root code from an app and pre-collected page app wraps.
+
+    Args:
+        app: The app whose root wrapper chain should be compiled.
+        page_app_wrap_components: The app wraps collected from page compilation.
+
+    Returns:
+        The generated app root source.
+    """
+    app_root = _memoize_stateful_app_wraps(
+        app._app_root(_resolve_app_wrap_components(app, page_app_wrap_components)),
+        CompileContext(pages=[], hooks=CompilerHooks()),
+    )
+    return _compile_app(app_root)
 
 
 @pytest.mark.parametrize(
@@ -1696,7 +2154,9 @@ module.exports = {
     [True, False],
 )
 def test_app_wrap_compile_theme(
-    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+    react_strict_mode: bool,
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -1706,7 +2166,7 @@ def test_app_wrap_compile_theme(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
@@ -1714,32 +2174,715 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the entire chain in its body. ``addEvents`` is now a
+    # module-level callable (see ``$/utils/context``) so no
+    # ``useContext(EventLoopContext)`` hoist is needed; the events hook
+    # block is empty. State/event-loop providers ride along as the highest
+    # collected app wraps, ahead of the (memoized) ErrorBoundary etc.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
-        + "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        "},"
-        "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
-        "jsx(Fragment,{},"
-        "jsx(DefaultOverlayComponents,{},),"
-        "jsx(Fragment,{},"
-        "children"
-        "))))))" + (")" if react_strict_mode else "") + ")"
-        "\n}"
+        + "jsx(StateProvider,{},"
+        + "jsx(EventLoopProvider,{},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
+        + "jsx(RadixThemesColorModeProvider,{},"
+        + "jsx(Fragment,{},"
+        + f"jsx({toast_provider_tag},{{}},),"
+        + "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        + "jsx(Fragment,{},"
+        + f"jsx({overlay_tag},{{}},),"
+        + "jsx(Fragment,{},"
+        + "children"
+        + "))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+    # The extracted ErrorBoundary memo module carries the fallback render and
+    # the memoized ``onError`` handler instead of the AppWrap chain.
+    memo_contents = (
+        web_dir
+        / constants.Dirs.COMPONENTS_PATH
+        / f"{error_boundary_tag}{constants.Ext.JSX}"
+    ).read_text()
+    assert "fallbackRender" in memo_contents
+    assert "handle_frontend_exception" in memo_contents
+
+
+def test_compile_without_radix_components_skips_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Pure HTML apps should not include Radix Themes assets or wrappers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" not in root_stylesheet
+    assert "RadixThemesTheme" not in app_root
+    mock_deprecate.assert_not_called()
+
+
+def _hydrate_fallback_module(web_dir: Path) -> Path:
+    """Path to the compiled HydrateFallback memo module under a web dir.
+
+    Args:
+        web_dir: The app's compiled web directory.
+
+    Returns:
+        The path to the HydrateFallback memo module.
+    """
+    return (
+        web_dir / constants.Dirs.COMPONENTS_PATH / f"HydrateFallback{constants.Ext.JSX}"
+    )
+
+
+def test_compile_hydrate_fallback_emits_hydrate_fallback(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A hydrate_fallback should compile to a memo module re-exported by root.jsx."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Hydrating...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    assert (
+        "export { HydrateFallback as HydrateFallback } "
+        'from "$/utils/components/HydrateFallback";' in app_root
+    )
+    assert "Hydrating..." in _hydrate_fallback_module(web_dir).read_text()
+
+
+def _example_hydrate_fallback() -> rx.Component:
+    """Hydrate fallback component referenced by dotted import path in tests.
+
+    Returns:
+        A simple fallback component.
+    """
+    return rx.el.div("Fallback from config...")
+
+
+def test_compile_hydrate_fallback_from_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    assert 'from "$/utils/components/HydrateFallback";' in app_root
+    assert "Fallback from config..." in _hydrate_fallback_module(web_dir).read_text()
+
+
+def test_app_hydrate_fallback_takes_precedence_over_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """App.hydrate_fallback should win over the hydrate_fallback config."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Fallback from app...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    fallback_module = _hydrate_fallback_module(web_dir).read_text()
+    assert "Fallback from app..." in fallback_module
+    assert "Fallback from config..." not in fallback_module
+
+
+def test_resolve_import_path_resolves_nested_attribute():
+    """A dotted path should resolve to the attribute of its nested module."""
+    from reflex_components_radix.themes.components.button import button
+
+    from reflex.app import _resolve_import_path
+
+    resolved = _resolve_import_path(
+        "reflex_components_radix.themes.components.button.button"
+    )
+
+    assert resolved is button
+
+
+def test_resolve_import_path_raises_for_missing_module():
+    """An unresolvable path should raise (caller handles the failure)."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ModuleNotFoundError):
+        _resolve_import_path("nonexistent_module.does_not_exist")
+
+
+def test_resolve_import_path_raises_for_single_segment():
+    """A path without a dot should raise a descriptive error, not an opaque one."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ValueError, match="expected a dotted"):
+        _resolve_import_path("mymodule")
+
+
+def test_component_from_import_path_resolves_callable():
+    """A dotted path to a component callable should resolve to a component."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_core.el.elements.typography import Div
+
+    from reflex.app import _component_from_import_path
+
+    component = _component_from_import_path(
+        "tests.units.test_app._example_hydrate_fallback", "hydrate_fallback"
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Div)
+
+
+def test_component_from_import_path_resolves_nested_module():
+    """A multi-segment module path should resolve via importlib, not the top package."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_radix.themes.components.button import Button
+
+    from reflex.app import _component_from_import_path
+
+    # The callable lives in a deeply nested module; ``__import__`` would have
+    # returned the top-level package instead of this submodule.
+    component = _component_from_import_path(
+        "reflex_components_radix.themes.components.button.button",
+        "extra_overlay_function",
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Button)
+
+
+def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+    """An unresolvable path should be logged and return None instead of raising."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    component = _component_from_import_path(
+        "nonexistent_module.does_not_exist", "hydrate_fallback"
+    )
+
+    assert component is None
+    mock_error.assert_called_once()
+
+
+def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+    """A path resolving to a non-callable attribute should return None."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    # ``reflex.constants`` is a module, not a callable returning a component.
+    component = _component_from_import_path("reflex.constants", "hydrate_fallback")
+
+    assert component is None
+    mock_error.assert_called_once()
+
+
+def test_compile_with_radix_component_auto_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Using a Radix Themes component should enable the plugin with a warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.box("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
+    mock_deprecate.assert_called_once()
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "Implicit Radix Themes enablement"
+    )
+
+
+def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """``App(theme=...)`` should continue to work with a deprecation warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components mirror to their defining module's output file."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    # The overlay/toast app wraps are framework ``@memo`` functions, so they
+    # mirror to their defining module under .web/app_components/ (rather than a
+    # shared file). Their export must land in some mirrored module there.
+    memo_sources = "\n".join(
+        path.read_text()
+        for path in (web_dir / constants.Dirs.APP_COMPONENTS).rglob(
+            f"*{constants.Ext.JSX}"
+        )
+    )
+    # Each overlay memo mirrors to its defining module, so its export carries a
+    # per-module symbol derived from that module.
+    overlay_symbol = memo_paths.mirrored_symbol(
+        "DefaultOverlayComponents", default_overlay_component.__module__
+    )
+    toast_symbol = memo_paths.mirrored_symbol(
+        "MemoizedToastProvider", _compile_app.__module__
+    )
+    assert f"export const {overlay_symbol} = memo" in memo_sources
+    assert f"export const {toast_symbol} = memo" in memo_sources
+
+
+def test_compile_dry_run_does_not_prune_or_write_manifest(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """A ``--dry`` compile must not delete memo files or rewrite the manifest."""
+    from reflex.compiler import utils as compiler_utils
+
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    app.add_page(rx.box("Index"), route="/")
+
+    # Seed a stale memo file plus a manifest entry that a real compile would
+    # prune (it is no longer emitted).
+    stale_rel = f"{constants.Dirs.COMPONENTS_PATH}/Stale{constants.Ext.JSX}"
+    stale = web_dir / stale_rel
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_text("// stale", encoding="utf-8")
+    manifest = web_dir / compiler_utils._MEMO_MANIFEST_FILENAME
+    manifest.write_text(json.dumps([stale_rel]), encoding="utf-8")
+    manifest_before = manifest.read_text(encoding="utf-8")
+
+    app._compile(dry_run=True)
+
+    assert stale.exists(), "dry run must not delete stale memo files"
+    assert manifest.read_text(encoding="utf-8") == manifest_before, (
+        "dry run must not rewrite the memo manifest"
+    )
+
+
+def test_compile_page_is_idempotent_for_component_state(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Re-evaluating a stateful page in one process must not duplicate states.
+
+    In prod, granian forks workers that re-run the stateful-pages marker after
+    the parent process already compiled the page. Because ``ComponentState.create``
+    mutates a process-global counter and registry, an unguarded re-evaluation
+    creates a second set of dynamic state classes (the "2x states" bug).
+    """
+    import reflex.istate.dynamic as dynamic_mod
+
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, _ = compilable_app
+
+    class DupCounter(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, **props):
+            return rx.el.div(**props)
+
+    app.add_page(lambda: rx.vstack(DupCounter.create(), DupCounter.create()), route="/")
+    route = next(iter(app._unevaluated_pages))
+
+    # Parent process: full compile evaluates the page once.
+    app._compile(dry_run=True)
+    assert DupCounter._per_component_state_instance_count == 2
+
+    # Forked worker: re-running the stateful-pages marker via _compile_page must
+    # reuse the already-created state classes instead of creating new ones.
+    app._compile_page(route, save_page=False)
+    assert DupCounter._per_component_state_instance_count == 2
+    assert not hasattr(dynamic_mod, "DupCounter_n3")
+
+    # A save_page=True call for an already-compiled route must still leave the
+    # component in _pages (the skip must honour the save_page contract) without
+    # duplicating states.
+    assert route in app._pages
+    app._compile_page(route, save_page=True)
+    assert route in app._pages
+    assert DupCounter._per_component_state_instance_count == 2
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
+
+
+def test_stateful_app_wrap_is_memoized(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """Stateful app wraps compile into their own memo modules.
+
+    The ``AppWrap`` function body also renders the ``StateProvider`` context
+    provider, so a state hook hoisted into ``AppWrap`` can never resolve its
+    context. The auto-memoize pass must extract state-bearing app wraps into
+    their own memo components, which render below the provider in the React
+    tree.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    class AppWrapState(State):
+        banner: str = "hello"
+
+    app.extra_app_wraps[50, "StatefulBanner"] = lambda _: rx.el.div(AppWrapState.banner)
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    root_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    app_wrap_fn = root_contents[root_contents.index("function AppWrap") :]
+    # No state hooks may remain in the AppWrap function body.
+    assert "useContext(StateContexts" not in app_wrap_fn
+    # The route children still flow through the (memoized) wrap chain, which
+    # renders inside the state provider.
+    assert "jsx(StateProvider" in app_wrap_fn
+    assert "children" in app_wrap_fn[app_wrap_fn.index("jsx(StateProvider") :]
+
+    # The extracted memo module carries the state hook instead.
+    memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
+    assert any(
+        "useContext(StateContexts" in memo_file.read_text()
+        for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
+    )
+
+
+def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> None:
+    """App-root chain components with event triggers pull state/event providers.
+
+    The default error boundary's fallback render contains a Copy button.
+    The button has an ``on_click`` handler, so the page collector pulls
+    ``StateProvider`` and ``EventLoopProvider`` into the app root via the
+    event-trigger app-wrap path. ``addEvents`` itself reaches its call
+    sites through the module-level import — no ``useContext`` hoist.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" in root_contents
+    assert "jsx(EventLoopProvider" in root_contents
+
+
+def test_event_provider_app_wrap_order(mocker: MockerFixture) -> None:
+    """StateProvider wraps EventLoopProvider, and both wrap AppWrap."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, page_ctx.app_wrap_components)
+
+    # The provider chain is rendered inside the ``AppWrap`` function body;
+    # ``ReflexProviders`` references ``jsx(AppWrap, {}, children)`` earlier in
+    # the file, so scope the search to the chain to avoid matching that.
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    state_index = chain.index("jsx(StateProvider")
+    event_loop_index = chain.index("jsx(EventLoopProvider")
+    children_index = chain.rindex("children")
+    assert state_index < event_loop_index < children_index
+
+
+def test_minimal_static_app_wrap_omits_state_providers(
+    mocker: MockerFixture,
+) -> None:
+    """An app-root chain with no event/state hooks avoids state providers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app.app_wraps = {}
+    app.extra_app_wraps = {}
+    app.toaster = None
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" not in root_contents
+    assert "jsx(EventLoopProvider" not in root_contents
+
+
+def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
+    """A component with event triggers collects ``StateProvider`` and
+    ``EventLoopProvider`` into the page-level app_wrap registry through the
+    Var-driven path attached to ``Hooks.EVENTS``.
+
+    Uses the page-walk pipeline directly (not ``app._compile()``) so the
+    assertion is robust against ``rx.State`` registration leaks between
+    tests in this file.
+    """
+    component = rx.button("ping", on_click=rx.console_log("ping"))
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    # ``from_state`` priorities: StateProvider outer (100), EventLoopProvider
+    # inner (90). Both must be present whenever a component carries event
+    # triggers, since the ``useContext(EventLoopContext)`` hook hoisted at
+    # ``AppWrap`` level requires both providers as React-tree ancestors.
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+
+
+def test_no_event_triggers_omits_state_providers() -> None:
+    """A static page with no event triggers does not pull state providers in.
+
+    Validates that the migration is *conditional* — apps that don't use
+    state machinery don't pay for unused providers in the app root.
+    """
+    component = rx.text("hello")
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    assert (100, "StateProvider") not in keys
+    assert (90, "EventLoopProvider") not in keys
+
+
+def test_compile_writes_upload_files_provider_via_var_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """A page that uses ``selected_files`` *without* an Upload component still
+    pulls the UploadFilesProvider in via the Var-declared app_wrap path.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.text(selected_files("custom-id").to_string()),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+    assert "UploadFilesProvider" in root_contents
+
+
+def test_selected_files_collects_upload_provider_without_upload_component() -> None:
+    """``selected_files`` alone pulls in UploadFilesProvider."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.text(selected_files("custom-id").to_string())
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") not in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") not in page_ctx.app_wrap_components
+
+
+def test_no_upload_usage_omits_upload_provider() -> None:
+    """A page that never references upload Vars omits ``UploadFilesProvider``.
+
+    The provider rides only on ``selected_files`` / ``upload_files`` Var data
+    (or an ``Upload`` component). A page that uses state and events but no
+    upload must not pull it into the registry — the complement of
+    :func:`test_selected_files_collects_upload_provider_without_upload_component`.
+    """
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    keys = page_ctx.app_wrap_components.keys()
+
+    # Event triggers pull in the state/event providers...
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+    # ...but nothing references upload, so its provider stays out.
+    assert (5, "UploadFilesProvider") not in keys
+
+
+def test_upload_root_collects_upload_and_event_providers() -> None:
+    """Upload root requires both upload context and event-loop providers."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.upload.root(rx.button("Select file"))
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
 @pytest.mark.parametrize(
@@ -1747,7 +2890,9 @@ def test_app_wrap_compile_theme(
     [True, False],
 )
 def test_app_wrap_priority(
-    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+    react_strict_mode: bool,
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 
@@ -1757,7 +2902,7 @@ def test_app_wrap_priority(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
 
     app, web_dir = compilable_app
 
@@ -1787,33 +2932,111 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the priority-ordered chain inside its body.
+    # ``addEvents`` is reached via module-level import so the events hook
+    # block is empty.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(StateProvider,{},"
         + "jsx(RadixThemesBox,{},"
-        "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        "},"
-        'jsx(RadixThemesText,{as:"p"},'
-        "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(Fragment2,{},"
-        "jsx(Fragment,{},"
-        "jsx(DefaultOverlayComponents,{},),"
-        "jsx(Fragment,{},"
-        "children"
-        ")))))))" + (")" if react_strict_mode else "") + "))\n}"
+        + "jsx(EventLoopProvider,{},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
+        + 'jsx(RadixThemesText,{as:"p"},'
+        + "jsx(RadixThemesColorModeProvider,{},"
+        + "jsx(Fragment,{},"
+        + f"jsx({toast_provider_tag},{{}},),"
+        + "jsx(Fragment2,{},"
+        + "jsx(Fragment,{},"
+        + f"jsx({overlay_tag},{{}},),"
+        + "jsx(Fragment,{},"
+        + "children"
+        + "))))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+
+
+def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(
+    mocker: MockerFixture,
+):
+    """Subpath imports should install the base npm package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+        "react": {ImportVar(tag="useEffect")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl" in install_set
+    assert "@scope/pkg" in install_set
+    assert "react-map-gl/maplibre" not in install_set
+    assert "@scope/pkg/subpath" not in install_set
+
+
+def test_get_frontend_packages_keeps_https_imports_unchanged(
+    mocker: MockerFixture,
+):
+    """URL-based imports should be passed through unchanged."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "https://cdn.skypack.dev/some-lib" in install_set
+    assert "https:" not in install_set
+
+
+def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
+    mocker: MockerFixture,
+):
+    """Versioned subpath imports should install the base package with its version."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl@1.0.0" in install_set
+    assert "@scope/pkg@2.0.0" in install_set
+    assert "react-map-gl@1.0.0/maplibre" not in install_set
+    assert "@scope/pkg@2.0.0/subpath" not in install_set
 
 
 def test_app_state_determination():
@@ -1841,13 +3064,40 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def test_app_with_optional_endpoints():
-    from reflex.components.core.upload import Upload
+@pytest.fixture
+def upload_enabled(monkeypatch):
+    """Fixture that enables Upload and cleans up afterward."""
+    from reflex_components_core.core.upload import Upload
 
-    app = App()
-    Upload.is_used = True
-    app._add_optional_endpoints()
-    # TODO: verify the availability of the endpoints in app.api
+    monkeypatch.setattr(Upload, "is_used", True)
+    yield
+    monkeypatch.setattr(Upload, "is_used", False)
+
+
+@pytest.mark.usefixtures("upload_enabled")
+def test_app_with_optional_endpoints(tmp_path: Path):
+    from starlette.routing import Mount, Route
+
+    with chdir(tmp_path):
+        app = App()
+        app._add_optional_endpoints()
+
+        assert app._api is not None
+        upload_path = str(constants.Endpoint.UPLOAD)
+        routes = list(app._api.routes)
+
+        assert any(
+            isinstance(r, Route)
+            and r.path == upload_path
+            and "POST" in getattr(r, "methods", set())
+            for r in routes
+        )
+        assert any(
+            isinstance(r, Mount)
+            and r.path == upload_path
+            and r.name == "uploaded_files"
+            for r in routes
+        )
 
 
 def test_app_state_manager():
@@ -2153,7 +3403,7 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
     app._event_namespace = AsyncMock()
 
     async with app.modify_state(
-        token=_substate_key(token, Sub.get_name())
+        token=BaseStateToken(ident=token, cls=Sub)
     ) as root_state:
         sub = root_state.substates[Sub.get_name()]
         if substate:
@@ -2188,3 +3438,433 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
         )
     else:
         assert app._event_namespace.emit_update.call_count == 0
+
+
+@pytest.fixture
+def app_with_processor() -> App:
+    """Create an App with a mocked event processor that has a root context.
+
+    Returns:
+        An App instance with a mock event processor and root context.
+    """
+    app = App(_state=EmptyState)
+    root_context = EventContext(
+        token="",
+        state_manager=StateManagerMemory(),
+        enqueue_impl=AsyncMock(),
+    )
+    processor = Mock()
+    processor._root_context = root_context
+    app._event_processor = processor
+    return app
+
+
+@pytest.fixture
+def isolated_context() -> contextvars.Context:
+    """Create a fresh empty contextvars.Context.
+
+    Returns:
+        A new Context with no variables set.
+    """
+    return contextvars.Context()
+
+
+@pytest.fixture(
+    params=[False, True],
+    ids=["unset_registration_context", "preset_registration_context"],
+)
+def pre_set_registration_context(
+    isolated_context: contextvars.Context,
+    request: pytest.FixtureRequest,
+) -> RegistrationContext | None:
+    """Optionally pre-set a RegistrationContext in the isolated context.
+
+    Args:
+        isolated_context: The empty context to optionally populate.
+        request: The pytest fixture request with the param value.
+
+    Returns:
+        The pre-set RegistrationContext, or None if unset.
+    """
+    if request.param:
+        ctx = RegistrationContext()
+        isolated_context.run(RegistrationContext.set, ctx)
+        return ctx
+    return None
+
+
+@pytest.fixture(
+    params=[False, True], ids=["unset_event_context", "preset_event_context"]
+)
+def pre_set_event_context(
+    isolated_context: contextvars.Context,
+    request: pytest.FixtureRequest,
+) -> EventContext | None:
+    """Optionally pre-set an EventContext in the isolated context.
+
+    Args:
+        isolated_context: The empty context to optionally populate.
+        request: The pytest fixture request with the param value.
+
+    Returns:
+        The pre-set EventContext, or None if unset.
+    """
+    if request.param:
+        ctx = EventContext(
+            token="pre-existing",
+            state_manager=StateManagerMemory(),
+            enqueue_impl=AsyncMock(),
+        )
+        isolated_context.run(EventContext.set, ctx)
+        return ctx
+    return None
+
+
+def test_set_contexts(
+    app_with_processor: App,
+    pre_set_registration_context: RegistrationContext | None,
+    pre_set_event_context: EventContext | None,
+    isolated_context: contextvars.Context,
+):
+    """set_contexts sets absent contexts, preserves existing ones, and resets on exit."""
+
+    def _test():
+        with app_with_processor.set_contexts():
+            # Pre-existing contexts are preserved; absent ones are filled in.
+            if pre_set_registration_context is not None:
+                assert RegistrationContext.get() is pre_set_registration_context
+            else:
+                assert (
+                    RegistrationContext.get()
+                    is app_with_processor._registration_context
+                )
+
+            if pre_set_event_context is not None:
+                assert EventContext.get() is pre_set_event_context
+            else:
+                assert app_with_processor._event_processor is not None
+                assert (
+                    EventContext.get()
+                    is app_with_processor._event_processor._root_context
+                )
+
+        # After exit: pushed contexts are reset, pre-existing ones remain.
+        if pre_set_registration_context is not None:
+            assert RegistrationContext.get() is pre_set_registration_context
+        else:
+            with pytest.raises(LookupError):
+                RegistrationContext.get()
+
+        if pre_set_event_context is not None:
+            assert EventContext.get() is pre_set_event_context
+        else:
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    isolated_context.run(_test)
+
+
+async def test_modify_state_rebinds_event_context_to_token(
+    app_with_processor: App,
+):
+    """modify_state(token) rebinds EventContext.token to the modified token.
+
+    Out-of-band ``modify_state`` (e.g. the shared-state fan-out that recomputes
+    another client's delta) runs in a task that copied the triggering event's
+    EventContext. Without rebinding, code inside (``get_delta``, computed vars)
+    would read the *actor's* token, not the token whose state is being modified.
+    """
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    assert app_with_processor._event_processor is not None
+    root_context = app_with_processor._event_processor._root_context
+    assert root_context is not None
+
+    # Simulate the actor (token-A) event context the way the processor sets it
+    # (via ``set``, which the fan-out task then inherits by copying the context).
+    actor_token = EventContext.set(root_context.fork(token="token-A"))
+    try:
+        assert EventContext.get().token == "token-A"
+        async with app_with_processor.modify_state(
+            BaseStateToken(ident="token-B", cls=EmptyState)
+        ):
+            assert EventContext.get().token == "token-B"
+        # The actor's context is restored after modify_state exits.
+        assert EventContext.get().token == "token-A"
+    finally:
+        EventContext.reset(actor_token)
+
+
+def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
+    """When event processor is None, EventContext should not be touched."""
+
+    def _test():
+        app = App(_state=EmptyState)
+        assert app._event_processor is None
+
+        with app.set_contexts():
+            assert RegistrationContext.get() is app._registration_context
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    isolated_context.run(_test)
+
+
+def test_compile_sends_telemetry_when_enabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is enabled, ``_compile`` emits one ``compile`` PostHog event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    for key in (
+        "plugins_enabled",
+        "plugins_disabled",
+        "pages_count",
+        "component_counts",
+        "states",
+        "features_used",
+        "duration_ms",
+        "trigger",
+        "exception",
+    ):
+        assert key in payload, f"missing key {key} in compile event payload"
+    assert payload["exception"] is None
+    assert payload["trigger"] == "initial"
+
+
+def test_compile_skips_telemetry_when_disabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=False)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile()
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_reports_exception_and_reraises(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A compile exception is sanitized into the event and then re-raised."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    class _BoomError(RuntimeError):
+        pass
+
+    mocker.patch(
+        "reflex.compiler.compiler.compile_app",
+        side_effect=_BoomError("/etc/passwd: secret token foo"),
+    )
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    with pytest.raises(_BoomError):
+        app._compile()
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    assert payload["exception"] == {"type": "_BoomError"}
+
+
+def test_compile_skips_telemetry_when_compile_app_short_circuits(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """No ``compile`` event when ``compile_app()`` skipped the real compile."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=False)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="backend_startup")
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_event_features_used_match_populated_app(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """End-to-end compile fills features_used with exact counts from the app.
+
+    Guards against data-malformation regressions like the inherited-field
+    double-count: storage vars declared on a parent state must be counted
+    once, even when descendants inherit them.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _PopulatedRoot(BaseState):
+        root_cookie: str = Cookie()
+        root_local: str = LocalStorage()
+
+        @rx.event(background=True)
+        async def heavy(self):
+            """Background handler used to assert detection."""
+
+    class _PopulatedChild(_PopulatedRoot):
+        # root_cookie is inherited here and must not be re-counted.
+        child_session: str = SessionStorage()
+
+    app._state = _PopulatedRoot
+
+    def about_page():
+        return rx.box(rx.text("about"))
+
+    def item_page():
+        return rx.box(rx.text("item"))
+
+    app.add_page(about_page, route="/about")
+    app.add_page(item_page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    features = payload["features_used"]
+    assert features["cookie_count"] == 1, (
+        "inherited cookie field was counted on parent and child"
+    )
+    assert features["local_storage_count"] == 1
+    assert features["session_storage_count"] == 1
+    assert features["background_event_handlers_count"] == 1
+    assert features["dynamic_routes_count"] == 1
+    assert sorted(s["depth_from_root"] for s in payload["states"]) == [0, 1]
+
+
+def test_compile_event_features_used_stable_across_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Recompiling under hot_reload reports the same features_used as the initial compile.
+
+    A bug that accumulated state across compiles (e.g. caching the snapshot
+    or re-counting on each pass) would show up here as drift between the
+    two payloads.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _ReloadRoot(BaseState):
+        token: str = Cookie()
+
+    class _ReloadChild(_ReloadRoot):
+        session: str = SessionStorage()
+
+    app._state = _ReloadRoot
+
+    def page():
+        return rx.box(rx.text("hi"))
+
+    app.add_page(page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+    app._compile(trigger="hot_reload")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 2
+    first = compile_calls[0].kwargs["properties"]
+    second = compile_calls[1].kwargs["properties"]
+    assert first["trigger"] == "initial"
+    assert second["trigger"] == "hot_reload"
+    assert first["features_used"] == second["features_used"]
+    assert [s["depth_from_root"] for s in first["states"]] == [
+        s["depth_from_root"] for s in second["states"]
+    ]
+    # Sanity-check the values themselves, not just equality.
+    assert first["features_used"]["cookie_count"] == 1
+    assert first["features_used"]["session_storage_count"] == 1
+    assert first["features_used"]["dynamic_routes_count"] == 1
+
+
+def test_call_marks_first_dev_backend_worker_as_startup(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The first reload-capable backend worker compile is backend startup."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+    assert marker.exists()
+
+
+def test_call_marks_later_dev_backend_worker_as_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A later reload-capable backend worker compile is a hot reload."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_call_ignores_stale_marker_without_dev_backend_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stale marker alone is not enough to label a compile as hot reload."""
+    monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, raising=False)
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"

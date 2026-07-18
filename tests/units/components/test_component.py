@@ -1,24 +1,13 @@
+import copy
 from contextlib import nullcontext
-from typing import Any, ClassVar
+from dataclasses import dataclass
+from typing import Any, ClassVar, TypedDict
 
 import pytest
-
-import reflex as rx
-from reflex.base import Base
-from reflex.compiler.utils import compile_custom_component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    CustomComponent,
-    StatefulComponent,
-    custom_component,
-)
-from reflex.components.radix.themes.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import (
+from reflex_base.components.component import Component, field
+from reflex_base.constants import EventTriggers
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import (
     EventChain,
     EventHandler,
     JavascriptInputEvent,
@@ -27,18 +16,33 @@ from reflex.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex.state import BaseState
-from reflex.style import Style
-from reflex.utils import imports
-from reflex.utils.exceptions import (
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import (
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
 )
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
+from reflex_base.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.mappings import RADIX_MAPPING
+from reflex_components_radix.themes.layout.box import Box
+
+import reflex as rx
+from reflex import (
+    _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+    _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+)
+from reflex.state import BaseState
+from reflex.utils import imports
 
 
 class TestState(BaseState):
@@ -262,20 +266,6 @@ def on_click2() -> EventHandler:
     return EventHandler(fn=on_click2)
 
 
-@pytest.fixture
-def my_component():
-    """A test component function.
-
-    Returns:
-        A test component function.
-    """
-
-    def my_component(prop1: Var[str], prop2: Var[int]):
-        return Box.create(prop1, prop2)
-
-    return my_component
-
-
 def test_set_style_attrs(component1):
     """Test that style attributes are set in the dict.
 
@@ -337,7 +327,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text-union-none-str",
         ),
@@ -367,7 +357,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="number-union-none-int",
         ),
@@ -403,7 +393,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text_or_number-union-none-str",
         ),
@@ -421,7 +411,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -510,6 +500,27 @@ def test_get_imports(component1, component2):
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
+
+
+def test_get_imports_includes_components_in_props():
+    """Test that component-valued props contribute their imports."""
+
+    class PropComponent(Component):
+        tag = "PropComponent"
+        library = "prop-lib"
+
+    class ParentComponent(Component):
+        tag = "ParentComponent"
+        library = "parent-lib"
+
+        slot: Component | None = field(default=None)
+
+    imports_ = ParentComponent.create(slot=PropComponent.create())._get_all_imports()
+
+    assert imports_ == parse_imports({
+        "parent-lib": ["ParentComponent"],
+        "prop-lib": ["PropComponent"],
+    })
 
 
 def test_get_custom_code(component1: Component, component2: Component):
@@ -792,7 +803,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
-class _Obj(Base):
+@dataclass
+class _Obj:
     custom: int = 0
 
 
@@ -828,50 +840,32 @@ def test_component_event_trigger_arbitrary_args():
     C1.create(on_foo=C1State.mock_handler)
 
 
-def test_create_custom_component(my_component):
-    """Test that we can create a custom component.
+def test_non_submit_mapping_events_do_not_accept_typed_dict_handlers():
+    """TypedDict relaxation should stay scoped to form submission handlers."""
 
-    Args:
-        my_component: A test custom component.
-    """
-    component = rx.memo(my_component)(prop1="test", prop2=1)
-    assert component.tag == "MyComponent"
-    assert set(component.get_props()) == {"prop1", "prop2"}
-    assert component.tag in CUSTOM_COMPONENTS
+    class Payload(TypedDict):
+        email: str
 
+    class C1State(BaseState):
+        def mock_handler(self, payload: Payload):
+            """Mock handler."""
 
-def test_custom_component_hash(my_component):
-    """Test that the hash of a custom component is correct.
+    def on_foo_spec(payload: Var[dict[str, int]]) -> tuple[Var[dict[str, int]]]:
+        return (payload,)
 
-    Args:
-        my_component: A test custom component.
-    """
-    component1 = rx.memo(my_component)(prop1="test", prop2=1)
-    component2 = rx.memo(my_component)(prop1="test", prop2=2)
-    assert {component1, component2} == {component1}
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
 
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
 
-def test_custom_component_wrapper():
-    """Test that the wrapper of a custom component is correct."""
-
-    @custom_component
-    def my_component(width: Var[int], color: Var[str]):
-        return rx.box(
-            width=width,
-            color=color,
-        )
-
-    from reflex.components.radix.themes.typography.text import Text
-
-    ccomponent = my_component(
-        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
-    )
-    assert isinstance(ccomponent, CustomComponent)
-    assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], Text)
-
-    component = ccomponent.get_component()
-    assert isinstance(component, Box)
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        C1.create(on_foo=C1State.mock_handler)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -931,10 +925,6 @@ def test_invalid_event_handler_args(component2, test_state: type[TestState]):
         component2.create(on_blur=lambda: 1)
     with pytest.raises(ValueError):
         component2.create(on_blur=lambda: [1])
-    with pytest.raises(ValueError):
-        component2.create(
-            on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
-        )
 
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatchError):
@@ -1006,6 +996,9 @@ def test_valid_event_handler_args(component2, test_state: type[TestState]):
     # Return EventSpec and EventHandler (no arg).
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something]
+    )
+    component2.create(
+        on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
     )
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something()]
@@ -1153,47 +1146,6 @@ def test_format_component(component, rendered):
         rendered: The expected rendered component.
     """
     assert str(component) == rendered
-
-
-def test_stateful_component(test_state: type[TestState]):
-    """Test that a stateful component is created correctly.
-
-    Args:
-        test_state: A test state.
-    """
-    text_component = rx.text(test_state.num)
-    stateful_component = StatefulComponent.compile_from(text_component)
-    assert isinstance(stateful_component, StatefulComponent)
-    assert stateful_component.tag is not None
-    assert stateful_component.tag.startswith("Text_")
-    assert stateful_component.references == 1
-    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
-    assert isinstance(sc2, StatefulComponent)
-    assert stateful_component.references == 2
-    assert sc2.references == 2
-
-
-def test_stateful_component_memoize_event_trigger(test_state: type[TestState]):
-    """Test that a stateful component is created correctly with events.
-
-    Args:
-        test_state: A test state.
-    """
-    button_component = rx.button("Click me", on_blur=test_state.do_something)
-    stateful_component = StatefulComponent.compile_from(button_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-    # No event trigger? No StatefulComponent
-    assert not isinstance(
-        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
-    )
-
-
-def test_stateful_banner():
-    """Test that a stateful component is created correctly with events."""
-    connection_modal_component = rx.connection_modal()
-    stateful_component = StatefulComponent.compile_from(connection_modal_component)
-    assert isinstance(stateful_component, StatefulComponent)
 
 
 TEST_VAR = LiteralVar.create("p")._replace(
@@ -1469,9 +1421,9 @@ def test_instantiate_all_components():
         "Thead",
     }
     component_nested_list = [
-        *rx.RADIX_MAPPING.values(),
-        *rx.COMPONENTS_BASE_MAPPING.values(),
-        *rx.COMPONENTS_CORE_MAPPING.values(),
+        *RADIX_MAPPING.values(),
+        *_COMPONENTS_BASE_MAPPING.values(),
+        *_COMPONENTS_CORE_MAPPING.values(),
     ]
     for component_name in [
         comp_name
@@ -1766,47 +1718,6 @@ def test_rename_props():
     assert 'renamed_prop1:"prop1_2"' in rendered_c2["props"]
     assert 'subclass_prop2:"prop2_2"' in rendered_c2["props"]
     assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
-
-
-def test_custom_component_get_imports():
-    class Inner(Component):
-        tag = "Inner"
-        library = "inner"
-
-    class Other(Component):
-        tag = "Other"
-        library = "other"
-
-    @rx.memo
-    def wrapper():
-        return Inner.create()
-
-    @rx.memo
-    def outer(c: Component):
-        return Other.create(c)
-
-    custom_comp = wrapper()
-
-    # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp._get_all_imports()
-    assert "outer" not in custom_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    custom_comp.get_component()
-    _, imports_inner = compile_custom_component(custom_comp)
-    assert "inner" in imports_inner
-    assert "outer" not in imports_inner
-
-    outer_comp = outer(c=wrapper())
-
-    # Libraries are not imported directly, but are imported by the custom component.
-    assert "inner" not in outer_comp._get_all_imports()
-    assert "other" not in outer_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    _, imports_outer = compile_custom_component(outer_comp)
-    assert "inner" not in imports_outer
-    assert "other" in imports_outer
 
 
 def test_custom_component_declare_event_handlers_in_fields():
@@ -2315,3 +2226,118 @@ def test_ref():
     assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
 
     assert "ref" not in rx.box()._render().props
+
+
+def test_component_equality_compares_fields():
+    """``BaseComponent.__eq__`` must compare field values, not just class identity.
+
+    HTML ``Element`` subclasses (``rx.box`` etc.) override ``__eq__`` to compare by
+    tag only, so this test uses a plain ``Component`` subclass to exercise the
+    base implementation.
+    """
+
+    class EqProbe(Component):
+        tag = "EqProbe"
+        label: str = ""
+
+    class OtherProbe(Component):
+        tag = "OtherProbe"
+        label: str = ""
+
+    a = EqProbe.create(label="x")
+    b = EqProbe.create(label="x")
+    c = EqProbe.create(label="y")
+
+    assert a == b
+    assert a != c
+
+    parent_same = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_other = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_diff = EqProbe.create(EqProbe.create(label="other"), label="root")
+    assert parent_same == parent_other
+    assert parent_same != parent_diff
+
+    assert EqProbe.create() != OtherProbe.create()
+    assert EqProbe.create() != "not a component"
+
+
+def test_component_equality_handles_var_fields():
+    """``BaseComponent.__eq__`` must not raise when a field holds a Var.
+
+    ``Var.__eq__`` returns a ``BooleanVar``; bool-ifying that raises
+    ``VarTypeError``. Equality has to compare Vars structurally (via
+    ``Var.equals``) and walk containers element-wise so list/dict fields that
+    hold Vars don't trip up the default container ``__eq__``.
+    """
+
+    class VarState(BaseState):
+        text: str = "hi"
+
+    class VarProbe(Component):
+        tag = "VarProbe"
+        label: str = ""
+        items: list = []
+        meta: dict = {}
+
+    same_a = VarProbe.create(label=VarState.text)
+    same_b = VarProbe.create(label=VarState.text)
+    different = VarProbe.create(label="literal")
+    assert same_a == same_b
+    assert same_a != different
+
+    list_a = VarProbe.create(items=[VarState.text])
+    list_b = VarProbe.create(items=[VarState.text])
+    assert list_a == list_b
+
+    dict_a = VarProbe.create(meta={"k": VarState.text})
+    dict_b = VarProbe.create(meta={"k": VarState.text})
+    assert dict_a == dict_b
+
+
+def test_deepcopy_drops_stale_render_cache() -> None:
+    """A deep-copied component must re-render after its children are mutated.
+
+    ``render()`` memoizes ``_cached_render_result``. The compiler deep-copies
+    app-wrap components and rebinds their ``children`` (e.g. in
+    ``App._app_root``); if the clone kept the original's cache, the appended
+    child would be silently dropped — the page content ``children`` would
+    never reach the rendered tree and the page would render blank.
+    """
+    original = Fragment.create()
+    original.render()  # populate _cached_render_result with no children
+
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="page-content"))
+
+    assert len(clone.render()["children"]) == 1
+    # The original must be untouched (independent deep copy).
+    assert original.render()["children"] == []
+
+
+def test_deepcopy_produces_independent_children() -> None:
+    """Deep copy must not share the ``children`` list with the original."""
+    original = Fragment.create(Bare.create(contents="a"))
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="b"))
+
+    assert len(original.children) == 1
+    assert len(clone.children) == 2
+
+
+def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
+    """Collecting subtree hooks must not pollute each node's own hooks cache."""
+    child = Box.create(id="hooks_cache_child")
+    parent = Box.create(child, id="hooks_cache_parent")
+
+    parent_own_hooks = dict(parent._get_hooks_internal())
+    child_own_hooks = dict(child._get_hooks_internal())
+    combined = parent._get_all_hooks_internal()
+
+    # The subtree collection includes both nodes' hooks.
+    for hook in (*parent_own_hooks, *child_own_hooks):
+        assert hook in combined
+
+    # The parent's per-node cache must not absorb the child's hooks.
+    assert dict(parent._get_hooks_internal()) == parent_own_hooks
+    # And repeated collection yields the same result.
+    assert parent._get_all_hooks_internal() == combined

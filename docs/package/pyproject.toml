@@ -1,0 +1,27 @@
+[project]
+name = "reflex-docs-bundle"
+dynamic = ["version"]
+description = "Reflex documentation bundled as a Python package."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-docs-bundle-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build]
+include = ["reflex_docs_bundle", "scripts/hatch_build.py"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["reflex_docs_bundle"]
+
+[tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"

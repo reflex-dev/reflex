@@ -4,15 +4,20 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
+from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.constants.base import LiteralColorMode
+from reflex_base.constants.compiler import PageNames
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Var
+from reflex_base.vars.sequence import LiteralStringVar
+from reflex_components_core.base import document
+from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.el.elements.metadata import Head, Link, Meta
+from reflex_components_core.el.elements.other import Html
 
-from reflex import constants
+import reflex as rx
 from reflex.compiler import compiler, utils
-from reflex.components.base import document
-from reflex.components.el.elements.metadata import Link
-from reflex.constants.compiler import PageNames
-from reflex.utils.imports import ImportVar, ParsedImportDict
-from reflex.vars.base import Var
-from reflex.vars.sequence import LiteralStringVar
 
 
 @pytest.mark.parametrize(
@@ -162,7 +167,6 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css');\n"
@@ -226,7 +230,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -248,7 +251,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -295,7 +297,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('./style.css');",
     )
 
 
@@ -334,8 +336,180 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./style.css');",
     )
+
+
+def test_compile_stylesheets_includes_radix_plugin(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Explicit RadixThemesPlugin should add the Radix stylesheet import."""
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text(".root { color: red; }")
+
+    config = mocker.Mock()
+    config.plugins = [rx.plugins.RadixThemesPlugin()]
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    assert compiler.compile_root_stylesheet(["/style.css"]) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+    )
+
+
+def test_compile_app_root_omits_radix_window_library_by_default():
+    """Apps without Radix should not import it in the app root."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "@radix-ui/themes" not in code
+
+
+def test_compile_app_root_omits_hydrate_fallback_by_default():
+    """Apps without a hydrate_fallback should not export a HydrateFallback."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "HydrateFallback" not in code
+
+
+def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
+    """A hydrate_fallback memo export should be re-exported as HydrateFallback."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"), "MyFallback")
+
+    assert (
+        "export { MyFallback as HydrateFallback } "
+        'from "$/utils/components/MyFallback";' in code
+    )
+
+
+def test_compile_app_root_includes_radix_window_library_when_bundled():
+    """Bundled Radix libraries should be exposed to window.__reflex."""
+    reset_bundled_libraries()
+    try:
+        bundle_library("@radix-ui/themes@3.3.0")
+
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+        assert 'import * as radix_ui_themes from "@radix-ui/themes";' in code
+        assert '"@radix-ui/themes": radix_ui_themes' in code
+    finally:
+        reset_bundled_libraries()
+
+
+def test_compile_contexts_has_default_color_mode_context():
+    """ColorModeContext should have a safe fallback value without Radix."""
+    _, code = compiler.compile_contexts(None, None)
+
+    assert "createContext({" in code
+    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+
+
+def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
+    """Point the compiler's get_config at a fresh config with the given mode.
+
+    Builds a standalone Config rather than mutating the shared singleton so the
+    override cannot leak into other tests regardless of execution order.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        mode: The default color mode to configure.
+    """
+    config = rx.Config(
+        app_name="test_default_color_mode",
+        default_color_mode=mode,
+        _skip_plugins_checks=True,
+    )
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+
+
+@pytest.mark.parametrize("mode", ["system", "light", "dark"])
+def test_compile_contexts_uses_config_default_color_mode(
+    mode: LiteralColorMode, mocker: MockerFixture
+):
+    """The Config.default_color_mode option should drive the compiled default."""
+    _mock_config_color_mode(mocker, mode)
+
+    _, code = compiler.compile_contexts(None, None)
+
+    assert f'export const defaultColorMode = "{mode}"' in code
+
+
+def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixture):
+    """An explicit theme appearance should still win over the config default."""
+    _mock_config_color_mode(mocker, "light")
+
+    _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
+
+    assert 'export const defaultColorMode = "dark"' in code
+
+
+@pytest.mark.parametrize(
+    ("theme", "config_mode", "expected"),
+    [
+        (None, "system", "system"),
+        (None, "dark", "dark"),
+        (None, "light", "light"),
+        # An explicit theme appearance wins over the config default.
+        (rx.theme(appearance="dark"), "light", "dark"),
+        # "inherit" (the default) falls back to the config default.
+        (rx.theme(appearance="inherit"), "dark", "dark"),
+        (rx.theme(), "dark", "dark"),
+    ],
+)
+def test_resolve_default_color_mode(
+    theme, config_mode: LiteralColorMode, expected: str, mocker: MockerFixture
+):
+    """The resolved default matches theme appearance, else the config default."""
+    _mock_config_color_mode(mocker, config_mode)
+
+    assert compiler._resolve_default_color_mode(theme) == expected
+
+
+@pytest.mark.parametrize("mode", ["system", "light", "dark"])
+def test_preload_color_theme_uses_default(mode: str):
+    """The preload script falls back to the given default when no theme is saved."""
+    from reflex.utils.misc import preload_color_theme
+
+    code = str(preload_color_theme(mode))
+
+    assert f"|| {mode!r}" in code
+
+
+def test_compile_document_root_bakes_default_color_mode(mocker: MockerFixture):
+    """compile_document_root threads the resolved default into the preload script."""
+    _mock_config_color_mode(mocker, "dark")
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=Path("/tmp/does_not_matter"),
+    )
+
+    _, code = compiler.compile_document_root(
+        [], default_color_mode=compiler._resolve_default_color_mode(None)
+    )
+
+    assert "|| 'dark'" in code
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
@@ -364,39 +538,39 @@ def test_create_document_root():
     # Test with no components.
     root = utils.create_document_root()
     root.render()
-    assert isinstance(root, utils.Html)
-    assert isinstance(root.children[0], utils.Head)
+    assert isinstance(root, Html)
+    assert isinstance(root.children[0], Head)
     # Default language.
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
     assert len(root.children[0].children) == 6
-    assert isinstance(root.children[0].children[1], utils.Meta)
+    assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
     assert char_set.equals(Var.create("utf-8"))
-    assert isinstance(root.children[0].children[2], utils.Meta)
+    assert isinstance(root.children[0].children[2], Meta)
     name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], document.Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
-        utils.Scripts.create(src="foo.js"),
-        utils.Scripts.create(src="bar.js"),
+        Scripts.create(src="foo.js"),
+        Scripts.create(src="bar.js"),
     ]
     root = utils.create_document_root(
         head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
@@ -419,12 +593,12 @@ def test_create_document_root_with_scripts():
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
-        utils.Meta.create(char_set="cp1252"),
+        Meta.create(char_set="cp1252"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
@@ -434,13 +608,13 @@ def test_create_document_root_with_meta_char_set():
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
-        utils.Meta.create(http_equiv="refresh", content="5"),
-        utils.Meta.create(name="viewport", content="foo"),
+        Meta.create(http_equiv="refresh", content="5"),
+        Meta.create(name="viewport", content="foo"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]

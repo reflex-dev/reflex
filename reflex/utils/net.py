@@ -5,8 +5,8 @@ import time
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
-from reflex.utils.decorator import once
-from reflex.utils.types import Unset
+from reflex_base.utils.decorator import once
+from reflex_base.utils.types import Unset
 
 from . import console
 
@@ -17,7 +17,7 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
-    from reflex.environment import environment
+    from reflex_base.environment import environment
 
     return not environment.SSL_NO_VERIFY.get()
 
@@ -135,7 +135,7 @@ def _httpx_local_address_kwarg() -> str:
     Returns:
         The local address to bind to
     """
-    from reflex.environment import environment
+    from reflex_base.environment import environment
 
     return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get() or (
         "::" if _should_use_ipv6() else "0.0.0.0"

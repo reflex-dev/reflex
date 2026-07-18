@@ -3,9 +3,10 @@
 import asyncio
 import time
 from collections.abc import Callable, Coroutine
+from contextvars import Context
 from typing import Any
 
-from reflex.utils import console
+from reflex_base.utils import console
 
 
 async def _run_forever(
@@ -64,6 +65,7 @@ def ensure_task(
     exception_delay: float = 1.0,
     exception_limit: int = 5,
     exception_limit_window: float = 60.0,
+    task_context: Context | None = None,
     **kwargs: Any,
 ) -> asyncio.Task:
     """Ensure that a task is running for the given coroutine function.
@@ -78,6 +80,7 @@ def ensure_task(
         exception_delay: The delay between retries when an exception is suppressed.
         exception_limit: The maximum number of suppressed exceptions within the limit window before raising.
         exception_limit_window: The time window in seconds for counting suppressed exceptions.
+        task_context: The context to use for the task.
         *args: The arguments to pass to the coroutine function.
         **kwargs: The keyword arguments to pass to the coroutine function.
 
@@ -93,17 +96,20 @@ def ensure_task(
     task = getattr(owner, task_attribute, None)
     if task is None or task.done():
         asyncio.get_running_loop()  # Ensure we're in an event loop.
-        task = asyncio.create_task(
-            _run_forever(
-                coro_function,
-                *args,
-                suppress_exceptions=suppress_exceptions,
-                exception_delay=exception_delay,
-                exception_limit=exception_limit,
-                exception_limit_window=exception_limit_window,
-                **kwargs,
-            ),
-            name=f"reflex_ensure_task|{type(owner).__name__}.{task_attribute}={coro_function.__name__}|{time.time()}",
+        rf_coro = _run_forever(
+            coro_function,
+            *args,
+            suppress_exceptions=suppress_exceptions,
+            exception_delay=exception_delay,
+            exception_limit=exception_limit,
+            exception_limit_window=exception_limit_window,
+            **kwargs,
         )
+        task_name = f"reflex_ensure_task|{type(owner).__name__}.{task_attribute}={coro_function.__name__}|{time.time()}"
+        if task_context is not None:
+            # Run the task in the given context (not needed after Python 3.11+ which supports passing context to create_task directly).
+            task = task_context.run(asyncio.create_task, rf_coro, name=task_name)
+        else:
+            task = asyncio.create_task(rf_coro, name=task_name)
         setattr(owner, task_attribute, task)
     return task

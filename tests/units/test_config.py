@@ -4,11 +4,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import reflex_base.config
 from pytest_mock import MockerFixture
+from reflex_base.constants import Endpoint, Env
+from reflex_base.plugins import Plugin
+from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 import reflex as rx
-import reflex.config
-from reflex.constants import Endpoint, Env
 from reflex.environment import (
     EnvVar,
     env_var,
@@ -17,8 +20,6 @@ from reflex.environment import (
     interpret_enum_env,
     interpret_int_env,
 )
-from reflex.plugins import Plugin
-from reflex.plugins.sitemap import SitemapPlugin
 
 
 def test_requires_app_name():
@@ -37,6 +38,26 @@ def test_set_app_name(base_config_values):
     assert config.app_name == base_config_values["app_name"]
 
 
+def test_default_color_mode_default(base_config_values):
+    """Test that default_color_mode defaults to "system".
+
+    Args:
+        base_config_values: Config values.
+    """
+    config = rx.Config(**base_config_values)
+    assert config.default_color_mode == "system"
+
+
+def test_frozen_lockfile_default(base_config_values):
+    """Test that frozen_lockfile defaults to True (lockfile enforcement on).
+
+    Args:
+        base_config_values: Config values.
+    """
+    config = rx.Config(**base_config_values)
+    assert config.frozen_lockfile is True
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -44,6 +65,7 @@ def test_set_app_name(base_config_values):
         ("REFLEX_FRONTEND_PORT", 3001),
         ("REFLEX_FRONTEND_PATH", "/test"),
         ("REFLEX_BACKEND_PORT", 8001),
+        ("REFLEX_BACKEND_PATH", "/api"),
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
@@ -51,6 +73,9 @@ def test_set_app_name(base_config_values):
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
+        ("REFLEX_FROZEN_LOCKFILE", False),
+        ("REFLEX_FROZEN_LOCKFILE", True),
+        ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )
 def test_update_from_env(
@@ -133,6 +158,30 @@ def test_update_from_env_cors(
     ]
 
 
+def test_update_from_env_frontend_compression_formats(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test comma-delimited frontend compression formats from the environment."""
+    monkeypatch.setenv(
+        "REFLEX_FRONTEND_COMPRESSION_FORMATS", "gzip, brotli , zstd, gzip"
+    )
+    config = rx.Config(**base_config_values)
+    assert config.frontend_compression_formats == ["gzip", "brotli", "zstd"]
+
+
+def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]):
+    """Test that unsupported frontend compression formats raise config errors."""
+    with pytest.raises(
+        ConfigError,
+        match="frontend_compression_formats contains unsupported format",
+    ):
+        rx.Config(
+            **base_config_values,
+            frontend_compression_formats=["gzip", "snappy"],
+        )
+
+
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
@@ -143,6 +192,30 @@ def test_update_from_env_cors(
         (
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "api/",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api/v1",
+            },
+            f"/api/v1{Endpoint.EVENT}",
         ),
     ],
 )
@@ -155,11 +228,81 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
         expected: Expected namespace
     """
     conf = rx.Config(**kwargs)
-    mocker.patch("reflex.config.get_config", return_value=conf)
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
 
-    config = reflex.config.get_config()
+    config = reflex_base.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
+
+
+@pytest.mark.parametrize(
+    ("backend_path", "path", "expected"),
+    [
+        ("", "/ping", "/ping"),
+        ("/api", "/ping", "/api/ping"),
+        ("api", "/ping", "/api/ping"),
+        ("/api/", "/ping", "/api/ping"),
+        ("/api", "", ""),
+        ("/api", "relative/path", "relative/path"),
+        ("/api/v1", "/ping", "/api/v1/ping"),
+        ("api/v1/", "/ping", "/api/v1/ping"),
+        ("/api/v1", "", ""),
+        ("/api/v1", "relative/path", "relative/path"),
+    ],
+)
+def test_prepend_backend_path(backend_path: str, path: str, expected: str):
+    """Test that prepend_backend_path normalizes and prefixes paths correctly.
+
+    Args:
+        backend_path: The configured backend_path.
+        path: The input path to prefix.
+        expected: The expected output.
+    """
+    config = rx.Config(app_name="test_app", backend_path=backend_path)
+    assert config.prepend_backend_path(path) == expected
+
+
+@pytest.mark.parametrize("backend_path", ["", "/api", "api/", "/api/v1"])
+@pytest.mark.parametrize("endpoint", list(Endpoint))
+def test_endpoint_get_url_with_backend_path(
+    mocker: MockerFixture, backend_path: str, endpoint: Endpoint
+):
+    """Endpoint.get_url() includes backend_path; WS protocol swap still works for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+        backend_path: The configured backend_path.
+        endpoint: The endpoint to generate a URL for.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path=backend_path,
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    url = endpoint.get_url()
+    prefix = f"/{backend_path.strip('/')}" if backend_path.strip("/") else ""
+    if endpoint is Endpoint.EVENT:
+        assert url == f"ws://example.com{prefix}{endpoint}"
+    else:
+        assert url == f"http://example.com{prefix}{endpoint}"
+
+
+def test_get_event_namespace_matches_mount_path(mocker: MockerFixture):
+    """Socket.IO namespace must equal the HTTP mount path for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path="/api",
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    assert conf.get_event_namespace() == conf.prepend_backend_path(str(Endpoint.EVENT))
 
 
 DEFAULT_CONFIG = rx.Config(app_name="a")
@@ -246,7 +389,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)
+    monkeypatch.setattr(reflex_base.config.os, "environ", mock_os_env)  # pyright: ignore[reportPrivateImportUsage]
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
@@ -462,3 +605,236 @@ class TestDisablePlugins:
         """Test that builtin plugins are added when not disabled."""
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_non_builtin_plugin_does_not_warn(self, mocker: MockerFixture):
+        """Disabling a non-builtin plugin emits no warning.
+
+        Non-builtin plugins (e.g. ones added via REFLEX_EXTRA_PLUGINS) can be
+        disabled through this same mechanism, so disabling a plugin that is not
+        enabled-by-default must not warn.
+        """
+
+        class CustomPlugin(Plugin): ...
+
+        warn = mocker.patch("reflex_base.config.console.warn")
+        rx.Config(app_name="test", disable_plugins=[CustomPlugin])
+        assert not any(
+            "not a built-in plugin" in str(call.args[0]) for call in warn.call_args_list
+        )
+
+
+def test_plugins_instance_passthrough():
+    """A Plugin instance is kept as-is (issue #6440)."""
+    instance = SitemapPlugin()
+    config = rx.Config(app_name="test", plugins=[instance])
+    assert instance in config.plugins
+
+
+def test_plugins_class_auto_instantiated():
+    """A Plugin subclass is auto-instantiated rather than raising deep in the compiler (issue #6440)."""
+    config = rx.Config(app_name="test", plugins=[SitemapPlugin])  # pyright: ignore[reportArgumentType]
+    instances = [p for p in config.plugins if isinstance(p, SitemapPlugin)]
+    assert len(instances) == 1
+    # And it must be an instance, not the class itself.
+    assert not isinstance(instances[0], type)
+
+
+def test_plugins_invalid_value_raises_config_error():
+    """A non-Plugin value raises ConfigError naming the entry, not a deep TypeError (issue #6440)."""
+    with pytest.raises(ConfigError, match=r"reflex\.Config\.plugins"):
+        rx.Config(app_name="test", plugins=["not-a-plugin"])  # pyright: ignore[reportArgumentType]
+
+
+def test_plugins_class_requiring_args_raises_config_error():
+    """A Plugin subclass that needs constructor args raises a clear ConfigError (issue #6440)."""
+
+    class NeedsArgs(Plugin):
+        def __init__(self, required):
+            self.required = required
+
+    with pytest.raises(ConfigError, match="NeedsArgs"):
+        rx.Config(app_name="test", plugins=[NeedsArgs])  # pyright: ignore[reportArgumentType]
+
+
+# Module-level plugins so REFLEX_EXTRA_PLUGINS can resolve them by import path.
+class ExtraPluginA(Plugin):
+    """First plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+class ExtraPluginB(Plugin):
+    """Second plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+# Records every instantiation so tests can assert a disabled plugin is never built.
+_extra_plugin_instantiations: list[str] = []
+
+
+class TrackedExtraPlugin(Plugin):
+    """Plugin that records when its constructor runs."""
+
+    def __init__(self):
+        """Record that this plugin was instantiated."""
+        _extra_plugin_instantiations.append(type(self).__name__)
+
+
+class NeedsArgsExtraPlugin(Plugin):
+    """Plugin whose constructor requires an argument, so it cannot be auto-built."""
+
+    def __init__(self, required):
+        """Initialize, requiring an argument.
+
+        Args:
+            required: A required positional argument.
+        """
+        self.required = required
+
+
+_EXTRA_PLUGIN_A = "tests.units.test_config.ExtraPluginA"
+_EXTRA_PLUGIN_B = "tests.units.test_config.ExtraPluginB"
+_TRACKED_EXTRA_PLUGIN = "tests.units.test_config.TrackedExtraPlugin"
+_NEEDS_ARGS_EXTRA_PLUGIN = "tests.units.test_config.NeedsArgsExtraPlugin"
+_BAD_PLUGIN_SPEC = "tests.units.test_config.NoSuchPlugin"
+
+
+def test_extra_plugins_appends_single_plugin(monkeypatch: pytest.MonkeyPatch):
+    """A single extra plugin is appended to the plugins list."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_multiple_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Multiple colon-separated extra plugins are all appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_EXTRA_PLUGIN_A}:{_EXTRA_PLUGIN_B}")
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_preserves_config_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Extra plugins are appended without replacing plugins from the config."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    instance = ExtraPluginA()
+    config = rx.Config(app_name="test", plugins=[instance])
+    # The config-provided instance is preserved...
+    assert instance in config.plugins
+    # ...and the extra plugin from the env var is appended.
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_unset_appends_nothing(monkeypatch: pytest.MonkeyPatch):
+    """When unset, no extra plugins leak into the plugins list."""
+    monkeypatch.delenv("REFLEX_EXTRA_PLUGINS", raising=False)
+    config = rx.Config(app_name="test")
+    assert not any(isinstance(p, (ExtraPluginA, ExtraPluginB)) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_duplicate_existing_type(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An extra plugin whose type is already configured is not added twice."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginA()])
+    instances = [p for p in config.plugins if isinstance(p, ExtraPluginA)]
+    assert len(instances) == 1
+
+
+def test_extra_plugins_respects_disable_plugins(monkeypatch: pytest.MonkeyPatch):
+    """An extra plugin disabled via disable_plugins is not appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", disable_plugins=[ExtraPluginA])
+    assert not any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_replace_like_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_PLUGINS replaces config plugins, unlike REFLEX_EXTRA_PLUGINS."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginB()])
+    # The config plugin is dropped by the REFLEX_PLUGINS replacement.
+    assert not any(isinstance(p, ExtraPluginB) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_on_top_of_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_EXTRA_PLUGINS appends on top of the REFLEX_PLUGINS replacement."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    config = rx.Config(app_name="test", plugins=[SitemapPlugin()])
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_enabled_is_instantiated(monkeypatch: pytest.MonkeyPatch):
+    """A non-disabled extra plugin has its constructor run exactly once."""
+    _extra_plugin_instantiations.clear()
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _TRACKED_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, TrackedExtraPlugin) for p in config.plugins)
+    assert _extra_plugin_instantiations == ["TrackedExtraPlugin"]
+
+
+def test_extra_plugins_disabled_is_never_instantiated(monkeypatch: pytest.MonkeyPatch):
+    """A disabled extra plugin is imported but its constructor never runs."""
+    _extra_plugin_instantiations.clear()
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _TRACKED_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test", disable_plugins=[TrackedExtraPlugin])
+    assert not any(isinstance(p, TrackedExtraPlugin) for p in config.plugins)
+    # The constructor must never have run for the disabled plugin.
+    assert _extra_plugin_instantiations == []
+
+
+def test_extra_plugins_bad_spec_warns_and_keeps_valid(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """A bad REFLEX_EXTRA_PLUGINS entry warns but valid entries are still added."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_BAD_PLUGIN_SPEC}:{_EXTRA_PLUGIN_A}")
+    config = rx.Config(app_name="test")
+    # The valid entry survives despite the bad one (no all-or-nothing failure).
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(
+        "REFLEX_EXTRA_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+    )
+
+
+def test_extra_plugins_uninstantiable_warns_and_skips(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An extra plugin that cannot be instantiated warns and is skipped, not fatal."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _NEEDS_ARGS_EXTRA_PLUGIN)
+    config = rx.Config(app_name="test")
+    assert not any(isinstance(p, NeedsArgsExtraPlugin) for p in config.plugins)
+    assert any(
+        "could not be instantiated" in str(call.args[0]) for call in warn.call_args_list
+    )
+
+
+def test_plugins_bad_env_spec_raises_invalid_plugin_config_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An invalid REFLEX_PLUGINS import path raises InvalidPluginConfigError.
+
+    The dedicated subclass lets error tracking catch plugin-load failures
+    specifically, while still subclassing ConfigError for existing handlers.
+    """
+    monkeypatch.setenv("REFLEX_PLUGINS", _BAD_PLUGIN_SPEC)
+    with pytest.raises(InvalidPluginConfigError, match="could not be loaded"):
+        rx.Config(app_name="test")
+    assert issubclass(InvalidPluginConfigError, ConfigError)
+
+
+def test_disable_plugins_bad_env_spec_warns(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An invalid REFLEX_DISABLE_PLUGINS import path warns but does not crash."""
+    warn = mocker.patch("reflex_base.config.console.warn")
+    monkeypatch.setenv("REFLEX_DISABLE_PLUGINS", _BAD_PLUGIN_SPEC)
+    rx.Config(app_name="test")
+    assert any(
+        "REFLEX_DISABLE_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+    )

@@ -1,0 +1,20 @@
+"""Reflex base UI components package."""
+
+from __future__ import annotations
+
+from reflex_base.utils import lazy_loader
+
+_SUBMODULES: set[str] = {
+    "base",
+    "core",
+    "datadisplay",
+    "el",
+}
+
+_SUBMOD_ATTRS: dict[str, list[str]] = {}
+
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submodules=_SUBMODULES,
+    submod_attrs=_SUBMOD_ATTRS,
+)

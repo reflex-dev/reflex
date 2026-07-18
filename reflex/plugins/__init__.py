@@ -1,17 +1,43 @@
-"""Reflex Plugin System."""
+"""Re-export from reflex_base.plugins."""
 
-from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
-from .base import CommonContext, Plugin, PreCompileContext
-from .sitemap import SitemapPlugin
-from .tailwind_v3 import TailwindV3Plugin
-from .tailwind_v4 import TailwindV4Plugin
+from reflex_base.plugins import (
+    BaseContext,
+    CommonContext,
+    CompileContext,
+    CompilerHooks,
+    ComponentAndChildren,
+    EmbedPlugin,
+    PageContext,
+    Plugin,
+    PreCompileContext,
+    SitemapPlugin,
+    TailwindV3Plugin,
+    TailwindV4Plugin,
+    _ScreenshotPlugin,
+    embed,
+    sitemap,
+    tailwind_v3,
+    tailwind_v4,
+)
+from reflex_components_radix.plugin import RadixThemesPlugin
 
 __all__ = [
+    "BaseContext",
     "CommonContext",
+    "CompileContext",
+    "CompilerHooks",
+    "ComponentAndChildren",
+    "EmbedPlugin",
+    "PageContext",
     "Plugin",
     "PreCompileContext",
+    "RadixThemesPlugin",
     "SitemapPlugin",
     "TailwindV3Plugin",
     "TailwindV4Plugin",
     "_ScreenshotPlugin",
+    "embed",
+    "sitemap",
+    "tailwind_v3",
+    "tailwind_v4",
 ]

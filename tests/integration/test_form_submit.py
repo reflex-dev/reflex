@@ -2,14 +2,15 @@
 
 import asyncio
 import functools
+import json
 from collections.abc import Generator
 
 import pytest
+from reflex_base.utils import format
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
-from reflex.utils import format
 
 
 def FormSubmit(form_component):
@@ -21,7 +22,7 @@ def FormSubmit(form_component):
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: rx.Field[dict] = rx.field(default_factory=dict)
 
         var_options: list[str] = ["option3", "option4"]
 
@@ -65,6 +66,7 @@ def FormSubmit(form_component):
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
             ),
+            rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
             height="100vh",
         )
@@ -79,7 +81,7 @@ def FormSubmitName(form_component):
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: rx.Field[dict] = rx.field(default_factory=dict)
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
@@ -122,6 +124,7 @@ def FormSubmitName(form_component):
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
             ),
+            rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
             height="100vh",
         )
@@ -225,20 +228,12 @@ async def test_submit(driver, form_submit: AppHarness):
     submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_input.click()
 
-    state_name = form_submit.get_state_name("_form_state")
-    full_state_name = form_submit.get_full_state_name(["_form_state"])
-
-    async def get_form_data():
-        return (
-            (await form_submit.get_state(f"{token}_{full_state_name}"))
-            .substates[state_name]
-            .form_data  # pyright: ignore[reportAttributeAccessIssue]
-        )
-
     # wait for the form data to arrive at the backend
-    form_data = await AppHarness._poll_for_async(get_form_data)
+    form_submit.poll_for_content(
+        driver.find_element(By.ID, "form-data"), exp_not_equal="{}"
+    )
+    form_data = json.loads(driver.find_element(By.ID, "form-data").text)
     assert isinstance(form_data, dict)
-
     form_data = format.collect_form_dict_names(form_data)
 
     print(form_data)

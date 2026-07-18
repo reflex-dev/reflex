@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine, Generator
+import json
+from collections.abc import Generator
 from urllib.parse import urlsplit
 
 import pytest
@@ -11,7 +12,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 
-from .utils import poll_for_navigation
+from .utils import poll_assert_event_order, poll_for_navigation
 
 
 def DynamicRoute():
@@ -47,6 +48,10 @@ def DynamicRoute():
             except ValueError:
                 return "0"
 
+        @rx.var
+        def params(self) -> dict[str, str | list[str]]:
+            return self.router.page.params
+
     def index():
         return rx.fragment(
             rx.input(
@@ -68,12 +73,14 @@ def DynamicRoute():
                 id="link_page_next",
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.list(  # pyright: ignore [reportAttributeAccessIssue]
+            rx.vstack(
                 rx.foreach(
                     DynamicState.order,  # pyright: ignore [reportAttributeAccessIssue]
-                    lambda i: rx.list_item(rx.text(i)),
+                    rx.text,
                 ),
+                id="event_order",
             ),
+            rx.text(DynamicState.params.to_string(), id="params"),
         )
 
     class ArgState(rx.State):
@@ -215,46 +222,10 @@ def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-@pytest.fixture
-def poll_for_order(
-    dynamic_route: AppHarness, token: str
-) -> Callable[[list[str]], Coroutine[None, None, None]]:
-    """Poll for the order list to match the expected order.
-
-    Args:
-        dynamic_route: harness for DynamicRoute app.
-        token: The token visible in the driver browser.
-
-    Returns:
-        An async function that polls for the order list to match the expected order.
-    """
-    dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
-    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
-
-    async def _poll_for_order(exp_order: list[str]):
-        async def _backend_state():
-            return await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
-
-        async def _check():
-            return (await _backend_state()).substates[
-                dynamic_state_name
-            ].order == exp_order  # pyright: ignore[reportAttributeAccessIssue]
-
-        await AppHarness._poll_for_async(_check, timeout=10)
-        assert (
-            list((await _backend_state()).substates[dynamic_state_name].order)  # pyright: ignore[reportAttributeAccessIssue]
-            == exp_order
-        )
-
-    return _poll_for_order
-
-
-@pytest.mark.asyncio
-async def test_on_load_navigate(
+def test_on_load_navigate(
     dynamic_route: AppHarness,
     driver: WebDriver,
     token: str,
-    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
@@ -262,9 +233,7 @@ async def test_on_load_navigate(
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
         token: The token visible in the driver browser.
-        poll_for_order: function that polls for the order list to match the expected order.
     """
-    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
     assert dynamic_route.app_instance is not None
     link = driver.find_element(By.ID, "link_page_next")
     assert link
@@ -290,7 +259,7 @@ async def test_on_load_navigate(
             page_id_input, exp_not_equal=str(ix - 1)
         ) == str(ix)
         assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}"
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
 
     frontend_url = dynamic_route.frontend_url
     assert frontend_url
@@ -300,48 +269,46 @@ async def test_on_load_navigate(
     exp_order += ["/page/[page_id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/page/10")
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
 
     # make sure internal nav still hydrates after redirect
     exp_order += ["/page/[page_id]-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
 
     # load same page with a query param and make sure it passes through
     exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
-    await poll_for_order(exp_order)
-    assert (
-        await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
-    ).router.page.params["foo"] == "bar"
+    poll_assert_event_order(driver, exp_order)
+    params_json = driver.find_element(By.ID, "params")
+    params = json.loads(params_json.text)
+    assert params == {"foo": "bar", "page_id": "11"}
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/missing")
-    await poll_for_order(exp_order)
 
     # browser nav should still trigger hydration
     exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.back()
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
     link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
         link.click()
-    await poll_for_order(exp_order)
 
     # hit a page that redirects back to dynamic page
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/redirect-page/0/?foo=bar")
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
     # should have redirected back to page 0
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/page/0"
 
@@ -349,21 +316,18 @@ async def test_on_load_navigate(
     exp_order += ["on-load-static"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/page/static")
-    await poll_for_order(exp_order)
+    poll_assert_event_order(driver, exp_order)
 
 
-@pytest.mark.asyncio
-async def test_on_load_navigate_non_dynamic(
+def test_on_load_navigate_non_dynamic(
     dynamic_route: AppHarness,
     driver: WebDriver,
-    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
 ):
     """Click links to navigate between static pages with on_load event.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
-        poll_for_order: function that polls for the order list to match the expected order.
     """
     assert dynamic_route.app_instance is not None
     link = driver.find_element(By.ID, "link_page_x")
@@ -372,7 +336,7 @@ async def test_on_load_navigate_non_dynamic(
     with poll_for_navigation(driver):
         link.click()
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    await poll_for_order(["/static/x-no page id"])
+    poll_assert_event_order(driver, ["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
     link = driver.find_element(By.ID, "link_index")
@@ -384,13 +348,13 @@ async def test_on_load_navigate_non_dynamic(
     with poll_for_navigation(driver):
         link.click()
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    await poll_for_order(["/static/x-no page id", "/static/x-no page id"])
+    poll_assert_event_order(driver, ["/static/x-no page id", "/static/x-no page id"])
 
     for _ in range(3):
         link = driver.find_element(By.ID, "link_page_x")
         link.click()
         assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    await poll_for_order(["/static/x-no page id"] * 5)
+    poll_assert_event_order(driver, ["/static/x-no page id"] * 5)
 
 
 @pytest.mark.asyncio

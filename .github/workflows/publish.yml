@@ -1,7 +1,18 @@
 name: Publish to PyPI
 
+run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
+
 on:
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.2.3 or reflex-lucide-v0.1.0)"
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
   publish:
@@ -13,22 +24,51 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.14"
+          python-version: "3.14.5"
+          enable-cache: false
+          restore-cache: false
+          save-cache: false
+          cache-python: false
+
+      - name: Parse release tag
+        id: parse
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: bash .github/scripts/publish/parse_tag.sh
+
+      # A *.dev dependency pin references an unpublished version, so it must never reach
+      # released package metadata. Scoped to the package being published so a dependency
+      # can still be released while dependents temporarily dev-pin it.
+      - name: Reject development-release dependency pins
+        env:
+          PACKAGE: ${{ steps.parse.outputs.package }}
+        run: uv run --with packaging --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
+
+      - name: Pin reflex-base to exact version
+        if: steps.parse.outputs.package == 'reflex'
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: bash .github/scripts/publish/pin_reflex_base.sh
 
       - name: Build
-        run: uv build
+        run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
 
       - name: Verify .pyi files in wheel
-        run: |
-          if unzip -l dist/*.whl | grep '\.pyi$'; then
-            echo "✓ .pyi files found in distribution"
-          else
-            echo "Error: No .pyi files found in wheel"
-            exit 1
-          fi
+        if: steps.parse.outputs.package == 'reflex'
+        env:
+          BUILD_DIR: ${{ steps.parse.outputs.build_dir }}
+        run: bash .github/scripts/publish/verify_pyi.sh
 
       - name: Publish
-        run: uv publish
+        run: uv publish dist/*

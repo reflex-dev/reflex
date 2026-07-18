@@ -7,10 +7,10 @@ import importlib
 import importlib.metadata
 import inspect
 import json
-import random
 import re
 import sys
 import typing
+import uuid
 from datetime import datetime
 from os import getcwd
 from pathlib import Path
@@ -18,17 +18,20 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.constants.base import RunningMode
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import once
 
-from reflex import constants, model
-from reflex.config import Config, get_config
-from reflex.environment import environment
+from reflex import model
 from reflex.utils import console, net, path_ops
-from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
     from redis.asyncio import Redis
+    from reflex_base.telemetry_context import CompileTrigger
 
     from reflex.app import App
 
@@ -249,6 +252,7 @@ def get_compiled_app(
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
     use_rich: bool = True,
+    trigger: CompileTrigger | None = None,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -258,6 +262,7 @@ def get_compiled_app(
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         use_rich: Whether to use rich progress bars.
+        trigger: Optional label forwarded to ``App._compile`` for telemetry.
 
     Returns:
         The compiled app based on the default config.
@@ -265,7 +270,12 @@ def get_compiled_app(
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
+    app._compile(
+        prerender_routes=prerender_routes,
+        dry_run=dry_run,
+        use_rich=use_rich,
+        trigger=trigger,
+    )
     return app_module
 
 
@@ -318,7 +328,7 @@ def _can_colorize() -> bool:
         try:
             import nt
 
-            if not nt._supports_virtual_terminal():
+            if not nt._supports_virtual_terminal():  # pyright: ignore[reportAttributeAccessIssue]
                 return False
         except (ImportError, AttributeError):
             return False
@@ -333,6 +343,7 @@ def compile_or_validate_app(
     compile: bool = False,
     check_if_schema_up_to_date: bool = False,
     prerender_routes: bool = False,
+    trigger: CompileTrigger | None = None,
 ) -> bool:
     """Compile or validate the app module based on the default config.
 
@@ -340,6 +351,7 @@ def compile_or_validate_app(
         compile: Whether to compile the app.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         prerender_routes: Whether to prerender routes.
+        trigger: Optional label forwarded to ``App._compile`` for telemetry.
 
     Returns:
         True if the app was successfully compiled or validated, False otherwise.
@@ -349,6 +361,7 @@ def compile_or_validate_app(
             get_compiled_app(
                 check_if_schema_up_to_date=check_if_schema_up_to_date,
                 prerender_routes=prerender_routes,
+                trigger=trigger,
             )
         else:
             get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
@@ -498,7 +511,46 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     return data.get("project_hash")
 
 
-def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+_DISTINCT_ID_SEMANTICS_VERSION = "0.9.5"
+
+
+def _installation_id_semantics_file() -> Path:
+    """Return the path of the telemetry distinct_id semantics marker file.
+
+    Returns:
+        The marker path, next to the installation id in the Reflex dir.
+    """
+    return environment.REFLEX_DIR.get() / "installation_id_semantics"
+
+
+def has_uuid_distinct_id_semantics() -> bool:
+    """Return whether this installation uses UUID telemetry distinct_id semantics.
+
+    The marker is written for brand-new installs (by
+    ``ensure_reflex_installation_id``) and after a legacy install attempts to
+    alias its numeric distinct_id to the UUID form, so its absence identifies an
+    as-yet-unmigrated legacy installation.
+
+    Returns:
+        True if the per-installation semantics marker file exists.
+    """
+    return _installation_id_semantics_file().exists()
+
+
+def mark_uuid_distinct_id_semantics():
+    """Record that this installation uses UUID telemetry distinct_id semantics.
+
+    The marker lives next to the installation id in the Reflex dir, so it is
+    per-machine (like the id itself) rather than per-app. Failures are ignored:
+    the marker is best-effort and a missing one only triggers a later retry.
+    """
+    with contextlib.suppress(Exception):
+        marker = _installation_id_semantics_file()
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(_DISTINCT_ID_SEMANTICS_VERSION)
+
+
+def check_running_mode(frontend: bool, backend: bool) -> RunningMode:
     """Check if the app is running in frontend or backend mode.
 
     Args:
@@ -509,8 +561,12 @@ def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
         The running modes.
     """
     if not frontend and not backend:
-        return True, True
-    return frontend, backend
+        return RunningMode.FULLSTACK
+    if frontend and not backend:
+        return RunningMode.FRONTEND_ONLY
+    if not frontend and backend:
+        return RunningMode.BACKEND_ONLY
+    return RunningMode.FULLSTACK
 
 
 def assert_in_reflex_dir():
@@ -586,8 +642,14 @@ def ensure_reflex_installation_id() -> int | None:
                 #     - content not parseable as an int
 
         if installation_id is None:
-            installation_id = random.getrandbits(128)
+            # Generate a uuid4 and persist its 128-bit integer form. Storing the
+            # int keeps the file readable by older Reflex versions; telemetry
+            # re-encodes it as the canonical UUID string before sending.
+            installation_id = uuid.uuid4().int
             installation_id_file.write_text(str(installation_id))
+            # A freshly generated id is UUID-native, so record the new semantics
+            # up front; there is no legacy numeric id for telemetry to alias.
+            mark_uuid_distinct_id_semantics()
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")
         return None
@@ -658,11 +720,11 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 
         try:
-            if model.Model.alembic_autogenerate(
+            if model.alembic_autogenerate(
                 connection=connection,
                 write_migration_scripts=False,
             ):

@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
+from reflex_base.constants.state import FIELD_MARKER
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.constants.state import FIELD_MARKER
 from reflex.testing import AppHarness
 
 from . import utils

@@ -1,11 +1,16 @@
 """Export utilities."""
 
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.utils import build, console, exec, prerequisites, telemetry
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils import console
+
+from reflex.utils import build, exec, prerequisites, telemetry
 
 
 def export(
@@ -58,25 +63,52 @@ def export(
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 
-    if frontend:
-        # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app(prerender_routes=prerender_routes)
-        # Set up .web directory and install frontend dependencies.
-        build.setup_frontend(Path.cwd())
+    start = time.monotonic()
+    phase_durations: dict[str, float] = {}
+    status = "success"
+    detail: str | None = None
 
-    # Build the static app.
-    if frontend:
-        build.build()
+    @contextmanager
+    def _time_phase(name: str) -> Iterator[None]:
+        t0 = time.monotonic()
+        try:
+            yield
+        finally:
+            phase_durations[name] = time.monotonic() - t0
 
-    # Zip up the app.
-    if zipping:
-        build.zip_app(
-            frontend=frontend,
-            backend=backend,
-            zip_dest_dir=zip_dest_dir,
-            include_db_file=upload_db_file,
-            backend_excluded_dirs=backend_excluded_dirs,
+    try:
+        if frontend:
+            with _time_phase("compile_duration"):
+                # Ensure module can be imported and app.compile() is called.
+                prerequisites.get_compiled_app(
+                    prerender_routes=prerender_routes, trigger="export"
+                )
+            with _time_phase("setup_duration"):
+                # Set up .web directory and install frontend dependencies.
+                build.setup_frontend(Path.cwd())
+            with _time_phase("build_duration"):
+                build.build()
+        if zipping:
+            with _time_phase("zip_duration"):
+                build.zip_app(
+                    frontend=frontend,
+                    backend=backend,
+                    zip_dest_dir=zip_dest_dir,
+                    include_db_file=upload_db_file,
+                    backend_excluded_dirs=backend_excluded_dirs,
+                )
+    except Exception as exc:
+        status = "failure"
+        detail = type(exc).__name__
+        raise
+    finally:
+        telemetry.send(
+            "export",
+            status=status,
+            detail=detail,
+            duration=time.monotonic() - start,
+            compile_duration=phase_durations.get("compile_duration"),
+            setup_duration=phase_durations.get("setup_duration"),
+            build_duration=phase_durations.get("build_duration"),
+            zip_duration=phase_durations.get("zip_duration"),
         )
-
-    # Post a telemetry event.
-    telemetry.send("export")

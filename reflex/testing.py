@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import dataclasses
 import functools
 import inspect
@@ -12,44 +13,38 @@ import platform
 import re
 import signal
 import socket
-import socketserver
 import subprocess
 import sys
 import textwrap
 import threading
 import time
 import types
-from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
-from http.server import SimpleHTTPRequestHandler
+from collections.abc import Callable, Coroutine, Sequence
+from copy import deepcopy
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import uvicorn
+from reflex_base.components.memo import MEMOS
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
+from reflex_base.utils.types import ASGIApp
 from typing_extensions import Self
 
 import reflex
 import reflex.reflex
 import reflex.utils.build
+import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import CustomComponent
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.istate.manager.disk import StateManagerDisk
-from reflex.istate.manager.memory import StateManagerMemory
-from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import (
-    BaseState,
-    StateManager,
-    _split_substate_key,
-    reload_state_module,
-)
+from reflex.istate.shared import SharedState as SharedState  # To register it.
+from reflex.state import reload_state_module
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
-from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -121,8 +116,9 @@ class AppHarness:
     frontend_output_thread: threading.Thread | None = None
     backend_thread: threading.Thread | None = None
     backend: uvicorn.Server | None = None
-    state_manager: StateManager | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
+    _registry_token: contextvars.Token[RegistrationContext] | None = None
+    _base_registration_context: ClassVar[RegistrationContext] | None = None
 
     @classmethod
     def create(
@@ -142,11 +138,11 @@ class AppHarness:
                 If unspecified, then root must already contain a working reflex app and will be used directly.
             app_name: provide the name of the app, otherwise will be derived from app_source or root.
 
-        Raises:
-            ValueError: when app_source is a string and app_name is not provided.
-
         Returns:
             AppHarness instance
+
+        Raises:
+            ValueError: when app_source is a string and app_name is not provided.
         """
         if app_name is None:
             if app_source is None:
@@ -241,9 +237,10 @@ class AppHarness:
 
     def _initialize_app(self):
         # disable telemetry reporting for tests
-
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
-        CustomComponent.create().get_component.cache_clear()
+        # Reset the global memo registry so previous AppHarness apps do not
+        # leak compiled component definitions into the next test app.
+        MEMOS.clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
@@ -268,32 +265,30 @@ class AppHarness:
             with chdir(self.app_path):
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
+            # Use a new registration context for a new app.
+            if AppHarness._base_registration_context is None:
+                # Save the initial RegistrationContext for the app if we haven't already
+                AppHarness._base_registration_context = (
+                    RegistrationContext.ensure_context()
+                )
+            new_registration_context = deepcopy(AppHarness._base_registration_context)
+            self._registry_token = RegistrationContext.set(new_registration_context)
             # ensure config and app are reloaded when testing different app
-            reflex.config.get_config(reload=True)
+            config = get_config(reload=True)
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we actually compile the app during first initialization.
+            # Ensure we compile generated apps, and reload pre-existing app modules
+            # that were already imported so they can re-register memo definitions.
+            should_reload_app = (
+                self.app_source is not None or config.module in sys.modules
+            )
             self.app_instance, self.app_module = (
                 reflex.utils.prerequisites.get_and_validate_app(
-                    # Do not reload the module for pre-existing apps (only apps generated from source)
-                    reload=self.app_source is not None
+                    reload=should_reload_app
                 )
             )
             self.app_asgi = self.app_instance()
-        if self.app_instance and self.app_instance._state_manager is not None:
-            if self.app_instance._state is None:
-                msg = "State is not set."
-                raise RuntimeError(msg)
-            if isinstance(self.app_instance._state_manager, StateManagerRedis):
-                # Create our own redis connection for testing.
-                self.state_manager = StateManagerRedis.create(self.app_instance._state)
-            elif isinstance(self.app_instance._state_manager, StateManagerDisk):
-                self.state_manager = StateManagerDisk.create(self.app_instance._state)
-        if self.state_manager is None:
-            self.state_manager = (
-                self.app_instance._state_manager if self.app_instance else None
-            )
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
@@ -345,59 +340,25 @@ class AppHarness:
             )
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
+
+        def _run_backend(context: contextvars.Context) -> None:
+            if self.backend is not None:
+                context.run(self.backend.run)
+
         with chdir(self.app_path):
             print(  # noqa: T201
                 "Creating backend in a new thread..."
             )  # for pytest diagnosis
-            self.backend_thread = threading.Thread(target=self.backend.run)
+            self.backend_thread = threading.Thread(
+                target=_run_backend, args=(contextvars.copy_context(),)
+            )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
-
-    async def _reset_backend_state_manager(self):
-        """Reset the StateManagerRedis event loop affinity.
-
-        This is necessary when the backend is restarted and the state manager is a
-        StateManagerRedis instance.
-
-        Raises:
-            RuntimeError: when the state manager cannot be reset
-        """
-        if (
-            self.app_instance is not None
-            and self.app_instance._state_manager is not None
-        ):
-            with contextlib.suppress(RuntimeError):
-                await self.app_instance._state_manager.close()
-        if (
-            self.app_instance is not None
-            and isinstance(
-                self.app_instance._state_manager,
-                StateManagerRedis,
-            )
-            and self.app_instance._state is not None
-        ):
-            self.app_instance._state_manager = StateManagerRedis.create(
-                state=self.app_instance._state,
-            )
-            if not isinstance(self.app_instance.state_manager, StateManagerRedis):
-                msg = "Failed to reset state manager."
-                raise RuntimeError(msg)
-
-            # Also reset the TokenManager to avoid loop affinity issues
-            if (
-                hasattr(self.app_instance, "event_namespace")
-                and self.app_instance.event_namespace is not None
-                and hasattr(self.app_instance.event_namespace, "_token_manager")
-            ):
-                # Import here to avoid circular imports
-                from reflex.utils.token_manager import TokenManager
-
-                self.app_instance.event_namespace._token_manager = TokenManager.create()
 
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
@@ -431,7 +392,7 @@ class AppHarness:
             m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
-                config = reflex.config.get_config()
+                config = get_config()
                 config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
@@ -500,6 +461,8 @@ class AppHarness:
             driver.quit()
 
         self._reload_state_module()
+        if self._registry_token is not None:
+            RegistrationContext.reset(self._registry_token)
 
         if self.backend is not None:
             self.backend.should_exit = True
@@ -712,98 +675,6 @@ class AppHarness:
         self._frontends.append(driver)
         return driver
 
-    async def get_state(self, token: str) -> BaseState:
-        """Get the state associated with the given token.
-
-        Args:
-            token: The state token to look up.
-
-        Returns:
-            The state instance associated with the given token
-
-        Raises:
-            RuntimeError: when the app hasn't started running
-        """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
-        if self.app_instance is not None and isinstance(
-            self.app_instance.state_manager, StateManagerDisk
-        ):
-            # Song and dance to convince the instance's state manager to flush
-            # (we can't directly await the _other_ loop's Future)
-            await self.app_instance.state_manager._flush_write_queue()
-        if isinstance(self.state_manager, StateManagerDisk):
-            # Force reload the latest state from disk.
-            client_token, _ = _split_substate_key(token)
-            self.state_manager.states.pop(client_token, None)
-        try:
-            return await self.state_manager.get_state(token)
-        finally:
-            await self.state_manager.close()
-
-    async def set_state(self, token: str, **kwargs) -> None:
-        """Set the state associated with the given token.
-
-        Args:
-            token: The state token to set.
-            kwargs: Attributes to set on the state.
-
-        Raises:
-            RuntimeError: when the app hasn't started running
-        """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
-        state = await self.get_state(token)
-        for key, value in kwargs.items():
-            setattr(state, key, value)
-        try:
-            await self.state_manager.set_state(token, state)
-        finally:
-            if self.app_instance is not None and isinstance(
-                self.app_instance.state_manager, StateManagerDisk
-            ):
-                # Clear the token from the backend's cache so it will be reloaded.
-                client_token, _ = _split_substate_key(token)
-                self.app_instance.state_manager.states.pop(client_token, None)
-            await self.state_manager.close()
-
-    @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
-        """Modify the state associated with the given token and send update to frontend.
-
-        Args:
-            token: The state token to modify
-
-        Yields:
-            The state instance associated with the given token
-
-        Raises:
-            RuntimeError: when the app hasn't started running
-        """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
-        if self.app_instance is None:
-            msg = "App is not running."
-            raise RuntimeError(msg)
-        app_state_manager = self.app_instance.state_manager
-        if isinstance(self.state_manager, (StateManagerRedis, StateManagerDisk)):
-            # Temporarily replace the app's state manager with our own, since
-            # the redis/disk connection is on the backend_thread event loop
-            self.app_instance._state_manager = self.state_manager
-        try:
-            async with self.app_instance.modify_state(token) as state:
-                yield state
-        finally:
-            if isinstance(app_state_manager, StateManagerDisk):
-                # Clear the token from the cache so it will be reloaded.
-                client_token, _ = _split_substate_key(token)
-                app_state_manager.states.pop(client_token, None)
-            await self.state_manager.close()
-            self.app_instance._state_manager = app_state_manager
-
     def token_manager(self) -> TokenManager:
         """Get the token manager for the app instance.
 
@@ -874,35 +745,6 @@ class AppHarness:
             raise TimeoutError(msg)
         return element.get_attribute("value")
 
-    def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, BaseState]:
-        """Poll app state_manager for any connected clients.
-
-        Args:
-            timeout: how long to wait for client states
-
-        Returns:
-            active state instances when the polling loop exited
-
-        Raises:
-            RuntimeError: when the app hasn't started running
-            TimeoutError: when the timeout expires before any states are seen
-            ValueError: when the state_manager is not a memory state manager
-        """
-        if self.app_instance is None:
-            msg = "App is not running."
-            raise RuntimeError(msg)
-        state_manager = self.app_instance.state_manager
-        if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-            msg = "Only works with memory or disk state manager"
-            raise ValueError(msg)
-        if not self._poll_for(
-            target=lambda: state_manager.states,
-            timeout=timeout,
-        ):
-            msg = "No states were observed while polling."
-            raise TimeoutError(msg)
-        return state_manager.states
-
     @staticmethod
     def poll_for_or_raise_timeout(
         target: Callable[[], T],
@@ -955,119 +797,33 @@ class AppHarness:
         )
 
 
-class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
-    """SimpleHTTPRequestHandler with custom error page handling."""
-
-    def __init__(self, *args, error_page_map: dict[int, Path], **kwargs):
-        """Initialize the handler.
-
-        Args:
-            error_page_map: map of error code to error page path
-            *args: passed through to superclass
-            **kwargs: passed through to superclass
-        """
-        self.error_page_map = error_page_map
-        super().__init__(*args, **kwargs)
-
-    def send_error(
-        self, code: int, message: str | None = None, explain: str | None = None
-    ) -> None:
-        """Send the error page for the given error code.
-
-        If the code matches a custom error page, then message and explain are
-        ignored.
-
-        Args:
-            code: the error code
-            message: the error message
-            explain: the error explanation
-        """
-        error_page = self.error_page_map.get(code)
-        if error_page:
-            self.send_response(code, message)
-            self.send_header("Connection", "close")
-            body = error_page.read_bytes()
-            self.send_header("Content-Type", self.error_content_type)
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        else:
-            super().send_error(code, message, explain)
-
-
-class Subdir404TCPServer(socketserver.TCPServer):
-    """TCPServer for SimpleHTTPRequestHandlerCustomErrors that serves from a subdir."""
-
-    def __init__(
-        self,
-        *args,
-        root: Path,
-        error_page_map: dict[int, Path] | None,
-        **kwargs,
-    ):
-        """Initialize the server.
-
-        Args:
-            root: the root directory to serve from
-            error_page_map: map of error code to error page path
-            *args: passed through to superclass
-            **kwargs: passed through to superclass
-        """
-        self.root = root
-        self.error_page_map = error_page_map or {}
-        super().__init__(*args, **kwargs)
-
-    def finish_request(self, request: socket.socket, client_address: tuple[str, int]):
-        """Finish one request by instantiating RequestHandlerClass.
-
-        Args:
-            request: the requesting socket
-            client_address: (host, port) referring to the client's address.
-        """
-        self.RequestHandlerClass(
-            request,
-            client_address,
-            self,
-            directory=str(self.root),  # pyright: ignore [reportCallIssue]
-            error_page_map=self.error_page_map,  # pyright: ignore [reportCallIssue]
-        )
-
-
 class AppHarnessProd(AppHarness):
     """AppHarnessProd executes a reflex app in-process for testing.
 
     In prod mode, instead of running `react-router dev` the app is exported as static
-    files and served via the builtin python http.server with custom 404 redirect
-    handling. Additionally, the backend runs in multi-worker mode.
+    files and served via Starlette StaticFiles in a dedicated Uvicorn server.
+    Additionally, the backend runs in multi-worker mode.
     """
 
     frontend_thread: threading.Thread | None = None
-    frontend_server: Subdir404TCPServer | None = None
+    frontend_server: uvicorn.Server | None = None
 
     def _run_frontend(self):
-        web_root = (
-            self.app_path
-            / reflex.utils.prerequisites.get_web_dir()
-            / reflex.constants.Dirs.STATIC
-        )
-        error_page_map = {
-            404: web_root / "404.html",
-        }
-        with Subdir404TCPServer(
-            ("", 0),
-            SimpleHTTPRequestHandlerCustomErrors,
-            root=web_root,
-            error_page_map=error_page_map,
-        ) as self.frontend_server:
-            self.frontend_url = "http://localhost:{1}".format(
-                *self.frontend_server.socket.getsockname()
+        with chdir(self.app_path):
+            frontend_app = reflex.utils.exec._frontend_prod_app()
+        self.frontend_server = uvicorn.Server(
+            uvicorn.Config(
+                app=frontend_app,
+                host="127.0.0.1",
+                port=0,
             )
-            self.frontend_server.serve_forever()
+        )
+        self.frontend_server.run()
 
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
@@ -1095,10 +851,26 @@ class AppHarnessProd(AppHarness):
         self.frontend_thread.start()
 
     def _wait_frontend(self):
-        self._poll_for(lambda: self.frontend_server is not None)
-        if self.frontend_server is None or not self.frontend_server.socket.fileno():
+        self._poll_for(
+            lambda: (
+                self.frontend_server is not None
+                and getattr(self.frontend_server, "servers", [])
+                and self.frontend_server.servers[0].sockets
+            )
+        )
+        if (
+            self.frontend_server is None
+            or not self.frontend_server.servers[0].sockets
+            or not self.frontend_server.servers[0].sockets[0].fileno()
+        ):
             msg = "Frontend did not start"
             raise RuntimeError(msg)
+        frontend_socket = self.frontend_server.servers[0].sockets[0]
+        config = get_config()
+        self.frontend_url = "http://{}:{}".format(
+            *frontend_socket.getsockname()
+        ) + config.prepend_frontend_path("/")
+        config.deploy_url = self.frontend_url
 
     def _start_backend(self):
         if self.app_asgi is None:
@@ -1114,10 +886,17 @@ class AppHarnessProd(AppHarness):
             ),
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
+
+        def _run_backend(context: contextvars.Context) -> None:
+            if self.backend is not None:
+                context.run(self.backend.run)
+
         print(  # noqa: T201
             "Creating backend in a new thread..."
         )
-        self.backend_thread = threading.Thread(target=self.backend.run)
+        self.backend_thread = threading.Thread(
+            target=_run_backend, args=(contextvars.copy_context(),)
+        )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
 
@@ -1128,130 +907,10 @@ class AppHarnessProd(AppHarness):
             environment.REFLEX_SKIP_COMPILE.set(None)
 
     def stop(self):
-        """Stop the frontend python webserver."""
-        super().stop()
+        """Stop the frontend and backend servers."""
         if self.frontend_server is not None:
-            self.frontend_server.shutdown()
+            self.frontend_server.should_exit = True
+        super().stop()
         if self.frontend_thread is not None:
             self.frontend_thread.join()
 
-
-class AppHarnessSSR(AppHarnessProd):
-    """AppHarnessSSR runs a Reflex app with SSR via ssr-serve.js.
-
-    Instead of serving static files with Python's http.server, this harness
-    runs the Node.js ``ssr-serve.js`` Express server that provides bot-aware
-    server-side rendering.  Regular (non-bot) users still receive the SPA shell
-    for fast hydration, while crawlers get fully rendered HTML.
-
-    Use this harness with ``ssr_mode="bot_only"`` (or ``"always"``) in
-    ``rxconfig.py``.
-    """
-
-    def _initialize_app(self):
-        """Initialize the app and patch the config for SSR.
-
-        The base ``_initialize_app`` scaffolds the project (``_init``), reloads
-        the config from disk, then creates the app instance (which registers
-        endpoints).  We need ``ssr_mode`` set **before** the app instance is
-        created so that the ``/_ssr_data`` endpoint is registered and the
-        ``package.json`` includes SSR dependencies.
-
-        Strategy: call ``super()`` which does everything, then:
-        1. Patch ``rxconfig.py`` on disk so future reloads pick it up.
-        2. Set the live config ``ssr_mode`` to ``BOT_ONLY``.
-        3. Manually register the ``/_ssr_data`` endpoint on the already-created
-           ASGI app (since it was skipped during initial creation).
-        """
-        super()._initialize_app()
-
-        # 1. Patch the on-disk rxconfig.py for future reinit / export.
-        rxconfig_path = self.app_path / reflex.constants.Config.FILE
-        content = rxconfig_path.read_text()
-        content = content.replace("rx.Config(", 'rx.Config(\n    ssr_mode="bot_only",')
-        rxconfig_path.write_text(content)
-
-        # 2. Enable SSR on the live config singleton.
-        get_config().ssr_mode = reflex.constants.SsrMode.BOT_ONLY
-
-        # 3. Register the /_ssr_data endpoint that was skipped during init.
-        if self.app_instance is not None and self.app_instance._api is not None:
-            from reflex.app import ssr_data
-
-            self.app_instance._api.add_route(
-                str(reflex.constants.Endpoint.SSR_DATA),
-                ssr_data(self.app_instance),
-                methods=["POST"],
-            )
-
-    def _start_frontend(self):
-        """Export the app and launch ssr-serve.js as the frontend process.
-
-        After export, an extra ``bun install`` is run to pick up SSR
-        dependencies that were written to ``package.json`` by ``_compile()``
-        *after* the initial package install (a sequencing nuance: in normal
-        usage the package.json is correct from the start, but here the test
-        harness flipped ``ssr_mode`` after the first ``_init``).
-        """
-        with chdir(self.app_path):
-            config = reflex.config.get_config()
-            print("Polling for servers...")  # for pytest diagnosis  # noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
-            print("Building frontend (SSR)...")  # for pytest diagnosis  # noqa: T201
-
-            get_config().loglevel = reflex.constants.LogLevel.INFO
-
-            reflex.utils.prerequisites.assert_in_reflex_dir()
-
-            if reflex.utils.prerequisites.needs_reinit():
-                reflex.reflex._init(name=get_config().app_name)
-
-            export(
-                zipping=False,
-                frontend=True,
-                backend=False,
-                loglevel=reflex.constants.LogLevel.INFO,
-                env=reflex.constants.Env.PROD,
-            )
-
-        # export() regenerated package.json with SSR deps but the initial
-        # bun install ran before that.  Run install once more so that
-        # @react-router/express, express, compression are available.
-        web_dir = self.app_path / reflex.utils.prerequisites.get_web_dir()
-        print("Installing SSR dependencies...")  # for pytest diagnosis  # noqa: T201
-        install_proc = reflex.utils.processes.new_process(
-            [
-                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-                "install",
-                "--legacy-peer-deps",
-            ],
-            cwd=web_dir,
-        )
-        install_proc.communicate()
-
-        print("Frontend starting (SSR)...")  # for pytest diagnosis  # noqa: T201
-
-        from reflex.utils.path_ops import get_node_path
-
-        node = str(get_node_path() or "node")
-        self.frontend_process = reflex.utils.processes.new_process(
-            [node, "ssr-serve.js"],
-            cwd=web_dir,
-            env={
-                "PORT": "0",
-                "NO_COLOR": "1",
-                "SSR_MODE": get_config().ssr_mode.value,
-            },
-            **FRONTEND_POPEN_ARGS,
-        )
-
-    def _wait_frontend(self):
-        """Wait for ssr-serve.js to emit its listening URL on stdout.
-
-        Reuses the base ``AppHarness._wait_frontend`` which parses
-        ``FRONTEND_LISTENING_REGEX`` — that regex already matches the
-        ``[ssr-serve] http://localhost:<port>`` output format.
-        """
-        AppHarness._wait_frontend(self)

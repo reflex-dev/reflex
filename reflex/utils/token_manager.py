@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 import pickle
 import uuid
@@ -11,8 +12,8 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar
 
-from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import BaseState, StateUpdate
+from reflex.istate.manager.redis import enable_keyspace_notifications
+from reflex.state import StateUpdate
 from reflex.utils import console, prerequisites
 from reflex.utils.tasks import ensure_task
 
@@ -124,6 +125,10 @@ class TokenManager(ABC):
         for token, sid in token_sid_pairs:
             await self.disconnect_token(token, sid)
 
+    @abstractmethod
+    async def close(self) -> None:
+        """Release any resources held by the token manager."""
+
 
 class LocalTokenManager(TokenManager):
     """Token manager using local in-memory dictionaries (single worker)."""
@@ -171,6 +176,9 @@ class LocalTokenManager(TokenManager):
         self.token_to_socket.pop(token, None)
         self.sid_to_token.pop(sid, None)
 
+    async def close(self) -> None:
+        """Release any resources held by the token manager (no-op)."""
+
 
 class RedisTokenManager(LocalTokenManager):
     """Token manager using Redis for distributed multi-worker support.
@@ -193,7 +201,7 @@ class RedisTokenManager(LocalTokenManager):
         self.redis = redis
 
         # Get token expiration from config (default 1 hour)
-        from reflex.config import get_config
+        from reflex_base.config import get_config
 
         config = get_config()
         self.token_expiration = config.redis_token_expiration
@@ -248,9 +256,7 @@ class RedisTokenManager(LocalTokenManager):
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
-        await StateManagerRedis(
-            state=BaseState, redis=self.redis
-        )._enable_keyspace_notifications()
+        await enable_keyspace_notifications(self.redis)
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
         async with self.redis.pubsub() as pubsub:
@@ -430,7 +436,6 @@ class RedisTokenManager(LocalTokenManager):
                 self.token_to_socket[token] = socket_record
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
-            console.warn(f"Redis token owner not found for token {token}")
         except Exception as e:
             console.error(f"Redis error getting token owner: {e}")
         return None
@@ -464,3 +469,14 @@ class RedisTokenManager(LocalTokenManager):
         else:
             return True
         return False
+
+    async def close(self) -> None:
+        """Cancel background pub/sub tasks and close the Redis client."""
+        for task in (self._socket_record_task, self._lost_and_found_task):
+            if task is not None and not task.done():
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+        self._socket_record_task = None
+        self._lost_and_found_task = None
+        await self.redis.aclose()

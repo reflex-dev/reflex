@@ -2,9 +2,9 @@ import numpy as np
 import PIL
 import pytest
 from PIL.Image import Image as Img
+from reflex_base.utils.serializers import serialize, serialize_image
 
 import reflex as rx
-from reflex.utils.serializers import serialize, serialize_image
 
 
 @pytest.fixture
