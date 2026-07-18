@@ -72,12 +72,8 @@ def _resolve_plugin() -> I18nPlugin:
 def _extract_template() -> tuple[I18nPlugin, Catalog, Path]:
     """Dry-compile the app and extract every message into a template catalog.
 
-    Compiling populates the ``rx.t`` registry; the template then unions those
-    static messages with the dynamic gettext calls in the app source.
-
     Returns:
-        The configured plugin, the freshly extracted template, and the
-        absolute catalog directory.
+        The plugin, the extracted template, and the catalog directory.
     """
     from reflex.utils import prerequisites
 

@@ -46,16 +46,11 @@ class I18nPlugin(Plugin):
         )
 
     def __post_init__(self):
-        """Activate the i18n configuration and register framework state.
-
-        Runs when the plugin is constructed (from ``rxconfig.py``), before the
-        app compiles, so ``rx.t`` and server-side translation are wired and
-        ``I18nState`` is registered as a substate.
-        """
+        """Activate the i18n config and register framework state."""
         set_active_i18n_config(self._config())
-        # Importing registers I18nState (substate), the event-scope locale
-        # provider, and the gettext implicit-dependency hook. Import here
-        # rather than at module top to keep it lazy until the plugin is used.
+        # Registers I18nState (substate), the event-scope locale provider, and
+        # the gettext implicit-dependency hook. Lazy so it only happens when
+        # the plugin is actually used.
         from . import state  # noqa: F401
 
     def get_static_assets(
@@ -81,9 +76,6 @@ class I18nPlugin(Plugin):
 
     def _compile_catalogs(self) -> list[tuple[str, str]]:
         """Compile per-locale catalog modules from the app's ``.po`` files.
-
-        Runs after page compilation, so the message registry holds every
-        ``rx.t`` key the app uses; catalogs are filtered to those keys.
 
         Returns:
             Pairs of (``.web``-relative path, module code).

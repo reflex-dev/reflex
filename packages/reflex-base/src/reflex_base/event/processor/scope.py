@@ -1,17 +1,9 @@
-"""Per-event ambient context providers.
+"""Per-event ambient context providers (e.g. i18n locale).
 
-Some features need a context (e.g. a contextvar) active for the whole duration
-of an event: during handler execution *and* during delta/computed-var
-resolution, which happens after the handler. Middleware cannot express this
-(its pre/post hooks are separate calls), so this module lets a feature register
-a provider that yields a context manager entered around both phases.
-
-The provider is called fresh at each phase, so a value it derives from state
-(e.g. a locale a handler just changed) is re-read for delta resolution.
-
-External packages register providers; the event processor enters them via
-:func:`event_scope`. When nothing is registered, the fast path is a bare
-``nullcontext`` so non-users pay effectively nothing.
+A provider yields a context manager entered around both handler execution and
+delta resolution; it is called fresh at each phase, so state a handler changed
+is re-read. Middleware can't do this (separate pre/post calls). No registered
+providers means a ``nullcontext`` fast path.
 """
 
 from __future__ import annotations
@@ -36,18 +28,13 @@ def register_event_scope_provider(provider: EventScopeProvider) -> None:
     """Register a per-event ambient-context provider.
 
     Args:
-        provider: An async callable taking the root state and returning a
-            synchronous context manager to enter around handler execution and
-            delta resolution.
+        provider: Async callable from root state to a context manager.
     """
     _providers.append(provider)
 
 
 def has_event_scope_providers() -> bool:
     """Whether any event-scope providers are registered.
-
-    A cheap synchronous check so the processor can skip scope handling
-    entirely when no feature uses it.
 
     Returns:
         True if at least one provider is registered.
@@ -82,14 +69,13 @@ class _EventScope:
 def event_scope(
     root_state: BaseState,
 ) -> contextlib.AbstractAsyncContextManager[None]:
-    """Build the ambient-context scope for processing an event.
+    """Ambient-context scope for processing an event.
 
     Args:
         root_state: The client's root state instance.
 
     Returns:
-        An async context manager entering every registered provider's scope,
-        or a no-op context when none are registered.
+        A scope entering every provider, or a no-op when none are registered.
     """
     if not _providers:
         return contextlib.nullcontext()
