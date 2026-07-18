@@ -93,10 +93,10 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
         import io
 
         from babel.messages.mofile import write_mo
-        from babel.messages.pofile import read_po
 
-        with path.open("r", encoding="utf-8") as po_file:
-            catalog = read_po(po_file)
+        from .catalog import read_po_catalog
+
+        catalog = read_po_catalog(path)
         buffer = io.BytesIO()
         write_mo(buffer, catalog)
         buffer.seek(0)
