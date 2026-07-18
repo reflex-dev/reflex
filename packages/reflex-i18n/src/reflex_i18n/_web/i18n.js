@@ -107,11 +107,21 @@ export function I18nProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    loaders[locale]().then((module_) => {
-      if (!cancelled) {
-        setCatalog(module_);
-      }
-    });
+    loaders[locale]()
+      .then((module_) => {
+        if (!cancelled) {
+          setCatalog(module_);
+        }
+      })
+      .catch((error) => {
+        // A failed chunk load (e.g. a stale hashed chunk after a redeploy)
+        // leaves the previous catalog in place; text falls back to the source
+        // msgids. Surface it instead of an unhandled rejection.
+        console.error(
+          `Failed to load i18n catalog for locale "${locale}".`,
+          error,
+        );
+      });
     const root = document.documentElement;
     root.lang = locale;
     root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
