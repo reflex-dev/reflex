@@ -71,6 +71,17 @@ def I18nApp():
             # Server-side Babel formatting; auto-reformats on locale switch.
             return format_number(self.amount, min_fraction_digits=2)
 
+    @rx.memo
+    def memo_inside() -> rx.Component:
+        # rx.t call site INSIDE a memoized component.
+        return rx.text(rx.t("Hello"), id="memo-inside")
+
+    @rx.memo
+    def memo_prop(label: rx.Var[str]) -> rx.Component:
+        # A translated string computed outside and passed IN as a prop, which
+        # React.memo gates on by identity.
+        return rx.text(label, id="memo-prop")
+
     def index():
         return rx.box(
             rx.input(
@@ -92,6 +103,8 @@ def I18nApp():
             rx.text(PageState.server_number, id="server-number"),
             rx.text(rx.i18n.date(PageState.day, length="medium"), id="client-date"),
             rx.text(rx.i18n.time(PageState.meeting, length="short"), id="client-time"),
+            memo_inside(),
+            memo_prop(label=rx.t("Hello")),
             rx.button("inc", on_click=PageState.increment, id="inc"),
             rx.button("greet", on_click=PageState.greet, id="greet"),
             rx.button("de", on_click=rx.i18n.set_locale("de"), id="to-de"),
@@ -230,6 +243,34 @@ def test_computed_var_retranslates_on_switch(i18n_app: AppHarness, page: Page):
 
     page.click("#to-en")
     expect(page.locator("#computed-greeting")).to_have_text("Welcome")
+
+
+def test_memo_component_translations_switch_locale(i18n_app: AppHarness, page: Page):
+    """rx.t updates inside rx.memo components and when passed in as a prop.
+
+    React.memo re-renders on a consumed context change, and the parent recomputes
+    a translated prop on switch, so neither case freezes the source text.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    # Both the in-memo call site and the memoized prop start at the source text.
+    expect(page.locator("#memo-inside")).to_have_text("Hello")
+    expect(page.locator("#memo-prop")).to_have_text("Hello")
+
+    # A locale switch retranslates both without a reload.
+    page.click("#to-de")
+    expect(page.locator("#memo-inside")).to_have_text("Hallo")
+    expect(page.locator("#memo-prop")).to_have_text("Hallo")
+
+    page.click("#to-en")
+    expect(page.locator("#memo-inside")).to_have_text("Hello")
+    expect(page.locator("#memo-prop")).to_have_text("Hello")
 
 
 def test_number_formatting_switches_locale(i18n_app: AppHarness, page: Page):
