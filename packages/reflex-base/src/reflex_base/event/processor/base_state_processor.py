@@ -6,7 +6,7 @@ import dataclasses
 import functools
 import inspect
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
@@ -190,6 +190,7 @@ async def chain_updates(
     events: EventSpec | list[EventSpec] | None,
     handler_name: str,
     root_state: BaseState | None = None,
+    deferred: list[Callable[[], Awaitable[None]]] | None = None,
 ) -> None:
     """Chain yielded events and emit a delta to the frontend.
 
@@ -200,6 +201,12 @@ async def chain_updates(
         events: The events to queue with the update.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
+        deferred: If provided, the routing of the chained events is appended
+            here instead of being awaited, so the caller can run it after
+            releasing the state lock. The delta is always emitted inline: its
+            values reference live state containers (``get_value`` unwraps
+            proxies without copying), so it must be serialized before another
+            lock holder can mutate them.
     """
     from reflex.event import Event
 
@@ -215,10 +222,14 @@ async def chain_updates(
             root_state._clean()
 
     # Convert valid EventHandler and EventSpec into Event
-    if fixed_events := Event.from_event_type(
+    fixed_events = Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
-    ):
-        await _route_events(ctx, fixed_events)
+    )
+    if fixed_events:
+        if deferred is not None:
+            deferred.append(functools.partial(_route_events, ctx, fixed_events))
+        else:
+            await _route_events(ctx, fixed_events)
 
 
 async def process_event(
@@ -226,6 +237,7 @@ async def process_event(
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState,
+    deferred: list[Callable[[], Awaitable[None]]] | None = None,
 ):
     """Process event.
 
@@ -234,6 +246,10 @@ async def process_event(
         payload: The event payload.
         state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas.
+        deferred: If provided, routing of the handler's final chained events
+            is appended here instead of being awaited, so the caller can run
+            it after releasing the state lock. Deltas are always emitted
+            inline.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -263,7 +279,9 @@ async def process_event(
     if inspect.isasyncgen(events):
         async for event in events:
             await chain_updates(event, root_state=root_state, handler_name=handler_name)
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            None, root_state=root_state, handler_name=handler_name, deferred=deferred
+        )
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
@@ -277,13 +295,20 @@ async def process_event(
             # in the loop, we must catch StopIteration to access it
             if si.value is not None:
                 await chain_updates(
-                    si.value, root_state=root_state, handler_name=handler_name
+                    si.value,
+                    root_state=root_state,
+                    handler_name=handler_name,
+                    deferred=deferred,
                 )
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            None, root_state=root_state, handler_name=handler_name, deferred=deferred
+        )
 
     # Handle regular event chains.
     else:
-        await chain_updates(events, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            events, root_state=root_state, handler_name=handler_name, deferred=deferred
+        )
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -336,6 +361,8 @@ class BaseStateEventProcessor(EventProcessor):
         ctx = entry.ctx
         event = entry.event
         router_data = event.router_data or {}
+        deferred_emits: list[Callable[[], Awaitable[None]]] | None = None
+        background_states: tuple[BaseState, BaseState] | None = None
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -377,22 +404,34 @@ class BaseStateEventProcessor(EventProcessor):
             if needs_to_rehydrate:
                 await self._rehydrate(root_state)
 
-            # Process non-background events while holding the lock.
+            # Process non-background events while holding the lock. The
+            # routing of any final chained events is collected and run after
+            # the lock is released, shortening the hold time; deltas are
+            # emitted inline since their values reference live state data.
             if not registered_handler.handler.is_background:
+                deferred_emits = []
                 await process_event(
                     handler=registered_handler.handler,
                     payload=event.payload,
                     state=substate,
                     root_state=root_state,
+                    deferred=deferred_emits,
                 )
-                return
-        # Otherwise drop the state lock and start processing the background task with a proxy state.
-        await process_event(
-            handler=registered_handler.handler,
-            state=StateProxy(substate),
-            payload=event.payload,
-            root_state=root_state,
-        )
+            else:
+                background_states = (substate, root_state)
+        if deferred_emits is not None:
+            for emit in deferred_emits:
+                await emit()
+        elif background_states is not None:
+            # The state lock was dropped above; process the background task
+            # with a proxy state.
+            substate, root_state = background_states
+            await process_event(
+                handler=registered_handler.handler,
+                state=StateProxy(substate),
+                payload=event.payload,
+                root_state=root_state,
+            )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None

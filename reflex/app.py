@@ -1618,6 +1618,9 @@ class EventNamespace(AsyncNamespace):
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
 
+        # Decoded headers and client IP per sid; fixed for a connection's lifetime.
+        self._sid_client_info: dict[str, tuple[dict[str, str], str]] = {}
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
         """Get token to SID mapping for backward compatibility.
@@ -1672,6 +1675,7 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._sid_client_info.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -1773,29 +1777,30 @@ class EventNamespace(AsyncNamespace):
             msg = "Socket.IO environ is not initialized."
             raise RuntimeError(msg)
 
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        # Get the client headers and IP, decoded once per connection since
+        # they are fixed for the lifetime of a sid.
+        client_info = self._sid_client_info.get(sid)
+        if client_info is None:
+            cached_headers = {
+                k.decode("utf-8"): v.decode("utf-8")
+                for (k, v) in environ["asgi.scope"]["headers"]
+            }
+            try:
+                client_ip = environ["asgi.scope"]["client"][0]
+                cached_headers["asgi-scope-client"] = client_ip
+            except (KeyError, IndexError):
+                client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+            # Unroll reverse proxy forwarded headers.
+            client_ip = (
+                cached_headers
+                .get("x-forwarded-for", client_ip)
+                .partition(",")[0]
+                .strip()
             )
-            .partition(",")[0]
-            .strip()
-        )
+            client_info = self._sid_client_info[sid] = (cached_headers, client_ip)
+        # Copy so downstream router_data mutations cannot leak into the cache.
+        headers = dict(client_info[0])
+        client_ip = client_info[1]
         router_data = event.router_data
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
