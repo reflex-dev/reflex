@@ -9,6 +9,7 @@ whenever the locale changes.
 
 from __future__ import annotations
 
+import copy
 import gettext as _gettext_module
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -18,9 +19,12 @@ from typing import TYPE_CHECKING
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import get_active_catalog_dir
+from .config import get_active_catalog_dir, get_active_i18n_config
 
 if TYPE_CHECKING:
+    import datetime
+    import decimal
+
     from reflex_base.vars.base import Var
 
 # The locale in effect for the current client while an event is processed.
@@ -213,6 +217,236 @@ def negotiate_locale(
     return default
 
 
+def _format_locale() -> str:
+    """The locale to format in: active locale, else the default, else ``en``.
+
+    Returns:
+        The locale code for server-side formatting.
+    """
+    locale = _active_locale.get()
+    if locale is not None:
+        return locale
+    config = get_active_i18n_config()
+    return config.default_locale if config is not None else "en"
+
+
+def _babel_locale() -> str:
+    """The active format locale, normalized for Babel.
+
+    Returns:
+        The locale with ``-`` replaced by ``_`` (Babel rejects ``en-US``).
+    """
+    return _format_locale().replace("-", "_")
+
+
+def _apply_number(
+    kind: str,
+    number: float | decimal.Decimal,
+    *,
+    min_fraction_digits: int | None,
+    max_fraction_digits: int | None,
+    grouping: bool,
+    currency: str | None = None,
+) -> str:
+    """Format a number with the locale's own pattern.
+
+    Using the locale's ``NumberPattern`` keeps locale-specific affixes and
+    grouping (the ``%`` spacing, currency symbol position, non-Western grouping)
+    that a hand-built pattern would lose; the requested fraction digits are
+    applied by overriding the pattern's ``frac_prec``.
+
+    Args:
+        kind: ``"decimal"``, ``"percent"`` or ``"currency"``.
+        number: The number to format.
+        min_fraction_digits: Minimum fraction digits, or None for the default.
+        max_fraction_digits: Maximum fraction digits, or None for the default.
+        grouping: Whether to show the grouping separator.
+        currency: The ISO 4217 currency code (for ``kind="currency"``).
+
+    Returns:
+        The localized number.
+    """
+    from babel import Locale
+
+    locale = Locale.parse(_babel_locale())
+    if kind == "currency":
+        pattern = locale.currency_formats["standard"]
+    elif kind == "percent":
+        pattern = locale.percent_formats[None]
+    else:
+        pattern = locale.decimal_formats[None]
+
+    # Default: use the pattern's own fraction digits (currency_digits for
+    # currency). If digits are requested, override frac_prec on a copy so the
+    # shared locale pattern is untouched, and drop currency_digits so the
+    # override takes effect.
+    currency_digits = True
+    if min_fraction_digits is not None or max_fraction_digits is not None:
+        low = min_fraction_digits if min_fraction_digits is not None else 0
+        high = (
+            max_fraction_digits
+            if max_fraction_digits is not None
+            else max(low, pattern.frac_prec[1])
+        )
+        pattern = copy.copy(pattern)
+        pattern.frac_prec = (low, high)
+        currency_digits = False
+
+    return pattern.apply(
+        number,
+        locale,
+        currency=currency,
+        currency_digits=currency_digits,
+        group_separator=grouping,
+    )
+
+
+def format_number(
+    number: float | decimal.Decimal,
+    *,
+    min_fraction_digits: int | None = None,
+    max_fraction_digits: int | None = None,
+    grouping: bool = True,
+    compact: bool = False,
+) -> str:
+    """Format a number in the active locale (server-side).
+
+    Args:
+        number: The number to format.
+        min_fraction_digits: Minimum fraction digits.
+        max_fraction_digits: Maximum fraction digits.
+        grouping: Whether to show the grouping separator.
+        compact: Whether to use compact notation (e.g. ``1.2M``); honors
+            ``max_fraction_digits`` only.
+
+    Returns:
+        The localized number.
+    """
+    if compact:
+        from babel import numbers
+
+        return numbers.format_compact_decimal(
+            float(number),
+            locale=_babel_locale(),
+            fraction_digits=max_fraction_digits or 0,
+        )
+    return _apply_number(
+        "decimal",
+        number,
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+    )
+
+
+# Babel's canonical name; ``format_number`` is the friendlier alias.
+format_decimal = format_number
+
+
+def format_currency(
+    number: float | decimal.Decimal,
+    currency: str,
+    *,
+    min_fraction_digits: int | None = None,
+    max_fraction_digits: int | None = None,
+    grouping: bool = True,
+) -> str:
+    """Format a currency amount in the active locale (server-side).
+
+    Args:
+        number: The amount to format.
+        currency: The ISO 4217 currency code (e.g. ``"EUR"``).
+        min_fraction_digits: Minimum fraction digits (default: the currency's).
+        max_fraction_digits: Maximum fraction digits (default: the currency's).
+        grouping: Whether to show the grouping separator.
+
+    Returns:
+        The localized currency amount.
+    """
+    return _apply_number(
+        "currency",
+        number,
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+        currency=currency,
+    )
+
+
+def format_percent(
+    number: float | decimal.Decimal,
+    *,
+    min_fraction_digits: int | None = None,
+    max_fraction_digits: int | None = None,
+    grouping: bool = True,
+) -> str:
+    """Format a ratio as a percentage in the active locale (``0.15`` -> ``15%``).
+
+    Args:
+        number: The ratio to format (``1`` == 100%).
+        min_fraction_digits: Minimum fraction digits.
+        max_fraction_digits: Maximum fraction digits.
+        grouping: Whether to show the grouping separator.
+
+    Returns:
+        The localized percentage.
+    """
+    return _apply_number(
+        "percent",
+        number,
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+    )
+
+
+def format_date(value: datetime.date, *, length: str = "medium") -> str:
+    """Format a date in the active locale (server-side).
+
+    Args:
+        value: The ``date``/``datetime`` to format.
+        length: The date length (``short``/``medium``/``long``/``full``).
+
+    Returns:
+        The localized date.
+    """
+    from babel import dates
+
+    return dates.format_date(value, format=length, locale=_babel_locale())
+
+
+def format_time(
+    value: datetime.time | datetime.datetime, *, length: str = "medium"
+) -> str:
+    """Format a time in the active locale (server-side).
+
+    Args:
+        value: The ``time``/``datetime`` to format.
+        length: The time length (``short``/``medium``/``long``/``full``).
+
+    Returns:
+        The localized time.
+    """
+    from babel import dates
+
+    return dates.format_time(value, format=length, locale=_babel_locale())
+
+
+def format_datetime(value: datetime.datetime, *, length: str = "medium") -> str:
+    """Format a date and time in the active locale (server-side).
+
+    Args:
+        value: The ``datetime`` to format.
+        length: The length (``short``/``medium``/``long``/``full``).
+
+    Returns:
+        The localized date and time.
+    """
+    from babel import dates
+
+    return dates.format_datetime(value, format=length, locale=_babel_locale())
+
+
 def _locale_dependency() -> Var | None:
     """The var a gettext-family call implies a dependency on.
 
@@ -228,8 +462,24 @@ def _locale_dependency() -> Var | None:
 
 
 # Registered here rather than in :mod:`.state` so a computed var that calls
-# gettext gains its dependency on the active locale as soon as the app imports
-# gettext — before (and independently of) I18nPlugin construction, which in a
-# backend worker can happen after the getter's dependencies are scanned and
-# cached. Registering only populates a dict; the provider imports state lazily.
-register_implicit_dependency((gettext, ngettext, pgettext), _locale_dependency)
+# gettext (or a ``format_*`` helper) gains its dependency on the active locale
+# as soon as the app imports it — before (and independently of) I18nPlugin
+# construction, which in a backend worker can happen after the getter's
+# dependencies are scanned and cached. Registering only populates a dict; the
+# provider imports state lazily. ``format_decimal`` is ``format_number``, so
+# the tuple dedupes it.
+register_implicit_dependency(
+    (
+        gettext,
+        ngettext,
+        pgettext,
+        format_number,
+        format_decimal,
+        format_currency,
+        format_percent,
+        format_date,
+        format_time,
+        format_datetime,
+    ),
+    _locale_dependency,
+)

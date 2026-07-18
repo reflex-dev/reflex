@@ -10,9 +10,11 @@ from reflex.testing import AppHarness
 
 def I18nApp():
     """App exercising static and dynamic translation."""
+    import datetime
     from pathlib import Path
 
     import reflex as rx
+    from reflex.i18n import format_number
     from reflex.i18n import gettext as _
 
     po_header = (
@@ -41,6 +43,11 @@ def I18nApp():
 
     class PageState(rx.State):
         count: int = 1
+        amount: float = 1234.5
+        # A date-only and a time-only value: client-side formatting must parse
+        # these without a UTC day-shift or an "Invalid Date".
+        day: datetime.date = datetime.date(2026, 7, 18)
+        meeting: datetime.time = datetime.time(14, 30, 0)
         # Set at emit time by an event handler; translated server-side into
         # the active locale via gettext.
         message: str = ""
@@ -59,6 +66,11 @@ def I18nApp():
             # dependency on the active locale so this recomputes on switch.
             return _("Welcome")
 
+        @rx.var
+        def server_number(self) -> str:
+            # Server-side Babel formatting; auto-reformats on locale switch.
+            return format_number(self.amount, min_fraction_digits=2)
+
     def index():
         return rx.box(
             rx.input(
@@ -73,6 +85,13 @@ def I18nApp():
             ),
             rx.text(PageState.message, id="dynamic-message"),
             rx.text(PageState.computed_greeting, id="computed-greeting"),
+            rx.text(
+                rx.i18n.number(PageState.amount, min_fraction_digits=2),
+                id="client-number",
+            ),
+            rx.text(PageState.server_number, id="server-number"),
+            rx.text(rx.i18n.date(PageState.day, length="medium"), id="client-date"),
+            rx.text(rx.i18n.time(PageState.meeting, length="short"), id="client-time"),
             rx.button("inc", on_click=PageState.increment, id="inc"),
             rx.button("greet", on_click=PageState.greet, id="greet"),
             rx.button("de", on_click=rx.i18n.set_locale("de"), id="to-de"),
@@ -90,15 +109,23 @@ def I18nApp():
 
 @pytest.fixture
 def browser_context_args(browser_context_args: dict) -> dict:
-    """Pin the browser locale so locale negotiation is deterministic.
+    """Pin the browser locale and time zone for deterministic i18n output.
+
+    The time zone is a negative offset (America/New_York) so a date-only value
+    parsed as UTC midnight would visibly shift to the previous day, catching
+    regressions in client-side date normalization.
 
     Args:
         browser_context_args: The default pytest-playwright context args.
 
     Returns:
-        Context args with the locale forced to en-US.
+        Context args with locale en-US and a fixed time zone.
     """
-    return {**browser_context_args, "locale": "en-US"}
+    return {
+        **browser_context_args,
+        "locale": "en-US",
+        "timezone_id": "America/New_York",
+    }
 
 
 @pytest.fixture(scope="module")
@@ -203,3 +230,52 @@ def test_computed_var_retranslates_on_switch(i18n_app: AppHarness, page: Page):
 
     page.click("#to-en")
     expect(page.locator("#computed-greeting")).to_have_text("Welcome")
+
+
+def test_number_formatting_switches_locale(i18n_app: AppHarness, page: Page):
+    """Client (Intl) and server (Babel) number formatting follow the locale.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    # Default locale (en): 1,234.50 for both client- and server-formatted.
+    expect(page.locator("#client-number")).to_have_text("1,234.50")
+    expect(page.locator("#server-number")).to_have_text("1,234.50")
+
+    # German grouping/decimal separators, on both surfaces.
+    page.click("#to-de")
+    expect(page.locator("#client-number")).to_have_text("1.234,50")
+    expect(page.locator("#server-number")).to_have_text("1.234,50")
+
+    page.click("#to-en")
+    expect(page.locator("#client-number")).to_have_text("1,234.50")
+
+
+def test_client_date_and_time_formatting(i18n_app: AppHarness, page: Page):
+    """Client-side date/time formatting parses Python values correctly.
+
+    Under a negative-offset time zone, a date-only value must not shift to the
+    previous day, and a time-only value must not render "Invalid Date".
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    # Date-only value: stays on the 18th (not the 17th) despite UTC-4.
+    expect(page.locator("#client-date")).to_have_text("Jul 18, 2026")
+    # Time-only value: formats as a time, never "Invalid Date".
+    expect(page.locator("#client-time")).to_have_text("2:30 PM")
+
+    # German locale reformats both without a day-shift.
+    page.click("#to-de")
+    expect(page.locator("#client-date")).to_have_text("18.07.2026")
+    expect(page.locator("#client-time")).to_have_text("14:30")
