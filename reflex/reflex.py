@@ -985,6 +985,14 @@ def _add_plugin_cli_commands() -> None:
                 f"{entry_point.value!r}: {exc}"
             )
             continue
+        # Guard against a resolved object that is not a Click command, which
+        # would otherwise make cli.add_command raise and abort the whole CLI.
+        if not isinstance(command, click.Command):
+            console.warn(
+                f"CLI command {entry_point.name!r} from {entry_point.value!r} "
+                f"is not a click.Command; skipping."
+            )
+            continue
         cli.add_command(command, name=entry_point.name)
 
 
