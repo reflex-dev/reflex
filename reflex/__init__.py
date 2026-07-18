@@ -221,6 +221,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "gettext",
         "ngettext",
         "pgettext",
+        "set_locale",
         "t",
     ],
     "istate.storage": [
