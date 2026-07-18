@@ -1437,6 +1437,22 @@ def test_computed_var_cached():
     assert comp_v_calls == 2
 
 
+def test_setattr_wrong_type_logs_error(mocker):
+    """Assigning a value of the wrong type to a base var logs an error in dev mode.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+
+    class WrongTypeState(BaseState):
+        n: int = 0
+
+    state = WrongTypeState()
+    mock_error = mocker.patch("reflex.utils.console.error")
+    setattr(state, "n", "not an int")  # noqa: B010
+    assert mock_error.call_count == 1
+
+
 def test_computed_var_cached_depends_on_non_cached():
     """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 
