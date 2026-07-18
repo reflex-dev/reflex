@@ -49,6 +49,16 @@ class I18nState(State):
     # until the user picks one, so Accept-Language keeps driving the default.
     locale_cookie: str = Cookie("", name=LOCALE_COOKIE_NAME)
 
+    @classmethod
+    def is_user_defined(cls) -> bool:
+        """Whether this is a user-authored state.
+
+        Returns:
+            False: this is a framework state, so it is excluded from telemetry
+            and auto-setter generation.
+        """
+        return False
+
     @computed_var(cache=True, backend=True, auto_deps=False, deps=["locale_cookie"])
     def locale(self) -> str:
         """The locale in effect for this client (server-side).
