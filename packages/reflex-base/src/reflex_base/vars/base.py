@@ -1958,7 +1958,7 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
         # normally and keep contributing VarData via the return expression.
         for operand in operands:
             operand_dict = operand.__dict__
-            operand_dict["_format_without_tagging"] = (
+            operand_dict["_format_without_tagging"] = (  # pyright: ignore[reportIndexIssue]
                 operand_dict.get("_format_without_tagging", 0) + 1
             )
         try:
@@ -1968,9 +1968,9 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
                 operand_dict = operand.__dict__
                 remaining = operand_dict["_format_without_tagging"] - 1
                 if remaining:
-                    operand_dict["_format_without_tagging"] = remaining
+                    operand_dict["_format_without_tagging"] = remaining  # pyright: ignore[reportIndexIssue]
                 else:
-                    del operand_dict["_format_without_tagging"]
+                    del operand_dict["_format_without_tagging"]  # pyright: ignore[reportIndexIssue]
 
         return CustomVarOperation.create(
             name=func.__name__,
