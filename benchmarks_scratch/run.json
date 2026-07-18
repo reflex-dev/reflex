@@ -1,5 +1,5 @@
 {
   "base_ref": "main",
   "head_ref": "claude/reflex-perf-optimizations-01l7a3-eng-10096",
-  "bench_script": "benchmarks_scratch/bench_fix4_getattribute.py"
+  "bench_script": "benchmarks_scratch/debug_fix4_was_touched.py"
 }
