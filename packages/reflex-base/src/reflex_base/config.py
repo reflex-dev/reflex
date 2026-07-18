@@ -187,6 +187,9 @@ class BaseConfig:
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
         ssr_mode: Server-side rendering mode ("off", "bot_only", or "always").
+        isr_render_url: ISR render-tier URL; when set, enables ISR page serving.
+        isr_revalidate: Default seconds until an ISR-cached page goes stale.
+        isr_build_id: Identifier that rotates the ISR cache on each deploy.
     """
 
     app_name: str
@@ -274,6 +277,17 @@ class BaseConfig:
 
     # Server-side rendering mode: "off" (default), "bot_only", or "always".
     ssr_mode: constants.SsrMode = constants.SsrMode.OFF
+
+    # ISR render-tier URL. When set, the ISR page-server regenerates pages by
+    # POSTing paths here; when None, ISR is disabled.
+    isr_render_url: str | None = None
+
+    # Default seconds until an ISR-cached page is considered stale.
+    isr_revalidate: int = 60
+
+    # Identifier that rotates the ISR cache on each deploy. Defaults at runtime
+    # to the REFLEX_BUILD_ID env var (see reflex.isr.get_build_id).
+    isr_build_id: str | None = None
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)

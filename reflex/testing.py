@@ -913,4 +913,3 @@ class AppHarnessProd(AppHarness):
         super().stop()
         if self.frontend_thread is not None:
             self.frontend_thread.join()
-

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from starlette.responses import Response
 
     from reflex.app import App
-    from reflex.event import IndividualEventType
+    from reflex.event import Event
     from reflex.state import BaseState
 
 # Sentinel token/session id used for the stateless SSR render.
@@ -68,26 +68,25 @@ def _build_router_data(
     }
 
 
-async def _run_on_load_event(
-    state: BaseState, load_event: IndividualEventType, path: str
-) -> None:
-    """Run a single on_load handler on the ephemeral SSR state.
+async def _run_on_load_event(state: BaseState, event: Event, path: str) -> None:
+    """Run a single resolved on_load event on the ephemeral SSR state.
 
-    Resolves the handler's target substate and invokes it directly (rather than
-    going through the session-managed event queue, which needs a real client
-    token and state manager).  Handlers mutate the state in place; their return
-    value is consumed but discarded since the whole tree is serialized later.
+    Resolves the handler's target substate from ``event.name`` and invokes it
+    directly (rather than going through the session-managed event queue, which
+    needs a real client token and state manager).  Handlers mutate the state in
+    place; their return value is consumed but discarded since the whole tree is
+    serialized later.
 
     Args:
         state: The ephemeral root state instance.
-        load_event: The on_load event handler (EventSpec/EventHandler) to run.
+        event: The resolved on_load event (``event.name`` is the dotted handler).
         path: The URL path (for error logging).
     """
     try:
-        handler = getattr(load_event, "handler", load_event)
         # e.g. "reflex___state____state.blog_state.on_load" -> substate + method.
-        full_name = f"{handler.state_full_name}.{handler.fn.__name__}".split(".")
-        substate = state.get_substate(full_name[:-1])
+        *substate_path, method = event.name.split(".")
+        substate = state.get_substate(substate_path)
+        handler = substate.event_handlers[method]
 
         result = handler.fn(substate)
         if asyncio.iscoroutine(result):
@@ -110,8 +109,13 @@ async def _run_on_load_events(app: App, state: BaseState, path: str) -> None:
         state: The ephemeral root state instance.
         path: The URL path (for error logging).
     """
-    for load_event in app.get_load_events(path):
-        await _run_on_load_event(state, load_event, path)
+    from reflex.event import Event
+
+    load_events = app.get_load_events(path)
+    if not load_events:
+        return
+    for event in Event.from_event_type(load_events, router_data=state.router_data):
+        await _run_on_load_event(state, event, path)
 
 
 def ssr_data(app: App):
