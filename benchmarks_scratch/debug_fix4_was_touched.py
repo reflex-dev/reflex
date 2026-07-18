@@ -1,24 +1,31 @@
-"""Bisect test_app_modify_state_clean failure scope (debug for PR #6757)."""
+"""Bisect the suite-order polluter of test_app_modify_state_clean (PR #6757)."""
 
 import subprocess
 import sys
 
+TARGET = "tests/units/test_app.py::test_app_modify_state_clean"
 
-def run(args: list[str]) -> int:
-    print(f"$ pytest {' '.join(args)}", flush=True)
+
+def run(label: str, args: list[str]) -> int:
     proc = subprocess.run(
-        [sys.executable, "-m", "pytest", *args, "-q", "--no-header", "-p", "no:cacheprovider"],
+        [sys.executable, "-m", "pytest", *args, TARGET, "-q", "--no-header", "-p", "no:cacheprovider"],
         check=False,
+        capture_output=True,
+        text=True,
     )
-    print(f"exit={proc.returncode}", flush=True)
+    tail = "\n".join(proc.stdout.strip().splitlines()[-3:])
+    print(f"[{label}] exit={proc.returncode}\n{tail}\n", flush=True)
     return proc.returncode
 
 
 def main():
-    rc1 = run(["tests/units/test_app.py", "-k", "modify_state_clean"])
-    rc2 = run(["tests/units/test_app.py"])
-    rc3 = run(["tests/units/istate", "tests/units/reflex_base", "tests/units/test_app.py", "-k", "modify_state_clean or istate or reflex_base"])
-    print(f"RESULTS: selection={rc1} file={rc2} cross-file={rc3}")
+    results = {
+        "app_mixins+compiler": run("app_mixins+compiler", ["tests/units/app_mixins", "tests/units/compiler"]),
+        "components": run("components", ["tests/units/components"]),
+        "docgen+middleware+plugins": run("docgen+middleware+plugins", ["tests/units/docgen", "tests/units/middleware", "tests/units/plugins"]),
+        "reflex_cli+states": run("reflex_cli+states", ["tests/units/reflex_cli", "tests/units/states"]),
+    }
+    print("RESULTS:", results)
 
 
 main()
