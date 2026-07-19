@@ -476,6 +476,7 @@ async def test_enqueue_child_of_done_parent_does_not_crash(
         done_parent.set_result(None)
         ep._futures["parent-txid"] = done_parent
 
+        assert ep._root_context is not None
         child_ctx = dataclasses.replace(
             ep._root_context.fork(token=token), parent_txid="parent-txid"
         )
