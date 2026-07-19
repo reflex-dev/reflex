@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import dataclasses
 from typing import Any
 
 import pytest
@@ -11,6 +12,7 @@ from reflex_base.event.processor.event_processor import (
     QueueShutDown,
     _stream_queue_until_done,
 )
+from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
@@ -456,6 +458,37 @@ async def test_chained_event_processed(token: str):
     async with ep:
         await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
     assert _CALL_LOG == [{"value": "chained"}]
+
+
+async def test_enqueue_child_of_done_parent_does_not_crash(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """Regression: a late-chained event whose parent future already completed
+    still runs instead of crashing when registered as the parent's child.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+    async with mock_event_processor as ep:
+        done_parent = EventFuture(txid="parent-txid")
+        done_parent.set_result(None)
+        ep._futures["parent-txid"] = done_parent
+
+        child_ctx = dataclasses.replace(
+            ep._root_context.fork(token=token), parent_txid="parent-txid"
+        )
+        future = await ep.enqueue(
+            token,
+            Event.from_event_type(logging_event("late-child"))[0],
+            ev_ctx=child_ctx,
+        )
+        await future
+
+    assert _CALL_LOG == [{"value": "late-child"}]
+    # The child is not registered under the already-done parent.
+    assert done_parent.children == []
 
 
 async def test_join_when_not_started(processor: EventProcessor):
