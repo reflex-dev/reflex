@@ -503,6 +503,37 @@ async def test_backend_exception_handler_called(token: str):
     assert isinstance(caught[0], RuntimeError)
 
 
+async def test_exception_handler_can_chain_recovery_events(token: str):
+    """The backend exception handler task can enqueue recovery events.
+
+    The failed future must not be retained in ``_futures`` during exception
+    recovery, or the recovery event would find its done (non-cancelled) parent
+    and ``add_child`` would raise instead of queuing the event.
+
+    Args:
+        token: The client token.
+    """
+
+    class _RecoveringProcessor(EventProcessor):
+        async def _handle_backend_exception(
+            self, ex: Exception, ev_ctx: EventContext | None = None
+        ) -> None:
+            if ev_ctx is not None:
+                EventContext.set(ev_ctx)
+            await EventContext.get().enqueue(
+                Event.from_event_type(logging_event("recovered"))[0]
+            )
+
+    ep = _RecoveringProcessor(
+        backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
+    )
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        await asyncio.wait_for(ep.join(), timeout=1)
+    assert _CALL_LOG == [{"value": "recovered"}]
+
+
 async def test_error_does_not_stop_queue(
     processor: EventProcessor,
     token: str,
@@ -813,15 +844,24 @@ async def test_stream_queue_until_done_handles_concurrent_put_and_completion():
 
 
 async def _drain_superseded(ep: EventProcessor) -> None:
-    """Give done callbacks a few ticks to clean the supersession tracking.
+    """Wait for done callbacks to clean the supersession tracking.
+
+    Callback cleanup completes in a bounded number of event-loop ticks, so
+    failing to drain within the allotted ticks is a real bug, not a timing
+    flake.
 
     Args:
         ep: The event processor to wait on.
+
+    Raises:
+        AssertionError: If the tracking dict is not cleaned up in time.
     """
-    for _ in range(20):
+    for _ in range(100):
         if not ep._superseded:
             return
         await asyncio.sleep(0)
+    msg = f"supersession tracking was not cleaned up: {ep._superseded}"
+    raise AssertionError(msg)
 
 
 async def test_superseding_event_cancels_previous_chain(

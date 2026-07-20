@@ -2924,6 +2924,7 @@ class EventNamespace:
         func: None = None,
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2939,6 +2940,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2951,6 +2953,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2962,6 +2965,9 @@ class EventNamespace:
         Args:
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
+            supersedes: Whether enqueuing the event cancels the previous unfinished
+                chain of the same event for the same client token (latest-wins).
+                Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
@@ -3013,6 +3019,8 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if supersedes is True:
+                setattr(func, SUPERSEDES_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)

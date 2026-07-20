@@ -404,8 +404,8 @@ class EventProcessor:
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
             if parent_future.cancelled():
-                # The chain this event belongs to was cancelled; the event is
-                # stillborn and never enters the queue.
+                # The chain this event belongs to was cancelled, so cancel the
+                # tracker since this event will never enter the queue.
                 tracked.cancel()
                 return tracked
             parent_future.add_child(tracked)
@@ -506,9 +506,11 @@ class EventProcessor:
         """
         if not future.done():
             return
-        if future.txid in self._tasks:
-            # The handler task is still running or unwinding; keep the future
-            # so late-chained events can find their (possibly cancelled) parent.
+        if future.cancelled() and future.txid in self._tasks:
+            # The cancelled handler task is still unwinding; keep the future so
+            # late-chained events can find their cancelled parent. Failed
+            # futures are not retained, so a backend exception handler task
+            # reusing the txid can chain recovery events normally.
             return
         # Not checking future.all_done() to avoid waiting for grandchildren here.
         if not all(c.done() for c in future.children):
@@ -678,12 +680,11 @@ class EventProcessor:
             return
         entry, registered_handler = token_queue[0]
         # Skip cancelled futures. Before a task exists, the only way a future
-        # can be done (and thus already cleaned up) is cancellation, so a
-        # missing future also means the entry was cancelled.
+        # can be done is cancellation, and its _try_clean_future done callback
+        # removes it from _futures, so a missing future also means the entry
+        # was cancelled.
         future = self._futures.get(entry.ctx.txid)
         if future is None or future.cancelled():
-            if future is not None:
-                self._try_clean_future(future)
             token_queue.popleft()
             if token_queue:
                 self._dispatch_next_for_token(token)
@@ -704,8 +705,6 @@ class EventProcessor:
                 # cleaned up (see _dispatch_next_for_token).
                 future = self._futures.get(entry.ctx.txid)
                 if future is None or future.cancelled():
-                    if future is not None:
-                        self._try_clean_future(future)
                     queue.task_done()
                     continue
                 try:
