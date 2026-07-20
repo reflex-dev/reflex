@@ -101,6 +101,7 @@ import openai
 class ChatState(rx.State):
     messages: list[dict[str, str]] = []
     is_generating: bool = False
+    is_streaming: bool = False
 
     @rx.event(background=True)
     async def send_message(self, form_data: dict):
