@@ -44,6 +44,22 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.app_lifecycle.share_app,
             ],
         ),
+        create_item(
+            "Organization",
+            children=[
+                ai_builder.organization.overview,
+                ai_builder.organization.members,
+                ai_builder.organization.roles_and_permissions,
+                ai_builder.organization.project_access,
+                ai_builder.organization.custom_roles,
+                ai_builder.organization.domains,
+                ai_builder.organization.sso,
+                ai_builder.organization.deployment_approvals,
+                ai_builder.organization.audit_logs,
+                ai_builder.organization.moving_projects_and_apps,
+                ai_builder.organization.cloud_providers,
+            ],
+        ),
         # create_item(
         #     "Integrations",
         #     children=[
