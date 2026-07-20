@@ -1346,6 +1346,7 @@ class TestImportTimeInstall:
         import os
         import subprocess
         import sys
+        import textwrap
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
@@ -1356,15 +1357,15 @@ class TestImportTimeInstall:
         }
         (tmp_path / MINIFY_JSON).write_text(json.dumps(config))
         (tmp_path / "myapp.py").write_text(
-            "\n".join([
-                "from reflex_base.registry import RegistrationContext",
-                "import reflex.state",
-                "resolver = RegistrationContext.ensure_context().name_resolver",
-                "assert type(resolver).__name__ == 'MinifyNameResolver', resolver",
-                "class Foo(reflex.state.State):",
-                "    pass",
-                "assert Foo.get_name() == 'f', Foo.get_name()",
-            ])
+            textwrap.dedent("""
+                from reflex_base.registry import RegistrationContext
+                import reflex.state
+                resolver = RegistrationContext.ensure_context().name_resolver
+                assert type(resolver).__name__ == "MinifyNameResolver", resolver
+                class Foo(reflex.state.State):
+                    pass
+                assert Foo.get_name() == "f", Foo.get_name()
+            """)
         )
 
         result = subprocess.run(
