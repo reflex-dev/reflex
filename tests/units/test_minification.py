@@ -472,7 +472,7 @@ class TestValidateMinifyConfig:
                 pass
 
         user_path = get_state_full_path(UserOnlyState)
-        # Config intentionally omits framework ``reflex.state.State`` entries.
+        # Config omits framework reflex.state.State entries.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {user_path: StateEntry(id="a", parent="reflex.state.State")},
@@ -481,11 +481,8 @@ class TestValidateMinifyConfig:
 
         _errors, _warnings, missing = validate_minify_config(config, State)
 
-        # Framework ``reflex.state.State`` and its handlers must not be flagged
-        # missing even though the user-only config omits them.
         assert not any(entry.startswith("state:reflex.state.") for entry in missing)
         assert not any(entry.startswith("event:reflex.state.") for entry in missing)
-        # The user state itself is present, so it isn't reported missing either.
         assert f"state:{user_path}" not in missing
         assert f"event:{user_path}.do_thing" not in missing
 

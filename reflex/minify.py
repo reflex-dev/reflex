@@ -593,9 +593,7 @@ def validate_minify_config(
 
     code_state_paths = {get_state_full_path(s) for s in all_states}
 
-    # Only user-defined states are minified at runtime (see
-    # ``MinifyNameResolver``), so framework states absent from a user-curated
-    # config are not "missing" — skip them when reporting missing entries.
+    # Framework states are never minified, so don't report them as missing.
     user_states = [s for s in all_states if not _is_framework_state(s)]
 
     # Check for missing states (in code but not in config)
