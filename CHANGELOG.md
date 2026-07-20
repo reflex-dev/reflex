@@ -1,3 +1,25 @@
+## v0.9.7 (2026-07-15)
+
+### Features
+
+- Added `default_color_mode` to `rx.Config` (`"system"`, `"light"`, or `"dark"`, also settable via `REFLEX_DEFAULT_COLOR_MODE`), so apps can set the initial color mode — and use the built-in color mode switcher and `rx.color_mode_cond` — without pulling in the large Radix themes CSS. The value drives both the compiled `ThemeProvider` default and the pre-hydration preload script, so there is no flash of the wrong theme on first paint. An explicit `rx.theme(appearance=...)` still takes precedence. ([#6716](https://github.com/reflex-dev/reflex/issues/6716))
+- `@rx.memo` components now compile with a configurable JS wrapper: React's `memo` remains the default, `wrapper=` swaps in a custom function `Var` whose imports ride along into the generated module, and `wrapper=None` emits the bare function component. ([#6730](https://github.com/reflex-dev/reflex/issues/6730))
+- The new `frozen_lockfile` config option is now honored during frontend package installation: when enabled (the default), bun's initial install runs with `--frozen-lockfile` so a lockfile out of sync with `package.json` fails fast. Set `frozen_lockfile=False` to let the lockfile update in place instead. npm has no equivalent install flag today, so the option is a no-op there. ([#6763](https://github.com/reflex-dev/reflex/issues/6763))
+
+### Bug Fixes
+
+- Fix stateful pages being evaluated twice in one process (forked prod workers and same-process export+serve), which created duplicate `ComponentState` classes and broke frontend hydration (`TypeError: d is not a function`). ([#6710](https://github.com/reflex-dev/reflex/issues/6710))
+- Reset the disk state manager write queue task after close. ([#6715](https://github.com/reflex-dev/reflex/issues/6715))
+- Close the `RedisTokenManager` redis client and cancel its pub/sub background tasks on app shutdown, fixing leaked redis connections (`ResourceWarning: unclosed Connection`) when the server stops. ([#6724](https://github.com/reflex-dev/reflex/issues/6724))
+- Event handlers and computed vars inherited from a state mixin now preserve the source function's custom attributes and keyword-only defaults. ([#6725](https://github.com/reflex-dev/reflex/issues/6725))
+
+### Performance
+
+- Run anonymous telemetry collection and delivery on a dedicated single-worker background thread instead of inline on the asyncio event loop. The blocking syscalls, subprocess calls and synchronous HTTP request used to gather and post an event no longer stall the event loop — notably when reporting backend errors at a high rate. Delivery is best-effort and any failure is suppressed, so telemetry can never affect the running app. ([#6626](https://github.com/reflex-dev/reflex/issues/6626))
+- Event chaining (`yield OtherState.handler(rows)`) no longer deep-copies payload values that are not attached to any state: only state-bound `MutableProxy` subtrees are copied, making proxy-free payloads ~5x faster to chain. ([#6739](https://github.com/reflex-dev/reflex/issues/6739))
+- `Var.to()` and `Var.guess_type()` resolve their target Var subclass through cached registry lookups instead of scanning the full registry with `safe_issubclass` on every call. ([#6742](https://github.com/reflex-dev/reflex/issues/6742))
+
+
 ## v0.9.6 (2026-06-25)
 
 ### Features

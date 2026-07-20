@@ -3,6 +3,7 @@
 from collections import Counter
 
 import pytest
+import reflex as rx
 
 
 @pytest.fixture
@@ -51,3 +52,38 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     assert "/ai-builder/integrations/ai-onboarding/" not in paths
     assert "/ai-builder/integrations/mcp-overview/" not in paths
     assert "/ai-builder/integrations/skills/" not in paths
+
+
+def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
+    """Generated docs meta descriptions should not exceed the SEO snippet cap."""
+    overlong = {
+        route.path: len(route.description or "")
+        for route in routes_fixture
+        if route.description and len(route.description) > 155
+    }
+
+    assert overlong == {}
+
+
+@pytest.mark.parametrize(
+    ("label", "href"),
+    [("Blog", "/blog/"), ("FAQ", "/faq/")],
+)
+def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
+    """Root-site footer links should not inherit the /docs router basename."""
+    from reflex_docs.templates.docpage.docpage import docpage_footer
+
+    rendered = docpage_footer.__wrapped__(rx.Var.create("/test")).render()
+
+    def find_link(node: dict) -> dict | None:
+        if any(child.get("contents") == f'"{label}"' for child in node["children"]):
+            return node
+        for child in node["children"]:
+            if "children" in child and (link := find_link(child)) is not None:
+                return link
+        return None
+
+    link = find_link(rendered)
+    assert link is not None
+    assert link["name"] == '"a"'
+    assert f'href:"{href}"' in link["props"]
