@@ -80,11 +80,83 @@ double-indicator experience.
 Both snippets below use the [`openai`](https://pypi.org/project/openai/) package and read
 the API key from the `OPENAI_API_KEY` environment variable. They also run as
 [background events](/docs/events/background-events/), so all state mutations happen inside
-`async with self:` and every `yield` is placed **after** the block exits — holding the
-state lock across a `yield` would block every other event handler until the stream
-finishes.
+`async with self:` blocks with deltas being sent to the client after exiting the block.
 
-### Incorrect
+### Implementation
+
+The loading dots show first, and the assistant bubble appears only on the first streamed
+token. Two more details make this safe:
+
+* The streaming LLM call is wrapped in a `try/finally` so
+  `is_streaming` always resets even if the API call raises
+* An `is_generating` guard serializes requests while the assistant message is updated
+  by a captured index rather than `self.messages[-1]`, which would otherwise point
+  at whichever message is currently last and let overlapping streams write to the
+  wrong bubble:
+
+```python
+import openai
+
+
+class ChatState(rx.State):
+    messages: list[dict[str, str]] = []
+    is_generating: bool = False
+
+    @rx.event(background=True)
+    async def send_message(self, form_data: dict):
+        user_msg = form_data.get("message", "").strip()
+        if not user_msg:
+            return
+
+        async with self:
+            if self.is_generating:
+                return  # a reply is still streaming; ignore overlapping submits
+            self.is_generating = True
+            self.messages.append({"role": "user", "content": user_msg})
+            self.is_streaming = True
+            request_messages = [
+                {"role": m["role"], "content": m["content"]} for m in self.messages
+            ]
+
+        assistant_index = None
+        try:
+            client = openai.AsyncOpenAI()
+            stream = await client.chat.completions.create(
+                model="gpt-4o",
+                messages=request_messages,
+                stream=True,
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if not delta:
+                    continue
+                async with self:
+                    if assistant_index is None:
+                        # First token: create the bubble and capture its index
+                        self.messages.append({"role": "assistant", "content": delta})
+                        assistant_index = len(self.messages) - 1
+                        self.is_streaming = False  # hide dots on first token
+                    else:
+                        self.messages[assistant_index]["content"] += delta
+        finally:
+            async with self:
+                self.is_streaming = False
+                self.is_generating = False
+```
+
+### Key Details
+
+1. Build the API request from `self.messages` directly — there is no trailing empty
+   message to slice off with `[:-1]`.
+2. Append the assistant message only on the first token from the stream.
+3. Hide the loading indicator after the first token, not at the end of the stream.
+4. Wrap the stream in `try/finally` so `is_streaming` resets even when the API call fails.
+5. Guard overlapping submits with `is_generating` and update the assistant message by its
+   captured index (not `self.messages[-1]`) — background events run concurrently, so a
+   second stream could otherwise append tokens to the wrong message.
+
+````md alert info
+## Gotchas to Avoid
 
 An empty assistant bubble appears next to the loading dots because it is appended before
 any content arrives:
@@ -113,6 +185,7 @@ class ChatState(rx.State):
             ]
 
         client = openai.AsyncOpenAI()
+        # BAD: the stream is not wrapped in try/finally, so is_streaming may not reset
         stream = await client.chat.completions.create(
             model="gpt-4o",
             messages=request_messages,
@@ -126,78 +199,4 @@ class ChatState(rx.State):
         async with self:
             self.is_streaming = False
 ```
-
-### Correct
-
-The loading dots show first, and the assistant bubble appears only on the first streamed
-token. Two more details make this safe: the stream is wrapped in a `try/finally` so
-`is_streaming` always resets even if the API call raises, and — because background events
-run concurrently, so a second submit can start before the first reply finishes — an
-`is_generating` guard serializes requests while the assistant message is updated by a
-captured index rather than `self.messages[-1]`, which would otherwise point at whichever
-message is currently last and let overlapping streams write to the wrong bubble:
-
-```python
-import openai
-
-
-class ChatState(rx.State):
-    messages: list[dict[str, str]] = []
-    is_streaming: bool = False
-    is_generating: bool = False
-
-    @rx.event(background=True)
-    async def send_message(self, form_data: dict):
-        user_msg = form_data.get("message", "").strip()
-        if not user_msg:
-            return
-
-        async with self:
-            if self.is_generating:
-                return  # a reply is still streaming; ignore overlapping submits
-            self.is_generating = True
-            self.messages.append({"role": "user", "content": user_msg})
-            self.is_streaming = True
-            request_messages = [
-                {"role": m["role"], "content": m["content"]} for m in self.messages
-            ]
-        yield  # flush outside the lock so the loading indicator shows now
-
-        assistant_index = None
-        try:
-            client = openai.AsyncOpenAI()
-            stream = await client.chat.completions.create(
-                model="gpt-4o",
-                messages=request_messages,
-                stream=True,
-            )
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content or ""
-                if not delta:
-                    continue
-                async with self:
-                    if assistant_index is None:
-                        # First token: create the bubble and capture its index
-                        self.messages.append({"role": "assistant", "content": delta})
-                        assistant_index = len(self.messages) - 1
-                        self.is_streaming = False  # hide dots on first token
-                    else:
-                        self.messages[assistant_index]["content"] += delta
-        finally:
-            async with self:
-                self.is_streaming = False
-                self.is_generating = False
-```
-
-The differences that matter:
-
-1. Set `is_streaming = True`, then `yield` **after** leaving `async with self:` to flush
-   the loading indicator without holding the state lock.
-2. Build the API request from `self.messages` directly — there is no trailing empty
-   message to slice off with `[:-1]`.
-3. Append the assistant message only on the first token from the stream.
-4. Hide the loading indicator on the first token, not at the end of the stream.
-5. Wrap the stream in `try/finally` so `is_streaming` resets even when the API call fails.
-6. Guard overlapping submits with `is_generating` and update the assistant message by its
-   captured index (not `self.messages[-1]`) — background events run concurrently, so a
-   second stream could otherwise append tokens to the wrong message.
+````
