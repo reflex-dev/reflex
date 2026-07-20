@@ -76,11 +76,17 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
+from reflex.minify import ensure_minify_resolver_for_active_context
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+# Must run before any state class registers — a later install renames states
+# while names captured by VarData.from_state keep the old value (e.g. granian
+# prod workers import the app module directly, bypassing get_app).
+ensure_minify_resolver_for_active_context()
 
 
 Delta = dict[str, dict[str, Any]]

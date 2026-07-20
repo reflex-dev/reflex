@@ -1336,3 +1336,43 @@ class TestMinifyNameResolver:
         assert resolver.config is None
         assert resolver.resolve_state_name(State) is None
         assert resolver.resolve_handler_name(State, "any") is None
+
+
+class TestImportTimeInstall:
+    """Importing reflex.state must install the resolver before states register."""
+
+    def test_resolver_active_before_any_state_registers(self, tmp_path):
+        """A fresh interpreter registers user states under their minified name."""
+        import os
+        import subprocess
+        import sys
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "myapp.State.Foo": StateEntry(id="f", parent="reflex.state.State")
+            },
+            "events": {},
+        }
+        (tmp_path / MINIFY_JSON).write_text(json.dumps(config))
+        (tmp_path / "myapp.py").write_text(
+            "\n".join([
+                "from reflex_base.registry import RegistrationContext",
+                "import reflex.state",
+                "resolver = RegistrationContext.ensure_context().name_resolver",
+                "assert type(resolver).__name__ == 'MinifyNameResolver', resolver",
+                "class Foo(reflex.state.State):",
+                "    pass",
+                "assert Foo.get_name() == 'f', Foo.get_name()",
+            ])
+        )
+
+        result = subprocess.run(
+            [sys.executable, "-c", "import myapp"],
+            cwd=tmp_path,
+            env={**os.environ, "REFLEX_MINIFY_STATES": MinifyMode.ENABLED.value},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
