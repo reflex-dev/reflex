@@ -1193,7 +1193,9 @@ def minify_list(output_json: bool):
         has_substates = len(substates) > 0
 
         if handlers:
-            console.log(f"{child_prefix}|-- Event Handlers:")
+            console.log(
+                f"{child_prefix}{'|' if has_substates else '`'}-- Event Handlers:"
+            )
             handler_prefix = child_prefix + ("|   " if has_substates else "    ")
             for i, handler in enumerate(handlers):
                 is_last_handler = i == len(handlers) - 1
@@ -1217,7 +1219,7 @@ def minify_list(output_json: bool):
     if output_json:
         import json
 
-        console.log(json.dumps(tree_data, indent=2))
+        click.echo(json.dumps(tree_data, indent=2))
     else:
         if config is not None:
             console.log("State Tree (minify.json loaded)")

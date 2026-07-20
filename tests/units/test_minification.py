@@ -464,6 +464,31 @@ class TestValidateMinifyConfig:
         assert not errors, f"Unexpected errors: {errors}"
         assert any("Orphaned state" in w for w in warnings)
 
+    def test_validate_ignores_framework_states_in_missing(self):
+        """Framework states/handlers omitted from a user-only config aren't missing."""
+
+        class UserOnlyState(State):
+            def do_thing(self):
+                pass
+
+        user_path = get_state_full_path(UserOnlyState)
+        # Config intentionally omits framework ``reflex.state.State`` entries.
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {user_path: StateEntry(id="a", parent="reflex.state.State")},
+            "events": {user_path: {"do_thing": "a"}},
+        }
+
+        _errors, _warnings, missing = validate_minify_config(config, State)
+
+        # Framework ``reflex.state.State`` and its handlers must not be flagged
+        # missing even though the user-only config omits them.
+        assert not any(entry.startswith("state:reflex.state.") for entry in missing)
+        assert not any(entry.startswith("event:reflex.state.") for entry in missing)
+        # The user state itself is present, so it isn't reported missing either.
+        assert f"state:{user_path}" not in missing
+        assert f"event:{user_path}.do_thing" not in missing
+
     def test_validate_warns_stale_parent(self):
         """A live entry whose stored parent disagrees with the code is flagged."""
 

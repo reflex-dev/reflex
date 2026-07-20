@@ -591,16 +591,22 @@ def validate_minify_config(
             for mid, handlers in _find_duplicate_ids(state_events.items()).items()
         )
 
-    # Check for missing states (in code but not in config)
     code_state_paths = {get_state_full_path(s) for s in all_states}
+
+    # Only user-defined states are minified at runtime (see
+    # ``MinifyNameResolver``), so framework states absent from a user-curated
+    # config are not "missing" — skip them when reporting missing entries.
+    user_states = [s for s in all_states if not _is_framework_state(s)]
+
+    # Check for missing states (in code but not in config)
     missing: list[str] = [
         f"state:{state_path}"
-        for state_path in code_state_paths
+        for state_path in (get_state_full_path(s) for s in user_states)
         if state_path not in config["states"]
     ]
 
     # Check for missing events (in code but not in config)
-    for state_cls in all_states:
+    for state_cls in user_states:
         state_path = get_state_full_path(state_cls)
         state_events = config["events"].get(state_path, {})
         missing.extend(
