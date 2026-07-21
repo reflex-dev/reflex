@@ -1,14 +1,22 @@
 import copy
+import hashlib
+import io
 import pickle
 import shutil
 from collections.abc import Generator
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 import reflex as rx
 import reflex.constants as constants
 from reflex.assets import AssetPathStr, remove_stale_external_asset_symlinks
+
+
+def _asset_hash(path: Path) -> str:
+    """Return the expected short content hash for an asset."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
 
 
 @pytest.fixture
@@ -32,9 +40,14 @@ def mock_asset_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_shared_asset(mock_asset_path: Path) -> None:
     """Test shared assets."""
+    source_file = Path(__file__).parent / "custom_script.js"
+    expected_hash = _asset_hash(source_file)
+
     # The asset function copies a file to the app's external assets directory.
     asset = rx.asset(path="custom_script.js", shared=True, subfolder="subfolder")
-    assert asset == "/external/test_assets/subfolder/custom_script.js"
+    assert (
+        asset == f"/external/test_assets/subfolder/custom_script.js?v={expected_hash}"
+    )
     result_file = Path(
         mock_asset_path,
         "assets",
@@ -50,7 +63,7 @@ def test_shared_asset(mock_asset_path: Path) -> None:
 
     # Test the asset function without a subfolder.
     asset = rx.asset(path="custom_script.js", shared=True)
-    assert asset == "/external/test_assets/custom_script.js"
+    assert asset == f"/external/test_assets/custom_script.js?v={expected_hash}"
     result_file = Path(
         mock_asset_path, "assets", "external", "test_assets", "custom_script.js"
     )
@@ -107,7 +120,171 @@ def test_local_asset(custom_script_in_asset_dir: Path) -> None:
 
     """
     asset = rx.asset("custom_script.js", shared=False)
-    assert asset == "/custom_script.js"
+    assert asset == f"/custom_script.js?v={_asset_hash(custom_script_in_asset_dir)}"
+
+
+def test_local_asset_hash_changes_with_content(
+    custom_script_in_asset_dir: Path,
+) -> None:
+    """The asset URL changes when the file content changes.
+
+    Args:
+        custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
+    """
+    custom_script_in_asset_dir.write_text("first")
+    first_asset = rx.asset("custom_script.js", shared=False)
+
+    custom_script_in_asset_dir.write_text("second")
+    second_asset = rx.asset("custom_script.js", shared=False)
+
+    assert first_asset != second_asset
+    assert first_asset == (
+        f"/custom_script.js?v={hashlib.sha256(b'first').hexdigest()[:8]}"
+    )
+    assert second_asset == (
+        f"/custom_script.js?v={hashlib.sha256(b'second').hexdigest()[:8]}"
+    )
+
+
+def test_asset_hash_reads_in_chunks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Hashing handles assets larger than one read chunk.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 3)
+    asset_file = tmp_path / "large.bin"
+    asset_file.write_bytes(b"abcdefghi")
+
+    assert (
+        assets_module._short_content_hash(asset_file)
+        == hashlib.sha256(b"abcdefghi").hexdigest()[:8]
+    )
+
+
+def test_asset_hash_retries_when_file_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries when the file changes while it is being read.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _ChangingPath:
+        open_calls = 0
+
+        def open(self, mode: str) -> io.BytesIO:
+            assert mode == "rb"
+            self.open_calls += 1
+            if self.open_calls == 1:
+                return io.BytesIO(b"old")
+            return io.BytesIO(b"final")
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
+    changing_path = _ChangingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, changing_path))
+        == hashlib.sha256(b"final").hexdigest()[:8]
+    )
+    assert changing_path.open_calls == 4
+
+
+def test_asset_hash_retries_after_atomic_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries if the file is replaced with the same size and mtime.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _ReplacingPath:
+        open_calls = 0
+
+        def open(self, mode: str) -> io.BytesIO:
+            assert mode == "rb"
+            self.open_calls += 1
+            if self.open_calls == 1:
+                return io.BytesIO(b"old")
+            return io.BytesIO(b"new")
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
+    replacing_path = _ReplacingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, replacing_path))
+        == hashlib.sha256(b"new").hexdigest()[:8]
+    )
+    assert replacing_path.open_calls == 4
+
+
+def test_asset_hash_retries_after_in_place_rewrite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries if an in-place rewrite changes bytes but preserves metadata.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _RewritingPath:
+        open_calls = 0
+        reads = [b"oldnew", b"newnew", b"newnew", b"newnew"]
+
+        def open(self, mode: str) -> io.BytesIO:
+            assert mode == "rb"
+            self.open_calls += 1
+            return io.BytesIO(self.reads[self.open_calls - 1])
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 3)
+    rewriting_path = _RewritingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, rewriting_path))
+        == hashlib.sha256(b"newnew").hexdigest()[:8]
+    )
+    assert rewriting_path.open_calls == 4
+
+
+def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing falls back to a timestamp if every read sees a file change.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _ChangingPath:
+        open_calls = 0
+
+        def open(self, mode: str) -> io.BytesIO:
+            assert mode == "rb"
+            self.open_calls += 1
+            return io.BytesIO(str(self.open_calls).encode())
+
+    warn_calls: list[str] = []
+    monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
+    monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
+
+    result = assets_module._short_content_hash(cast(Path, _ChangingPath()))
+
+    assert result == "1234.5"
+    assert len(warn_calls) == 1
+    assert warn_calls[0].endswith(
+        f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+    )
 
 
 def test_asset_importable_path_local(custom_script_in_asset_dir: Path) -> None:
@@ -117,6 +294,7 @@ def test_asset_importable_path_local(custom_script_in_asset_dir: Path) -> None:
         custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
     """
     asset = rx.asset("custom_script.js", shared=False)
+    assert asset == f"/custom_script.js?v={_asset_hash(custom_script_in_asset_dir)}"
     assert isinstance(asset, AssetPathStr)
     assert asset.importable_path == "$/public/custom_script.js"
 
@@ -124,6 +302,8 @@ def test_asset_importable_path_local(custom_script_in_asset_dir: Path) -> None:
 def test_asset_importable_path_shared(mock_asset_path: Path) -> None:
     """A shared asset path exposes an `importable_path` prefixed with $/public."""
     asset = rx.asset(path="custom_script.js", shared=True)
+    expected_hash = _asset_hash(Path(__file__).parent / "custom_script.js")
+    assert asset == f"/external/test_assets/custom_script.js?v={expected_hash}"
     assert isinstance(asset, AssetPathStr)
     assert asset.importable_path == "$/public/external/test_assets/custom_script.js"
 
@@ -188,6 +368,28 @@ def test_asset_path_pickle_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
         assert isinstance(clone, AssetPathStr)
         assert clone == "/my-app/external/mod/file.js"
         assert clone.importable_path == "$/public/external/mod/file.js"
+
+
+def test_versioned_asset_path_pickle_roundtrip(
+    custom_script_in_asset_dir: Path,
+) -> None:
+    """Pickle/copy round-trips preserve the versioned URL and unversioned import path.
+
+    Args:
+        custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
+    """
+    original = rx.asset("custom_script.js")
+    assert original == f"/custom_script.js?v={_asset_hash(custom_script_in_asset_dir)}"
+    assert original.importable_path == "$/public/custom_script.js"
+
+    for clone in (
+        pickle.loads(pickle.dumps(original)),
+        copy.copy(original),
+        copy.deepcopy(original),
+    ):
+        assert isinstance(clone, AssetPathStr)
+        assert clone == original
+        assert clone.importable_path == original.importable_path
 
 
 def test_remove_stale_external_asset_symlinks(mock_asset_path: Path) -> None:
