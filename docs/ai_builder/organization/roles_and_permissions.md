@@ -76,8 +76,8 @@ A person's access to a project comes from either their organization role or thei
 ```python eval
 rx.image(
     src=rx.color_mode_cond(
-        "https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview.webp",
-        "https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview_dark.webp",
+        light="https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview.webp",
+        dark="https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview_dark.webp",
     ),
     alt="Diagram showing organization roles on the left and project roles on the right, with an organization admin inheriting project admin across all projects",
     class_name="rounded-md h-auto",
