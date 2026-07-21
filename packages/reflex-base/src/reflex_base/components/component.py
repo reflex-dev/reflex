@@ -610,65 +610,138 @@ def _hash_str(value: str) -> str:
     return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
 
 
-def _update_deterministic_hash(hasher: Any, value: object) -> None:
-    """Feed ``value`` into ``hasher`` using a self-delimiting, type-tagged encoding.
+@functools.cache
+def _deterministic_hash_dataclass_fields(cls: type) -> tuple[tuple[str, bytes], ...]:
+    """Per-class cache of dataclass field names and their encoded bytes.
+
+    ``dataclasses.fields`` rebuilds its result tuple on every call; hashing a
+    large app calls it millions of times (mostly for ``VarData``), so cache
+    the derived (name, encoded name) pairs per class.
+
+    Args:
+        cls: The dataclass type to introspect.
+
+    Returns:
+        The (field name, encoded field name) pairs in definition order.
+    """
+    return tuple((f.name, f.name.encode()) for f in dataclasses.fields(cls))
+
+
+def _encode_deterministic(buf: bytearray, value: object) -> None:
+    """Append ``value`` to ``buf`` using a self-delimiting, type-tagged encoding.
 
     Each branch writes a distinct type tag plus length-prefixed payload, which
     keeps the encoding injective without building intermediate strings — the
     nested ``str([...])`` approach this replaces was the dominant cost of
     ``_deterministic_hash`` (~4x speedup on synthetic, ~2x on real renders).
 
+    Exact-type checks front-run the isinstance ladder: auto-memoization hashes
+    hundreds of millions of values per compile, nearly all of them plain
+    ``str``/``dict``/``list``/``tuple`` nodes from rendered component dicts,
+    and the ladder's isinstance calls dominated the compile profile. Subclasses
+    fall through to the ladder, which keeps the original branch order so the
+    encoding is byte-identical to the pre-dispatch implementation.
+
     Args:
-        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
-        value: The value to fold into the hasher.
+        buf: The output buffer to append to.
+        value: The value to fold into the buffer.
 
     Raises:
         TypeError: If the value is not hashable.
     """
+    if type(value) is str:
+        encoded = value.encode()
+        buf += b"s"
+        buf += len(encoded).to_bytes(8, "little")
+        buf += encoded
+        return
+    if type(value) is dict:
+        items = sorted(value.items(), key=operator.itemgetter(0))
+        buf += b"d"
+        buf += len(items).to_bytes(8, "little")
+        for k, v in items:
+            _encode_deterministic(buf, k)
+            _encode_deterministic(buf, v)
+        return
+    if type(value) is list or type(value) is tuple:
+        buf += b"l"
+        buf += len(value).to_bytes(8, "little")
+        for item in value:
+            _encode_deterministic(buf, item)
+        return
     if value is None:
-        hasher.update(b"N")
-    elif isinstance(value, bool):
-        hasher.update(b"T" if value else b"F")
+        buf += b"N"
+        return
+    if type(value) is bool:
+        buf += b"T" if value else b"F"
+        return
+    if type(value) is int or type(value) is float:
+        buf += b"n"
+        buf += str(value).encode()
+        return
+    # Slow path for subclasses and structured types, in the original ladder
+    # order so subclass encodings stay identical (e.g. ``IntEnum`` must hit
+    # the numeric branch before the dataclass branch would see it).
+    if isinstance(value, bool):
+        buf += b"T" if value else b"F"
     elif isinstance(value, (int, float, enum.Enum)):
-        hasher.update(b"n")
-        hasher.update(str(value).encode())
+        buf += b"n"
+        buf += str(value).encode()
     elif isinstance(value, str):
         encoded = value.encode()
-        hasher.update(b"s")
-        hasher.update(len(encoded).to_bytes(8, "little"))
-        hasher.update(encoded)
+        buf += b"s"
+        buf += len(encoded).to_bytes(8, "little")
+        buf += encoded
     elif isinstance(value, dict):
         items = sorted(value.items(), key=operator.itemgetter(0))
-        hasher.update(b"d")
-        hasher.update(len(items).to_bytes(8, "little"))
+        buf += b"d"
+        buf += len(items).to_bytes(8, "little")
         for k, v in items:
-            _update_deterministic_hash(hasher, k)
-            _update_deterministic_hash(hasher, v)
+            _encode_deterministic(buf, k)
+            _encode_deterministic(buf, v)
     elif isinstance(value, (tuple, list)):
-        hasher.update(b"l")
-        hasher.update(len(value).to_bytes(8, "little"))
+        buf += b"l"
+        buf += len(value).to_bytes(8, "little")
         for item in value:
-            _update_deterministic_hash(hasher, item)
+            _encode_deterministic(buf, item)
     elif isinstance(value, Var):
-        hasher.update(b"v")
-        _update_deterministic_hash(hasher, value._js_expr)
-        _update_deterministic_hash(hasher, value._get_all_var_data())
+        buf += b"v"
+        _encode_deterministic(buf, value._js_expr)
+        _encode_deterministic(buf, value._get_all_var_data())
     elif dataclasses.is_dataclass(value):
-        fields = dataclasses.fields(value)
-        hasher.update(b"D")
-        hasher.update(len(fields).to_bytes(8, "little"))
-        for field in fields:
-            hasher.update(field.name.encode())
-            _update_deterministic_hash(hasher, getattr(value, field.name))
+        fields = _deterministic_hash_dataclass_fields(
+            value if isinstance(value, type) else type(value)
+        )
+        buf += b"D"
+        buf += len(fields).to_bytes(8, "little")
+        for field_name, encoded_field_name in fields:
+            buf += encoded_field_name
+            _encode_deterministic(buf, getattr(value, field_name))
     elif isinstance(value, BaseComponent):
-        hasher.update(b"C")
-        _update_deterministic_hash(hasher, value.render())
+        buf += b"C"
+        _encode_deterministic(buf, value.render())
     else:
         msg = (
             f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
             "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
         )
         raise TypeError(msg)
+
+
+def _update_deterministic_hash(hasher: Any, value: object) -> None:
+    """Feed ``value`` into ``hasher`` via :func:`_encode_deterministic`.
+
+    Buffering the whole encoding and updating the hasher once replaces the
+    per-node ``hasher.update`` calls (hundreds of millions per compile) with
+    cheap bytearray appends.
+
+    Args:
+        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
+        value: The value to fold into the hasher.
+    """
+    buf = bytearray()
+    _encode_deterministic(buf, value)
+    hasher.update(buf)
 
 
 def _deterministic_hash(value: object) -> str:
