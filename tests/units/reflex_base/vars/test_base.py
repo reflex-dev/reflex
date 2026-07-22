@@ -74,7 +74,7 @@ def test_custom_mutable_attr_is_deepcopied():
         name: str = f  # pyright: ignore[reportAssignmentType]
 
     rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._opts == {"a": [1]}  # pyright: ignore[reportAttributeAccessIssue]
-    assert rebuilt._opts is not opts  # pyright: ignore[reportAttributeAccessIssue]
+    assert rebuilt._opts == {"a": [1]}  # ty:ignore[unresolved-attribute]
+    assert rebuilt._opts is not opts  # ty:ignore[unresolved-attribute]
     opts["a"].append(2)
-    assert rebuilt._opts == {"a": [1]}  # pyright: ignore[reportAttributeAccessIssue]
+    assert rebuilt._opts == {"a": [1]}  # ty:ignore[unresolved-attribute]

@@ -123,13 +123,13 @@ class ScaleParams:
 
         """
         if isinstance(regions, list):
-            regions = dict.fromkeys(regions, 1)
+            regions = dict.fromkeys(regions, 1)  # ty:ignore[invalid-assignment]
         return cls(
             scale_type,
             vm_type,
             tuple(
                 Region(name=name, number_of_machines=number)
-                for name, number in regions.items()
+                for name, number in regions.items()  # ty:ignore[unresolved-attribute]
             )
             if regions
             else (),
@@ -339,7 +339,7 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
             return False
 
 
-webbrowser.BackgroundBrowser = SilentBackgroundBrowser
+webbrowser.BackgroundBrowser = SilentBackgroundBrowser  # ty:ignore[invalid-assignment]
 
 
 def get_existing_access_token() -> str:

@@ -9,7 +9,7 @@ from collections.abc import Callable, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
-from types import UnionType
+from types import FunctionType, UnionType
 from typing import (
     Annotated,
     Any,
@@ -43,7 +43,7 @@ from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import safe_issubclass, typehint_issubclass
+from reflex_base.utils.types import safe_issubclass, set_signature, typehint_issubclass
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
@@ -261,7 +261,7 @@ class _LazyBody(Generic[_BodyT]):
 class MemoDefinition:
     """Base metadata for a memo."""
 
-    fn: Callable[..., Any]
+    fn: FunctionType
     python_name: str
     params: tuple[MemoParam, ...]
     # The Python module that defined this memo. When set, the memo's compiled
@@ -808,7 +808,7 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
     def _placeholder(*args: Any) -> Any:
         return run_script(prop_callback.call(*args))
 
-    _placeholder.__signature__ = inspect.signature(primary_spec)  # pyright: ignore[reportFunctionMemberAccess]
+    set_signature(_placeholder, inspect.signature(primary_spec))
     return _placeholder
 
 
@@ -1047,7 +1047,7 @@ class _MemoCallBinding:
 
 
 def _evaluate_memo_function(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     params: tuple[MemoParam, ...],
 ) -> Any:
     """Evaluate a memo function with placeholder vars.
@@ -1125,7 +1125,7 @@ def _lift_rest_props(component: Component) -> Component:
 
 
 def _analyze_params(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     *,
     for_component: bool,
     hints: dict[str, Any] | None = None,
@@ -1315,7 +1315,7 @@ def _build_args_function(
 
 
 def _evaluate_component_body(
-    fn: Callable[..., Any], params: tuple[MemoParam, ...]
+    fn: FunctionType, params: tuple[MemoParam, ...]
 ) -> Component:
     """Run a component memo's body and return its compiled component.
 
@@ -1340,7 +1340,7 @@ def _evaluate_component_body(
 
 
 def _evaluate_function_body(
-    fn: Callable[..., Any], params: tuple[MemoParam, ...]
+    fn: FunctionType, params: tuple[MemoParam, ...]
 ) -> ArgsFunctionOperation:
     """Run a var memo's body and build its compiled function.
 
@@ -1357,7 +1357,7 @@ def _evaluate_function_body(
 
 
 def _create_component_definition(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     return_annotation: Any,
     source_module: str | None = None,
 ) -> MemoComponentDefinition:
@@ -1881,7 +1881,7 @@ def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
 
 
 def _memo_impl(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     wrapper: Var | None,
 ) -> _MemoComponentWrapper | _MemoFunctionWrapper:
     """Analyze and register a memo definition for a decorated function.
@@ -1993,7 +1993,7 @@ def memo(
     *, wrapper: Var | None
 ) -> Callable[[Callable[..., Component]], _MemoComponentWrapper]: ...
 def memo(
-    fn: Callable[..., Any] | None = None,
+    fn: FunctionType | None = None,
     *,
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER,
 ) -> (

@@ -62,9 +62,9 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
-            if self.room:  # pyright: ignore[reportAttributeAccessIssue]
-                assert linked_state._linked_to == self.room  # pyright: ignore[reportAttributeAccessIssue]
+            linked_state = await self._link_to(self.room or "default")  # ty:ignore[unresolved-attribute]
+            if self.room:  # ty:ignore[unresolved-attribute]
+                assert linked_state._linked_to == self.room  # ty:ignore[unresolved-attribute]
             else:
                 assert linked_state._linked_to == "default"
 
@@ -82,7 +82,7 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
+            linked_state = await self._link_to(self.room or "default")  # ty:ignore[unresolved-attribute]
             initial_note = self.router.page.params.get("initial_note", "")
             if initial_note:
                 linked_state.note = initial_note

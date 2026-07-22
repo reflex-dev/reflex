@@ -404,7 +404,7 @@ class TestEnvVar:
     def test_set_string_value(self):
         """Test setting a string value."""
         env_var_instance = EnvVar("TEST_VAR", "default", str)
-        env_var_instance.set("new_value")  # type: ignore[arg-type]
+        env_var_instance.set("new_value")  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "new_value"
         # Clean up
         del os.environ["TEST_VAR"]
@@ -423,7 +423,7 @@ class TestEnvVar:
     def test_set_enum_value(self):
         """Test setting an enum value."""
         env_var_instance = EnvVar("TEST_VAR", _TestEnum.VALUE1, _TestEnum)
-        env_var_instance.set(_TestEnum.VALUE2)  # type: ignore[arg-type]
+        env_var_instance.set(_TestEnum.VALUE2)  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "value2"
         # Clean up
         del os.environ["TEST_VAR"]
@@ -431,7 +431,7 @@ class TestEnvVar:
     def test_set_list_value(self):
         """Test setting a list value."""
         env_var_instance = EnvVar("TEST_VAR", [], list[int])
-        env_var_instance.set([1, 2, 3])  # type: ignore[arg-type]
+        env_var_instance.set([1, 2, 3])  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "1:2:3"
         # Clean up
         del os.environ["TEST_VAR"]

@@ -327,7 +327,7 @@ def test_get_var_value_with_import_from():
     async def get_state_import_from(self: DependencyTestState):
         from tests.units.states.mutation import MutableTestState
 
-        return await self.get_var_value(MutableTestState.hashmap)  # pyright: ignore[reportArgumentType]
+        return await self.get_var_value(MutableTestState.hashmap)  # ty:ignore[invalid-argument-type]
 
     from tests.units.states.mutation import MutableTestState
 
@@ -474,7 +474,7 @@ def test_hybrid_property_with_custom_var_dependencies():
         @has_last_name.var
         def has_last_name(cls) -> Var[str]:
             # Reference an unrelated field here to confirm the tracker uses fget, not this.
-            return cls.unrelated  # pyright: ignore[reportReturnType]
+            return cls.unrelated  # ty:ignore[invalid-return-type]
 
         def func_using_hybrid_property(self):
             return self.has_last_name

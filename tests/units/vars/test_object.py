@@ -268,7 +268,7 @@ def test_typing() -> None:
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
     optional_var = ObjectState.base_optional
-    _ = assert_type(optional_var, ObjectVar[Base])
+    _ = assert_type(optional_var, ObjectVar[Base])  # ty:ignore[type-assertion-failure]
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
@@ -278,7 +278,7 @@ def test_typing() -> None:
     var = ObjectState.sqlamodel
     _ = assert_type(var, ObjectVar[SqlaModel])
     optional_var = ObjectState.sqlamodel_optional
-    _ = assert_type(optional_var, ObjectVar[SqlaModel])
+    _ = assert_type(optional_var, ObjectVar[SqlaModel])  # ty:ignore[type-assertion-failure]
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
@@ -288,7 +288,7 @@ def test_typing() -> None:
     var = ObjectState.dataclass
     _ = assert_type(var, ObjectVar[Dataclass])
     optional_var = ObjectState.dataclass_optional
-    _ = assert_type(optional_var, ObjectVar[Dataclass])
+    _ = assert_type(optional_var, ObjectVar[Dataclass])  # ty:ignore[type-assertion-failure]
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]

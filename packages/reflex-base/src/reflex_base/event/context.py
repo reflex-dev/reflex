@@ -9,7 +9,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base.context.base import BaseContext
-from reflex_base.utils.format import to_snake_case
+from reflex_base.utils.format import callable_qualname, to_snake_case
 
 if TYPE_CHECKING:
     from reflex.istate.manager import StateManager
@@ -24,7 +24,7 @@ def get_name(cls: type | Callable) -> str:
         The name of the state/func.
     """
     module = cls.__module__.replace(".", "___")
-    qualname = getattr(cls, "__qualname__", cls.__name__).replace(".", "___")
+    qualname = callable_qualname(cls).replace(".", "___")
     return to_snake_case(f"{module}___{qualname}")
 
 

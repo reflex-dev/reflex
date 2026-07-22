@@ -11,12 +11,12 @@ import reflex as rx
 def test_code_light_dark_theme(theme, expected):
     code_block = CodeBlock.create(theme=theme)
 
-    assert code_block.theme._js_expr == expected  # pyright: ignore [reportAttributeAccessIssue]
+    assert code_block.theme._js_expr == expected  # ty:ignore[unresolved-attribute]
 
 
 def test_code_block_rejects_string_theme():
     with pytest.raises(TypeError, match=r"CodeBlock\.theme"):
-        CodeBlock.create("print('Hello')", theme="one_dark")  # pyright: ignore[reportArgumentType]
+        CodeBlock.create("print('Hello')", theme="one_dark")  # ty:ignore[invalid-argument-type]
 
 
 def test_code_block_accepts_color_mode_cond_theme():

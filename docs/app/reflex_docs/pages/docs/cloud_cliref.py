@@ -260,7 +260,7 @@ def process_command(command: click.Command, name: str) -> str:
 
 
 if find_spec("typer") is not None and find_spec("typer.main") is not None:
-    import typer  # pyright: ignore[reportMissingImports]
+    import typer
 
     if isinstance(cli, typer.Typer):
         cli = typer.main.get_command(cli)

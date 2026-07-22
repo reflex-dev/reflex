@@ -11,7 +11,7 @@ from typer.main import get_command
 
 hosting_cli = (
     get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+)  # ty:ignore[invalid-assignment]
 
 runner = CliRunner()
 

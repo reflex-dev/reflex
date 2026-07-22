@@ -69,7 +69,7 @@ def test_register_docs_adds_discovered_pages(tmp_path: Path):
 
     app = AppRecorder()
     routes = register_docs(
-        app,  # type: ignore[arg-type]
+        app,  # ty:ignore[invalid-argument-type]
         DocsSiteConfig(
             content_dir=tmp_path,
             sitemap_base_url="https://example.com/docs/product/",

@@ -191,7 +191,7 @@ def test_automigration(
         id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
 
     # initial table
-    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
+    class AlembicThing(ModelBase):
         t1: Mapped[str] = mapped_column(default="")
 
     with get_engine().connect() as connection:
@@ -208,7 +208,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Create column t2, mark t1 as optional with default
-    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
+    class AlembicThing(ModelBase):
         t1: Mapped[str | None] = mapped_column(default="default")
         t2: Mapped[str] = mapped_column(default="bar")
 
@@ -228,7 +228,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Drop column t1
-    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
+    class AlembicThing(ModelBase):
         t2: Mapped[str] = mapped_column(default="bar")
 
     assert migrate(autogenerate=True)
@@ -263,7 +263,7 @@ def test_automigration(
     # drop table (AlembicSecond)
     model_registry.get_metadata().clear()
 
-    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
+    class AlembicThing(ModelBase):
         t2: Mapped[str] = mapped_column(default="bar")
 
     assert migrate(autogenerate=True)

@@ -1118,7 +1118,7 @@ def test_var_returning_memo_rejects_wrapper():
     """``wrapper=`` is only supported on component-returning memos."""
     with pytest.raises(TypeError, match="only supports `wrapper=`"):
 
-        @rx.memo(wrapper=None)  # pyright: ignore[reportArgumentType]
+        @rx.memo(wrapper=None)  # ty:ignore[invalid-argument-type]
         def format_id(value: rx.Var[int]) -> rx.Var[str]:
             return value.to(str)
 
@@ -1315,7 +1315,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
 
     @rx.memo
     def transparent(children: rx.Var[rx.Component]) -> rx.Component:
-        return children  # type: ignore[return-value]
+        return children  # ty:ignore[invalid-return-type]
 
     wrapped_child = transparent(RestrictedChild.create())
     parent = ValidParent.create(wrapped_child)
@@ -1407,7 +1407,7 @@ def test_component_memo_event_handler_compiles_to_prop_callback():
 def test_component_memo_event_handler_wires_event_chain_at_call_site():
     """Instantiating an EH memo should wrap the handler in an EventChain trigger."""
 
-    def _handler_fn(value: str):  # pyright: ignore[reportUnusedFunction]
+    def _handler_fn(value: str):
         pass
 
     raw_handler = EventHandler(fn=_handler_fn)
@@ -1444,7 +1444,7 @@ def test_component_memo_rejects_event_handler_with_default():
 
         @rx.memo
         def bad_eh_default(
-            event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
+            event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,
         ) -> rx.Component:
             return rx.button("hi")
 

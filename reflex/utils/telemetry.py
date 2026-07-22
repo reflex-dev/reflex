@@ -69,7 +69,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
         The CPU info.
     """
     platform_os = platform.system()
-    cpuinfo = {}
+    cpuinfo: dict[str, Any] = {}
     try:
         if platform_os == "Windows":
             cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'

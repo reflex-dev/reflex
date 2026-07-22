@@ -120,7 +120,7 @@ Next make sure all the following tests pass. This ensures that every new change 
 
 ```bash
 uv run ruff check .
-uv run pyright reflex tests
+uv run ty check
 ```
 
 Finally, run `ruff` to format your code.
@@ -129,7 +129,7 @@ Finally, run `ruff` to format your code.
 uv run ruff format .
 ```
 
-Consider installing git pre-commit hooks so Ruff, Pyright, and `make_pyi` will run automatically before each commit.
+Consider installing git pre-commit hooks so Ruff, ty, and `make_pyi` will run automatically before each commit.
 
 ```bash
 uv run pre-commit install

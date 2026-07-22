@@ -66,7 +66,7 @@ async def test_get_redis_status(
         # Case 2: Database connection error (OperationalError)
         (
             MagicMock(),
-            sqlalchemy.exc.OperationalError("error", "error", "error"),  # pyright: ignore[reportArgumentType]
+            sqlalchemy.exc.OperationalError("error", "error", "error"),  # ty:ignore[invalid-argument-type]
             {"db": False},
         ),
     ],

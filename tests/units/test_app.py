@@ -196,16 +196,16 @@ def test_custom_auth_admin() -> type[AuthProvider]:
         login_path: str = "/login"
         logout_path: str = "/logout"
 
-        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def login(self):
             """Login."""
 
-        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def is_authenticated(self):
             """Is authenticated."""
 
-        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def get_admin_user(self):
             """Get admin user."""
 
-        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def logout(self):
             """Logout."""
 
     return TestAuthProvider
@@ -539,7 +539,7 @@ async def test_dynamic_var_event(
         clean_registration_context: The registration context fixture, which is cleared before each test.
     """
     clean_registration_context.register_base_state(test_state)
-    state = test_state()  # pyright: ignore [reportCallIssue]
+    state = test_state()  # ty:ignore[missing-argument]
     state.add_var("int_val", int, 0)
 
     def set_int_val(self, value: int):
@@ -775,7 +775,7 @@ def dict_mutation_state():
 
         def add_age(self):
             """Add an age to the dict."""
-            self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
+            self.details.update({"age": 20})  # ty:ignore[no-matching-overload]
 
         def change_name(self):
             """Change the name in the dict."""
@@ -813,7 +813,7 @@ def dict_mutation_state():
 
         def change_friend_name(self):
             """Change the friend's name in the nested dict."""
-            self.friend_in_nested_dict["friend"]["name"] = "Tommy"
+            self.friend_in_nested_dict["friend"]["name"] = "Tommy"  # ty:ignore[invalid-assignment]
 
         def remove_friend(self):
             """Remove the friend from the nested dict."""
@@ -821,7 +821,7 @@ def dict_mutation_state():
 
         def add_friend_age(self):
             """Add an age to the friend in the nested dict."""
-            self.friend_in_nested_dict["friend"]["age"] = 30
+            self.friend_in_nested_dict["friend"]["age"] = 30  # ty:ignore[invalid-assignment]
 
     return DictMutationTestState()
 
@@ -1759,7 +1759,7 @@ class DynamicState(State):
         Returns:
             same as self.dynamic
         """
-        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+        return self.dynamic  # ty:ignore[unresolved-attribute]
 
 
 def test_dynamic_arg_shadow(
@@ -1811,7 +1811,7 @@ def cleanup_dynamic_arg():
     """Fixture to reset DynamicState class vars after each test."""
     yield
     with contextlib.suppress(AttributeError):
-        del State.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+        del State.dynamic  # ty:ignore[unresolved-attribute]
 
     State.computed_vars.pop("dynamic", None)
     State.vars.pop("dynamic", None)
@@ -1935,14 +1935,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
-            assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
+            assert state.dynamic == prev_exp_val  # ty:ignore[unresolved-attribute]
 
         if environment.REFLEX_OPLOCK_ENABLED.get():
             await app.state_manager.close()
 
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
-        assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
+        assert state.dynamic == exp_val  # ty:ignore[unresolved-attribute]
 
         # a simple state update event should NOT trigger on_load or route var side effects
         emitted_deltas.clear()
@@ -2909,19 +2909,19 @@ def test_app_wrap_priority(
     class Fragment1(Component):
         tag = "Fragment1"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(10, "Fragment2"): Fragment2.create()}
 
     def page():

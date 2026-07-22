@@ -19,26 +19,26 @@ def get_code_style(color: str):
         The component.
     """
     return {
-        "color": c_color(color, 9),  # type: ignore[arg-type]
+        "color": c_color(color, 9),
         "border_radius": "4px",
-        "border": f"1px solid {c_color(color, 4)}",  # type: ignore[arg-type]
-        "background": c_color(color, 3),  # type: ignore[arg-type]
+        "border": f"1px solid {c_color(color, 4)}",
+        "background": c_color(color, 3),
         **fonts.code,
         "line_height": "1.5",
     }
 
 
-def get_code_style_rdx(color: str):  # type: ignore[reportArgumentType]
+def get_code_style_rdx(color: str):
     """Get code style rdx.
 
     Returns:
         The component.
     """
     return {
-        "color": rx.color(color, 11),  # type: ignore[reportArgumentType]
+        "color": rx.color(color, 11),
         "border_radius": "0.25rem",
-        "border": f"1px solid {rx.color(color, 5)}",  # type: ignore[reportArgumentType]
-        "background": rx.color(color, 3),  # type: ignore[reportArgumentType]
+        "border": f"1px solid {rx.color(color, 5)}",
+        "background": rx.color(color, 3),
     }
 
 

@@ -36,7 +36,7 @@ def test_hybrid_property_var_fn_backend_var_access_raises():
 
         @value.var
         def value(cls) -> Var[str]:
-            return cls._secret  # pyright: ignore[reportReturnType]
+            return cls._secret  # ty:ignore[invalid-return-type]
 
     with pytest.raises(HybridPropertyError, match="_secret"):
         _ = VarFnBackendState.value
@@ -74,7 +74,7 @@ def test_hybrid_property_var_returns_new_descriptor():
 
         @Mixin.full.var
         def full(cls) -> Var:
-            return cls.first  # pyright: ignore[reportReturnType]
+            return cls.first  # ty:ignore[invalid-return-type]
 
     class StateB(Mixin, rx.State):
         first: str = "x"

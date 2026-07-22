@@ -59,6 +59,7 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    LiteralVar,
     ToOperation,
     Var,
     computed_var,
@@ -318,7 +319,7 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     Returns:
         The marked function.
     """
-    fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    fn.__override_base_method__ = True  # ty:ignore[unresolved-attribute]
     return fn
 
 
@@ -687,7 +688,10 @@ class BaseState(EvenMoreBasicBaseState):
                 if name in cls.inherited_vars:
                     continue
                 if is_computed_var(value):
-                    fget = cls._copy_fn(value.fget)
+                    fget = value.fget
+                    if not isinstance(fget, FunctionType):
+                        continue
+                    fget = cls._copy_fn(fget)
                     newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
@@ -699,6 +703,8 @@ class BaseState(EvenMoreBasicBaseState):
                 if not cls._item_is_event_handler(name, value):
                     continue
                 if parent_state is not None and parent_state.event_handlers.get(name):
+                    continue
+                if not isinstance(value, FunctionType):
                     continue
                 value = cls._copy_fn(value)
                 value.__qualname__ = f"{cls.__name__}.{name}"
@@ -737,7 +743,7 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, name, handler)
 
     @staticmethod
-    def _copy_fn(fn: Callable) -> Callable:
+    def _copy_fn(fn: FunctionType) -> FunctionType:
         """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
 
         Args:
@@ -778,7 +784,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
     @classmethod
-    def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
+    def _evaluate(cls, f: FunctionType, of_type: type | None = None) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
@@ -864,7 +870,7 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.cache
-    def _get_type_hints(cls) -> dict[str, Any]:
+    def _get_type_hints(cls) -> builtins.dict[str, Any]:
         """Get the type hints for this class.
 
         If the class is dynamic, evaluate the type hints with the original
@@ -1309,7 +1315,7 @@ class BaseState(EvenMoreBasicBaseState):
         return None
 
     @staticmethod
-    def _get_base_functions() -> dict[str, FunctionType]:
+    def _get_base_functions() -> builtins.dict[str, FunctionType]:
         """Get all functions of the state class excluding dunder methods.
 
         Returns:
@@ -1322,7 +1328,7 @@ class BaseState(EvenMoreBasicBaseState):
         }
 
     @classmethod
-    def _update_substate_inherited_vars(cls, vars_to_add: dict[str, Var]):
+    def _update_substate_inherited_vars(cls, vars_to_add: Mapping[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 
         Also updates the var dependency tracking dicts after adding vars.
@@ -1343,7 +1349,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def setup_dynamic_args(cls, args: dict[str, str]):
+    def setup_dynamic_args(cls, args: builtins.dict[str, str]):
         """Set up args for easy access in renderer.
 
         Args:
@@ -1454,7 +1460,7 @@ class BaseState(EvenMoreBasicBaseState):
             else:
                 fn = functools.partial(handler.fn, self)
             fn.__module__ = handler.fn.__module__
-            fn.__qualname__ = handler.fn.__qualname__
+            fn.__qualname__ = handler.fn.__qualname__  # ty:ignore[unresolved-attribute]
             return fn
 
         backend_vars = super().__getattribute__("_backend_vars") or {}
@@ -1754,13 +1760,9 @@ class BaseState(EvenMoreBasicBaseState):
         if not isinstance(var, Var):
             return var
 
-        unset = object()
-
         # Fast case: this is a literal var and the value is known.
-        if (
-            var_value := getattr(var, "_var_value", unset)
-        ) is not unset and not isinstance(var_value, Var):
-            return var_value  # pyright: ignore [reportReturnType]
+        if isinstance(var, LiteralVar) and not isinstance(var._var_value, Var):
+            return var._var_value
 
         # Unwrap any cast wrappers and resolve via the underlying var's *own*
         # var data, not the recursive _get_all_var_data(). For an operation or
@@ -1973,7 +1975,7 @@ class BaseState(EvenMoreBasicBaseState):
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
-    ) -> dict[str, Any]:
+    ) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -2070,7 +2072,7 @@ class BaseState(EvenMoreBasicBaseState):
             state.pop(inherited_var_name, None)
         return state
 
-    def __setstate__(self, state: dict[str, Any]):
+    def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
 
         This method is called by pickle to deserialize the object.
@@ -2280,7 +2282,7 @@ class State(BaseState):
             from reflex.istate.shared import SharedStateBaseInternal
 
             shared_base = await self.get_state(SharedStateBaseInternal)
-            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # ty:ignore[invalid-return-type]
         return await super()._get_state_from_redis(state_cls)
 
     @event

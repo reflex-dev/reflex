@@ -334,7 +334,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
 # entry still accepts it because .to()/guess_type() only call .create(...),
 # which has a compatible signature.
 _register_var_subclass_entry(
-    VarSubclassEntry(ReflexURLVar, ReflexURLCastedVar, (ReflexURL,))  # pyright: ignore[reportArgumentType]
+    VarSubclassEntry(ReflexURLVar, ReflexURLCastedVar, (ReflexURL,))  # ty:ignore[invalid-argument-type]
 )
 
 

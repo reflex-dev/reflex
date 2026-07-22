@@ -618,7 +618,7 @@ def _make_pyi_files():
     for top_level_dir in Path.cwd().iterdir():
         if not top_level_dir.is_dir() or top_level_dir.name.startswith("."):
             continue
-        for dir, _, _ in top_level_dir.walk():
+        for dir, _, _ in top_level_dir.walk():  # ty:ignore[unresolved-attribute]
             if "__pycache__" in dir.name:
                 continue
             PyiGenerator().scan_all([dir])

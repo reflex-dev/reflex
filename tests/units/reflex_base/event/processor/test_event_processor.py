@@ -124,7 +124,7 @@ async def _background_slow_logging_handler(value: str = "default"):
     _CALL_LOG.append({"value": value})
 
 
-_background_slow_logging_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_background_slow_logging_handler._reflex_background_task = True  # ty:ignore[unresolved-attribute]
 
 
 noop_event = EventHandler(fn=_noop_handler)

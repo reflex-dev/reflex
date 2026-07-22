@@ -65,7 +65,7 @@ class AssetPathStr(str):
         else:
             relative_path = str.__new__(
                 str,
-                object,  # pyright: ignore[reportArgumentType]
+                object,  # ty:ignore[invalid-argument-type]
                 "utf-8" if encoding is None else encoding,
                 "strict" if errors is None else errors,
             )

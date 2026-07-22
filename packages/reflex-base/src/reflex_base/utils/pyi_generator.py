@@ -482,7 +482,7 @@ def _get_class_annotation_globals(target_class: type) -> Mapping[str, Any]:
 
 
 @cache
-def _get_class_event_triggers(target_class: type) -> frozenset[str]:
+def _get_class_event_triggers(target_class: type[Component]) -> frozenset[str]:
     """Get and cache event trigger names for a class.
 
     Args:
@@ -507,7 +507,7 @@ def _generate_imports(
     """
     return [
         *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # pyright: ignore [reportCallIssue]
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # ty:ignore[no-matching-overload]
             for name, values in DEFAULT_IMPORTS.items()
         ],
         ast.Import([ast.alias("reflex")]),
@@ -594,7 +594,7 @@ def _extract_func_kwargs_as_ast_nodes(
 
 def _extract_class_props_as_ast_nodes(
     func: Callable,
-    clzs: list[type],
+    clzs: list[type[Component]],
     type_hint_globals: dict[str, Any],
     extract_real_default: bool = False,
 ) -> Sequence[tuple[ast.arg, ast.Constant | None]]:
@@ -643,7 +643,7 @@ def _extract_class_props_as_ast_nodes(
                 #       with the annotation in some cases.
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
-                    default = target_class.__fields__[name].default
+                    default = target_class.__fields__[name].default  # ty:ignore[unresolved-attribute]
                     if isinstance(default, Var):
                         default = default._decode()
 
@@ -660,7 +660,7 @@ def _extract_class_props_as_ast_nodes(
                         )
                     ),
                 ),
-                ast.Constant(value=default),  # pyright: ignore [reportArgumentType]
+                ast.Constant(value=default),
             ))
     return kwargs
 
@@ -684,7 +684,8 @@ def _get_visible_type_name(
     type_name = getattr(typ, "__name__", None)
 
     if type_name is not None and (
-        type_hint_globals.get(type_name) is typ
+        type_module in ("builtins", "__builtins__")
+        or type_hint_globals.get(type_name) is typ
         or type_name in DEFAULT_IMPORTS.get(str(type_module), set())
         or type_name in EXCLUDED_IMPORTS.get(str(type_module), set())
     ):
@@ -748,7 +749,9 @@ def type_to_ast(
         return ast.Name(id=str(typ))
 
     # Get the base type name (List, Dict, Optional, etc.)
-    base_name = getattr(origin, "_name", origin.__name__)
+    base_name = getattr(origin, "_name", None) or getattr(
+        origin, "__name__", repr(origin)
+    )
 
     # Get type arguments
     args = get_args(typ)
@@ -839,7 +842,9 @@ def _generate_component_create_functiondef(
     # kwargs associated with props defined in the class and its parents
     all_classes = [c for c in clz.__mro__ if issubclass(c, Component)]
     prop_kwargs = _extract_class_props_as_ast_nodes(
-        clz.create, all_classes, type_hint_globals
+        clz.create,
+        all_classes,
+        type_hint_globals,
     )
     all_props = [arg[0].arg for arg in prop_kwargs]
     kwargs.extend(prop_kwargs)
@@ -966,7 +971,7 @@ def _generate_component_create_functiondef(
         defaults=[],
     )
 
-    return ast.FunctionDef(  # pyright: ignore [reportCallIssue]
+    return ast.FunctionDef(
         name="create",
         args=create_args,
         body=[
@@ -1018,7 +1023,7 @@ def _generate_staticmethod_call_functiondef(
             else []
         ),
     )
-    return ast.FunctionDef(  # pyright: ignore [reportCallIssue]
+    return ast.FunctionDef(
         name="__call__",
         args=call_args,
         body=[
@@ -1069,7 +1074,7 @@ def _generate_namespace_call_functiondef(
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    if clz.__call__.__func__.__name__ != "create":  # pyright: ignore [reportFunctionMemberAccess]
+    if clz.__call__.__func__.__name__ != "create":
         return None
 
     if not issubclass(component_clz, Component):
@@ -1160,7 +1165,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified Module node.
         """
         self.generic_visit(node)
-        return self._remove_docstring(node)  # pyright: ignore [reportReturnType]
+        return self._remove_docstring(node)  # ty:ignore[invalid-return-type]
 
     def visit_Import(
         self, node: ast.Import | ast.ImportFrom

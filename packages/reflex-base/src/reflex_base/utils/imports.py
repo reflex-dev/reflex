@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
+from typing import final
 
 # Absolute import paths beginning with one of these reserved ``.web``
 # subdirectories are rewritten to ``$``-prefixed module specifiers.
@@ -109,6 +110,7 @@ def collapse_imports(
     }
 
 
+@final
 @dataclasses.dataclass(frozen=True)
 class ImportVar:
     """An import var."""

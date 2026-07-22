@@ -18,7 +18,7 @@ from reflex.utils import console, types
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
-from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.format import callable_qualname, format_event_handler
 
 if TYPE_CHECKING:
     from reflex.event import Event, EventHandler, EventSpec
@@ -270,7 +270,9 @@ async def process_event(
         try:
             while True:
                 await chain_updates(
-                    next(events), root_state=root_state, handler_name=handler_name
+                    next(events),  # ty:ignore[invalid-argument-type]
+                    root_state=root_state,
+                    handler_name=handler_name,
                 )
         except StopIteration as si:
             # the "return" value of the generator is not available
@@ -410,7 +412,7 @@ class BaseStateEventProcessor(EventProcessor):
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,
-                    handler_name=self.backend_exception_handler.__qualname__,
+                    handler_name=callable_qualname(self.backend_exception_handler),
                 )
 
 

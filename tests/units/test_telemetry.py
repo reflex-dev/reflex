@@ -267,7 +267,7 @@ def test_prepare_event_merges_properties(event_defaults):
 
     assert event is not None
     assert event["event"] == "compile"
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["pages_count"] == 7
     assert props["trigger"] == "initial"
     # Existing default keys are preserved.
@@ -424,7 +424,7 @@ def test_prepare_event_properties_override_kwargs(event_defaults):
     )
 
     assert event is not None
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["template"] == "from-properties"
 
 
@@ -488,7 +488,7 @@ def test_get_event_defaults_encodes_ids_as_uuid_strings(stub_event_default_sourc
     defaults = telemetry._get_event_defaults()
 
     assert defaults is not None
-    props: dict = defaults["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = defaults["properties"]  # ty:ignore[invalid-assignment]
     assert isinstance(props["distinct_id"], str)
     assert isinstance(props["distinct_app_id"], str)
     assert props["distinct_id"] == str(uuid.UUID(int=installation_id))

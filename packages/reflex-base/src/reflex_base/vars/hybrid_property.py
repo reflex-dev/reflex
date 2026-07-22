@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from reflex_base.utils.exceptions import HybridPropertyError
+from reflex_base.utils.format import callable_name
 from reflex_base.utils.types import Self, override
 
 from .base import Var
@@ -115,7 +116,9 @@ class HybridProperty(property):
                 if not owner.backend_vars:
                     return self._get_var(owner)
                 property_name = (
-                    self.fget.__name__ if self.fget is not None else "hybrid_property"
+                    callable_name(self.fget)
+                    if self.fget is not None
+                    else "hybrid_property"
                 )
                 return self._get_var(_StateBackendVarGuard(owner, property_name))
         return self

@@ -25,7 +25,7 @@ def test_render_on_submit():
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # pyright: ignore [reportAttributeAccessIssue]
+    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # ty:ignore[unresolved-attribute]
     assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
 
 
@@ -148,7 +148,7 @@ def test_on_submit_resolves_typed_dict_after_bound_args():
 
     form = HTMLForm.create(
         Input.create(name="email"),
-        on_submit=SignupState.on_submit("marketing"),  # pyright: ignore [reportCallIssue]
+        on_submit=SignupState.on_submit("marketing"),
     )
 
     assert isinstance(form.event_triggers["on_submit"], EventChain)

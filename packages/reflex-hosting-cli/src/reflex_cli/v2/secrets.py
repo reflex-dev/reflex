@@ -158,9 +158,7 @@ def update_secrets(
 
         if envfile:
             try:
-                from dotenv import (  # pyright: ignore[reportMissingImports]
-                    dotenv_values,
-                )
+                from dotenv import dotenv_values
             except ImportError:
                 console.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""

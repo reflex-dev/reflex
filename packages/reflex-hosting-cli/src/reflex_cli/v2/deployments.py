@@ -102,7 +102,7 @@ def _patch_typer(click_instance: click.Command) -> typer.Typer:
         original_get_group_from_info,
     )
 
-    typer.main.get_group_from_info = get_group_from_info
+    typer.main.get_group_from_info = get_group_from_info  # ty:ignore[invalid-assignment]
 
     return fake_typer_app
 
@@ -112,7 +112,7 @@ if (
     and find_spec("typer.core") is not None
     and find_spec("typer.models") is not None
 ):
-    hosting_cli = _patch_typer(hosting_cli)  # pyright: ignore[reportAssignmentType]
+    hosting_cli = _patch_typer(hosting_cli)  # ty:ignore[invalid-assignment]
 
 TIME_FORMAT_HELP = "Accepts ISO 8601 format, unix epoch or time relative to now. For time relative to now, use the format: <d><unit>. Valid units are d (day), h (hour), m (minute), s (second). For example, 1d for 1 day ago from now."
 MIN_LOGS_LIMIT = 50

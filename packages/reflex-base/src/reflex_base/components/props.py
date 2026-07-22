@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Any, TypeVar, get_args, get_origin
@@ -158,11 +159,11 @@ def props_field(
     if default is not MISSING and default_factory is not None:
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
-    return PropsField(  # pyright: ignore [reportReturnType]
+    return PropsField(
         default=default,
         default_factory=default_factory,
         annotated_type=MISSING,
-    )
+    )  # ty:ignore[invalid-return-type]
 
 
 @dataclass_transform(field_specifiers=(props_field,))
@@ -283,7 +284,7 @@ class PropsBase(metaclass=PropsBaseMeta):
                 )
 
     @classmethod
-    def get_fields(cls) -> dict[str, Any]:
+    def get_fields(cls) -> builtins.dict[str, Any]:
         """Get the fields of the object.
 
         Returns:

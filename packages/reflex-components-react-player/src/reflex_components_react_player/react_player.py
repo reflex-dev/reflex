@@ -256,7 +256,7 @@ class ReactPlayer(Component):
                     f"The prop {prop!r} has been replaced by {new_prop!r}, please update your code.",
                 )
                 props[new_prop] = props.pop(prop)
-        return super().create(*children, **props)  # type: ignore[return-value]
+        return super().create(*children, **props)
 
     def _render(self, props: dict[str, Any] | None = None):
         """Render the component. Adds width and height set to None because

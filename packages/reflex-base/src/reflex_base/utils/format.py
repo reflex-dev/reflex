@@ -28,6 +28,40 @@ WRAP_MAP = {
 }
 
 
+def callable_name(fn: object) -> str:
+    """Return ``fn.__name__`` when available, otherwise ``repr(fn)``.
+
+    Args:
+        fn: The object whose display name is wanted.
+
+    Returns:
+        The display name.
+    """
+    name = getattr(fn, "__name__", None)
+    if isinstance(name, str):
+        return name
+    return repr(fn)
+
+
+def callable_qualname(fn: object) -> str:
+    """Return ``fn.__qualname__`` when available, otherwise the display name.
+
+    Like :func:`callable_name` but keeps the qualifying path (e.g.
+    ``MyState.handler``) for callables that expose ``__qualname__``, falling
+    back to :func:`callable_name` for those that don't (e.g. ``partial``).
+
+    Args:
+        fn: The object whose qualified name is wanted.
+
+    Returns:
+        The qualified display name.
+    """
+    qualname = getattr(fn, "__qualname__", None)
+    if isinstance(qualname, str):
+        return qualname
+    return callable_name(fn)
+
+
 def length_of_largest_common_substring(str1: str, str2: str) -> int:
     """Find the length of the largest common substring between two strings.
 
@@ -401,7 +435,7 @@ def format_prop(
 
         # For dictionaries, convert any properties to strings.
         if isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
+            prop = serializers.serialize_dict(prop)  # ty:ignore[unresolved-attribute]
 
         else:
             # Dump the prop as JSON.
@@ -574,7 +608,7 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # ty:ignore[invalid-assignment]
             if isinstance(specs, Var):
                 msg = f"Invalid event spec: {specs}. Expected a list of EventSpecs."
                 raise ValueError(msg)

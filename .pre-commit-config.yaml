@@ -34,11 +34,12 @@ repos:
     require_serial: true
 - repo: local
   hooks:
-  - id: pyright
-    name: pyright
-    entry: uv run --no-sync pyright
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check
     language: system
     types: [python]
+    pass_filenames: false
     require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1

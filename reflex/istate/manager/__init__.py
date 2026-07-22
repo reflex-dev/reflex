@@ -105,7 +105,7 @@ class StateManager(ABC):
             from reflex.istate.manager.token import BaseStateToken
             from reflex.state import State
 
-            return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
+            return BaseStateToken.from_legacy_token(token, root_state=State)  # ty:ignore[invalid-return-type]
         return token
 
     @overload
@@ -189,7 +189,7 @@ class StateManager(ABC):
         """
 
     @abstractmethod
-    @contextlib.asynccontextmanager
+    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
     async def modify_state(
         self,
         token: StateToken[TOKEN_TYPE] | str,
@@ -204,9 +204,9 @@ class StateManager(ABC):
         Yields:
             The state for the token.
         """
-        yield  # pyright: ignore[reportReturnType]
+        yield  # ty:ignore[invalid-yield]
 
-    @contextlib.asynccontextmanager
+    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
     async def modify_state_with_links(
         self,
         token: StateToken[TOKEN_TYPE] | str,
