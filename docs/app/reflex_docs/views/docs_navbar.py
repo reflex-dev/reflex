@@ -83,14 +83,17 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
             "/docs/ai/"
         )
         is_hosting = router_path.contains("hosting")
-        active = ~is_overview & ~is_ai_builder & ~is_hosting
+        is_xy = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
+        active = ~is_overview & ~is_ai_builder & ~is_hosting & ~is_xy
     elif active_str == "ai":
         active = router_path.startswith("/ai/") | router_path.startswith("/docs/ai/")
+    elif active_str == "xy":
+        active = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
     else:
         active = router_path.contains(active_str)
 
     return ui.navigation_menu.item(
-        rx.el.a(
+        rx.el.elements.a(
             button(
                 text,
                 size="sm",
@@ -114,6 +117,7 @@ def navigation_menu() -> rx.Component:
             menu_item("Build with AI", ai_builder.overview.best_practices.path, "ai"),
             menu_item("Framework", getting_started.introduction.path, "framework"),
             menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
+            menu_item("XY", "/docs/xy/", "xy"),
             class_name="flex flex-row items-center gap-2 m-0 h-full list-none",
             custom_attrs={"role": "menubar"},
         ),
