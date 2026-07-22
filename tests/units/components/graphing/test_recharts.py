@@ -5,9 +5,12 @@ from reflex_components_recharts.charts import (
     PieChart,
     RadarChart,
     RadialBarChart,
+    SankeyChart,
     ScatterChart,
 )
 from reflex_components_recharts.general import ResponsiveContainer
+
+import reflex as rx
 
 
 def test_area_chart():
@@ -50,3 +53,22 @@ def test_scatter_chart():
     sc = ScatterChart.create()
     assert isinstance(sc, ResponsiveContainer)
     assert isinstance(sc.children[0], ScatterChart)
+
+
+def test_sankey_chart():
+    sc = SankeyChart.create()
+    assert isinstance(sc, ResponsiveContainer)
+    assert isinstance(sc.children[0], SankeyChart)
+    assert sc.children[0].render()["name"] == "RechartsSankeyChart"
+    assert "link_width" not in SankeyChart.get_props()
+
+
+def test_sankey_chart_accepts_unannotated_state_data():
+    class SankeyState(rx.State):
+        data = {
+            "nodes": [{"name": "A"}, {"name": "B"}],
+            "links": [{"source": 0, "target": 1, "value": 1}],
+        }
+
+    sc = SankeyChart.create(data=SankeyState.data)
+    assert isinstance(sc, ResponsiveContainer)

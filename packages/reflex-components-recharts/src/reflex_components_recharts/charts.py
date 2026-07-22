@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, ClassVar
+from collections.abc import Mapping, Sequence
+from typing import Any, ClassVar, TypedDict
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
+from typing_extensions import NotRequired
 
 from reflex_components_recharts.general import ResponsiveContainer
 
@@ -516,6 +517,86 @@ class FunnelChart(ChartBase):
     ]
 
 
+class SankeyNode(TypedDict):
+    """A node in a Sankey chart."""
+
+    name: str
+    type: NotRequired[str]
+    fill: NotRequired[str | Color]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
+
+
+class SankeyLink(TypedDict):
+    """A weighted link between two Sankey chart nodes."""
+
+    source: int
+    target: int
+    value: int | float
+    fill: NotRequired[str | Color]
+    fillOpacity: NotRequired[int | float]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
+
+
+class SankeyData(TypedDict):
+    """The source data for a Sankey chart."""
+
+    nodes: Sequence[SankeyNode]
+    links: Sequence[SankeyLink]
+
+
+class SankeyChart(ChartBase):
+    """A Sankey chart component in Recharts."""
+
+    tag = "Sankey"
+
+    alias = "RechartsSankeyChart"
+
+    name_key: Var[str] = field(doc='The key of each node name. Default: "name"')
+
+    data_key: Var[str | int] = field(doc='The key of each link value. Default: "value"')
+
+    data: Var[SankeyData | Mapping[str, Any]] = field(
+        doc="The source data, including nodes and the weighted links between them."
+    )
+
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}'
+    )
+
+    node: Var[Any] = field(
+        doc="The configuration object or custom renderer used to draw nodes."
+    )
+
+    link: Var[Any] = field(
+        doc="The configuration object or custom renderer used to draw links."
+    )
+
+    sort: Var[bool] = field(
+        doc="Whether to sort nodes on the y-axis or display them in data order."
+    )
+
+    node_padding: Var[int] = field(doc="The padding between nodes.")
+
+    node_width: Var[int] = field(doc="The width of each node.")
+
+    link_curvature: Var[float] = field(doc="The curvature of each link.")
+
+    iterations: Var[int] = field(
+        doc="The number of layout iterations used to position nodes and links."
+    )
+
+    # Valid children components
+    _valid_children: ClassVar[list[str]] = [
+        "Legend",
+        "GraphingTooltip",
+        "Defs",
+    ]
+
+
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
 
@@ -598,4 +679,5 @@ radar_chart = RadarChart.create
 radial_bar_chart = RadialBarChart.create
 scatter_chart = ScatterChart.create
 funnel_chart = FunnelChart.create
+sankey_chart = SankeyChart.create
 treemap = Treemap.create
