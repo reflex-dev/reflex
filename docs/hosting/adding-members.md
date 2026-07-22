@@ -8,6 +8,11 @@ A project is a collection of applications (apps / websites).
 
 Every project has its own billing page that are accessible to Admins.
 
+```md alert info
+# Looking for members, roles, and permissions?
+People, seats, roles, and access are organized at the organization and project level. For the complete guide, see [Organizations](/docs/ai/organization/overview/) — in particular [Members & seats](/docs/ai/organization/members/), [Roles & permissions](/docs/ai/organization/roles-and-permissions/), and [Managing project access](/docs/ai/organization/project-access/).
+```
+
 
 
 ## Adding Team Members
