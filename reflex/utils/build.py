@@ -147,10 +147,11 @@ def zip_app(
     }
 
     if frontend:
+        web_dir = prerequisites.get_web_dir()
         _zip(
             component_name=constants.ComponentName.FRONTEND,
             target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
-            root_directory=prerequisites.get_web_dir() / constants.Dirs.STATIC,
+            root_directory=web_dir / constants.Dirs.STATIC,
             files_to_exclude=files_to_exclude,
             exclude_venv_directories=False,
         )

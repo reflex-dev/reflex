@@ -472,12 +472,14 @@ def update_react_router_config(prerender_routes: bool = False):
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
+    from reflex_base import ssr
+
     react_router_config = {
         "basename": config.prepend_frontend_path("/"),
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": False,
+        "ssr": ssr.ssr_build_enabled(),
     }
 
     if prerender_routes:

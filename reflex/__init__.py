@@ -182,7 +182,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "app": ["App", "UploadFile"],
     "assets": ["asset"],
     "config": ["Config", "DBConfig"],
-    "constants": ["Env"],
+    "constants": ["Env", "SsrMode"],
     "constants.colors": ["Color"],
     "_upload": [
         "UploadChunk",
