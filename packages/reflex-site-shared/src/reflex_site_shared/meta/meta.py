@@ -1,6 +1,6 @@
 """Meta module."""
 
-import json
+from reflex_base.utils.format import orjson_dumps
 
 import reflex as rx
 from reflex_site_shared.constants import (
@@ -240,7 +240,7 @@ def blog_jsonld(
         "@context": "https://schema.org",
         "@graph": graph,
     }
-    return rx.el.script(json.dumps(data), type="application/ld+json")
+    return rx.el.script(orjson_dumps(data), type="application/ld+json")
 
 
 def website_organization_jsonld(url: str = REFLEX_DOMAIN_URL) -> rx.Component:
@@ -277,7 +277,7 @@ def website_organization_jsonld(url: str = REFLEX_DOMAIN_URL) -> rx.Component:
             },
         ],
     }
-    return rx.el.script(json.dumps(data), type="application/ld+json")
+    return rx.el.script(orjson_dumps(data), type="application/ld+json")
 
 
 def blog_index_jsonld(posts: list[tuple[str, dict]], url: str) -> rx.Component:
@@ -326,7 +326,7 @@ def blog_index_jsonld(posts: list[tuple[str, dict]], url: str) -> rx.Component:
             },
         ],
     }
-    return rx.el.script(json.dumps(data), type="application/ld+json")
+    return rx.el.script(orjson_dumps(data), type="application/ld+json")
 
 
 def faq_jsonld(faq_schema: dict) -> rx.Component:
@@ -335,7 +335,7 @@ def faq_jsonld(faq_schema: dict) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.script(json.dumps(faq_schema), type="application/ld+json")
+    return rx.el.script(orjson_dumps(faq_schema), type="application/ld+json")
 
 
 def pricing_jsonld(url: str) -> rx.Component:
@@ -383,4 +383,4 @@ def pricing_jsonld(url: str) -> rx.Component:
             },
         ],
     }
-    return rx.el.script(json.dumps(data), type="application/ld+json")
+    return rx.el.script(orjson_dumps(data), type="application/ld+json")

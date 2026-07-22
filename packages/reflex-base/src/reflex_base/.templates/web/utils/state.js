@@ -460,24 +460,33 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
+// Sentinels for non-finite floats, emitted by reflex_base.utils.format and
+// restored by the reviver below. Colliding user strings arrive escaped; the
+// reviver strips one escape level. The rewriter handles bare NaN/Infinity
+// tokens from stdlib json.dumps (defense-in-depth).
 const NAN_SENTINEL = "__reflex_nan__";
+const INF_SENTINEL = "__reflex_inf__";
+const NEG_INF_SENTINEL = "__reflex_neg_inf__";
+const SENTINEL_ESCAPE_PREFIX = "__reflex_esc__";
 const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
 const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
+  Infinity: `"${INF_SENTINEL}"`,
+  "-Infinity": `"${NEG_INF_SENTINEL}"`,
   NaN: `"${NAN_SENTINEL}"`,
 };
 const rewriteBareNonFiniteFloats = (str) =>
   str.replace(NON_FINITE_FLOAT_RE, (match) =>
     match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
   );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
+export const reviveNonFiniteFloats = (_k, v) => {
+  if (typeof v !== "string" || !v.startsWith("__reflex_")) return v;
+  if (v === NAN_SENTINEL) return NaN;
+  if (v === INF_SENTINEL) return Infinity;
+  if (v === NEG_INF_SENTINEL) return -Infinity;
+  if (v.startsWith(SENTINEL_ESCAPE_PREFIX))
+    return v.slice(SENTINEL_ESCAPE_PREFIX.length);
+  return v;
+};
 
 /**
  * Queue events to be processed and trigger processing of queue.
@@ -584,7 +593,7 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str);
+      return JSON.parse(str, reviveNonFiniteFloats);
     } catch (e) {
       try {
         return JSON.parse(

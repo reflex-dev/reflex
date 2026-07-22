@@ -9,7 +9,6 @@ import dataclasses
 import functools
 import importlib
 import inspect
-import json
 import operator
 import sys
 import time
@@ -551,8 +550,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(format.orjson_dumps_socket),
+                    loads=staticmethod(format.orjson_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
@@ -1364,7 +1363,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
             with stateful_pages_marker.open("w") as f:
-                json.dump(list(self._stateful_pages), f)
+                f.write(format.orjson_dumps(list(self._stateful_pages)))
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
@@ -1744,8 +1743,8 @@ class EventNamespace(AsyncNamespace):
                 f" Event data: {fields}"
             )
             try:
-                fields = json.loads(fields)
-            except json.JSONDecodeError as ex:
+                fields = format.orjson_loads(fields)
+            except ValueError as ex:
                 msg = f"Failed to deserialize event data: {fields}."
                 raise exceptions.EventDeserializationError(msg) from ex
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
@@ -10,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import format_state_name, json_dumps, orjson_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -374,11 +373,11 @@ export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);
-export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
+export const clientStorage = {"{}" if client_storage is None else orjson_dumps(client_storage)}
 
 {state_str}
 
-export const isDevMode = {json.dumps(is_dev_mode)};
+export const isDevMode = {orjson_dumps(is_dev_mode)};
 
 // Module-level event dispatchers populated by ``EventLoopProvider`` on each
 // render. Components reach addEvents/connectErrors via this import instead of
@@ -533,7 +532,7 @@ def package_json_template(
     """
     # Ensure "type" is not duplicated since it's always set to "module"
     additional_keys.pop("type", None)
-    return json.dumps({
+    return orjson_dumps({
         "name": additional_keys.pop("name", "reflex"),
         "type": "module",
         "scripts": scripts,
@@ -568,7 +567,7 @@ def vite_config_template(
     if allowed_hosts is True:
         allowed_hosts_line = "\n    allowedHosts: true,"
     elif isinstance(allowed_hosts, list) and allowed_hosts:
-        allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
+        allowed_hosts_line = f"\n    allowedHosts: {orjson_dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
     return rf"""import {{ fileURLToPath, URL }} from "url";

@@ -638,11 +638,9 @@ class Config(BaseConfig):
         Returns:
             The config as a JSON string.
         """
-        import json
+        from reflex_base.utils.format import orjson_dumps
 
-        from reflex_base.utils.serializers import serialize
-
-        return json.dumps(self, default=serialize)
+        return orjson_dumps(self)
 
     @staticmethod
     def _prepend_path(path: str, prefix: str) -> str:

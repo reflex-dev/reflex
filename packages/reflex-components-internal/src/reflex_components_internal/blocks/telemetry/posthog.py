@@ -1,7 +1,8 @@
 """PostHog analytics tracking integration for Reflex applications."""
 
-import json
 from typing import Any
+
+from reflex_base.utils.format import orjson_dumps
 
 import reflex as rx
 
@@ -32,7 +33,7 @@ def identify_posthog_user(user_id: str) -> rx.event.EventSpec:
     Returns:
         rx.event.EventSpec: Event specification for identifying the user in PostHog
     """
-    user_id = json.dumps(user_id)
+    user_id = orjson_dumps(user_id)
 
     return rx.call_script(
         f"""
@@ -59,7 +60,7 @@ def _track_form_posthog(
         Event that runs PostHog identify and capture in the browser.
     """
     filtered = {k: v for k, v in form_data.items() if k in allowed_keys}
-    props_json = json.dumps(filtered)
+    props_json = orjson_dumps(filtered)
 
     return rx.call_script(
         f"""
