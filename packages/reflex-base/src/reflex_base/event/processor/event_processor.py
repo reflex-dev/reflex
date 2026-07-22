@@ -393,8 +393,9 @@ class EventProcessor:
         self._futures[txid] = tracked
         tracked.add_done_callback(self._try_clean_future)
         tracked.add_done_callback(self._on_future_done)
-        # If this context has a parent, register as a child of the parent's future.
-        if parent_future is not None:
+        # Register as a child of the parent's future; skip if the parent is
+        # already done (late-chained event) so the child runs instead of crashing.
+        if parent_future is not None and not parent_future.done():
             parent_future.add_child(tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
