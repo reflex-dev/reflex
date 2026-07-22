@@ -550,6 +550,7 @@ def vite_config_template(
     force_full_reload: bool,
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
+    minify: bool = True,
     allowed_hosts: bool | list[str] = False,
 ):
     """Template for vite.config.js.
@@ -560,6 +561,7 @@ def vite_config_template(
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
+        minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
 
     Returns:
@@ -618,6 +620,8 @@ export default defineConfig((config) => ({{
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
+    minify: {"true" if minify else "false"},
+    cssMinify: {"true" if minify else "false"},
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{

@@ -720,10 +720,30 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
+        trigger = get_backend_compile_trigger()
         self._compile(
             prerender_routes=should_prerender_routes(),
-            trigger=get_backend_compile_trigger(),
+            trigger=trigger,
         )
+
+        # In preview mode the frontend is served as a mounted static bundle rather
+        # than by the Vite dev server, so each hot reload must re-run the frontend
+        # build against the freshly compiled output.
+        if (
+            trigger == "hot_reload"
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.PREVIEW
+            and environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get()
+        ):
+            from reflex.utils import build
+
+            # A build failure (e.g. a bad import in user code) must not take the
+            # backend down: keep serving the previous build until the next save.
+            try:
+                build.build()
+            except (Exception, SystemExit) as exc:
+                console.error(
+                    f"Frontend build failed; serving the previous build. {exc}"
+                )
 
         config = get_config()
 

@@ -200,6 +200,7 @@ class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
+    PREVIEW = "preview"
     PROD = "prod"
 
 
