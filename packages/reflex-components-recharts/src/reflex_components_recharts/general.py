@@ -299,9 +299,77 @@ class Cell(Recharts):
     )
 
 
+class Layer(Recharts):
+    """A Layer component in Recharts. Renders an SVG <g> element that groups
+    other SVG elements, e.g. when constructing custom node elements.
+    """
+
+    tag = "Layer"
+
+    alias = "RechartsLayer"
+
+
+class Rectangle(Recharts):
+    """A Rectangle shape component in Recharts, e.g. used as a building block
+    for custom node elements.
+    """
+
+    tag = "Rectangle"
+
+    alias = "RechartsRectangle"
+
+    x: Var[int | float] = field(
+        doc="The x-coordinate of the top left corner of the rectangle. Default: 0"
+    )
+
+    y: Var[int | float] = field(
+        doc="The y-coordinate of the top left corner of the rectangle. Default: 0"
+    )
+
+    width: Var[int | float] = field(doc="The width of the rectangle. Default: 0")
+
+    height: Var[int | float] = field(doc="The height of the rectangle. Default: 0")
+
+    radius: Var[int | float | Sequence[int | float]] = field(
+        doc="The radius of the rectangle's corners. When a number, sets all four corners; when a sequence of four numbers, sets the radii of the top-left, top-right, bottom-right and bottom-left corners. Default: 0"
+    )
+
+    fill: Var[str | Color] = field(doc="The fill color of the rectangle.")
+
+    fill_opacity: Var[float] = field(doc="The opacity of the rectangle fill.")
+
+    stroke: Var[str | Color] = field(doc="The stroke color of the rectangle.")
+
+    stroke_width: Var[str | int | float] = field(
+        doc="The width of the rectangle stroke."
+    )
+
+    is_animation_active: Var[bool] = field(
+        doc="If set false, animation of the rectangle will be disabled. Default: False"
+    )
+
+    is_update_animation_active: Var[bool] = field(
+        doc="If set false, the animation of the rectangle when its coordinates or size update will be disabled. Default: False"
+    )
+
+    animation_begin: Var[int] = field(
+        doc="Specifies when the animation should begin, the unit of this option is ms. Default: 0"
+    )
+
+    animation_duration: Var[int] = field(
+        doc="Specifies the duration of animation, the unit of this option is ms. Default: 1500"
+    )
+
+    animation_easing: Var[LiteralAnimationEasing] = field(
+        doc='The type of easing function. Default: "ease"'
+    )
+
+
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
 graphing_tooltip = tooltip = GraphingTooltip.create
 label = Label.create
 label_list = LabelList.create
 cell = Cell.create
+layer = Layer.create
+rectangle = Rectangle.create
