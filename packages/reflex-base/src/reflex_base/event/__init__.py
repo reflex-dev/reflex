@@ -811,7 +811,7 @@ class EventChain(EventActionsMixin):
 
     args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
 
-    invocation: Var | None = dataclasses.field(default=None)
+    invocation: FunctionVar | None = dataclasses.field(default=None)
 
     @classmethod
     def create(

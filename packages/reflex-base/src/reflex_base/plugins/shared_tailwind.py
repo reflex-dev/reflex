@@ -1,7 +1,6 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
 import dataclasses
-from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Literal, TypedDict
 
@@ -108,7 +107,7 @@ def tailwind_config_js_template(
     imports = [
         plugin["import"]
         for plugin in plugins
-        if isinstance(plugin, Mapping) and "import" in plugin
+        if not isinstance(plugin, str) and "import" in plugin
     ]
 
     # Generate import statements for destructured imports
@@ -119,12 +118,12 @@ def tailwind_config_js_template(
     # Generate plugin imports
     plugin_imports = []
     for i, plugin in enumerate(plugins, 1):
-        if isinstance(plugin, Mapping) and "call" not in plugin:
+        if isinstance(plugin, str):
+            plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
+        elif "call" not in plugin:
             plugin_imports.append(
                 f"import plugin{i} from {json.dumps(plugin['name'])};"
             )
-        elif not isinstance(plugin, Mapping):
-            plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
 
     plugin_imports_lines = "\n".join(plugin_imports)
 
@@ -136,7 +135,7 @@ def tailwind_config_js_template(
     # Generate plugin array
     plugin_list = []
     for i, plugin in enumerate(plugins, 1):
-        if isinstance(plugin, Mapping) and "call" in plugin:
+        if not isinstance(plugin, str) and "call" in plugin:
             args_part = ""
             if "args" in plugin:
                 args_part = json.dumps(plugin["args"])
