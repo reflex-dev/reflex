@@ -5049,6 +5049,18 @@ class MutableProxyState(BaseState):
     data: dict[str, list[int]] = {"a": [1], "b": [2]}
 
 
+class NestedMutableProxyState(BaseState):
+    """A test state with nested mutable dict values."""
+
+    data: dict[str, dict[str, int]] = {"a": {"x": 1}, "b": {"y": 2}}
+
+
+class IterableMutableProxyState(BaseState):
+    """A test state with mutable values that can be accessed by iteration."""
+
+    data: list[list[int]] = [[1]]
+
+
 @pytest.mark.asyncio
 async def test_rebind_mutable_proxy(
     token: str, attached_mock_event_context: EventContext
@@ -5099,6 +5111,226 @@ async def test_rebind_mutable_proxy(
         assert state.data["a"] == [2, 3]
         # Object identity persists across serialization, so data["b"] is also mutated.
         assert state.data["b"] == [2, 3]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_manager(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Mutable state proxies can enter the owning StateProxy context."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        data_proxy = state_proxy.data
+        items_proxy = data_proxy["a"]
+
+    assert isinstance(data_proxy, ImmutableMutableProxy)
+    assert isinstance(items_proxy, ImmutableMutableProxy)
+    await data_proxy.__aexit__(None, None, None)
+    with pytest.raises(ImmutableStateError):
+        data_proxy["a"].append(3)
+    with pytest.raises(ImmutableStateError):
+        items_proxy.append(3)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        assert isinstance(state, MutableProxyState)
+        state.data["a"].append(2)
+
+    async with data_proxy as mutable_data:
+        assert mutable_data is data_proxy
+        with pytest.raises(RuntimeError, match="already in an async context"):
+            async with data_proxy:
+                pass
+        data_proxy["a"].append(3)
+        mutable_data["b"].append(4)
+
+    async with items_proxy as mutable_items:
+        assert mutable_items is items_proxy
+        mutable_items.append(5)
+        assert items_proxy.__wrapped__ == [1, 2, 3, 5]
+
+    with pytest.raises(ImmutableStateError):
+        data_proxy["a"].append(6)
+    with pytest.raises(ImmutableStateError):
+        items_proxy.append(6)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        assert isinstance(state, MutableProxyState)
+        assert state.data["a"] == [1, 2, 3, 5]
+        assert state.data["b"] == [2, 4]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_dict_method_paths(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Dict method proxies refresh to the returned item, not the parent dict."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        existing_proxy = state_proxy.data.get("a")
+        default_proxy = state_proxy.data.get("missing", {"fallback": 4})
+
+    async with state_proxy:
+        new_proxy = state_proxy.data.setdefault("c", {"z": 3})
+
+    assert isinstance(existing_proxy, ImmutableMutableProxy)
+    assert isinstance(new_proxy, ImmutableMutableProxy)
+    assert isinstance(default_proxy, ImmutableMutableProxy)
+
+    async with existing_proxy as mutable_existing:
+        mutable_existing["x"] = 10
+
+    async with new_proxy as mutable_new:
+        mutable_new["z"] = 30
+
+    with pytest.raises(RuntimeError, match="Unable to refresh mutable proxy"):
+        async with default_proxy:
+            pass
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        assert isinstance(state, NestedMutableProxyState)
+        assert state.data == {
+            "a": {"x": 10},
+            "b": {"y": 2},
+            "c": {"z": 30},
+        }
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_rejects_iter_proxy(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Iteration-sourced mutable proxies fail clearly as async context managers."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        [items_proxy] = state_proxy.data
+
+    assert isinstance(items_proxy, ImmutableMutableProxy)
+    with pytest.raises(RuntimeError, match="Unable to refresh mutable proxy"):
+        async with items_proxy:
+            pass
+
+    async with state_proxy:
+        state_proxy.data[0].append(2)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        assert isinstance(state, IterableMutableProxyState)
+        assert state.data == [[1, 2]]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_recovers_from_enter_failure(
+    token: str,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed owning StateProxy enter does not permanently block the proxy."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        data_proxy = state_proxy.data
+
+    original_aenter = StateProxy.__aenter__
+    fail_once = True
+
+    async def fail_first_enter(self: StateProxy) -> StateProxy:
+        nonlocal fail_once
+        if fail_once:
+            fail_once = False
+            raise asyncio.CancelledError
+        return await original_aenter(self)
+
+    monkeypatch.setattr(StateProxy, "__aenter__", fail_first_enter)
+
+    with pytest.raises(asyncio.CancelledError):
+        async with data_proxy:
+            pass
+
+    assert data_proxy._self_actx_state is None
+    async with data_proxy as mutable_data:
+        mutable_data["a"].append(2)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        assert isinstance(state, MutableProxyState)
+        assert state.data["a"] == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_clears_state_when_cleanup_fails(
+    token: str,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed cleanup while entering does not leave the proxy marked mutable."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        [items_proxy] = state_proxy.data
+
+    async def fail_exit(self: StateProxy, *exc_info: Any) -> None:
+        await asyncio.sleep(0)
+        msg = "cleanup failed"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(StateProxy, "__aexit__", fail_exit)
+
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        async with items_proxy:
+            pass
+
+    assert items_proxy._self_actx_state is None
 
 
 def test_override_base_method_skips_event_handler_wrapping():
