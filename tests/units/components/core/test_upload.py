@@ -12,6 +12,8 @@ from reflex_components_core.core._upload import (
     UploadChunkIterator,
     _buffered_upload_args,
     _decode_event_args,
+    _sanitize_upload_filename,
+    _upload_file_from_starlette,
     _UploadChunkMultipartParser,
 )
 from reflex_components_core.core.upload import (
@@ -333,8 +335,46 @@ def test_buffered_upload_args_file_rejected():
     assert exc_info.value.status_code == 400
 
 
+@pytest.mark.parametrize(
+    ("filename", "expected"),
+    [
+        ("plain.txt", "plain.txt"),
+        ("../secret.txt", "secret.txt"),
+        ("nested/path/report.csv", "nested/path/report.csv"),
+        (r"..\secret.txt", "secret.txt"),
+        (r"C:\Users\name\report.csv", "report.csv"),
+    ],
+)
+def test_upload_filename_sanitization_drops_path_segments(filename: str, expected: str):
+    """Unsafe path segments are removed from uploaded filenames."""
+    assert _sanitize_upload_filename(filename) == expected
+
+
+def test_upload_filename_sanitization_preserves_relative_directory():
+    """Directory uploads retain safe relative path segments."""
+    assert _sanitize_upload_filename("photos/2026/image.png") == (
+        "photos/2026/image.png"
+    )
+
+
+def test_buffered_upload_file_path_preserves_relative_directory():
+    """Buffered uploads expose safe relative directory paths."""
+    upload = StarletteUploadFile(
+        file=io.BytesIO(b"data"), filename="photos/2026/image.png"
+    )
+    reflex_upload = _upload_file_from_starlette(upload)
+
+    assert reflex_upload.path is not None
+    assert str(reflex_upload.path).replace("\\", "/") == "photos/2026/image.png"
+    assert reflex_upload.name == "image.png"
+
+
 def _multipart_body(
-    boundary: str, *, args: str | None = None, file_first: bool = False
+    boundary: str,
+    *,
+    args: str | None = None,
+    file_first: bool = False,
+    filename: str = "a.txt",
 ) -> bytes:
     """Build a multipart upload body, optionally with a bound-args field.
 
@@ -342,6 +382,7 @@ def _multipart_body(
         boundary: The multipart boundary token.
         args: The raw bound-args field value, or ``None`` to omit it.
         file_first: Place the file part before the args field (contract violation).
+        filename: The raw multipart filename.
 
     Returns:
         The encoded multipart body.
@@ -355,7 +396,7 @@ def _multipart_body(
     )
     file_part = (
         f"--{boundary}\r\n"
-        'Content-Disposition: form-data; name="files"; filename="a.txt"\r\n'
+        f'Content-Disposition: form-data; name="files"; filename="{filename}"\r\n'
         "Content-Type: text/plain\r\n\r\n"
         "hello\r\n"
     )
@@ -365,7 +406,7 @@ def _multipart_body(
 
 async def _run_chunk_parser(
     body: bytes, boundary: str, *, charset: str | None = None
-) -> tuple[str | None, list[bytes]]:
+) -> tuple[str | None, list[bytes], list[str]]:
     """Drive the streaming chunk parser over a multipart body.
 
     Args:
@@ -374,7 +415,7 @@ async def _run_chunk_parser(
         charset: Optional charset to advertise in the request Content-Type.
 
     Returns:
-        The raw args field passed to dispatch and the file chunk payloads.
+        The raw args field passed to dispatch, file chunk payloads, and chunk filenames.
     """
 
     async def _stream():
@@ -402,13 +443,17 @@ async def _run_chunk_parser(
     )
     await parser.parse()
     await chunk_iter.finish()
-    chunks = [chunk.data async for chunk in chunk_iter]
-    return await args_received.get(), chunks
+    chunks = [chunk async for chunk in chunk_iter]
+    return (
+        await args_received.get(),
+        [chunk.data for chunk in chunks],
+        [chunk.filename for chunk in chunks],
+    )
 
 
 async def test_chunk_parser_captures_bound_args_before_file():
     """The streaming parser captures the leading args field and emits the file."""
-    raw, chunks = await _run_chunk_parser(
+    raw, chunks, _ = await _run_chunk_parser(
         _multipart_body("BOUNDARY", args='{"field": "value"}'), "BOUNDARY"
     )
     assert _decode_event_args(raw) == {"field": "value"}
@@ -417,14 +462,14 @@ async def test_chunk_parser_captures_bound_args_before_file():
 
 async def test_chunk_parser_without_args_dispatches_empty():
     """A streaming upload with no args field still dispatches (with empty args)."""
-    raw, chunks = await _run_chunk_parser(_multipart_body("BOUNDARY"), "BOUNDARY")
+    raw, chunks, _ = await _run_chunk_parser(_multipart_body("BOUNDARY"), "BOUNDARY")
     assert _decode_event_args(raw) == {}
     assert b"".join(chunks) == b"hello"
 
 
 async def test_chunk_parser_bogus_charset_does_not_crash():
     """A bogus request charset must fall back, not raise LookupError -> 500."""
-    raw, chunks = await _run_chunk_parser(
+    raw, chunks, _ = await _run_chunk_parser(
         _multipart_body("BOUNDARY", args='{"field": "value"}'),
         "BOUNDARY",
         charset="bogus-cs",
@@ -438,6 +483,14 @@ async def test_chunk_parser_args_after_file_rejected():
     body = _multipart_body("BOUNDARY", args='{"field": "value"}', file_first=True)
     with pytest.raises(MultiPartException):
         await _run_chunk_parser(body, "BOUNDARY")
+
+
+async def test_chunk_parser_preserves_relative_directory_filename():
+    """Streaming uploads retain safe relative directory paths."""
+    _, _, filenames = await _run_chunk_parser(
+        _multipart_body("BOUNDARY", filename="photos/2026/image.png"), "BOUNDARY"
+    )
+    assert filenames == ["photos/2026/image.png"]
 
 
 async def test_chunk_parser_args_as_file_rejected():
