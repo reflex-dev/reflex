@@ -146,8 +146,8 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs'.
-    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+    # Split the path into non-empty segments.
+    segments = [segment for segment in path.split("/") if segment]
 
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
