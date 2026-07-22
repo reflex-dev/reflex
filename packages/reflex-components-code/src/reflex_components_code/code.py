@@ -409,7 +409,6 @@ class CodeBlock(Component, MarkdownComponentMap):
     custom_style: dict[str, str | Var | Color] = field(
         doc="A custom style for the code block.",
         default_factory=dict,
-        is_javascript_property=False,
     )
 
     code_tag_props: Var[dict[str, str | dict[str, str]]] = field(
@@ -458,6 +457,25 @@ class CodeBlock(Component, MarkdownComponentMap):
                 light=Theme.one_light,
                 dark=Theme.one_dark,
             )
+
+        if props.get("wrap_long_lines") is True:
+            code_tag_props = props.get("code_tag_props")
+            if code_tag_props is None:
+                props["code_tag_props"] = {"style": {"whiteSpace": "pre-wrap"}}
+            elif isinstance(code_tag_props, dict):
+                code_tag_props = code_tag_props.copy()
+                code_tag_style = code_tag_props.get("style")
+                if code_tag_style is None:
+                    code_tag_props["style"] = {"whiteSpace": "pre-wrap"}
+                elif (
+                    isinstance(code_tag_style, dict)
+                    and "whiteSpace" not in code_tag_style
+                ):
+                    code_tag_props["style"] = {
+                        "whiteSpace": "pre-wrap",
+                        **code_tag_style,
+                    }
+                props["code_tag_props"] = code_tag_props
 
         if can_copy:
             code = children[0]
