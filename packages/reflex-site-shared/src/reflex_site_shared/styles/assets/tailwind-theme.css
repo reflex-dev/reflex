@@ -1152,6 +1152,9 @@
     --shadow-card-xs-no-left: var(--shadow-card-xs-no-left-adaptive);
     --shadow-card-small: var(--shadow-card-small-adaptive);
     --shadow-card-dark: 0 0 0 1px var(--secondary-4);
+    --spacing-gutter: clamp(1.5rem, 0.5rem + 5.2vw, 6rem);
+    --text-caption: 0.75rem;
+    --text-caption--line-height: 1rem;
     --text-xs: 0.8125rem;
     --text-xs--line-height: 1.25rem;
     --text-sm: 0.875rem;
@@ -1669,6 +1672,15 @@
 }
 
 @layer utilities {
+    .rule-dashed-b {
+        background-image: repeating-linear-gradient(to right,
+                var(--color-secondary-8) 0 1px,
+                transparent 1px 4px);
+        background-repeat: no-repeat;
+        background-size: 100% 1px;
+        background-position: left bottom;
+    }
+
     .font-instrument-sans {
         font-family: var(--font-instrument-sans);
     }

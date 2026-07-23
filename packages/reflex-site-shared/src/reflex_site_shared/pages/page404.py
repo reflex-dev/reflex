@@ -5,7 +5,12 @@ from reflex_site_shared.components.blocks.flexdown import markdown_with_shiki
 from reflex_site_shared.templates.webpage import webpage
 
 
-@webpage(path="/404", title="Page Not Found · Reflex.dev", add_as_page=False)
+@webpage(
+    path="/404",
+    title="Page Not Found · Reflex.dev",
+    add_as_page=False,
+    show_banner=False,
+)
 def page404():
     """Page404.
 
