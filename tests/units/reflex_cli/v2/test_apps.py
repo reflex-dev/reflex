@@ -10,6 +10,7 @@ from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import GetAppError
+from reflex_cli.v2.apps import apps_cli
 from reflex_cli.v2.deployments import hosting_cli
 from typer.main import Typer, get_command
 
@@ -1518,3 +1519,110 @@ def test_scale_correct_post_request_config(
         scale_params=mock_scale_params.return_value,
         client=mock_authenticated_client,
     )
+
+
+# The rollback/describe tests invoke the `apps` group directly rather than
+# through `hosting_cli` so they don't depend on the reflex-version gate on the
+# top-level group callback.
+
+
+def test_app_rollback_success(mocker: MockFixture):
+    """A confirmed rollback calls the API with the resolved app + deployment."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mock_rollback = mocker.patch(
+        "reflex_cli.utils.hosting.rollback_deployment", return_value=None
+    )
+
+    result = runner.invoke(
+        apps_cli,
+        ["rollback", "dep-1", "--app-id", "app-1", "--no-interactive"],
+    )
+
+    assert result.exit_code == 0, result.output
+    mock_rollback.assert_called_once_with(
+        app_id="app-1", deployment_id="dep-1", client=mock_client
+    )
+
+
+def test_app_rollback_error_exits_nonzero(mocker: MockFixture):
+    """An API error string surfaces and the command exits non-zero."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.rollback_deployment",
+        return_value="rollback failed: no image",
+    )
+
+    result = runner.invoke(
+        apps_cli,
+        ["rollback", "dep-1", "--app-id", "app-1", "--no-interactive"],
+    )
+
+    assert result.exit_code == 1
+
+
+def test_app_rollback_resolves_app_name(mocker: MockFixture):
+    """--app-name is resolved to an app id before rolling back."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value={"id": "resolved-id"}
+    )
+    mock_rollback = mocker.patch(
+        "reflex_cli.utils.hosting.rollback_deployment", return_value=None
+    )
+
+    result = runner.invoke(
+        apps_cli,
+        ["rollback", "dep-1", "--app-name", "myapp", "--no-interactive"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert mock_rollback.call_args.kwargs["app_id"] == "resolved-id"
+
+
+def test_app_describe_sets_note(mocker: MockFixture):
+    """Describe forwards the note to the description endpoint."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mock_desc = mocker.patch(
+        "reflex_cli.utils.hosting.update_deployment_description", return_value=None
+    )
+
+    result = runner.invoke(
+        apps_cli,
+        ["describe", "dep-1", "--description", "hotfix", "--app-id", "app-1"],
+    )
+
+    assert result.exit_code == 0, result.output
+    mock_desc.assert_called_once_with(
+        app_id="app-1", deployment_id="dep-1", description="hotfix", client=mock_client
+    )
+
+
+def test_app_describe_error_exits_nonzero(mocker: MockFixture):
+    """A failed description update exits non-zero."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.update_deployment_description",
+        return_value="update description failed: no deployment",
+    )
+
+    result = runner.invoke(
+        apps_cli,
+        ["describe", "dep-1", "--description", "x", "--app-id", "app-1"],
+    )
+
+    assert result.exit_code == 1

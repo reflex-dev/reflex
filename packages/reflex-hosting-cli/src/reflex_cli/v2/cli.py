@@ -74,6 +74,89 @@ def logout(
     console.success("Successfully logged out.")
 
 
+def _resolve_deploy_provider(
+    app: dict[str, Any],
+    provider_arg: str | None,
+    interactive: bool,
+    app_was_created: bool,
+    client: Any,
+) -> str | None:
+    """Resolve and pin the hosting provider for this deploy.
+
+    Decides whether the deploy targets Reflex Cloud or a connected GCP account,
+    prompting interactively when GCP is available and no ``--provider`` was
+    given, then pins the app to the chosen provider (switching, with a teardown
+    warning, when it differs from the app's current provider).
+
+    Args:
+        app: The resolved app dict (must contain "id" and "name").
+        provider_arg: The ``--provider`` value, if the user passed one.
+        interactive: Whether to prompt.
+        app_was_created: Whether the app was just created in this deploy (a
+            switch then has nothing to tear down).
+        client: The authenticated client.
+
+    Returns:
+        The backend provider value in effect ("fly"/"gcp"), or None if left at
+        the app's existing default.
+
+    Raises:
+        Exit: If ``--provider`` is invalid or a required switch fails.
+
+    """
+    from reflex_cli.utils import hosting
+
+    current = app.get("provider")
+
+    if provider_arg is not None:
+        # Explicit --provider always wins; validated by the caller already.
+        target = hosting.normalize_provider(provider_arg)
+    else:
+        gcp_status = hosting.gcp_deploy_available(client)
+        if not gcp_status or not interactive:
+            # No GCP connected, or non-interactive with no explicit choice: keep
+            # whatever the app already targets.
+            return current
+        region = gcp_status.get("region")
+        console.print(
+            "This organization has Google Cloud connected"
+            + (f" (region {region})" if region else "")
+            + "."
+        )
+        default_choice = "gcp" if current == hosting.PROVIDER_GCP else "reflex-cloud"
+        choice = console.ask(
+            "Where would you like to deploy?",
+            choices=["reflex-cloud", "gcp"],
+            default=default_choice,
+        )
+        target = hosting.normalize_provider(choice)
+
+    if target is None or target == (current or hosting.PROVIDER_REFLEX_CLOUD):
+        # Nothing to change; the app already targets this provider.
+        return target or current
+
+    if not app_was_created and current is not None:
+        console.warn(
+            f"Switching '{app['name']}' from {hosting.provider_display_name(current)} "
+            f"to {hosting.provider_display_name(target)} tears down its current "
+            "deployment on the old provider; this deploy brings it back up on the "
+            "new one."
+        )
+        if (
+            interactive
+            and console.ask("Continue?", choices=["y", "n"], default="y") != "y"
+        ):
+            console.info("Deployment cancelled.")
+            raise click.exceptions.Exit(0)
+
+    result = hosting.set_app_provider(app["id"], target, client=client)
+    if isinstance(result, str) and result.startswith("set provider failed"):
+        console.error(result)
+        raise click.exceptions.Exit(1)
+    console.info(f"Deploying to {hosting.provider_display_name(target)}.")
+    return target
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -92,6 +175,8 @@ def deploy(
     env: str | None = None,
     project_name: str | None = None,
     app_id: str | None = None,
+    provider: str | None = None,
+    deployment_description: str | None = None,
     **kwargs,
 ):
     """Deploy the app to the Reflex hosting service.
@@ -113,6 +198,11 @@ def deploy(
         env: The environment to use for deployment.
         project_name: The name of the project.
         app_id: The ID of the app.
+        provider: The hosting provider to deploy to ("reflex-cloud" or "gcp").
+            When omitted and the org has GCP connected, the CLI prompts in
+            interactive mode.
+        deployment_description: An optional changelog note recorded on this
+            deployment and shown in ``reflex cloud apps history``.
         **kwargs: Additional keyword arguments.
 
     Raises:
@@ -152,6 +242,8 @@ def deploy(
             project_id = config.get("project", None)
         if not project_name:
             project_name = config.get("projectname", None)
+        if not provider:
+            provider = config.get("provider", None)
         if not app_id:
             app_id = config.get("appid", None)
             if not isinstance(app_id, (str, type(None))):
@@ -207,11 +299,20 @@ def deploy(
 
     envs = envs or []
 
+    # Validate --provider up front so an obvious typo fails before any work.
+    if provider is not None and hosting.normalize_provider(provider) is None:
+        console.error(f"Unknown provider {provider!r}. Use 'reflex-cloud' or 'gcp'.")
+        raise click.exceptions.Exit(2)
+
     if not app_name and not app_id:
         console.error(
             "Please provide a valid app name or ID for the deployed instance."
         )
         raise click.exceptions.Exit(1)
+
+    # Tracks whether the app is created during this deploy: a provider switch on
+    # a brand-new app has nothing to tear down, so we skip the switch warning.
+    app_was_created = False
     try:
         if app_name and not app_id:
             search_project_id = project_id
@@ -315,6 +416,7 @@ def deploy(
                 project_id=project_id,
                 client=authenticated_client,
             )
+            app_was_created = True
             console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
         else:
             console.error("Please create an app to deploy.")
@@ -326,7 +428,30 @@ def deploy(
             project_id=project_id,
             client=authenticated_client,
         )
+        app_was_created = True
         console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
+
+    # Choose/confirm the hosting provider before reserving the hostname: the
+    # reserved URL is baked into the exported frontend, and a GCP app resolves
+    # to a *.run.app backend URL, so the provider must be pinned first.
+    effective_provider = _resolve_deploy_provider(
+        app=app,
+        provider_arg=provider,
+        interactive=interactive,
+        app_was_created=app_was_created,
+        client=authenticated_client,
+    )
+    if effective_provider == hosting.PROVIDER_GCP:
+        # GCP Cloud Run ignores Reflex Cloud regions/VM types — the region and
+        # sizing come from the org's connected GCP account. Drop them so
+        # validation and the deploy don't send incompatible values.
+        if regions or vmtype:
+            console.info(
+                "Ignoring --region/--vmtype for the Google Cloud target "
+                "(region and sizing come from the connected GCP account)."
+            )
+        regions = None
+        vmtype = None
 
     urls = hosting.get_hostname(
         app_id=app["id"],
@@ -450,6 +575,7 @@ def deploy(
         client=authenticated_client,
         packages=packages,
         strategy=strategy,
+        description=deployment_description,
     )
     if "failed" in result:
         console.error(result)

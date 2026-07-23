@@ -131,6 +131,7 @@ class Config:
     packages: list[str] = dataclasses.field(default_factory=list)
     appid: str | None = dataclasses.field(default=None)
     strategy: str | None = dataclasses.field(default=None)
+    provider: str | None = dataclasses.field(default=None)
     include_db: bool = dataclasses.field(default=False)
 
     _cloud_config_path: Path | None = dataclasses.field(default=None)

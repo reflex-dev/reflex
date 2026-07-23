@@ -1044,3 +1044,78 @@ def test_deploy_empty_project_in_config_is_not_forwarded_to_create_app(
     get_project.assert_not_called()
     create_app.assert_called_once()
     assert create_app.call_args.kwargs.get("project_id") is None
+
+
+def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
+    """--provider gcp on a fly app switches it and returns the new provider."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app, "gcp", interactive=False, app_was_created=True, client=client
+    )
+    assert result == "gcp"
+    mock_set.assert_called_once_with("app-1", "gcp", client=client)
+
+
+def test_resolve_deploy_provider_reflex_cloud_no_switch(mocker: MockFixture):
+    """--provider reflex-cloud on a fly app is a no-op (already Reflex Cloud)."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app, "reflex-cloud", interactive=False, app_was_created=False, client=client
+    )
+    assert result == "fly"
+    mock_set.assert_not_called()
+
+
+def test_resolve_deploy_provider_non_interactive_keeps_current(mocker: MockFixture):
+    """Non-interactive with no --provider keeps the app's provider, no prompt."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.gcp_deploy_available",
+        return_value={"configured": True, "allowed": True},
+    )
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app, None, interactive=False, app_was_created=False, client=client
+    )
+    assert result == "fly"
+    mock_set.assert_not_called()
+
+
+def test_resolve_deploy_provider_switch_failure_exits(mocker: MockFixture):
+    """A rejected provider switch aborts the deploy."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider",
+        return_value="set provider failed: Enterprise required",
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    with pytest.raises(click.exceptions.Exit):
+        cli._resolve_deploy_provider(
+            app, "gcp", interactive=False, app_was_created=True, client=client
+        )
+
+
+def test_resolve_deploy_provider_interactive_prompt_selects_gcp(mocker: MockFixture):
+    """When GCP is available and the user picks it, the app switches to GCP."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.gcp_deploy_available",
+        return_value={"configured": True, "allowed": True, "region": "us-central1"},
+    )
+    mocker.patch("reflex_cli.utils.console.ask", return_value="gcp")
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app, None, interactive=True, app_was_created=True, client=client
+    )
+    assert result == "gcp"
+    mock_set.assert_called_once()

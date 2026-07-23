@@ -12,6 +12,12 @@ The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google
 Self-deploying to GCP Cloud Run is part of the **Enterprise tier** of Reflex Cloud. The control plane will return `403` to non-Enterprise tokens, and the CLI surfaces a clear error pointing at this. Contact [sales@reflex.dev](mailto:sales@reflex.dev) to upgrade.
 ```
 
+```md alert warning
+# Self-service vs. managed GCP deploys
+
+This page covers the **self-service** `reflex cloud deploy --gcp` command, which builds and deploys from your own machine using your local `gcloud`. If you'd rather connect a GCP account to your organization once and deploy with the normal `reflex deploy` command — keeping the managed lifecycle (history, rollback, scaling, logs) — see [Cloud Providers](/docs/hosting/cloud-providers/).
+```
+
 ## Prerequisites
 
 Before running the command, install and authenticate the local tools the deploy script invokes:
