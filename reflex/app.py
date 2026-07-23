@@ -1363,8 +1363,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
             )
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
-            with stateful_pages_marker.open("w") as f:
-                json.dump(list(self._stateful_pages), f)
+            content = json.dumps(list(self._stateful_pages))
+            if (
+                not stateful_pages_marker.exists()
+                or stateful_pages_marker.read_text() != content
+            ):
+                stateful_pages_marker.write_text(content)
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""

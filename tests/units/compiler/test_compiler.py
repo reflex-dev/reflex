@@ -125,6 +125,46 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         )
 
 
+def test_compile_stylesheets_skips_unchanged_copy(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """An unchanged asset stylesheet is not rewritten into .web on recompile.
+
+    Vite watches .web/styles, so a rewrite with identical content still fires
+    an HMR update on every dev reload.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text("button { color: blue }")
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    target = project / constants.Dirs.WEB / "styles" / "style.css"
+    stat_before = target.stat()
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    stat_after = target.stat()
+    assert stat_after.st_mtime_ns == stat_before.st_mtime_ns
+
+    (assets_dir / "style.css").write_text("button { color: red }")
+    compiler.compile_root_stylesheet(["/style.css"])
+    assert target.read_text() == "button { color: red }"
+
+
 def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     """Test that stylesheets compile correctly.
 

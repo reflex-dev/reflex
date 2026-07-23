@@ -207,6 +207,19 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
+    # The compile daemon owns .web regeneration; backend reload workers only
+    # evaluate pages to register state.
+    from reflex_base.environment import environment
+
+    if running_mode.has_frontend() and environment.REFLEX_COMPILE_CACHE.get():
+        from reflex.utils import compile_daemon
+
+        commands.append((
+            compile_daemon.run_compile_daemon,
+            exec.should_prerender_routes(),
+        ))
+        environment.REFLEX_SKIP_COMPILE.set(True)
+
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.

@@ -906,16 +906,9 @@ def multi_docs(
     description: str | None = None,
     source: str | None = None,
 ):
-    components = [
-        component_docs(component_tuple, previews)
-        for component_tuple in component_list[1:]
-    ]
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_doc_exists = os.path.exists(ll_actual_path)
     ll_list = ll_component_list if ll_component_list is not None else component_list
-    ll_components = [
-        component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
-    ]
 
     active_class_name = "font-small bg-secondary-2 p-2 text-secondary-11 rounded-xl shadow-large w-28 cursor-default border border-secondary-4 text-center"
 
@@ -967,6 +960,11 @@ def multi_docs(
 
     @docpage(set_path=path, t=title, description=description)
     def out():
+        # Build prop docs during page eval so imports stay cheap.
+        components = [
+            component_docs(component_tuple, previews)
+            for component_tuple in component_list[1:]
+        ]
         toc = get_docgen_toc(actual_path)
         # Reuse the source already read by the caller to avoid a second read.
         doc_content = (
@@ -1012,6 +1010,9 @@ def multi_docs(
         set_path=path + "low", t=title + " (Low Level)", description=ll_description
     )
     def ll():
+        ll_components = [
+            component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
+        ]
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
