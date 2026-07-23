@@ -35,10 +35,14 @@ if hasattr(asyncio, "QueueShutDown"):
     class QueueShutDown(asyncio.QueueShutDown):  # pyright: ignore[reportRedeclaration]
         """Exception raised when trying to put an item into a shut down queue."""
 
+    _QUEUE_SHUTDOWN_ERRORS: tuple[type[BaseException], ...] = (asyncio.QueueShutDown,)
+
 else:
 
     class QueueShutDown(Exception):  # noqa: N818
         """Exception raised when trying to put an item into a shut down queue."""
+
+    _QUEUE_SHUTDOWN_ERRORS = (QueueShutDown,)
 
 
 _StreamItemT = TypeVar("_StreamItemT")
@@ -299,7 +303,11 @@ class EventProcessor:
             self._queue_task.cancel()
             try:
                 await self._queue_task
-            except (asyncio.CancelledError, QueueShutDown, RuntimeError):
+            except (
+                asyncio.CancelledError,
+                RuntimeError,
+                *_QUEUE_SHUTDOWN_ERRORS,
+            ):
                 pass
             except Exception as ex:
                 telemetry.send_error(ex, context="backend")
@@ -642,7 +650,7 @@ class EventProcessor:
         if (queue := self._queue) is None:
             msg = "Event processor is not running, call .start(...) first."
             raise RuntimeError(msg)
-        with contextlib.suppress(QueueShutDown):
+        with contextlib.suppress(*_QUEUE_SHUTDOWN_ERRORS):
             while True:
                 entry = await queue.get()
                 if (
