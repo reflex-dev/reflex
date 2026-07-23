@@ -68,6 +68,49 @@ def index():
     )
 ```
 
+## Using with `rx.foreach`
+
+To render a memoized component for each item of a list Var, wrap the call in a
+lambda and pass the props by keyword. Also pass a `key` prop that uniquely
+identifies each item — React uses it to track items across re-renders. For the
+`key` to reach the rendered element, declare an `rx.RestProp` parameter and
+spread it onto the returned component; `key` flows through the `...rest` spread
+and React consumes it. Do **not** declare `key` itself in the memo's signature.
+
+```python
+from typing import TypedDict
+
+
+class Task(TypedDict):
+    id: str
+    name: str
+
+
+class TaskState(rx.State):
+    tasks: list[Task] = [
+        {"id": "1", "name": "Write docs"},
+        {"id": "2", "name": "Review PR"},
+    ]
+
+
+@rx.memo
+def task_card(rest: rx.RestProp, *, task: rx.Var[Task]) -> rx.Component:
+    return rx.card(rx.text(task["name"]), rest)
+
+
+def index():
+    return rx.vstack(
+        rx.foreach(
+            TaskState.tasks,
+            lambda task: task_card(task=task, key=task["id"]),
+        ),
+    )
+```
+
+Inside the memo body, `task` is a `Var`, not a plain dict: index into it with
+`task["name"]` or use it in f-strings, but do not iterate over it or call
+Python dict methods like `.keys()` — only Var operations are available.
+
 ## Forwarding Props with `rx.RestProp`
 
 Use `rx.RestProp` to accept and forward arbitrary props (think `...rest` in JSX). Useful for thin wrappers that re-style a primitive without redeclaring every prop.
