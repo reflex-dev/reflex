@@ -1993,6 +1993,11 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
             if "completed successfully" in status:
                 console.success(status)
                 break
+            if "AwaitingApproval" in status:
+                console.success(
+                    "build submitted for approval; it will deploy automatically once an approver approves it."
+                )
+                break
             if "build error" in status:
                 console.warn(status)
                 console.warn(
@@ -2008,10 +2013,9 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
             if "bad response" in status:
                 console.warn(status)
                 return True
-            if status == current_status:
-                continue
-            current_status = status
-            console.info(status)
+            if status != current_status:
+                current_status = status
+                console.info(status)
             time.sleep(0.5)
     return True
 
