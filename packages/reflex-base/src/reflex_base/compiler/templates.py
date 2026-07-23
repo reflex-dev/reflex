@@ -610,11 +610,37 @@ function fullReload() {{
   }};
 }}
 
+// React Router queues manifest updates for lazy routes even when their modules
+// are not loaded. Its HMR runtime throws on those entries before clearing the
+// queue, which blocks every later update until the browser is reloaded.
+function patchReactRouterHmrRuntime() {{
+  const unloadedRouteThrow = /if\s*\(!imported\)\s*\{{\s*throw\s+Error\(\s*`\[react-router:hmr\] No module update found for route [^`]+`,\s*\);\s*\}}/;
+  return {{
+    name: "reflex-patch-react-router-hmr-runtime",
+    apply: "serve",
+    enforce: "post",
+    transform(code, id) {{
+      if (id !== "\0virtual:react-router/hmr-runtime") return;
+      if (!unloadedRouteThrow.test(code)) {{
+        this.warn(
+          "react-router hmr runtime changed; unloaded-route HMR patch skipped",
+        );
+        return;
+      }}
+      return {{
+        code: code.replace(unloadedRouteThrow, "if (!imported) continue;"),
+        map: null,
+      }};
+    }},
+  }};
+}}
+
 export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
+    patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
