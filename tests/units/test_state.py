@@ -46,7 +46,7 @@ from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.istate.proxy import StateProxy
 from reflex.state import (
     BaseState,
@@ -4430,6 +4430,45 @@ async def test_state_manager_disk_close_resets_write_queue_task():
     await state_manager.close()
 
     assert state_manager._write_queue_task is None
+
+
+@pytest.mark.asyncio
+async def test_state_manager_disk_debounced_set_state_updates_non_base_state_cache(
+    tmp_path, monkeypatch
+):
+    """Test that debounced non-BaseState writes are visible before disk flush."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=60)
+    token = StateToken(ident="client", cls=int)
+
+    await state_manager.set_state(token, 1)
+
+    assert await state_manager.get_state(token) == 1
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_state(
+    tmp_path, monkeypatch
+):
+    """Test that debounced non-BaseState writes flush the latest queued value."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=60)
+    token = StateToken(ident="client", cls=int)
+
+    await state_manager.set_state(token, 1)
+    first_timestamp = state_manager._write_queue[token].timestamp
+    await state_manager.set_state(token, 2)
+
+    assert state_manager._write_queue[token].timestamp == first_timestamp
+
+    await state_manager.close()
+
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    assert await fresh_state_manager.get_state(token) == 2
+
+    await fresh_state_manager.close()
 
 
 class Obj(Base):

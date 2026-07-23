@@ -332,14 +332,17 @@ class StateManagerDisk(StateManager):
             context: The state modification context.
         """
         token = self._coerce_token(token)
+        is_base_state_token = isinstance(token, BaseStateToken)
+        if not is_base_state_token:
+            self.states[token.cache_key] = state
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
-            if token not in self._write_queue:
-                self._write_queue[token] = QueueItem(
-                    token=token,
-                    state=state,
-                    timestamp=time.time(),
-                )
+            queued_item = self._write_queue.get(token)
+            self._write_queue[token] = QueueItem[TOKEN_TYPE](
+                token=token,
+                state=state,
+                timestamp=queued_item.timestamp if queued_item else time.time(),
+            )
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
