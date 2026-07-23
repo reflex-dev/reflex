@@ -126,6 +126,24 @@ def markers_example():
     )
 ```
 
+#### Custom Marker Icons
+
+To customize a marker's icon, pass a plain dictionary of [Leaflet icon options](https://leafletjs.com/reference.html#icon) to the marker's `icon` prop. There is no `rxe.map.icon` component or `icon` helper in the types module — the prop takes a dict directly:
+
+```python
+rxe.map.marker(
+    position=rxe.map.latlng(lat=51.505, lng=-0.09),
+    icon={
+        "iconUrl": "https://example.com/custom-marker.png",
+        "iconSize": [25, 41],
+        "iconAnchor": [12, 41],
+        "popupAnchor": [1, -34],
+        "shadowUrl": "https://example.com/marker-shadow.png",
+        "shadowSize": [41, 41],
+    },
+)
+```
+
 ### Vector Layers
 
 Draw shapes and areas on the map:
@@ -223,6 +241,17 @@ def interactive_example():
     )
 ```
 
+Zoom and move events fire rapidly while the user interacts with the map. Debounce them to avoid flooding the backend with state updates:
+
+```python
+rxe.map(
+    ...,
+    on_zoom=InteractiveMapState.handle_zoom_change.debounce(100),
+)
+```
+
+When storing the zoom level in state, annotate it as `float` (e.g. `zoom: float = 13.0`) — Leaflet reports fractional zoom values.
+
 ### Map Controls
 
 Add UI controls for enhanced user interaction:
@@ -273,6 +302,20 @@ To access the Map API, you need to get a reference to your map using its ID:
 
 ```python
 map_api = rxe.map.api("my-map-id")
+```
+
+`rxe.map.api()` is a function that returns an API object — it is not a class. There is no `rxe.map.API` and no importable `MapApi` type to use in annotations. Call it inline wherever you need it (in a component function or inside an event handler); never store the returned object in a state var, which fails with a `TypeError` about un-annotated parameters.
+
+API methods accept **positional arguments only**, with `callback` as the one keyword exception:
+
+```python
+# Correct - positional arguments
+map_api.fly_to(coordinates, 15.0)
+map_api.locate(rxe.map.locate_options(set_view=True))
+map_api.fly_to(coordinates, 15.0, callback=my_callback)
+
+# Wrong - keyword arguments raise TypeError
+map_api.fly_to(coordinates, zoom=15.0)
 ```
 
 ### Interactive Demo

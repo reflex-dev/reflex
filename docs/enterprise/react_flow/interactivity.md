@@ -58,6 +58,7 @@ def set_edges(self, edges: list[Edge]):
 
 - set_edges updates edges when they are modified or deleted.
 
+Note that these are plain setters — they receive the already-updated list. The change-application logic lives in the component wiring, shown next.
 
 ## Render the Interactive Flow
 
@@ -78,6 +79,9 @@ def interactive_flow():
             on_edges_change=lambda edge_changes: FlowState.set_edges(
                 rxe.flow.util.apply_edge_changes(FlowState.edges, edge_changes)
             ),
+            on_connect=lambda connection: FlowState.set_edges(
+                rxe.flow.util.add_edge(connection, FlowState.edges)
+            ),
             fit_view=True,
             attribution_position="bottom-right",
         ),
@@ -85,3 +89,30 @@ def interactive_flow():
         width="100vw",
     )
 ```
+
+- `on_nodes_change` fires when nodes are dragged, selected, resized, or removed.
+- `on_edges_change` fires when edges are selected or removed.
+- `on_connect` fires when the user drags a connection between two handles; `rxe.flow.util.add_edge` builds the new edge list from the connection.
+
+Make sure to set the `height` and `width` of the container around the flow — the flow fills its parent, so without explicit dimensions it will not be visible.
+
+## Controlled vs. Uncontrolled Flows
+
+Passing `nodes` and `edges` makes the flow **controlled**: your state is the source of truth, and the canvas renders exactly what the state contains. A controlled flow must wire `on_nodes_change` and `on_edges_change` as shown above, otherwise user interactions (dragging, selecting, deleting) are discarded.
+
+Passing only `default_nodes` and `default_edges` makes the flow **uncontrolled**: the component manages changes internally, but your state never learns about them.
+
+## Where Changes Get Applied
+
+`rxe.flow.util.apply_node_changes` and `rxe.flow.util.apply_edge_changes` must be used inside of component code — in the lambda wired to `on_nodes_change` / `on_edges_change` — and never inside of state code. They evaluate on the client and produce the updated list, which is then passed to a plain setter event handler:
+
+```python
+rxe.flow(
+    ...,
+    on_nodes_change=lambda changes: FlowState.set_nodes(
+        rxe.flow.util.apply_node_changes(FlowState.nodes, changes)
+    ),
+)
+```
+
+Do not call these utilities from within an `@rx.event` handler; the state side should only receive and store the resulting list.
