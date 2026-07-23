@@ -24,6 +24,7 @@ from reflex_base.components.memo import (
     MemoDefinition,
     MemoFunctionDefinition,
     create_component_memo,
+    materialize_registered_memo_bodies,
     reset_memo_component_classes,
 )
 from reflex_base.config import get_config
@@ -1279,6 +1280,11 @@ def compile_app(
         ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
 
+    # Settle memo bodies before snapshotting: a var-returning memo's lazy body
+    # may reference another `@rx.memo` that an AppHarness reload cleared from
+    # `MEMOS`, re-registering it only when read. Doing so after the snapshot
+    # would omit the dependency's own module.
+    materialize_registered_memo_bodies()
     memo_component_files, memo_components_imports = compile_memo_components(
         (
             *MEMOS.values(),

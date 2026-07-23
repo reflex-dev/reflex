@@ -238,32 +238,43 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
-        # Reset the global memo registry so previous AppHarness apps do not
-        # leak compiled component definitions into the next test app.
-        MEMOS.clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
-        if self.app_source is not None:
-            app_globals = self._get_globals_from_signature(self.app_source)
-            if isinstance(self.app_source, functools.partial):
-                self.app_source = self.app_source.func
-            # get the source from a function or module object
-            source_code = "\n".join([
-                "\n".join([
-                    self.get_app_global_source(k, v) for k, v in app_globals.items()
-                ]),
-                self._get_source_from_app_source(self.app_source),
-            ])
-            get_config().loglevel = reflex.constants.LogLevel.INFO
-            with chdir(self.app_path):
-                reflex.reflex._init(
-                    name=self.app_name,
-                    template=reflex.constants.Templates.DEFAULT,
-                )
-                self.app_module_path.write_text(source_code)
-        else:
-            # Just initialize the web folder.
+
+        if self.app_source is None:
+            # Real, pre-existing app: import once and use it as-is. Reloading an
+            # already-imported app re-runs only the top module, dropping every
+            # submodule page/state/@rx.memo, so use reload=False (no reset).
             with chdir(self.app_path):
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
+                os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+                os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
+                get_config(reload=True)
+                self.app_instance, self.app_module = (
+                    reflex.utils.prerequisites.get_and_validate_app(reload=False)
+                )
+                self.app_asgi = self.app_instance()
+            return
+
+        # Generated app: reset the global memo registry so a previous AppHarness
+        # app does not leak compiled component definitions into the next test app.
+        MEMOS.clear()
+        app_globals = self._get_globals_from_signature(self.app_source)
+        if isinstance(self.app_source, functools.partial):
+            self.app_source = self.app_source.func
+        # get the source from a function or module object
+        source_code = "\n".join([
+            "\n".join([
+                self.get_app_global_source(k, v) for k, v in app_globals.items()
+            ]),
+            self._get_source_from_app_source(self.app_source),
+        ])
+        get_config().loglevel = reflex.constants.LogLevel.INFO
+        with chdir(self.app_path):
+            reflex.reflex._init(
+                name=self.app_name,
+                template=reflex.constants.Templates.DEFAULT,
+            )
+            self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
             # Use a new registration context for a new app.
             if AppHarness._base_registration_context is None:
@@ -274,19 +285,12 @@ class AppHarness:
             new_registration_context = deepcopy(AppHarness._base_registration_context)
             self._registry_token = RegistrationContext.set(new_registration_context)
             # ensure config and app are reloaded when testing different app
-            config = get_config(reload=True)
+            get_config(reload=True)
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we compile generated apps, and reload pre-existing app modules
-            # that were already imported so they can re-register memo definitions.
-            should_reload_app = (
-                self.app_source is not None or config.module in sys.modules
-            )
             self.app_instance, self.app_module = (
-                reflex.utils.prerequisites.get_and_validate_app(
-                    reload=should_reload_app
-                )
+                reflex.utils.prerequisites.get_and_validate_app(reload=True)
             )
             self.app_asgi = self.app_instance()
 
