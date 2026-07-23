@@ -23,7 +23,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format, memo_paths
@@ -3868,3 +3868,45 @@ def test_call_ignores_stale_marker_without_dev_backend_reload(
 
     compile_mock.assert_called_once()
     assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+
+
+def test_add_page_invalidates_router_cache():
+    """Adding a page refreshes a router built from the old route set."""
+    app = App()
+    assert app.router("/late") is None
+
+    app.add_page(lambda: rx.el.div(), route="/late")
+
+    assert app.router("/late") == "late"
+
+
+def test_compile_registers_plugin_routes(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Compilation includes pages contributed by configured plugins."""
+
+    class RoutePlugin(Plugin):
+        """Plugin contributing one page for the compile test."""
+
+        def register_route(self, *, add_page, **_):
+            """Contribute the test page through the staged capability.
+
+            Args:
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
+            """
+            add_page(lambda: rx.el.div("plugin page"), route="/from-plugin")
+
+    plugin = RoutePlugin()
+    conf = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+
+    app._compile(dry_run=True, use_rich=False)
+
+    assert "from-plugin" in app._unevaluated_pages
+    assert "from-plugin" in app._pages
+    assert app._plugin_routes_registered
