@@ -5205,6 +5205,90 @@ def test_descriptor_overrides_inherited_descriptor():
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
 
 
+class OnLoadCancelState(State):
+    """A test state whose on_load handler blocks until cancelled."""
+
+    # Signalling gates, populated per-test with loop-local events.
+    _gates: ClassVar[dict[str, asyncio.Event]] = {}
+
+    @rx.event
+    async def slow_handler(self):
+        """Signal start, then block; signal again if cancelled."""
+        type(self)._gates["started"].set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            type(self)._gates["cancelled"].set()
+            raise
+
+
+async def test_on_load_internal_supersedes_previous_navigation(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A newer navigation cancels the previous unfinished on_load chain (#6593).
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+    """
+    OnLoadInternalState._app_ref = None
+    assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
+    assert not State.event_handlers["hydrate"].supersedes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=OnLoadCancelState.slow_handler)
+    app._compile_page("index")
+
+    OnLoadCancelState._gates = {
+        "started": asyncio.Event(),
+        "cancelled": asyncio.Event(),
+    }
+    on_load_internal_name = format.format_event_handler(
+        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+    )
+
+    async with mock_base_state_event_processor as processor:
+        stale = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/",
+                    RouteVar.ORIGIN: "/",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["started"].wait(), timeout=5)
+
+        # Navigate to a page without on_load events (fast path).
+        current = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/other",
+                    RouteVar.ORIGIN: "/other",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["cancelled"].wait(), timeout=5)
+        # The fresh navigation completes without waiting behind the stale chain.
+        await asyncio.wait_for(current.wait_all(), timeout=5)
+        assert stale.done()
+
+
 async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
     """_resolve_delta awaits coroutine values and leaves plain values untouched."""
     from reflex.state import _resolve_delta

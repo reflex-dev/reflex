@@ -2444,6 +2444,9 @@ class OnLoadInternalState(State):
     # Cannot properly annotate this as `App` due to circular import issues.
     _app_ref: ClassVar[Any] = None
 
+    # A newer navigation supersedes the previous unfinished on_load chain for
+    # the same client token, cancelling its stale work (#6593).
+    @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 

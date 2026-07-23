@@ -120,6 +120,11 @@ class EventProcessor:
     _futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
+    # Latest-wins tracking for superseding handlers: (event name, token) -> the
+    # currently active chain root future.
+    _superseded: dict[tuple[str, str], EventFuture] = dataclasses.field(
+        default_factory=dict, init=False
+    )
     _token_queues: dict[
         str,
         collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
@@ -311,6 +316,7 @@ class EventProcessor:
             self._queue_task = None
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
+        self._superseded.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -372,6 +378,8 @@ class EventProcessor:
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
+            If the event was chained from an already-cancelled chain, the
+            returned future is already cancelled and the event is dropped.
         """
         if ev_ctx is None:
             try:
@@ -395,7 +403,14 @@ class EventProcessor:
         tracked.add_done_callback(self._on_future_done)
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
+            if parent_future.cancelled():
+                # The chain this event belongs to was cancelled, so cancel the
+                # tracker since this event will never enter the queue.
+                tracked.cancel()
+                return tracked
             parent_future.add_child(tracked)
+        if parent_future is None:
+            self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -491,13 +506,52 @@ class EventProcessor:
         """
         if not future.done():
             return
+        if future.cancelled() and future.txid in self._tasks:
+            # The cancelled handler task is still unwinding; keep the future so
+            # late-chained events can find their cancelled parent. Failed
+            # futures are not retained, so a backend exception handler task
+            # reusing the txid can chain recovery events normally.
+            return
         # Not checking future.all_done() to avoid waiting for grandchildren here.
         if not all(c.done() for c in future.children):
             return
         parent = future.parent
         self._futures.pop(future.txid, None)
+        if (
+            (key := future.supersede_key) is not None
+            and self._superseded.get(key) is future
+            and future.all_done()
+        ):
+            del self._superseded[key]
         if parent is not None and parent.txid:
             self._try_clean_future(parent)
+
+    def _supersede_previous(
+        self, *, token: str, event: Event, tracked: EventFuture
+    ) -> None:
+        """Cancel the previous unfinished chain of a superseding event handler.
+
+        Root handlers marked with ``supersedes`` (e.g. ``on_load_internal``)
+        use latest-wins semantics: enqueuing a new invocation cancels the
+        previous unfinished event chain for the same handler and client token.
+
+        Args:
+            token: The client token associated with the event.
+            event: The event being enqueued.
+            tracked: The future of the event being enqueued.
+        """
+        try:
+            registered = RegistrationContext.get().event_handlers.get(event.name)
+        except LookupError:
+            return
+        if registered is None or not registered.handler.supersedes:
+            return
+        key = (event.name, token)
+        previous = self._superseded.get(key)
+        if previous is not None and not previous.all_done():
+            previous.cancel()
+        self._superseded[key] = tracked
+        tracked.supersede_key = key
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
@@ -625,10 +679,12 @@ class EventProcessor:
         if not token_queue:
             return
         entry, registered_handler = token_queue[0]
-        # Skip cancelled futures.
+        # Skip cancelled futures. Before a task exists, the only way a future
+        # can be done is cancellation, and its _try_clean_future done callback
+        # removes it from _futures, so a missing future also means the entry
+        # was cancelled.
         future = self._futures.get(entry.ctx.txid)
-        if future is not None and future.cancelled():
-            self._try_clean_future(future)
+        if future is None or future.cancelled():
             token_queue.popleft()
             if token_queue:
                 self._dispatch_next_for_token(token)
@@ -645,10 +701,10 @@ class EventProcessor:
         with contextlib.suppress(QueueShutDown):
             while True:
                 entry = await queue.get()
-                if (
-                    future := self._futures.get(entry.ctx.txid)
-                ) is not None and future.cancelled():
-                    self._try_clean_future(future)
+                # A missing future means the entry was cancelled and already
+                # cleaned up (see _dispatch_next_for_token).
+                future = self._futures.get(entry.ctx.txid)
+                if future is None or future.cancelled():
                     queue.task_done()
                     continue
                 try:
@@ -757,6 +813,10 @@ class EventProcessor:
             else:
                 if future is not None and not future.done():
                     future.set_result(result)
+        if future is not None:
+            # The task is gone; clean up now in case the future resolved
+            # earlier (e.g. external cancellation) and cleanup was deferred.
+            self._try_clean_future(future)
 
 
 __all__ = [

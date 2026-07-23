@@ -126,6 +126,72 @@ async def _background_slow_logging_handler(value: str = "default"):
 
 _background_slow_logging_handler._reflex_background_task = True  # type: ignore[attr-defined]
 
+# Gates for coordinating supersede tests; tests create loop-local events here.
+_GATES: dict[str, asyncio.Event] = {}
+
+
+async def _gated_logging_handler(value: str = "default"):
+    """Wait for the gate named ``value`` (if any), then log.
+
+    Args:
+        value: The value to log; also names the gate to wait for.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        await gate.wait()
+    _CALL_LOG.append({"value": value})
+
+
+async def _cancellable_load_handler(value: str = "default"):
+    """Log ``value``; if a gate named ``value`` exists, signal it and block.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    _CALL_LOG.append({"value": value})
+
+
+async def _resurrecting_load_handler(value: str = "default"):
+    """Signal the gate named ``value``, block, and chain an event when cancelled.
+
+    Args:
+        value: The value naming the gate to signal.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+    try:
+        await asyncio.sleep(10)
+    except asyncio.CancelledError:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(logging_event("resurrected"))[0])
+        raise
+
+
+async def _superseding_root_handler(value: str = "default", child: str = "load"):
+    """A superseding handler that chains a load event, like on_load_internal.
+
+    Args:
+        value: Label forwarded to the chained load event.
+        child: Which child handler to chain ("load" or "resurrect").
+    """
+    ctx = EventContext.get()
+    child_event = (
+        resurrecting_load_event if child == "resurrect" else cancellable_load_event
+    )
+    await ctx.enqueue(Event.from_event_type(child_event(value))[0])
+
+
+_superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
 
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
@@ -140,6 +206,10 @@ multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
 background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
 error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
+gated_logging_event = EventHandler(fn=_gated_logging_handler)
+cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
+resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
+superseding_root_event = EventHandler(fn=_superseding_root_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -150,6 +220,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         forked_registration_context: Isolated registration context for the test.
     """
     _CALL_LOG.clear()
+    _GATES.clear()
     for handler in (
         noop_event,
         slow_event,
@@ -164,6 +235,10 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         background_slow_logging_event,
         background_then_normal_event,
         error_then_logging_event,
+        gated_logging_event,
+        cancellable_load_event,
+        resurrecting_load_event,
+        superseding_root_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -426,6 +501,37 @@ async def test_backend_exception_handler_called(token: str):
         await ep.enqueue(token, Event.from_event_type(error_event())[0])
     assert len(caught) == 1
     assert isinstance(caught[0], RuntimeError)
+
+
+async def test_exception_handler_can_chain_recovery_events(token: str):
+    """The backend exception handler task can enqueue recovery events.
+
+    The failed future must not be retained in ``_futures`` during exception
+    recovery, or the recovery event would find its done (non-cancelled) parent
+    and ``add_child`` would raise instead of queuing the event.
+
+    Args:
+        token: The client token.
+    """
+
+    class _RecoveringProcessor(EventProcessor):
+        async def _handle_backend_exception(
+            self, ex: Exception, ev_ctx: EventContext | None = None
+        ) -> None:
+            if ev_ctx is not None:
+                EventContext.set(ev_ctx)
+            await EventContext.get().enqueue(
+                Event.from_event_type(logging_event("recovered"))[0]
+            )
+
+    ep = _RecoveringProcessor(
+        backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
+    )
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        await asyncio.wait_for(ep.join(), timeout=1)
+    assert _CALL_LOG == [{"value": "recovered"}]
 
 
 async def test_error_does_not_stop_queue(
@@ -735,3 +841,117 @@ async def test_stream_queue_until_done_handles_concurrent_put_and_completion():
 
     collected = [v async for v in _stream_queue_until_done(queue, _watcher())]
     assert collected == [99]
+
+
+async def _drain_superseded(ep: EventProcessor) -> None:
+    """Wait for done callbacks to clean the supersession tracking.
+
+    Callback cleanup completes in a bounded number of event-loop ticks, so
+    failing to drain within the allotted ticks is a real bug, not a timing
+    flake.
+
+    Args:
+        ep: The event processor to wait on.
+
+    Raises:
+        AssertionError: If the tracking dict is not cleaned up in time.
+    """
+    for _ in range(100):
+        if not ep._superseded:
+            return
+        await asyncio.sleep(0)
+    msg = f"supersession tracking was not cleaned up: {ep._superseded}"
+    raise AssertionError(msg)
+
+
+async def test_superseding_event_cancels_previous_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A newer superseding event cancels the previous running chain (#6593).
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["stale"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("stale"))[0]
+        )
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+        # The root handler returned after chaining, but the chain is live.
+        assert stale.done()
+        assert not stale.all_done()
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+        assert ep._superseded == {}
+
+    assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
+
+
+async def test_superseding_event_skips_queued_stale_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A superseded chain that never started is skipped, not executed.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["blocker"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(
+            token, Event.from_event_type(gated_logging_event("blocker"))[0]
+        )
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("stale"))[0]
+        )
+        # Let the stale entry reach the per-token queue before superseding it.
+        await ep.join(timeout=1)
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        assert stale.cancelled()
+        _GATES["blocker"].set()
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+
+    # The stale root handler never ran at all.
+    assert _CALL_LOG == [{"value": "blocker"}, {"value": "fresh"}]
+
+
+async def test_superseded_chain_cannot_chain_new_events(
+    processor: EventProcessor,
+    token: str,
+):
+    """A cancelled chain cannot resurrect itself by chaining during unwind.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["stale"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(
+            token,
+            Event.from_event_type(superseding_root_event("stale", "resurrect"))[0],
+        )
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+        # Drain anything the unwinding stale chain may have enqueued.
+        await asyncio.wait_for(ep.join(), timeout=1)
+
+    assert {"value": "resurrected"} not in _CALL_LOG
+    assert {"value": "fresh"} in _CALL_LOG
