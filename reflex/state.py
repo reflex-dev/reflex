@@ -2654,6 +2654,29 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    removed: set[str] = set()
+    _reload_state_module(module, state, removed)
+    # Drop dependency edges that point at reloaded states from every surviving
+    # state. A state removed here re-registers its edges when its module is
+    # re-imported; without this, an edge stored on a state that is NOT in the
+    # reloaded module (e.g. a package-level state a computed var depends on)
+    # would dangle and crash _mark_dirty_computed_vars on the next app.
+    if removed:
+        _purge_dependencies_on_states(removed, state.get_root_state())
+
+
+def _reload_state_module(
+    module: str,
+    state: type[BaseState],
+    removed: set[str],
+) -> None:
+    """Recursively reset rx.State subclasses defined in ``module``.
+
+    Args:
+        module: The module to reload.
+        state: The state class to reload.
+        removed: Accumulates the full names of states removed during reload.
+    """
     from reflex_base.registry import RegistrationContext
 
     # Reset the _app_ref of OnLoadInternalState to avoid stale references.
@@ -2670,11 +2693,32 @@ def reload_state_module(
     reg_ctx = RegistrationContext.get()
     substates = reg_ctx.get_substates(state)
     for subclass in tuple(substates):
-        reload_state_module(module=module, state=subclass)
+        _reload_state_module(module, subclass, removed)
         if subclass.__module__ == module and module is not None:
+            removed.add(subclass.get_full_name())
             all_base_state_classes.pop(subclass.get_full_name(), None)
             substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
+
+
+def _purge_dependencies_on_states(
+    removed: set[str],
+    root: type[BaseState],
+) -> None:
+    """Remove dependency edges pointing at any of ``removed`` from all states.
+
+    Args:
+        removed: Full names of states that were reloaded/removed.
+        root: The root state used to resolve remaining state classes.
+    """
+    for full_name in tuple(all_base_state_classes):
+        try:
+            cls = root.get_class_substate(full_name)
+        except ValueError:
+            continue
+        cls._potentially_dirty_states.difference_update(removed)
+        for deps in cls._var_dependencies.values():
+            deps.difference_update({edge for edge in deps if edge[0] in removed})

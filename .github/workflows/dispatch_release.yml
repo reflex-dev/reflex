@@ -90,6 +90,10 @@ on:
         description: "reflex-hosting-cli"
         type: boolean
         default: false
+      reflex_i18n:
+        description: "reflex-i18n"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -123,6 +127,7 @@ jobs:
           reflex_components_sonner: ${{ inputs.reflex_components_sonner }}
           reflex_docgen: ${{ inputs.reflex_docgen }}
           reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
+          reflex_i18n: ${{ inputs.reflex_i18n }}
         run: bash .github/scripts/dispatch_release/detect.sh
 
   plan:
