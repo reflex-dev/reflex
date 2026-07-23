@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import contextvars
+import dataclasses
 import functools
 import io
 import json
@@ -3064,7 +3065,9 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def _app_with_plugins(mocker: MockerFixture, *plugins: unittest.mock.Mock) -> App:
+def _app_with_plugins(
+    mocker: MockerFixture, *plugins: rx.plugins.Plugin | unittest.mock.Mock
+) -> App:
     """Create an app configured with the given plugin doubles.
 
     Args:
@@ -3131,6 +3134,29 @@ def test_call_app_partial_post_compile_failure(mocker: MockerFixture):
 
     ok_plugin.post_compile.assert_called_once()
     assert flaky_plugin.post_compile.call_count == 2
+
+
+def test_call_app_post_compile_with_unhashable_plugin(mocker: MockerFixture):
+    """Hook tracking must not require plugins to be hashable.
+
+    Real plugins (e.g. ``TailwindV4Plugin``) are dataclasses with the default
+    ``eq=True``, which sets ``__hash__ = None`` — so completed hooks must be
+    tracked by identity, not stored in a set.
+    """
+
+    @dataclasses.dataclass
+    class DataclassPlugin(rx.plugins.Plugin):
+        post_compile_calls: int = 0
+
+        def post_compile(self, **context) -> None:
+            self.post_compile_calls += 1
+
+    plugin = DataclassPlugin()
+    app = _app_with_plugins(mocker, plugin)
+    app()
+    app()
+
+    assert plugin.post_compile_calls == 1
 
 
 def test_call_app_caches_asgi_app(mocker: MockerFixture):

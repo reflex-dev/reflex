@@ -406,8 +406,11 @@ class App(MiddlewareMixin, LifespanMixin):
     # Plugins whose post_compile hook already ran for this app instance.
     # The hooks mutate the app (add_middleware, mounting routes), so each
     # must run at most once, even when another plugin's failed hook forces
-    # the ASGI app assembly to be retried.
-    _post_compiled_plugins: set[Plugin] = dataclasses.field(default_factory=set)
+    # the ASGI app assembly to be retried. Keyed by id() because plugins are
+    # dataclasses (eq=True makes them unhashable, and equal-but-distinct
+    # instances must each run); the value keeps the plugin alive so its id
+    # cannot be recycled.
+    _post_compiled_plugins: dict[int, Plugin] = dataclasses.field(default_factory=dict)
 
     # The ASGI app assembled by __call__, built at most once per app
     # instance: assembly mutates persistent objects (self._api, a Starlette
@@ -753,9 +756,9 @@ class App(MiddlewareMixin, LifespanMixin):
             ValueError: If the app has not been initialized.
         """
         for plugin in get_config().plugins:
-            if plugin not in self._post_compiled_plugins:
+            if id(plugin) not in self._post_compiled_plugins:
                 plugin.post_compile(app=self)
-                self._post_compiled_plugins.add(plugin)
+                self._post_compiled_plugins[id(plugin)] = plugin
 
         if not self._api:
             msg = "The app has not been initialized."
