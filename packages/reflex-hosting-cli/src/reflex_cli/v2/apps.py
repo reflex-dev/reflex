@@ -204,7 +204,7 @@ def app_rollback(
                 f"Roll back to deployment {deployment_id}? The current deployment "
                 "will be replaced.",
                 choices=["y", "n"],
-                default="y",
+                default="n",
             )
             != "y"
         ):

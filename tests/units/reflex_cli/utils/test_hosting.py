@@ -360,11 +360,15 @@ def _client(**data: object) -> AuthenticatedClient:
 
 def test_normalize_provider():
     """User-facing provider names map to backend values (or None if unknown)."""
-    assert normalize_provider("reflex-cloud") == "fly"
-    assert normalize_provider("Reflex") == "fly"
-    assert normalize_provider("GCP") == "gcp"
-    assert normalize_provider("google-cloud") == "gcp"
+    from reflex_cli.utils.hosting import PROVIDER_GCP, PROVIDER_REFLEX_CLOUD
+
+    assert normalize_provider("reflex-cloud") == PROVIDER_REFLEX_CLOUD
+    assert normalize_provider("Reflex") == PROVIDER_REFLEX_CLOUD
+    assert normalize_provider("GCP") == PROVIDER_GCP
+    assert normalize_provider("google-cloud") == PROVIDER_GCP
     assert normalize_provider("aws") is None
+    # The backend wire value is not exposed as a user-facing name.
+    assert normalize_provider("fly") is None
 
 
 def test_provider_display_name():

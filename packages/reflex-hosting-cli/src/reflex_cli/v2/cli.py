@@ -97,8 +97,8 @@ def _resolve_deploy_provider(
         client: The authenticated client.
 
     Returns:
-        The backend provider value in effect ("fly"/"gcp"), or None if left at
-        the app's existing default.
+        The backend provider value in effect (Reflex Cloud's default or GCP), or
+        None if left at the app's existing default.
 
     Raises:
         Exit: If ``--provider`` is invalid or a required switch fails.

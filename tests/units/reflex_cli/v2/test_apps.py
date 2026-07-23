@@ -1547,6 +1547,24 @@ def test_app_rollback_success(mocker: MockFixture):
     )
 
 
+def test_app_rollback_defaults_to_cancel(mocker: MockFixture):
+    """Pressing Enter at the confirm prompt cancels rather than rolling back."""
+    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
+    )
+    mock_rollback = mocker.patch("reflex_cli.utils.hosting.rollback_deployment")
+
+    result = runner.invoke(
+        apps_cli,
+        ["rollback", "dep-1", "--app-id", "app-1"],
+        input="\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    mock_rollback.assert_not_called()
+
+
 def test_app_rollback_error_exits_nonzero(mocker: MockFixture):
     """An API error string surfaces and the command exits non-zero."""
     mock_client = hosting.AuthenticatedClient(token="t", validated_data={})

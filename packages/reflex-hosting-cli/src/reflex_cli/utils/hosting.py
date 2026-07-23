@@ -827,18 +827,20 @@ def create_app(
     return response_json
 
 
-# Hosting provider identifiers understood by the backend. "Reflex Cloud" is the
-# managed (Fly-backed) platform; "gcp" is a customer-connected GCP Cloud Run
-# target (bring-your-own-cloud, Enterprise tier).
+# Hosting provider identifiers understood by the backend. Reflex Cloud is the
+# managed platform (its backend wire value happens to be "fly", an
+# implementation detail kept out of user-facing names); "gcp" is a
+# customer-connected GCP Cloud Run target (bring-your-own-cloud, Enterprise tier).
 PROVIDER_REFLEX_CLOUD = "fly"
 PROVIDER_GCP = "gcp"
 
-# User-facing provider names accepted on the CLI, mapped to backend values.
+# User-facing provider names accepted on the CLI, mapped to backend values. Only
+# provider-agnostic names are exposed — the "fly" wire value is deliberately not
+# an alias so deploy scripts don't couple to how Reflex Cloud is hosted.
 PROVIDER_ALIASES = {
     "reflex-cloud": PROVIDER_REFLEX_CLOUD,
     "reflex": PROVIDER_REFLEX_CLOUD,
     "cloud": PROVIDER_REFLEX_CLOUD,
-    "fly": PROVIDER_REFLEX_CLOUD,
     "gcp": PROVIDER_GCP,
     "google": PROVIDER_GCP,
     "google-cloud": PROVIDER_GCP,
@@ -852,7 +854,8 @@ def normalize_provider(provider: str) -> str | None:
         provider: A provider name from the CLI (e.g. "reflex-cloud", "gcp").
 
     Returns:
-        The backend provider value ("fly" or "gcp"), or None if unrecognized.
+        The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
+        ``PROVIDER_GCP``), or None if unrecognized.
 
     """
     return PROVIDER_ALIASES.get(provider.strip().lower())
@@ -862,7 +865,8 @@ def provider_display_name(provider: str | None) -> str:
     """Return a human-facing label for a backend provider value.
 
     Args:
-        provider: The backend provider value ("fly"/"gcp") or None.
+        provider: The backend provider value (``PROVIDER_GCP`` for GCP; anything
+            else, including None, is treated as Reflex Cloud).
 
     Returns:
         A display label, defaulting to "Reflex Cloud".
@@ -999,7 +1003,8 @@ def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) ->
 
     Args:
         app_id: The id of the application.
-        provider: The backend provider value ("fly" or "gcp").
+        provider: The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
+            ``PROVIDER_GCP``).
         client: The authenticated client.
 
     Returns:
