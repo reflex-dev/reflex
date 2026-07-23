@@ -66,33 +66,17 @@ def test_reserved_annotation_attr_not_copied():
 
 
 def test_custom_attr_is_carried_by_reference():
-    """Custom attrs are carried onto the rebuilt Field as the same objects.
+    """Custom attrs land on the rebuilt Field as the same objects.
 
-    The source Field is a throwaway namespace value replaced during class
-    creation, so sharing is safe — and identity is what tag consumers rely on
-    (matching how ``_copy_fn`` carries a function's ``__dict__``).
-    """
-    f = field("x")
-    opts = {"a": [1]}
-    f._opts = opts  # pyright: ignore[reportAttributeAccessIssue]
-
-    class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
-
-    rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._opts is opts  # pyright: ignore[reportAttributeAccessIssue]
-
-
-def test_custom_callable_attr_survives_by_identity():
-    """A callable-object custom attr is not cloned by the rebuild.
-
-    Downstream markers (e.g. auth check objects) may be stateful; the rebuilt
-    field must expose the original instance, not a copy.
+    Identity is what tag consumers rely on (e.g. stateful callable markers
+    must not run as clones), and any copy scheme would break it. The lock
+    also guards the old failure mode directly: deep-copying carried attrs
+    raised ``TypeError: cannot pickle '_thread.lock' object``.
     """
 
     class Check:
-        def __call__(self) -> bool:
-            return True
+        def __init__(self) -> None:
+            self.lock = threading.Lock()
 
     check = Check()
     f = field("x")
@@ -103,25 +87,3 @@ def test_custom_callable_attr_survives_by_identity():
 
     rebuilt = MyState.get_fields()["name"]
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
-
-
-def test_non_copyable_custom_attr_does_not_break_class_creation():
-    """A custom attr holding non-copyable state must not crash class creation.
-
-    Regression: deep-copying carried attrs raised ``TypeError: cannot pickle
-    '_thread.lock' object`` for markers holding locks, clients, or similar.
-    """
-
-    class Guard:
-        def __init__(self) -> None:
-            self.lock = threading.Lock()
-
-    guard = Guard()
-    f = field("x")
-    f._guard = guard  # pyright: ignore[reportAttributeAccessIssue]
-
-    class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
-
-    rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._guard is guard  # pyright: ignore[reportAttributeAccessIssue]
