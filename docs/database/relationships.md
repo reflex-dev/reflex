@@ -44,7 +44,7 @@ class User(rx.Model, table=True):
 
 
 class Flag(rx.Model, table=True):
-    post_id: int = sqlmodel.Field(foreign_key="post.id")
+    post_id: int = sqlmodel.Field(foreign_key="post.id", index=True)
     user_id: int = sqlmodel.Field(foreign_key="user.id")
     message: str
 
@@ -159,4 +159,50 @@ class Post(rx.Model, table=True):
         back_populates="post",
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+```
+
+### Querying Related Rows on Demand
+
+For master-detail interfaces — a table of parent rows where selecting a row
+reveals its related rows — it is not necessary to eager load every
+relationship up front. Store the selected id in state and query only the
+related rows for that selection, filtering on the foreign key.
+
+```python
+from typing import List, Optional
+
+import reflex as rx
+
+
+class PostFlagsState(rx.State):
+    posts: List[Post] = []
+    selected_post_id: Optional[int] = None
+    selected_flags: List[Flag] = []
+
+    @rx.event
+    def load_posts(self):
+        with rx.session() as session:
+            self.posts = session.exec(Post.select().limit(15)).all()
+
+    @rx.event
+    def select_post(self, post_id: int):
+        self.selected_post_id = post_id
+        with rx.session() as session:
+            self.selected_flags = session.exec(
+                Flag.select().where(Flag.post_id == post_id)
+            ).all()
+```
+
+This runs a single indexed query per selection and avoids holding every child
+row in state — the `index=True` on `Flag.post_id` keeps the foreign-key lookup
+off a full table scan (adding the index to an existing table requires a
+migration). Avoid the inverse pattern of querying children in a Python loop
+over parents (the "N+1" pattern) — when the children of many parents are
+needed at once, use one query with `.in_()` on the foreign key, or one of the
+eager loading options above.
+
+```python
+post_ids = [post.id for post in self.posts]
+with rx.session() as session:
+    flags = session.exec(Flag.select().where(Flag.post_id.in_(post_ids))).all()
 ```

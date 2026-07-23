@@ -190,6 +190,178 @@ class State(rx.State):
             return [list(row) for row in session.execute("SELECT * FROM user").all()]
 ```
 
+## Writing Efficient Queries
+
+The database is much better at filtering, joining, and aggregating than Python.
+Every row returned by a query is sent over the network and held in memory as
+part of the state — for every user with an open session. Do the work in the
+query itself and return only display-ready results.
+
+The examples below use a simple `Order` model.
+
+```python
+class Order(rx.Model, table=True):
+    user_id: int
+    status: str
+    amount: float | None = None
+```
+
+### Aggregate in SQL, not Python
+
+Avoid fetching a whole table just to compute a summary in Python. Use the
+database's aggregate functions (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`) with
+`GROUP BY` so only the summary rows come back.
+
+```python
+from sqlmodel import select, func
+
+
+class OrderStats(rx.State):
+    order_count: int = 0
+    orders_by_status: list[tuple[str, int]] = []
+
+    @rx.event
+    def load_stats(self):
+        with rx.session() as session:
+            # Count rows in the database instead of len() on a full fetch.
+            self.order_count = session.exec(select(func.count(Order.id))).one()
+
+            # One row per group, ready for a chart or summary table.
+            self.orders_by_status = [
+                tuple(row)
+                for row in session.exec(
+                    select(Order.status, func.count(Order.id)).group_by(Order.status)
+                ).all()
+            ]
+```
+
+Related metrics can be computed in a single query with conditional
+aggregation, instead of issuing one query per metric:
+
+```python
+import sqlalchemy
+from sqlmodel import select, func
+
+
+class OrderKPIs(rx.State):
+    total_orders: int = 0
+    completed_orders: int = 0
+    total_amount: float = 0.0
+
+    @rx.event
+    def load_kpis(self):
+        with rx.session() as session:
+            total, completed, amount = session.exec(
+                select(
+                    func.count(Order.id),
+                    func.sum(
+                        sqlalchemy.case((Order.status == "completed", 1), else_=0)
+                    ),
+                    func.coalesce(func.sum(Order.amount), 0.0),
+                )
+            ).one()
+        self.total_orders = total
+        self.completed_orders = completed or 0
+        self.total_amount = float(amount)
+```
+
+### Avoid Queries Inside Loops
+
+Issuing a query per item — the "N+1" pattern — multiplies network round trips.
+Fetch everything in one statement with a `JOIN`, an `IN (...)` list, or
+`GROUP BY`.
+
+```python
+# Inefficient: one query per user (N+1).
+with rx.session() as session:
+    for user in users:
+        orders = session.exec(Order.select().where(Order.user_id == user.id)).all()
+
+# Efficient: one query for all users at once.
+with rx.session() as session:
+    orders = session.exec(
+        Order.select().where(Order.user_id.in_([user.id for user in users]))
+    ).all()
+```
+
+The `.in_()` method binds each value as a separate query parameter, so it is
+safe to use with user-provided values. In raw SQL, use an *expanding* bind
+parameter for the same effect — never join the values into the SQL string:
+
+```python
+import sqlalchemy
+
+with rx.session() as session:
+    rows = session.execute(
+        sqlalchemy.text("SELECT * FROM users WHERE id IN :user_ids").bindparams(
+            sqlalchemy.bindparam("user_ids", expanding=True)
+        ),
+        {"user_ids": [1, 2, 3]},
+    ).all()
+```
+
+If the related objects are linked with foreign keys, the
+[relationship loading techniques](/docs/database/relationships) can also fetch
+linked objects without extra queries.
+
+### Return Only What the UI Needs
+
+- Select only the columns the UI displays when tables are wide, instead of
+  whole rows.
+- Give every query that returns detail rows a `.limit()`, and use
+  offset-based [pagination](/docs/library/tables-and-data-grids/table) when
+  the user needs more rows.
+- Load static data (dropdown options, date bounds) once in an `on_load` event
+  handler. When a filter changes, re-run only the filtered queries — not the
+  option lookups.
+- Avoid caching large raw query results in state vars to work around a slow
+  query: per-user state duplicates that data in server memory for every
+  session. Fix the query instead — aggregate in SQL, add a limit, combine
+  round trips. Keeping small, display-ready results in state (chart rows, KPI
+  values, one page of a table) is the intended pattern.
+
+## Handling NULL Values
+
+Database columns may contain `NULL`, which arrives in Python as `None`.
+Aggregates like `SUM` and `AVG` also return `NULL` when they run over zero
+rows. Casting such results directly will crash:
+
+```python
+float(row[0])  # TypeError: float() argument must be ... not 'NoneType'
+```
+
+There are two ways to handle this.
+
+### Coalesce in the Query (Preferred)
+
+`COALESCE` returns its first non-`NULL` argument, so the query itself
+guarantees a usable value. This is especially important for nullable numeric
+columns and for aggregates that may run over empty groups.
+
+```python
+from sqlmodel import select, func
+
+with rx.session() as session:
+    total = session.exec(select(func.coalesce(func.sum(Order.amount), 0.0))).one()
+```
+
+The same works in raw SQL: `SELECT COALESCE(SUM(amount), 0) FROM ...`.
+
+### Guard in Python
+
+When consuming rows that may contain `NULL`s, fall back explicitly while
+building the values:
+
+```python
+orders = [
+    {
+        "status": str(row[0] or ""),
+        "amount": float(row[1]) if row[1] is not None else 0.0,
+    }
+    for row in rows
+]
+```
+
 ## Async Database Operations
 
 Reflex provides an async version of the session function called `rx.asession` for asynchronous database operations. This is useful when you need to perform database operations in an async context, such as within async event handlers.
