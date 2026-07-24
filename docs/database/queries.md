@@ -192,7 +192,7 @@ class State(rx.State):
 
 ## Writing Efficient Queries
 
-The database is much better at filtering, joining, and aggregating than Python.
+Databases are generally much better at filtering, joining, and aggregating than Python.
 Every row returned by a query is sent over the network and held in memory as
 part of the state — for every user with an open session. Do the work in the
 query itself and return only display-ready results.
@@ -272,16 +272,16 @@ Fetch everything in one statement with a `JOIN`, an `IN (...)` list, or
 `GROUP BY`.
 
 ```python
-# Inefficient: one query per user (N+1).
-with rx.session() as session:
-    for user in users:
-        orders = session.exec(Order.select().where(Order.user_id == user.id)).all()
-
 # Efficient: one query for all users at once.
 with rx.session() as session:
     orders = session.exec(
         Order.select().where(Order.user_id.in_([user.id for user in users]))
     ).all()
+
+# Inefficient: one query per user (N+1).
+with rx.session() as session:
+    for user in users:
+        orders = session.exec(Order.select().where(Order.user_id == user.id)).all()
 ```
 
 The `.in_()` method binds each value as a separate query parameter, so it is
