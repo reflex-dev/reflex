@@ -2,8 +2,10 @@ import decimal
 import json
 import math
 import re
+import subprocess
 import typing
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -54,8 +56,13 @@ from reflex.state import BaseState
 
 pytest.importorskip("pydantic")
 
-
 from pydantic import BaseModel as Base
+
+ROUND_HELPER = (
+    Path(__file__).parents[2]
+    / "packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/round.js"
+)
+
 
 test_vars = [
     Var(_js_expr="prop1", _var_type=int),
@@ -1038,7 +1045,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))))"
+        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (pyRound(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2), 0)))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1047,6 +1054,51 @@ def test_all_number_operations():
         str(LiteralBooleanVar.create(False) < LiteralBooleanVar.create(True))
         == "(Number(false) < Number(true))"
     )
+
+
+@pytest.mark.parametrize(
+    ("value", "ndigits", "expected"),
+    [
+        (2.5, 0, "2"),
+        (3.5, 0, "4"),
+        (-2.5, 0, "-2"),
+        (-3.5, 0, "-4"),
+        (3.6, 0, "4"),
+        (250, -2, "200"),
+        (350, -2, "400"),
+        (-250, -2, "-200"),
+        (-350, -2, "-400"),
+        (2.675, 2, "2.67"),
+        (5e-324, 323, "0"),
+        (1e20, 0, "100000000000000000000"),
+        (1.2345, 324, "1.2345"),
+        (-1.2345, -309, "-0"),
+        (float("inf"), 2, "Infinity"),
+    ],
+)
+def test_number_round_python_semantics(value, ndigits, expected):
+    rounded = round(LiteralNumberVar.create(value), ndigits)
+    var_data = rounded._get_all_var_data()
+    assert var_data is not None
+    assert any(
+        imported.tag == "pyRound" and imported.is_default
+        for imported in dict(var_data.imports)["$/utils/helpers/round.js"]
+    )
+
+    result = subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            f"{ROUND_HELPER.read_text(encoding='utf-8')}\nconsole.log({rounded!s})",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == expected
+    assert rounded._var_type is (int if ndigits == 0 else float)
 
 
 @pytest.mark.parametrize(
