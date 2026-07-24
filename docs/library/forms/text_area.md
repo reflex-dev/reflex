@@ -141,3 +141,23 @@ newline. Replicating Enter-to-submit alongside custom key handling therefore
 needs a client-side handler (e.g. via `rx.call_script`), not a plain
 `on_key_down` event handler.
 ```
+
+## Auto-Expanding Height
+
+Set `auto_height=True` to make a text area grow to fit its content as the user
+types, instead of scrolling inside a fixed box. Pair it with `rows="0"` so it
+starts at a single line and expands from there.
+
+```python demo exec
+def auto_height_example():
+    return rx.text_area(
+        placeholder="Type a few lines — the box grows to fit",
+        auto_height=True,
+        rows="0",
+        width="100%",
+    )
+```
+
+`auto_height` attaches a client-side handler that resizes the element on every
+input, so its height always matches the content. Add a CSS `min_height` /
+`max_height` when you want to cap how small or tall it can get.
