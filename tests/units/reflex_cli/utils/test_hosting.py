@@ -358,6 +358,25 @@ def _client(**data: object) -> AuthenticatedClient:
     return AuthenticatedClient(token="fake-token", validated_data=data)
 
 
+def _ok_body(mocker: MockerFixture, body: object):
+    """Build a mock 2xx response whose ``.json()`` returns an arbitrary body.
+
+    ``_ok`` only accepts dict payloads; use this for list/str JSON responses.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        body: The value ``response.json()`` should return.
+
+    Returns:
+        A mock response object.
+
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = body
+    return response
+
+
 def test_normalize_provider():
     """User-facing provider names map to backend values (or None if unknown)."""
     from reflex_cli.utils.hosting import PROVIDER_GCP, PROVIDER_REFLEX_CLOUD
@@ -440,7 +459,7 @@ def test_get_gcp_provider_status_hits_endpoint(mocker: MockerFixture):
 def test_list_provider_accounts_hits_endpoint(mocker: MockerFixture):
     """Listing connected providers targets the org provider-accounts endpoint."""
     mock_get = mocker.patch(
-        "httpx.get", return_value=_ok(mocker, [{"provider": "gcp"}])
+        "httpx.get", return_value=_ok_body(mocker, [{"provider": "gcp"}])
     )
     assert list_provider_accounts("org-1", _CLIENT) == [{"provider": "gcp"}]
     assert mock_get.call_args.args[0].endswith("/api/v1/orgs/org-1/provider-accounts")
@@ -477,6 +496,7 @@ def test_rollback_deployment_error(mocker: MockerFixture):
     """A rejected rollback surfaces the server detail as an error string."""
     mocker.patch("httpx.post", return_value=_error(mocker, 400, "no image"))
     result = rollback_deployment("app-1", "dep-1", _CLIENT)
+    assert result is not None
     assert result.startswith("rollback failed")
     assert "no image" in result
 
@@ -495,6 +515,7 @@ def test_update_deployment_description_error(mocker: MockerFixture):
     """A missing deployment surfaces the server detail as an error string."""
     mocker.patch("httpx.post", return_value=_error(mocker, 404, "no deployment"))
     result = update_deployment_description("app-1", "dep-1", "note", _CLIENT)
+    assert result is not None
     assert result.startswith("update description failed")
 
 
@@ -518,7 +539,7 @@ def test_create_app_omits_provider_when_none(mocker: MockerFixture):
 
 def test_create_deployment_forwards_description(mocker: MockerFixture):
     """A per-deployment note is sent as the multipart description field."""
-    mock_post = mocker.patch("httpx.post", return_value=_ok(mocker, "dep-1"))
+    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
     mocker.patch("importlib.metadata.version", return_value="0.1.99")
     mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
     mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
@@ -565,7 +586,7 @@ def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFix
             "timestamp": "t2",
         },
     ]
-    mocker.patch("httpx.get", return_value=_ok(mocker, payload))
+    mocker.patch("httpx.get", return_value=_ok_body(mocker, payload))
     history = get_app_history("app-1", _CLIENT)
     assert history[0]["description"] == "hotfix"
     assert history[0]["can rollback"] is True
