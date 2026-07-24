@@ -790,6 +790,17 @@ def makemigrations(message: str | None):
     help="The hostname of the frontend.",
 )
 @click.option(
+    "--provider",
+    help="The hosting provider to deploy to: 'reflex-cloud' (default) or 'gcp' "
+    "(a GCP account connected to your org, Enterprise tier). When omitted and "
+    "GCP is connected, you'll be prompted in interactive mode.",
+)
+@click.option(
+    "--description",
+    help="An optional note recorded on this deployment and shown in "
+    "`reflex cloud apps history`.",
+)
+@click.option(
     "--interactive/--no-interactive",
     is_flag=True,
     default=True,
@@ -838,6 +849,8 @@ def deploy(
     env: tuple[str],
     vmtype: str | None,
     hostname: str | None,
+    provider: str | None,
+    description: str | None,
     interactive: bool,
     envfile: str | None,
     project: str | None,
@@ -909,6 +922,8 @@ def deploy(
         token=token,
         project=project,
         project_name=project_name,
+        provider=provider,
+        deployment_description=description,
         **({"config_path": config_path} if config_path is not None else {}),
     )
 

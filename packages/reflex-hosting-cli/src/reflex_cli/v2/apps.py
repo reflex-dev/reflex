@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import click
 
@@ -23,6 +24,57 @@ from reflex_cli.utils.exceptions import (
 @click.group()
 def apps_cli():
     """Commands for managing apps."""
+
+
+def _resolve_app_id(
+    app_id: str | None,
+    app_name: str | None,
+    client: Any,
+    interactive: bool,
+) -> str:
+    """Resolve an app id from --app-id, --app-name, or the cloud config.
+
+    Args:
+        app_id: The explicit app id, if given.
+        app_name: The app name to look up, if given.
+        client: The authenticated client.
+        interactive: Whether to interactively resolve name conflicts.
+
+    Returns:
+        The resolved app id.
+
+    Raises:
+        Exit: If no app id can be resolved.
+
+    """
+    from reflex_cli.utils import hosting
+
+    # Explicit --app-id wins, then an explicit --app-name lookup, and only then
+    # the cloud.yml/pyproject appid — so passing --app-name always overrides a
+    # configured appid rather than being silently ignored.
+    if not app_id and app_name is not None:
+        result = hosting.search_app(
+            app_name=app_name,
+            project_id=None,
+            client=client,
+            interactive=interactive,
+        )
+        app_id = result.get("id") if result else None
+
+    if not app_id and app_name is None:
+        config = hosting.read_config()
+        if config:
+            app_id = config.appid
+            if not isinstance(app_id, (str, type(None))):
+                console.error(
+                    "app_id must be a string or None. Please check your config file."
+                )
+                raise click.exceptions.Exit(1)
+
+    if not app_id:
+        console.error("No valid app_id or app_name provided.")
+        raise click.exceptions.Exit(1)
+    return app_id
 
 
 @apps_cli.command(name="history")
@@ -102,6 +154,141 @@ def app_history(
             console.print_table(table, headers=headers)
         else:
             console.print(str(history))
+    except NotAuthenticatedError as err:
+        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
+
+
+@apps_cli.command(name="rollback")
+@click.argument("deployment_id", required=True)
+@click.option("--app-id", help="The ID of the application.")
+@click.option("--app-name", help="The name of the application.")
+@click.option("--token", help="The authentication token.")
+@click.option(
+    "--loglevel",
+    type=click.Choice([level.value for level in constants.LogLevel]),
+    default=constants.LogLevel.INFO.value,
+    help="The log level to use.",
+)
+@click.option(
+    "--interactive/--no-interactive",
+    "-i",
+    is_flag=True,
+    default=True,
+    help="Whether to use interactive mode.",
+)
+def app_rollback(
+    deployment_id: str,
+    app_id: str | None,
+    app_name: str | None,
+    token: str | None,
+    loglevel: str,
+    interactive: bool,
+):
+    """Roll an app back to a previous deployment.
+
+    Redeploys the target deployment's already-built image and makes it current
+    again, without rebuilding from source. DEPLOYMENT_ID is a past deployment
+    from `reflex cloud apps history` whose "can rollback" is True. Identify the
+    app with --app-id/--app-name or a cloud.yml/pyproject.toml appid.
+    """
+    from reflex_cli.utils import hosting
+
+    console.set_log_level(loglevel)
+    try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
+        app_id = _resolve_app_id(app_id, app_name, authenticated_client, interactive)
+
+        if (
+            interactive
+            and console.ask(
+                f"Roll back to deployment {deployment_id}? The current deployment "
+                "will be replaced.",
+                choices=["y", "n"],
+                default="n",
+            )
+            != "y"
+        ):
+            console.info("Rollback cancelled.")
+            return
+
+        result = hosting.rollback_deployment(
+            app_id=app_id, deployment_id=deployment_id, client=authenticated_client
+        )
+        if result:
+            console.error(result)
+            raise click.exceptions.Exit(1)
+        console.success(f"Rollback to deployment {deployment_id} started.")
+        console.print(
+            f"Track progress with `reflex cloud apps status {deployment_id} "
+            "--watch` or the Reflex Cloud dashboard."
+        )
+    except NotAuthenticatedError as err:
+        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
+
+
+@apps_cli.command(name="describe")
+@click.argument("deployment_id", required=True)
+@click.option(
+    "--description",
+    required=True,
+    help='The changelog note to set. Pass --description "" to clear it.',
+)
+@click.option("--app-id", help="The ID of the application.")
+@click.option("--app-name", help="The name of the application.")
+@click.option("--token", help="The authentication token.")
+@click.option(
+    "--loglevel",
+    type=click.Choice([level.value for level in constants.LogLevel]),
+    default=constants.LogLevel.INFO.value,
+    help="The log level to use.",
+)
+@click.option(
+    "--interactive/--no-interactive",
+    "-i",
+    is_flag=True,
+    default=True,
+    help="Whether to use interactive mode.",
+)
+def app_describe(
+    deployment_id: str,
+    description: str,
+    app_id: str | None,
+    app_name: str | None,
+    token: str | None,
+    loglevel: str,
+    interactive: bool,
+):
+    """Set or clear the changelog note on a past deployment.
+
+    The note is shown in `reflex cloud apps history`. Identify the app with
+    --app-id/--app-name or a cloud.yml/pyproject.toml appid.
+    """
+    from reflex_cli.utils import hosting
+
+    console.set_log_level(loglevel)
+    try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
+        app_id = _resolve_app_id(app_id, app_name, authenticated_client, interactive)
+
+        result = hosting.update_deployment_description(
+            app_id=app_id,
+            deployment_id=deployment_id,
+            description=description,
+            client=authenticated_client,
+        )
+        if result:
+            console.error(result)
+            raise click.exceptions.Exit(1)
+        if description.strip():
+            console.success(f"Updated description for deployment {deployment_id}.")
+        else:
+            console.success(f"Cleared description for deployment {deployment_id}.")
     except NotAuthenticatedError as err:
         console.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err

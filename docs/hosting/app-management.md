@@ -61,3 +61,49 @@ Here there is a `Delete app` button. Pressing this button will delete the app an
 Clicking on the `Settings` tab in the Cloud UI on the app page also allows a user to change the `app name`, change the `app description` and check the `app id`.
 
 The other app settings also allows users to edit and add secrets (environment variables) to the app. For more information on secrets, see the [Secrets (Environment Variables)](/docs/hosting/secrets-environment-vars/) page.
+
+## Deployment history
+
+Every `reflex deploy` creates a new deployment. List an app's deployment history — each deployment's status, Python/Reflex versions, VM type, optional description, and whether it can be rolled back to — with:
+
+```bash
+reflex cloud apps history [APP_ID]
+```
+
+If you omit `APP_ID`, the app is resolved from the `appid` in your `cloud.yml`/`pyproject.toml`, or you can pass `--app-name`. Add `--json` for machine-readable output.
+
+## Deployment descriptions
+
+You can attach a short changelog note to a deployment so your history is easy to scan (for example, `"bump pricing page copy"`). Set it at deploy time:
+
+```bash
+reflex deploy --description "bump pricing page copy"
+```
+
+You can also set or replace the note on an existing deployment. Find the deployment id with `reflex cloud apps history`, then:
+
+```bash
+reflex cloud apps describe <DEPLOYMENT_ID> --app-id <APP_ID> --description "hotfix: revert checkout change"
+```
+
+Pass `--description ""` to clear the note. Descriptions show up in `reflex cloud apps history` and in the Cloud dashboard.
+
+```md alert info
+# CLI command to set a deployment description
+`reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID --description "<note>"`
+```
+
+## Rolling back a deployment
+
+If a deploy introduces a regression, you can roll back to any previous deployment that still has a built image. A rollback redeploys that deployment's existing image — no rebuild from source — and makes it current again, demoting the currently running deployment to history.
+
+```bash
+reflex cloud apps rollback <DEPLOYMENT_ID> --app-id <APP_ID>
+```
+
+Use `reflex cloud apps history` to find rollback-eligible deployments: their `can rollback` value is `True`. A deployment can only be rolled back to on the provider whose registry holds its image, so after [switching an app's provider](/docs/hosting/cloud-providers/) the deployments built on the previous provider are no longer offered as rollback targets.
+
+```md alert info
+# CLI command to roll back
+`reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID`
+```

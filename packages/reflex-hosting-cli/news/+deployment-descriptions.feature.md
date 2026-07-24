@@ -1,0 +1,1 @@
+Added optional per-deployment descriptions (changelog notes): set one at deploy time with `reflex deploy --description "..."`, set or clear it later with `reflex cloud apps describe`, and view it in `reflex cloud apps history`.
