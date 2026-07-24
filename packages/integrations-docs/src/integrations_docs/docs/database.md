@@ -87,6 +87,15 @@ Database (mydatabase) - Target database name
    - Generates SQLAlchemy models
    - Makes schema available to the AI for queries
 
+## Connecting a Private or Remote Database
+
+Reflex Build connects to your database from its cloud sandbox, so the database must be reachable over the internet. A few tips for remote connections:
+
+- **Use an IPv4-reachable host or a connection pooler.** IPv6-only hosts may not be reachable from the sandbox; most managed providers offer a pooler endpoint that works.
+- **Allowlisting:** on **Enterprise** plans, database traffic can be routed through a static egress IP that you allowlist on your database's firewall.
+
+You provide a single connection string (or the individual fields), and Reflex Build derives the environment variables your app connects with — `REFLEX_DB_URL` and its async counterpart `REFLEX_ASYNC_DB_URL` — automatically.
+
 
 ```md alert
 # NoSQL Databases
