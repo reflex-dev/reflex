@@ -144,7 +144,7 @@ def _resolve_deploy_provider(
         )
         if (
             interactive
-            and console.ask("Continue?", choices=["y", "n"], default="y") != "y"
+            and console.ask("Continue?", choices=["y", "n"], default="n") != "y"
         ):
             console.info("Deployment cancelled.")
             raise click.exceptions.Exit(0)

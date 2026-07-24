@@ -1102,6 +1102,25 @@ def test_resolve_deploy_provider_switch_failure_exits(mocker: MockFixture):
         )
 
 
+def test_resolve_deploy_provider_switch_confirm_defaults_to_cancel(
+    mocker: MockFixture,
+):
+    """Switching a deployed app's provider requires an explicit yes (default n)."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    ask = mocker.patch("reflex_cli.utils.console.ask", return_value="n")
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._resolve_deploy_provider(
+            app, "gcp", interactive=True, app_was_created=False, client=client
+        )
+
+    mock_set.assert_not_called()
+    # The teardown confirmation must default to "n" so Enter alone cancels.
+    assert ask.call_args.kwargs.get("default") == "n"
+
+
 def test_resolve_deploy_provider_interactive_prompt_selects_gcp(mocker: MockFixture):
     """When GCP is available and the user picks it, the app switches to GCP."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
