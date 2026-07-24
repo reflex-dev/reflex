@@ -50,7 +50,7 @@ When you connect a Build app to GitHub, Reflex Build creates a Git repository fo
 - If the `reflex-build` app is installed on a **GitHub organization**, the repository is created inside that organization.
 - Otherwise, the repository is created under your **personal GitHub account**.
 
-New repositories use the `main` branch and are private, unless you make them public when connecting.
+New repositories use the `main` branch. Repository visibility depends on your plan: on **Pro** you choose public or private when connecting; on the **Free** plan new repositories are public; on **Enterprise** they are always private.
 
 ## Pushing and Pulling Changes
 
