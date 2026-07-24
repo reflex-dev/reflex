@@ -1,9 +1,11 @@
 import decimal
 import json
 import math
+import operator as op
 import re
 import typing
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -366,12 +368,44 @@ def test_basic_operations(TestObj):
         str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
         == '["1", "2", "3"].slice().reverse()'
     )
+
     assert (
         str(Var(_js_expr="foo")._var_set_state("state").to(list).reverse())
         == "state.foo.slice().reverse()"
     )
     assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
     assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
+
+
+@pytest.mark.parametrize(
+    ("operation", "operator"),
+    [
+        (op.eq, "==="),
+        (op.ne, "!=="),
+        (op.lt, "<"),
+        (op.le, "<="),
+        (op.gt, ">"),
+        (op.ge, ">="),
+    ],
+)
+def test_datetime_comparison_uses_timestamps(operation, operator):
+    lhs = v(datetime(2024, 1, 1, 1, tzinfo=timezone(timedelta(hours=1))))
+    rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    assert str(operation(lhs, rhs)) == (
+        f'(new Date("2024-01-01 01:00:00+01:00").getTime() {operator} '
+        'new Date("2024-01-01 00:00:00+00:00").getTime())'
+    )
+
+
+def test_datetime_equality_with_other_type_uses_default_comparison():
+    value = v(datetime(2024, 1, 1))
+    expected_equality = (
+        '("2024-01-01 00:00:00"?.valueOf?.() === "2024-01-01 00:00:00"?.valueOf?.())'
+    )
+
+    assert str(value == "2024-01-01 00:00:00") == expected_equality
+    assert str(value != "2024-01-01 00:00:00") == f"!({expected_equality})"
 
 
 @pytest.mark.parametrize(
