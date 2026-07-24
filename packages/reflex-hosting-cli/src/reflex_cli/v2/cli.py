@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import json
 import os
 import shutil
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -155,6 +156,51 @@ def _resolve_deploy_provider(
         raise click.exceptions.Exit(1)
     console.info(f"Deploying to {hosting.provider_display_name(target)}.")
     return target
+
+
+@contextlib.contextmanager
+def _restore_provider_on_failure(
+    app: dict[str, Any], switched_from: str | None, client: Any
+) -> Iterator[None]:
+    """Re-pin the previous provider if the deploy fails after a switch.
+
+    Switching a deployed app to a new provider tears down its old resources up
+    front, so a failure in a later step (hostname, export, deploy creation)
+    would strand the app on the new provider. On failure, best-effort restore
+    the previous provider so its last deployment stays a valid
+    ``reflex cloud apps rollback`` target for recovery.
+
+    Args:
+        app: The resolved app dict (must contain "id" and "name").
+        switched_from: The provider to restore to, or None if no destructive
+            switch happened (nothing to undo).
+        client: The authenticated client.
+
+    Yields:
+        None.
+
+    """
+    from reflex_cli.utils import hosting
+
+    try:
+        yield
+    except BaseException:
+        if switched_from is not None:
+            label = hosting.provider_display_name(switched_from)
+            restore = hosting.set_app_provider(app["id"], switched_from, client=client)
+            if isinstance(restore, str) and restore.startswith("set provider failed"):
+                console.warn(
+                    f"Deploy failed after switching '{app['name']}' provider, and "
+                    f"restoring {label} also failed: {restore}. Check the app in "
+                    "the Reflex Cloud dashboard."
+                )
+            else:
+                console.warn(
+                    f"Deploy failed after switching provider; restored "
+                    f"'{app['name']}' to {label}. Recover its previous deployment "
+                    "with `reflex cloud apps rollback`."
+                )
+        raise
 
 
 def deploy(
@@ -434,12 +480,22 @@ def deploy(
     # Choose/confirm the hosting provider before reserving the hostname: the
     # reserved URL is baked into the exported frontend, and a GCP app resolves
     # to a *.run.app backend URL, so the provider must be pinned first.
+    previous_provider = app.get("provider")
     effective_provider = _resolve_deploy_provider(
         app=app,
         provider_arg=provider,
         interactive=interactive,
         app_was_created=app_was_created,
         client=authenticated_client,
+    )
+    # A destructive provider switch on an already-deployed app tears its old
+    # resources down; remember what to restore to if a later step fails.
+    switched_from = (
+        previous_provider
+        if not app_was_created
+        and previous_provider is not None
+        and effective_provider != previous_provider
+        else None
     )
     if effective_provider == hosting.PROVIDER_GCP:
         # GCP Cloud Run ignores Reflex Cloud regions/VM types — the region and
@@ -453,133 +509,142 @@ def deploy(
         regions = None
         vmtype = None
 
-    urls = hosting.get_hostname(
-        app_id=app["id"],
-        app_name=app["name"],
-        hostname=hostname,
-        client=authenticated_client,
-    )
-    if "error" in urls:
-        console.error(urls["error"])
-        raise click.exceptions.Exit(1)
-    server_url = os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]  # backend
-    host_url = os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]  # frontend
-    processed_envs = hosting.process_envs(envs) if envs else None
-
-    if not app_name:
-        console.error("Please set an app name.")
-        raise click.exceptions.Exit(1)
-
-    # at this point, if project_id is None, the App should have the correct project_id and
-    # we should use that going forward to pass validation checks.
-    project_id = project_id or app.get("project_id")
-
-    validation_message = hosting.validate_deployment_args(
-        app_name=app_name,
-        app_id=app.get("id"),
-        project_id=project_id,
-        regions=regions,
-        vmtype=vmtype,
-        hostname=hostname,
-        client=authenticated_client,
-    )
-
-    if validation_message != "success":
-        console.error(validation_message)
-        raise click.exceptions.Exit(1)
-
-    if envfile:
-        try:
-            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
-
-            processed_envs = dotenv_values(envfile)
-        except ImportError:
-            console.error(
-                """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
-            )
-            raise click.exceptions.Exit(1) from None
-
-    # Compile the app in production mode: backend first then frontend.
-    temporary_dir = tempfile.TemporaryDirectory()
-    temporary_dir_path = Path(temporary_dir.name)
-
-    import importlib.metadata
-
-    rx_version = version.parse(importlib.metadata.version("reflex"))
-    breaking_version = version.parse("0.7.6")
-    # Try zipping backend first
-    try:
-        # Check if the reflex version is >= 0.7.6
-        if rx_version <= breaking_version:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                False,
-                True,
-                True,
-            )  # pyright: ignore[reportCallIssue]
-        else:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                False,
-                True,
-                include_db,
-                True,  # pyright: ignore[reportCallIssue]
-            )
-    except Exception as ex:
-        console.error(f"Unable to export due to: {ex}")
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ex
-
-    # Zip frontend
-    try:
-        # Check if the reflex version is >= 0.7.6
-        if rx_version <= breaking_version:
-            export_fn(str(temporary_dir_path), server_url, host_url, True, False, True)  # pyright: ignore[reportCallIssue]
-        else:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                True,
-                False,
-                include_db,
-                True,  # pyright: ignore[reportCallIssue]
-            )
-    except ImportError as ie:
-        console.error(
-            f"Encountered ImportError, did you install all the dependencies? {ie}"
+    with _restore_provider_on_failure(app, switched_from, authenticated_client):
+        urls = hosting.get_hostname(
+            app_id=app["id"],
+            app_name=app["name"],
+            hostname=hostname,
+            client=authenticated_client,
         )
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ie
-    except Exception as ex:
-        console.error(f"Unable to export due to: {ex}")
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ex
+        if "error" in urls:
+            console.error(urls["error"])
+            raise click.exceptions.Exit(1)
+        server_url = (
+            os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]
+        )  # backend
+        host_url = (
+            os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]
+        )  # frontend
+        processed_envs = hosting.process_envs(envs) if envs else None
 
-    result = hosting.create_deployment(
-        app_id=app.get("id"),
-        app_name=app_name,
-        project_id=project_id,
-        regions=regions,
-        zip_dir=Path(temporary_dir_path),
-        hostname=extract_domain(host_url) if hostname else None,
-        vmtype=vmtype,
-        secrets=processed_envs,
-        client=authenticated_client,
-        packages=packages,
-        strategy=strategy,
-        description=deployment_description,
-    )
-    if "failed" in result:
-        console.error(result)
-        raise click.exceptions.Exit(1)
+        if not app_name:
+            console.error("Please set an app name.")
+            raise click.exceptions.Exit(1)
+
+        # at this point, if project_id is None, the App should have the correct project_id and
+        # we should use that going forward to pass validation checks.
+        project_id = project_id or app.get("project_id")
+
+        validation_message = hosting.validate_deployment_args(
+            app_name=app_name,
+            app_id=app.get("id"),
+            project_id=project_id,
+            regions=regions,
+            vmtype=vmtype,
+            hostname=hostname,
+            client=authenticated_client,
+        )
+
+        if validation_message != "success":
+            console.error(validation_message)
+            raise click.exceptions.Exit(1)
+
+        if envfile:
+            try:
+                from dotenv import (
+                    dotenv_values,  # pyright: ignore[reportMissingImports]
+                )
+
+                processed_envs = dotenv_values(envfile)
+            except ImportError:
+                console.error(
+                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+                )
+                raise click.exceptions.Exit(1) from None
+
+        # Compile the app in production mode: backend first then frontend.
+        temporary_dir = tempfile.TemporaryDirectory()
+        temporary_dir_path = Path(temporary_dir.name)
+
+        import importlib.metadata
+
+        rx_version = version.parse(importlib.metadata.version("reflex"))
+        breaking_version = version.parse("0.7.6")
+        # Try zipping backend first
+        try:
+            # Check if the reflex version is >= 0.7.6
+            if rx_version <= breaking_version:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    False,
+                    True,
+                    True,
+                )  # pyright: ignore[reportCallIssue]
+            else:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    False,
+                    True,
+                    include_db,
+                    True,  # pyright: ignore[reportCallIssue]
+                )
+        except Exception as ex:
+            console.error(f"Unable to export due to: {ex}")
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ex
+
+        # Zip frontend
+        try:
+            # Check if the reflex version is >= 0.7.6
+            if rx_version <= breaking_version:
+                export_fn(
+                    str(temporary_dir_path), server_url, host_url, True, False, True
+                )  # pyright: ignore[reportCallIssue]
+            else:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    True,
+                    False,
+                    include_db,
+                    True,  # pyright: ignore[reportCallIssue]
+                )
+        except ImportError as ie:
+            console.error(
+                f"Encountered ImportError, did you install all the dependencies? {ie}"
+            )
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ie
+        except Exception as ex:
+            console.error(f"Unable to export due to: {ex}")
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ex
+
+        result = hosting.create_deployment(
+            app_id=app.get("id"),
+            app_name=app_name,
+            project_id=project_id,
+            regions=regions,
+            zip_dir=Path(temporary_dir_path),
+            hostname=extract_domain(host_url) if hostname else None,
+            vmtype=vmtype,
+            secrets=processed_envs,
+            client=authenticated_client,
+            packages=packages,
+            strategy=strategy,
+            description=deployment_description,
+        )
+        if "failed" in result:
+            console.error(result)
+            raise click.exceptions.Exit(1)
     hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
     console.print(
         f"deployment progress can now be viewed on the website: {hosting_ui_url}"

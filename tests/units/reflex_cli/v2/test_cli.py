@@ -1138,3 +1138,49 @@ def test_resolve_deploy_provider_interactive_prompt_selects_gcp(mocker: MockFixt
     )
     assert result == "gcp"
     mock_set.assert_called_once()
+
+
+def test_restore_provider_on_failure_restores_on_error(mocker: MockFixture):
+    """A failure after a switch re-pins the previous provider, then re-raises."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="fly"
+    )
+    app = {"id": "app-1", "name": "myapp"}
+    error = ValueError("boom")
+
+    with (
+        pytest.raises(ValueError),
+        cli._restore_provider_on_failure(app, "fly", client),
+    ):
+        raise error
+
+    mock_set.assert_called_once_with("app-1", "fly", client=client)
+
+
+def test_restore_provider_on_failure_noop_without_switch(mocker: MockFixture):
+    """With no prior switch, a failure leaves the provider untouched."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp"}
+    error = ValueError("boom")
+
+    with (
+        pytest.raises(ValueError),
+        cli._restore_provider_on_failure(app, None, client),
+    ):
+        raise error
+
+    mock_set.assert_not_called()
+
+
+def test_restore_provider_on_failure_noop_on_success(mocker: MockFixture):
+    """On success the provider is left as the newly-switched one."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp"}
+
+    with cli._restore_provider_on_failure(app, "fly", client):
+        pass
+
+    mock_set.assert_not_called()

@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import GetAppError
-from reflex_cli.v2.apps import apps_cli
+from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
 from typer.main import Typer, get_command
 
@@ -1644,3 +1644,44 @@ def test_app_describe_error_exits_nonzero(mocker: MockFixture):
     )
 
     assert result.exit_code == 1
+
+
+def test_resolve_app_id_prefers_app_name_over_config(mocker: MockFixture):
+    """An explicit --app-name overrides a configured appid rather than being ignored."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.read_config",
+        return_value=Config(appid="config-app-id"),
+    )
+    search = mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value={"id": "named-app-id"}
+    )
+
+    assert _resolve_app_id(None, "myapp", client, interactive=False) == "named-app-id"
+    search.assert_called_once()
+
+
+def test_resolve_app_id_falls_back_to_config(mocker: MockFixture):
+    """With no explicit app id or name, the configured appid is used."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.read_config",
+        return_value=Config(appid="config-app-id"),
+    )
+    search = mocker.patch("reflex_cli.utils.hosting.search_app")
+
+    assert _resolve_app_id(None, None, client, interactive=False) == "config-app-id"
+    search.assert_not_called()
+
+
+def test_resolve_app_id_explicit_id_wins(mocker: MockFixture):
+    """An explicit app id short-circuits both name lookup and config."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    read_config = mocker.patch("reflex_cli.utils.hosting.read_config")
+    search = mocker.patch("reflex_cli.utils.hosting.search_app")
+
+    assert _resolve_app_id("explicit-id", "myapp", client, interactive=False) == (
+        "explicit-id"
+    )
+    search.assert_not_called()
+    read_config.assert_not_called()

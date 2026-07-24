@@ -49,7 +49,19 @@ def _resolve_app_id(
     """
     from reflex_cli.utils import hosting
 
-    if not app_id:
+    # Explicit --app-id wins, then an explicit --app-name lookup, and only then
+    # the cloud.yml/pyproject appid — so passing --app-name always overrides a
+    # configured appid rather than being silently ignored.
+    if not app_id and app_name is not None:
+        result = hosting.search_app(
+            app_name=app_name,
+            project_id=None,
+            client=client,
+            interactive=interactive,
+        )
+        app_id = result.get("id") if result else None
+
+    if not app_id and app_name is None:
         config = hosting.read_config()
         if config:
             app_id = config.appid
@@ -58,15 +70,6 @@ def _resolve_app_id(
                     "app_id must be a string or None. Please check your config file."
                 )
                 raise click.exceptions.Exit(1)
-
-    if app_name is not None and app_id is None:
-        result = hosting.search_app(
-            app_name=app_name,
-            project_id=None,
-            client=client,
-            interactive=interactive,
-        )
-        app_id = result.get("id") if result else None
 
     if not app_id:
         console.error("No valid app_id or app_name provided.")
@@ -219,8 +222,8 @@ def app_rollback(
             raise click.exceptions.Exit(1)
         console.success(f"Rollback to deployment {deployment_id} started.")
         console.print(
-            "Track progress with `reflex cloud apps status` or the Reflex Cloud "
-            "dashboard."
+            f"Track progress with `reflex cloud apps status {deployment_id} "
+            "--watch` or the Reflex Cloud dashboard."
         )
     except NotAuthenticatedError as err:
         console.error("You are not authenticated. Run `reflex login` to authenticate.")
