@@ -1,6 +1,6 @@
 import importlib.util
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 from pytest_mock import MockerFixture
@@ -231,8 +231,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
             "@import url('./style.css');\n"
-            f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
-            f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
+            "@import url('./preprocess/styles_a.css');\n"
+            "@import url('./preprocess/styles_b.css');"
         ),
     )
 
@@ -252,8 +252,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
             "@import url('./style.css');\n"
-            f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
-            f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
+            "@import url('./preprocess/styles_a.css');\n"
+            "@import url('./preprocess/styles_b.css');"
         ),
     )
 
@@ -268,6 +268,55 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     assert (
         project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
     ).read_text() == expected_result
+
+
+def test_compile_stylesheets_nested_import_uses_posix_separators(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Nested stylesheet imports must use forward slashes on every platform.
+
+    A CSS `@import url(...)` treats a backslash as an escape introducer, not a
+    path separator, so emitting `str(target_path)` breaks nested stylesheets on
+    Windows (where the relative path is backslash-separated). Simulate that by
+    forcing the relative path to a `PureWindowsPath` and assert the emitted
+    import is POSIX-normalized.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    nested_dir = assets_dir / "subdir"
+    nested_dir.mkdir()
+    (nested_dir / "theme.css").write_text(".root { color: red; }")
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    real_relative_to = Path.relative_to
+    mocker.patch.object(
+        Path,
+        "relative_to",
+        lambda self, *args, **kwargs: PureWindowsPath(
+            real_relative_to(self, *args, **kwargs)
+        ),
+    )
+
+    _, code = compiler.compile_root_stylesheet(["/subdir/theme.css"])
+
+    assert "@import url('./subdir/theme.css');" in code
+    assert "\\" not in code
 
 
 def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
