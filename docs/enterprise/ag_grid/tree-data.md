@@ -109,28 +109,43 @@ class TreeDisplayState(rx.State):
         {"host": "server2", "path": ["Downloads", "file2.pdf"], "size": 2048},
     ]
 
+    @rx.event
+    def set_combine_hosts(self, value: bool):
+        self.combine_hosts = value
+
 
 def tree_grid_conditional():
-    return rxe.ag_grid(
-        id="tree_grid_conditional",
-        row_data=TreeDisplayState.data,
-        tree_data=True,
-        get_data_path=rx.cond(
-            TreeDisplayState.combine_hosts,
-            rx.vars.function.ArgsFunctionOperation.create(
-                ["data"],
-                rx.Var("data.path"),
+    return rx.vstack(
+        rx.hstack(
+            rx.switch(
+                checked=TreeDisplayState.combine_hosts,
+                on_change=TreeDisplayState.set_combine_hosts,
             ),
-            rx.vars.function.ArgsFunctionOperation.create(
-                ["data"],
-                rx.Var("[data.host, ...data.path]"),
-            ),
-        ).to(rx.vars.FunctionVar),
-        key=f"grid_{TreeDisplayState.combine_hosts}",
-        auto_group_column_def={"headerName": "File Explorer", "minWidth": 280},
-        column_defs=[{"field": "size", "aggFunc": "sum"}],
+            rx.text("Combine both hosts into one tree"),
+            align="center",
+        ),
+        rxe.ag_grid(
+            id="tree_grid_conditional",
+            row_data=TreeDisplayState.data,
+            tree_data=True,
+            get_data_path=rx.cond(
+                TreeDisplayState.combine_hosts,
+                rx.vars.function.ArgsFunctionOperation.create(
+                    ["data"],
+                    rx.Var("data.path"),
+                ),
+                rx.vars.function.ArgsFunctionOperation.create(
+                    ["data"],
+                    rx.Var("[data.host, ...data.path]"),
+                ),
+            ).to(rx.vars.FunctionVar),
+            key=f"grid_{TreeDisplayState.combine_hosts}",
+            auto_group_column_def={"headerName": "File Explorer", "minWidth": 280},
+            column_defs=[{"field": "size", "aggFunc": "sum"}],
+            width="100%",
+            height="500px",
+        ),
         width="100%",
-        height="500px",
     )
 ```
 

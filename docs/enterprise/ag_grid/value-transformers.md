@@ -12,12 +12,6 @@ import reflex_enterprise as rxe
 
 AgGrid allow you to apply transformers based on the column of your grid. This allow you to perform operations on the data before displaying it on the grid, without having to pre-process the data on the backend, reducing the load on your application.
 
-TOC:
-- [Value Getter](#value-getter)
-- [Value Formatter](#value-formatter)
-- [Formatter Patterns](#formatter-patterns)
-- [Cell Renderer](#cell-renderer)
-
 ## Value Getter
 
 `value_getter` is a property of the column definition that allows you to define a function that will be called to get the value of the cell. This function will receive the row data as a parameter and should return the value to be displayed on the cell.
