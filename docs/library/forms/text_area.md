@@ -145,15 +145,16 @@ needs a client-side handler (e.g. via `rx.call_script`), not a plain
 ## Auto-Expanding Height
 
 Set `auto_height=True` to make a text area grow to fit its content as the user
-types, instead of scrolling inside a fixed box. Pair it with `rows="0"` so it
-starts at a single line and expands from there.
+types, instead of scrolling inside a fixed box. Pair it with `rows="1"` and
+`min_height="0"` so it starts at a single line and expands from there.
 
 ```python demo exec
 def auto_height_example():
     return rx.text_area(
         placeholder="Type a few lines — the box grows to fit",
         auto_height=True,
-        rows="0",
+        rows="1",
+        min_height="0",
         width="100%",
     )
 ```
