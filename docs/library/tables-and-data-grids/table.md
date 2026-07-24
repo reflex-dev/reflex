@@ -1055,6 +1055,8 @@ def loading_data_table_example3():
 Give each paginated table its own state vars (`offset`, `limit`, `total_items`) so multiple tables on a page paginate independently, and reset `offset` to `0` whenever the search or sort value changes — otherwise the user may be left on a page number beyond the end of the newly filtered results.
 ```
 
+For a reusable paginated table, define it with [`ComponentState`](/docs/state-structure/component-state/): each instance automatically gets its own `offset`, `limit`, and `total_items`, so you can place several independent paginated tables on a page without hand-managing separate state vars for each.
+
 ## More advanced examples
 
 The real power of the `rx.table` comes where you are able to visualise, add and edit data live in your app. Check out these apps and code to see how this is done: app: https://customer-data-app.reflex.run code: https://github.com/reflex-dev/templates/tree/main/customer_data_app and code: https://github.com/reflex-dev/templates/tree/main/sales.

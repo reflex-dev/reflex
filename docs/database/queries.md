@@ -38,7 +38,7 @@ class QueryUser(rx.State):
     def get_users(self):
         with rx.session() as session:
             self.users = session.exec(
-                User.select().where(User.username.contains(self.name))
+                select(User).where(User.username.contains(self.name))
             ).all()
 ```
 
@@ -76,7 +76,7 @@ class ChangeEmail(rx.State):
     def modify_user(self):
         with rx.session() as session:
             user = session.exec(
-                User.select().where((User.username == self.username))
+                select(User).where((User.username == self.username))
             ).first()
             user.email = self.email
             session.add(user)
@@ -96,7 +96,7 @@ class RemoveUser(rx.State):
     def delete_user(self):
         with rx.session() as session:
             user = session.exec(
-                User.select().where(User.username == self.username)
+                select(User).where(User.username == self.username)
             ).first()
             session.delete(user)
             session.commit()
@@ -275,18 +275,24 @@ Fetch everything in one statement with a `JOIN`, an `IN (...)` list, or
 # Efficient: one query for all users at once.
 with rx.session() as session:
     orders = session.exec(
-        Order.select().where(Order.user_id.in_([user.id for user in users]))
+        select(Order).where(Order.user_id.in_([user.id for user in users]))
     ).all()
 
 # Inefficient: one query per user (N+1).
 with rx.session() as session:
     for user in users:
-        orders = session.exec(Order.select().where(Order.user_id == user.id)).all()
+        orders = session.exec(select(Order).where(Order.user_id == user.id)).all()
 ```
 
 The `.in_()` method binds each value as a separate query parameter, so it is
-safe to use with user-provided values. In raw SQL, use an *expanding* bind
-parameter for the same effect — never join the values into the SQL string:
+safe to use with user-provided values.
+
+```md alert info
+# Raw SQL: pass lists with an expanding bind parameter
+In raw SQL, use an *expanding* bind parameter for an `IN` list — never join the values into the SQL string, which exposes the query to SQL injection.
+```
+
+The example below binds the list with an expanding parameter:
 
 ```python
 import sqlalchemy
@@ -410,7 +416,7 @@ class AsyncUserState(rx.State):
     @rx.event(background=True)
     async def get_users_async(self):
         async with rx.asession() as asession:
-            result = await asession.execute(User.select())
+            result = await asession.execute(select(User))
             async with self:
                 self.users = result.all()
 ```
@@ -427,7 +433,7 @@ class AsyncQueryUser(rx.State):
     @rx.event(background=True)
     async def get_users(self):
         async with rx.asession() as asession:
-            stmt = User.select().where(User.username.contains(self.name))
+            stmt = select(User).where(User.username.contains(self.name))
             result = await asession.execute(stmt)
             async with self:
                 self.users = result.all()
@@ -461,7 +467,7 @@ class AsyncChangeEmail(rx.State):
     @rx.event(background=True)
     async def modify_user(self):
         async with rx.asession() as asession:
-            stmt = User.select().where(User.username == self.username)
+            stmt = select(User).where(User.username == self.username)
             result = await asession.execute(stmt)
             user = result.first()
             if user:
@@ -481,7 +487,7 @@ class AsyncRemoveUser(rx.State):
     @rx.event(background=True)
     async def delete_user(self):
         async with rx.asession() as asession:
-            stmt = User.select().where(User.username == self.username)
+            stmt = select(User).where(User.username == self.username)
             result = await asession.execute(stmt)
             user = result.first()
             if user:

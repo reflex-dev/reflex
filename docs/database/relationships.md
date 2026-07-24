@@ -172,6 +172,7 @@ related rows for that selection, filtering on the foreign key.
 from typing import List, Optional
 
 import reflex as rx
+from sqlmodel import select
 
 
 class PostFlagsState(rx.State):
@@ -182,14 +183,14 @@ class PostFlagsState(rx.State):
     @rx.event
     def load_posts(self):
         with rx.session() as session:
-            self.posts = session.exec(Post.select().limit(15)).all()
+            self.posts = session.exec(select(Post).limit(15)).all()
 
     @rx.event
     def select_post(self, post_id: int):
         self.selected_post_id = post_id
         with rx.session() as session:
             self.selected_flags = session.exec(
-                Flag.select().where(Flag.post_id == post_id)
+                select(Flag).where(Flag.post_id == post_id)
             ).all()
 ```
 
@@ -204,5 +205,5 @@ eager loading options above.
 ```python
 post_ids = [post.id for post in self.posts]
 with rx.session() as session:
-    flags = session.exec(Flag.select().where(Flag.post_id.in_(post_ids))).all()
+    flags = session.exec(select(Flag).where(Flag.post_id.in_(post_ids))).all()
 ```
