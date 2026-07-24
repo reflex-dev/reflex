@@ -168,7 +168,7 @@ Renderers that use state or event handlers must be defined as an `@rx.memo` comp
 
 ```python
 @rx.memo
-def row_action_button(rowid: str) -> rx.Component:
+def row_action_button(rowid: rx.Var[str]) -> rx.Component:
     return rx.flex(
         rx.button(
             RowClickCounterState.row_clicks.get(rowid, 0),

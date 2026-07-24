@@ -13,7 +13,7 @@ To enable it, set `tree_data=True` and tell the grid where to find the path with
 
 When a field in the row data already contains the path array, pass its name as a string via `data_path_key`:
 
-```python
+```python demo exec
 import reflex as rx
 import reflex_enterprise as rxe
 
@@ -67,9 +67,9 @@ Key configuration:
 
 ## Custom Paths: `get_data_path`
 
-For anything beyond reading a single field, pass a JavaScript function as `get_data_path`. It must be built with `rx.vars.function.ArgsFunctionOperation` and cast to `rx.vars.FunctionVar`:
+For anything beyond reading a single field, pass a JavaScript function as `get_data_path`, built with `rx.vars.function.ArgsFunctionOperation`:
 
-```python
+```python demo exec
 def tree_grid_custom():
     return rxe.ag_grid(
         id="tree_grid_custom",
@@ -78,7 +78,7 @@ def tree_grid_custom():
         get_data_path=rx.vars.function.ArgsFunctionOperation.create(
             ["data"],
             rx.Var("data.path"),
-        ).to(rx.vars.FunctionVar),
+        ),
         auto_group_column_def={"headerName": "File Path", "minWidth": 280},
         column_defs=[
             {"field": "size", "aggFunc": "sum"},
@@ -101,7 +101,7 @@ Returning the function from an `@rx.var` (or storing it in state) raises `Invali
 
 `get_data_path` can be selected at render time with `rx.cond`. Give the grid a `key` derived from the condition so it re-initializes when the path logic changes:
 
-```python
+```python demo exec
 class TreeDisplayState(rx.State):
     combine_hosts: bool = True
     data: list[dict] = [

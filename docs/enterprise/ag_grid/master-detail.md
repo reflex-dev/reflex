@@ -13,7 +13,7 @@ Three pieces are required:
 2. A column with `"cell_renderer": "agGroupCellRenderer"`, which renders the expand/collapse arrows.
 3. `detail_cell_renderer_params` describing the detail grid's columns and how to extract the detail rows from the master row.
 
-```python
+```python demo exec
 import reflex as rx
 import reflex_enterprise as rxe
 
