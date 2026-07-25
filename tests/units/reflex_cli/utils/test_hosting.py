@@ -13,14 +13,27 @@ from reflex_cli.utils.hosting import (
     ScaleType,
     SecurityReviewError,
     authenticated_token,
+    create_app,
+    create_deployment,
     delete_token_from_config,
+    gcp_deploy_available,
+    get_app_history,
     get_authenticated_client,
     get_existing_access_token,
+    get_gcp_provider_status,
     get_security_review,
     get_selected_project,
+    get_token_org_id,
+    get_token_tier,
+    list_provider_accounts,
     normalize_project_id,
+    normalize_provider,
+    provider_display_name,
+    rollback_deployment,
     save_token_to_config,
+    set_app_provider,
     submit_security_review,
+    update_deployment_description,
 )
 
 _CLIENT = AuthenticatedClient(token="fake-token", validated_data={})
@@ -338,3 +351,244 @@ def test_get_security_review_returns_payload(mocker: MockerFixture):
     assert mock_get.call_args.args[0].endswith(
         "/api/v1/agents/security-review/jobs/job-1"
     )
+
+
+def _client(**data: object) -> AuthenticatedClient:
+    """Build an authenticated client with the given validated token data."""
+    return AuthenticatedClient(token="fake-token", validated_data=data)
+
+
+def _ok_body(mocker: MockerFixture, body: object):
+    """Build a mock 2xx response whose ``.json()`` returns an arbitrary body.
+
+    ``_ok`` only accepts dict payloads; use this for list/str JSON responses.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        body: The value ``response.json()`` should return.
+
+    Returns:
+        A mock response object.
+
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = body
+    return response
+
+
+def test_normalize_provider():
+    """User-facing provider names map to backend values (or None if unknown)."""
+    from reflex_cli.utils.hosting import PROVIDER_GCP, PROVIDER_REFLEX_CLOUD
+
+    assert normalize_provider("reflex-cloud") == PROVIDER_REFLEX_CLOUD
+    assert normalize_provider("Reflex") == PROVIDER_REFLEX_CLOUD
+    assert normalize_provider("GCP") == PROVIDER_GCP
+    assert normalize_provider("google-cloud") == PROVIDER_GCP
+    assert normalize_provider("aws") is None
+    # The backend wire value is not exposed as a user-facing name.
+    assert normalize_provider("fly") is None
+
+
+def test_provider_display_name():
+    """Backend provider values render human-facing labels, defaulting to Cloud."""
+    assert provider_display_name("gcp") == "Google Cloud (GCP)"
+    assert provider_display_name("fly") == "Reflex Cloud"
+    assert provider_display_name(None) == "Reflex Cloud"
+
+
+def test_get_token_org_and_tier():
+    """org_id/tier come from the validated token data, None when absent."""
+    client = _client(org_id="org-1", tier="Enterprise")
+    assert get_token_org_id(client) == "org-1"
+    assert get_token_tier(client) == "Enterprise"
+    assert get_token_org_id(_client()) is None
+    assert get_token_tier(_client()) is None
+
+
+def test_gcp_deploy_available_configured_and_allowed(mocker: MockerFixture):
+    """GCP is offered only when it's both connected and tier-allowed."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        return_value={"configured": True, "allowed": True, "region": "us-central1"},
+    )
+    assert gcp_deploy_available(_client(org_id="o")) == {
+        "configured": True,
+        "allowed": True,
+        "region": "us-central1",
+    }
+
+
+def test_gcp_deploy_available_not_allowed(mocker: MockerFixture):
+    """A connected-but-not-allowed org does not get GCP offered."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        return_value={"configured": True, "allowed": False},
+    )
+    assert gcp_deploy_available(_client(org_id="o")) is None
+
+
+def test_gcp_deploy_available_swallows_errors(mocker: MockerFixture):
+    """A lookup failure falls back to no GCP rather than aborting the deploy."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        side_effect=Exception("boom"),
+    )
+    assert gcp_deploy_available(_client(org_id="o")) is None
+
+
+def test_gcp_deploy_available_without_org():
+    """No resolvable org id means GCP is not offered."""
+    assert gcp_deploy_available(_client()) is None
+
+
+def test_get_gcp_provider_status_hits_endpoint(mocker: MockerFixture):
+    """The status call targets the org-scoped GCP status endpoint."""
+    mock_get = mocker.patch(
+        "httpx.get", return_value=_ok(mocker, {"configured": True, "allowed": True})
+    )
+    assert get_gcp_provider_status("org-1", _CLIENT) == {
+        "configured": True,
+        "allowed": True,
+    }
+    assert mock_get.call_args.args[0].endswith(
+        "/api/v1/orgs/org-1/provider-accounts/gcp/status"
+    )
+
+
+def test_list_provider_accounts_hits_endpoint(mocker: MockerFixture):
+    """Listing connected providers targets the org provider-accounts endpoint."""
+    mock_get = mocker.patch(
+        "httpx.get", return_value=_ok_body(mocker, [{"provider": "gcp"}])
+    )
+    assert list_provider_accounts("org-1", _CLIENT) == [{"provider": "gcp"}]
+    assert mock_get.call_args.args[0].endswith("/api/v1/orgs/org-1/provider-accounts")
+
+
+def test_set_app_provider_success(mocker: MockerFixture):
+    """A successful switch posts the provider and returns the new value."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"provider": "gcp"})
+    )
+    assert set_app_provider("app-1", "gcp", _CLIENT) == "gcp"
+    assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/provider")
+    assert mock_post.call_args.kwargs["json"] == {"provider": "gcp"}
+
+
+def test_set_app_provider_error(mocker: MockerFixture):
+    """A rejected switch surfaces the server detail as an error string."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 403, "Enterprise required"))
+    result = set_app_provider("app-1", "gcp", _CLIENT)
+    assert result.startswith("set provider failed")
+    assert "Enterprise required" in result
+
+
+def test_rollback_deployment_success(mocker: MockerFixture):
+    """A successful rollback returns None and targets the rollback endpoint."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok(mocker))
+    assert rollback_deployment("app-1", "dep-1", _CLIENT) is None
+    assert mock_post.call_args.args[0].endswith(
+        "/api/v1/apps/app-1/deployments/dep-1/rollback"
+    )
+
+
+def test_rollback_deployment_error(mocker: MockerFixture):
+    """A rejected rollback surfaces the server detail as an error string."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 400, "no image"))
+    result = rollback_deployment("app-1", "dep-1", _CLIENT)
+    assert result is not None
+    assert result.startswith("rollback failed")
+    assert "no image" in result
+
+
+def test_update_deployment_description_success(mocker: MockerFixture):
+    """Setting a note posts the description to the deployment description endpoint."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok(mocker))
+    assert update_deployment_description("app-1", "dep-1", "note", _CLIENT) is None
+    assert mock_post.call_args.args[0].endswith(
+        "/api/v1/apps/app-1/deployments/dep-1/description"
+    )
+    assert mock_post.call_args.kwargs["json"] == {"description": "note"}
+
+
+def test_update_deployment_description_error(mocker: MockerFixture):
+    """A missing deployment surfaces the server detail as an error string."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 404, "no deployment"))
+    result = update_deployment_description("app-1", "dep-1", "note", _CLIENT)
+    assert result is not None
+    assert result.startswith("update description failed")
+
+
+def test_create_app_forwards_provider(mocker: MockerFixture):
+    """create_app forwards a provider when given one."""
+    response = _ok(mocker, {"id": "app-1", "name": "n"})
+    response.status_code = 200
+    mock_post = mocker.patch("httpx.post", return_value=response)
+    create_app("n", _CLIENT, "desc", "proj-1", provider="gcp")
+    assert mock_post.call_args.kwargs["json"]["provider"] == "gcp"
+
+
+def test_create_app_omits_provider_when_none(mocker: MockerFixture):
+    """create_app omits the provider field when none is requested."""
+    response = _ok(mocker, {"id": "app-1", "name": "n"})
+    response.status_code = 200
+    mock_post = mocker.patch("httpx.post", return_value=response)
+    create_app("n", _CLIENT, "desc", "proj-1")
+    assert "provider" not in mock_post.call_args.kwargs["json"]
+
+
+def test_create_deployment_forwards_description(mocker: MockerFixture):
+    """A per-deployment note is sent as the multipart description field."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+    mocker.patch("importlib.metadata.version", return_value="0.1.99")
+    mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
+    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
+    from pathlib import Path
+
+    create_deployment(
+        zip_dir=Path("/tmp"),
+        client=_CLIENT,
+        app_name="n",
+        project_id=None,
+        regions=None,
+        hostname=None,
+        vmtype=None,
+        secrets=None,
+        packages=None,
+        strategy=None,
+        app_id="app-1",
+        description="my note",
+    )
+    assert mock_post.call_args.kwargs["data"]["description"] == "my note"
+
+
+def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
+    """History rows carry the deployment note and rollback eligibility."""
+    payload = [
+        {
+            "id": "d1",
+            "status": "Running",
+            "hostname": "h",
+            "python_version": "3.11",
+            "reflex_version": "1.0",
+            "vm_type": "c1",
+            "timestamp": "t",
+            "description": "hotfix",
+            "can_rollback": True,
+        },
+        {
+            "id": "d2",
+            "status": "Historical",
+            "hostname": "h2",
+            "python_version": "3.11",
+            "reflex_version": "1.0",
+            "vm_type": "c1",
+            "timestamp": "t2",
+        },
+    ]
+    mocker.patch("httpx.get", return_value=_ok_body(mocker, payload))
+    history = get_app_history("app-1", _CLIENT)
+    assert history[0]["description"] == "hotfix"
+    assert history[0]["can rollback"] is True
+    assert history[1]["description"] == ""
+    assert history[1]["can rollback"] is False
