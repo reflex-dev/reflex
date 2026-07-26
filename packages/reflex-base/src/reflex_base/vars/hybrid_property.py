@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Generic, cast, overload
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Generic, cast, overload
 
 from typing_extensions import TypeVar
 
@@ -11,8 +11,18 @@ from reflex_base.utils.exceptions import HybridPropertyError
 
 from .base import Var
 
+if TYPE_CHECKING:
+    from .number import BooleanVar, NumberVar
+    from .object import ObjectVar
+    from .sequence import ArrayVar, StringVar
+
 _T = TypeVar("_T")
 _O = TypeVar("_O")
+# the getter's return type, for resolving class-level access to a var type
+_INT = TypeVar("_INT", bound=int)
+_STR = TypeVar("_STR", bound=str)
+_SEQUENCE = TypeVar("_SEQUENCE", bound=Sequence[Any])
+_MAPPING = TypeVar("_MAPPING", bound=Mapping[Any, Any])
 # Without a var function the frontend value is whatever running the getter
 # against vars produces, and a var function may declare there is none.
 _V = TypeVar("_V", default=Var[Any] | None)
@@ -71,6 +81,11 @@ class HybridProperty(Generic[_T, _O, _V]):
     var this descriptor returns there. `_T` is the value the getter returns on an
     instance, `_O` the class the property is defined on, and `_V` the frontend var
     returned when the property is accessed on the class.
+
+    Without a var function, class-level access is typed as the var equivalent of
+    `_T`, which holds as long as the getter builds a Var when it runs against
+    vars. A getter that collapses them to a plain Python value (e.g. `str(...)`,
+    `len(...)`) needs a var function to say what the frontend value really is.
     """
 
     def __init__(
@@ -160,6 +175,90 @@ class HybridProperty(Generic[_T, _O, _V]):
             raise AttributeError(msg)
         # the getter runs against vars here, so it returns the frontend var
         return cast("Var[Any] | None", self.fget(owner))
+
+    # Without an explicitly typed var function, class-level access resolves to the
+    # var equivalent of the getter's return type, the way `Field` does for base
+    # vars. The `_V` default in the `self` annotations keeps these from matching
+    # once a var function has declared a type of its own.
+    @overload
+    def __get__(
+        self: HybridProperty[bool, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[bool | None, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> BooleanVar | None: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_INT, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> NumberVar[_INT]: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_INT | None, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> NumberVar[_INT] | None: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_STR, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_STR | None, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> StringVar | None: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_MAPPING, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> ObjectVar[_MAPPING]: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_MAPPING | None, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> ObjectVar[_MAPPING] | None: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_SEQUENCE, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> ArrayVar[_SEQUENCE]: ...
+
+    @overload
+    def __get__(
+        self: HybridProperty[_SEQUENCE | None, Any, Var[Any] | None],
+        instance: None,
+        owner: type,
+        /,
+    ) -> ArrayVar[_SEQUENCE] | None: ...
 
     @overload
     def __get__(self, instance: None, owner: type, /) -> _V: ...

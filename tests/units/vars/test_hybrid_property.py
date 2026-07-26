@@ -248,3 +248,40 @@ def test_hybrid_property_var_fn_as_classmethod():
     assert str(Var.create(ClassmethodVarState.doubled)) == str(
         Var.create(ClassmethodVarState.count * 4)
     )
+
+
+def test_hybrid_property_class_access_var_type_follows_getter():
+    """Class-level access resolves to the var equivalent of the getter's return type."""
+
+    class LadderState(rx.State):
+        count: int = 0
+        names: list[str] = []
+
+        @hybrid_property
+        def positive(self) -> bool:
+            return self.count > 0
+
+        @hybrid_property
+        def doubled(self) -> int:
+            return self.count * 2
+
+        @hybrid_property
+        def upper_names(self) -> list[str]:
+            return [name.upper() for name in self.names]
+
+        @upper_names.var
+        @classmethod
+        def _upper_names_var(cls) -> Var[list[str]]:
+            return cls.names  # pyright: ignore[reportReturnType]
+
+    # the operations these var types carry must be available on class access
+    assert isinstance(LadderState.positive & True, Var)
+    assert isinstance(LadderState.doubled + 1, Var)
+    assert isinstance(LadderState.upper_names.length(), Var)
+    # ... while the getter still serves the instance
+    state = LadderState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state.count = 2
+    state.names = ["a"]
+    assert state.positive is True
+    assert state.doubled == 4
+    assert state.upper_names == ["A"]
