@@ -116,13 +116,19 @@ class HybridProperty(Generic[_T, _O, _V]):
         """
         return self._name or "hybrid_property"
 
-    def _copy(self) -> HybridProperty[_T, _O, _V]:
-        """Copy the property, so each class gets its own descriptor.
+    def _derive(self) -> _HybridPropertyBinding[_T, _O, _V]:
+        """Copy the property into a binding, so each class gets its own descriptor.
+
+        The copy is a binding rather than a plain property so that whichever
+        decorator produced it (`getter`, `setter`, `deleter` or `var`) may be
+        defined under a name of its own without losing the property's name.
 
         Returns:
-            A copy of this property.
+            A copy of this property that rebinds under the property's name.
         """
-        new = type(self)(self.fget, self.fset, self.fdel, self.__doc__)
+        new: _HybridPropertyBinding[_T, _O, _V] = _HybridPropertyBinding(
+            self.fget, self.fset, self.fdel, self.__doc__
+        )
         new._var = self._var
         new._name = self._name
         return new
@@ -234,7 +240,7 @@ class HybridProperty(Generic[_T, _O, _V]):
         Returns:
             A new property instance with the getter function set.
         """
-        new = self._copy()
+        new = self._derive()
         new.fget = fget
         return new
 
@@ -247,7 +253,7 @@ class HybridProperty(Generic[_T, _O, _V]):
         Returns:
             A new property instance with the setter function set.
         """
-        new = self._copy()
+        new = self._derive()
         new.fset = fset
         return new
 
@@ -260,7 +266,7 @@ class HybridProperty(Generic[_T, _O, _V]):
         Returns:
             A new property instance with the deleter function set.
         """
-        new = self._copy()
+        new = self._derive()
         new.fdel = fdel
         return new
 
@@ -308,35 +314,36 @@ class HybridProperty(Generic[_T, _O, _V]):
         """
         if isinstance(func, (classmethod, staticmethod)):
             func = func.__func__
-        new = _HybridPropertyVarBinding(self)
+        new = self._derive()
         new._var = func
         return new
 
 
-class _HybridPropertyVarBinding(HybridProperty[_T, _O, _V]):
-    """The descriptor `HybridProperty.var` returns, which rebinds itself to the property's name.
+class _HybridPropertyBinding(HybridProperty[_T, _O, _V]):
+    """The descriptor the `getter`, `setter`, `deleter` and `var` decorators return.
 
-    A var function is commonly defined under a name of its own so it does not
+    Those functions are commonly defined under a name of their own so they do not
     shadow the property's declaration. This descriptor puts the finished property
     back under the property's name when the class body is evaluated, and removes
     itself from the alias name.
+
+    When several of them are used on one property, each must decorate the result of
+    the previous one, since a copy carries only what the property it was derived
+    from had::
+
+        @value.setter
+        def _value_setter(self, new: str) -> None: ...
+
+        @_value_setter.deleter
+        def _value_deleter(self) -> None: ...
     """
-
-    def __init__(self, prop: HybridProperty[_T, _O, Any]) -> None:
-        """Initialize the binding from the property it extends.
-
-        Args:
-            prop: The property the var function was defined for.
-        """
-        super().__init__(prop.fget, prop.fset, prop.fdel, prop.__doc__)
-        self._name = prop._name
 
     def __set_name__(self, owner: type, name: str, /) -> None:
         """Bind the finished property under the name of the property it extends.
 
         Args:
-            owner: The class the var function is defined on.
-            name: The attribute name the var function is bound to.
+            owner: The class the decorated function is defined on.
+            name: The attribute name the decorated function is bound to.
 
         Raises:
             HybridPropertyError: If the property it extends has no known name.
@@ -344,9 +351,9 @@ class _HybridPropertyVarBinding(HybridProperty[_T, _O, _V]):
         target = self._name
         if target is None:
             msg = (
-                f"The var function '{name}' of '{owner.__name__}' extends a hybrid "
-                f"property with no name; define the property in a class body or with "
-                f"a named getter function."
+                f"'{name}' of '{owner.__name__}' extends a hybrid property with no "
+                f"name; define the property in a class body or with a named getter "
+                f"function."
             )
             raise HybridPropertyError(msg)
         bound = HybridProperty(self.fget, self.fset, self.fdel, self.__doc__)

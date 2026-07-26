@@ -53,7 +53,7 @@ class HybridQuantity:
         return self.quantity != 0
 
     @is_nonzero.var
-    def is_nonzero(cls) -> Var[bool]:
+    def _is_nonzero_var(cls) -> Var[bool]:
         """The frontend var for ``is_nonzero`` (deliberately distinct from the getter).
 
         Returns:

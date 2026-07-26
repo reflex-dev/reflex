@@ -35,7 +35,7 @@ def test_hybrid_property_var_fn_backend_var_access_raises():
             return self.name
 
         @value.var
-        def value(cls) -> Var[str]:
+        def _value_var(cls) -> Var[str]:
             return cls._secret  # pyright: ignore[reportReturnType]
 
     with pytest.raises(HybridPropertyError, match="_secret"):
@@ -72,8 +72,8 @@ def test_hybrid_property_var_returns_new_descriptor():
         first: str = "a"
         last: str = "b"
 
-        @Mixin.full.var
-        def full(cls) -> Var:
+        @original.var
+        def _full_var(cls) -> Var:
             return cls.first  # pyright: ignore[reportReturnType]
 
     class StateB(Mixin, rx.State):
@@ -154,7 +154,7 @@ def test_hybrid_property_var_fn_under_own_name():
 
     # the alias does not linger on the class
     assert "_doubled_var" not in AliasState.__dict__
-    assert AliasState(_reflex_internal_init=True).doubled == 0
+    assert AliasState(_reflex_internal_init=True).doubled == 0  # pyright: ignore[reportCallIssue]
     assert str(Var.create(AliasState.doubled)) == str(Var.create(AliasState.count * 3))
 
 
@@ -173,7 +173,7 @@ def test_hybrid_property_var_fn_may_return_none():
             return None
 
     assert NoFrontendState.maybe is None
-    assert NoFrontendState(_reflex_internal_init=True).maybe == 0
+    assert NoFrontendState(_reflex_internal_init=True).maybe == 0  # pyright: ignore[reportCallIssue]
 
 
 def test_hybrid_property_none_on_object_var_raises():
@@ -214,11 +214,11 @@ def test_hybrid_property_setter_and_deleter():
             return self._value
 
         @value.setter
-        def value(self, new: str) -> None:
+        def _value_setter(self, new: str) -> None:
             self._value = new
 
-        @value.deleter
-        def value(self) -> None:
+        @_value_setter.deleter
+        def _value_deleter(self) -> None:
             seen.append("deleted")
 
     holder = Holder()
@@ -244,7 +244,7 @@ def test_hybrid_property_var_fn_as_classmethod():
         def doubled(cls) -> Var[int]:
             return cls.count * 4  # pyright: ignore[reportReturnType]
 
-    assert ClassmethodVarState(_reflex_internal_init=True).doubled == 0
+    assert ClassmethodVarState(_reflex_internal_init=True).doubled == 0  # pyright: ignore[reportCallIssue]
     assert str(Var.create(ClassmethodVarState.doubled)) == str(
         Var.create(ClassmethodVarState.count * 4)
     )
