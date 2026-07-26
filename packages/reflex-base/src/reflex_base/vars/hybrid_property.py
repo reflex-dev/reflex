@@ -1,12 +1,22 @@
 """hybrid_property decorator which functions like a normal python property but additionally allows (class-level) access from the frontend. You can use the same code for frontend and backend, or implement 2 different methods."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Generic, cast, overload
+
+from typing_extensions import TypeVar
 
 from reflex_base.utils.exceptions import HybridPropertyError
-from reflex_base.utils.types import Self, override
 
 from .base import Var
+
+_T = TypeVar("_T")
+_O = TypeVar("_O")
+# Without a var function the frontend value is whatever running the getter
+# against vars produces, and a var function may declare there is none.
+_V = TypeVar("_V", default=Var[Any] | None)
+_V2 = TypeVar("_V2", bound="Var[Any] | None")
 
 
 class _StateBackendVarGuard:
@@ -53,13 +63,71 @@ class _StateBackendVarGuard:
         return getattr(state_cls, name)
 
 
-class HybridProperty(property):
-    """A hybrid property that can also be used in frontend/as var."""
+class HybridProperty(Generic[_T, _O, _V]):
+    """A hybrid property that can also be used in frontend/as var.
 
-    # The optional var function for the property.
-    _var: Callable[[Any], Var] | None = None
+    Deliberately not a `property` subclass: type checkers hard-code class-level
+    access on properties to the descriptor itself, which would hide the frontend
+    var this descriptor returns there. `_T` is the value the getter returns on an
+    instance, `_O` the class the property is defined on, and `_V` the frontend var
+    returned when the property is accessed on the class.
+    """
 
-    def _get_var(self, owner: Any) -> Var:
+    def __init__(
+        self,
+        fget: Callable[[_O], _T] | None = None,
+        fset: Callable[[_O, _T], None] | None = None,
+        fdel: Callable[[_O], None] | None = None,
+        doc: str | None = None,
+    ) -> None:
+        """Initialize the hybrid property.
+
+        Args:
+            fget: The getter, returning the python value on an instance.
+            fset: The optional setter.
+            fdel: The optional deleter.
+            doc: The docstring, taken from `fget` when not given.
+        """
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        self.__doc__ = doc if doc is not None else getattr(fget, "__doc__", None)
+        # The optional var function for the property.
+        self._var: Callable[[Any], Var[Any] | None] | None = None
+        # The attribute name the property is bound to, for error messages and
+        # for rebinding when the var function is defined under another name.
+        self._name: str | None = getattr(fget, "__name__", None)
+
+    def __set_name__(self, owner: type, name: str, /) -> None:
+        """Record the attribute name the property is bound to.
+
+        Args:
+            owner: The class the property is defined on.
+            name: The attribute name the property is bound to.
+        """
+        self._name = name
+
+    @property
+    def _property_name(self) -> str:
+        """The name of the property, for error messages.
+
+        Returns:
+            The bound attribute name, or a generic placeholder.
+        """
+        return self._name or "hybrid_property"
+
+    def _copy(self) -> HybridProperty[_T, _O, _V]:
+        """Copy the property, so each class gets its own descriptor.
+
+        Returns:
+            A copy of this property.
+        """
+        new = type(self)(self.fget, self.fset, self.fdel, self.__doc__)
+        new._var = self._var
+        new._name = self._name
+        return new
+
+    def _get_var(self, owner: Any) -> Var[Any] | None:
         """Get the frontend Var for the property.
 
         The ``owner`` is the object the property is accessed on at the var level:
@@ -71,7 +139,8 @@ class HybridProperty(property):
             owner: The class or var the property is accessed on.
 
         Returns:
-            The frontend Var for the property.
+            The frontend Var for the property, or None if the var function
+            declares that the property has no frontend value on ``owner``.
 
         Raises:
             AttributeError: If the property has no getter function and no var function is set.
@@ -81,11 +150,17 @@ class HybridProperty(property):
             return self._var(owner)
         # Call the property getter function if no custom var function is set
         if self.fget is None:
-            msg = "HybridProperty has no getter function"
+            msg = f"Hybrid property '{self._property_name}' has no getter function"
             raise AttributeError(msg)
-        return self.fget(owner)
+        # the getter runs against vars here, so it returns the frontend var
+        return cast("Var[Any] | None", self.fget(owner))
 
-    @override
+    @overload
+    def __get__(self, instance: None, owner: type, /) -> _V: ...
+
+    @overload
+    def __get__(self, instance: _O, owner: type | None = None, /) -> _T: ...
+
     def __get__(self, instance: Any, owner: type | None = None, /) -> Any:
         """Get the value of the property.
 
@@ -104,28 +179,126 @@ class HybridProperty(property):
             The property value, a frontend Var, or the descriptor itself.
 
         Raises:
+            AttributeError: If the property has no getter function.
             HybridPropertyError: If the frontend logic reads a backend-only state var.
         """
         if instance is not None:
-            return super().__get__(instance, owner)
+            if self.fget is None:
+                msg = f"Hybrid property '{self._property_name}' has no getter function"
+                raise AttributeError(msg)
+            return self.fget(instance)
         if isinstance(owner, type):
             from reflex.state import BaseState
 
             if issubclass(owner, BaseState):
                 if not owner.backend_vars:
                     return self._get_var(owner)
-                property_name = (
-                    self.fget.__name__ if self.fget is not None else "hybrid_property"
-                )
-                return self._get_var(_StateBackendVarGuard(owner, property_name))
+                return self._get_var(_StateBackendVarGuard(owner, self._property_name))
         return self
 
-    def var(self, func: Callable[[Any], Var]) -> Self:
+    def __set__(self, instance: _O, value: _T, /) -> None:
+        """Set the value of the property.
+
+        Args:
+            instance: The instance to set the value on.
+            value: The value to set.
+
+        Raises:
+            AttributeError: If the property has no setter function.
+        """
+        if self.fset is None:
+            msg = f"Hybrid property '{self._property_name}' has no setter"
+            raise AttributeError(msg)
+        self.fset(instance, value)
+
+    def __delete__(self, instance: _O, /) -> None:
+        """Delete the value of the property.
+
+        Args:
+            instance: The instance to delete the value on.
+
+        Raises:
+            AttributeError: If the property has no deleter function.
+        """
+        if self.fdel is None:
+            msg = f"Hybrid property '{self._property_name}' has no deleter"
+            raise AttributeError(msg)
+        self.fdel(instance)
+
+    def getter(self, fget: Callable[[_O], _T]) -> HybridProperty[_T, _O, _V]:
+        """Set the getter function of the property.
+
+        Args:
+            fget: The getter function to set.
+
+        Returns:
+            A new property instance with the getter function set.
+        """
+        new = self._copy()
+        new.fget = fget
+        return new
+
+    def setter(self, fset: Callable[[_O, _T], None]) -> HybridProperty[_T, _O, _V]:
+        """Set the setter function of the property.
+
+        Args:
+            fset: The setter function to set.
+
+        Returns:
+            A new property instance with the setter function set.
+        """
+        new = self._copy()
+        new.fset = fset
+        return new
+
+    def deleter(self, fdel: Callable[[_O], None]) -> HybridProperty[_T, _O, _V]:
+        """Set the deleter function of the property.
+
+        Args:
+            fdel: The deleter function to set.
+
+        Returns:
+            A new property instance with the deleter function set.
+        """
+        new = self._copy()
+        new.fdel = fdel
+        return new
+
+    @overload
+    def var(
+        self, func: classmethod[_O, ..., _V2], /
+    ) -> HybridProperty[_T, _O, _V2]: ...
+
+    @overload
+    def var(self, func: staticmethod[..., _V2], /) -> HybridProperty[_T, _O, _V2]: ...
+
+    @overload
+    def var(self, func: Callable[[Any], _V2], /) -> HybridProperty[_T, _O, _V2]: ...
+
+    def var(self, func: Any, /) -> Any:
         """Set the (optional) var function for the property.
 
-        Returns a new HybridProperty with the same getter/setter/deleter so
-        that each class gets its own descriptor — matching how property.setter
-        behaves and preventing shared-mixin mutation across subclasses.
+        Returns a new HybridProperty with the same getter/setter/deleter so that
+        each class gets its own descriptor, preventing shared-mixin mutation
+        across subclasses. The var function receives the class (not an instance),
+        and may return None to declare that the property has no frontend value on
+        that class, e.g. when it depends on configuration the class does not
+        enable. Declaring it a `classmethod` types its first parameter as the
+        class without repeating the annotation.
+
+        Redeclaring the property's name keeps the frontend var's type visible on
+        class-level access:
+
+            @hybrid_property
+            def total_pages(self) -> int | None: ...
+
+            @total_pages.var
+            @classmethod
+            def total_pages(cls) -> Var[int] | None: ...
+
+        The result also binds itself under the name of the property it was
+        created from, so the var function may instead be defined under a name of
+        its own (at the cost of the frontend var's type on class access).
 
         Args:
             func: The var function to set.
@@ -133,9 +306,55 @@ class HybridProperty(property):
         Returns:
             A new property instance with the var function set.
         """
-        new = type(self)(self.fget, self.fset, self.fdel, self.__doc__)
+        if isinstance(func, (classmethod, staticmethod)):
+            func = func.__func__
+        new = _HybridPropertyVarBinding(self)
         new._var = func
         return new
+
+
+class _HybridPropertyVarBinding(HybridProperty[_T, _O, _V]):
+    """The descriptor `HybridProperty.var` returns, which rebinds itself to the property's name.
+
+    A var function is commonly defined under a name of its own so it does not
+    shadow the property's declaration. This descriptor puts the finished property
+    back under the property's name when the class body is evaluated, and removes
+    itself from the alias name.
+    """
+
+    def __init__(self, prop: HybridProperty[_T, _O, Any]) -> None:
+        """Initialize the binding from the property it extends.
+
+        Args:
+            prop: The property the var function was defined for.
+        """
+        super().__init__(prop.fget, prop.fset, prop.fdel, prop.__doc__)
+        self._name = prop._name
+
+    def __set_name__(self, owner: type, name: str, /) -> None:
+        """Bind the finished property under the name of the property it extends.
+
+        Args:
+            owner: The class the var function is defined on.
+            name: The attribute name the var function is bound to.
+
+        Raises:
+            HybridPropertyError: If the property it extends has no known name.
+        """
+        target = self._name
+        if target is None:
+            msg = (
+                f"The var function '{name}' of '{owner.__name__}' extends a hybrid "
+                f"property with no name; define the property in a class body or with "
+                f"a named getter function."
+            )
+            raise HybridPropertyError(msg)
+        bound = HybridProperty(self.fget, self.fset, self.fdel, self.__doc__)
+        bound._var = self._var
+        bound._name = target
+        setattr(owner, target, bound)
+        if name != target:
+            delattr(owner, name)
 
 
 hybrid_property = HybridProperty
