@@ -437,9 +437,7 @@ class TestEnvVar:
         del os.environ["TEST_VAR"]
 
 
-@pytest.mark.parametrize(
-    "name", ["test_var", "Test_Var", "tEST_VAR", "reflex_use_npm"]
-)
+@pytest.mark.parametrize("name", ["test_var", "Test_Var", "tEST_VAR", "reflex_use_npm"])
 def test_env_var_name_not_uppercase_raises(name):
     """Test that a non-uppercase environment variable name is rejected.
 
