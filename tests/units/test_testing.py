@@ -111,10 +111,11 @@ def test_app_harness_initialize_clears_memo_registries(
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 
 
-def test_app_harness_initialize_reloads_existing_imported_app(
+def test_app_harness_initialize_preserves_existing_imported_app(
     tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure pre-existing imported apps are reloaded after memo registry reset.
+    """A real (``app_source is None``) app is imported with ``reload=False`` and
+    its registrations (incl. memos) are kept, not reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
@@ -132,8 +133,11 @@ def test_app_harness_initialize_reloads_existing_imported_app(
         harness_mocks.config.module,
         ModuleType(harness_mocks.config.module),
     )
+    MEMOS["existing_memo", None] = mock.sentinel.memo
 
     harness = AppHarness.create(root=tmp_path / "plain_app")
     harness._initialize_app()
 
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=False)
+    # The real app's registrations (incl. memos) are preserved, not reset.
+    assert ("existing_memo", None) in MEMOS
