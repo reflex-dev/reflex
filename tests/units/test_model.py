@@ -311,6 +311,8 @@ def test_automigration_add_column_with_callable_default(
         assert result[2].t1 == "bar"
         assert result[2].note == "generated"
 
+    model_registry.get_metadata().clear()
+
 
 class ReflexModel(Model):
     """A model for testing."""
