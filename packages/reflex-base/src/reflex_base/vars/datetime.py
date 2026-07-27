@@ -254,7 +254,7 @@ class LiteralDatetimeVar(LiteralVar[DATETIME_T], DateTimeVar[DATETIME_T]):
         Returns:
             LiteralDatetimeVar: The new instance of the class.
         """
-        js_expr = f'"{value.isoformat()}"'
+        js_expr = f'"{value!s}"'
         return cls(
             _js_expr=js_expr,
             _var_type=type(value),
