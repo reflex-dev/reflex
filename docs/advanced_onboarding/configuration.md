@@ -82,7 +82,7 @@ The imported module must still define `app` at module level.
 
 - `frontend_port` (default `3000`) and `backend_port` (default `8000`) control which ports the frontend and backend listen on. In dev mode, if a port is taken, the next available port is used.
 - `backend_host` (default `0.0.0.0`) is the address the backend server binds to.
-- `api_url` (default `http://localhost:8000`) is the URL the user's **browser** uses to reach the backend. Whenever the backend is not reachable at localhost from the browser — in production, or behind a reverse proxy — set `api_url` to the public backend URL.
+- `api_url` (default `http://localhost:8000`) is the URL the user's **browser** uses to reach the backend. You typically don't need to set it: when `api_url` points at localhost, the frontend substitutes the domain the app was served from, so a backend reachable at the same address as the frontend (e.g. behind a reverse proxy or load balancer) is found automatically. Set `api_url` only when the backend is listening on a different address than the frontend, e.g. `https://api.example.com`.
 - `deploy_url` (default `http://localhost:3000`) is the public URL where the **frontend** is hosted. Reflex uses it wherever an absolute frontend URL is needed — most notably for the links in the generated `sitemap.xml`. It is also the origin browsers will present when connecting to the backend, which matters for CORS (below).
 
 ## CORS

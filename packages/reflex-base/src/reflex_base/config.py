@@ -157,7 +157,7 @@ class BaseConfig:
         frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
-        api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
+        api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
         deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
         backend_host: The url the backend will be hosted on.
         db_url: The database url used by rx.Model.
