@@ -7,7 +7,7 @@ from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any
 
-from reflex_site_shared.docs.models import DocsPage, DocsSiteConfig
+from reflex_site_shared.docs.models import DocsPage, DocsSiteConfig, ExternalDoc
 from reflex_site_shared.utils.md import MarkdownDocument, get_md_files
 
 _HEADING_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
@@ -115,6 +115,75 @@ def _is_excluded(relative_path: Path, patterns: tuple[str, ...]) -> bool:
     return any(fnmatchcase(relative_name, pattern) for pattern in patterns)
 
 
+def _build_page(
+    source_path: Path,
+    relative_path: Path,
+    source_text: str,
+    route: str,
+) -> DocsPage:
+    """Parse one Markdown source into a discovered page.
+
+    Args:
+        source_path: Real file the page is published from.
+        relative_path: Markdown path relative to the content root.
+        source_text: Published Markdown, YAML frontmatter included.
+        route: Normalized public route.
+
+    Returns:
+        The discovered page.
+    """
+    document = MarkdownDocument.from_source(source_text)
+    return DocsPage(
+        source_path=source_path,
+        relative_path=relative_path,
+        route=route,
+        title=_title_for(document, relative_path),
+        description=_metadata_text(document.metadata, "description"),
+        metadata=document.metadata,
+        content=document.content.strip(),
+        source_text=source_text,
+    )
+
+
+def _external_pages(
+    external_docs: tuple[ExternalDoc, ...],
+    route_prefix: str,
+    routes: dict[str, Path],
+) -> list[DocsPage]:
+    """Build pages for Markdown published from outside the content tree.
+
+    Args:
+        external_docs: Documents to publish at virtual content-tree locations.
+        route_prefix: Normalized route prefix.
+        routes: Routes already claimed by the content tree, extended in place.
+
+    Returns:
+        One page per external document.
+
+    Raises:
+        ValueError: If a document claims an already published route.
+    """
+    pages: list[DocsPage] = []
+    for external_doc in external_docs:
+        route = _route_for(external_doc.relative_path, route_prefix)
+        if previous_path := routes.get(route):
+            msg = (
+                f"Duplicate documentation route {route!r}: "
+                f"{previous_path} and {external_doc.source_path}"
+            )
+            raise ValueError(msg)
+        routes[route] = external_doc.source_path
+        pages.append(
+            _build_page(
+                external_doc.source_path,
+                external_doc.relative_path,
+                external_doc.read_source(),
+                route,
+            )
+        )
+    return pages
+
+
 def discover_docs(config: DocsSiteConfig) -> tuple[DocsPage, ...]:
     """Discover Markdown pages and derive their public metadata.
 
@@ -123,6 +192,7 @@ def discover_docs(config: DocsSiteConfig) -> tuple[DocsPage, ...]:
 
     Returns:
         Pages sorted in stable route order, with the prefix index first.
+        External documents are ordered with the content tree.
 
     Raises:
         FileNotFoundError: If the content directory does not exist.
@@ -150,18 +220,15 @@ def discover_docs(config: DocsSiteConfig) -> tuple[DocsPage, ...]:
             )
             raise ValueError(msg)
         routes[route] = source_path
-        document = MarkdownDocument.from_file(source_path)
         pages.append(
-            DocsPage(
-                source_path=source_path,
-                relative_path=relative_path,
-                route=route,
-                title=_title_for(document, relative_path),
-                description=_metadata_text(document.metadata, "description"),
-                metadata=document.metadata,
-                content=document.content.strip(),
+            _build_page(
+                source_path,
+                relative_path,
+                source_path.read_text(encoding="utf-8"),
+                route,
             )
         )
+    pages.extend(_external_pages(config.external_docs, route_prefix, routes))
 
     route_order = {route: index for index, route in enumerate(config.navigation_order)}
     unknown_routes = route_order.keys() - routes.keys()

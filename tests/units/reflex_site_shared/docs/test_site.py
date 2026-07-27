@@ -128,6 +128,7 @@ def test_render_markdown_page_uses_absolute_source_identity(
         description=None,
         metadata={},
         content="# Product Docs",
+        source_text="# Product Docs",
     )
     calls: list[tuple[str, str, str]] = []
 
@@ -156,6 +157,7 @@ def test_default_docs_layout_contains_configured_site_shell(tmp_path: Path) -> N
         description=None,
         metadata={},
         content="# Guide\n\n## Installation",
+        source_text="# Guide\n\n## Installation",
     )
     navigation = (NavigationItem(title="Guide", route="/guide/"),)
 
@@ -193,6 +195,7 @@ def test_repository_link_can_remain_in_footer_without_navbar_button(
         description=None,
         metadata={},
         content="# Guide",
+        source_text="# Guide",
     )
     rendered = str(
         docs_template.docs_layout(

@@ -19,6 +19,7 @@ def _page(route: str, title: str, relative_path: str) -> DocsPage:
         description=None,
         metadata={},
         content="",
+        source_text="",
     )
 
 

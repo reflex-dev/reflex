@@ -101,6 +101,55 @@ class DocsLayoutConfig:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ExternalDoc:
+    """Markdown published from outside the documentation content tree.
+
+    Files such as package changelogs are maintained beside the code they
+    describe. Publishing one as an external document gives it a virtual location
+    in the content tree, so it gets a route, navigation entry, and generated
+    assets like any authored page while its real path stays the edit target.
+
+    Args:
+        source_path: Real file the page is published from.
+        relative_path: Virtual Markdown path inside the content tree, which
+            determines the public route.
+        source: Complete Markdown, YAML frontmatter included, replacing the file
+            contents. Use it to give a page canonical metadata or headings the
+            source file cannot carry.
+    """
+
+    source_path: Path
+    relative_path: Path
+    source: str | None = None
+
+    def __post_init__(self) -> None:
+        """Normalize and validate the published paths.
+
+        Raises:
+            ValueError: If the virtual path is absolute or is not Markdown.
+        """
+        object.__setattr__(self, "source_path", Path(self.source_path))
+        relative_path = Path(self.relative_path)
+        if relative_path.is_absolute():
+            msg = f"External doc relative_path must be relative: {relative_path}"
+            raise ValueError(msg)
+        if relative_path.suffix.lower() != ".md":
+            msg = f"External doc relative_path must be a .md path: {relative_path}"
+            raise ValueError(msg)
+        object.__setattr__(self, "relative_path", relative_path)
+
+    def read_source(self) -> str:
+        """Return the Markdown published for this document.
+
+        Returns:
+            The explicit source override, or the source file's text.
+        """
+        if self.source is not None:
+            return self.source
+        return self.source_path.read_text(encoding="utf-8")
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class DocsSiteConfig:
     """Configuration for discovering a documentation content tree.
 
@@ -108,6 +157,8 @@ class DocsSiteConfig:
         content_dir: Directory containing the site's Markdown files.
         route_prefix: URL prefix under which documentation routes are mounted.
         exclude: Glob patterns, relative to ``content_dir``, to ignore.
+        external_docs: Markdown published from outside ``content_dir``, such as
+            package changelogs kept beside their code.
         navigation_order: Central ordered route list used by the sidebar and
             previous/next navigation. Unlisted pages follow in route order.
         sitemap_base_url: Optional absolute public URL prepended to every route
@@ -117,6 +168,7 @@ class DocsSiteConfig:
     content_dir: Path
     route_prefix: str = "/"
     exclude: tuple[str, ...] = ()
+    external_docs: tuple[ExternalDoc, ...] = ()
     navigation_order: tuple[str, ...] = ()
     sitemap_base_url: str | None = None
 
@@ -124,6 +176,7 @@ class DocsSiteConfig:
         """Normalize path-like and sequence inputs."""
         object.__setattr__(self, "content_dir", Path(self.content_dir))
         object.__setattr__(self, "exclude", tuple(self.exclude))
+        object.__setattr__(self, "external_docs", tuple(self.external_docs))
         navigation_order = tuple(self.navigation_order)
         if len(navigation_order) != len(set(navigation_order)):
             msg = "navigation_order cannot contain duplicate routes"
@@ -146,12 +199,16 @@ class DocsPage:
 
     Args:
         source_path: Absolute or configured path to the source file.
-        relative_path: Source path relative to the content directory.
+        relative_path: Source path relative to the content directory. External
+            documents use their virtual location in that tree.
         route: Normalized public URL route.
         title: Display title for the page.
         description: Optional page description from frontmatter.
         metadata: Parsed YAML frontmatter.
         content: Markdown content without YAML frontmatter.
+        source_text: Published Markdown, YAML frontmatter included. It differs
+            from the source file for external documents rendered from an
+            explicit source.
     """
 
     source_path: Path
@@ -161,6 +218,7 @@ class DocsPage:
     description: str | None
     metadata: Mapping[str, Any]
     content: str
+    source_text: str
 
     def __post_init__(self) -> None:
         """Store metadata as an immutable mapping."""

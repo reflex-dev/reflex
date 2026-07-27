@@ -57,6 +57,7 @@ def test_bannerless_layout_uses_navbar_only_content_offset() -> None:
         description=None,
         metadata={},
         content="# Guide",
+        source_text="# Guide",
     )
     rendered = str(
         docs_layout(
@@ -86,6 +87,7 @@ def test_docs_layout_uses_site_owned_sidebar_renderer() -> None:
         description=None,
         metadata={},
         content="# Guide",
+        source_text="# Guide",
     )
     routes: list[str] = []
 
@@ -172,6 +174,7 @@ def test_docs_layout_uses_page_aware_footer_renderer() -> None:
         description=None,
         metadata={},
         content="# Guide",
+        source_text="# Guide",
     )
     paths: list[Path] = []
 
@@ -206,6 +209,7 @@ def test_docs_layout_supports_a_sidebar_aware_breadcrumb() -> None:
         description=None,
         metadata={},
         content="# Guide",
+        source_text="# Guide",
     )
     received: list[tuple[Path, rx.Component]] = []
 

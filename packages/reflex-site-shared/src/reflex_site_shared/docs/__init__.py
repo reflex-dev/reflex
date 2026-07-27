@@ -59,6 +59,7 @@ from reflex_site_shared.docs.models import DocsLayoutConfig as DocsLayoutConfig
 from reflex_site_shared.docs.models import DocsNavbarAction as DocsNavbarAction
 from reflex_site_shared.docs.models import DocsPage as DocsPage
 from reflex_site_shared.docs.models import DocsSiteConfig as DocsSiteConfig
+from reflex_site_shared.docs.models import ExternalDoc as ExternalDoc
 from reflex_site_shared.docs.models import NavigationItem as NavigationItem
 from reflex_site_shared.docs.navigation import build_navigation as build_navigation
 from reflex_site_shared.docs.navigation import get_prev_next as get_prev_next
@@ -70,6 +71,7 @@ __all__ = [
     "DocsNavbarAction",
     "DocsPage",
     "DocsSiteConfig",
+    "ExternalDoc",
     "NavigationItem",
     "build_docs_routes",
     "build_navigation",
