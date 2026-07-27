@@ -2497,7 +2497,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         ):
             return True
         elapsed = time.monotonic() - last_updated[1]
-        return elapsed < 0 or elapsed > self._update_interval.total_seconds()
+        return elapsed > self._update_interval.total_seconds()
 
     @overload
     def __get__(

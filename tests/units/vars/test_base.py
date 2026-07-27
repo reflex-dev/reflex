@@ -143,6 +143,7 @@ async def test_computed_var_interval_uses_monotonic_time(
     else:
         assert state.cv == expected_value
     assert call_count == expected_value
+    datetime_mock.now.assert_not_called()
 
 
 @pytest.mark.parametrize(
