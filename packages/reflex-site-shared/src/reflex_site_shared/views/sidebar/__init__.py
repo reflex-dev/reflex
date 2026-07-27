@@ -38,7 +38,7 @@ def drawer_category_label(text: str) -> rx.Component:
     return rx.el.div(
         rx.el.span(
             text,
-            class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed border-secondary-6 text-secondary-11 block",
+            class_name="font-mono font-[415] text-caption uppercase pb-4 rule-dashed-b text-secondary-11 block",
         ),
         class_name="px-4 pt-4",
     )
@@ -443,12 +443,28 @@ def drawer_top_offset(top_px: int | float) -> str:
     return f"!top-[{top_px}px] !h-[calc(100dvh-{top_px}px)]"
 
 
-def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
+def navbar_sidebar_drawer(
+    trigger: rx.Component, *, show_banner: bool = True
+) -> rx.Component:
     """Navbar sidebar drawer.
+
+    Args:
+        trigger: The component that opens the drawer.
+        show_banner: Whether the navbar includes the hosting banner.
 
     Returns:
         The component.
     """
+    content_class = ui.cn(
+        "!bg-secondary-1 w-full !outline-none",
+        rx.cond(
+            HostingBannerState.is_banner_visible,
+            drawer_top_offset(136.5),
+            drawer_top_offset(77),
+        )
+        if show_banner
+        else drawer_top_offset(77),
+    )
     return rx.drawer.root(
         rx.drawer.trigger(
             trigger,
@@ -462,7 +478,6 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
                         ),
                         drawer_collapsible("Resources", resources_panel()),
                         drawer_collapsible("Solutions", solutions_panel()),
-                        drawer_link("Enterprise", "/docs/enterprise/overview/"),
                         drawer_link("Pricing", "/pricing/"),
                         drawer_link("Docs", "/docs/"),
                         class_name="flex flex-col flex-1 w-full overflow-y-auto min-h-0",
@@ -470,14 +485,7 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
                     drawer_footer(),
                     class_name="flex flex-col w-full h-full bg-secondary-1",
                 ),
-                class_name=ui.cn(
-                    "!bg-secondary-1 w-full !outline-none",
-                    rx.cond(
-                        HostingBannerState.is_banner_visible,
-                        drawer_top_offset(136.5),
-                        drawer_top_offset(77),
-                    ),
-                ),
+                class_name=content_class,
             )
         ),
         direction="bottom",
@@ -513,8 +521,11 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Comp
     )
 
 
-def navbar_sidebar_button() -> rx.Component:
+def navbar_sidebar_button(*, show_banner: bool = True) -> rx.Component:
     """Navbar sidebar button.
+
+    Args:
+        show_banner: Whether the navbar includes the hosting banner.
 
     Returns:
         The component.
@@ -549,6 +560,7 @@ def navbar_sidebar_button() -> rx.Component:
                 custom_attrs={"aria-label": "Open sidebar"},
                 native_button=False,
             ),
+            show_banner=show_banner,
         ),
         class_name="flex justify-center items-center size-8",
     )
