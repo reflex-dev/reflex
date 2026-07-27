@@ -1507,18 +1507,34 @@ def test_rename_imports_and_app_name_preserves_utf8(
     monkeypatch.setattr(Path, "read_text", read_text)
     monkeypatch.setattr(Path, "write_text", write_text)
 
-    source = (
-        "import old_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"
-    )
+    source = "import old_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
     file_path = temp_directory / "example.py"
     file_path.write_bytes(source.encode("utf-8"))
 
     rename_imports_and_app_name(file_path, "old_name", "new_name")
 
-    expected = (
-        "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"
-    )
+    expected = "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
     assert file_path.read_bytes() == expected.encode("utf-8")
+
+
+def test_rename_imports_and_app_name_preserves_declared_encoding(temp_directory):
+    """Python source encoding cookies are honored during rename.
+
+    Args:
+        temp_directory: A temporary directory fixture.
+    """
+    source = (
+        "# -*- coding: cp1252 -*-\nimport old_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("cp1252"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = (
+        "# -*- coding: cp1252 -*-\nimport new_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    assert file_path.read_bytes() == expected.encode("cp1252")
 
 
 def test_cli_rename_command(temp_directory):

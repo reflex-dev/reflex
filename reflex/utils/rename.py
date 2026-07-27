@@ -2,6 +2,7 @@
 
 import re
 import sys
+import tokenize
 from pathlib import Path
 
 from reflex_base import constants
@@ -97,7 +98,12 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         new_name: The new name to use.
     """
     file_path = Path(file_path)
-    content = file_path.read_text(encoding="utf-8")
+    if file_path.suffix == constants.Ext.PY:
+        with file_path.open("rb") as source:
+            encoding = tokenize.detect_encoding(source.readline)[0]
+    else:
+        encoding = "utf-8"
+    content = file_path.read_text(encoding=encoding)
 
     # Replace `from old_name.` or `from old_name` with `from new_name`
     content = re.sub(
@@ -127,7 +133,7 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         content,
     )
 
-    file_path.write_text(content, encoding="utf-8")
+    file_path.write_text(content, encoding=encoding)
 
 
 def process_directory(
