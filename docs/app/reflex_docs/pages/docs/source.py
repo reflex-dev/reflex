@@ -23,7 +23,10 @@ def format_field(field: FieldDocumentation) -> rx.Component:
 def format_fields(
     headers: list[str],
     fields: tuple[FieldDocumentation, ...],
+    env_var_prefix: str | None = None,
 ) -> rx.Component:
+    if env_var_prefix is not None:
+        headers = [headers[0], "Environment Variable", *headers[1:]]
     return (
         rx.table.root(
             rx.table.header(
@@ -39,6 +42,18 @@ def format_fields(
                     rx.table.row(
                         rx.table.cell(
                             format_field(field),
+                        ),
+                        *(
+                            [
+                                rx.table.cell(
+                                    rx.code(
+                                        f"{env_var_prefix}{field.name.upper()}",
+                                        class_name="code-style",
+                                    ),
+                                )
+                            ]
+                            if env_var_prefix is not None
+                            else []
                         ),
                         rx.table.cell(
                             render_markdown(field.description or ""),
@@ -85,10 +100,9 @@ def format_methods(methods: tuple[MethodDocumentation, ...]) -> rx.Component:
 def generate_docs(
     title: str,
     cls: type,
-    extra_fields: tuple[FieldDocumentation, ...] | None = None,
+    env_var_prefix: str | None = None,
 ) -> rx.Component:
     doc = generate_class_documentation(cls)
-    fields = doc.fields + (extra_fields or ())
 
     return rx.box(
         h1_comp(text=title.title()),
@@ -107,10 +121,10 @@ def generate_docs(
         (
             rx.box(
                 h2_comp(text="Fields"),
-                format_fields(["Prop", "Description"], fields),
+                format_fields(["Prop", "Description"], doc.fields, env_var_prefix),
                 overflow="auto",
             )
-            if fields
+            if doc.fields
             else rx.fragment()
         ),
         rx.box(

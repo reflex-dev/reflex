@@ -150,7 +150,7 @@ def env_vars_page():
             Reflex provides a number of environment variables that can be used to configure the behavior of your application.
             These environment variables can be set in your shell environment or in a `.env` file.
 
-            This page documents all available environment variables in Reflex.
+            This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
             """
         ),
         h2_comp(text="Environment Variables"),

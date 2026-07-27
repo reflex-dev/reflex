@@ -158,7 +158,7 @@ class BaseConfig:
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-        deploy_url: The url the frontend will be hosted on.
+        deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
         backend_host: The url the backend will be hosted on.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
@@ -176,7 +176,7 @@ class BaseConfig:
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
-        env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
+        env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
         default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
@@ -319,16 +319,7 @@ class Config(BaseConfig):
     REFLEX_FRONTEND_PORT=3001 reflex run
     ```
 
-    ## Key Configuration Areas
-
-    - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
-    - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
-    - **Database**: `db_url`, `async_db_url`, `redis_url`
-    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
-    - **State Management**: `state_manager_mode`, `state_auto_setters`
-    - **Plugins**: `plugins`, `disable_plugins`
-
-    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.
+    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for a guided overview of the most commonly tweaked settings.
     """
 
     # Track whether the app name has already been validated for this Config instance.
