@@ -7,6 +7,9 @@
  * @returns {number} The rounded value.
  */
 export default function pyRound(value, ndigits) {
+  if (!Number.isInteger(ndigits)) {
+    throw new TypeError("ndigits must be an integer");
+  }
   if (!Number.isFinite(value) || ndigits > 323) return value;
   if (ndigits < -308) return value * 0;
 
@@ -39,5 +42,8 @@ export default function pyRound(value, ndigits) {
 
   const sign = value < 0 || Object.is(value, -0) ? "-" : "";
   const result = Number(`${sign}${rounded}e${-ndigits}`);
+  if (!Number.isFinite(result)) {
+    throw new RangeError("rounded value is too large to represent");
+  }
   return result === 0 && sign ? -0 : result;
 }

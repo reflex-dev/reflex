@@ -1071,6 +1071,8 @@ def test_all_number_operations():
         (2.675, 2, "2.67"),
         (5e-324, 323, "0"),
         (1e20, 0, "100000000000000000000"),
+        (1.7976931348623157e308, -308, "RangeError"),
+        (1.5, 2.5, "TypeError"),
         (1.2345, 324, "1.2345"),
         (-1.2345, -309, "-0"),
         (float("inf"), 2, "Infinity"),
@@ -1090,7 +1092,8 @@ def test_number_round_python_semantics(value, ndigits, expected):
             "node",
             "--input-type=module",
             "--eval",
-            f"{ROUND_HELPER.read_text(encoding='utf-8')}\nconsole.log({rounded!s})",
+            f"""{ROUND_HELPER.read_text(encoding="utf-8")}
+try {{ console.log({rounded!s}); }} catch (error) {{ console.log(error.name); }}""",
         ],
         check=True,
         capture_output=True,
