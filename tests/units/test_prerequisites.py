@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import tempfile
 import uuid
@@ -1514,7 +1515,7 @@ def test_rename_imports_and_app_name_preserves_utf8(
     rename_imports_and_app_name(file_path, "old_name", "new_name")
 
     expected = "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
-    assert file_path.read_bytes() == expected.encode("utf-8")
+    assert file_path.read_bytes() == expected.replace("\n", os.linesep).encode("utf-8")
 
 
 def test_rename_imports_and_app_name_preserves_declared_encoding(temp_directory):
@@ -1534,7 +1535,7 @@ def test_rename_imports_and_app_name_preserves_declared_encoding(temp_directory)
     expected = (
         "# -*- coding: cp1252 -*-\nimport new_name  # caf\u00e9\n"  # codespell:ignore
     )
-    assert file_path.read_bytes() == expected.encode("cp1252")
+    assert file_path.read_bytes() == expected.replace("\n", os.linesep).encode("cp1252")
 
 
 def test_cli_rename_command(temp_directory):
