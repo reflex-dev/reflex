@@ -36,6 +36,7 @@ from reflex_base.vars.base import (
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.datetime import DateTimeVar
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
@@ -393,15 +394,28 @@ def test_datetime_comparison_uses_timestamps(operation, operator):
     rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
 
     assert str(operation(lhs, rhs)) == (
-        f'(new Date("2024-01-01 01:00:00+01:00").getTime() {operator} '
-        'new Date("2024-01-01 00:00:00+00:00").getTime())'
+        f'(compareDatetime("2024-01-01T01:00:00+01:00", '
+        f'"2024-01-01T00:00:00+00:00") {operator} 0)'
+    )
+
+
+def test_datetime_comparison_preserves_microseconds():
+    lhs = cast(
+        DateTimeVar,
+        v(datetime(2024, 1, 1, microsecond=1, tzinfo=timezone.utc)),
+    )
+    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=timezone.utc)
+
+    assert str(lhs < rhs) == (
+        '(compareDatetime("2024-01-01T00:00:00.000001+00:00", '
+        '"2024-01-01T00:00:00.000999+00:00") < 0)'
     )
 
 
 def test_datetime_equality_with_other_type_uses_default_comparison():
     value = v(datetime(2024, 1, 1))
     expected_equality = (
-        '("2024-01-01 00:00:00"?.valueOf?.() === "2024-01-01 00:00:00"?.valueOf?.())'
+        '("2024-01-01T00:00:00"?.valueOf?.() === "2024-01-01 00:00:00"?.valueOf?.())'
     )
 
     assert str(value == "2024-01-01 00:00:00") == expected_equality

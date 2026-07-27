@@ -11,6 +11,7 @@ from reflex_base.vars.number import BooleanVar
 
 from .base import (
     CustomVarOperationReturn,
+    ImportVar,
     LiteralVar,
     Var,
     VarData,
@@ -21,6 +22,12 @@ from .base import (
 DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 
 datetime_types = datetime | date
+
+_COMPARE_DATETIME_IMPORT = {
+    "$/utils/helpers/datetime.js": [
+        ImportVar(tag="compareDatetime", is_default=True, install=False)
+    ],
+}
 
 
 def raise_var_type_error():
@@ -217,8 +224,9 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"(new Date({lhs}).getTime() {operator} new Date({rhs}).getTime())",
+        f"(compareDatetime({lhs}, {rhs}) {operator} 0)",
         bool,
+        VarData(imports=_COMPARE_DATETIME_IMPORT),
     )
 
 
@@ -246,7 +254,7 @@ class LiteralDatetimeVar(LiteralVar[DATETIME_T], DateTimeVar[DATETIME_T]):
         Returns:
             LiteralDatetimeVar: The new instance of the class.
         """
-        js_expr = f'"{value!s}"'
+        js_expr = f'"{value.isoformat()}"'
         return cls(
             _js_expr=js_expr,
             _var_type=type(value),
