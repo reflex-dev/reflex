@@ -69,7 +69,7 @@ class EnvVarDocs:
             env_vars = [
                 (name, var)
                 for name, var in env_vars
-                if not getattr(var, "internal", False)
+                if not getattr(var, "name", "").startswith("__")
             ]
 
         env_vars.sort(key=lambda x: x[0])
