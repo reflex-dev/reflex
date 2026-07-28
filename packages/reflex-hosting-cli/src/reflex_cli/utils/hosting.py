@@ -389,6 +389,24 @@ def is_reflex_enterprise_installed() -> bool:
         return True
 
 
+_last_auth_request_id: str = ""
+
+
+def get_auth_request_id() -> str:
+    """Get the request id sent with the most recent token validation request.
+
+    The id is sent to the control plane as the ``X-Request-ID`` header, so it
+    can be quoted to support to correlate a failed authentication with the
+    server-side logs.
+
+    Returns:
+        The request id of the last ``validate_token`` call, or an empty string
+        if no validation request has been made in this process.
+
+    """
+    return _last_auth_request_id
+
+
 def validate_token(token: str) -> dict[str, Any]:
     """Validate the token with the control plane.
 
@@ -405,6 +423,9 @@ def validate_token(token: str) -> dict[str, Any]:
     """
     import httpx
 
+    global _last_auth_request_id
+    request_id = _last_auth_request_id = uuid.uuid4().hex
+
     try:
         # Add reflex-enterprise detection flag as query parameter
         params = {
@@ -415,23 +436,27 @@ def validate_token(token: str) -> dict[str, Any]:
 
         response = httpx.post(
             urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/authenticate/me"),
-            headers=authorization_header(token),
+            headers={**authorization_header(token), "X-Request-ID": request_id},
             params=params,
             timeout=constants.Hosting.TIMEOUT,
         )
         response.raise_for_status()
         return response.json()
     except httpx.RequestError as re:
-        console.debug(f"Request to auth server failed due to {re}")
+        console.debug(
+            f"Request to auth server failed due to {re} (request id: {request_id})"
+        )
         raise Exception(str(re)) from re
     except httpx.HTTPError as ex:
-        console.debug(f"Unable to validate the token due to: {ex}")
+        console.debug(
+            f"Unable to validate the token due to: {ex} (request id: {request_id})"
+        )
         raise Exception("server error") from ex
     except ValueError as ve:
-        console.debug("Access denied")
+        console.debug(f"Access denied (request id: {request_id})")
         raise ValueError("access denied") from ve
     except Exception as ex:
-        console.debug(f"Unexpected error: {ex}")
+        console.debug(f"Unexpected error: {ex} (request id: {request_id})")
         raise Exception("internal errors") from ex
 
 
@@ -2487,10 +2512,13 @@ def validate_token_with_retries(access_token: str) -> dict[str, Any]:
         try:
             return validate_token(access_token)
         except ValueError:
-            console.error("Access denied")
+            console.error(f"Access denied (auth request id: {get_auth_request_id()})")
             delete_token_from_config()
         except Exception as ex:
-            console.debug(f"Unable to validate token due to: {ex}")
+            console.warn(
+                f"Unable to validate access token: {ex} "
+                f"(auth request id: {get_auth_request_id()})"
+            )
     return {}
 
 
