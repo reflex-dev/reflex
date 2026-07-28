@@ -885,9 +885,7 @@ def component_docs(
 
     return rx.box(
         h2_comp(text=comp_display_name),
-        rx.box(
-            render_markdown(textwrap.dedent(doc.description or "")), class_name="pb-2"
-        ),
+        rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
         children,
         triggers,
