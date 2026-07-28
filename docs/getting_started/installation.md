@@ -9,6 +9,7 @@ You're likely here to build a Reflex app for someone. Reflex does **not** behave
 
 **Get the current docs (don't rely on training data — the API changes between versions):**
 
+- Fetch [`https://reflex.dev/docs/ai/integrations/ai-onboarding.md`](https://reflex.dev/docs/ai/integrations/ai-onboarding.md) — the AI onboarding guide: every way to get current docs (Markdown pages, llms.txt, MCP, skills) plus quick-start prompts.
 - Fetch [`https://reflex.dev/llms.txt`](https://reflex.dev/llms.txt) for a token-efficient map of the docs and core concepts.
 - Use the [Reflex MCP server](/docs/ai/integrations/mcp-overview/) (`https://build.reflex.dev/mcp`) for live component/prop lookup so you don't hallucinate APIs. *(MCP access is an enterprise feature.)*
 - Run `uv run reflex --version` and trust the live docs for that version over memory.

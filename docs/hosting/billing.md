@@ -4,6 +4,11 @@ import reflex as rx
 
 # Billing
 
+```md alert info
+# Members, seats, and roles
+Seats, members, and roles are managed in your organization's settings. See [Members & seats](/docs/ai/organization/members/) and [Roles & permissions](/docs/ai/organization/roles-and-permissions/) in the [Organizations](/docs/ai/organization/overview/) section.
+```
+
 ## Overview 
 
 Billing for Reflex Cloud is monthly per project. Project owners and admins are able to view and manage the billing page. 
