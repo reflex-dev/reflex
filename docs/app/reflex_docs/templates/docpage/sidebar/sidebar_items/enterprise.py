@@ -54,6 +54,10 @@ def get_sidebar_items_enterprise_usage():
                     link=enterprise.auth.custom_pages.path,
                 ),
                 SideBarItem(
+                    names="Auditing Auth Actions",
+                    link=enterprise.auth.audit.path,
+                ),
+                SideBarItem(
                     names="Testing Guarded Code",
                     link=enterprise.auth.testing.path,
                 ),
