@@ -103,7 +103,8 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
             encoding = tokenize.detect_encoding(source.readline)[0]
     else:
         encoding = "utf-8"
-    content = file_path.read_text(encoding=encoding)
+    with file_path.open("r", encoding=encoding, newline="") as source:
+        content = source.read()
 
     # Replace `from old_name.` or `from old_name` with `from new_name`
     content = re.sub(
@@ -133,7 +134,7 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         content,
     )
 
-    file_path.write_text(content, encoding=encoding)
+    file_path.write_text(content, encoding=encoding, newline="")
 
 
 def process_directory(
