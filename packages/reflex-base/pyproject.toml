@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "packaging >=24.2,<27",
     "pydantic >=2.12.0,<3.0",
-    "rich >=13,<15",
+    "rich >=13,<16",
     "typing_extensions >=4.13.0",
     "platformdirs >=4.3.7,<5.0",
 ]
