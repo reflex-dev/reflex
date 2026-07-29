@@ -377,7 +377,8 @@ def run_frontend_prod(host: str, port: int):
 @once
 def _warn_user_about_uvicorn():
     console.warn(
-        "Using Uvicorn for backend as it is installed. Reflex will switch to Granian by default in a future release; set REFLEX_USE_GRANIAN=1 to opt in now."
+        "Using Uvicorn because both Uvicorn and Gunicorn are installed. "
+        "Set REFLEX_USE_GRANIAN=1 to use Granian instead."
     )
 
 

@@ -81,15 +81,21 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
-def test_warn_user_about_uvicorn_does_not_reference_past_version(
-    mocker: MockerFixture,
+def test_should_use_granian_warns_when_falling_back_to_uvicorn(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """The Uvicorn/Granian warning must not cite a version that has already shipped."""
+    """The automatic Uvicorn fallback explains how to select Granian."""
+    monkeypatch.delenv(environment.REFLEX_USE_GRANIAN.name, raising=False)
+    mocker.patch.object(exec_utils.importlib.util, "find_spec", return_value=object())
     warn = mocker.patch.object(exec_utils.console, "warn")
+    mocker.patch.object(
+        exec_utils,
+        "_warn_user_about_uvicorn",
+        side_effect=inspect.unwrap(exec_utils._warn_user_about_uvicorn),
+    )
 
-    inspect.unwrap(exec_utils._warn_user_about_uvicorn)()
-
-    warn.assert_called_once()
-    message = warn.call_args.args[0]
-    assert "0.8.0" not in message
-    assert "Granian" in message
+    assert exec_utils.should_use_granian() is False
+    warn.assert_called_once_with(
+        "Using Uvicorn because both Uvicorn and Gunicorn are installed. "
+        "Set REFLEX_USE_GRANIAN=1 to use Granian instead."
+    )
