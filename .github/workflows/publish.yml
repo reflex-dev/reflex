@@ -1,18 +1,79 @@
 name: Publish to PyPI
 
-run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
+run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
+
+# Publishes one package at one version. The tag is created on the local
+# checkout before building (uv-dynamic-versioning derives the version from
+# it) but is only pushed — and the GitHub release only created — after the
+# PyPI upload succeeds. A failed run therefore leaves no tag behind: fix the
+# problem on top of the changelog bump and the release_from_changelog
+# workflow retries the publish on the next push.
+#
+# Guards enforced by the prepare step (scripts/release.py prepare-publish):
+# - the version must be the newest version in the package's CHANGELOG.md
+#   (when one exists) — the changelog is the source of truth;
+# - final versions may only be published from main or r/hotfix/** branches;
+# - an already-existing tag turns the run into a no-op.
+#
+# REQUIRED CONFIGURATION: PyPI trusted publishing must trust this workflow
+# file (publish.yml) with the `pypi` environment — unchanged by the
+# changelog-driven flow, including when called from another workflow (the
+# OIDC job_workflow_ref claim still points at publish.yml). If the `pypi`
+# environment restricts deployment branches, it must allow main and r/**.
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      package:
+        description: "Package to publish (reflex for the repo-root package)"
+        required: true
+        type: string
+      version:
+        description: "Target version (e.g. 1.2.3 or 1.2.3a1, no v prefix). Empty auto patch-bumps the newest tag — only for packages without a CHANGELOG.md."
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag (e.g. v1.2.3 or reflex-lucide-v0.1.0)"
+      package:
+        description: "Package to publish"
         required: true
+        type: choice
+        options:
+          - reflex
+          - hatch-reflex-pyi
+          - reflex-base
+          - reflex-components-code
+          - reflex-components-core
+          - reflex-components-dataeditor
+          - reflex-components-gridjs
+          - reflex-components-internal
+          - reflex-components-lucide
+          - reflex-components-markdown
+          - reflex-components-moment
+          - reflex-components-plotly
+          - reflex-components-radix
+          - reflex-components-react-player
+          - reflex-components-recharts
+          - reflex-components-sonner
+          - reflex-docgen
+          - reflex-hosting-cli
+          - reflex-site-shared
+      version:
+        description: "Target version (e.g. 1.2.3 or 1.2.3a1, no v prefix). Empty auto patch-bumps the newest tag — only for packages without a CHANGELOG.md."
+        required: false
+        default: ""
 
 permissions:
   contents: read
+
+# Serializes directly-dispatched runs per package. Callers (the
+# release_from_changelog and auto_release_internal workflows) additionally
+# hold their own per-package group for the whole called run; this key is
+# ignored for workflow_call, which cannot deadlock against it.
+concurrency:
+  group: publish-dispatch-${{ inputs.package }}
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -22,11 +83,16 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    outputs:
+      skipped: ${{ steps.prepare.outputs.skipped }}
+      version: ${{ steps.prepare.outputs.version }}
+      tag: ${{ steps.prepare.outputs.tag }}
+      prerelease: ${{ steps.prepare.outputs.prerelease }}
+      mark_latest: ${{ steps.prepare.outputs.mark_latest }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-tags: true
           fetch-depth: 0
           persist-credentials: false
@@ -41,34 +107,96 @@ jobs:
           save-cache: false
           cache-python: false
 
-      - name: Parse release tag
-        id: parse
+      - name: Validate against changelog, branch rules and existing tags
+        id: prepare
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: bash .github/scripts/publish/parse_tag.sh
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: uv run --script scripts/release.py prepare-publish
 
       # A *.dev dependency pin references an unpublished version, so it must never reach
       # released package metadata. Scoped to the package being published so a dependency
       # can still be released while dependents temporarily dev-pin it.
       - name: Reject development-release dependency pins
+        if: steps.prepare.outputs.skipped != 'true'
         env:
-          PACKAGE: ${{ steps.parse.outputs.package }}
+          PACKAGE: ${{ inputs.package }}
         run: uv run --with packaging --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
 
       - name: Pin reflex-base to exact version
-        if: steps.parse.outputs.package == 'reflex'
+        if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
         env:
-          VERSION: ${{ steps.parse.outputs.version }}
+          VERSION: ${{ steps.prepare.outputs.version }}
         run: bash .github/scripts/publish/pin_reflex_base.sh
 
+      # uv-dynamic-versioning derives each package's version from the newest
+      # reachable tag with the package's prefix, so tagging HEAD locally is
+      # what selects the version being built.
+      - name: Tag local checkout
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+        run: git tag "$TAG"
+
       - name: Build
-        run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
+        if: steps.prepare.outputs.skipped != 'true'
+        run: uv build --directory "${{ steps.prepare.outputs.build_dir }}"
+
+      - name: Verify built version
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: bash .github/scripts/publish/verify_dist_version.sh
 
       - name: Verify .pyi files in wheel
-        if: steps.parse.outputs.package == 'reflex'
+        if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
         env:
-          BUILD_DIR: ${{ steps.parse.outputs.build_dir }}
+          BUILD_DIR: ${{ steps.prepare.outputs.build_dir }}
         run: bash .github/scripts/publish/verify_pyi.sh
 
+      # --check-url makes a retried run skip files that already made it to
+      # PyPI (e.g. when the upload succeeded but tagging failed), instead of
+      # erroring on the duplicate upload.
       - name: Publish
-        run: uv publish dist/*
+        if: steps.prepare.outputs.skipped != 'true'
+        run: uv publish --check-url https://pypi.org/simple/ dist/*
+
+  tag-and-release:
+    needs: publish
+    if: needs.publish.outputs.skipped != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Extract release notes from changelog
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ needs.publish.outputs.version }}
+          NOTES_PATH: ${{ runner.temp }}/release_notes.md
+        run: uv run --script scripts/release.py extract-notes
+
+      - name: Push tag
+        env:
+          TAG: ${{ needs.publish.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/publish/push_tag.sh
+
+      - name: Create GitHub release
+        env:
+          TAG: ${{ needs.publish.outputs.tag }}
+          PKG: ${{ inputs.package }}
+          VERSION: ${{ needs.publish.outputs.version }}
+          PRERELEASE: ${{ needs.publish.outputs.prerelease }}
+          MARK_LATEST: ${{ needs.publish.outputs.mark_latest }}
+          NOTES_PATH: ${{ runner.temp }}/release_notes.md
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/publish/create_release.sh

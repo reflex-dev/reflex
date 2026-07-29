@@ -1,0 +1,71 @@
+name: Release from changelog
+
+# The CHANGELOG.md files are the source of truth for publishing. On every push
+# to main or an r/** branch, this workflow compares the newest version heading
+# in each package's CHANGELOG.md (repo root for reflex, packages/*/ for
+# sub-packages) against the repo's git tags and publishes any version that has
+# no tag yet. Tags are only pushed after a successful publish (see
+# publish.yml), so a failed build/publish is retried by pushing a fix on top
+# of the changelog bump — no tag or release cleanup required.
+#
+# Final (non-prerelease) versions are only published from main or r/hotfix/**
+# branches; alpha versions publish from any triggering branch (the Dispatch
+# release workflow pushes them to r/pre-* branches).
+#
+# workflow_dispatch exists so the Dispatch release workflow can trigger a
+# check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire
+# on-push workflows) and for manual re-checks; it runs against the branch it
+# is dispatched on.
+
+on:
+  push:
+    branches: ["main", "r/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-from-changelog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - id: detect
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: uv run --script scripts/release.py detect
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    # Serializes the entire publish (build, upload, tag, release) per package,
+    # so a second push while a publish is in flight waits and then no-ops on
+    # the already-created tag.
+    concurrency:
+      group: publish-${{ matrix.package }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}
+      version: ${{ matrix.version }}

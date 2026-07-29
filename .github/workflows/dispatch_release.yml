@@ -1,11 +1,35 @@
 name: Dispatch release
 
-# REQUIRED CONFIGURATION: any action starting with `release-` is gated on the
-# `dispatch-release-approval` environment. The gate only enforces a second
-# approval if that environment has required reviewers configured in repo
-# Settings → Environments. Without reviewers configured, the gate job
-# auto-succeeds and provides NO protection — verify the environment is set up
-# before relying on this workflow for production releases.
+# Kicks off a release by materializing news fragments into the selected
+# packages' CHANGELOG.md files at the next version — the changelogs are the
+# source of truth for publishing (see release_from_changelog.yml, which
+# publishes any changelog version that has no git tag yet).
+#
+# Prerelease actions (new-prerelease-*, continued-prerelease) write alpha
+# versions and push them straight to an r/pre-<date> branch (continued
+# prereleases push back to the r/* branch the workflow was dispatched on);
+# alphas publish immediately without further approval. To pull new work into
+# a prerelease train, merge main into the r/pre-* branch, then dispatch
+# continued-prerelease on it.
+#
+# Release actions (release-*) open a pull request with the changelog changes
+# instead — reviewing and merging that PR is the release approval, and the
+# resulting push publishes the final versions. The PR targets main, or the
+# r/hotfix/** branch the workflow was dispatched on (hotfix branches may
+# publish final versions directly). release-from-prerelease collapses the
+# accumulated alpha sections into the single final-version section, so alpha
+# headings never appear in a published final changelog.
+#
+# REQUIRED CONFIGURATION:
+# - "Allow GitHub Actions to create and approve pull requests" must be
+#   enabled in the repo's Actions settings for release-* actions to open PRs.
+# - Branch protection on main should require review, since merging a release
+#   PR is what approves publishing final versions.
+# - r/** and release/** branches must be pushable by GITHUB_TOKEN (no
+#   restrictive rulesets), and the pypi environment on publish.yml must allow
+#   deployments from r/** for alphas to publish.
+# - The dispatch-release-approval environment gate is no longer used and can
+#   be deleted from the repo settings; PR review replaced it.
 
 on:
   workflow_dispatch:
@@ -94,6 +118,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: dispatch-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   detect:
     runs-on: ubuntu-latest
@@ -125,13 +153,13 @@ jobs:
           reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
         run: bash .github/scripts/dispatch_release/detect.sh
 
-  plan:
+  materialize:
     needs: detect
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-    outputs:
-      releases: ${{ steps.plan.outputs.releases }}
+      contents: write
+      pull-requests: write
+      actions: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -139,58 +167,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-      - id: plan
+      - name: Plan versions
+        id: plan
         env:
           PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
           ACTION: ${{ inputs.action }}
-        run: uv run --script .github/scripts/dispatch_release/plan.py
-
-  gate:
-    needs: plan
-    if: ${{ startsWith(inputs.action, 'release-') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    environment: dispatch-release-approval
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Show release plan
+        run: uv run --script scripts/release.py plan
+      - name: Materialize changelogs
         env:
-          RELEASES: ${{ needs.plan.outputs.releases }}
+          RELEASES_JSON: ${{ steps.plan.outputs.releases }}
           ACTION: ${{ inputs.action }}
-        run: bash .github/scripts/dispatch_release/show_plan.sh
-
-  release:
-    needs: [plan, gate]
-    if: ${{ always() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.plan.outputs.releases) }}
-      fail-fast: false
-    concurrency:
-      group: dispatch-release-${{ matrix.package }}
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Create GitHub release
+        run: uv run --script scripts/release.py materialize
+      - name: Push prerelease branch
+        if: ${{ !startsWith(inputs.action, 'release-') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ matrix.tag }}
-          PKG: ${{ matrix.package }}
-          VERSION: ${{ matrix.next }}
           ACTION: ${{ inputs.action }}
-        run: bash .github/scripts/dispatch_release/create_release.sh
-      - name: Trigger publish workflow
+          REF_NAME: ${{ github.ref_name }}
+          RELEASES: ${{ steps.plan.outputs.releases }}
+        run: bash .github/scripts/dispatch_release/push_prerelease.sh
+      - name: Open release pull request
+        if: ${{ startsWith(inputs.action, 'release-') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ matrix.tag }}
-          REF: ${{ github.ref_name }}
-        run: bash .github/scripts/dispatch_release/trigger_publish.sh
+          ACTION: ${{ inputs.action }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASES: ${{ steps.plan.outputs.releases }}
+        run: bash .github/scripts/dispatch_release/open_release_pr.sh
