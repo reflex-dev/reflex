@@ -575,6 +575,20 @@ def test_memo_uses_var_runtime_value_type_for_missing_param_annotation():
     assert user_var._var_type is dict
 
 
+def test_memo_does_not_infer_explicit_any_from_runtime_value():
+    """An explicit ``Var[Any]`` annotation should remain intentionally untyped."""
+
+    @rx.memo
+    def explicit_any(value: rx.Var[Any]) -> rx.Component:
+        assert type(value) is Var
+        assert value._var_type is Any
+        return rx.text(value.to(str))
+
+    component = explicit_any(value={"name": "Ada"})
+
+    assert isinstance(component, MemoComponent)
+
+
 def test_memo_warns_on_missing_return_annotation():
     """A missing return annotation should default to ``rx.Component`` with a warning."""
     with patch.object(console, "deprecate") as mock_deprecate:
@@ -685,6 +699,14 @@ def test_lazy_body_reentrant_read_without_placeholder_raises():
     cell = _LazyBody(thunk)
     with pytest.raises(RuntimeError, match="Re-entrant"):
         cell.get()
+
+
+def test_lazy_body_first_read_can_override_thunk():
+    """A contextual first read should be cached instead of the default thunk."""
+    cell = _LazyBody(lambda: "default")
+
+    assert cell.get(lambda: "contextual") == "contextual"
+    assert cell.get() == "contextual"
 
 
 @pytest.mark.parametrize(
