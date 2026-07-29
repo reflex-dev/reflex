@@ -1474,6 +1474,85 @@ from new_name
     assert updated_content == expected_content
 
 
+def test_rename_imports_and_app_name_preserves_utf8(
+    temp_directory, monkeypatch: pytest.MonkeyPatch
+):
+    """UTF-8 source is preserved even when the platform default encoding is not UTF-8.
+
+    Simulates a Western Windows locale (cp1252) where ``Path.read_text`` /
+    ``write_text`` without an explicit ``encoding`` would mis-decode UTF-8 source,
+    silently corrupting or aborting on non-ASCII characters (curly quotes, accents).
+
+    Args:
+        temp_directory: A temporary directory fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    original_open = Path.open
+
+    def open_file(
+        self, mode="r", buffering=-1, encoding=None, errors=None, newline=None
+    ):
+        return original_open(
+            self,
+            mode=mode,
+            buffering=buffering,
+            encoding=(encoding if encoding is not None or "b" in mode else "cp1252"),
+            errors=errors,
+            newline=newline,
+        )
+
+    monkeypatch.setattr(Path, "open", open_file)
+
+    source = "import old_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("utf-8"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
+    assert file_path.read_bytes() == expected.encode("utf-8")
+
+
+def test_rename_imports_and_app_name_preserves_declared_encoding(temp_directory):
+    """Python source encoding cookies are honored during rename.
+
+    Args:
+        temp_directory: A temporary directory fixture.
+    """
+    source = (
+        "# -*- coding: cp1252 -*-\nimport old_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("cp1252"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = (
+        "# -*- coding: cp1252 -*-\nimport new_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    assert file_path.read_bytes() == expected.encode("cp1252")
+
+
+@pytest.mark.parametrize("line_ending", ["\n", "\r\n"])
+def test_rename_imports_and_app_name_preserves_line_endings(
+    temp_directory, line_ending
+):
+    """Source line endings are preserved during rename.
+
+    Args:
+        temp_directory: A temporary directory fixture.
+        line_ending: The line ending used in the source file.
+    """
+    source = line_ending.join(("import old_name", "# comment", ""))
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode())
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = line_ending.join(("import new_name", "# comment", ""))
+    assert file_path.read_bytes() == expected.encode()
+
+
 def test_cli_rename_command(temp_directory):
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
