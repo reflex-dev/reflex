@@ -210,6 +210,35 @@ def test_computed_var_interval_wall_clock_fallback(
     assert state.cv == expected_value
 
 
+def test_computed_var_interval_cached_across_instances(
+    mocker: MockerFixture,
+) -> None:
+    """Test a fresh value stays cached when first read by another instance.
+
+    Sequential requests landing on different workers (e.g. the REST/MCP event
+    handler API behind a load balancer) see a foreign clock id; that must not
+    force recomputation while the value is fresh by wall clock.
+    """
+    call_count = 0
+
+    class StateTest(State):
+        @computed_var(cache=True, interval=60)
+        def cv(self) -> int:
+            nonlocal call_count
+            call_count += 1
+            return call_count
+
+    state = StateTest()
+    assert state.cv == 1
+
+    # Simulate the state being loaded by a different worker process, which
+    # has its own module-level clock id.
+    mocker.patch("reflex_base.vars.base._MONOTONIC_CLOCK_ID", uuid.uuid4())
+
+    assert state.cv == 1
+    assert call_count == 1
+
+
 @pytest.mark.parametrize(
     "persisted_timestamp",
     [None, (object(), 100), "2026-01-01"],
