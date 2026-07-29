@@ -541,7 +541,7 @@ def test_memo_uses_first_call_value_type_for_missing_param_annotation():
     @rx.memo
     def user_card(user) -> rx.Component:
         return rx.box(
-            rx.heading(user["name"]),
+            rx.heading(user["name"].upper()),
             rx.text(user["email"]),
         )
 

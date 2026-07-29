@@ -794,7 +794,7 @@ def _var_placeholder(
         runtime_type = (
             runtime_value._var_type
             if isinstance(runtime_value, Var)
-            else type(runtime_value)
+            else LiteralVar.create(runtime_value)._var_type
         )
         return Var(_js_expr=name, _var_type=runtime_type).guess_type()
     return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
