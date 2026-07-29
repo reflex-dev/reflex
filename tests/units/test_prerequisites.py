@@ -334,6 +334,25 @@ def test_sync_root_lockfiles_to_web_keeps_web_package_json(tmp_path, monkeypatch
     assert not web_lock.exists()
 
 
+def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch):
+    """Persisted package.json is rendered into .web instead of byte-copied."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    with chdir(tmp_path):
+        frontend_skeleton.sync_root_lockfiles_to_web()
+
+    web_pkg = json.loads((web_dir / constants.PackageJson.PATH).read_text())
+    assert web_pkg["dependencies"] == {"react": "19.2.5"}
+    assert web_pkg["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
 def test_install_frontend_packages_syncs_root_bun_lock(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -905,6 +924,26 @@ def test_install_frontend_packages_persists_package_json_to_root(
     assert env.root_package_json.read_text() == (
         '{"name": "reflex", "dependencies": {}}'
     )
+
+
+def test_install_frontend_packages_repairs_missing_package_json_scripts(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A damaged persisted package.json is repaired before it reaches .web."""
+    env = install_packages_env
+    env.root_package_json.write_text(json.dumps({}))
+    calls = _record_calls(env)
+
+    env.install()
+
+    web_package_json = json.loads(env.web_package_json.read_text())
+    root_package_json = json.loads(env.root_package_json.read_text())
+    assert web_package_json["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert (
+        web_package_json["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+    )
+    assert root_package_json == web_package_json
+    assert calls == []
 
 
 def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
