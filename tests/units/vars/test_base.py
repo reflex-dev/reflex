@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from collections.abc import Mapping, Sequence
 
 import pytest
@@ -143,15 +144,75 @@ async def test_computed_var_interval_uses_monotonic_time(
     else:
         assert state.cv == expected_value
     assert call_count == expected_value
-    datetime_mock.now.assert_not_called()
+
+
+def test_computed_var_interval_persists_legacy_datetime() -> None:
+    """Test the persisted last-updated attribute remains a datetime.
+
+    Older workers compute ``datetime.datetime.now() - last_updated`` directly
+    on the deserialized attribute, so the value stored under the legacy
+    attribute must stay a plain datetime for rolling deployments.
+    """
+
+    class StateTest(State):
+        @computed_var(cache=True, interval=10)
+        def cv(self) -> int:
+            return 1
+
+    state = StateTest()
+    assert state.cv == 1
+
+    computed = StateTest.computed_vars["cv"]
+    last_updated = getattr(state, computed._last_updated_attr)
+    assert isinstance(last_updated, datetime.datetime)
+    assert datetime.datetime.now() - last_updated < datetime.timedelta(seconds=10)
+
+
+@pytest.mark.parametrize(
+    ("wall_clock_delta", "expected_value"),
+    [
+        (datetime.timedelta(seconds=1), 1),
+        (datetime.timedelta(hours=1), 2),
+    ],
+)
+def test_computed_var_interval_wall_clock_fallback(
+    wall_clock_delta: datetime.timedelta,
+    expected_value: int,
+) -> None:
+    """Test state from another process falls back to wall-clock expiry.
+
+    Args:
+        wall_clock_delta: The wall-clock time elapsed since the last update.
+        expected_value: The expected computed value after the fallback check.
+    """
+    call_count = 0
+
+    class StateTest(State):
+        @computed_var(cache=True, interval=10)
+        def cv(self) -> int:
+            nonlocal call_count
+            call_count += 1
+            return call_count
+
+    state = StateTest()
+    assert state.cv == 1
+
+    computed = StateTest.computed_vars["cv"]
+    # Simulate deserialization in a different process: the monotonic reading
+    # carries a foreign clock id, so only the wall-clock datetime is usable.
+    setattr(state, computed._last_updated_monotonic_attr, (uuid.uuid4(), 100.0))
+    setattr(
+        state,
+        computed._last_updated_attr,
+        datetime.datetime.now() - wall_clock_delta,
+    )
+
+    assert state.cv == expected_value
 
 
 @pytest.mark.parametrize(
     "persisted_timestamp",
-    [
-        datetime.datetime(2026, 1, 1),
-        (object(), 100),
-    ],
+    [None, (object(), 100), "2026-01-01"],
 )
 def test_computed_var_interval_expires_incompatible_timestamp(
     persisted_timestamp: object,
@@ -174,6 +235,7 @@ def test_computed_var_interval_expires_incompatible_timestamp(
     assert state.cv == 1
 
     computed = StateTest.computed_vars["cv"]
+    delattr(state, computed._last_updated_monotonic_attr)
     setattr(state, computed._last_updated_attr, persisted_timestamp)
 
     assert state.cv == 2
