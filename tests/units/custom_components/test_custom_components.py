@@ -7,14 +7,14 @@ from pathlib import Path
 from reflex.custom_components import custom_components
 
 
-def test_make_pyi_files_walks_without_path_walk(monkeypatch, tmp_path: Path):
-    """``_make_pyi_files`` scans component dirs without relying on ``Path.walk``.
+def test_make_pyi_files_delegates_recursive_scan_without_path_walk(
+    monkeypatch, tmp_path: Path
+):
+    """``_make_pyi_files`` delegates recursive scanning without ``Path.walk``.
 
     ``pathlib.Path.walk`` only exists on Python 3.12+, but Reflex supports 3.10
     and 3.11 too, so the build must not depend on it. ``Path.walk`` is removed
-    here to reproduce the 3.10/3.11 environment on any interpreter; the function
-    must still recurse (skipping ``__pycache__``) instead of raising
-    ``AttributeError``.
+    here to reproduce the 3.10/3.11 environment on any interpreter.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
@@ -24,13 +24,14 @@ def test_make_pyi_files_walks_without_path_walk(monkeypatch, tmp_path: Path):
     nested = package / "sub"
     nested.mkdir(parents=True)
     (package / "__pycache__").mkdir()
+    (tmp_path / "__pycache__").mkdir()
     (tmp_path / ".hidden").mkdir()
 
-    scanned: list[str] = []
+    scans: list[list[Path]] = []
 
     class _RecordingGenerator:
         def scan_all(self, targets, *_args, **_kwargs):
-            scanned.extend(str(target) for target in targets)
+            scans.append([Path(target) for target in targets])
 
     monkeypatch.setattr(
         "reflex_base.utils.pyi_generator.PyiGenerator", _RecordingGenerator
@@ -40,8 +41,4 @@ def test_make_pyi_files_walks_without_path_walk(monkeypatch, tmp_path: Path):
 
     custom_components._make_pyi_files()
 
-    scanned_names = {Path(target).name for target in scanned}
-    assert "my_component" in scanned_names
-    assert "sub" in scanned_names
-    assert "__pycache__" not in scanned_names
-    assert ".hidden" not in scanned_names
+    assert scans == [[package]]
