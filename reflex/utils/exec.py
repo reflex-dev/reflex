@@ -377,7 +377,7 @@ def run_frontend_prod(host: str, port: int):
 @once
 def _warn_user_about_uvicorn():
     console.warn(
-        "Using Uvicorn because both Uvicorn and Gunicorn are installed. "
+        "Using Uvicorn for the backend. "
         "Set REFLEX_USE_GRANIAN=1 to use Granian instead."
     )
 

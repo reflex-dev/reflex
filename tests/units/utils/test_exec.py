@@ -96,6 +96,6 @@ def test_should_use_granian_warns_when_falling_back_to_uvicorn(
 
     assert exec_utils.should_use_granian() is False
     warn.assert_called_once_with(
-        "Using Uvicorn because both Uvicorn and Gunicorn are installed. "
+        "Using Uvicorn for the backend. "
         "Set REFLEX_USE_GRANIAN=1 to use Granian instead."
     )
