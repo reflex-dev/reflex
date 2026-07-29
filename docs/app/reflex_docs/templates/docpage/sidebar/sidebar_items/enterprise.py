@@ -63,6 +63,15 @@ def get_sidebar_items_enterprise_usage():
                 ),
             ],
         ),
+        SideBarItem(
+            names="Testing",
+            children=[
+                SideBarItem(
+                    names="End-to-End Testing",
+                    link=enterprise.testing.path,
+                ),
+            ],
+        ),
     ]
 
 
@@ -93,6 +102,14 @@ def get_sidebar_items_enterprise_components():
                 SideBarItem(
                     names="Pivot Mode",
                     link=enterprise.ag_grid.pivot_mode.path,
+                ),
+                SideBarItem(
+                    names="Tree Data",
+                    link=enterprise.ag_grid.tree_data.path,
+                ),
+                SideBarItem(
+                    names="Master Detail",
+                    link=enterprise.ag_grid.master_detail.path,
                 ),
                 SideBarItem(
                     names="Theme",

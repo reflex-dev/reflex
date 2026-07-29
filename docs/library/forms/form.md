@@ -119,7 +119,7 @@ import reflex as rx
 
 Forms are used to collect user input. The `rx.form` component is used to group inputs and submit them together.
 
-The form component's children can be form controls such as `rx.input`, `rx.checkbox`, `rx.slider`, `rx.textarea`, `rx.radio_group`, `rx.select` or `rx.switch`. The controls should have a `name` attribute that is used to identify the control in the form data. The `on_submit` event trigger submits the form data as a dictionary to the `handle_submit` event handler.
+The form component's children can be form controls such as `rx.input`, `rx.checkbox`, `rx.slider`, `rx.text_area`, `rx.radio_group`, `rx.select` or `rx.switch`. The controls should have a `name` attribute that is used to identify the control in the form data. The `on_submit` event trigger submits the form data as a dictionary to the `handle_submit` event handler.
 
 The form is submitted when the user clicks the submit button or presses enter on the form controls.
 

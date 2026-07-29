@@ -23,7 +23,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format, memo_paths
@@ -2591,6 +2591,52 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
     )
 
 
+def test_compile_page_is_idempotent_for_component_state(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Re-evaluating a stateful page in one process must not duplicate states.
+
+    In prod, granian forks workers that re-run the stateful-pages marker after
+    the parent process already compiled the page. Because ``ComponentState.create``
+    mutates a process-global counter and registry, an unguarded re-evaluation
+    creates a second set of dynamic state classes (the "2x states" bug).
+    """
+    import reflex.istate.dynamic as dynamic_mod
+
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, _ = compilable_app
+
+    class DupCounter(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, **props):
+            return rx.el.div(**props)
+
+    app.add_page(lambda: rx.vstack(DupCounter.create(), DupCounter.create()), route="/")
+    route = next(iter(app._unevaluated_pages))
+
+    # Parent process: full compile evaluates the page once.
+    app._compile(dry_run=True)
+    assert DupCounter._per_component_state_instance_count == 2
+
+    # Forked worker: re-running the stateful-pages marker via _compile_page must
+    # reuse the already-created state classes instead of creating new ones.
+    app._compile_page(route, save_page=False)
+    assert DupCounter._per_component_state_instance_count == 2
+    assert not hasattr(dynamic_mod, "DupCounter_n3")
+
+    # A save_page=True call for an already-compiled route must still leave the
+    # component in _pages (the skip must honour the save_page contract) without
+    # duplicating states.
+    assert route in app._pages
+    app._compile_page(route, save_page=True)
+    assert route in app._pages
+    assert DupCounter._per_component_state_instance_count == 2
+
+
 def test_compile_writes_upload_files_provider_app_wrap(
     compilable_app: tuple[App, Path],
     mocker,
@@ -3822,3 +3868,45 @@ def test_call_ignores_stale_marker_without_dev_backend_reload(
 
     compile_mock.assert_called_once()
     assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+
+
+def test_add_page_invalidates_router_cache():
+    """Adding a page refreshes a router built from the old route set."""
+    app = App()
+    assert app.router("/late") is None
+
+    app.add_page(lambda: rx.el.div(), route="/late")
+
+    assert app.router("/late") == "late"
+
+
+def test_compile_registers_plugin_routes(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Compilation includes pages contributed by configured plugins."""
+
+    class RoutePlugin(Plugin):
+        """Plugin contributing one page for the compile test."""
+
+        def register_route(self, *, add_page, **_):
+            """Contribute the test page through the staged capability.
+
+            Args:
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
+            """
+            add_page(lambda: rx.el.div("plugin page"), route="/from-plugin")
+
+    plugin = RoutePlugin()
+    conf = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+
+    app._compile(dry_run=True, use_rich=False)
+
+    assert "from-plugin" in app._unevaluated_pages
+    assert "from-plugin" in app._pages
+    assert app._plugin_routes_registered

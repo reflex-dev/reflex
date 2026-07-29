@@ -19,6 +19,7 @@ from reflex_docgen import (
     PropDocumentation,
     generate_documentation,
 )
+from reflex_site_shared.components.docs_api import docs_api_cell, docs_api_table
 
 from reflex_docs.docgen_pipeline import (
     get_docgen_toc,
@@ -26,6 +27,7 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h2_comp
 
 
@@ -98,10 +100,6 @@ _PILL_BTN_ACTIVE_CLASS = (
     "border border-secondary-8 bg-secondary-3 px-2.5 text-sm font-medium text-secondary-12 "
     "shadow-[inset_0_0_0_1px_var(--secondary-6)] transition-colors "
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
-)
-_PROPS_TABLE_CELL_CLASS = "min-w-0 px-4 py-3 align-top"
-_PROPS_TABLE_HEADER_CLASS = (
-    "px-4 py-3 text-left text-xs font-semibold text-secondary-11"
 )
 _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "cell-content max-h-[4.25rem] overflow-hidden "
@@ -362,7 +360,7 @@ def prop_docs(
     # Return the docs for the prop.
     return (
         [
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     rx.el.div(
                         rx.code(
@@ -384,9 +382,9 @@ def prop_docs(
                     ),
                     class_name=cell_content_class,
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[20%]"),
+                "w-[20%]",
             ),
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     rx.box(
                         rx.box(
@@ -433,9 +431,9 @@ def prop_docs(
                     ),
                     class_name="flex flex-row items-start gap-2",
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[25%]"),
+                "w-[25%]",
             ),
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     render_inline_markdown(
                         description,
@@ -443,7 +441,7 @@ def prop_docs(
                     ),
                     class_name=cell_content_class,
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[55%]"),
+                "w-[55%]",
             ),
         ],
         is_long_row,
@@ -543,8 +541,6 @@ def generate_props(
                 **row_props,
             )
         )
-
-    body = rx.el.tbody(*rows, class_name="bg-secondary-1")
 
     comp: rx.Component
     try:
@@ -769,30 +765,7 @@ def generate_props(
             as_="h3",
             class_name="font-large text-secondary-12 mt-4 mb-2 text-left self-start",
         ),
-        rx.box(
-            rx.el.table(
-                rx.el.thead(
-                    rx.el.tr(
-                        rx.el.th(
-                            "Prop",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[20%]"),
-                        ),
-                        rx.el.th(
-                            "Type",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[25%]"),
-                        ),
-                        rx.el.th(
-                            "Description",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[55%]"),
-                        ),
-                    ),
-                    class_name="border-b border-secondary-4 bg-secondary-2",
-                ),
-                body,
-                class_name="w-full table-fixed border-collapse text-left",
-            ),
-            class_name="mb-4 w-full min-w-0 overflow-hidden rounded-xl border border-secondary-4 bg-secondary-1 shadow-small",
-        ),
+        docs_api_table(*rows),
     )
 
 
@@ -1026,8 +999,14 @@ def multi_docs(
         )
 
     # Differentiate the low-level page's meta description so search engines
-    # don't see it as a duplicate of the high-level page's description.
-    ll_description = f"{description} (low-level API reference)" if description else None
+    # don't see it as a duplicate of the high-level page's description. Truncate
+    # the base first so the differentiating suffix always survives the cap.
+    ll_suffix = " (low-level API reference)"
+    ll_description = (
+        f"{truncate_meta_description(description, max_len=155 - len(ll_suffix))}{ll_suffix}"
+        if description
+        else None
+    )
 
     @docpage(
         set_path=path + "low", t=title + " (Low Level)", description=ll_description

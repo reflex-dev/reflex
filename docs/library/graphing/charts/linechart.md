@@ -87,6 +87,54 @@ def line_features():
     )
 ```
 
+## Axis Labels
+
+Nest an `rx.recharts.label` inside `rx.recharts.x_axis` or `rx.recharts.y_axis` to title the axes. Use the `position` prop to place the label, and rotate the y-axis label with `custom_attrs={"angle": 270}`. Give the x-axis some extra `height` and the chart a left `margin` so the labels have room. The axes here also use `axis_line=False` and `tick_line=False` for a cleaner look.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def line_axis_labels():
+    return rx.recharts.line_chart(
+        rx.recharts.line(
+            data_key="uv",
+            stroke=rx.color("accent", 9),
+            stroke_width=2,
+            type_="natural",
+        ),
+        rx.recharts.x_axis(
+            rx.recharts.label(value="Page", position="center"),
+            data_key="name",
+            height=60,
+            axis_line=False,
+            tick_line=False,
+        ),
+        rx.recharts.y_axis(
+            rx.recharts.label(
+                value="Visits",
+                position="left",
+                custom_attrs={"angle": 270},
+            ),
+            axis_line=False,
+            tick_line=False,
+        ),
+        rx.recharts.graphing_tooltip(),
+        data=data,
+        margin={"left": 20, "right": 20, "top": 20},
+        width="100%",
+        height=300,
+    )
+```
+
 ## Layout
 
 The `layout` prop allows you to set the orientation of the graph to be vertical or horizontal. The `margin` prop defines the spacing around the graph,

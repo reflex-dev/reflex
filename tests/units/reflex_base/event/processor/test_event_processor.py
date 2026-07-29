@@ -356,6 +356,32 @@ async def test_multiple_futures_cancelled_on_stop(processor: EventProcessor):
     assert ep._futures == {}
 
 
+async def test_stop_drains_same_token_sequential_backlog(
+    processor: EventProcessor,
+    token: str,
+):
+    """Graceful stop drains queued same-token events within the shutdown budget.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        futures = [
+            await ep.enqueue(
+                token, Event.from_event_type(slow_logging_event(str(i)))[0]
+            )
+            for i in range(10)
+        ]
+
+    assert [entry["value"] for entry in _CALL_LOG] == [str(i) for i in range(10)]
+    assert all(future.done() and not future.cancelled() for future in futures)
+    assert ep._tasks == {}
+    assert ep._token_queues == {}
+    assert ep._futures == {}
+
+
 async def test_cancel_future_before_task_starts(
     mock_event_processor: EventProcessor,
     token: str,

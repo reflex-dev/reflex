@@ -32,8 +32,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   destructive: "bg-destructive-9 hover:bg-destructive-10 text-primary-contrast",
   outline:
     "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white dark:bg-secondary-4 hover:bg-secondary-2 dark:hover:bg-secondary-5 text-secondary-12",
-  ghost:
-    "text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9",
+  ghost: "text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -61,21 +60,14 @@ export function GradientButton({
 
   const handleMouseMove = useCallback<
     React.MouseEventHandler<HTMLButtonElement>
-  >((e) => {
-    const button = e.currentTarget;
-    const rect = button.getBoundingClientRect();
-    setX(e.clientX - rect.left);
-    setY(e.clientY - rect.top);
+  >((event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setX(event.clientX - rect.left);
+    setY(event.clientY - rect.top);
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
-    setIsMouseOver(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsMouseOver(false);
-  }, []);
-
+  const handleMouseEnter = useCallback(() => setIsMouseOver(true), []);
+  const handleMouseLeave = useCallback(() => setIsMouseOver(false), []);
   const Component = nativeButton ? "button" : "div";
 
   return (

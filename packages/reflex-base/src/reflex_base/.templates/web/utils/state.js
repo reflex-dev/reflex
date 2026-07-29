@@ -1229,6 +1229,23 @@ export const pyRstrip = (s, chars) => {
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
 
+/***
+ * Python-semantics flat map: map each element through fn and concatenate the
+ * results, iterating each one the way Python does (arrays yield their
+ * elements, strings yield characters, objects yield their keys).
+ * @param {Array} arr The array to map over.
+ * @param {Function} fn The mapping function applied to each element.
+ * @returns {Array} The flattened array of mapped results.
+ */
+export const pyFlatMap = (arr, fn) =>
+  arr.flatMap((element) => {
+    const value = fn(element);
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return Array.from(value);
+    if (value === Object(value)) return Object.keys(value);
+    throw new TypeError(`flat_map value is not iterable: ${value}`);
+  });
+
 /**
  * Get the value from a ref.
  * @param ref The ref to get the value from.

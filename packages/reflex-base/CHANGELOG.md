@@ -1,3 +1,28 @@
+## v0.9.7 (2026-07-15)
+
+### Deprecations
+
+- `ArrayVar.foreach` is deprecated; use `ArrayVar.map` instead. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+
+### Features
+
+- `ArrayVar` gained `map`, `filter`, `reduce`, and `flat_map` operations, and `StringVar.strip` now accepts a `chars` argument alongside new `lstrip`/`rstrip` methods. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+- Added `default_color_mode` to `rx.Config` (`"system"`, `"light"`, or `"dark"`, also settable via `REFLEX_DEFAULT_COLOR_MODE`) and moved the shared `LiteralColorMode` type and color-mode string constants into `reflex_base.constants`. This lets apps set the initial color mode without depending on the Radix themes appearance prop. ([#6716](https://github.com/reflex-dev/reflex/issues/6716))
+- `@rx.memo` now accepts a `wrapper=` argument controlling the JS function that wraps the compiled component definition: keep the default React `memo`, pass a custom function `Var` (e.g. an `rx.vars.FunctionStringVar` carrying its own imports), or pass `wrapper=None` to export the bare function component. ([#6730](https://github.com/reflex-dev/reflex/issues/6730))
+- Added `frozen_lockfile` to `rx.Config` (default `True`, also settable via `REFLEX_FROZEN_LOCKFILE`), controlling whether the frontend package manager runs in lockfile-enforcing mode. Reflex still creates, manages, and syncs the lockfile regardless; the option only controls whether a lockfile/`package.json` mismatch is treated as an error. ([#6763](https://github.com/reflex-dev/reflex/issues/6763))
+
+### Bug Fixes
+
+- Custom attributes set on a `Field` are now preserved (deep-copied) when the state metaclass rebuilds fields, instead of being silently discarded. The reserved `annotation` attribute is never carried over so rebuilt fields are not misidentified as pydantic fields. ([#6726](https://github.com/reflex-dev/reflex/issues/6726))
+- Fix `_get_all_hooks_internal` mutating each component's cached internal hooks with its descendants' hooks, which made memo tag hashes order-dependent and duplicated hooks into memo bodies. ([#6741](https://github.com/reflex-dev/reflex/issues/6741))
+
+### Performance
+
+- Cache framework-path checks in `console.deprecate`'s call-stack walk, making repeat calls ~150x faster (deprecated attributes on hot paths, like `RouterData.page`, no longer cost multiple milliseconds per access). ([#6736](https://github.com/reflex-dev/reflex/issues/6736))
+- Event chaining (`yield OtherState.handler(rows)`) no longer deep-copies payload values that are not attached to any state: only state-bound `MutableProxy` subtrees are copied, making proxy-free payloads ~5x faster to chain. ([#6739](https://github.com/reflex-dev/reflex/issues/6739))
+- `Var.to()` and `Var.guess_type()` resolve their target Var subclass through cached registry lookups instead of scanning the full registry with `safe_issubclass` on every call (~70% of the cost of constructing a var operation). ([#6742](https://github.com/reflex-dev/reflex/issues/6742))
+
+
 ## v0.9.6.post1 (2026-06-26)
 
 ### Features
