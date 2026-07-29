@@ -33,6 +33,7 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
+from reflex_base.vars.object import ObjectVar
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -557,6 +558,8 @@ def test_memo_uses_var_runtime_value_type_for_missing_param_annotation():
 
     @rx.memo
     def user_card(user) -> rx.Component:
+        assert isinstance(user, ObjectVar)
+        assert user._var_type is dict
         return rx.box(
             rx.heading(user["name"]),
             rx.text(user["email"]),
