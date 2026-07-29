@@ -229,8 +229,21 @@ class _LazyBody(Generic[_BodyT]):
         body._ready = True
         return body
 
-    def get(self) -> _BodyT:
+    @property
+    def is_ready(self) -> bool:
+        """Whether the body has already been computed.
+
+        Returns:
+            Whether the cached value is ready.
+        """
+        return self._ready
+
+    def get(self, thunk: Callable[[], _BodyT] | None = None) -> _BodyT:
         """Return the body, running and caching ``thunk`` on first read.
+
+        Args:
+            thunk: Optional one-time replacement for the default thunk. Ignored
+                after the body has been computed.
 
         Returns:
             The cached body, or the placeholder when read mid-evaluation.
@@ -250,7 +263,7 @@ class _LazyBody(Generic[_BodyT]):
             return self._placeholder
         self._busy = True
         try:
-            self._value = self._thunk()
+            self._value = (self._thunk if thunk is None else thunk)()
             self._ready = True
         finally:
             self._busy = False
@@ -295,6 +308,9 @@ class MemoComponentDefinition(MemoDefinition):
 
     export_name: str
     _component: _LazyBody[Component]
+    _runtime_inferred_params: frozenset[str] = dataclasses.field(
+        default_factory=frozenset, repr=False, compare=False
+    )
     # For passthrough wrappers built by the auto-memoize plugin: the
     # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
     # body. The ``component`` keeps its ORIGINAL children so compile-time
@@ -772,16 +788,28 @@ def _rest_placeholder(name: str) -> RestProp:
     return RestProp(_js_expr=name, _var_type=dict[str, Any])
 
 
-def _var_placeholder(name: str, annotation: Any) -> Var:
+def _var_placeholder(
+    name: str,
+    annotation: Any,
+    runtime_value: Any | None = None,
+) -> Var:
     """Create a placeholder Var for a memo parameter.
 
     Args:
         name: The JavaScript identifier.
         annotation: The parameter annotation.
+        runtime_value: Optional runtime value used to infer unannotated params.
 
     Returns:
         The placeholder Var.
     """
+    if _annotation_inner_type(annotation) is Any and runtime_value is not None:
+        runtime_type = (
+            runtime_value._var_type
+            if isinstance(runtime_value, Var)
+            else LiteralVar.create(runtime_value)._var_type
+        )
+        return Var(_js_expr=name, _var_type=runtime_type).guess_type()
     return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
 
 
@@ -1049,12 +1077,14 @@ class _MemoCallBinding:
 def _evaluate_memo_function(
     fn: Callable[..., Any],
     params: tuple[MemoParam, ...],
+    runtime_values: Mapping[str, Any] | None = None,
 ) -> Any:
     """Evaluate a memo function with placeholder vars.
 
     Args:
         fn: The function to evaluate.
         params: The memo parameters.
+        runtime_values: Optional runtime values keyed by parameter name.
 
     Returns:
         The return value from the function.
@@ -1063,7 +1093,14 @@ def _evaluate_memo_function(
     keyword_args = {}
 
     for param in params:
-        placeholder = param.make_placeholder()
+        if param.kind is MemoParamKind.VALUE:
+            placeholder = _var_placeholder(
+                param.placeholder_name,
+                param.annotation,
+                runtime_values.get(param.name) if runtime_values is not None else None,
+            )
+        else:
+            placeholder = param.make_placeholder()
         if param.parameter_kind in (
             inspect.Parameter.POSITIONAL_ONLY,
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -1130,6 +1167,7 @@ def _analyze_params(
     for_component: bool,
     hints: dict[str, Any] | None = None,
     defaulted_params: list[str] | None = None,
+    missing_params: list[str] | None = None,
 ) -> tuple[MemoParam, ...]:
     """Analyze and validate memo parameters.
 
@@ -1144,6 +1182,9 @@ def _analyze_params(
             a missing annotation, otherwise ``Var[<bare type>]``) and their
             names appended; when ``None`` (strict mode, used by internal
             callers) either case raises ``TypeError``.
+        missing_params: When provided, collects the names of parameters that
+            have no annotation at all (the ``Var[Any]``-coerced subset of
+            ``defaulted_params``, which also holds legacy bare-type params).
 
     Returns:
         The analyzed parameters.
@@ -1187,6 +1228,8 @@ def _analyze_params(
             else:
                 annotation = Var[annotation]
             defaulted_params.append(parameter.name)
+            if is_missing and missing_params is not None:
+                missing_params.append(parameter.name)
 
         # Children parameters by name must match the children kind exactly —
         # otherwise we accept a value-typed `children` and emit confusing JSX.
@@ -1315,13 +1358,16 @@ def _build_args_function(
 
 
 def _evaluate_component_body(
-    fn: Callable[..., Any], params: tuple[MemoParam, ...]
+    fn: Callable[..., Any],
+    params: tuple[MemoParam, ...],
+    runtime_values: Mapping[str, Any] | None = None,
 ) -> Component:
     """Run a component memo's body and return its compiled component.
 
     Args:
         fn: The decorated function.
         params: The analyzed memo parameters.
+        runtime_values: Optional runtime values keyed by parameter name.
 
     Returns:
         The wrapped component the body returned.
@@ -1329,7 +1375,9 @@ def _evaluate_component_body(
     Raises:
         TypeError: If the body does not return a component.
     """
-    body = _normalize_component_return(_evaluate_memo_function(fn, params))
+    body = _normalize_component_return(
+        _evaluate_memo_function(fn, params, runtime_values)
+    )
     if body is None:
         msg = (
             f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
@@ -1644,9 +1692,24 @@ class _MemoComponentWrapper:
 
         # Reading ``component`` materializes the deferred body, so ``type(...)``
         # reflects the real wrapped class rather than the placeholder.
+        if definition._runtime_inferred_params and not definition._component.is_ready:
+            runtime_values = {
+                name: explicit_values[name]
+                for name in definition._runtime_inferred_params
+                if name in explicit_values
+            }
+            component = definition._component.get(
+                lambda: _evaluate_component_body(
+                    definition.fn,
+                    definition.params,
+                    runtime_values,
+                )
+            )
+        else:
+            component = definition.component
         return _get_memo_component_class(
             definition.export_name,
-            type(definition.component),
+            type(component),
             definition.source_module,
         )._create(
             children=list(children),
@@ -1767,9 +1830,9 @@ def create_passthrough_component_memo(
         return new_component
 
     # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` will evaluate again internally; the
-    # second pass overwrites ``captured_hole_child`` but the captured value
-    # is identical.
+    # ``_create_component_definition`` evaluates again internally; that second
+    # pass appends another, identical hole to ``captured_hole_child``, and the
+    # ``captured_hole_child[0]`` read below picks up the first.
     params = _analyze_params(passthrough, for_component=True)
     preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
     if preview is None:
@@ -1921,11 +1984,13 @@ def _memo_impl(
         raise TypeError(msg)
 
     defaulted_params: list[str] = []
+    missing_params: list[str] = []
     params = _analyze_params(
         fn,
         for_component=is_component,
         hints=hints,
         defaulted_params=defaulted_params,
+        missing_params=missing_params,
     )
 
     source_module = memo_paths.capture_source_module(fn)
@@ -1951,6 +2016,7 @@ def _memo_impl(
                 lambda: _evaluate_component_body(fn, params),
                 placeholder=Fragment.create(),
             ),
+            _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
         )
         memo_callable = _create_component_wrapper(definition)
