@@ -1186,7 +1186,13 @@ def cmd_verify_dist() -> None:
     """
     target = Version(os.environ["VERSION"])
     dist = REPO_ROOT / os.environ.get("DIST_DIR", "dist")
-    files = sorted(path for path in dist.glob("*") if path.is_file())
+    # Verify exactly what `uv publish dist/*` will upload: the shell glob
+    # skips hidden files (uv build drops a .gitignore into dist/).
+    files = sorted(
+        path
+        for path in dist.glob("*")
+        if path.is_file() and not path.name.startswith(".")
+    )
     if not files:
         fail(f"no artifacts in {dist}")
     for path in files:
