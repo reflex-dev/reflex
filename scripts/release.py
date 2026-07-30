@@ -1,11 +1,14 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "packaging>=24.2",
-#     "towncrier>=24.8",
-#     "tomli>=2; python_version < '3.11'",
+#     "packaging==26.2",
+#     "towncrier==25.8.0",
+#     "tomli==2.4.1; python_version < '3.11'",
 # ]
 # ///
+# Exact pins, resolved with hashes in release.py.lock (regenerate with
+# `uv lock --script scripts/release.py` after editing the list above).
+# Every workflow call site passes --locked so header/lock drift fails loudly.
 """Changelog-driven release helpers for the CI release workflows.
 
 The ``CHANGELOG.md`` files (repo root for ``reflex``, ``packages/<name>/`` for
@@ -39,6 +42,10 @@ style, and append to ``$GITHUB_OUTPUT`` / ``$GITHUB_STEP_SUMMARY``):
   against the target version.
 - ``extract-notes``: write the changelog section for a version to a file, for
   use as GitHub release notes.
+- ``check-headings``: fail when the working tree adds changelog version
+  headings that BASE_REF does not have — used by PR CI so hand-edited
+  headings (which would otherwise be publish triggers) are rejected by the
+  exact parser the release pipeline uses.
 """
 
 from __future__ import annotations
@@ -1080,6 +1087,67 @@ def cmd_verify_dist() -> None:
     sys.stderr.write(f"✓ {len(files)} artifact(s) at version {target}\n")
 
 
+def _git_show(root: Path, ref: str, rel_path: str) -> str | None:
+    """Return a file's content at a git ref, or None if absent there.
+
+    Args:
+        root: The repository root.
+        ref: The git ref (e.g. ``origin/main``).
+        rel_path: Repo-relative file path.
+
+    Returns:
+        The file content at the ref, or None when the path does not exist.
+    """
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{rel_path}"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
+def cmd_check_headings() -> None:
+    """Fail when the working tree adds changelog version headings vs BASE_REF.
+
+    Reads BASE_REF from the environment. Any versioned section heading (as
+    recognized by the same parser the release pipeline publishes from) that
+    exists in a working-tree CHANGELOG.md but not at BASE_REF is rejected:
+    a merged heading without a git tag is a real publish trigger, so new
+    headings must come from the Dispatch release workflow.
+    """
+    root = REPO_ROOT
+    base_ref = os.environ["BASE_REF"]
+    errors: list[str] = []
+    for package in discover_changelog_packages(root):
+        path = changelog_path(root, package)
+        rel_path = path.relative_to(root).as_posix()
+        base_text = _git_show(root, base_ref, rel_path) or ""
+        known = {
+            section.version
+            for section in parse_sections(base_text)[1]
+            if section.version is not None
+        }
+        errors.extend(
+            f"{rel_path}: adds version heading '## {section.label}' "
+            f"(v{section.version})"
+            for section in parse_sections(path.read_text())[1]
+            if section.version is not None and section.version not in known
+        )
+    if errors:
+        for error in errors:
+            sys.stdout.write(f"::error::{error}\n")
+        fail(
+            "new CHANGELOG.md version headings are publish triggers and must "
+            "be materialized by the Dispatch release workflow (release/* "
+            "branches). If this is deliberate restructuring of "
+            "already-published sections, apply the 'changelog-version-edit' "
+            "label."
+        )
+    sys.stderr.write("No new changelog version headings.\n")
+
+
 def cmd_extract_notes() -> None:
     """Write the changelog section for a version to NOTES_PATH.
 
@@ -1111,6 +1179,7 @@ def main() -> None:
         "pin-reflex-base": cmd_pin_reflex_base,
         "verify-dist": cmd_verify_dist,
         "extract-notes": cmd_extract_notes,
+        "check-headings": cmd_check_headings,
     }
     if len(sys.argv) != 2 or sys.argv[1] not in commands:
         fail(f"usage: release.py {{{','.join(commands)}}}")

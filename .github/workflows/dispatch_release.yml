@@ -181,12 +181,12 @@ jobs:
         env:
           PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
           ACTION: ${{ inputs.action }}
-        run: uv run --script scripts/release.py plan
+        run: uv run --no-config --locked --script scripts/release.py plan
       - name: Materialize changelogs
         env:
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
           ACTION: ${{ inputs.action }}
-        run: uv run --script scripts/release.py materialize
+        run: uv run --no-config --locked --script scripts/release.py materialize
       - name: Push prerelease branch
         if: ${{ !startsWith(inputs.action, 'release-') }}
         env:

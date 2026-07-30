@@ -120,7 +120,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}
-        run: uv run --script scripts/release.py prepare-publish
+        run: uv run --no-config --locked --script scripts/release.py prepare-publish
 
       # A *.dev dependency pin references an unpublished version, so it must never reach
       # released package metadata. Scoped to the package being published so a dependency
@@ -135,7 +135,7 @@ jobs:
         if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
         env:
           VERSION: ${{ steps.prepare.outputs.version }}
-        run: uv run --script scripts/release.py pin-reflex-base
+        run: uv run --no-config --locked --script scripts/release.py pin-reflex-base
 
       # uv-dynamic-versioning derives each package's version from the newest
       # reachable tag with the package's prefix, so tagging HEAD locally is
@@ -155,7 +155,7 @@ jobs:
         if: steps.prepare.outputs.skipped != 'true'
         env:
           VERSION: ${{ steps.prepare.outputs.version }}
-        run: uv run --script scripts/release.py verify-dist
+        run: uv run --no-config --locked --script scripts/release.py verify-dist
 
       - name: Verify .pyi files in wheel
         if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
@@ -169,7 +169,14 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ steps.prepare.outputs.version }}
           NOTES_PATH: release_notes.md
-        run: uv run --script scripts/release.py extract-notes
+        run: uv run --no-config --locked --script scripts/release.py extract-notes
+
+      # The manifest lets the gated publish job re-verify (with coreutils
+      # only) that what it uploads is byte-identical to what was built and
+      # verified here — everything the human approves is covered by it.
+      - name: Write checksum manifest
+        if: steps.prepare.outputs.skipped != 'true'
+        run: sha256sum dist/* release_notes.md > SHA256SUMS
 
       - name: Upload artifacts for the gated publish
         if: steps.prepare.outputs.skipped != 'true'
@@ -179,6 +186,7 @@ jobs:
           path: |
             dist/*
             release_notes.md
+            SHA256SUMS
           if-no-files-found: error
           overwrite: true
 
@@ -231,6 +239,9 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: publish-${{ inputs.package }}
+
+      - name: Verify artifact integrity
+        run: sha256sum -c SHA256SUMS
 
       # --check-url makes a retried run skip files that already made it to
       # PyPI (e.g. when the upload succeeded but tagging failed), instead of

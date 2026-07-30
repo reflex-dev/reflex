@@ -88,6 +88,8 @@ If you don't yet know the PR number, use an [orphan fragment](https://towncrier.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
+**Changelog version headings:** PRs to `main` must not add new version headings to any `CHANGELOG.md` — a merged heading without a git tag is a publish trigger, so new headings only come from the *Dispatch release* workflow. CI enforces this with the same parser the release pipeline uses; for deliberate restructuring of already-published sections, apply the `changelog-version-edit` label.
+
 **Releasing (maintainers):** the `CHANGELOG.md` files are the source of truth
 for publishing. A release is cut by materializing the news fragments into a
 package's `CHANGELOG.md` under a new version heading and landing that change on

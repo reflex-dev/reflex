@@ -642,6 +642,52 @@ def test_cmd_verify_dist_empty(repo: Path, monkeypatch: pytest.MonkeyPatch):
         release.cmd_verify_dist()
 
 
+def test_cmd_check_headings_passes_without_new_headings(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("BASE_REF", "HEAD")
+    release.cmd_check_headings()
+    # Editing an existing section's content is fine too.
+    path = release.changelog_path(repo, "reflex-base")
+    path.write_text(path.read_text().replace("New thing.", "New thing, reworded."))
+    release.cmd_check_headings()
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "## v0.9.9 (2026-01-01)",
+        # Whitespace/case variants the old grep-based guard missed but the
+        # release parser (and therefore the publisher) accepts.
+        "##  v0.9.9 (2026-01-01)",
+        "## V0.9.9 (2026-01-01)",
+        "##   0.9.9 (2026-01-01)",
+        "## v0.9.9rc1 (2026-01-01)",
+    ],
+)
+def test_cmd_check_headings_rejects_new_headings(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, heading: str
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("BASE_REF", "HEAD")
+    _bump(repo, "other-pkg", heading)
+    with pytest.raises(SystemExit):
+        release.cmd_check_headings()
+
+
+def test_cmd_check_headings_rejects_new_changelog_file(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("BASE_REF", "HEAD")
+    (repo / "packages" / "bare-pkg" / "CHANGELOG.md").write_text(
+        "## v0.1.6 (2026-01-01)\n\n- new\n"
+    )
+    with pytest.raises(SystemExit):
+        release.cmd_check_headings()
+
+
 def test_cmd_extract_notes(repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
     notes_path = tmp_path / "notes.md"
