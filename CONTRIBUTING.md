@@ -97,7 +97,10 @@ a release branch — never by tagging manually. The pieces:
 
 1. **Dispatch release** (`dispatch_release.yml`, run from the Actions tab)
    selects packages and a release action, computes the next version(s), runs
-   towncrier, and delivers the changelog bump:
+   towncrier, and delivers the changelog bump. Leaving every package
+   unchecked auto-selects the packages with pending news fragments (for
+   `release-from-prerelease`: the packages whose changelog is topped by an
+   alpha). Details:
    - *Prerelease actions* (`new-prerelease-*`, `continued-prerelease`) push
      alpha versions straight to an `r/pre-<date>` branch (continued
      prereleases push back to the `r/pre-*` branch they are dispatched on);

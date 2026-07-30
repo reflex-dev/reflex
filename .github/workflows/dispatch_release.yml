@@ -6,6 +6,12 @@ name: Dispatch release
 # builds any changelog version that has no git tag yet and uploads it once
 # the pypi environment deployment is approved).
 #
+# Leaving every package unchecked auto-selects the packages to release:
+# those with pending news fragments — or, for release-from-prerelease, those
+# whose changelog is topped by an alpha (the train's fragments are already
+# consumed). Fragments in the repo-root news/ select reflex-base, which
+# releases reflex alongside it.
+#
 # Prerelease actions (new-prerelease-*, continued-prerelease) write alpha
 # versions and push them straight to an r/pre-<date> branch (continued
 # prereleases push back to the r/pre-* branch the workflow was dispatched

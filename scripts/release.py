@@ -28,7 +28,9 @@ style, and append to ``$GITHUB_OUTPUT`` / ``$GITHUB_STEP_SUMMARY``):
   ``r/pre-*`` or ``r/hotfix/**``.
 - ``plan``: compute the next version for each selected package for a release
   action (``new-prerelease-patch``, ``continued-prerelease``,
-  ``release-from-prerelease``, ``release-major``, ...).
+  ``release-from-prerelease``, ``release-major``, ...). An empty selection
+  auto-detects packages with pending news fragments (or alpha-topped
+  changelogs for ``release-from-prerelease``).
 - ``materialize``: write the planned versions into the changelogs with
   towncrier; for ``release-from-prerelease`` also collapse the accumulated
   alpha sections into the single final-version section (alpha headings never
@@ -349,6 +351,92 @@ def load_category_order(root: Path) -> list[str]:
     """
     data = tomllib.loads((root / "pyproject.toml").read_text())
     return [entry["name"] for entry in data["tool"]["towncrier"]["type"]]
+
+
+def load_fragment_types(root: Path) -> set[str]:
+    """Read the towncrier fragment type directory names.
+
+    Args:
+        root: The repo root containing pyproject.toml.
+
+    Returns:
+        The type keys (``feature``, ``bugfix``, ...) fragments are named with.
+    """
+    data = tomllib.loads((root / "pyproject.toml").read_text())
+    return {entry["directory"] for entry in data["tool"]["towncrier"]["type"]}
+
+
+def _has_pending_fragments(news_dir: Path, types: set[str]) -> bool:
+    """Return whether a news directory contains unmaterialized fragments.
+
+    A fragment is any non-hidden file whose dot-separated name contains a
+    configured fragment type (``1234.feature.md``, ``+name.bugfix.md``, ...);
+    ``.gitkeep`` and stray files never count.
+
+    Args:
+        news_dir: The package's ``news`` directory (may not exist).
+        types: The configured fragment type keys.
+
+    Returns:
+        True when at least one pending fragment exists.
+    """
+    if not news_dir.is_dir():
+        return False
+    return any(
+        not path.name.startswith(".")
+        and path.is_file()
+        and not types.isdisjoint(path.name.split("."))
+        for path in news_dir.iterdir()
+    )
+
+
+def pending_fragment_packages(root: Path) -> list[str]:
+    """List packages with unmaterialized news fragments.
+
+    Fragments in the repo-root ``news/`` belong to ``reflex``, which is not
+    independently releasable — they select ``reflex-base`` instead (the plan
+    pairing releases reflex alongside it, consuming the root fragments).
+
+    Args:
+        root: The repository root.
+
+    Returns:
+        Package names with pending fragments, reflex-base first (when the
+        root has fragments), then sub-packages in alphabetical order.
+    """
+    types = load_fragment_types(root)
+    selected: list[str] = []
+    if _has_pending_fragments(root / "news", types):
+        selected.append("reflex-base")
+    selected.extend(
+        news_dir.parent.name
+        for news_dir in sorted((root / "packages").glob("*/news"))
+        if _has_pending_fragments(news_dir, types)
+    )
+    return list(dict.fromkeys(selected))
+
+
+def alpha_train_packages(root: Path) -> list[str]:
+    """List packages whose newest changelog version is a prerelease.
+
+    This is the auto-selection signal for ``release-from-prerelease``: the
+    train's fragments were already consumed into alpha sections, so pending
+    fragments say nothing about which packages are in the train. ``reflex``
+    maps to ``reflex-base`` (the pair releases together via plan pairing).
+
+    Args:
+        root: The repository root.
+
+    Returns:
+        Package names, deduplicated, in changelog-discovery order.
+    """
+    selected: list[str] = []
+    for package in discover_changelog_packages(root):
+        version = latest_version(changelog_path(root, package).read_text())
+        if version is None or not version.is_prerelease:
+            continue
+        selected.append("reflex-base" if package == ROOT_PACKAGE else package)
+    return list(dict.fromkeys(selected))
 
 
 def collapse_prereleases(
@@ -806,6 +894,10 @@ def cmd_plan() -> None:
 
     Reads PACKAGES_JSON and ACTION from the environment; writes ``releases``
     (JSON array of ``{package, current, next, tag}``) to ``$GITHUB_OUTPUT``.
+
+    An empty selection auto-detects the packages to release: those with
+    pending news fragments — or, for ``release-from-prerelease``, those whose
+    changelog is topped by an alpha (their fragments are already consumed).
     """
     root = REPO_ROOT
     action = os.environ["ACTION"]
@@ -813,6 +905,20 @@ def cmd_plan() -> None:
 
     if action not in ACTIONS:
         fail(f"unknown action '{action}'")
+
+    selection = "explicit"
+    if not packages:
+        if action == "release-from-prerelease":
+            packages = alpha_train_packages(root)
+            selection = "auto: alpha-topped changelogs"
+            source = "an alpha-topped changelog"
+        else:
+            packages = pending_fragment_packages(root)
+            selection = "auto: pending news fragments"
+            source = "pending news fragments"
+        if not packages:
+            fail(f"no packages selected and no package has {source}")
+        notice(f"no packages selected; auto-detected {', '.join(packages)}")
 
     releases: list[dict[str, str]] = []
     for package in packages:
@@ -846,7 +952,14 @@ def cmd_plan() -> None:
 
     _append_lines(
         "GITHUB_STEP_SUMMARY",
-        ["## Release plan", "", f"Action: `{action}`", "", *_plan_table(releases)],
+        [
+            "## Release plan",
+            "",
+            f"Action: `{action}`  ",
+            f"Selection: `{selection}`",
+            "",
+            *_plan_table(releases),
+        ],
     )
     write_outputs(releases=json.dumps(releases))
 

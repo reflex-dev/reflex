@@ -409,6 +409,73 @@ def test_cmd_detect_lockstep_satisfied_by_existing_tag(
     assert outputs["any"] == "false"
 
 
+def test_pending_fragment_packages(repo: Path):
+    (repo / "packages" / "other-pkg" / "news" / ".gitkeep").write_text("")
+    (repo / "packages" / "other-pkg" / "news" / "README.md").write_text(
+        "not a fragment"
+    )
+    assert release.pending_fragment_packages(repo) == []
+    (repo / "packages" / "other-pkg" / "news" / "1234.feature.md").write_text("Thing.")
+    (repo / "packages" / "reflex-base" / "news" / "+orphan.bugfix.md").write_text(
+        "Fix."
+    )
+    assert release.pending_fragment_packages(repo) == ["other-pkg", "reflex-base"]
+    # Repo-root fragments belong to reflex, which releases via reflex-base.
+    (repo / "news" / "9.feature.md").write_text("Root thing.")
+    assert release.pending_fragment_packages(repo) == ["reflex-base", "other-pkg"]
+
+
+def test_alpha_train_packages(repo: Path):
+    assert release.alpha_train_packages(repo) == []
+    _bump(repo, "reflex", "## v0.10.0a1 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.10.0a1 (2026-07-29)")
+    assert release.alpha_train_packages(repo) == ["reflex-base"]
+    _bump(repo, "other-pkg", "## v0.5.0a2 (2026-07-29)")
+    assert release.alpha_train_packages(repo) == ["reflex-base", "other-pkg"]
+
+
+def test_cmd_plan_auto_selects_pending_fragments(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    (repo / "packages" / "other-pkg" / "news" / "42.bugfix.md").write_text("Fix.")
+    monkeypatch.setenv("ACTION", "release-patch")
+    monkeypatch.setenv("PACKAGES_JSON", "[]")
+    release.cmd_plan()
+    assert json.loads(_outputs(gh_env)["releases"]) == [
+        {
+            "package": "other-pkg",
+            "current": "0.9.7",
+            "next": "0.9.8",
+            "tag": "other-pkg-v0.9.8",
+        }
+    ]
+
+
+def test_cmd_plan_auto_selects_alpha_train_for_release_from_prerelease(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    _bump(repo, "reflex", "## v0.10.0a1 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.10.0a1 (2026-07-29)")
+    monkeypatch.setenv("ACTION", "release-from-prerelease")
+    monkeypatch.setenv("PACKAGES_JSON", "[]")
+    release.cmd_plan()
+    releases = json.loads(_outputs(gh_env)["releases"])
+    assert [r["package"] for r in releases] == ["reflex-base", "reflex"]
+    assert [r["next"] for r in releases] == ["0.10.0", "0.10.0"]
+
+
+def test_cmd_plan_fails_when_nothing_to_auto_select(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("ACTION", "release-patch")
+    monkeypatch.setenv("PACKAGES_JSON", "[]")
+    with pytest.raises(SystemExit):
+        release.cmd_plan()
+
+
 def test_cmd_plan_pairs_reflex_with_reflex_base(
     repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
 ):
