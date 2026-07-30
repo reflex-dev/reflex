@@ -35,14 +35,17 @@ BODY_FILE="${RUNNER_TEMP}/release_pr_body.md"
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-# Stage only what materialization is expected to touch: rewritten changelogs
-# and consumed news fragments (towncrier already stages the deletions).
-git add -A -- CHANGELOG.md news 'packages/*/CHANGELOG.md' 'packages/*/news'
-if git diff --cached --quiet; then
+# Stage the changelog rewrites (including first-release creations); a
+# directory pathspec with a wildcard never matches, so name the files. The
+# consumed news fragments are already staged by towncrier's git rm, and
+# `commit -a` below picks up any tracked change it left unstaged — while
+# never committing untracked stray files.
+git add -- CHANGELOG.md 'packages/*/CHANGELOG.md'
+if git diff --cached --quiet && git diff --quiet; then
   echo "Error: materialization produced no changes; nothing to release."
   exit 1
 fi
-git commit -m "Materialize changelogs for ${SUMMARY} (${ACTION})"
+git commit -a -m "Materialize changelogs for ${SUMMARY} (${ACTION})"
 # The token is supplied via gh's credential helper so it never appears in a
 # remote URL or process argv.
 git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
