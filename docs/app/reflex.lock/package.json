@@ -7,6 +7,8 @@
   },
   "dependencies": {
     "@base-ui/react": "1.6.0",
+    "@fontsource-variable/instrument-sans": "5.2.8",
+    "@fontsource-variable/jetbrains-mono": "5.2.8",
     "@glideapps/glide-data-grid": "6.0.3",
     "@hugeicons/core-free-icons": "4.2.0",
     "@hugeicons/react": "1.1.6",
@@ -27,6 +29,7 @@
     "ag-grid-enterprise": "34.3.1",
     "ag-grid-react": "34.3.1",
     "clsx-for-tailwind": "1.0.0",
+    "es-toolkit": "1.46.1",
     "gridjs": "6.2.0",
     "gridjs-react": "6.1.1",
     "hast-util-to-string": "3.0.1",
