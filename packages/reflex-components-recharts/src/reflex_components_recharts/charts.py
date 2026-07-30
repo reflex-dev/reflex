@@ -580,13 +580,16 @@ class SankeyNodeProps(TypedDict):
 
 
 class SankeyLinkPayload(TypedDict):
-    """The payload for a Sankey chart link."""
+    """The payload for a Sankey chart link.
 
-    source: int
-    target: int
+    Unlike the input `SankeyLink`, the `source` and `target` are resolved into
+    the computed node payloads rather than integer indices.
+    """
+
+    source: SankeyNodePayload
+    target: SankeyNodePayload
     value: int | float
-    index: int
-    width: int | float
+    dy: int | float
     sy: int | float
     ty: int | float
 
@@ -716,6 +719,17 @@ class SankeyChart(ChartBase):
     ]
 
 
+# Module-level aliases keep the namespace attributes below resolvable in the
+# generated .pyi, where a class-scoped `X = X` is a self-referential alias.
+_SankeyNodeAlias = SankeyNode
+_SankeyLinkAlias = SankeyLink
+_SankeyDataAlias = SankeyData
+_SankeyNodePayloadAlias = SankeyNodePayload
+_SankeyNodePropsAlias = SankeyNodeProps
+_SankeyLinkPayloadAlias = SankeyLinkPayload
+_SankeyLinkPropsAlias = SankeyLinkProps
+
+
 class SankeyNamespace(SimpleNamespace):
     """A namespace for the Sankey chart components."""
 
@@ -724,13 +738,13 @@ class SankeyNamespace(SimpleNamespace):
     __call__ = staticmethod(SankeyChart.create)
 
     # For type checking
-    SankeyNode = SankeyNode
-    SankeyLink = SankeyLink
-    SankeyData = SankeyData
-    SankeyNodePayload = SankeyNodePayload
-    SankeyNodeProps = SankeyNodeProps
-    SankeyLinkPayload = SankeyLinkPayload
-    SankeyLinkProps = SankeyLinkProps
+    SankeyNode = _SankeyNodeAlias
+    SankeyLink = _SankeyLinkAlias
+    SankeyData = _SankeyDataAlias
+    SankeyNodePayload = _SankeyNodePayloadAlias
+    SankeyNodeProps = _SankeyNodePropsAlias
+    SankeyLinkPayload = _SankeyLinkPayloadAlias
+    SankeyLinkProps = _SankeyLinkPropsAlias
 
 
 class Treemap(RechartsCharts):

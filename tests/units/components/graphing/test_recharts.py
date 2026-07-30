@@ -1,3 +1,5 @@
+from typing import get_type_hints
+
 from reflex_components_recharts.charts import (
     AreaChart,
     BarChart,
@@ -6,6 +8,9 @@ from reflex_components_recharts.charts import (
     RadarChart,
     RadialBarChart,
     SankeyChart,
+    SankeyLinkPayload,
+    SankeyLinkProps,
+    SankeyNodePayload,
     ScatterChart,
 )
 from reflex_components_recharts.general import ResponsiveContainer, use_chart_width
@@ -73,6 +78,31 @@ def test_sankey_chart_accepts_unannotated_state_data():
 
     sc = SankeyChart.create(data=SankeyState.data)
     assert isinstance(sc, ResponsiveContainer)
+
+
+def test_sankey_link_payload_matches_recharts():
+    # Recharts delivers the payload as {...link, source: sourceNode, target:
+    # targetNode} with index only on the outer props and thickness under dy.
+    # https://github.com/reflex-dev/reflex/pull/6708#discussion_r3679088777
+    hints = get_type_hints(SankeyLinkPayload)
+    assert hints["source"] is SankeyNodePayload
+    assert hints["target"] is SankeyNodePayload
+    assert "index" not in hints
+    assert "width" not in hints
+    assert {"value", "dy", "sy", "ty"} <= hints.keys()
+    assert "index" in get_type_hints(SankeyLinkProps)
+
+
+def test_sankey_link_props_var_access():
+    link = rx.Var("link").to(SankeyLinkProps)
+    source_name = link.payload.source.name
+    assert source_name._var_type is str
+    assert str(source_name) == 'link?.["payload"]?.["source"]?.["name"]'
+    assert link.payload.dy._var_type == (int | float)
+    # Custom pass-through keys on the payload remain reachable via a dict cast.
+    assert str(link.payload.source.to(dict)["fill"]) == (
+        'link?.["payload"]?.["source"]?.["fill"]'
+    )
 
 
 def test_use_chart_width():
