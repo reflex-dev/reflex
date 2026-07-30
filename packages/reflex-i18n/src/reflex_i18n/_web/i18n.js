@@ -1,13 +1,23 @@
 import {
   createContext,
   createElement,
+  Fragment,
   useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
+import { useLocation } from "react-router";
 
-import { cookieName, defaultLocale, loaders, locales } from "$/i18n/index.js";
+import {
+  cookieName,
+  defaultAtRoot,
+  defaultLocale,
+  deployUrl,
+  loaders,
+  locales,
+  urlRouting,
+} from "$/i18n/index.js";
 
 // gettext msgctxt separator; catalog keys are "context\u0004msgid".
 const CONTEXT_SEPARATOR = "\u0004";
@@ -122,9 +132,14 @@ export function I18nProvider({ children }) {
           error,
         );
       });
-    const root = document.documentElement;
-    root.lang = locale;
-    root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
+    // With URL-based routing the per-route LocaleRoute owns <html lang>/dir
+    // (its locale is authoritative); only manage it here in cookie mode to
+    // avoid the two fighting over the document element.
+    if (!urlRouting) {
+      const root = document.documentElement;
+      root.lang = locale;
+      root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
+    }
     return () => {
       cancelled = true;
     };
@@ -248,4 +263,100 @@ export function useTranslation() {
   );
 
   return [t_, tp_];
+}
+
+// --- URL-based locale routing (opt-in via I18nPlugin(routing=...)) ---
+
+// Provide a fixed locale + statically-imported catalog to a route's subtree.
+// The catalog is a static import (bundled with the route chunk), so the right
+// language is present synchronously during prerender.
+export function LocaleRoute({ locale, catalog, children }) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.lang = locale;
+    root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
+  }, [locale]);
+  return createElement(
+    I18nContext.Provider,
+    { value: { locale, catalog, setLocale: switchLocale } },
+    children,
+  );
+}
+
+// Path-prefix helpers (mirror reflex_i18n.routing.PathPrefixRouting).
+const delocalizePath = (pathname) => {
+  const [head, ...rest] = pathname.replace(/^\//, "").split("/");
+  if (locales.includes(head)) {
+    return "/" + rest.join("/");
+  }
+  return pathname.startsWith("/") ? pathname : "/" + pathname;
+};
+
+const localizePath = (base, locale) => {
+  if (locale === defaultLocale && defaultAtRoot) {
+    return base;
+  }
+  return base === "/" ? "/" + locale : "/" + locale + base;
+};
+
+const absoluteUrl = (path) => {
+  const base = (deployUrl || "").replace(/\/$/, "");
+  return base ? base + path : path;
+};
+
+// Emit reciprocal <link rel="alternate" hreflang> + canonical for the current
+// route. Rendered as an app-wrap so it applies to every page; React hoists the
+// links into <head> and they prerender into the static HTML.
+export function HreflangLinks({ children }) {
+  const { pathname } = useLocation();
+  const base = delocalizePath(pathname);
+  const links = locales.map((locale) =>
+    createElement("link", {
+      key: locale,
+      rel: "alternate",
+      hrefLang: locale,
+      href: absoluteUrl(localizePath(base, locale)),
+    }),
+  );
+  links.push(
+    createElement("link", {
+      key: "x-default",
+      rel: "alternate",
+      hrefLang: "x-default",
+      href: absoluteUrl(localizePath(base, defaultLocale)),
+    }),
+    createElement("link", {
+      key: "canonical",
+      rel: "canonical",
+      href: absoluteUrl(pathname),
+    }),
+  );
+  // This is an app-wrap: render the links AND pass the app content through.
+  return createElement(Fragment, null, ...links, children);
+}
+
+// A crawlable language switcher: real <a> links to the current page in each
+// locale (so crawlers follow them and the URL stays the source of truth).
+export function LanguageSwitcher(props) {
+  const { pathname } = useLocation();
+  const base = delocalizePath(pathname);
+  const active = locales.find(
+    (locale) => localizePath(base, locale) === pathname,
+  );
+  return createElement(
+    "nav",
+    props,
+    ...locales.map((locale) =>
+      createElement(
+        "a",
+        {
+          key: locale,
+          href: localizePath(base, locale),
+          hrefLang: locale,
+          "aria-current": locale === active ? "true" : undefined,
+        },
+        locale,
+      ),
+    ),
+  );
 }

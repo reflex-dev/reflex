@@ -131,12 +131,21 @@ async def _locale_scope(
     # config: the provider is registered process-wide once i18n is imported,
     # but an app not using i18n (possible when several apps share a process)
     # must be a no-op so it never touches I18nState.
-    if not any(isinstance(plugin, I18nPlugin) for plugin in get_config().plugins):
+    plugin = next((p for p in get_config().plugins if isinstance(p, I18nPlugin)), None)
+    if plugin is None:
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
-    locale = _resolve_locale(
-        i18n_state.locale_cookie, i18n_state.router.headers.accept_language
-    )
+    config = get_active_i18n_config()
+    if plugin.routing is not None and config is not None:
+        # URL-based routing: the path is authoritative for the locale, so
+        # dynamic (gettext) content matches the URL the visitor is on.
+        locale = plugin.routing.locale_of(
+            i18n_state.router.page.path, config.locales, config.default_locale
+        )
+    else:
+        locale = _resolve_locale(
+            i18n_state.locale_cookie, i18n_state.router.headers.accept_language
+        )
     return use_locale(locale)
 
 

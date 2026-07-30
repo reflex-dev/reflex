@@ -216,6 +216,61 @@ def language_switcher():
 Static (`rx.t`) content updates instantly; dynamic (state) content updates on
 the next server round-trip.
 
+## URL-based locales & SEO
+
+The cookie-based default keeps every language on the same URL. That's ideal for
+apps (dashboards, authenticated tools), but bad for **SEO**: search engines see
+only the default language, because the locale lives in a cookie/state rather
+than the URL.
+
+For public sites, opt into **URL-based locales** by giving the plugin a routing
+strategy:
+
+```python
+from reflex_i18n import I18nPlugin, PathPrefixRouting
+
+config = rx.Config(
+    app_name="mysite",
+    deploy_url="https://mysite.com",  # used for absolute hreflang hrefs
+    plugins=[
+        I18nPlugin(
+            locales=["en", "de", "fr"],
+            default_locale="en",
+            routing=PathPrefixRouting(),  # /de/..., /fr/...
+        )
+    ],
+)
+```
+
+You write each page **once**; the plugin fans it out into a concrete route per
+locale. With the default `PathPrefixRouting(default_at_root=True)`:
+
+- `/pricing` serves the default locale, `/de/pricing` and `/fr/pricing` the
+  others (use `default_at_root=False` to prefix every locale).
+- Each route is prerendered and carries reciprocal
+  `<link rel="alternate" hreflang="...">` (plus `x-default` and `canonical`) in
+  its `<head>`, so all languages are discoverable and indexable.
+- The locale comes from the **URL**, not a cookie — so each language URL renders
+  its own content for crawlers.
+
+Add a crawlable switcher (real `<a>` links, not a cookie swap), or build your
+own links with `rx.i18n.locale_url`:
+
+```python
+rx.i18n.language_switcher()  # prebuilt <a> links
+rx.link("Deutsch", href=rx.i18n.locale_url("de", "/pricing"))
+```
+
+Notes:
+
+- Page `title`/`meta` translated with `rx.t` still resolve in the default
+  locale (the document head is outside the per-route locale provider); prefer
+  per-route titles if that matters.
+- `default_at_root=True` (the default) is recommended for SEO: the default
+  locale keeps clean canonical URLs (`/pricing`). With `default_at_root=False`
+  the unprefixed path and the prefixed default (`/pricing` and `/en/pricing`)
+  both exist — add a redirect from the unprefixed path if you use that mode.
+
 ## Translation catalogs
 
 Translations are standard gettext `.po` files, one per locale, under `locales/`:

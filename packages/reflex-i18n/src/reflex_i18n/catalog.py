@@ -130,7 +130,13 @@ def _lookup_translation(
     return list(strings)
 
 
-def compile_index_module(config: I18nConfig) -> str:
+def compile_index_module(
+    config: I18nConfig,
+    *,
+    url_routing: bool = False,
+    default_at_root: bool = True,
+    deploy_url: str = "",
+) -> str:
     """Render the JS module describing the app's locales and catalog loaders.
 
     The static ``import()`` map lets the bundler code-split one chunk per
@@ -138,6 +144,12 @@ def compile_index_module(config: I18nConfig) -> str:
 
     Args:
         config: The app's i18n configuration.
+        url_routing: Whether URL-based locale routing is enabled (so the client
+            knows the locale comes from the URL, not the cookie).
+        default_at_root: Whether URL routing serves the default locale at the
+            unprefixed path (used by the hreflang helper).
+        deploy_url: Absolute site URL for building absolute hreflang hrefs, or
+            empty to emit relative hrefs.
 
     Returns:
         The JS module source code.
@@ -151,5 +163,8 @@ def compile_index_module(config: I18nConfig) -> str:
         f"export const locales = {json.dumps(list(config.locales))};\n"
         f"export const defaultLocale = {json.dumps(config.default_locale)};\n"
         f"export const cookieName = {json.dumps(LOCALE_COOKIE_NAME)};\n"
+        f"export const urlRouting = {json.dumps(url_routing)};\n"
+        f"export const defaultAtRoot = {json.dumps(default_at_root)};\n"
+        f"export const deployUrl = {json.dumps(deploy_url)};\n"
         f"export const loaders = {{\n{loaders}\n}};\n"
     )
