@@ -103,9 +103,10 @@ a release branch — never by tagging manually. The pieces:
      deployment is approved. To pull new work into a prerelease train, merge
      `main` into its branch and dispatch `continued-prerelease` on it.
    - *Release actions* (`release-*`) open a PR with the changelog changes
-     instead; reviewing and merging that PR **is** the release approval. The
-     PR targets `main`, or the `r/hotfix/...` branch the workflow was
-     dispatched on (hotfix branches may publish final versions directly).
+     instead; reviewing and merging that PR is how final versions land (the
+     upload still waits for the `pypi` environment approval below). The PR
+     targets `main`, or the `r/hotfix/...` branch the workflow was dispatched
+     on (hotfix branches may publish final versions directly).
      `release-from-prerelease` collapses the accumulated alpha sections into
      one final-version section — alpha headings never ship in a final
      changelog.

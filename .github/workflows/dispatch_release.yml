@@ -3,22 +3,23 @@ name: Dispatch release
 # Kicks off a release by materializing news fragments into the selected
 # packages' CHANGELOG.md files at the next version — the changelogs are the
 # source of truth for publishing (see release_from_changelog.yml, which
-# publishes any changelog version that has no git tag yet).
+# builds any changelog version that has no git tag yet and uploads it once
+# the pypi environment deployment is approved).
 #
 # Prerelease actions (new-prerelease-*, continued-prerelease) write alpha
 # versions and push them straight to an r/pre-<date> branch (continued
-# prereleases push back to the r/* branch the workflow was dispatched on);
-# alphas publish immediately without further approval. To pull new work into
-# a prerelease train, merge main into the r/pre-* branch, then dispatch
-# continued-prerelease on it.
+# prereleases push back to the r/pre-* branch the workflow was dispatched
+# on); alphas build immediately and upload after pypi environment approval —
+# no PR review involved. To pull new work into a prerelease train, merge
+# main into the r/pre-* branch, then dispatch continued-prerelease on it.
 #
 # Release actions (release-*) open a pull request with the changelog changes
-# instead — reviewing and merging that PR is the release approval, and the
-# resulting push publishes the final versions. The PR targets main, or the
-# r/hotfix/** branch the workflow was dispatched on (hotfix branches may
-# publish final versions directly). release-from-prerelease collapses the
-# accumulated alpha sections into the single final-version section, so alpha
-# headings never appear in a published final changelog.
+# instead — reviewing and merging that PR is how final versions land for
+# publishing. The PR targets main, or the r/hotfix/** branch the workflow
+# was dispatched on (hotfix branches may publish final versions directly).
+# release-from-prerelease collapses the accumulated alpha sections into the
+# single final-version section, so alpha headings never appear in a
+# published final changelog.
 #
 # Materializing changelogs never publishes by itself: every PyPI upload —
 # alphas included — additionally requires approval by the `pypi`

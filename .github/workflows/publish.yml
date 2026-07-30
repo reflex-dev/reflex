@@ -194,7 +194,10 @@ jobs:
       name: pypi
     permissions:
       id-token: write
+      # Reading the environment's protection rules needs repository read
+      # access on GITHUB_TOKEN (contents) plus actions: read.
       actions: read
+      contents: read
     steps:
       - name: Require a human-approval gate on the pypi environment
         env:
@@ -204,9 +207,10 @@ jobs:
           # Fail closed: uploads must never run unattended. If this job
           # started without reviewers configured on the pypi environment,
           # nothing paused it — refuse to publish and tell the admins how to
-          # fix it. (Requires actions: read on GITHUB_TOKEN.)
-          if ! rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/pypi" --jq '[.protection_rules[]?.type]'); then
-            echo "::error::Could not read the pypi environment's protection rules; refusing to publish unattended."
+          # fix it. The two failure modes get distinct messages so a token
+          # scope problem is not mistaken for missing reviewers.
+          if ! rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/pypi" --jq '[.protection_rules[]?.type]' 2>"$RUNNER_TEMP/gh_api_error.txt"); then
+            echo "::error::Could not read the pypi environment's protection rules ($(tail -n1 "$RUNNER_TEMP/gh_api_error.txt")); refusing to publish unattended. This is a token or configuration problem, not a missing-reviewers problem: the job needs contents: read and actions: read on GITHUB_TOKEN, and the pypi environment must exist."
             exit 1
           fi
           if [[ "$rules" != *'"required_reviewers"'* ]]; then
