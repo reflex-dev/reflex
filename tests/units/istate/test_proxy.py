@@ -14,7 +14,12 @@ from reflex_base.utils.exceptions import ImmutableStateError
 import reflex as rx
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import ImmutableMutableProxy, MutableProxy, StateProxy
+from reflex.istate.proxy import (
+    ImmutableMutableProxy,
+    MutableProxy,
+    ReadOnlyStateProxy,
+    StateProxy,
+)
 from reflex.state import BaseState
 
 
@@ -559,3 +564,152 @@ async def test_immutable_mutable_proxy_async_context_cleans_up_base_exception(
         if state_proxy._self_actx is not None:
             await state_proxy.__aexit__(None, None, None)
         data_proxy._self_actx_state = None
+
+
+@pytest.mark.asyncio
+async def test_read_only_state_proxy_field_rejects_async_context(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Mutable fields of a read-only state proxy stay read-only under async with."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        read_only_proxy = ReadOnlyStateProxy(state)
+        data_proxy = read_only_proxy.data
+
+    assert isinstance(data_proxy, ImmutableMutableProxy)
+    with pytest.raises(ImmutableStateError, match="read-only"):
+        async with data_proxy:
+            pass
+    assert data_proxy._self_actx_state is None
+    with pytest.raises(ImmutableStateError):
+        data_proxy["a"].append(3)
+
+
+@dataclasses.dataclass
+class SuccessData:
+    """A dataclass variant for union-typed field refresh tests."""
+
+    values: list[int] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass
+class ErrorData:
+    """A different dataclass variant for union-typed field refresh tests."""
+
+    messages: list[str] = dataclasses.field(default_factory=list)
+
+
+class UnionDataclassState(BaseState):
+    """A test state with a union-typed dataclass field."""
+
+    result: SuccessData | ErrorData = SuccessData(values=[1])
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_rejects_type_change(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Refreshing a dataclass proxy to a different wrapped type fails loudly."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=UnionDataclassState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        result_proxy = state_proxy.result
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=UnionDataclassState)
+    ) as state:
+        assert isinstance(state, UnionDataclassState)
+        state.result = ErrorData(messages=["boom"])
+
+    with pytest.raises(RuntimeError, match="Unable to refresh mutable proxy"):
+        async with result_proxy:
+            pass
+    assert result_proxy._self_actx_state is None
+
+    # A same-type replacement still refreshes normally.
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=UnionDataclassState)
+    ) as state:
+        assert isinstance(state, UnionDataclassState)
+        state.result = SuccessData(values=[2])
+
+    async with result_proxy as mutable_result:
+        mutable_result.values.append(3)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=UnionDataclassState)
+    ) as state:
+        assert isinstance(state, UnionDataclassState)
+        assert state.result == SuccessData(values=[2, 3])
+
+
+@dataclasses.dataclass
+class CustomGetRegistry:
+    """A dataclass with a custom method shadowing the dict `get` method name."""
+
+    entries: dict[str, list[int]] = dataclasses.field(default_factory=dict)
+
+    def get(self, key: str) -> list[int] | None:
+        """Look up an entry list by key.
+
+        Args:
+            key: The entry key.
+
+        Returns:
+            The entry list, or None if missing.
+        """
+        return self.entries.get(key)
+
+
+class CustomGetState(BaseState):
+    """A test state holding a dataclass with a custom `get` method."""
+
+    registry: CustomGetRegistry = CustomGetRegistry(entries={"a": [1]})
+
+
+@pytest.mark.asyncio
+async def test_mutable_proxy_custom_get_method_path_tracking(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """A custom `get` method on a proxied dataclass works and tracks paths."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=CustomGetState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        entry_proxy = state_proxy.registry.get("a")
+        assert state_proxy.registry.get("missing") is None
+
+    assert isinstance(entry_proxy, ImmutableMutableProxy)
+    assert entry_proxy._self_path == (("attr", "entries"), ("item", "a"))
+
+    async with entry_proxy as mutable_entry:
+        mutable_entry.append(2)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=CustomGetState)
+    ) as state:
+        assert isinstance(state, CustomGetState)
+        assert state.registry.entries == {"a": [1, 2]}

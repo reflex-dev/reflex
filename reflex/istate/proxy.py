@@ -508,6 +508,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Raises:
             RuntimeError: If this proxy is already in an async context or cannot
                 be refreshed from its bound state field.
+            ImmutableStateError: If this proxy is bound to a read-only state proxy.
         """
         if self._self_actx_state is not None:
             msg = (
@@ -518,6 +519,11 @@ class MutableProxy(wrapt.ObjectProxy):
         if _UNREFRESHABLE_ACCESS_SPEC in self._self_path:
             self._raise_refresh_error()
         context_state = self._self_state
+        if isinstance(context_state, ReadOnlyStateProxy):
+            # Entering the owning StateProxy would set it mutable, silently
+            # bypassing the read-only guarantee of `get_state()` wrappers.
+            msg = "This is a read-only state proxy."
+            raise ImmutableStateError(msg)
         self._self_actx_state = context_state
         aenter_ok = False
         try:
@@ -539,6 +545,13 @@ class MutableProxy(wrapt.ObjectProxy):
             if (
                 isinstance(refreshed_value, MutableProxy)
                 and self._self_field_name == refreshed_value._self_field_name
+                # The proxy class is specialized per dataclass type (see
+                # __dataclass_proxies__), so a refresh must not change the
+                # wrapped dataclass type out from under it.
+                and (
+                    not dataclasses.is_dataclass(self.__wrapped__)
+                    or type(self.__wrapped__) is type(refreshed_value.__wrapped__)
+                )
             ):
                 super().__setattr__("__wrapped__", refreshed_value.__wrapped__)
                 self._self_state = refreshed_value._self_state
