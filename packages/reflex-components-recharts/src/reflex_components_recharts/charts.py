@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from typing import Any, ClassVar, TypedDict
+import inspect
+from collections.abc import Callable, Mapping, Sequence
+from types import SimpleNamespace
+from typing import Any, ClassVar, TypedDict, get_args, get_origin
 
 from reflex_base.components.component import Component, field
+from reflex_base.components.memo import _MemoComponentWrapper, memo
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
+from reflex_base.vars.object import RestProp
 from typing_extensions import NotRequired
 
 from reflex_components_recharts.general import ResponsiveContainer
@@ -548,6 +552,121 @@ class SankeyData(TypedDict):
     links: Sequence[SankeyLink]
 
 
+class SankeyNodePayload(TypedDict):
+    """The payload for a Sankey chart node."""
+
+    name: str
+    sourceNodes: list[int]
+    sourceLinks: list[int]
+    targetLinks: list[int]
+    targetNodes: list[int]
+    value: int | float
+    depth: int
+    x: int | float
+    dx: int | float
+    y: int | float
+    dy: int | float
+
+
+class SankeyNodeProps(TypedDict):
+    """The props for a custom Sankey chart node."""
+
+    height: int
+    width: int
+    payload: SankeyNodePayload
+    index: int
+    x: int
+    y: int
+
+
+class SankeyLinkPayload(TypedDict):
+    """The payload for a Sankey chart link."""
+
+    source: int
+    target: int
+    value: int | float
+    index: int
+    width: int | float
+    sy: int | float
+    ty: int | float
+
+
+class SankeyLinkProps(TypedDict):
+    """The props for a custom Sankey chart link."""
+
+    sourceX: int
+    targetX: int
+    sourceY: int
+    targetY: int
+    sourceControlX: int
+    targetControlX: int
+    sourceRelativeY: int
+    targetRelativeY: int
+    linkWidth: int
+    index: int
+    payload: SankeyLinkPayload
+
+
+def sankey_node(
+    fn: Callable,
+) -> _MemoComponentWrapper:
+    """A decorator to create a custom Sankey chart node.
+
+    Args:
+        fn: A function that takes a SankeyNodeProps and returns a Reflex component.
+
+    Returns:
+        A function that takes a SankeyNodeProps and returns a Reflex component.
+    """
+    sig = inspect.signature(fn)
+    if (
+        len(sig.parameters) != 1
+        or (first_param := sig.parameters[next(iter(sig.parameters))]) is None
+        or get_origin(first_param.annotation) is not Var
+        or not (args := get_args(first_param.annotation))
+        or args[0] is not SankeyNodeProps
+    ):
+        msg = f"@sankey_node decorated function must take a single argument of type SankeyNodeProps, got {sig.parameters}"
+        raise TypeError(msg)
+
+    def _wrapper(rest: RestProp) -> Component:
+        return fn(**{first_param.name: rest.to(SankeyNodeProps)})
+
+    _wrapper.__name__ = fn.__name__
+    _wrapper.__module__ = fn.__module__
+    return memo(wrapper=None)(_wrapper)
+
+
+def sankey_link(
+    fn: Callable,
+) -> _MemoComponentWrapper:
+    """A decorator to create a custom Sankey chart link.
+
+    Args:
+        fn: A function that takes a SankeyLinkProps and returns a Reflex component.
+
+    Returns:
+        A function that takes a SankeyLinkProps and returns a Reflex component.
+    """
+    sig = inspect.signature(fn)
+    if (
+        len(sig.parameters) != 1
+        or (first_param := sig.parameters[next(iter(sig.parameters))]) is None
+        or get_origin(first_param.annotation) is not Var
+        or not (args := get_args(first_param.annotation))
+        or args[0] is not SankeyLinkProps
+    ):
+        msg = f"@sankey_link decorated function must take a single argument of type SankeyLinkProps, got {sig.parameters}"
+        raise TypeError(msg)
+
+    def _wrapper(rest: RestProp) -> Component:
+        return fn(**{first_param.name: rest.to(SankeyLinkProps)})
+
+    _wrapper.__name__ = fn.__name__
+    _wrapper.__module__ = fn.__module__
+    return memo(wrapper=None)(_wrapper)
+
+
 class SankeyChart(ChartBase):
     """A Sankey chart component in Recharts."""
 
@@ -595,6 +714,23 @@ class SankeyChart(ChartBase):
         "GraphingTooltip",
         "Defs",
     ]
+
+
+class SankeyNamespace(SimpleNamespace):
+    """A namespace for the Sankey chart components."""
+
+    node = staticmethod(sankey_node)
+    link = staticmethod(sankey_link)
+    __call__ = staticmethod(SankeyChart.create)
+
+    # For type checking
+    SankeyNode = SankeyNode
+    SankeyLink = SankeyLink
+    SankeyData = SankeyData
+    SankeyNodePayload = SankeyNodePayload
+    SankeyNodeProps = SankeyNodeProps
+    SankeyLinkPayload = SankeyLinkPayload
+    SankeyLinkProps = SankeyLinkProps
 
 
 class Treemap(RechartsCharts):
@@ -679,5 +815,5 @@ radar_chart = RadarChart.create
 radial_bar_chart = RadialBarChart.create
 scatter_chart = ScatterChart.create
 funnel_chart = FunnelChart.create
-sankey_chart = SankeyChart.create
+sankey_chart = SankeyNamespace()
 treemap = Treemap.create

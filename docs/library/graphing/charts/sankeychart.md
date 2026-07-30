@@ -83,6 +83,15 @@ def sankey_stateful():
         rx.recharts.sankey_chart(
             rx.recharts.graphing_tooltip(),
             data=SankeyState.data,
+            node={
+                "fill": rx.color("accent", 7),
+                "stroke": rx.color("accent", 10),
+                "strokeWidth": 2,
+            },
+            link={
+                "stroke": rx.color("gray", 7),
+                "strokeOpacity": 0.35,
+            },
             node_padding=18,
             node_width=14,
             width="100%",
@@ -93,9 +102,18 @@ def sankey_stateful():
     )
 ```
 
-## Custom Node Types And Styles
 
-Use fields on each node to describe node types and per-node styling. Pass `node` or `link` dictionaries to control shared Sankey styling.
+## Full Node / Link Customization
+
+For complete control over node and link rendering, pass a
+`@rx.recharts.sankey_chart.node` or `@rx.recharts.sankey_chart.link` decorated
+function that returns an svg-based component. The function receives a
+`Var[SankeyNodeProps]` or `Var[SankeyLinkProps]` object with the node or link
+data `payload`, as well as the object's position and dimensions. You can use these
+properties to construct a custom node or link.
+
+Because the component renders inside the SVG element of the chart, you can only
+use `rx.el.svg` components to construct the custom node or link.
 
 ```python demo graphing
 styled_sankey_data = {
@@ -117,21 +135,73 @@ styled_sankey_data = {
 }
 
 
-def sankey_custom_styles():
+def sankey_custom_render():
+    @rx.recharts.sankey_chart.node
+    def custom_node(
+        node: rx.Var[rx.recharts.sankey_chart.SankeyNodeProps],
+    ) -> rx.Component:
+        # Determine if the node is at the right edge of the chart to adjust the label position accordingly.
+        is_out = node.x + node.width + 6 > rx.recharts.use_chart_width()
+        return rx.fragment(
+            rx.el.svg.text(
+                node.payload.name,
+                x=rx.cond(is_out, node.x - 6, node.x + node.width + 6),
+                y=node.y + node.height / 2,
+                text_anchor=rx.cond(is_out, "end", "start"),
+                stroke=rx.color("gray", 12),
+                font_size=10,
+            ),
+            rx.el.svg.rect(
+                x=node.x,
+                y=node.y,
+                width=node.width,
+                height=node.height,
+                # Accessing custom keys in the payload needs a `dict` cast.
+                fill=node.payload.to(dict)["fill"],
+                stroke=rx.color("gray", 12),
+                stroke_width=1,
+            ),
+        )
+
+    @rx.recharts.sankey_chart.link
+    def custom_link(
+        link: rx.Var[rx.recharts.sankey_chart.SankeyLinkProps],
+    ) -> rx.Component:
+        link_id = rx.vars.use_id()
+        source = link.payload.source.to(dict)
+        target = link.payload.target.to(dict)
+        return rx.fragment(
+            rx.el.svg.linear_gradient(
+                rx.el.svg.stop(offset="0%", stop_color=source["fill"]),
+                rx.el.svg.stop(offset="100%", stop_color=target["fill"]),
+                id=link_id,
+            ),
+            rx.el.svg.text(
+                link.payload.value,
+                x=(link.sourceX + link.targetX) / 2,
+                y=(link.sourceY + link.targetY) / 2,
+                text_anchor="middle",
+                stroke=rx.color("gray", 12),
+                font_size=10,
+            ),
+            rx.el.svg.path(
+                d=(
+                    f"M{link.sourceX},{link.sourceY} "
+                    f"C{link.sourceControlX},{link.sourceY} "
+                    f"{link.targetControlX},{link.targetY} "
+                    f"{link.targetX},{link.targetY}"
+                ),
+                fill="none",
+                stroke=f"url(#{link_id})",
+                stroke_opacity=0.35,
+                stroke_width=link.linkWidth,
+            ),
+        )
+
     return rx.recharts.sankey_chart(
-        rx.recharts.graphing_tooltip(),
         data=styled_sankey_data,
-        node={
-            "stroke": rx.color("gray", 12),
-            "strokeWidth": 1,
-        },
-        link={
-            "stroke": rx.color("gray", 8),
-            "strokeOpacity": 0.35,
-        },
-        node_padding=22,
-        node_width=16,
-        link_curvature=0.45,
+        node=custom_node,
+        link=custom_link,
         width="100%",
         height=340,
     )
