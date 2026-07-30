@@ -115,6 +115,10 @@ properties to construct a custom node or link.
 Because the component renders inside the SVG element of the chart, you can only
 use `rx.el.svg` components to construct the custom node or link.
 
+The example below also uses `rx.recharts.use_chart_width()` to read the
+rendered chart width and `rx.vars.use_id()` to generate a unique id that links
+each link's gradient definition to the path that references it.
+
 ```python demo graphing
 styled_sankey_data = {
     "nodes": [

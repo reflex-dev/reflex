@@ -8,7 +8,8 @@ from reflex_components_recharts.charts import (
     SankeyChart,
     ScatterChart,
 )
-from reflex_components_recharts.general import ResponsiveContainer
+from reflex_components_recharts.general import ResponsiveContainer, use_chart_width
+from reflex_components_recharts.recharts import Recharts
 
 import reflex as rx
 
@@ -72,3 +73,14 @@ def test_sankey_chart_accepts_unannotated_state_data():
 
     sc = SankeyChart.create(data=SankeyState.data)
     assert isinstance(sc, ResponsiveContainer)
+
+
+def test_use_chart_width():
+    width = use_chart_width()
+    assert width._var_type == (int | None)
+    var_data = width._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == (f"const {width!s} = useChartWidth();",)
+    assert dict(var_data.imports)[Recharts.library or ""] == (
+        rx.ImportVar(tag="useChartWidth"),
+    )
