@@ -1,9 +1,11 @@
 import decimal
 import json
 import math
+import operator as op
 import re
 import typing
 from collections.abc import Mapping, Sequence
+from datetime import date, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -34,6 +36,7 @@ from reflex_base.vars.base import (
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.datetime import DateTimeVar
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
@@ -372,6 +375,58 @@ def test_basic_operations(TestObj):
     )
     assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
     assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
+
+
+@pytest.mark.parametrize(
+    ("operation", "operator"),
+    [
+        (op.eq, "==="),
+        (op.ne, "!=="),
+        (op.lt, "<"),
+        (op.le, "<="),
+        (op.gt, ">"),
+        (op.ge, ">="),
+    ],
+)
+def test_datetime_comparison_uses_timestamps(operation, operator):
+    lhs = v(datetime(2024, 1, 1, 1, tzinfo=timezone(timedelta(hours=1))))
+    rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    assert str(operation(lhs, rhs)) == (
+        f'(compareDatetime("2024-01-01 01:00:00+01:00", '
+        f'"2024-01-01 00:00:00+00:00") {operator} 0)'
+    )
+
+
+def test_datetime_comparison_preserves_microseconds():
+    lhs = cast(
+        DateTimeVar,
+        v(datetime(2024, 1, 1, microsecond=1, tzinfo=timezone.utc)),
+    )
+    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=timezone.utc)
+
+    assert str(lhs < rhs) == (
+        '(compareDatetime("2024-01-01 00:00:00.000001+00:00", '
+        '"2024-01-01 00:00:00.000999+00:00") < 0)'
+    )
+
+
+def test_date_comparison_uses_compare_datetime():
+    lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
+    rhs = date(2024, 1, 2)
+
+    assert str(lhs < rhs) == '(compareDatetime("2024-01-01", "2024-01-02") < 0)'
+    assert str(lhs == rhs) == '(compareDatetime("2024-01-01", "2024-01-02") === 0)'
+
+
+def test_datetime_equality_with_other_type_uses_default_comparison():
+    value = v(datetime(2024, 1, 1))
+    expected_equality = (
+        '("2024-01-01 00:00:00"?.valueOf?.() === "2024-01-01 00:00:00"?.valueOf?.())'
+    )
+
+    assert str(value == "2024-01-01 00:00:00") == expected_equality
+    assert str(value != "2024-01-01 00:00:00") == f"!({expected_equality})"
 
 
 @pytest.mark.parametrize(
