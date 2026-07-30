@@ -37,6 +37,26 @@ jobs:
         with:
           python-version: "3.14"
           run-uv-sync: true
+      # A merged version heading without a git tag triggers a real publish
+      # (see release_from_changelog.yml), so new headings must come from the
+      # Dispatch release workflow's release/* branches — not hand edits.
+      - name: Reject manual changelog version headings
+        if: steps.skip.outputs.skip != 'true' && !startsWith(github.head_ref, 'release/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          added=$(git diff origin/main...HEAD -- CHANGELOG.md 'packages/*/CHANGELOG.md' | grep -E '^\+## v?[0-9]' || true)
+          if [ -n "$added" ]; then
+            echo "$added"
+            echo ""
+            echo "This PR adds version heading(s) to a CHANGELOG.md. Version headings are the"
+            echo "publish trigger: once merged, any heading without a matching git tag is"
+            echo "built and queued for PyPI upload. New headings must be materialized by the"
+            echo "'Dispatch release' workflow (release/* branches). If this is intentional"
+            echo "restructuring of already-published sections, apply the 'skip-changelog'"
+            echo "label."
+            exit 1
+          fi
       - name: Determine affected packages
         if: steps.skip.outputs.skip != 'true'
         id: affected

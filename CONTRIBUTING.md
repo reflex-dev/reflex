@@ -99,9 +99,9 @@ a release branch — never by tagging manually. The pieces:
    - *Prerelease actions* (`new-prerelease-*`, `continued-prerelease`) push
      alpha versions straight to an `r/pre-<date>` branch (continued
      prereleases push back to the `r/pre-*` branch they are dispatched on);
-     alphas publish immediately with no further approval. To pull new work
-     into a prerelease train, merge `main` into its branch and dispatch
-     `continued-prerelease` on it.
+     alphas build immediately and upload once the `pypi` environment
+     deployment is approved. To pull new work into a prerelease train, merge
+     `main` into its branch and dispatch `continued-prerelease` on it.
    - *Release actions* (`release-*`) open a PR with the changelog changes
      instead; reviewing and merging that PR **is** the release approval. The
      PR targets `main`, or the `r/hotfix/...` branch the workflow was
@@ -112,14 +112,18 @@ a release branch — never by tagging manually. The pieces:
    - Selecting `reflex-base` automatically releases the root `reflex` package
      at the same version.
 2. **Release from changelog** (`release_from_changelog.yml`) runs on every push
-   to `main` and `r/**`: any package whose newest changelog version has no git
-   tag gets published. Final (non-alpha) versions only publish from `main` or
-   `r/hotfix/**`.
+   to `main`, `r/pre-*`, and `r/hotfix/**`: any package whose newest changelog
+   version has no git tag gets built and queued for publishing. Final
+   (non-alpha) versions only publish from `main` or `r/hotfix/**`; alphas only
+   from `r/pre-*`/`r/hotfix/**`. `reflex` and `reflex-base` are checked as a
+   lockstep pair and `reflex` publishes only after the rest of the batch.
 3. **Publish to PyPI** (`publish.yml`, also manually dispatchable with a
-   package + version) tags its local checkout, builds, uploads to PyPI, and
-   only then pushes the tag and creates the GitHub release. A failed publish
-   leaves no tag behind — fix the problem on top of the changelog bump and the
-   next push retries automatically.
+   package + version) validates and builds without privileges, then **waits
+   for a human to approve the `pypi` environment deployment** — every upload,
+   alphas and internal packages included, requires that approval. Only after a
+   successful upload does it push the tag and create the GitHub release, so a
+   failed or rejected publish leaves no tag behind — fix the problem on top of
+   the changelog bump and the next push retries automatically.
 
 **Where changelogs are published:** the docs site renders every `CHANGELOG.md`
 in the repo (repo root and `packages/*/`) under

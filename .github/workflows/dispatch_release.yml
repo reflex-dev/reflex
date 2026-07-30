@@ -20,16 +20,24 @@ name: Dispatch release
 # accumulated alpha sections into the single final-version section, so alpha
 # headings never appear in a published final changelog.
 #
+# Materializing changelogs never publishes by itself: every PyPI upload —
+# alphas included — additionally requires approval by the `pypi`
+# environment's required reviewers (see publish.yml).
+#
 # REQUIRED CONFIGURATION:
+# - The `pypi` environment must have required reviewers (asserted, fail
+#   closed, by publish.yml).
 # - "Allow GitHub Actions to create and approve pull requests" must be
 #   enabled in the repo's Actions settings for release-* actions to open PRs.
-# - Branch protection on main should require review, since merging a release
-#   PR is what approves publishing final versions.
-# - r/** and release/** branches must be pushable by GITHUB_TOKEN (no
-#   restrictive rulesets), and the pypi environment on publish.yml must allow
-#   deployments from r/** for alphas to publish.
-# - The dispatch-release-approval environment gate is no longer used and can
-#   be deleted from the repo settings; PR review replaced it.
+# - Branch protection on main should require review; merging a release PR is
+#   what lands final versions for publishing.
+# - Recommended: a ruleset restricting who can create/push r/** and
+#   release/** branches to maintainers plus the github-actions[bot] app
+#   (this workflow pushes as github-actions[bot] via GITHUB_TOKEN).
+# - If the pypi environment restricts deployment branches, allow main,
+#   r/pre-*, and r/hotfix/*.
+# - The old dispatch-release-approval environment is no longer used; the
+#   pypi environment reviewers and release-PR review replace it.
 
 on:
   workflow_dispatch:

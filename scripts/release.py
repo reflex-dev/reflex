@@ -19,9 +19,10 @@ Subcommands (all read their inputs from environment variables, GitHub Actions
 style, and append to ``$GITHUB_OUTPUT`` / ``$GITHUB_STEP_SUMMARY``):
 
 - ``detect``: list packages whose newest changelog version is untagged.
-  Used by the ``release_from_changelog`` workflow on every push to ``main`` and
-  ``r/**`` branches. Final (non-prerelease) versions are only released from
-  ``main`` or ``r/hotfix/**`` branches.
+  Used by the ``release_from_changelog`` workflow on every push to ``main``,
+  ``r/pre-*`` and ``r/hotfix/**`` branches. Final (non-prerelease) versions are
+  only released from ``main`` or ``r/hotfix/**``; prereleases only from
+  ``r/pre-*`` or ``r/hotfix/**``.
 - ``plan``: compute the next version for each selected package for a release
   action (``new-prerelease-patch``, ``continued-prerelease``,
   ``release-from-prerelease``, ``release-major``, ...).
@@ -30,8 +31,12 @@ style, and append to ``$GITHUB_OUTPUT`` / ``$GITHUB_STEP_SUMMARY``):
   alpha sections into the single final-version section (alpha headings never
   appear in a published final changelog).
 - ``prepare-publish``: validate a (package, version) pair against the
-  changelog, the branch rules and existing tags, and emit build metadata for
-  the publish workflow.
+  changelog, the branch rules, the reflex/reflex-base lockstep invariant and
+  existing tags, and emit build metadata for the publish workflow.
+- ``pin-reflex-base``: rewrite reflex's ``reflex-base >= ...`` requirement to
+  the exact release version before building.
+- ``verify-dist``: check the core-metadata Version of every built artifact
+  against the target version.
 - ``extract-notes``: write the changelog section for a version to a file, for
   use as GitHub release notes.
 """
@@ -45,6 +50,8 @@ import os
 import re
 import subprocess
 import sys
+import tarfile
+import zipfile
 from pathlib import Path
 from typing import NoReturn
 
@@ -163,19 +170,44 @@ def is_final(version: Version) -> bool:
     return not version.is_prerelease and not version.is_devrelease
 
 
-def branch_allows_final(ref_name: str) -> bool:
-    """Return whether final versions may be published from a branch.
+def branch_allows_publish(version: Version, ref_name: str) -> bool:
+    """Return whether a version may be published from a branch.
 
-    Non-prerelease tags can only be published and pushed from ``main`` or from
-    a hotfix branch like ``r/hotfix/...``.
+    Final (non-prerelease) tags can only be published and pushed from ``main``
+    or from a hotfix branch like ``r/hotfix/...``; prereleases only from the
+    branches the Dispatch release workflow materializes them on (``r/pre-*``,
+    or ``r/pre-*`` trains cut from an ``r/hotfix/**`` branch).
 
     Args:
+        version: The version to publish.
         ref_name: The branch name (``github.ref_name``).
 
     Returns:
-        True when the branch may publish final versions.
+        True when the branch may publish the version.
     """
-    return ref_name == "main" or ref_name.startswith("r/hotfix/")
+    if is_final(version):
+        return ref_name == "main" or ref_name.startswith("r/hotfix/")
+    return ref_name.startswith(("r/pre-", "r/hotfix/"))
+
+
+def lockstep_partner(package: str) -> str | None:
+    """Return the package that must release in lockstep with ``package``.
+
+    ``reflex`` and ``reflex-base`` always release together at the same version
+    (reflex's metadata pins ``reflex-base`` exactly), so publishing one
+    requires the other at the identical version.
+
+    Args:
+        package: The package name.
+
+    Returns:
+        The partner package name, or None when the package has no partner.
+    """
+    if package == ROOT_PACKAGE:
+        return "reflex-base"
+    if package == "reflex-base":
+        return ROOT_PACKAGE
+    return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -402,15 +434,15 @@ def _git(args: list[str], cwd: Path) -> str:
     return subprocess.check_output(["git", *args], cwd=cwd, text=True)
 
 
-def latest_tag_version(root: Path, package: str) -> Version | None:
-    """Return the largest PEP 440 version tagged for a package.
+def _tag_versions(root: Path, package: str) -> list[Version]:
+    """Return every PEP 440 version tagged for a package.
 
     Args:
         root: The repository root.
         package: The package name.
 
     Returns:
-        The largest tagged version, or None if the package has no tags.
+        The parsed versions, unordered.
     """
     prefix = tag_prefix(package)
     versions: list[Version] = []
@@ -422,7 +454,35 @@ def latest_tag_version(root: Path, package: str) -> Version | None:
             versions.append(Version(raw))
         except InvalidVersion:
             continue
+    return versions
+
+
+def latest_tag_version(root: Path, package: str) -> Version | None:
+    """Return the largest PEP 440 version tagged for a package.
+
+    Args:
+        root: The repository root.
+        package: The package name.
+
+    Returns:
+        The largest tagged version, or None if the package has no tags.
+    """
+    versions = _tag_versions(root, package)
     return max(versions) if versions else None
+
+
+def latest_final_tag_version(root: Path, package: str) -> Version | None:
+    """Return the largest final (non-pre, non-dev) version tagged for a package.
+
+    Args:
+        root: The repository root.
+        package: The package name.
+
+    Returns:
+        The largest final tagged version, or None if there is none.
+    """
+    finals = [v for v in _tag_versions(root, package) if is_final(v)]
+    return max(finals) if finals else None
 
 
 def tag_exists(root: Path, tag: str) -> bool:
@@ -491,8 +551,22 @@ def next_version(current: Version | None, action: str, package: str) -> str:
         post_n = current.post or 0
 
     display = str(current) if current is not None else "<none>"
+    # Only aN prereleases are produced by this tooling; a b/rc heading means
+    # the changelog was edited outside the sanctioned flow.
+    alpha_hint = (
+        " (only alpha aN prereleases are supported)"
+        if current is not None and current.pre is not None and not is_alpha
+        else ""
+    )
 
     if mode == "new-prerelease":
+        if current is not None and current.is_prerelease:
+            fail(
+                f"new-prerelease-* would abandon the in-progress {display} "
+                f"train for {package}; use continued-prerelease or "
+                "release-from-prerelease on its r/pre-* branch, or dispatch "
+                "from main to start a new train"
+            )
         if sub == "patch":
             return f"{major}.{minor}.{patch + 1}a1"
         if sub == "minor":
@@ -503,7 +577,7 @@ def next_version(current: Version | None, action: str, package: str) -> str:
         if not is_alpha:
             fail(
                 f"continued-prerelease requires the newest version to be an "
-                f"alpha; newest for {package} is {display!r}"
+                f"alpha; newest for {package} is {display!r}{alpha_hint}"
             )
         return f"{major}.{minor}.{patch}a{alpha_n + 1}"
 
@@ -511,7 +585,7 @@ def next_version(current: Version | None, action: str, package: str) -> str:
         if not is_alpha:
             fail(
                 f"release-from-prerelease requires the newest version to be an "
-                f"alpha; newest for {package} is {display!r}"
+                f"alpha; newest for {package} is {display!r}{alpha_hint}"
             )
         return f"{major}.{minor}.{patch}"
     if sub == "post":
@@ -622,15 +696,50 @@ def _plan_table(releases: list[dict[str, str]]) -> list[str]:
     return rows
 
 
+def _check_lockstep(root: Path, due: dict[str, str]) -> list[str]:
+    """Verify the reflex/reflex-base lockstep invariant for a release batch.
+
+    Each lockstep partner of a due package must either be due at the identical
+    version in the same batch or already carry the tag for that version (the
+    retry case where one half published earlier).
+
+    Args:
+        root: The repository root.
+        due: Mapping of due package name to version string.
+
+    Returns:
+        A list of human-readable violations (empty when the batch is sound).
+    """
+    errors: list[str] = []
+    for package, version in due.items():
+        partner = lockstep_partner(package)
+        if partner is None:
+            continue
+        partner_tag = tag_for(partner, version)
+        if due.get(partner) != version and not tag_exists(root, partner_tag):
+            errors.append(
+                f"{package} v{version} is due but its lockstep partner "
+                f"{partner} is neither due at v{version} nor already tagged "
+                f"{partner_tag}; publishing would break the exact "
+                "reflex/reflex-base pin. Materialize both changelogs together "
+                "(Dispatch release workflow)."
+            )
+    return errors
+
+
 def cmd_detect() -> None:
     """Detect packages whose newest changelog version has no git tag.
 
-    Reads REF_NAME from the environment; writes ``packages`` (JSON array of
-    ``{package, version, tag}``) and ``any`` to ``$GITHUB_OUTPUT``.
+    Reads REF_NAME from the environment. Writes to ``$GITHUB_OUTPUT``:
+    ``packages`` (JSON array of ``{package, version, tag}``, excluding
+    ``reflex``), ``any`` (whether that array is non-empty), and
+    ``reflex_version`` (empty when reflex is not due). ``reflex`` is emitted
+    separately so the caller can publish it after its dependencies.
+
+    Fails closed when the reflex/reflex-base lockstep invariant is violated.
     """
     root = REPO_ROOT
     ref_name = os.environ["REF_NAME"]
-    allow_final = branch_allows_final(ref_name)
 
     releases: list[dict[str, str]] = []
     rows = [
@@ -650,22 +759,39 @@ def cmd_detect() -> None:
         if tag_exists(root, tag):
             rows.append(f"| `{package}` | `{version}` | already tagged `{tag}` |")
             continue
-        if is_final(version) and not allow_final:
+        if not branch_allows_publish(version, ref_name):
+            kind = "final" if is_final(version) else "prerelease"
+            allowed = (
+                "main and r/hotfix/**"
+                if is_final(version)
+                else "r/pre-* and r/hotfix/**"
+            )
             notice(
-                f"{package} v{version} is a final version but branch "
-                f"'{ref_name}' cannot publish finals (only main and "
-                "r/hotfix/** can); skipping."
+                f"{package} v{version} is a {kind} version but branch "
+                f"'{ref_name}' cannot publish {kind}s (only {allowed} can); "
+                "skipping."
             )
             rows.append(f"| `{package}` | `{version}` | skipped: branch rule |")
             continue
         releases.append({"package": package, "version": str(version), "tag": tag})
         rows.append(f"| `{package}` | `{version}` | **will publish** `{tag}` |")
 
+    due = {r["package"]: r["version"] for r in releases}
+    lockstep_errors = _check_lockstep(root, due)
+
+    others = [r for r in releases if r["package"] != ROOT_PACKAGE]
+    reflex_version = due.get(ROOT_PACKAGE, "")
+
     _append_lines("GITHUB_STEP_SUMMARY", rows)
     write_outputs(
-        packages=json.dumps(releases),
-        any="true" if releases else "false",
+        packages=json.dumps(others),
+        any="true" if others else "false",
+        reflex_version=reflex_version,
     )
+    if lockstep_errors:
+        for error in lockstep_errors:
+            sys.stdout.write(f"::error::{error}\n")
+        sys.exit(1)
 
 
 def cmd_plan() -> None:
@@ -730,7 +856,7 @@ def cmd_materialize() -> None:
     releases: list[dict[str, str]] = json.loads(os.environ["RELEASES_JSON"])
     collapse = action == "release-from-prerelease"
     category_order = load_category_order(root) if collapse else []
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
 
     for release in releases:
         package, version = release["package"], release["next"]
@@ -795,10 +921,14 @@ def cmd_prepare_publish() -> None:
         )
         notice(f"no version given; auto patch-bump for {package}: {version}")
 
-    if is_final(version) and not branch_allows_final(ref_name):
+    if not branch_allows_publish(version, ref_name):
+        allowed = (
+            "main or an r/hotfix/** branch"
+            if is_final(version)
+            else "an r/pre-* or r/hotfix/** branch"
+        )
         fail(
-            f"final version {version} can only be published from main or an "
-            f"r/hotfix/** branch, not {ref_name!r}"
+            f"version {version} can only be published from {allowed}, not {ref_name!r}"
         )
 
     if path.is_file():
@@ -813,10 +943,34 @@ def cmd_prepare_publish() -> None:
     else:
         notice(f"{package} has no CHANGELOG.md; skipping changelog check.")
 
+    partner = lockstep_partner(package)
+    if partner is not None and not tag_exists(root, tag_for(partner, str(version))):
+        partner_path = changelog_path(root, partner)
+        partner_newest = (
+            latest_version(partner_path.read_text()) if partner_path.is_file() else None
+        )
+        if partner_newest != version:
+            fail(
+                f"{package} v{version} releases in lockstep with {partner}, "
+                f"but {partner} is neither tagged at v{version} nor "
+                f"materialized at it (its newest changelog version is "
+                f"{partner_newest if partner_newest is not None else '<none>'})."
+            )
+
     tag = tag_for(package, str(version))
     skipped = tag_exists(REPO_ROOT, tag)
     if skipped:
         notice(f"tag {tag} already exists; nothing to publish.")
+
+    # Only mark the GitHub release "Latest" when this is genuinely the newest
+    # final reflex version — a hotfix of an older line must not steal the
+    # badge from a newer release.
+    newest_final = latest_final_tag_version(root, ROOT_PACKAGE)
+    mark_latest = (
+        package == ROOT_PACKAGE
+        and is_final(version)
+        and (newest_final is None or version >= newest_final)
+    )
 
     summary = [
         "## Publish",
@@ -833,11 +987,97 @@ def cmd_prepare_publish() -> None:
         tag=tag,
         build_dir=package_dir(package),
         prerelease="true" if version.is_prerelease else "false",
-        mark_latest="true"
-        if package == ROOT_PACKAGE and is_final(version)
-        else "false",
+        mark_latest="true" if mark_latest else "false",
         skipped="true" if skipped else "false",
     )
+
+
+def cmd_pin_reflex_base() -> None:
+    """Pin reflex's reflex-base dependency to the exact release version.
+
+    Reads VERSION from the environment and rewrites the single
+    ``"reflex-base >= ..."`` requirement in the repo-root pyproject.toml to
+    ``"reflex-base == <version>"``, failing unless exactly one requirement was
+    rewritten. The two packages release in lockstep, so the built reflex wheel
+    must depend on exactly the sibling version published alongside it.
+    """
+    version = Version(os.environ["VERSION"])
+    path = REPO_ROOT / "pyproject.toml"
+    new_pin = f'"reflex-base == {version}"'
+    updated, count = re.subn(r'"reflex-base >= [^"]*"', new_pin, path.read_text())
+    if count != 1:
+        fail(
+            f'expected exactly one "reflex-base >= ..." requirement in '
+            f"pyproject.toml, found {count}"
+        )
+    path.write_text(updated)
+    sys.stderr.write(f"Pinned {new_pin} in pyproject.toml\n")
+
+
+def _dist_metadata_version(path: Path) -> str:
+    """Read the ``Version`` metadata field of a built distribution.
+
+    Args:
+        path: A wheel (``*.whl``) or sdist (``*.tar.gz``).
+
+    Returns:
+        The Version header value from the wheel's METADATA / sdist's PKG-INFO.
+    """
+    if path.name.endswith(".whl"):
+        with zipfile.ZipFile(path) as wheel:
+            names = [
+                n
+                for n in wheel.namelist()
+                if n.endswith(".dist-info/METADATA") and n.count("/") == 1
+            ]
+            if len(names) != 1:
+                fail(f"expected one .dist-info/METADATA in {path.name}, got {names}")
+            content = wheel.read(names[0]).decode()
+    elif path.name.endswith(".tar.gz"):
+        with tarfile.open(path, "r:gz") as sdist:
+            names = [
+                m.name
+                for m in sdist.getmembers()
+                if m.name.endswith("/PKG-INFO") and m.name.count("/") == 1
+            ]
+            if len(names) != 1:
+                fail(f"expected one top-level PKG-INFO in {path.name}, got {names}")
+            member = sdist.extractfile(names[0])
+            if member is None:
+                fail(f"could not read {names[0]} from {path.name}")
+            content = member.read().decode()
+    else:
+        fail(f"unexpected artifact type: {path.name}")
+    for line in content.splitlines():
+        if not line.strip():
+            break
+        if line.startswith("Version:"):
+            return line.split(":", 1)[1].strip()
+    fail(f"no Version field in the metadata of {path.name}")
+
+
+def cmd_verify_dist() -> None:
+    """Verify every built artifact carries exactly the target version.
+
+    Reads VERSION (and optionally DIST_DIR, default ``dist``) from the
+    environment and compares each artifact's core-metadata ``Version`` field
+    against the target with PEP 440 equality. Catches a misconfigured
+    uv-dynamic-versioning tag prefix building e.g. ``0.0.0dev0``.
+    """
+    target = Version(os.environ["VERSION"])
+    dist = REPO_ROOT / os.environ.get("DIST_DIR", "dist")
+    files = sorted(path for path in dist.glob("*") if path.is_file())
+    if not files:
+        fail(f"no artifacts in {dist}")
+    for path in files:
+        raw = _dist_metadata_version(path)
+        try:
+            found = Version(raw)
+        except InvalidVersion:
+            fail(f"artifact {path.name} has unparsable version {raw!r}")
+        if found != target:
+            fail(f"artifact {path.name} has version {found}, expected {target}")
+    sys.stderr.write(f"✓ {len(files)} artifact(s) at version {target}\n")
 
 
 def cmd_extract_notes() -> None:
@@ -868,6 +1108,8 @@ def main() -> None:
         "plan": cmd_plan,
         "materialize": cmd_materialize,
         "prepare-publish": cmd_prepare_publish,
+        "pin-reflex-base": cmd_pin_reflex_base,
+        "verify-dist": cmd_verify_dist,
         "extract-notes": cmd_extract_notes,
     }
     if len(sys.argv) != 2 or sys.argv[1] not in commands:

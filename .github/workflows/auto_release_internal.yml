@@ -4,7 +4,8 @@ name: Auto-release internal packages
 # push to main that touches them. Publishing goes through publish.yml with no
 # explicit version: the next patch version is computed from the newest tag
 # inside the per-package publish concurrency group, and the tag is only
-# pushed after a successful upload.
+# pushed after a successful upload. Like every publish, the upload itself
+# waits for approval by the pypi environment's required reviewers.
 
 on:
   push:
@@ -59,6 +60,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      actions: read
     uses: ./.github/workflows/publish.yml
     with:
       package: ${{ matrix.package }}

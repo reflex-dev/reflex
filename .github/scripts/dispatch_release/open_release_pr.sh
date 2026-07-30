@@ -5,7 +5,6 @@ set -euo pipefail
 : "${ACTION:?}"
 : "${REF_NAME:?}"
 : "${RELEASES:?}"
-: "${GITHUB_REPOSITORY:?}"
 : "${GITHUB_RUN_ID:?}"
 
 # Final versions publish from main — except hotfix trains, which publish
@@ -26,17 +25,28 @@ BODY_FILE="${RUNNER_TEMP}/release_pr_body.md"
   echo "|---------|---------|------|-----|"
   echo "$RELEASES" | jq -r '.[] | "| `\(.package)` | `\(if .current == "" then "<none>" else .current end)` | `\(.next)` | `\(.tag)` |"'
   echo ""
-  echo "Merging this PR is the release approval: the push to \`${BASE}\` triggers the"
-  echo "\`release_from_changelog\` workflow, which publishes each version above and only"
-  echo "then pushes its tag and creates the GitHub release. If a publish fails, fix the"
-  echo "problem on top of the changelog bump — the next push retries automatically."
+  echo "Merging this PR lands the versions above for release: the push to \`${BASE}\`"
+  echo "triggers the \`release_from_changelog\` workflow, which builds each package and"
+  echo "then waits for \`pypi\` environment approval before uploading; the tag and"
+  echo "GitHub release are created only after a successful upload. If a publish"
+  echo "fails, fix the problem on top of the changelog bump — the next push retries"
+  echo "automatically."
 } > "$BODY_FILE"
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-git add -A
+# Stage only what materialization is expected to touch: rewritten changelogs
+# and consumed news fragments (towncrier already stages the deletions).
+git add -A -- CHANGELOG.md news 'packages/*/CHANGELOG.md' 'packages/*/news'
+if git diff --cached --quiet; then
+  echo "Error: materialization produced no changes; nothing to release."
+  exit 1
+fi
 git commit -m "Materialize changelogs for ${SUMMARY} (${ACTION})"
-git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+# The token is supplied via gh's credential helper so it never appears in a
+# remote URL or process argv.
+git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
+  push origin "HEAD:refs/heads/${BRANCH}"
 
 PR_URL=$(gh pr create --base "$BASE" --head "$BRANCH" --title "Release ${SUMMARY}" --body-file "$BODY_FILE")
 

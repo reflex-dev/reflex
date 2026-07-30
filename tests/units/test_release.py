@@ -1,8 +1,11 @@
 """Unit tests for scripts/release.py (the changelog-driven release helper)."""
 
+import io
 import json
 import subprocess
 import sys
+import tarfile
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -37,7 +40,7 @@ CHANGELOG = """## v0.9.7 (2026-07-15)
 PYPROJECT = """[project]
 name = "{name}"
 version = "0.0.0"
-
+{extra}
 [tool.towncrier]
 package = ""
 name = ""
@@ -68,28 +71,42 @@ def _git(repo: Path, *args: str) -> None:
     )
 
 
+def _bump(repo: Path, package: str, heading: str) -> None:
+    """Prepend a new version section to a package's changelog."""
+    path = release.changelog_path(repo, package)
+    path.write_text(f"{heading}\n\n- bumped\n\n\n{path.read_text()}")
+
+
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    """A minimal monorepo with a root package, one sub-package, and git tags.
+    """A minimal monorepo with a root package, sub-packages, and git tags.
+
+    Contains the ``reflex``/``reflex-base`` lockstep pair, an independent
+    ``other-pkg`` with a changelog, and a changelog-less ``bare-pkg``.
 
     Returns:
         The repo root path.
     """
-    (tmp_path / "pyproject.toml").write_text(PYPROJECT.format(name="reflex"))
+    (tmp_path / "pyproject.toml").write_text(
+        PYPROJECT.format(
+            name="reflex", extra='dependencies = ["reflex-base >= 0.9.7"]\n'
+        )
+    )
     (tmp_path / "CHANGELOG.md").write_text(CHANGELOG)
     (tmp_path / "news").mkdir()
-    pkg = tmp_path / "packages" / "reflex-base"
-    pkg.mkdir(parents=True)
-    (pkg / "pyproject.toml").write_text(PYPROJECT.format(name="reflex-base"))
-    (pkg / "CHANGELOG.md").write_text(CHANGELOG)
-    (pkg / "news").mkdir()
+    for pkg in ("reflex-base", "other-pkg"):
+        pkg_dir = tmp_path / "packages" / pkg
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "pyproject.toml").write_text(PYPROJECT.format(name=pkg, extra=""))
+        (pkg_dir / "CHANGELOG.md").write_text(CHANGELOG)
+        (pkg_dir / "news").mkdir()
     bare = tmp_path / "packages" / "bare-pkg"
     bare.mkdir()
-    (bare / "pyproject.toml").write_text(PYPROJECT.format(name="bare-pkg"))
+    (bare / "pyproject.toml").write_text(PYPROJECT.format(name="bare-pkg", extra=""))
     _git(tmp_path, "init", "-q")
     _git(tmp_path, "add", "-A")
     _git(tmp_path, "commit", "-q", "-m", "init")
-    for tag in ("v0.9.7", "reflex-base-v0.9.7", "bare-pkg-v0.1.5"):
+    for tag in ("v0.9.7", "reflex-base-v0.9.7", "other-pkg-v0.9.7", "bare-pkg-v0.1.5"):
         _git(tmp_path, "tag", tag)
     return tmp_path
 
@@ -146,19 +163,31 @@ def test_tag_naming():
     assert release.package_dir("reflex-base") == "packages/reflex-base"
 
 
+def test_lockstep_partner():
+    assert release.lockstep_partner("reflex") == "reflex-base"
+    assert release.lockstep_partner("reflex-base") == "reflex"
+    assert release.lockstep_partner("other-pkg") is None
+
+
 @pytest.mark.parametrize(
-    ("ref", "allowed"),
+    ("version", "ref", "allowed"),
     [
-        ("main", True),
-        ("r/hotfix/0.9", True),
-        ("r/hotfix/0.9/fix", True),
-        ("r/pre-2026.07.29", False),
-        ("feature-branch", False),
-        ("r/hotfixes", False),
+        ("1.2.3", "main", True),
+        ("1.2.3", "r/hotfix/0.9", True),
+        ("1.2.3", "r/hotfix/0.9/fix", True),
+        ("1.2.3.post1", "main", True),
+        ("1.2.3", "r/pre-2026.07.29", False),
+        ("1.2.3", "feature-branch", False),
+        ("1.2.3", "r/hotfixes", False),
+        ("1.2.3a1", "r/pre-2026.07.29", True),
+        ("1.2.3a1", "r/hotfix/0.9", True),
+        ("1.2.3a1", "main", False),
+        ("1.2.3a1", "feature-branch", False),
+        ("1.2.3a1", "r/prerelease", False),
     ],
 )
-def test_branch_allows_final(ref: str, allowed: bool):
-    assert release.branch_allows_final(ref) is allowed
+def test_branch_allows_publish(version: str, ref: str, allowed: bool):
+    assert release.branch_allows_publish(Version(version), ref) is allowed
 
 
 @pytest.mark.parametrize(
@@ -191,12 +220,27 @@ def test_next_version(current: str | None, action: str, expected: str):
         ("0.9.7", "release-from-prerelease"),
         ("0.10.0a1", "release-post"),
         (None, "release-post"),
+        # new-prerelease-* must not silently abandon an in-progress train.
+        ("1.2.3a5", "new-prerelease-patch"),
+        ("1.2.3a5", "new-prerelease-minor"),
+        ("1.2.3a5", "new-prerelease-major"),
+        # Only aN prereleases are supported.
+        ("1.2.3rc1", "continued-prerelease"),
+        ("1.2.3b1", "release-from-prerelease"),
     ],
 )
 def test_next_version_rejects_invalid_baselines(current: str | None, action: str):
     parsed = Version(current) if current is not None else None
     with pytest.raises(SystemExit):
         release.next_version(parsed, action, "pkg")
+
+
+def test_next_version_names_unsupported_prerelease_form(
+    capsys: pytest.CaptureFixture,
+):
+    with pytest.raises(SystemExit):
+        release.next_version(Version("1.2.3rc1"), "continued-prerelease", "pkg")
+    assert "only alpha aN prereleases are supported" in capsys.readouterr().err
 
 
 def test_collapse_prereleases_merges_categories_in_order():
@@ -251,17 +295,25 @@ def test_git_tag_helpers(repo: Path):
     assert not release.tag_exists(repo, "reflex-base-v0.9.8")
 
 
+def test_latest_final_tag_version_ignores_prereleases(repo: Path):
+    _git(repo, "tag", "v0.10.0a1")
+    assert release.latest_tag_version(repo, "reflex") == Version("0.10.0a1")
+    assert release.latest_final_tag_version(repo, "reflex") == Version("0.9.7")
+
+
 def test_current_version_prefers_changelog_over_tags(repo: Path):
-    (repo / "packages" / "reflex-base" / "CHANGELOG.md").write_text(
-        f"## v0.10.0a1 (2026-07-29)\n\nNo significant changes.\n\n\n{CHANGELOG}"
-    )
+    _bump(repo, "reflex-base", "## v0.10.0a1 (2026-07-29)")
     assert release.current_version(repo, "reflex-base") == Version("0.10.0a1")
     # bare-pkg has no changelog: falls back to its newest tag.
     assert release.current_version(repo, "bare-pkg") == Version("0.1.5")
 
 
 def test_discover_changelog_packages(repo: Path):
-    assert release.discover_changelog_packages(repo) == ["reflex", "reflex-base"]
+    assert release.discover_changelog_packages(repo) == [
+        "reflex",
+        "other-pkg",
+        "reflex-base",
+    ]
 
 
 def test_load_category_order(repo: Path):
@@ -273,31 +325,49 @@ def test_cmd_detect_finds_untagged_versions(
 ):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
     monkeypatch.setenv("REF_NAME", "main")
-    (repo / "CHANGELOG.md").write_text(f"## v0.9.8 (2026-07-29)\n\n- x\n\n{CHANGELOG}")
+    _bump(repo, "reflex", "## v0.9.8 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
     release.cmd_detect()
     outputs = _outputs(gh_env)
     assert outputs["any"] == "true"
-    assert json.loads(outputs["packages"]) == [
-        {"package": "reflex", "version": "0.9.8", "tag": "v0.9.8"}
-    ]
-
-
-def test_cmd_detect_skips_final_on_prerelease_branch(
-    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setattr(release, "REPO_ROOT", repo)
-    monkeypatch.setenv("REF_NAME", "r/pre-2026.07.29")
-    (repo / "CHANGELOG.md").write_text(f"## v0.9.8 (2026-07-29)\n\n- x\n\n{CHANGELOG}")
-    alpha = f"## v0.10.0a1 (2026-07-29)\n\n- y\n\n{CHANGELOG}"
-    (repo / "packages" / "reflex-base" / "CHANGELOG.md").write_text(alpha)
-    release.cmd_detect()
-    outputs = _outputs(gh_env)
-    # The final reflex version is skipped by the branch rule; the alpha publishes.
+    # reflex is emitted separately so it publishes after its dependencies.
+    assert outputs["reflex_version"] == "0.9.8"
     assert json.loads(outputs["packages"]) == [
         {
             "package": "reflex-base",
+            "version": "0.9.8",
+            "tag": "reflex-base-v0.9.8",
+        }
+    ]
+
+
+def test_cmd_detect_branch_policy(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    # A final on a prerelease branch and an alpha on main both get skipped.
+    _bump(repo, "other-pkg", "## v0.9.8 (2026-07-29)")
+    monkeypatch.setenv("REF_NAME", "r/pre-2026.07.29")
+    release.cmd_detect()
+    assert json.loads(_outputs(gh_env)["packages"]) == []
+
+    gh_env.unlink()
+    monkeypatch.setenv("REF_NAME", "main")
+    _bump(repo, "other-pkg", "## v0.10.0a1 (2026-07-29)")
+    release.cmd_detect()
+    assert json.loads(_outputs(gh_env)["packages"]) == []
+
+    # The alpha publishes from the r/pre-* branch it belongs on.
+    gh_env.unlink()
+    monkeypatch.setenv("REF_NAME", "r/pre-2026.07.29")
+    release.cmd_detect()
+    outputs = _outputs(gh_env)
+    assert outputs["reflex_version"] == ""
+    assert json.loads(outputs["packages"]) == [
+        {
+            "package": "other-pkg",
             "version": "0.10.0a1",
-            "tag": "reflex-base-v0.10.0a1",
+            "tag": "other-pkg-v0.10.0a1",
         }
     ]
 
@@ -310,7 +380,33 @@ def test_cmd_detect_all_tagged(
     release.cmd_detect()
     outputs = _outputs(gh_env)
     assert outputs["any"] == "false"
+    assert outputs["reflex_version"] == ""
     assert json.loads(outputs["packages"]) == []
+
+
+def test_cmd_detect_fails_closed_on_lockstep_violation(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("REF_NAME", "main")
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
+    with pytest.raises(SystemExit):
+        release.cmd_detect()
+
+
+def test_cmd_detect_lockstep_satisfied_by_existing_tag(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("REF_NAME", "main")
+    # reflex is due alone, but reflex-base already published 0.9.8 (retry case).
+    _bump(repo, "reflex", "## v0.9.8 (2026-07-29)")
+    _git(repo, "tag", "reflex-base-v0.9.8")
+    release.cmd_detect()
+    outputs = _outputs(gh_env)
+    assert outputs["reflex_version"] == "0.9.8"
+    assert json.loads(outputs["packages"]) == []
+    assert outputs["any"] == "false"
 
 
 def test_cmd_plan_pairs_reflex_with_reflex_base(
@@ -372,9 +468,8 @@ def test_cmd_prepare_publish_happy_path(
     repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
-    (repo / "packages" / "reflex-base" / "CHANGELOG.md").write_text(
-        f"## v0.9.8 (2026-07-29)\n\n- x\n\n{CHANGELOG}"
-    )
+    _bump(repo, "reflex", "## v0.9.8 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
     monkeypatch.setenv("PACKAGE", "reflex-base")
     monkeypatch.setenv("VERSION", "0.9.8")
     monkeypatch.setenv("REF_NAME", "main")
@@ -391,7 +486,8 @@ def test_cmd_prepare_publish_marks_reflex_final_latest(
     repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
-    (repo / "CHANGELOG.md").write_text(f"## v0.9.8 (2026-07-29)\n\n- x\n\n{CHANGELOG}")
+    _bump(repo, "reflex", "## v0.9.8 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
     monkeypatch.setenv("PACKAGE", "reflex")
     monkeypatch.setenv("VERSION", "v0.9.8")
     monkeypatch.setenv("REF_NAME", "main")
@@ -400,6 +496,21 @@ def test_cmd_prepare_publish_marks_reflex_final_latest(
     assert outputs["tag"] == "v0.9.8"
     assert outputs["build_dir"] == "."
     assert outputs["mark_latest"] == "true"
+
+
+def test_cmd_prepare_publish_hotfix_of_old_line_is_not_latest(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # A newer final release exists: the hotfix must not steal the badge.
+    _git(repo, "tag", "v0.10.0")
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    _bump(repo, "reflex", "## v0.9.8 (2026-07-29)")
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
+    monkeypatch.setenv("PACKAGE", "reflex")
+    monkeypatch.setenv("VERSION", "0.9.8")
+    monkeypatch.setenv("REF_NAME", "r/hotfix/0.9")
+    release.cmd_prepare_publish()
+    assert _outputs(gh_env)["mark_latest"] == "false"
 
 
 def test_cmd_prepare_publish_skips_existing_tag(
@@ -413,21 +524,40 @@ def test_cmd_prepare_publish_skips_existing_tag(
     assert _outputs(gh_env)["skipped"] == "true"
 
 
+def test_cmd_prepare_publish_enforces_lockstep(
+    repo: Path, gh_env: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    # reflex-base is materialized at 0.9.8 but reflex is not (and no v0.9.8 tag).
+    _bump(repo, "reflex-base", "## v0.9.8 (2026-07-29)")
+    monkeypatch.setenv("PACKAGE", "reflex-base")
+    monkeypatch.setenv("VERSION", "0.9.8")
+    monkeypatch.setenv("REF_NAME", "main")
+    with pytest.raises(SystemExit):
+        release.cmd_prepare_publish()
+    # The partner being already tagged satisfies the invariant (retry case).
+    _git(repo, "tag", "v0.9.8")
+    release.cmd_prepare_publish()
+    assert _outputs(gh_env)["skipped"] == "false"
+
+
 @pytest.mark.parametrize(
     ("package", "version", "ref"),
     [
         # Final version from a non-release branch.
-        ("reflex-base", "0.9.8", "r/pre-2026.07.29"),
+        ("other-pkg", "0.9.8", "r/pre-2026.07.29"),
+        # Prerelease version from main.
+        ("other-pkg", "0.10.0a1", "main"),
         # Version does not match the newest changelog version.
-        ("reflex-base", "0.9.9", "main"),
+        ("other-pkg", "0.9.9", "main"),
         # Empty version is only allowed without a changelog.
-        ("reflex-base", "", "main"),
+        ("other-pkg", "", "main"),
         # Dev/local/epoch versions never publish.
-        ("reflex-base", "0.9.8.dev1", "main"),
-        ("reflex-base", "0.9.8+local", "main"),
+        ("other-pkg", "0.9.8.dev1", "main"),
+        ("other-pkg", "0.9.8+local", "main"),
         ("bad/../name", "0.9.8", "main"),
         ("no-such-pkg", "0.9.8", "main"),
-        ("reflex-base", "not-a-version", "main"),
+        ("other-pkg", "not-a-version", "main"),
     ],
 )
 def test_cmd_prepare_publish_rejects(
@@ -439,9 +569,7 @@ def test_cmd_prepare_publish_rejects(
     ref: str,
 ):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
-    (repo / "packages" / "reflex-base" / "CHANGELOG.md").write_text(
-        f"## v0.9.8 (2026-07-29)\n\n- x\n\n{CHANGELOG}"
-    )
+    _bump(repo, "other-pkg", "## v0.9.8 (2026-07-29)")
     monkeypatch.setenv("PACKAGE", package)
     monkeypatch.setenv("VERSION", version)
     monkeypatch.setenv("REF_NAME", ref)
@@ -461,6 +589,57 @@ def test_cmd_prepare_publish_auto_version_for_changelogless(
     assert outputs["version"] == "0.1.6"
     assert outputs["tag"] == "bare-pkg-v0.1.6"
     assert outputs["skipped"] == "false"
+
+
+def test_cmd_pin_reflex_base(repo: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    monkeypatch.setenv("VERSION", "0.9.8")
+    release.cmd_pin_reflex_base()
+    text = (repo / "pyproject.toml").read_text()
+    assert '"reflex-base == 0.9.8"' in text
+    assert '"reflex-base >= ' not in text
+    # A second run finds no range requirement left to rewrite.
+    with pytest.raises(SystemExit):
+        release.cmd_pin_reflex_base()
+
+
+def _write_wheel(path: Path, name: str, version: str) -> None:
+    with zipfile.ZipFile(path, "w") as wheel:
+        wheel.writestr(
+            f"{name}-{version}.dist-info/METADATA",
+            f"Metadata-Version: 2.3\nName: {name}\nVersion: {version}\n\nVersion: 9.9.9 in the description is ignored.\n",
+        )
+
+
+def _write_sdist(path: Path, name: str, version: str) -> None:
+    with tarfile.open(path, "w:gz") as sdist:
+        payload = f"Metadata-Version: 2.3\nName: {name}\nVersion: {version}\n".encode()
+        info = tarfile.TarInfo(f"{name}-{version}/PKG-INFO")
+        info.size = len(payload)
+        sdist.addfile(info, io.BytesIO(payload))
+
+
+def test_cmd_verify_dist(repo: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    dist = repo / "dist"
+    dist.mkdir()
+    _write_wheel(dist / "demo-0.9.8-py3-none-any.whl", "demo", "0.9.8")
+    _write_sdist(dist / "demo-0.9.8.tar.gz", "demo", "0.9.8")
+    monkeypatch.setenv("VERSION", "0.9.8")
+    release.cmd_verify_dist()
+
+    # A wrong-version artifact fails the check.
+    _write_wheel(dist / "demo-0.9.9-py3-none-any.whl", "demo", "0.9.9")
+    with pytest.raises(SystemExit):
+        release.cmd_verify_dist()
+
+
+def test_cmd_verify_dist_empty(repo: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(release, "REPO_ROOT", repo)
+    (repo / "dist").mkdir()
+    monkeypatch.setenv("VERSION", "0.9.8")
+    with pytest.raises(SystemExit):
+        release.cmd_verify_dist()
 
 
 def test_cmd_extract_notes(repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
