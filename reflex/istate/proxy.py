@@ -480,10 +480,12 @@ class MutableProxy(wrapt.ObjectProxy):
             path: Access path from the state field to this wrapped object.
         """
         super().__init__(wrapped)
-        self._self_state = state
-        self._self_field_name = field_name
+        # object.__setattr__ skips the per-store "_self_" prefix dispatch in
+        # __setattr__/wrapt setattro; proxy construction is a per-element hot path.
+        object.__setattr__(self, "_self_state", state)
+        object.__setattr__(self, "_self_field_name", field_name)
         if path is not None:
-            self._self_path = path
+            object.__setattr__(self, "_self_path", path)
 
     def __repr__(self) -> str:
         """Get the representation of the wrapped object.
@@ -629,15 +631,18 @@ class MutableProxy(wrapt.ObjectProxy):
             The wrapped value.
         """
         if isinstance(value, MutableProxy) or is_mutable_type(type(value)):
-            return self._wrap_mutable(value, new_path_segment)
+            path = self._self_path
+            if new_path_segment is not None:
+                path = (*path, new_path_segment)
+            return self._wrap_mutable(value, path)
         return value
 
-    def _wrap_mutable(self, value: Any, new_path_segment: _AccessSpec | None) -> Any:
+    def _wrap_mutable(self, value: Any, path: tuple[_AccessSpec, ...]) -> Any:
         """Wrap a value already known to be mutable (or an existing proxy).
 
         Args:
             value: The mutable value (or MutableProxy) to wrap.
-            new_path_segment: Access path segment from this proxy to the value.
+            path: Full access path from the state field to the value.
 
         Returns:
             The wrapped value.
@@ -649,11 +654,7 @@ class MutableProxy(wrapt.ObjectProxy):
         # reference is up to date.
         if isinstance(value, MutableProxy):
             value = value.__wrapped__
-        base_cls = globals()[self.__base_proxy__]
-        path = self._self_path
-        if new_path_segment is not None:
-            path = (*path, new_path_segment)
-        return base_cls(
+        return globals()[self.__base_proxy__](
             wrapped=value,
             state=self._self_state,
             field_name=self._self_field_name,
@@ -730,7 +731,7 @@ class MutableProxy(wrapt.ObjectProxy):
             "__dict__",
         ):
             # Recursively wrap mutable attribute values retrieved through this proxy.
-            return self._wrap_mutable(value, ("attr", __name))
+            return self._wrap_mutable(value, (*self._self_path, ("attr", __name)))
 
         return value
 
@@ -751,13 +752,15 @@ class MutableProxy(wrapt.ObjectProxy):
             # List positions are not stable across concurrent mutations, so
             # list-derived proxies cannot refresh in an async context.
             if not isinstance(key, slice):
-                return self._wrap_mutable(value, _UNREFRESHABLE_ACCESS_SPEC)
+                return self._wrap_mutable(
+                    value, (*self._self_path, _UNREFRESHABLE_ACCESS_SPEC)
+                )
             # Slice items are not individually pre-checked for mutability.
             return [
                 self._wrap_recursive(item, _UNREFRESHABLE_ACCESS_SPEC) for item in value
             ]
         # Recursively wrap mutable items retrieved through this proxy.
-        return self._wrap_mutable(value, ("item", key))
+        return self._wrap_mutable(value, (*self._self_path, ("item", key)))
 
     def __iter__(self) -> Any:
         """Iterate over the proxied object and return a proxy if mutable.
@@ -767,11 +770,13 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         wrap_mutable = self._wrap_mutable
         mutable_check = is_mutable_type
+        # All iterated elements share one child path; build it once, not per element.
+        child_path = (*self._self_path, _UNREFRESHABLE_ACCESS_SPEC)
         for value in super().__iter__():  # pyright: ignore[reportAttributeAccessIssue]
             # Iterated values have no stable key to refresh through, so their
             # proxies cannot be used as async context managers.
             if isinstance(value, MutableProxy) or mutable_check(type(value)):
-                yield wrap_mutable(value, _UNREFRESHABLE_ACCESS_SPEC)
+                yield wrap_mutable(value, child_path)
             else:
                 yield value
 
