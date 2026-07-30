@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import date, datetime
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.vars.number import BooleanVar
@@ -211,7 +211,7 @@ def date_ge_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
 def date_compare_operation(
     lhs: DateTimeVar[DATETIME_T] | Any,
     rhs: DateTimeVar[DATETIME_T] | Any,
-    operator: str,
+    operator: Literal["===", "!==", "<", "<=", ">", ">="],
 ) -> CustomVarOperationReturn[bool]:
     """Compare datetime values by their timestamps.
 

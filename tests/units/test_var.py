@@ -5,7 +5,7 @@ import operator as op
 import re
 import typing
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -369,7 +369,6 @@ def test_basic_operations(TestObj):
         str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
         == '["1", "2", "3"].slice().reverse()'
     )
-
     assert (
         str(Var(_js_expr="foo")._var_set_state("state").to(list).reverse())
         == "state.foo.slice().reverse()"
@@ -410,6 +409,14 @@ def test_datetime_comparison_preserves_microseconds():
         '(compareDatetime("2024-01-01 00:00:00.000001+00:00", '
         '"2024-01-01 00:00:00.000999+00:00") < 0)'
     )
+
+
+def test_date_comparison_uses_compare_datetime():
+    lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
+    rhs = date(2024, 1, 2)
+
+    assert str(lhs < rhs) == '(compareDatetime("2024-01-01", "2024-01-02") < 0)'
+    assert str(lhs == rhs) == '(compareDatetime("2024-01-01", "2024-01-02") === 0)'
 
 
 def test_datetime_equality_with_other_type_uses_default_comparison():
