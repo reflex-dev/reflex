@@ -480,12 +480,16 @@ class MutableProxy(wrapt.ObjectProxy):
             path: Access path from the state field to this wrapped object.
         """
         super().__init__(wrapped)
-        # object.__setattr__ skips the per-store "_self_" prefix dispatch in
-        # __setattr__/wrapt setattro; proxy construction is a per-element hot path.
-        object.__setattr__(self, "_self_state", state)
-        object.__setattr__(self, "_self_field_name", field_name)
+        # Calling the base proxy's __setattr__ directly skips the per-store
+        # Python-level dispatch in MutableProxy.__setattr__; proxy construction
+        # is a per-element hot path. object.__setattr__ is not usable here: on
+        # Python <= 3.13 it rejects instances whose static base (wrapt's C
+        # ObjectProxy) overrides tp_setattro.
+        proxy_setattr = super().__setattr__
+        proxy_setattr("_self_state", state)
+        proxy_setattr("_self_field_name", field_name)
         if path is not None:
-            object.__setattr__(self, "_self_path", path)
+            proxy_setattr("_self_path", path)
 
     def __repr__(self) -> str:
         """Get the representation of the wrapped object.
