@@ -28,10 +28,24 @@ jobs:
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+      # The heading guard runs even for skip-changelog PRs: that label only
+      # waives the news-fragment requirement, not the publish-trigger guard.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        if: steps.skip.outputs.skip != 'true'
         with:
           fetch-depth: 0
+      # A merged version heading without a git tag triggers a real publish
+      # (see release_from_changelog.yml), so new headings must come from the
+      # Dispatch release workflow's release/* branches — not hand edits.
+      # check-headings uses the same parser the release pipeline publishes
+      # from, so the guard and the publisher cannot disagree. Escape hatch
+      # for deliberate restructuring: the 'changelog-version-edit' label.
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit') && !startsWith(github.head_ref, 'release/') }}
+      - name: Reject manual changelog version headings
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit') && !startsWith(github.head_ref, 'release/') }}
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: uv run --no-config --locked --script scripts/release.py check-headings
       - uses: ./.github/actions/setup_build_env
         if: steps.skip.outputs.skip != 'true'
         with:
