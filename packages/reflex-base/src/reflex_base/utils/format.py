@@ -872,26 +872,23 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
             return float(o)
         return serializers.serialize(o)
 
-    try:
-        out = orjson.dumps(obj, default=_default_fast, option=_ORJSON_SOCKET_OPTS)
-    except TypeError:
-        return _json_dumps_socket_fallback(obj)
-
-    if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
-        return out.decode()
-
     # orjson converts non-finite floats to null; sentinel prefixes may collide.
     def _default_walked(o: Any) -> Any:
         if isinstance(o, float):
             return float(o)
         return _replace_non_finite_floats(serializers.serialize(o))
 
-    walked = _replace_non_finite_floats(obj)
     try:
+        out = orjson.dumps(obj, default=_default_fast, option=_ORJSON_SOCKET_OPTS)
+        if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
+            return out.decode()
         return orjson.dumps(
-            walked, default=_default_walked, option=_ORJSON_SOCKET_OPTS
+            _replace_non_finite_floats(obj),
+            default=_default_walked,
+            option=_ORJSON_SOCKET_OPTS,
         ).decode()
     except TypeError:
+        # Payloads orjson can't represent even via default (e.g. int > 64-bit).
         return _json_dumps_socket_fallback(obj)
 
 
