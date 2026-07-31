@@ -9,4 +9,4 @@ Bumped bundled frontend dependency pins to their current releases:
 - `@tailwindcss/typography`: 0.5.19 → 0.5.20
 - Bun: 1.3.13 → 1.3.14
 
-Also raised the `rich` upper bound to `<16` (adopting rich 15), and dropped the now-redundant `cookie` `package.json` override — `universal-cookie` 8 and `react-router` both resolve `cookie` to 1.x on their own.
+Also raised the `rich` upper bound to `<16` (adopting rich 15). Replaced the now-redundant `cookie` `package.json` override (`universal-cookie` 8 and `react-router` resolve `cookie` to 1.x on their own) with a `postcss` override pinning it to 8.5.21 so transitive resolutions stay on a patched release (>= 8.5.18) for a security advisory.

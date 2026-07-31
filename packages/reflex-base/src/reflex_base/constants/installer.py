@@ -154,4 +154,8 @@ class PackageJson(SimpleNamespace):
         "vite": "8.0.16",
     }
     # Force specific transitive npm deps to a single resolved version when needed.
-    OVERRIDES: dict[str, str] = {}
+    OVERRIDES: dict[str, str] = {
+        # postcss < 8.5.18 carries a security advisory; force transitive
+        # resolutions up to a patched release.
+        "postcss": "8.5.21",
+    }
