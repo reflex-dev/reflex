@@ -167,7 +167,6 @@ manual_titles = {
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
-    "docs/ai_builder/integrations/agent_toolkit.md": "Agent Toolkit",
     "docs/enterprise/ag_grid/index.md": "AG Grid in Python: Interactive Data Grid",
     "docs/enterprise/ag_grid/column-defs.md": "AG Grid Column Definitions in Python",
     "docs/enterprise/ag_grid/pivot-mode.md": "AG Grid Pivot Mode in Python",
