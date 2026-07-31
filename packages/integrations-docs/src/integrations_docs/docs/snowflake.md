@@ -1,3 +1,7 @@
+---
+tags: Data Infrastructure
+description: Connect to Snowflake to query and analyze data in your Snowflake warehouse.
+---
 # Snowflake
 
 Snowflake is a cloud-based data warehousing platform that enables users to store, manage, and analyze large volumes of data. It provides a scalable and flexible architecture that separates storage and compute resources, allowing for efficient data processing and querying.
