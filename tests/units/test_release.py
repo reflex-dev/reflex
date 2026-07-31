@@ -522,6 +522,8 @@ def test_cmd_materialize_builds_and_collapses(
     release.cmd_materialize()
     text = (pkg / "CHANGELOG.md").read_text()
     assert "a1" not in text.split("## v0.9.7")[0]
+    # Headings are dated in the project's release timezone, not runner UTC.
+    assert f"## v0.10.0 ({release.release_date_today()})" in text
     assert text.index("## v0.10.0 (") < text.index("### Features")
     assert "- From alpha. ([#7](https://example.com/7))" in text
     assert "Late fix." in text

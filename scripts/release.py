@@ -4,6 +4,7 @@
 #     "packaging==26.2",
 #     "towncrier==25.8.0",
 #     "tomli==2.4.1; python_version < '3.11'",
+#     "tzdata==2025.2; sys_platform == 'win32'",
 # ]
 # ///
 # Exact pins, resolved with hashes in release.py.lock (regenerate with
@@ -61,6 +62,7 @@ import subprocess
 import sys
 import tarfile
 import zipfile
+import zoneinfo
 from pathlib import Path
 from typing import NoReturn
 
@@ -87,6 +89,11 @@ ACTIONS: dict[str, tuple[str, str | None]] = {
     "release-minor": ("release", "minor"),
     "release-major": ("release", "major"),
 }
+
+# Changelog heading dates (and the r/pre-<date> branch names, see
+# push_prerelease.sh) are stamped in the project's home timezone: CI runners
+# run on UTC, which would date an evening release with tomorrow's date.
+RELEASE_TIMEZONE = "America/Los_Angeles"
 
 NO_SIGNIFICANT_CHANGES = "No significant changes"
 
@@ -699,13 +706,24 @@ def next_version(current: Version | None, action: str, package: str) -> str:
     return f"{major + 1}.0.0"
 
 
-def run_towncrier(root: Path, package: str, version: str) -> None:
+def release_date_today() -> str:
+    """Return today's date in the project's release timezone.
+
+    Returns:
+        The date in ISO format (YYYY-MM-DD).
+    """
+    tz = zoneinfo.ZoneInfo(RELEASE_TIMEZONE)
+    return datetime.datetime.now(tz).date().isoformat()
+
+
+def run_towncrier(root: Path, package: str, version: str, date_str: str) -> None:
     """Materialize a package's news fragments into its CHANGELOG.md.
 
     Args:
         root: The repository root.
         package: The package name.
         version: The version to write (no ``v`` prefix; the heading gets one).
+        date_str: The date for the section heading (YYYY-MM-DD).
     """
     subprocess.run(
         [
@@ -719,6 +737,8 @@ def run_towncrier(root: Path, package: str, version: str) -> None:
             package_dir(package),
             "--version",
             f"v{version}",
+            "--date",
+            date_str,
             "--yes",
         ],
         cwd=root,
@@ -976,11 +996,11 @@ def cmd_materialize() -> None:
     releases: list[dict[str, str]] = json.loads(os.environ["RELEASES_JSON"])
     collapse = action == "release-from-prerelease"
     category_order = load_category_order(root) if collapse else []
-    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+    today = release_date_today()
 
     for release in releases:
         package, version = release["package"], release["next"]
-        run_towncrier(root, package, version)
+        run_towncrier(root, package, version, today)
         if collapse:
             path = changelog_path(root, package)
             path.write_text(

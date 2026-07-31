@@ -16,7 +16,9 @@ if [[ "$ACTION" == "continued-prerelease" ]]; then
   fi
   BRANCH="$REF_NAME"
 else
-  BRANCH="r/pre-$(date -u +%Y.%m.%d)"
+  # Same release timezone as the changelog heading dates (RELEASE_TIMEZONE in
+  # scripts/release.py) so the branch name and headings never disagree.
+  BRANCH="r/pre-$(TZ=America/Los_Angeles date +%Y.%m.%d)"
   if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
     BRANCH="${BRANCH}-${GITHUB_RUN_ID}"
   fi
