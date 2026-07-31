@@ -145,7 +145,7 @@ class ClientStateVar(Var):
             setter_dict_ref = _client_state_ref_dict(setter_name)
             default_expr = "undefined" if default is NoValue else f"{default_var!s}"
             hooks[
-                f"const [{var_name}, {setter_name}] = useState(() => {var_ref!s} ?? {default_expr})"
+                f"const [{var_name}, {setter_name}] = useState(() => {var_ref!s} !== undefined ? {var_ref!s} : {default_expr})"
             ] = VarData.merge(default_var._var_data, var_ref._get_all_var_data())
             func = ArgsFunctionOperationBuilder.create(
                 args_names=(arg_name,),

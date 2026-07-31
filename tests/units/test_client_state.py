@@ -21,10 +21,20 @@ def test_global_client_state_initializes_use_state_from_shared_ref():
     hooks = _hooks(flag)
 
     assert (
-        """const [flag, setFlag] = useState(() => refs['_client_state_flag'] ?? "")"""
+        """const [flag, setFlag] = useState(() => refs['_client_state_flag'] !== undefined ? refs['_client_state_flag'] : "")"""
         in hooks
     )
     assert """const [flag, setFlag] = useState("")""" not in hooks
+
+
+def test_global_client_state_preserves_null_shared_ref():
+    """Global client state should not replace explicit null with the default."""
+    flag = ClientStateVar.create("flag", default="idle")
+
+    assert (
+        """const [flag, setFlag] = useState(() => refs['_client_state_flag'] !== undefined ? refs['_client_state_flag'] : "idle")"""
+        in _hooks(flag)
+    )
 
 
 def test_global_client_state_without_default_uses_undefined_fallback():
@@ -32,7 +42,7 @@ def test_global_client_state_without_default_uses_undefined_fallback():
     flag = ClientStateVar.create("flag")
 
     assert (
-        "const [flag, setFlag] = useState(() => refs['_client_state_flag'] ?? undefined)"
+        "const [flag, setFlag] = useState(() => refs['_client_state_flag'] !== undefined ? refs['_client_state_flag'] : undefined)"
         in _hooks(flag)
     )
 
