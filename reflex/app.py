@@ -57,6 +57,7 @@ from reflex_components_core.core.banner import (
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_sonner.toast import toast
+from rich.markup import escape as escape_markup
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
@@ -1908,6 +1909,10 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Maximum error-level log entries a single session may produce via the
+    # client_error event before further reports from it are dropped.
+    _MAX_CLIENT_ERRORS_PER_SID = 5
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1920,6 +1925,9 @@ class EventNamespace(AsyncNamespace):
 
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
+
+        # Number of client_error reports logged per SID, for rate limiting.
+        self._client_error_counts: dict[str, int] = {}
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
@@ -1975,6 +1983,7 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2135,12 +2144,17 @@ class EventNamespace(AsyncNamespace):
 
         Returns:
             The value as a printable, length-bounded string with control
-            characters (newlines, ANSI escapes) replaced by spaces.
+            characters (newlines, ANSI escapes) replaced by spaces and rich
+            markup escaped.
         """
         text = value if isinstance(value, str) else str(value)
         text = "".join(char if char.isprintable() else " " for char in text)
+        # Escape rich markup so client values cannot style backend logs or
+        # raise MarkupError when printed through the console helpers.
+        text = escape_markup(text)
         if len(text) > max_length:
-            text = f"{text[:max_length]}... (truncated)"
+            suffix = "... (truncated)"
+            text = text[: max_length - len(suffix)] + suffix
         return text
 
     async def on_client_error(self, sid: str, data: Any):
@@ -2169,6 +2183,12 @@ class EventNamespace(AsyncNamespace):
                 f"[Frontend Error - unknown SID: {sid}] {error_type}: {message}"
             )
             return
+
+        # Rate limit per session so a client cannot flood the backend logs.
+        error_count = self._client_error_counts.get(sid, 0)
+        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+            return
+        self._client_error_counts[sid] = error_count + 1
 
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             console.error(

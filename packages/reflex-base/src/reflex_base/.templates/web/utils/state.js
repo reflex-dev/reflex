@@ -531,7 +531,10 @@ export const processEvent = async (socket, navigate, params) => {
   }
 
   // A backend/frontend state mismatch is fatal; do not send further events.
+  // Drop pending events too: callers drain the queue in while-loops that
+  // would otherwise spin forever on an early return.
   if (backend_state_mismatch) {
+    event_queue.length = 0;
     return;
   }
 
@@ -743,20 +746,26 @@ export const connect = async (
             substate === state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
-            queueEvents(on_hydrated_queue, socket, false, navigate, params);
+            await queueEvents(
+              on_hydrated_queue,
+              socket,
+              false,
+              navigate,
+              params,
+            );
             on_hydrated_queue.length = 0;
           }
         }
         applyClientStorageDelta(client_storage, update.delta);
       }
       if (update.events && update.events.length > 0) {
-        queueEvents(update.events, socket, false, navigate, params);
+        await queueEvents(update.events, socket, false, navigate, params);
       }
     } catch (error) {
       console.error("Error processing state update:", error);
       // Surface the error in the backend terminal logs.
       socket.current.emit(CLIENT_ERROR_EVENT, {
-        message: error.message || String(error),
+        message: error?.message || String(error),
         error_type: ERROR_TYPE_STATE_UPDATE,
       });
     }

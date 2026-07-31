@@ -147,3 +147,58 @@ async def test_client_values_are_sanitized_and_truncated(
     assert "\n" not in message
     assert "\t" not in message
     assert len(message) < 700
+
+
+def test_sanitize_respects_max_length():
+    """The sanitized value never exceeds max_length, even when truncated."""
+    out = EventNamespace._sanitize_client_log_value("A" * 5000, max_length=500)
+    assert len(out) <= 500
+    assert out.endswith("... (truncated)")
+
+
+def test_sanitized_markup_does_not_break_console():
+    """Client-supplied rich markup is escaped so it cannot style backend logs
+    or raise MarkupError when printed through the real console.
+    """
+    for payload in (
+        "x[/bold]y",
+        "x[/]y",
+        "[blink bold red]FAKE",
+        "[link=https://evil.example]z[/link]",
+    ):
+        sanitized = EventNamespace._sanitize_client_log_value(payload)
+        # Must not raise MarkupError.
+        console.error(f"[Frontend Error] {sanitized}")
+
+
+@pytest.mark.asyncio
+async def test_error_level_logging_is_rate_limited_per_sid(
+    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+):
+    """A single session cannot flood the backend logs with error-level entries.
+
+    Args:
+        event_namespace: The event namespace.
+        console_output: Captured console messages.
+    """
+    for _ in range(20):
+        await event_namespace.on_client_error(
+            "known_sid",
+            {"error_type": "custom_type", "message": "spam"},
+        )
+    assert len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
+    # Disconnecting removes the counter so the mapping cannot grow unboundedly.
+    task = event_namespace.on_disconnect("known_sid")
+    if task is not None:
+        await task
+    assert "known_sid" not in event_namespace._client_error_counts
+
+
+def test_client_error_event_name_matches_handler():
+    """python-socketio dispatches events to on_<event> methods by naming
+    convention; this pins the handler to SocketEvent.CLIENT_ERROR.
+    """
+    assert (
+        f"on_{constants.SocketEvent.CLIENT_ERROR}"
+        == EventNamespace.on_client_error.__name__
+    )
