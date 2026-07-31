@@ -69,7 +69,7 @@ You do not need an API key to read Reflex documentation. Start by deciding how y
 
 ## Reflex Docs for Agents
 
-You can give your assistant current Reflex documentation in a few ways. These Agent Toolkit resources are designed for assistants that need focused Markdown pages, a broad docs index, structured MCP lookup, or repeatable local skills.
+You can give your assistant current Reflex documentation in a few ways, from fetching a single Markdown page to installing reusable local skills. Each tab below covers one approach and when to reach for it.
 
 `````md tabs
 

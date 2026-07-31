@@ -7,6 +7,7 @@ from types import SimpleNamespace, UnionType
 from typing import Any, Literal, Union, get_args, get_origin
 
 from reflex.constants import Dirs
+from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
@@ -115,8 +116,6 @@ def _extract_markdown_title(source: str) -> str | None:
 
 def _llms_url_for_path(url_path: Path) -> str:
     """Return the public URL for a generated markdown asset."""
-    from reflex_base.config import get_config
-
     config = get_config()
     deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
     frontend_path = (config.frontend_path or "").strip("/")
@@ -130,8 +129,6 @@ def _llms_url_for_path(url_path: Path) -> str:
 
 def _docs_home_url() -> str:
     """Return the public URL for the docs home."""
-    from reflex_base.config import get_config
-
     config = get_config()
     deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
     frontend_path = (config.frontend_path or "").strip("/")
@@ -892,8 +889,6 @@ class AgentFilesPlugin(Plugin):
     def get_static_assets(
         self, **context: Unpack[CommonContext]
     ) -> Sequence[tuple[Path, str | bytes]]:
-        from reflex_base.config import get_config
-
         root = Path(Dirs.PUBLIC)
         if frontend_path := get_config().frontend_path:
             # Make sure the pre-rendered HTML does not get overwritten by md files.
