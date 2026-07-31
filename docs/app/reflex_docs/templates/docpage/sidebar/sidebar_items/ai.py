@@ -45,6 +45,7 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.app_lifecycle.deploy_app,
                 ai_builder.app_lifecycle.download_app,
                 ai_builder.app_lifecycle.copy_app,
+                ai_builder.app_lifecycle.fork_app,
                 ai_builder.app_lifecycle.share_app,
             ],
         ),

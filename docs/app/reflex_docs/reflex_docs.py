@@ -181,8 +181,6 @@ redirects.extend([
     ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
     ("/ai/features/customization/", "/ai/features/design-systems/"),
     ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
-    ("/ai/app-lifecycle/fork-app/", "/ai/app-lifecycle/copy-app/"),
-    ("/ai-builder/app-lifecycle/fork-app/", "/ai/app-lifecycle/copy-app/"),
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
 ])
