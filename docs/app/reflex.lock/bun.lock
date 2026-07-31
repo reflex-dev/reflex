@@ -27,6 +27,7 @@
         "ag-grid-community": "34.3.1",
         "ag-grid-enterprise": "34.3.1",
         "ag-grid-react": "34.3.1",
+        "clsx": "2.1.1",
         "clsx-for-tailwind": "1.0.0",
         "es-toolkit": "1.46.1",
         "gridjs": "6.2.0",
@@ -72,6 +73,7 @@
         "shiki": "3.3.0",
         "socket.io-client": "4.8.3",
         "sonner": "2.0.7",
+        "tailwind-merge": "3.6.0",
         "tailwindcss-animated": "2.0.0",
         "tailwindcss-scroll-mask": "0.0.3",
         "universal-cookie": "7.2.2",
@@ -1941,7 +1943,7 @@
 
     "tabbable": ["tabbable@6.4.0", "", {}, "sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg=="],
 
-    "tailwind-merge": ["tailwind-merge@2.6.1", "", {}, "sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ=="],
+    "tailwind-merge": ["tailwind-merge@3.6.0", "", {}, "sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w=="],
 
     "tailwindcss": ["tailwindcss@4.3.0", "", {}, "sha512-y6nxMGB1nMW9R6k96e5gdIFzcfL/gTJRNaqGes1YvkLnPVXzWgbqFF2yLC0T8G774n24cx3Pe8XrKoniCOAH+Q=="],
 
@@ -2508,6 +2510,8 @@
     "ag-grid-enterprise/ag-charts-community": ["ag-charts-community@12.3.1", "", { "dependencies": { "ag-charts-core": "12.3.1", "ag-charts-locale": "12.3.1", "ag-charts-types": "12.3.1" } }, "sha512-uRaUFmCl8e0Y3KxjaHUYlkCPS5OtwtfTChkdpoZuBKDXqerCPTjPu+uvlun3rYUSYxScwVf2LZCI0Hfw4Vc+WQ=="],
 
     "ag-grid-enterprise/ag-charts-enterprise": ["ag-charts-enterprise@12.3.1", "", { "dependencies": { "ag-charts-community": "12.3.1", "ag-charts-core": "12.3.1" } }, "sha512-2sQIwLfksRTcI4JVRjgQkyGq6z68UVTO/I91HKmtpukrQLsW/o0TzzHmgTtVJOXd9yO9gx2KWa2DMg0+FKdXEQ=="],
+
+    "clsx-for-tailwind/tailwind-merge": ["tailwind-merge@2.6.1", "", {}, "sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ=="],
 
     "color-alpha/color-parse": ["color-parse@1.4.3", "", { "dependencies": { "color-name": "^1.0.0" } }, "sha512-BADfVl/FHkQkyo8sRBwMYBqemqsgnu7JZAwUgvBvuwwuNUZAhSvLTbsEErS5bQXzOjDR0dWzJ4vXN2Q+QoPx0A=="],
 
