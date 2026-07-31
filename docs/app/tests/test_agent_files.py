@@ -73,8 +73,8 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="Skills",
         ),
         MarkdownIndexEntry(
-            url_path=Path("ai/features/ide.md"),
-            title="Reflex Build IDE",
+            url_path=Path("ai/features/editor-modes.md"),
+            title="Code and Review",
             section="AI Builder",
         ),
     ])
@@ -102,7 +102,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         in content
     )
     assert "Resend Integration" not in content
-    assert "Reflex Build IDE" not in content
+    assert "Code and Review" not in content
     assert "### AI Onboarding\n\n" in content
     assert (
         "- [AI Onboarding](https://reflex.dev/docs/ai/integrations/ai-onboarding.md)"
