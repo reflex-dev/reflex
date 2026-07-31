@@ -2015,6 +2015,12 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
+        # Log the substates being sent for debugging mismatches. The is_debug
+        # check avoids building the message on the hot path when disabled.
+        if update.delta and console.is_debug():
+            console.debug(
+                f"Emitting state update for substates: {list(update.delta.keys())} to client {token!r}"
+            )
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
@@ -2118,6 +2124,61 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    @staticmethod
+    def _sanitize_client_log_value(value: Any, max_length: int = 500) -> str:
+        """Make a client-supplied value safe to write to backend logs.
+
+        Args:
+            value: The client-supplied value.
+            max_length: Maximum length of the returned string.
+
+        Returns:
+            The value as a printable, length-bounded string with control
+            characters (newlines, ANSI escapes) replaced by spaces.
+        """
+        text = value if isinstance(value, str) else str(value)
+        text = "".join(char if char.isprintable() else " " for char in text)
+        if len(text) > max_length:
+            text = f"{text[:max_length]}... (truncated)"
+        return text
+
+    async def on_client_error(self, sid: str, data: Any):
+        """Handle errors reported by the frontend.
+
+        This allows frontend errors (especially state update processing errors)
+        to be visible in backend logs, improving debuggability.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client.
+        """
+        if not isinstance(data, dict):
+            console.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            return
+        error_type = self._sanitize_client_log_value(data.get("error_type", "unknown"))
+        message = self._sanitize_client_log_value(
+            data.get("message", "No error message provided")
+        )
+        substate = self._sanitize_client_log_value(data.get("substate", ""))
+
+        if sid not in self.sid_to_token:
+            # Sockets without a linked token are not known clients; don't let
+            # them write error-level entries into the backend logs.
+            console.debug(
+                f"[Frontend Error - unknown SID: {sid}] {error_type}: {message}"
+            )
+            return
+
+        if error_type == constants.ClientErrorType.DISPATCH_MISSING:
+            console.error(
+                f"[Frontend Error - SID: {sid}] State update failed: "
+                f"no dispatch function for substate(s) '{substate}'. "
+                "This indicates a frontend/backend state mismatch. "
+                "Rebuild the frontend or check that api_url points to the matching backend."
+            )
+        else:
+            console.error(f"[Frontend Error - SID: {sid}] {error_type}: {message}")
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.

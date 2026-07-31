@@ -2605,7 +2605,13 @@ class ComponentState(State, mixin=True):
     frozen=True,
 )
 class StateUpdate:
-    """A state update sent to the frontend."""
+    """A state update sent to the frontend.
+
+    Each substate key in the delta must have a dispatch function registered in
+    the frontend; otherwise the frontend reports a fatal ``client_error`` back
+    to the backend (see ``EventNamespace.on_client_error``), since this
+    indicates mismatched frontend and backend state definitions.
+    """
 
     # The state delta.
     delta: DeltaMapping = dataclasses.field(default_factory=dict)

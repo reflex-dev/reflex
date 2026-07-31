@@ -24,6 +24,13 @@ import { uploadFiles } from "$/utils/helpers/upload";
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 
+// Socket event names (must match reflex_base/constants/event.py SocketEvent)
+const CLIENT_ERROR_EVENT = "client_error";
+
+// Client error types (must match reflex_base/constants/event.py ClientErrorType)
+const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
+const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -39,6 +46,10 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+// Set when the backend sends a delta the frontend cannot process. A mismatch
+// between frontend and backend state definitions is fatal (#6019): no further
+// events are sent until the frontend is rebuilt/reloaded.
+let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -519,6 +530,11 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
+  // A backend/frontend state mismatch is fatal; do not send further events.
+  if (backend_state_mismatch) {
+    return;
+  }
+
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
@@ -695,22 +711,54 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
-    if (update.delta && Object.keys(update.delta).length > 0) {
-      for (const substate in update.delta) {
-        dispatch[substate](update.delta[substate]);
-        // handle events waiting for `is_hydrated`
-        if (
-          substate === state_name &&
-          update.delta[substate]?.is_hydrated_rx_state_
-        ) {
-          queueEvents(on_hydrated_queue, socket, false, navigate, params);
-          on_hydrated_queue.length = 0;
-        }
-      }
-      applyClientStorageDelta(client_storage, update.delta);
+    if (backend_state_mismatch) {
+      // A fatal state mismatch was already detected; drop further updates.
+      return;
     }
-    if (update.events && update.events.length > 0) {
-      queueEvents(update.events, socket, false, navigate, params);
+    // Validate the full delta before dispatching anything so a bad substate
+    // does not result in a partially applied state update.
+    const missing_substates = Object.keys(update.delta ?? {}).filter(
+      (substate) => typeof dispatch[substate] !== "function",
+    );
+    if (missing_substates.length > 0) {
+      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
+        '", "',
+      )}". This usually indicates a mismatch between frontend and backend state definitions. Please rebuild the frontend or check that api_url is correct.`;
+      console.error(errorMsg);
+      // Surface the error in the backend terminal logs.
+      socket.current.emit(CLIENT_ERROR_EVENT, {
+        message: errorMsg,
+        substate: missing_substates.join(", "),
+        error_type: ERROR_TYPE_DISPATCH_MISSING,
+      });
+      backend_state_mismatch = true;
+      return;
+    }
+    try {
+      if (update.delta && Object.keys(update.delta).length > 0) {
+        for (const substate in update.delta) {
+          dispatch[substate](update.delta[substate]);
+          // handle events waiting for `is_hydrated`
+          if (
+            substate === state_name &&
+            update.delta[substate]?.is_hydrated_rx_state_
+          ) {
+            queueEvents(on_hydrated_queue, socket, false, navigate, params);
+            on_hydrated_queue.length = 0;
+          }
+        }
+        applyClientStorageDelta(client_storage, update.delta);
+      }
+      if (update.events && update.events.length > 0) {
+        queueEvents(update.events, socket, false, navigate, params);
+      }
+    } catch (error) {
+      console.error("Error processing state update:", error);
+      // Surface the error in the backend terminal logs.
+      socket.current.emit(CLIENT_ERROR_EVENT, {
+        message: error.message || String(error),
+        error_type: ERROR_TYPE_STATE_UPDATE,
+      });
     }
   });
   socket.current.on("new_token", async (new_token) => {
