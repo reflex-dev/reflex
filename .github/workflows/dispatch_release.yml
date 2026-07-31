@@ -1,11 +1,50 @@
 name: Dispatch release
 
-# REQUIRED CONFIGURATION: any action starting with `release-` is gated on the
-# `dispatch-release-approval` environment. The gate only enforces a second
-# approval if that environment has required reviewers configured in repo
-# Settings → Environments. Without reviewers configured, the gate job
-# auto-succeeds and provides NO protection — verify the environment is set up
-# before relying on this workflow for production releases.
+# Kicks off a release by materializing news fragments into the selected
+# packages' CHANGELOG.md files at the next version — the changelogs are the
+# source of truth for publishing (see release_from_changelog.yml, which
+# builds any changelog version that has no git tag yet and uploads it once
+# the pypi environment deployment is approved).
+#
+# Leaving every package unchecked auto-selects the packages to release:
+# those with pending news fragments — or, for release-from-prerelease, those
+# whose changelog is topped by an alpha (the train's fragments are already
+# consumed). Fragments in the repo-root news/ select reflex-base, which
+# releases reflex alongside it.
+#
+# Prerelease actions (new-prerelease-*, continued-prerelease) write alpha
+# versions and push them straight to an r/pre-<date> branch (continued
+# prereleases push back to the r/pre-* branch the workflow was dispatched
+# on); alphas build immediately and upload after pypi environment approval —
+# no PR review involved. To pull new work into a prerelease train, merge
+# main into the r/pre-* branch, then dispatch continued-prerelease on it.
+#
+# Release actions (release-*) open a pull request with the changelog changes
+# instead — reviewing and merging that PR is how final versions land for
+# publishing. The PR targets main, or the r/hotfix/** branch the workflow
+# was dispatched on (hotfix branches may publish final versions directly).
+# release-from-prerelease collapses the accumulated alpha sections into the
+# single final-version section, so alpha headings never appear in a
+# published final changelog.
+#
+# Materializing changelogs never publishes by itself: every PyPI upload —
+# alphas included — additionally requires approval by the `pypi`
+# environment's required reviewers (see publish.yml).
+#
+# REQUIRED CONFIGURATION:
+# - The `pypi` environment must have required reviewers (asserted, fail
+#   closed, by publish.yml).
+# - "Allow GitHub Actions to create and approve pull requests" must be
+#   enabled in the repo's Actions settings for release-* actions to open PRs.
+# - Branch protection on main should require review; merging a release PR is
+#   what lands final versions for publishing.
+# - Recommended: a ruleset restricting who can create/push r/** and
+#   release/** branches to maintainers plus the github-actions[bot] app
+#   (this workflow pushes as github-actions[bot] via GITHUB_TOKEN).
+# - If the pypi environment restricts deployment branches, allow main,
+#   r/pre-*, and r/hotfix/*.
+# - The old dispatch-release-approval environment is no longer used; the
+#   pypi environment reviewers and release-PR review replace it.
 
 on:
   workflow_dispatch:
@@ -98,6 +137,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: dispatch-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   detect:
     runs-on: ubuntu-latest
@@ -130,13 +173,13 @@ jobs:
           reflex_i18n: ${{ inputs.reflex_i18n }}
         run: bash .github/scripts/dispatch_release/detect.sh
 
-  plan:
+  materialize:
     needs: detect
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-    outputs:
-      releases: ${{ steps.plan.outputs.releases }}
+      contents: write
+      pull-requests: write
+      actions: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -144,58 +187,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-      - id: plan
+      - name: Plan versions
+        id: plan
         env:
           PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
           ACTION: ${{ inputs.action }}
-        run: uv run --script .github/scripts/dispatch_release/plan.py
-
-  gate:
-    needs: plan
-    if: ${{ startsWith(inputs.action, 'release-') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    environment: dispatch-release-approval
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Show release plan
+        run: uv run --no-config --locked --script scripts/release.py plan
+      - name: Materialize changelogs
         env:
-          RELEASES: ${{ needs.plan.outputs.releases }}
+          RELEASES_JSON: ${{ steps.plan.outputs.releases }}
           ACTION: ${{ inputs.action }}
-        run: bash .github/scripts/dispatch_release/show_plan.sh
-
-  release:
-    needs: [plan, gate]
-    if: ${{ always() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.plan.outputs.releases) }}
-      fail-fast: false
-    concurrency:
-      group: dispatch-release-${{ matrix.package }}
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Create GitHub release
+        run: uv run --no-config --locked --script scripts/release.py materialize
+      - name: Push prerelease branch
+        if: ${{ !startsWith(inputs.action, 'release-') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ matrix.tag }}
-          PKG: ${{ matrix.package }}
-          VERSION: ${{ matrix.next }}
           ACTION: ${{ inputs.action }}
-        run: bash .github/scripts/dispatch_release/create_release.sh
-      - name: Trigger publish workflow
+          REF_NAME: ${{ github.ref_name }}
+          RELEASES: ${{ steps.plan.outputs.releases }}
+        run: bash .github/scripts/dispatch_release/push_prerelease.sh
+      - name: Open release pull request
+        if: ${{ startsWith(inputs.action, 'release-') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ matrix.tag }}
-          REF: ${{ github.ref_name }}
-        run: bash .github/scripts/dispatch_release/trigger_publish.sh
+          ACTION: ${{ inputs.action }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASES: ${{ steps.plan.outputs.releases }}
+        run: bash .github/scripts/dispatch_release/open_release_pr.sh
