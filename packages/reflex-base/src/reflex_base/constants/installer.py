@@ -147,16 +147,16 @@ class PackageJson(SimpleNamespace):
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.5.0",
-        "postcss": "8.5.21",
+        "autoprefixer": "10.5.4",
+        "postcss": "8.5.22",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.0.16",
+        "vite": "8.2.0",
     }
     # Force specific transitive npm deps to a single resolved version when needed.
     OVERRIDES: dict[str, str] = {
         # postcss < 8.5.18 carries a security advisory; force transitive
         # resolutions up to a patched release.
-        "postcss": "8.5.21",
+        "postcss": "8.5.22",
     }
