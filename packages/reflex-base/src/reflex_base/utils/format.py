@@ -9,6 +9,11 @@ import re
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
+try:
+    import orjson  # pyright: ignore[reportMissingImports]
+except ImportError:
+    orjson = None
+
 from reflex_base import constants
 from reflex_base.utils import exceptions
 
@@ -686,40 +691,40 @@ def json_dumps(obj: Any, **kwargs) -> str:
 def orjson_dumps(obj: Any, **kwargs) -> str:
     """Serialize obj to a JSON string, using orjson when available.
 
-    Translates common json.dumps kwargs (indent, sort_keys) into orjson
-    option flags.  Falls back to ``json_dumps`` (which has the
-    ``serializers.serialize`` default) if orjson is not installed, an
-    unsupported kwarg is passed, or orjson raises TypeError.
+    Supports orjson's two-space indentation and key sorting, falling back to
+    ``json_dumps`` for unsupported arguments or values.
+
+    Non-finite floats diverge between the backends: orjson emits ``null``
+    while stdlib emits bare ``NaN``/``Infinity`` tokens. Use
+    ``orjson_dumps_socket`` for payloads that may contain them.
 
     Args:
         obj: The object to serialize.
-        kwargs: Optional keyword arguments (indent, sort_keys).
+        kwargs: Optional keyword arguments (indent, sort_keys, ensure_ascii).
 
     Returns:
         A JSON string.
     """
-    try:
-        import orjson  # pyright: ignore[reportMissingImports]
-    except ImportError:
+    indent = kwargs.get("indent")
+    if (
+        orjson is None
+        # orjson only supports two-space indentation and always emits UTF-8.
+        or indent not in (None, 2)
+        or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
+    ):
         return json_dumps(obj, **kwargs)
 
     option = 0
-    if kwargs.pop("indent", None):
+    if indent:
         option |= orjson.OPT_INDENT_2
-    if kwargs.pop("sort_keys", False):
+    if kwargs.get("sort_keys"):
         option |= orjson.OPT_SORT_KEYS
-    kwargs.pop("ensure_ascii", None)  # orjson always produces UTF-8
-
-    if kwargs:
-        # Fall back to stdlib json for unsupported kwargs.
-        return json_dumps(obj, **kwargs)
 
     try:
         return orjson.dumps(obj, option=option or None).decode()
     except TypeError:
-        # Fallback for types orjson can't handle (e.g. int > 64-bit, or
-        # custom types). ``json_dumps`` carries the serializer default.
-        return json_dumps(obj)
+        # json_dumps handles large integers and registered custom types.
+        return json_dumps(obj, **kwargs)
 
 
 def orjson_loads(data: str | bytes) -> Any:
@@ -733,11 +738,8 @@ def orjson_loads(data: str | bytes) -> Any:
     Returns:
         The deserialized Python object.
     """
-    try:
-        import orjson  # pyright: ignore[reportMissingImports]
-    except ImportError:
+    if orjson is None:
         return json.loads(data)
-
     return orjson.loads(data)
 
 
@@ -750,7 +752,21 @@ NEG_INF_SENTINEL = "__reflex_neg_inf__"
 SENTINEL_ESCAPE_PREFIX = "__reflex_esc__"
 _SENTINELS = frozenset({NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL})
 _SENTINEL_COMMON_PREFIX = "__reflex_"
+_SENTINEL_PREFIX_BYTES = b"__reflex_"
 _INF = float("inf")
+
+_ORJSON_SOCKET_OPTS = (
+    (
+        orjson.OPT_NON_STR_KEYS
+        | orjson.OPT_PASSTHROUGH_DATACLASS
+        # Route datetimes through default= so they get the same
+        # space-separated format that ``serializers.serialize_datetime``
+        # produces; orjson's native output uses an ISO 'T' separator.
+        | orjson.OPT_PASSTHROUGH_DATETIME
+    )
+    if orjson is not None
+    else 0
+)
 
 
 def _replace_non_finite_floats(obj: Any) -> Any:
@@ -799,9 +815,13 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     stdlib ``json_dumps`` behavior), substitutes sentinel strings for
     NaN/Infinity floats, and escapes colliding user strings.
 
+    The object graph is only walked when the first serialization finds a
+    possible non-finite value or sentinel collision. The stdlib fallback keeps
+    bare non-finite tokens, which the frontend restores.
+
     Accepts and ignores ``**kwargs`` so the callable is compatible with
     socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
-    orjson's output is already minified.
+    Output is compact in both backends.
 
     Args:
         obj: The object to serialize.
@@ -810,35 +830,42 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     Returns:
         A JSON string ready for socket emit.
     """
-    del kwargs  # orjson output is minified; socket.io's separators arg is moot.
+    del kwargs  # Output is always compact; socket.io's separators arg is moot.
     from reflex_base.utils import serializers
 
-    try:
-        import orjson  # pyright: ignore[reportMissingImports]
-    except ImportError:
-        return json_dumps(_replace_non_finite_floats(obj))
+    if orjson is None:
+        out = json_dumps(obj, separators=(",", ":"))
+        if _SENTINEL_COMMON_PREFIX in out:
+            out = json_dumps(_replace_non_finite_floats(obj), separators=(",", ":"))
+        return out
 
-    def _default(o: Any) -> Any:
+    def _default_fast(o: Any) -> Any:
         # orjson passes float subclasses (not int/str) to default.
+        if isinstance(o, float):
+            return float(o)
+        return serializers.serialize(o)
+
+    try:
+        out = orjson.dumps(obj, default=_default_fast, option=_ORJSON_SOCKET_OPTS)
+    except TypeError:
+        return json_dumps(_replace_non_finite_floats(obj), separators=(",", ":"))
+
+    if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
+        return out.decode()
+
+    # orjson converts non-finite floats to null; sentinel prefixes may collide.
+    def _default_walked(o: Any) -> Any:
         if isinstance(o, float):
             return float(o)
         return _replace_non_finite_floats(serializers.serialize(o))
 
+    walked = _replace_non_finite_floats(obj)
     try:
         return orjson.dumps(
-            _replace_non_finite_floats(obj),
-            default=_default,
-            option=(
-                orjson.OPT_NON_STR_KEYS
-                | orjson.OPT_PASSTHROUGH_DATACLASS
-                # Route datetimes through default= so they get the same
-                # space-separated format that ``serializers.serialize_datetime``
-                # produces; orjson's native output uses an ISO 'T' separator.
-                | orjson.OPT_PASSTHROUGH_DATETIME
-            ),
+            walked, default=_default_walked, option=_ORJSON_SOCKET_OPTS
         ).decode()
     except TypeError:
-        return json_dumps(_replace_non_finite_floats(obj))
+        return json_dumps(walked, separators=(",", ":"))
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

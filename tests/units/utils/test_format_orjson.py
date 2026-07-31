@@ -339,3 +339,112 @@ def test_unknown_type_serializes_to_null():
 
     out = orjson_dumps_socket({"x": Unknown()})
     assert orjson_loads(out) == {"x": None}
+
+
+@pytest.fixture
+def no_orjson(monkeypatch: pytest.MonkeyPatch):
+    """Simulate orjson not being installed.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.utils import format as format_module
+
+    monkeypatch.setattr(format_module, "orjson", None)
+
+
+def test_fallback_emits_bare_non_finite_tokens(no_orjson):
+    """Without orjson, non-finite floats stay as bare stdlib tokens; the
+    frontend's bare-token rewriter restores them, so no walk is needed.
+    """
+    assert (
+        orjson_dumps_socket([1.0, float("nan"), float("inf")]) == "[1.0,NaN,Infinity]"
+    )
+
+
+def test_fallback_uses_compact_separators(no_orjson):
+    assert orjson_dumps_socket({"a": 1, "b": [2, 3]}) == '{"a":1,"b":[2,3]}'
+
+
+def test_fallback_skips_walk_on_clean_payload(no_orjson, monkeypatch):
+    """The walker must not run when the output contains no sentinel prefix."""
+    from reflex_base.utils import format as format_module
+
+    def _fail(_obj):
+        pytest.fail("walker ran on a clean payload")
+
+    monkeypatch.setattr(format_module, "_replace_non_finite_floats", _fail)
+    out = orjson_dumps_socket({"rows": [{"id": 1, "name": "x"}] * 5, "f": 1.5})
+    assert json.loads(out) == {"rows": [{"id": 1, "name": "x"}] * 5, "f": 1.5}
+
+
+@pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
+def test_fallback_escapes_colliding_strings(no_orjson, sentinel):
+    out = orjson_dumps_socket({"a": sentinel})
+    assert json.loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
+
+
+def test_fallback_collision_walk_sentinelizes_non_finite_floats(no_orjson):
+    """When a collision triggers the walk, NaN in the same payload becomes a
+    sentinel too, keeping the re-dumped output strict JSON.
+    """
+    out = orjson_dumps_socket({"s": NAN_SENTINEL, "f": float("nan")})
+    assert json.loads(out) == {
+        "s": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
+        "f": NAN_SENTINEL,
+    }
+
+
+def test_orjson_dumps_indent_4_falls_back_to_stdlib():
+    """Orjson only supports 2-space indent; other widths must not be
+    silently coerced to 2.
+    """
+    out = orjson_dumps({"a": 1}, indent=4)
+    assert out == json.dumps({"a": 1}, indent=4, ensure_ascii=False)
+
+
+def test_orjson_dumps_indent_2_matches_orjson():
+    import orjson as orjson_module
+
+    assert (
+        orjson_dumps({"a": 1}, indent=2)
+        == orjson_module.dumps({"a": 1}, option=orjson_module.OPT_INDENT_2).decode()
+    )
+
+
+def test_orjson_dumps_type_error_fallback_preserves_kwargs():
+    """Orjson raises TypeError for ints > 64-bit; the stdlib fallback must
+    keep sort_keys/indent instead of dropping them.
+    """
+    out = orjson_dumps({"b": 2**70, "a": 1}, sort_keys=True)
+    assert out.index('"a"') < out.index('"b"')
+
+
+def test_orjson_skips_walk_on_clean_payload(monkeypatch: pytest.MonkeyPatch):
+    """A payload without None/NaN/collisions must serialize in one pass."""
+    from reflex_base.utils import format as format_module
+
+    def _fail(_obj):
+        pytest.fail("walker ran on a clean payload")
+
+    monkeypatch.setattr(format_module, "_replace_non_finite_floats", _fail)
+    payload = {"rows": [{"id": 1, "name": "x", "balance": 1.5}] * 3}
+    assert orjson_loads(orjson_dumps_socket(payload)) == payload
+
+
+def test_orjson_none_values_stay_null():
+    """None triggers the verification walk but must still serialize as null."""
+    payload = {"a": None, "b": [None, 1.0], "c": "x"}
+    assert orjson_loads(orjson_dumps_socket(payload)) == payload
+
+
+def test_orjson_null_substring_in_string_is_safe():
+    """A user string containing 'null' may trigger the walk but not corruption."""
+    payload = {"msg": "the null hypothesis", "n": 1}
+    assert orjson_loads(orjson_dumps_socket(payload)) == payload
+
+
+def test_orjson_none_and_nan_together():
+    """Real None stays null while NaN in the same payload becomes a sentinel."""
+    out = orjson_dumps_socket({"a": None, "b": float("nan")})
+    assert orjson_loads(out) == {"a": None, "b": NAN_SENTINEL}
