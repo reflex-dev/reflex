@@ -32,6 +32,8 @@ from reflex_cli.utils.exceptions import (
     ResponseError,
     ScaleAppError,
     ScaleParamError,
+    TokenAccessDeniedError,
+    TokenValidationError,
 )
 
 
@@ -417,8 +419,8 @@ def validate_token(token: str) -> dict[str, Any]:
         Information about the user associated with the token.
 
     Raises:
-        ValueError: if access denied.
-        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
+        TokenAccessDeniedError: if access denied.
+        TokenValidationError: if runs into timeout, failed requests, unexpected errors. These should be tried again.
 
     """
     import httpx
@@ -446,18 +448,18 @@ def validate_token(token: str) -> dict[str, Any]:
         console.debug(
             f"Request to auth server failed due to {re} (request id: {request_id})"
         )
-        raise Exception(str(re)) from re
+        raise TokenValidationError(str(re), request_id=request_id) from re
     except httpx.HTTPError as ex:
         console.debug(
             f"Unable to validate the token due to: {ex} (request id: {request_id})"
         )
-        raise Exception("server error") from ex
+        raise TokenValidationError("server error", request_id=request_id) from ex
     except ValueError as ve:
         console.debug(f"Access denied (request id: {request_id})")
-        raise ValueError("access denied") from ve
+        raise TokenAccessDeniedError("access denied", request_id=request_id) from ve
     except Exception as ex:
         console.debug(f"Unexpected error: {ex} (request id: {request_id})")
-        raise Exception("internal errors") from ex
+        raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
 def delete_token_from_config():
@@ -2511,13 +2513,15 @@ def validate_token_with_retries(access_token: str) -> dict[str, Any]:
     with console.status("Validating access token ..."):
         try:
             return validate_token(access_token)
-        except ValueError:
-            console.error(f"Access denied (auth request id: {get_auth_request_id()})")
+        except ValueError as ex:
+            # getattr: mocks/foreign ValueErrors don't carry a request id.
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
+            console.error(f"Access denied (auth request id: {request_id})")
             delete_token_from_config()
         except Exception as ex:
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
             console.warn(
-                f"Unable to validate access token: {ex} "
-                f"(auth request id: {get_auth_request_id()})"
+                f"Unable to validate access token: {ex} (auth request id: {request_id})"
             )
     return {}
 

@@ -7,6 +7,7 @@ import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
+from reflex_cli.utils.exceptions import TokenValidationError
 from reflex_cli.utils.hosting import (
     AuthenticatedClient,
     ScaleParams,
@@ -640,3 +641,13 @@ def test_validate_token_with_retries_access_denied_reports_request_id(
     assert validate_token_with_retries("some-token") == {}
 
     assert get_auth_request_id() in mock_error.call_args.args[0]
+
+
+def test_validate_token_failure_carries_request_id_on_exception(mocker: MockerFixture):
+    """Validation errors carry the request id of their own request."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 500, "boom"))
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        validate_token("some-token")
+
+    assert exc_info.value.request_id == get_auth_request_id() != ""
