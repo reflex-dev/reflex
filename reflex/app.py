@@ -1913,6 +1913,12 @@ class EventNamespace(AsyncNamespace):
     # client_error event before further reports from it are dropped.
     _MAX_CLIENT_ERRORS_PER_SID = 5
 
+    # Process-wide bound on error-level client_error log entries per time
+    # window; per-SID budgets alone reset on reconnect, so scripted
+    # reconnects could otherwise flood the logs.
+    _CLIENT_ERROR_WINDOW_SECONDS = 60.0
+    _MAX_CLIENT_ERRORS_PER_WINDOW = 20
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1928,6 +1934,10 @@ class EventNamespace(AsyncNamespace):
 
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
+
+        # Start time and count of the current process-wide client_error window.
+        self._client_error_window_start = 0.0
+        self._client_error_window_count = 0
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
@@ -2188,6 +2198,16 @@ class EventNamespace(AsyncNamespace):
         error_count = self._client_error_counts.get(sid, 0)
         if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
             return
+
+        # Also bound total entries per time window: per-SID budgets reset on
+        # reconnect, so they alone do not stop scripted reconnect loops.
+        now = time.monotonic()
+        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
+            self._client_error_window_start = now
+            self._client_error_window_count = 0
+        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            return
+        self._client_error_window_count += 1
         self._client_error_counts[sid] = error_count + 1
 
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:

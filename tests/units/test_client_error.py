@@ -194,6 +194,37 @@ async def test_error_level_logging_is_rate_limited_per_sid(
     assert "known_sid" not in event_namespace._client_error_counts
 
 
+@pytest.mark.asyncio
+async def test_error_logging_bounded_across_reconnects(
+    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+):
+    """Reconnecting with fresh SIDs does not grant an unlimited log budget.
+
+    Args:
+        event_namespace: The event namespace.
+        console_output: Captured console messages.
+    """
+    for reconnect in range(50):
+        sid = f"sid_{reconnect}"
+        event_namespace.sid_to_token[sid] = f"token_{reconnect}"
+        for _ in range(5):
+            await event_namespace.on_client_error(
+                sid, {"error_type": "custom_type", "message": "spam"}
+            )
+    assert len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
+    # Once the window elapses, errors are logged again (not silenced forever).
+    event_namespace._client_error_window_start -= (
+        EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
+    )
+    event_namespace.sid_to_token["sid_fresh"] = "token_fresh"
+    await event_namespace.on_client_error(
+        "sid_fresh", {"error_type": "custom_type", "message": "after window"}
+    )
+    assert (
+        len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
+    )
+
+
 def test_client_error_event_name_matches_handler():
     """python-socketio dispatches events to on_<event> methods by naming
     convention; this pins the handler to SocketEvent.CLIENT_ERROR.
