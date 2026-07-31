@@ -1,45 +1,63 @@
-# Installing External Packages
+---
+tags: AI Builder
+description: Install a supported Python dependency through the Reflex Build agent or by editing the app's requirements file.
+---
+
+# Install External Packages
 
 ```python exec
 import reflex as rx
 ```
 
-Reflex Build allows you to install external python packages to use in your app. This is useful if you want to use a package that is not included in the default Reflex Build environment. Examples might include `openai`, `langsmith`, `requests`, etc.
+Add a Python package when the app needs a library that is not already in its environment.
 
-There are two ways to install external packages:
+You can install one in either of these ways:
 
-1. **Through the Chat Interface**: You can ask the AI to install a package for you.
-2. **Add to the `requirements.txt` file**: You can add the package to the `requirements.txt` file and then save the app. This will install the package in your app's environment.
+1. Ask the agent to add the package while implementing a feature.
+2. Add the package to `requirements.txt` in **Code**, then save the file.
 
-## Installing through the Chat Interface
+## Ask the agent
 
-Enter the name of the package you want to install in the chat interface. The AI will then install the package for you.
+Describe the outcome and name the package when you already know which one to use:
 
+```text
+Use the requests package to call this REST endpoint. Add it to the app's
+dependencies and handle timeouts and non-success responses.
+```
 
 ```python eval
 rx.el.div(
     rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/external_packages_input.avif",
+        src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/agent_package_install.webp",
         alt="Installing external packages via the chat interface",
-        class_name="rounded-md h-auto",
+        class_name="rounded-md h-auto mb-4",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
     class_name="w-full flex flex-col rounded-md",
 )
 ```
 
-## Installing through the requirements.txt file
+## Edit `requirements.txt`
 
-Add the package to the `requirements.txt` file and then save the app. This will install the package in your app's environment and recompile your app.
+Open `requirements.txt` in **Code**, add the package on its own line, and save. Reflex installs the dependency and recompiles the app.
 
 ```python eval
 rx.el.div(
     rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/external_packages_requirements.avif",
+        src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/requirements_package_added.webp",
         alt="Installing external packages via requirements.txt",
-        class_name="rounded-md h-auto",
+        class_name="rounded-md h-auto mb-4",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
     class_name="w-full flex flex-col rounded-md",
 )
 ```
+
+Pin a version only when the app depends on behavior from that version. After installation, check **Preview** and the build output for compatibility or import errors.
+
+Some packages are too large or require system dependencies that are unavailable in the Builder environment. When that happens, use a hosted API or another supported service instead.
+
+## Related
+
+- [Python Libraries](/docs/ai/python-libraries/) — give the agent reusable guidance for a specialized package.
+- [Call an External API](/docs/ai/apis/) — connect to a hosted service instead of installing a package.

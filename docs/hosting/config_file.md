@@ -4,19 +4,19 @@ import reflex as rx
 
 # Cloud Config File
 
-## What is reflex cloud config?
+## Create `cloud.yml`
 
-The following command:
+Run:
 
 ```bash
 reflex cloud config
 ```
 
-generates a `cloud.yml` configuration file used to deploy your Reflex app to the Reflex cloud platform. This file tells Reflex how and where to run your app in the cloud.
+The command creates `cloud.yml`, which defines how Reflex Cloud should deploy the app.
 
-## Configuration File Structure
+## File structure
 
-The `cloud.yml` file uses YAML format and supports the following structure. **All fields are optional** and will use sensible defaults if not specified:
+Every field is optional:
 
 ```yaml
 # Basic deployment settings
@@ -39,7 +39,7 @@ packages:                          # Optional: empty by default
   - procps
 ```
 
-## Configuration Options Reference
+## Options reference
 
 ```python demo-only
 rx.table.root(
@@ -88,14 +88,14 @@ rx.table.root(
                 "object",
                 "sjc: 1",
                 "Region deployment mapping",
-                "/docs/hosting/regions",
+                "/docs-preview/hosting/regions",
             ),
             (
                 "vmtype",
                 "string",
                 "c1m1",
                 "Virtual machine specifications",
-                "/docs/hosting/machine-types",
+                "/docs-preview/hosting/machine-types",
             ),
             ("hostname", "string", "null", "Custom subdomain", None),
             (
@@ -103,7 +103,7 @@ rx.table.root(
                 "string",
                 ".env",
                 "Environment variables file path",
-                "/docs/hosting/secrets-environment-vars",
+                "/docs-preview/hosting/secrets-environment-vars",
             ),
             ("project", "uuid", "null", "Project uuid", None),
             ("projectname", "string", "null", "Project name", None),
@@ -119,9 +119,7 @@ rx.table.root(
 )
 ```
 
-## Configuration Options
-
-For details of specific sections click the links in the table.
+## Configuration details
 
 ### Projects
 
@@ -136,7 +134,7 @@ You can also specify a project uuid instead of name:
 project: 12345678-1234-1234-1234-1234567890ab
 ```
 
-You can go to the homepage of the project in the reflex cloud dashboard to find your project uuid in the url `https://build.reflex.dev/project/uuid`
+Copy the project ID from the project's settings in Reflex Build.
 
 ### Apt Packages
 
@@ -157,7 +155,7 @@ Include local sqlite database:
 include_db: true
 ```
 
-This is not persistent and will be lost on restart. It is recommended to use a database service instead.
+This database is not persistent and is lost when the app restarts. Use a database service for production data.
 
 ### Strategy
 
@@ -214,4 +212,3 @@ reflex deploy
 reflex deploy --config cloud-prod.yml
 reflex deploy --config cloud-staging.yml
 ```
-

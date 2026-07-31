@@ -44,8 +44,8 @@ def onboarding_resources() -> rx.Component:
         _resource_card(
             "Reflex Build",
             "Use Reflex Build when you want an AI-native environment for creating, editing, previewing, and shipping apps.",
-            "/ai/overview/best-practices/",
-            "Read best practices",
+            "/ai/overview/what-is-reflex-build/",
+            "Learn Reflex Build",
         ),
         class_name="grid grid-cols-1 gap-3 md:grid-cols-2 my-6",
     )
@@ -91,7 +91,7 @@ Use this when an agent needs one focused page.
 Use the generated docs index when an agent needs a broad map of Reflex docs:
 
 ```text
-https://reflex.dev/docs/llms.txt
+https://reflex.dev/llms.txt
 ```
 
 The index groups docs by section and links to agent-friendly Markdown assets.
@@ -163,7 +163,7 @@ Debug this Reflex app. Read the error and relevant logs, identify whether the fa
 
 Reflex Build is the AI-native way to create Reflex apps in the browser. Use it when you want to generate, edit, preview, and share apps without setting up a local environment first.
 
-Start with the [Reflex Build best practices](/docs/ai/overview/best-practices/) guide, then use MCP and Skills when you want your local assistant to keep working with the same Reflex concepts.
+Start with [What Is Reflex Build](/docs/ai/overview/what-is-reflex-build/), then use MCP and Skills when you want your local assistant to keep working with the same Reflex concepts.
 
 ## Recommended Validation
 

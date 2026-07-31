@@ -1,54 +1,34 @@
 ---
 tags: Organization
-description: Create custom project roles in Reflex, built on a base access level with the specific permissions your team needs.
+description: Create custom project roles with a base access level and the specific permissions your team needs.
 ---
 
-# Custom Roles
+# Custom Project Roles
 
-```python exec
-import reflex as rx
-```
+The built-in project roles (Viewer, Editor, and Admin) cover most cases, but sometimes you need something in between: a contractor who can build apps but not manage secrets, or a reviewer who can approve deployments or project access changes without editing. A **custom project role** defines that combination.
 
-The built-in project roles (Viewer, Editor, and Admin) cover most cases, but sometimes you need something in between: a contractor who can build and deploy apps but nothing else, or a reviewer who can approve deployments without editing. A **custom role** defines that combination.
+Custom roles are created per project from **Roles** in the project sidebar, by anyone with the project **Admin** role.
 
-Custom roles are created per project, under **Settings → Roles**, by anyone with the project **Admin** role.
+Organization custom roles are separate. They start with Member access and add organization permissions such as creating projects, managing billing, or viewing audit logs. See [Organization roles](/docs/ai/organization/roles-and-permissions/#custom-organization-roles).
 
 ```md alert info
-# Custom roles are for teams
+# Custom roles require collaboration
 Custom roles matter once you have teammates on a project. Inviting teammates is an Enterprise feature; see [Managing project access](/docs/ai/organization/project-access/).
 ```
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/custom-roles/roles_list.webp",
-    alt="The project Roles tab listing built-in roles and a custom role, with a New role button",
-    class_name="rounded-md h-auto",
-)
-```
+## Create a custom role
 
-## How a custom role is built
+Select **New role**, then define:
 
-A custom role has two parts:
-
-1. **Base access level**: Viewer, Editor, or Admin. The role includes everything that level can do.
-2. **Additional permissions**: individual abilities you add on top of the base level.
+1. **Role name**: a label your team will recognize, such as *Support lead* or *Release manager*.
+2. **Base access**: Viewer, Editor, or Admin. The role includes everything that level can do.
+3. **Additional permissions**: individual abilities to add on top of the base level.
 
 Pick the closest built-in level, then add the permissions you need.
 
-## Creating a role
-
-Select **New role** and fill in:
-
-- **Role name**: a label your team will recognize, such as *Support lead* or *Release manager*.
-- **Base access**: the starting level (Viewer, Editor, or Admin).
-- **Additional permissions**: the abilities to add on top.
-
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/custom-roles/create_role_dialog.webp",
-    alt="The Create role dialog showing a name field, a base access dropdown, and grouped permission checkboxes",
-    class_name="rounded-md h-auto",
-)
+```md alert info
+# Roles assigned to teams cannot be based on Admin
+Teams can use custom roles based on Viewer or Editor. Assign the built-in Admin role directly to a person when they need full project control.
 ```
 
 Permissions that come with the base level are shown ticked and greyed out; they're part of the role and can't be removed. You choose everything else.
@@ -65,7 +45,8 @@ Permissions that come with the base level are shown ticked and greyed out; they'
 | | View secret names | See which secrets exist (names only) |
 | | Reveal secret values | See the value of a secret |
 | | Edit secrets | Add, change, and remove secrets |
-| **Deployments** | Approve deployments | Approve or reject deployments that need sign-off |
+| **Approvals** | Approve deployments | Approve or reject deployments that need sign-off |
+| | Approve project changes | Approve or reject member additions, removals, and role changes |
 | **Activity** | View audit log | See the project's activity history |
 
 ```md alert info
@@ -84,15 +65,18 @@ Either one amounts to admin control. If someone needs it, give them the Admin ro
 
 ## Assigning a custom role
 
-A custom role appears in the role dropdown wherever you assign project roles: when [adding members](/docs/ai/organization/project-access/) and when changing an existing member's role. Each custom role shows its base level and how many permissions it adds.
+A custom role appears in the role dropdown on the project's **Members** page. Assign it directly to a member or, when it is based on Viewer or Editor, to a [team](/docs/ai/organization/teams/). Each custom role shows its base level and how many permissions it adds.
 
 ## Editing and deleting roles
 
-From the Roles tab, **edit** a custom role to rename it or change its permissions. Built-in roles can't be edited and carry a **Built-in** badge.
+From the Roles tab, **edit** a custom role to rename it or change its permissions. The preview shows which capabilities will be added or removed and identifies the directly assigned members and teams affected.
 
-To **delete** a custom role, first reassign any members using it to another role. Reflex won't delete a role while members are still assigned to it.
+Saving changes updates access for everyone who holds the role, including every member of an assigned team. A role held by a team cannot be changed to the Admin base level; reassign the team first.
+
+To **delete** a custom role, first reassign every member and team using it. Reflex will not delete a role while a direct member or team assignment remains.
 
 ## Related
 
 - [Managing project access](/docs/ai/organization/project-access/) — assign a role to members.
+- [Teams](/docs/ai/organization/teams/) — assign a role once for a group.
 - [Roles & permissions](/docs/ai/organization/roles-and-permissions/) — how the built-in roles are made up.

@@ -1,85 +1,46 @@
+# Custom Domains
+
+Add a domain you control to a deployed Reflex Cloud app.
+
 ```python exec
 import reflex as rx
 ```
 
-# Custom Domains
+## Add the Domain
 
-
-With the Enterprise tier of Reflex Cloud you can use your own custom domain to host your app. 
-
-## Prerequisites
-
-You must purchase a domain from a domain registrar such as GoDaddy, Cloudflare, Namecheap, or AWS. 
-
-For this tutorial we will use GoDaddy and the example domain `tomgotsman.us`.
-
-
-## Steps
-
-Once you have purchased your domain, you can add it to your Reflex Cloud app by following these steps:
-
-1 - Ensure you have deployed your app to Reflex Cloud.
-
-2 - Once your app is deployed click the `Custom Domain` tab and add your custom domain to the input field and press the Add domain button. You should now see a page like below:
+1. Open **Deployments** and select the app.
+2. Select **Custom Domain**.
+3. Enter the domain, such as `app.example.com`.
+4. Select **Add domain**.
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/custom-domains-DNS-inputs.webp",
-    alt="Custom domain DNS record inputs",
+    src="https://web.reflex-assets.dev/docs-preview/hosting/custom_domain.webp",
+    alt="Custom domain configuration and DNS records for a hosted app",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-```python eval
-rx.box(height="20px")
-```
+## Change DNS Records
 
-3 - On the domain registrar's website, navigate to the DNS settings for your domain. It should look something like the image below:
+After the domain is added, Reflex shows the exact DNS records required for that app. Add every displayed record at the DNS provider that manages the domain.
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/other/custom-domains-DNS-before.webp",
-    alt="DNS settings before adding custom domain records",
-)
-```
+- Copy the host and value exactly.
+- Some DNS providers automatically append the root domain; avoid entering it twice.
+- Remove or update an existing conflicting record only after confirming it belongs to the same hostname.
 
-```python eval
-rx.box(height="20px")
-```
+Use the records shown in the current dashboard rather than values from an example or an older deployment.
 
-4 - Add all four of the DNS records provided by Reflex Cloud to your domain registrar's DNS settings. If there is already an A name record, delete it and replace it with the one provided by Reflex Cloud. Your DNS settings should look like the image below:
+## Verify
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/other/custom-domains-DNS-after.webp",
-    alt="DNS settings after adding custom domain records",
-)
-```
+Return to **Custom Domain** and check verification. DNS propagation can take from a few minutes to several hours.
 
-```md alert warning
-# It may alert you that this record will resolve on ######.tomgotsman.us.tomgotsman.us.
-If this happens ensure that you select to only have the record resolve on ######.tomgotsman.us.
-```
+If verification fails:
 
-```md alert warning
-# Your domain provider may not support an Apex CNAME record, in this case just use an A record.
-![Image showing failed CNAME record](/custom-domains-CNAME-fail.png)
-```
+- Confirm the record type, host, and value.
+- Check for a duplicate or conflicting record.
+- Verify that the DNS provider did not append the domain twice.
+- Wait for propagation and retry.
 
-```python eval
-rx.box(height="20px")
-```
-
-5 - Once you have added the DNS records, refresh the page on the Reflex Cloud page (it may take a few minutes to a few hours to update successfully). If the records are correct, you should see a success message like the one below:
-
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/other/custom-domains-success.webp",
-    alt="Custom domain successfully configured",
-)
-```
-
-```python eval
-rx.box(height="20px")
-```
-
-6 - Now redeploy your app using the `reflex deploy` command and your app should now be live on your custom domain!
+Once verified, the domain appears on the app's **Deployment** page.

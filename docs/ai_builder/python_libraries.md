@@ -1,46 +1,37 @@
+---
+tags: AI Builder
+description: Add supported Python libraries to a Reflex Build app and give the agent focused guidance for specialized packages.
+---
+
 # Python Libraries
 
+Reflex Build can add supported Python packages to an app. Ask for the behavior you need and name a package when you have already chosen one:
 
-Not every service or tool has a first-class integration — but your app can still connect to **any Python library** directly. By leveraging the built-in Python runtime, the AI Builder can install packages, import libraries, and call their functions from workflows or components. This gives you maximum flexibility to extend your app with the broader Python ecosystem.
-
-When you ask for a certain functionality the AI Builder will first check if there is a `first-class integration` available. If not, it will `search the web` to try and find a relevant Python library to fulfill your request. If it finds one, it will install the package and ask you to set any `API keys` that are required.
-
-
-## Example Use Cases
-
-### Slack 
-
-There is no built-in integration for Slack. But if you ask the AI Builder to send a message to a Slack channel, it will research itself the best implementation and then use the `slack_sdk` Python package to send the message.
-
-
-### Scikit-learn
-
-There is no built-in integration for Scikit-learn. But if you ask the AI Builder to classify some text using scikit-learn, it will research itself the best implementation and then use the `scikit-learn` Python package to load a pre-trained model and classify the text.
-
-
-
-
-## Adding Custom Knowledge
-
-If you are working with a specialized / less well-known library, you can add custom knowledge to help the AI Builder understand how to use it. Simply provide a brief description of the library, its purpose, and example usage in the **Knowledge** section of your app settings. This will guide the AI Builder when it attempts to call functions from that library.
-
-```python exec
-import reflex as rx
+```text
+Use pandas to validate the attached CSV. Show rows with missing email addresses
+or invalid dates before the user confirms the import.
 ```
 
-```md alert warning
-# Where to find the Knowledge Section
-```
+The agent can use web search to check current package documentation when needed. Review the selected package, version, and license before shipping the app.
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/ai_builder/features/knowledge_light.avif",
-    alt="Where to find the Knowledge Section",
-    class_name="rounded-lg border border-secondary-a4 mb-2",
-)
-```
+See [Install External Packages](/docs/ai/features/installing-external-packages/) for chat and `requirements.txt` workflows.
 
+## Add library guidance to Knowledge
 
-## What is Not Supported
+For a specialized package, add short usage instructions to the app's **Knowledge**:
 
-There are a very small number of libraries that are not supported due to their size. For example, large machine learning frameworks like `torch` or `tensorflow` are not supported directly. In these cases, we recommend using a first-class integration that can emulate similar functionality (e.g., the Replicate integration for running ML models in the cloud).
+- The package name and purpose.
+- The version or API surface the app should use.
+- A small example of the expected usage.
+- Any constraints the agent must preserve.
+
+See [Knowledge](/docs/ai/features/knowledge/) for project-wide and app-specific instructions.
+
+## Package limitations
+
+Some packages are too large or depend on operating-system libraries that are unavailable in the Builder environment. If a package cannot be installed, use a hosted API or another supported service for that capability.
+
+## Related
+
+- [Install External Packages](/docs/ai/features/installing-external-packages/) — add or pin a dependency.
+- [Call an External API](/docs/ai/apis/) — use an HTTP API when a local package is unsuitable.

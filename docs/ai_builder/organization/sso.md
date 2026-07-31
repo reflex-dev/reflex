@@ -5,21 +5,9 @@ description: Set up single sign-on (SSO) so your team signs in to Reflex through
 
 # Single Sign-On (SSO)
 
-```python exec
-import reflex as rx
-```
+**Single sign-on (SSO)** lets your team authenticate to Reflex through your company's identity provider, using the same login as your other work tools. It controls sign-in; it does not provision or remove organization members.
 
-**Single sign-on (SSO)** lets your team sign in to Reflex through your company's identity provider, using the same login as your other work tools. People don't manage separate Reflex credentials, and your IT team controls access from one place.
-
-Reflex supports **SAML** and **OIDC**, so it works with providers such as Okta, Microsoft Entra ID, and Google Workspace. SSO is set up on the **Domains** page (Settings → Domains), where it appears as a Single sign-on card once a domain is verified. It's part of the **Enterprise** plan.
-
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/sso/sso_card.webp",
-    alt="The Single sign-on settings card showing an Enable SSO button and status badge",
-    class_name="rounded-md h-auto",
-)
-```
+Reflex supports **SAML** and **OIDC**, so it works with providers such as Okta, Microsoft Entra ID, and Google Workspace. SSO is set up from **Domains** in the organization sidebar, where it appears as a Single sign-on card once a domain is verified. It's part of the **Enterprise** plan.
 
 ## Before you begin
 
@@ -40,7 +28,9 @@ Only organization admins can enable, configure, or disable single sign-on.
 
 ## How members sign in
 
-With SSO enabled, people on your verified domain are sent to your provider to sign in. Access is governed there, so removing someone in your provider also removes their access to Reflex.
+With SSO enabled, people on your verified domain are sent to your provider to sign in. Disabling an account in the provider prevents future SSO authentication, but it does not remove that person from the Reflex organization.
+
+Use [Directory sync (SCIM)](/docs/ai/organization/provisioning/) when your identity provider should create, update, and deprovision organization members. Remove a member in Reflex directly when SCIM is not configured.
 
 ## Disabling SSO
 
@@ -51,4 +41,5 @@ Disabling SSO doesn't remove anyone; existing members keep their access. You can
 ## Related
 
 - [Verified domains & auto-join](/docs/ai/organization/domains/) — the prerequisite for SSO.
+- [Directory sync (SCIM)](/docs/ai/organization/provisioning/) — provision and deprovision members from an identity provider.
 - [Members & seats](/docs/ai/organization/members/) — manage who belongs to the organization.
