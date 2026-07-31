@@ -29,6 +29,7 @@ class RadioGroupRoot(RadixThemesComponent):
     """A set of interactive radio buttons where only one can be selected at a time."""
 
     tag = "RadioGroup.Root"
+    _is_form_control = True
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         default=LiteralVar.create("2"),

@@ -44,20 +44,20 @@ def get_code_style_rdx(color: str):  # type: ignore[reportArgumentType]
 
 cell_style = {
     **fonts.small,
-    "color": c_color("slate", 11),
+    "color": "var(--secondary-11)",
     "line_height": "1.5",
 }
 
 
 # General styles.
-SANS = "Instrument Sans"
+SANS = "var(--font-instrument-sans)"
 BOLD_WEIGHT = font_weights["bold"]
 
 DOC_BORDER_RADIUS = "6px"
 
 # The base application style.
 BASE_STYLE = {
-    "background_color": "var(--c-slate-1)",
+    "background_color": "var(--secondary-1)",
     "::selection": {
         "background_color": rx.color("accent", 5, True),
     },
@@ -72,10 +72,3 @@ BASE_STYLE = {
         "background": "transparent",
     },
 }
-
-# Fonts to include.
-STYLESHEETS = [
-    "fonts.css",
-    "custom-colors.css",
-    "tailwind-theme.css",
-]

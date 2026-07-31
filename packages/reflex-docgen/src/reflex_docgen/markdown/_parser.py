@@ -44,6 +44,7 @@ _KNOWN_KEYS = frozenset({
     "components",
     "only_low_level",
     "title",
+    "meta_description",
     "description",
     "image",
 })
@@ -107,6 +108,7 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
             description=description,
             image=image,
             component_previews=tuple(previews),
+            metadata=data,
         ),
         source[m.end() :],
     )
@@ -270,6 +272,7 @@ def _convert_block(token: BlockToken) -> Block | None:
                 name=flags[0],
                 args=flags[1:],
                 children=_parse_blocks(content),
+                content=content,
             )
 
         return CodeBlock(language=language, flags=flags, content=content)

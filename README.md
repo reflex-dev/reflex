@@ -24,7 +24,7 @@
 > Build faster with Reflex:
 >
 > - **[AI Builder](https://build.reflex.dev/)** - Generate full-stack Reflex apps in seconds.
-> - **[Agent Toolkit](https://reflex.dev/docs/ai/integrations/ai-onboarding/)** - Connect MCP and Skills to your coding assistant.
+> - **[Agent Toolkit](https://reflex.dev/docs/ai/integrations/agent-toolkit/)** - Connect MCP and Skills to your coding assistant.
 > - **[App Management](https://reflex.dev/hosting)** - Deploy and manage your Reflex apps.
 
 ---
@@ -68,7 +68,7 @@ Build an image generation app in Python with Reflex: define the UI, manage state
 
 <div align="center">
 <video src="https://github.com/user-attachments/assets/aaff28ad-8b3c-43bf-967e-439ee34c8a87" width="900" controls muted poster="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex-image-generation-app.png">
-  <a href="https://github.com/user-attachments/assets/aaff28ad-8b3c-43bf-967e-439ee34c8a87">
+  <a href="https://web.reflex-assets.dev/video/reflex-dalle-video-2x.mp4">
     <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex-image-generation-app.png" alt="Preview of an image generation app built with Reflex" width="900">
   </a>
 </video>

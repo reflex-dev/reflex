@@ -1,6 +1,7 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_site_shared.components.docs_shell import docs_navbar_frame
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.constants import (
@@ -17,7 +18,7 @@ from reflex_docs.views.search import search_bar
 
 def github_button() -> rx.Component:
     label = f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
-    return rx.el.a(
+    return rx.el.elements.a(
         button(
             get_icon(icon="github_navbar", class_name="shrink-0"),
             f"{GITHUB_STARS // 1000}K",
@@ -64,7 +65,9 @@ def logo() -> rx.Component:
     )
 
 
-def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
+def menu_item(
+    text: str, href: str, active_str: str = "", external: bool = False
+) -> rx.Component:
     router_path = rx.State.router.page.path
     active_cn = "shadow-[inset_0_-1px_0_0_var(--primary-10)] [&_button]:text-primary-10 [&_div]:text-primary-10"
 
@@ -82,14 +85,19 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
             "/docs/ai/"
         )
         is_hosting = router_path.contains("hosting")
-        active = ~is_overview & ~is_ai_builder & ~is_hosting
+        is_xy = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
+        active = ~is_overview & ~is_ai_builder & ~is_hosting & ~is_xy
     elif active_str == "ai":
         active = router_path.startswith("/ai/") | router_path.startswith("/docs/ai/")
+    elif active_str == "xy":
+        active = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
     else:
         active = router_path.contains(active_str)
 
+    anchor = rx.el.elements.a if external else rx.el.a
+
     return ui.navigation_menu.item(
-        rx.el.a(
+        anchor(
             button(
                 text,
                 size="sm",
@@ -113,6 +121,7 @@ def navigation_menu() -> rx.Component:
             menu_item("Build with AI", ai_builder.overview.best_practices.path, "ai"),
             menu_item("Framework", getting_started.introduction.path, "framework"),
             menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
+            menu_item("XY", "/docs/xy/", "xy", external=True),
             class_name="flex flex-row items-center gap-2 m-0 h-full list-none",
             custom_attrs={"role": "menubar"},
         ),
@@ -173,17 +182,4 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    from reflex_site_shared.views.hosting_banner import hosting_banner
-
-    return rx.el.div(
-        hosting_banner(),
-        rx.el.header(
-            rx.el.div(
-                logo(),
-                navigation_menu(),
-                class_name="relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row max-w-[108rem]",
-            ),
-            class_name="w-full max-full h-[4.5rem] mx-auto flex flex-row items-center 3xl:px-16 px-6 backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
-        ),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
-    )
+    return docs_navbar_frame(logo(), navigation_menu())

@@ -114,7 +114,7 @@ def doclink(text: str, href: str, **props) -> rx.Component:
         text,
         href=href,
         **props,
-        class_name="text-m-slate-12 dark:text-m-slate-3 decoration-m-slate-12 dark:decoration-m-slate-3 underline",
+        class_name="text-secondary-12 decoration-secondary-12 underline",
     )
 
 
@@ -133,5 +133,5 @@ def doclink2(text: str, **props) -> rx.Component:
         text,
         **props,
         style=fonts.base,
-        class_name="text-m-slate-12 dark:text-m-slate-3 decoration-m-slate-12 dark:decoration-m-slate-3 underline",
+        class_name="text-secondary-12 decoration-secondary-12 underline",
     )

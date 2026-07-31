@@ -71,7 +71,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "20.19.0"
+    MIN_VERSION = "22.12.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -151,7 +151,7 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.0.12",
+        "vite": "8.0.16",
     }
     OVERRIDES = {
         "cookie": "1.1.1",

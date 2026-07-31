@@ -15,6 +15,9 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 class BaseField(Generic[FIELD_TYPE]):
     """Base field class used by internal metadata classes."""
 
+    # Set by ``FieldBasedMeta._finalize_fields`` once the owning class is built.
+    _name: str
+
     def __init__(
         self,
         default: FIELD_TYPE | _MISSING_TYPE = MISSING,

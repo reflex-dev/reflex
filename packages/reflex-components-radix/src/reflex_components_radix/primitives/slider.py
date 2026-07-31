@@ -26,6 +26,7 @@ class SliderRoot(SliderComponent):
 
     tag = "Root"
     alias = "RadixSliderRoot"
+    _is_form_control = True
 
     default_value: Var[Sequence[int]]
 

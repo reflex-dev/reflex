@@ -1,4 +1,5 @@
 ---
+meta_description: "Build tables in Python with Reflex. The rx.table component is a semantic, composable React table for presenting tabular data with headers, rows, and cells — all in pure Python, no JavaScript."
 components:
   - rx.table.root
   - rx.table.header
@@ -149,7 +150,7 @@ class Customer(rx.Model, table=True):
 
 # Table
 
-A semantic table for presenting tabular data.
+The Reflex table component (`rx.table`) is a semantic, composable table for presenting tabular data in pure Python. It renders a standard React/HTML table with headers, rows, and cells that you compose yourself.
 
 If you just want to [represent static data](/docs/library/tables-and-data-grids/data-table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data-table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
@@ -187,6 +188,7 @@ rx.table.root(
 
 ```md alert info
 # Set the table `width` to fit within its container and prevent it from overflowing.
+If the table has too many columns to fit, wrap the `rx.table.root` in a container with `overflow_x="auto"` (e.g. `rx.box(rx.table.root(...), overflow_x="auto", width="100%")`) so the table scrolls horizontally inside the container instead of stretching the page.
 ```
 
 ## Showing State data (using foreach)
@@ -341,7 +343,7 @@ def database_table_example():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState.filter_values(value),
+            on_change=DatabaseTableState.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -464,7 +466,7 @@ def in_memory_table_example():
 
 Both approaches provide the same user experience with filtering and sorting functionality.
 
-# Database
+## Database
 
 The more common use case for building an `rx.table` is to use data from a database.
 
@@ -606,6 +608,11 @@ For filtering the `rx.input` component is used. The data is filtered based on th
 
 The `%` character before and after `search_value` makes it a wildcard pattern that matches any sequence of characters before or after the `search_value`. `query.where(...)` modifies the existing query to include a filtering condition. The `or_` operator is a logical OR operator that combines multiple conditions. The query will return results that match any of these conditions. `Customer.name.ilike(search_value)` checks if the `name` column of the `Customer` table matches the `search_value` pattern in a case-insensitive manner (`ilike` stands for "case-insensitive like").
 
+```md alert info
+# Debounce the search input
+`on_change` fires on every keystroke, and each event here runs a database query. Chaining `.debounce(500)` on the event handler waits until the user pauses typing for 500ms, so one query runs per search instead of one per character. See [event actions](/docs/events/event-actions) for details.
+```
+
 ```python
 class Customer(rx.Model, table=True):
     """The customer model."""
@@ -711,7 +718,7 @@ def loading_data_table_example_2():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState2.filter_values(value),
+            on_change=DatabaseTableState2.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -801,7 +808,7 @@ def loading_data_table_example2():
         ),
         rx.input(
             placeholder="Search here...",
-            on_change=lambda value: DatabaseTableState2.filter_values(value),
+            on_change=DatabaseTableState2.filter_values.debounce(500),
         ),
         rx.table.root(
             rx.table.header(
@@ -1043,11 +1050,18 @@ def loading_data_table_example3():
     )
 ```
 
+```md alert info
+# Combining pagination with search and sorting
+Give each paginated table its own state vars (`offset`, `limit`, `total_items`) so multiple tables on a page paginate independently, and reset `offset` to `0` whenever the search or sort value changes — otherwise the user may be left on a page number beyond the end of the newly filtered results.
+```
+
+For a reusable paginated table, define it with [`ComponentState`](/docs/state-structure/component-state/): each instance automatically gets its own `offset`, `limit`, and `total_items`, so you can place several independent paginated tables on a page without hand-managing separate state vars for each.
+
 ## More advanced examples
 
 The real power of the `rx.table` comes where you are able to visualise, add and edit data live in your app. Check out these apps and code to see how this is done: app: https://customer-data-app.reflex.run code: https://github.com/reflex-dev/templates/tree/main/customer_data_app and code: https://github.com/reflex-dev/templates/tree/main/sales.
 
-# Download
+## Download
 
 Most users will want to download their data after they have got the subset that they would like in their table.
 
@@ -1260,11 +1274,11 @@ def download_data_table_example():
     )
 ```
 
-# Real World Example UI
+## Real World Example UI
 
 ```python demo
 rx.flex(
-    rx.heading("Your Team"),
+    rx.heading("Your Team", as_="h2"),
     rx.text("Invite and manage your team members"),
     rx.flex(
         rx.input(placeholder="Email Address"),
@@ -1303,3 +1317,11 @@ rx.flex(
     spacing="2",
 )
 ```
+
+## Related
+
+Explore the other ways to work with tabular data in Reflex, all in pure Python:
+
+- [Data Table](/docs/library/tables-and-data-grids/data-table)
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor)
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/)

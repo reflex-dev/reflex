@@ -1,4 +1,14 @@
+from ..state import SideBarItem
 from .item import create_item
+
+
+def get_sidebar_items_changelog():
+    from reflex_docs.pages.docs import changelog_packages
+
+    return [
+        SideBarItem(names=package, link=route)
+        for package, route in changelog_packages.items()
+    ]
 
 
 def get_sidebar_items_api_reference():
@@ -24,3 +34,4 @@ def get_sidebar_items_api_reference():
 
 
 api_reference = get_sidebar_items_api_reference()
+changelog_items = get_sidebar_items_changelog()

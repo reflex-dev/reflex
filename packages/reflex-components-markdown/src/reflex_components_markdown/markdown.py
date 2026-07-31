@@ -13,7 +13,6 @@ from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentNamespace,
-    CustomComponent,
     MemoizationLeaf,
     field,
 )
@@ -413,15 +412,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         if isinstance(component, MarkdownComponentMap):
             custom_code_list.append(component.get_component_map_custom_code())
 
-        # If the component is a custom component(rx.memo), obtain the underlining
-        # component and get the custom code from the children.
-        if isinstance(component, CustomComponent):
-            custom_code_list.extend(
-                self._get_map_fn_custom_code_from_children(
-                    component.component_fn(*component.get_prop_vars())
-                )
-            )
-        elif isinstance(component, Component):
+        if isinstance(component, Component):
             for child in component.children:
                 custom_code_list.extend(
                     self._get_map_fn_custom_code_from_children(child)

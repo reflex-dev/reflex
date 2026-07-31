@@ -7,13 +7,9 @@ env with names from *all* blocks on the second pass, so
 _exec_and_get_last_callable finds no "new" keys and raises RuntimeError.
 """
 
-import sys
 from pathlib import Path
 
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 
 MD_WITH_TWO_EXEC_BLOCKS = """\
 ```python exec

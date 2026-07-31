@@ -7,7 +7,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_DOMAIN_URL
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
@@ -15,35 +15,9 @@ from reflex_site_shared.meta.meta import (
     to_cdn_image_url,
 )
 from reflex_site_shared.telemetry import get_pixel_website_trackers
-from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
-from reflex_docs.templates.docpage.docpage import DOCS_PROD_BASE
 from reflex_docs.whitelist import _check_whitelisted_path
-
-
-def _seo_meta_tags(
-    title: str, description: str, image: str, canonical_url: str
-) -> list:
-    """Build the per-page SEO meta tag set, deduped against framework output.
-
-    Reflex's ``add_page`` already emits ``<meta name="description">`` (from
-    its ``description=`` arg) and ``<meta property="og:image">`` (from its
-    ``image=`` arg). We strip those entries from ``create_meta_tags`` to
-    avoid duplicate tags in the rendered ``<head>``.
-    """
-    tags = create_meta_tags(
-        title=title, description=description, image=image, url=canonical_url
-    )
-    return [
-        t
-        for t in tags
-        if not (
-            isinstance(t, dict)
-            and (t.get("name") == "description" or t.get("property") == "og:image")
-        )
-    ]
-
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
 # higher and the prod build fails with EMFILE error.
@@ -67,7 +41,6 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
-    stylesheets=styles.STYLESHEETS,
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),
@@ -75,24 +48,7 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=get_pixel_website_trackers()
-    + favicons_links()
-    + [
-        rx.el.link(
-            rel="preload",
-            href=rx.asset("fonts/instrument-sans.woff2"),
-            custom_attrs={"as": "font"},
-            type="font/woff2",
-            cross_origin="anonymous",
-        ),
-        rx.el.link(
-            rel="preload",
-            href=rx.asset("fonts/jetbrains-mono.woff2"),
-            custom_attrs={"as": "font"},
-            type="font/woff2",
-            cross_origin="anonymous",
-        ),
-    ],
+    head_components=get_pixel_website_trackers() + favicons_links(),
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -106,6 +62,30 @@ if sys.platform == "win32":
         )
     routes = routes[:WINDOWS_MAX_ROUTES]
 
+# Routes are registered without the frontend path prefix; it is mounted at
+# runtime (frontend_path="/docs"), so the public URL needs it prepended.
+_FRONTEND_PATH = (rx.config.get_config().frontend_path or "").rstrip("/")
+
+
+def _canonical_url(path: str) -> str:
+    """Build the absolute, trailing-slash canonical URL for a route path.
+
+    Args:
+        path: The route path (e.g. ``/state/overview/``), without the
+            frontend path prefix.
+
+    Returns:
+        The absolute canonical URL (e.g. ``https://reflex.dev/docs/state/overview/``).
+    """
+    # Some routes are registered with a leading-slash-less path (e.g.
+    # docpage("overview/", ...)); normalize so the prefix join can't produce
+    # "/docsoverview/" instead of "/docs/overview/".
+    if not path.startswith("/"):
+        path = "/" + path
+    url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
+    return url if url.endswith("/") else url + "/"
+
+
 # Add the pages to the app.
 _DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
 for route in routes:
@@ -114,39 +94,97 @@ for route in routes:
         image_url = (
             to_cdn_image_url(route.image) if route.image else None
         ) or _DEFAULT_PREVIEW
-        page_description = route.description or ONE_LINE_DESCRIPTION
 
-        meta_tags: list = [
-            {"name": "theme-color", "content": route.background_color},
-        ]
-        if isinstance(route.title, str):
-            meta_tags.extend(
-                _seo_meta_tags(
-                    title=route.title,
-                    description=page_description,
-                    image=image_url,
-                    canonical_url=public_url(route.path, fallback_base=DOCS_PROD_BASE),
-                )
+        # Build a complete, page-specific set of SEO meta tags (description,
+        # Open Graph, Twitter card, canonical) from the route's own title and
+        # description. Emitting these via `meta` — rather than add_page's
+        # `description`/`image` kwargs — prevents Reflex from emitting a second
+        # `description`/`og:image` tag (the "multiple meta description tags"
+        # issue), makes OG/Twitter values page-specific (docs pages previously
+        # had no description/og/twitter/canonical at all), and adds the missing
+        # canonical link.
+        # Prefer an explicit SEO title for the HTML <title>/meta; the sidebar
+        # and nav keep using the shorter `route.title`. This lets API-reference
+        # and CLI-reference pages emit a descriptive, >=30 char <title> while
+        # their sidebar label stays short (e.g. "App", "Deploy").
+        head_title = route.seo_title or route.title
+        if isinstance(head_title, str) and "[" not in route.path:
+            canonical = _canonical_url(route.path)
+            meta = create_meta_tags(
+                title=head_title,
+                description=route.description or ONE_LINE_DESCRIPTION,
+                image=image_url,
+                url=canonical,
             )
-        if route.meta is not None:
-            meta_tags.extend(route.meta)
+            # Preserve any extra page-declared tags (e.g. robots) not already
+            # covered, without re-introducing duplicate description/OG/Twitter.
+            if route.meta:
+                seen = {
+                    m.get("name") or m.get("property")
+                    for m in meta
+                    if isinstance(m, dict)
+                }
+                meta.extend(
+                    m
+                    for m in route.meta
+                    if isinstance(m, dict)
+                    and (m.get("name") or m.get("property")) not in seen
+                )
+        else:
+            # Dynamic ([...]) or Var-titled routes: a static canonical/title
+            # can't be emitted, so keep any page-provided meta as-is.
+            canonical = None
+            meta = list(route.meta) if route.meta is not None else []
+        meta.append({"name": "theme-color", "content": route.background_color})
 
-        app.add_page(
-            component=route.component,
-            route=route.path,
-            title=route.title,
-            description=page_description,
-            image=image_url,
-            meta=meta_tags,
-            on_load=route.on_load,
-        )
+        # Reflex's compiler always renders exactly one og:image from add_page's
+        # `image` kwarg (defaulting to the favicon). Pass the real preview as
+        # `image` and drop og:image from the meta list, so the page has a single
+        # og:image (the preview) rather than the favicon default + the preview.
+        meta = [
+            m
+            for m in meta
+            if not (isinstance(m, dict) and m.get("property") == "og:image")
+        ]
+
+        page_args = {
+            "component": route.component,
+            "route": route.path,
+            "title": head_title,
+            "image": image_url,
+            "meta": meta,
+            "on_load": route.on_load,
+        }
+
+        # Emit the trailing-slash canonical URL as the sitemap <loc> so the
+        # sitemap entry matches the canonical link (and the 200 page). The
+        # default would use the route without a trailing slash, which
+        # 301-redirects — surfacing as "3XX redirect in sitemap" /
+        # "non-canonical page in sitemap".
+        if canonical is not None:
+            page_args["context"] = {"sitemap": {"loc": canonical}}
+
+        # Call add_page with the dynamically constructed arguments
+        app.add_page(**page_args)
 
 # Add redirects.
 redirects = [
-    (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
-    for route in routes
-    if route.path.startswith("/ai/")
+    ("/ai/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
+    ("/ai-builder/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
+    *[
+        (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
+        for route in routes
+        if route.path.startswith("/ai/")
+    ],
 ]
+redirects.extend([
+    ("/ai/features/ide/", "/ai/features/editor-modes/"),
+    ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
+    ("/ai/features/customization/", "/ai/features/design-systems/"),
+    ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
+    ("/hosting/adding-members/", "/hosting/project-members/"),
+    ("/hosting/projects/", "/hosting/project-members/"),
+])
 
 
 def _redirect_page():

@@ -13,6 +13,8 @@ Reflex Enterprise provides comprehensive drag and drop functionality for creatin
 
 ```md alert warning
 # Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
+
+See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
 
 ## Basic Usage
@@ -34,7 +36,7 @@ class BasicDndState(rx.State):
 
 
 @rx.memo
-def draggable_card():
+def draggable_card() -> rxe.dnd.Draggable:
     return rxe.dnd.draggable(
         rx.card(
             rx.text("Drag me!", weight="bold"),
@@ -95,7 +97,7 @@ class MultiPositionState(rx.State):
 
 
 @rx.memo
-def movable_card():
+def movable_card() -> rxe.dnd.Draggable:
     return rxe.dnd.draggable(
         rx.card(
             rx.text("Movable Card", weight="bold"),
@@ -166,7 +168,7 @@ class StateTrackingState(rx.State):
 
 
 @rx.memo
-def tracked_draggable():
+def tracked_draggable() -> rxe.dnd.Draggable:
     drag_params = rxe.dnd.Draggable.collected_params
     return rxe.dnd.draggable(
         rx.card(
@@ -213,7 +215,10 @@ def state_tracking_example():
 
 ### Dynamic Lists with Drag and Drop
 
-Create dynamic draggable lists using `rx.foreach`:
+Create dynamic draggable lists using `rx.foreach`. Always pass a stable item
+identifier as the `key` prop to the outermost component rendered by the foreach
+to ensure item identity is trackable as the item in the underlying list is
+rearranged.
 
 ```python demo exec
 import dataclasses
@@ -274,7 +279,7 @@ class DynamicListState(rx.State):
 
 
 @rx.memo
-def draggable_list_item(item: ListItem):
+def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
     return rxe.dnd.draggable(
         rx.card(
             rx.text(item.text, weight="bold"),
@@ -293,7 +298,10 @@ def droppable_list(title: str, items: list[ListItem], list_id: str):
         rx.vstack(
             rx.text(title, weight="bold", size="5"),
             rx.vstack(
-                rx.foreach(items, lambda item, index: draggable_list_item(item=item)),
+                rx.foreach(
+                    items,
+                    lambda item, index: draggable_list_item(item=item, key=item.id),
+                ),
                 spacing="2",
                 min_height="200px",
                 width="100%",
@@ -329,6 +337,8 @@ The `rxe.dnd.draggable` component makes any element draggable:
 - `item`: Data object passed to drop handlers
 - `on_end`: Called when drag operation ends
 
+There is no event that fires when a drag begins — `on_end`, which fires when the drag completes, is the only drag lifecycle event on the draggable.
+
 ### Drop Target
 
 The `rxe.dnd.drop_target` component creates areas that accept draggable items:
@@ -337,6 +347,8 @@ The `rxe.dnd.drop_target` component creates areas that accept draggable items:
 - `accept`: List of drag types this target accepts
 - `on_drop`: Called when item is dropped
 - `on_hover`: Called when item hovers over target
+
+When drop targets are nested, a drop fires an event for each layer under the cursor, so deduplicate in the state handler (for example, with a timestamp or flag). To support dropping at the root level — such as the background of a file explorer — wrap the root container itself in a drop target.
 
 ### Collected Parameters
 
@@ -349,7 +361,38 @@ Access real-time drag/drop state:
 - `is_over`: Boolean indicating if draggable is hovering
 - `can_drop`: Boolean indicating if drop is allowed
 
-# API Reference
+```md alert warning
+# Assign collected params to a variable first
+
+Do not read fields directly off the class (e.g. `rxe.dnd.DropTarget.is_over`). Assign `collected_params` to a variable, then access fields through it: `params = rxe.dnd.DropTarget.collected_params`, then `params.is_over`.
+```
+
+When a single `@rx.memo` component renders more than one draggable or drop target, give each its own collected params name to avoid JavaScript name collisions. Use `_replace(_js_expr=...)` to create a uniquely named params Var and pass it via `_collected_params`. Note that `_replace` and `_js_expr` are internal Reflex APIs and may change between releases:
+
+```python
+@rx.memo
+def dual_drop_zones() -> rx.Component:
+    left_params = rxe.dnd.DropTarget.collected_params._replace(
+        _js_expr="leftZoneParams"
+    )
+    right_params = rxe.dnd.DropTarget.collected_params._replace(
+        _js_expr="rightZoneParams"
+    )
+    return rx.hstack(
+        rxe.dnd.drop_target(
+            rx.box("Left", bg=rx.cond(left_params.is_over, "green.100", "gray.100")),
+            accept=["MyDraggable"],
+            _collected_params=left_params,
+        ),
+        rxe.dnd.drop_target(
+            rx.box("Right", bg=rx.cond(right_params.is_over, "green.100", "gray.100")),
+            accept=["MyDraggable"],
+            _collected_params=right_params,
+        ),
+    )
+```
+
+## API Reference
 
 ### rxe.dnd.draggable
 
@@ -564,6 +607,12 @@ def app():
         your_app_content(),
         backend="HTML5",  # or "Touch" for mobile
     )
+```
+
+```md alert warning
+# Do not add a second provider
+
+Because the provider is added automatically when `draggable` or `drop_target` components are used, wrapping the app in an additional `rxe.dnd.provider` results in duplicate providers and breaks drag and drop. Only use manual control when the automatic provider does not fit (e.g. to select the touch backend), and make sure it is the only provider in the tree.
 ```
 
 ## Best Practices

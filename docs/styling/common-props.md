@@ -10,7 +10,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--c-slate-11)",
+    "color": "var(--secondary-11)",
 }
 c_color = lambda color, shade: f"var(--c-{color}-{shade})"
 

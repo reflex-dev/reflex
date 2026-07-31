@@ -426,7 +426,9 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
         A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
         the file is missing or unreadable.
     """
-    web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
+    web_pkg_json_path = frontend_skeleton.get_web_lockfile_path(
+        constants.PackageJson.PATH
+    )
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
@@ -458,18 +460,22 @@ def _is_bun_package_manager(package_manager: str) -> bool:
     return Path(package_manager).stem.lower() == "bun"
 
 
-def _run_initial_install(primary_package_manager: str, env: dict) -> None:
-    """Run the initial frozen-lockfile install with a friendly recovery hint.
+def _run_initial_install(
+    primary_package_manager: str, env: dict, frozen_lockfile: bool
+) -> None:
+    """Run the initial install with a friendly recovery hint.
 
-    bun reports ``error: lockfile had changes, but lockfile is frozen`` when
-    the persisted lockfile cannot satisfy the recovered package.json. When
-    that happens, point the user at ``reflex.lock/package.json`` so they can
-    delete it and let Reflex regenerate the dep set from scratch on the
-    next run.
+    When ``frozen_lockfile`` is set, bun reports ``error: lockfile had
+    changes, but lockfile is frozen`` if the persisted lockfile cannot
+    satisfy the recovered package.json. When that happens, point the user at
+    ``reflex.lock/package.json`` so they can delete it and let Reflex
+    regenerate the dep set from scratch on the next run.
 
     Args:
         primary_package_manager: Path to the package manager executable.
         env: Extra environment variables for the subprocess.
+        frozen_lockfile: Whether to enforce the lockfile, erroring when it is
+            out of sync with package.json instead of updating it in place.
 
     Raises:
         SystemExit: If the install fails. The exit message tells the user
@@ -480,7 +486,7 @@ def _run_initial_install(primary_package_manager: str, env: dict) -> None:
         "install",
         "--legacy-peer-deps",
     ]
-    if _is_bun_package_manager(primary_package_manager):
+    if frozen_lockfile and _is_bun_package_manager(primary_package_manager):
         # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
         # next major rejects unknown flags outright.
         install_args.append("--frozen-lockfile")
@@ -698,7 +704,7 @@ def _install_frontend_packages(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
-        _run_initial_install(primary_package_manager, env)
+        _run_initial_install(primary_package_manager, env, config.frozen_lockfile)
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
@@ -757,4 +763,3 @@ def install_frontend_packages(packages: set[str], config: Config):
     _sync_root_lockfiles_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
     frontend_skeleton.sync_web_lockfiles_to_root()
-    frontend_skeleton.sync_web_package_json_to_root()

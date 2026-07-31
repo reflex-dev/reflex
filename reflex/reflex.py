@@ -58,6 +58,7 @@ def _init(
     name: str,
     template: str | None = None,
     ai: bool = False,
+    agents: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, frontend_skeleton, prerequisites, templates
@@ -88,6 +89,10 @@ def _init(
 
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
+
+    # Write or refresh the AGENTS.md for AI coding agents.
+    if agents:
+        frontend_skeleton.initialize_agents_md()
 
     template_msg = f" using the {template} template" if template else ""
     if Path(constants.PyprojectToml.FILE).exists():
@@ -122,13 +127,19 @@ def _init(
     is_flag=True,
     help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
 )
+@click.option(
+    "--agents/--no-agents",
+    default=True,
+    help="Write an AGENTS.md to guide AI coding agents working in the app (enabled by default).",
+)
 def init(
     name: str,
     template: str | None,
     ai: bool,
+    agents: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, ai)
+    _init(name, template, ai, agents)
 
 
 def _compile_app(*, avoid_dirty_check: bool = True):
@@ -604,7 +615,18 @@ def login():
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=user_uuid)
+        set_props = {}
+        if user_email := validated_info.get("email"):
+            set_props["email"] = user_email
+        if user_tier := validated_info.get("tier"):
+            set_props["tier"] = user_tier
+        telemetry.send(
+            "login",
+            properties={
+                "$set": set_props,
+                "user_uuid": user_uuid,
+            },
+        )
 
 
 @cli.command()
@@ -768,6 +790,17 @@ def makemigrations(message: str | None):
     help="The hostname of the frontend.",
 )
 @click.option(
+    "--provider",
+    help="The hosting provider to deploy to: 'reflex-cloud' (default) or 'gcp' "
+    "(a GCP account connected to your org, Enterprise tier). When omitted and "
+    "GCP is connected, you'll be prompted in interactive mode.",
+)
+@click.option(
+    "--description",
+    help="An optional note recorded on this deployment and shown in "
+    "`reflex cloud apps history`.",
+)
+@click.option(
     "--interactive/--no-interactive",
     is_flag=True,
     default=True,
@@ -816,6 +849,8 @@ def deploy(
     env: tuple[str],
     vmtype: str | None,
     hostname: str | None,
+    provider: str | None,
+    description: str | None,
     interactive: bool,
     envfile: str | None,
     project: str | None,
@@ -887,6 +922,8 @@ def deploy(
         token=token,
         project=project,
         project_name=project_name,
+        provider=provider,
+        deployment_description=description,
         **({"config_path": config_path} if config_path is not None else {}),
     )
 

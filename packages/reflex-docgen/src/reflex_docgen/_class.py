@@ -1,11 +1,15 @@
 """Generate documentation for arbitrary Python classes."""
 
+import collections.abc
 import dataclasses
 import inspect
+import re
 from dataclasses import dataclass
-from typing import Any, get_args, get_type_hints
+from typing import Any, Literal, get_args, get_origin, get_type_hints
 
+from reflex_base.utils.types import is_union
 from reflex_base.vars.base import BaseStateMeta
+from typing_extensions import TypeAliasType
 from typing_inspection.introspection import AnnotationSource, inspect_annotation
 
 
@@ -16,7 +20,7 @@ class FieldDocumentation:
     Attributes:
         name: The name of the field.
         type: The resolved type of the field.
-        type_display: Human-readable type string (no Var wrapper). Uses __name__ for simple types, str() for generics.
+        type_display: Concise human-readable type string with module qualifiers stripped and type-alias names preserved.
         description: The description extracted from the class docstring or field.doc.
         default: The repr() of the default value, or None if no default.
     """
@@ -72,42 +76,146 @@ class ClassDocumentation:
     methods: tuple[MethodDocumentation, ...] = ()
 
 
-def _parse_docstring_attributes(cls: type) -> dict[str, str]:
-    """Parse an Attributes section from a class docstring using griffe.
+def _parse_docstring_sections(cls: type) -> list[Any]:
+    """Parse a class docstring into griffe sections.
+
+    Parsing once lets the description and the Attributes mapping be derived from the
+    same result instead of re-parsing the docstring for each.
 
     Args:
         cls: The class whose docstring to parse.
 
     Returns:
-        A mapping from attribute name to description string.
+        The parsed docstring sections, or an empty list when there is no docstring.
     """
     from griffe import Docstring, Parser  # provided by griffelib
 
     doc = cls.__doc__
     if not doc:
-        return {}
+        return []
 
-    parsed = Docstring(inspect.cleandoc(doc)).parse(Parser.auto)
+    return Docstring(inspect.cleandoc(doc)).parse(Parser.auto)
+
+
+def _attributes_from_sections(sections: list[Any]) -> dict[str, str]:
+    """Extract the Attributes section as a name-to-description mapping.
+
+    Args:
+        sections: The parsed docstring sections.
+
+    Returns:
+        A mapping from attribute name to description string.
+    """
     return {
         attr.name: attr.description
-        for section in parsed
+        for section in sections
         if section.kind.value == "attributes"
         for attr in section.value
     }
 
 
-def _type_display(type_: Any) -> str:
-    """Return a human-readable type string.
+def _description_from_sections(sections: list[Any]) -> str | None:
+    """Join the prose body of a docstring, excluding the Attributes section.
+
+    The Attributes section is rendered separately as a fields table, so keeping it in
+    the description would duplicate every attribute as body text. Griffe splits the
+    docstring into sections; the free-text sections (summary, detail, code blocks) are
+    the prose body. Documented classes use Google-style ``Attributes:`` plus inline
+    fenced code (kept as text), so no other section kind appears in practice.
 
     Args:
-        type_: The type to display.
+        sections: The parsed docstring sections.
 
     Returns:
-        A human-readable type string.
+        The prose description, or None if there is no prose.
     """
-    if get_args(type_):
-        return str(type_)
-    return getattr(type_, "__name__", str(type_))
+    text = "\n\n".join(
+        section.value for section in sections if section.kind.value == "text"
+    )
+    return text or None
+
+
+def _type_name(type_: Any) -> str:
+    """Return the short, unqualified name for a leaf type.
+
+    Args:
+        type_: The leaf type to name.
+
+    Returns:
+        The unqualified type name (e.g. ``Starlette`` for ``starlette.applications.Starlette``).
+    """
+    name = getattr(type_, "__name__", None)
+    if name:
+        return name
+    return str(type_).rsplit(".", maxsplit=1)[-1]
+
+
+def format_type(type_: Any) -> str:
+    """Return a concise, human-readable string for a type annotation.
+
+    Strips module qualifiers, preserves type-alias names, and renders unions,
+    literals, callables, and other generics recursively.
+
+    Args:
+        type_: The type annotation to format.
+
+    Returns:
+        A concise, human-readable type string.
+    """
+    if type_ is None or type_ is type(None):
+        return "None"
+    if isinstance(type_, TypeAliasType):
+        return type_.__name__
+
+    origin = get_origin(type_)
+    args = get_args(type_)
+
+    if origin is Literal:
+        values = [f'"{arg}"' if isinstance(arg, str) else repr(arg) for arg in args]
+        return f"Literal[{', '.join(values)}]"
+    if is_union(type_):
+        members = [arg for arg in args if arg is not type(None)]
+        rendered = " | ".join(format_type(arg) for arg in members)
+        # Surface optionality explicitly: ``X | None`` reads as ``Optional[X]``.
+        return f"Optional[{rendered}]" if len(members) != len(args) else rendered
+    if origin is collections.abc.Callable:
+        *param_part, return_type = args
+        params = param_part[0] if param_part else []
+        if params is Ellipsis:
+            inner = "..."
+        elif isinstance(params, list):
+            inner = f"[{', '.join(format_type(param) for param in params)}]"
+        else:
+            inner = format_type(params)
+        return f"Callable[{inner}, {format_type(return_type)}]"
+    if origin is not None and args:
+        return f"{_type_name(origin)}[{', '.join(format_type(arg) for arg in args)}]"
+    return _type_name(type_)
+
+
+def _format_default(value: Any, *, is_factory: bool) -> str | None:
+    """Return a stable, readable display for a field default, or None to omit it.
+
+    A raw repr of a function/lambda/factory default carries a volatile memory
+    address (e.g. ``<function f at 0x7c67...>``); render a clean name or an
+    empty-collection literal instead so the output is readable and deterministic.
+
+    Args:
+        value: The default value, or the default_factory when is_factory is True.
+        is_factory: Whether value is a dataclass/pydantic default_factory.
+
+    Returns:
+        A display string, or None when the default is opaque (e.g. a lambda).
+    """
+    # An empty-collection factory renders as its literal (``list`` -> ``[]``).
+    if is_factory and value in (dict, list, set, tuple, frozenset):
+        return repr(value())
+    if isinstance(value, type):
+        return value.__name__
+    if callable(value):
+        name = getattr(value, "__qualname__", "") or getattr(value, "__name__", "")
+        return None if not name or "<" in name else name
+    return repr(value)
 
 
 def _extract_field_doc(hint: Any, field_doc: str | None) -> tuple[Any, str | None]:
@@ -158,32 +266,34 @@ def _build_field_documentation(
     return FieldDocumentation(
         name=name,
         type=unwrapped_type,
-        type_display=_type_display(unwrapped_type),
+        type_display=format_type(unwrapped_type),
         description=description,
         default=default_value,
     )
 
 
-def _get_dataclass_fields(cls: type) -> tuple[FieldDocumentation, ...]:
+def _get_dataclass_fields(
+    cls: type, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract fields from a dataclass.
 
     Args:
         cls: The dataclass to extract fields from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
     """
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     result = []
     for f in dataclasses.fields(cls):
         hint = hints.get(f.name, f.type)
         field_doc = getattr(f, "doc", None)
 
         if f.default is not dataclasses.MISSING:
-            default_str = repr(f.default)
+            default_str = _format_default(f.default, is_factory=False)
         elif f.default_factory is not dataclasses.MISSING:
-            default_str = repr(f.default_factory)
+            default_str = _format_default(f.default_factory, is_factory=True)
         else:
             default_str = None
 
@@ -196,26 +306,28 @@ def _get_dataclass_fields(cls: type) -> tuple[FieldDocumentation, ...]:
     return tuple(result)
 
 
-def _get_state_fields(cls: BaseStateMeta) -> tuple[FieldDocumentation, ...]:
+def _get_state_fields(
+    cls: BaseStateMeta, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract instance fields from an rx.State subclass via __fields__.
 
     Args:
         cls: The class to extract fields from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
     """
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     fields_dict = cls.__fields__
     result = []
     for name, field in fields_dict.items():
         hint = hints.get(name, field.outer_type_)
 
         if field.default is not dataclasses.MISSING:
-            default_str = repr(field.default)
+            default_str = _format_default(field.default, is_factory=False)
         elif field.default_factory is not None:
-            default_str = repr(field.default_factory)
+            default_str = _format_default(field.default_factory, is_factory=True)
         else:
             default_str = None
 
@@ -228,11 +340,14 @@ def _get_state_fields(cls: BaseStateMeta) -> tuple[FieldDocumentation, ...]:
     return tuple(result)
 
 
-def _get_class_vars(cls: type) -> tuple[FieldDocumentation, ...]:
+def _get_class_vars(
+    cls: type, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract class variables from __class_vars__.
 
     Args:
         cls: The class to extract class variables from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
@@ -242,7 +357,6 @@ def _get_class_vars(cls: type) -> tuple[FieldDocumentation, ...]:
         return ()
 
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     result = []
     for name in class_vars:
         hint = hints.get(name, type(None))
@@ -255,6 +369,126 @@ def _get_class_vars(cls: type) -> tuple[FieldDocumentation, ...]:
     return tuple(result)
 
 
+# Matches a quoted span (group 1) or a dotted module path (group 2 captures the
+# final name). Quoted spans are matched first so a dotted value inside a Literal
+# (e.g. ``Literal["a.b"]``) is left untouched.
+_QUALIFIED_NAME = re.compile(
+    r"""("[^"]*"|'[^']*')|\b(?:[A-Za-z_]\w*\.)+([A-Za-z_]\w*)"""
+)
+
+
+def _split_top_level_union(annotation: str) -> list[str]:
+    """Split a forward-ref annotation into its top-level ``|`` union members.
+
+    Splits only at ``|`` outside any brackets, so a union nested inside a
+    subscript (e.g. the ``int | None`` in ``dict[str, int | None]``) stays intact.
+
+    Args:
+        annotation: The annotation string.
+
+    Returns:
+        The top-level union members, each stripped of surrounding whitespace.
+    """
+    members: list[str] = []
+    depth = 0
+    start = 0
+    for i, char in enumerate(annotation):
+        if char in "[(":
+            depth += 1
+        elif char in ")]":
+            depth -= 1
+        elif char == "|" and depth == 0:
+            members.append(annotation[start:i].strip())
+            start = i + 1
+    members.append(annotation[start:].strip())
+    return members
+
+
+def _format_annotation(annotation: Any) -> str:
+    """Render a parameter or return annotation as a concise type string.
+
+    Real type objects go through format_type. Forward-ref strings (from
+    ``from __future__ import annotations``) keep the author's readable names
+    rather than expanding aliases: module qualifiers are stripped (matching
+    format_type) and a top-level ``None`` is rewritten as Optional[...]. This is
+    done on the string, not by resolving it, so a TYPE_CHECKING-only name in one
+    member does not poison the rest. ``None`` nested inside a subscript is left
+    alone, and dotted values inside quoted Literals are preserved.
+
+    Args:
+        annotation: The annotation, either a real type or a forward-ref string.
+
+    Returns:
+        The rendered annotation string.
+    """
+    if not isinstance(annotation, str):
+        return format_type(annotation)
+
+    stripped = _QUALIFIED_NAME.sub(
+        lambda m: m.group(1) if m.group(1) is not None else m.group(2), annotation
+    )
+    members = _split_top_level_union(stripped)
+    if len(members) > 1 and "None" in members:
+        inner = " | ".join(member for member in members if member != "None")
+        return f"Optional[{inner}]"
+    return stripped
+
+
+def _format_signature(fn: Any) -> str:
+    """Return a readable call signature for a function or method.
+
+    Drops self/cls, renders each annotation independently (real types through
+    format_type, forward-ref strings kept verbatim with optionality normalized),
+    and cleans default values. Annotations are taken as written rather than
+    bulk-resolved, so one TYPE_CHECKING-only name does not affect the others.
+
+    Args:
+        fn: The function or method to render.
+
+    Returns:
+        A signature string such as ``(route: Optional[str] = None) -> None``.
+    """
+    try:
+        sig = inspect.signature(fn)
+    except (ValueError, TypeError):
+        return "(...)"
+
+    empty = inspect.Parameter.empty
+    parts: list[str] = []
+    keyword_separated = False
+    for name, param in sig.parameters.items():
+        if name in ("self", "cls"):
+            continue
+
+        if param.kind is inspect.Parameter.VAR_POSITIONAL:
+            prefix, keyword_separated = "*", True
+        elif param.kind is inspect.Parameter.VAR_KEYWORD:
+            prefix = "**"
+        elif param.kind is inspect.Parameter.KEYWORD_ONLY and not keyword_separated:
+            parts.append("*")
+            keyword_separated, prefix = True, ""
+        else:
+            prefix = ""
+
+        text = prefix + name
+
+        if param.annotation is not empty:
+            text += f": {_format_annotation(param.annotation)}"
+
+        if param.default is not empty:
+            default = _format_default(param.default, is_factory=False)
+            text += f" = {default if default is not None else '...'}"
+
+        parts.append(text)
+
+    rendered = f"({', '.join(parts)})"
+
+    if sig.return_annotation is not inspect.Signature.empty:
+        rendered += f" -> {_format_annotation(sig.return_annotation)}"
+
+    return rendered
+
+
 def _get_methods(cls: type) -> tuple[MethodDocumentation, ...]:
     """Extract public documented methods from a class.
 
@@ -264,9 +498,18 @@ def _get_methods(cls: type) -> tuple[MethodDocumentation, ...]:
     Returns:
         A tuple of MethodDocumentation objects.
     """
+    # Dataclass/state fields whose default is a function live in __dict__ as that
+    # function; they are fields, not methods, so exclude them.
+    if dataclasses.is_dataclass(cls):
+        field_names = {f.name for f in dataclasses.fields(cls)}
+    elif isinstance(cls, BaseStateMeta):
+        field_names = set(cls.__fields__)
+    else:
+        field_names = set()
+
     result = []
     for name, obj in cls.__dict__.items():
-        if name.startswith("_") or name == "Config":
+        if name.startswith("_") or name == "Config" or name in field_names:
             continue
 
         fn = obj
@@ -288,15 +531,10 @@ def _get_methods(cls: type) -> tuple[MethodDocumentation, ...]:
                 break
         docstring = docstring.strip() or None
 
-        try:
-            sig = str(inspect.signature(fn))
-        except (ValueError, TypeError):
-            sig = "(...)"
-
         result.append(
             MethodDocumentation(
                 name=name,
-                signature=sig,
+                signature=_format_signature(fn),
                 description=docstring,
             )
         )
@@ -316,16 +554,18 @@ def generate_class_documentation(cls: type) -> ClassDocumentation:
         The generated documentation for the class.
     """
     try:
-        description = inspect.cleandoc(cls.__doc__) if cls.__doc__ else None
+        sections = _parse_docstring_sections(cls)
+        description = _description_from_sections(sections)
+        docstring_attrs = _attributes_from_sections(sections)
 
         if dataclasses.is_dataclass(cls):
-            fields = _get_dataclass_fields(cls)
+            fields = _get_dataclass_fields(cls, docstring_attrs)
         elif isinstance(cls, BaseStateMeta):
-            fields = _get_state_fields(cls)
+            fields = _get_state_fields(cls, docstring_attrs)
         else:
             fields = ()
 
-        class_fields = _get_class_vars(cls)
+        class_fields = _get_class_vars(cls, docstring_attrs)
         methods = _get_methods(cls)
 
         return ClassDocumentation(

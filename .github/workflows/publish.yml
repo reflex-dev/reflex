@@ -1,32 +1,105 @@
 name: Publish to PyPI
 
-run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
+run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
+
+# Publishes one package at one version, in three stages:
+#
+#   build            unprivileged: validates the request against the changelog
+#                    (source of truth), branch rules, lockstep invariant and
+#                    existing tags; tags the local checkout (uv-dynamic-
+#                    versioning derives the version from it); builds; verifies
+#                    the built metadata; extracts release notes; uploads
+#                    everything as a workflow artifact.
+#   publish          gated by the `pypi` environment — a human reviewer must
+#                    approve every upload, alphas included. Holds the only
+#                    OIDC (id-token) privilege and runs nothing but
+#                    `uv publish` on the pre-built artifact.
+#   tag-and-release  only after a successful upload: pushes the tag and
+#                    creates the GitHub release. A failed run therefore leaves
+#                    no tag behind — fix the problem on top of the changelog
+#                    bump and the release_from_changelog workflow retries on
+#                    the next push.
+#
+# REQUIRED CONFIGURATION:
+# - The `pypi` environment MUST have required reviewers configured
+#   (Settings → Environments → pypi). The publish job asserts this via the
+#   API and fails closed when it cannot prove reviewers are configured.
+# - PyPI trusted publishing must trust this workflow file (publish.yml) with
+#   the `pypi` environment — unchanged by the changelog-driven flow,
+#   including when called from another workflow (the OIDC job_workflow_ref
+#   claim still points at publish.yml).
+# - If the `pypi` environment restricts deployment branches, allow main,
+#   r/pre-*, and r/hotfix/*.
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      package:
+        description: "Package to publish (reflex for the repo-root package)"
+        required: true
+        type: string
+      version:
+        description: "Target version (e.g. 1.2.3 or 1.2.3a1, no v prefix). Empty auto patch-bumps the newest tag — only for packages without a CHANGELOG.md."
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag (e.g. v1.2.3 or reflex-lucide-v0.1.0)"
+      package:
+        description: "Package to publish"
         required: true
+        type: choice
+        options:
+          - reflex
+          - hatch-reflex-pyi
+          - reflex-base
+          - reflex-components-code
+          - reflex-components-core
+          - reflex-components-dataeditor
+          - reflex-components-gridjs
+          - reflex-components-internal
+          - reflex-components-lucide
+          - reflex-components-markdown
+          - reflex-components-moment
+          - reflex-components-plotly
+          - reflex-components-radix
+          - reflex-components-react-player
+          - reflex-components-recharts
+          - reflex-components-sonner
+          - reflex-docgen
+          - reflex-hosting-cli
+          - reflex-site-shared
+      version:
+        description: "Target version (e.g. 1.2.3 or 1.2.3a1, no v prefix). Empty auto patch-bumps the newest tag — only for packages without a CHANGELOG.md."
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
+# The same per-package group every caller uses on its calling job, so direct
+# dispatches and workflow_call publishes of one package are mutually
+# exclusive end to end. (A called workflow's top-level concurrency is ignored
+# for workflow_call, so this cannot deadlock against the callers' groups.)
+concurrency:
+  group: publish-${{ inputs.package }}
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
     permissions:
-      id-token: write
       contents: read
+    outputs:
+      skipped: ${{ steps.prepare.outputs.skipped }}
+      version: ${{ steps.prepare.outputs.version }}
+      tag: ${{ steps.prepare.outputs.tag }}
+      prerelease: ${{ steps.prepare.outputs.prerelease }}
+      mark_latest: ${{ steps.prepare.outputs.mark_latest }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-tags: true
           fetch-depth: 0
           persist-credentials: false
@@ -41,26 +114,170 @@ jobs:
           save-cache: false
           cache-python: false
 
-      - name: Parse release tag
-        id: parse
+      - name: Validate against changelog, branch rules and existing tags
+        id: prepare
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: bash .github/scripts/publish/parse_tag.sh
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: uv run --no-config --locked --script scripts/release.py prepare-publish
+
+      # A *.dev dependency pin references an unpublished version, so it must never reach
+      # released package metadata. Scoped to the package being published so a dependency
+      # can still be released while dependents temporarily dev-pin it.
+      - name: Reject development-release dependency pins
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: uv run --with packaging --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
 
       - name: Pin reflex-base to exact version
-        if: steps.parse.outputs.package == 'reflex'
+        if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
         env:
-          VERSION: ${{ steps.parse.outputs.version }}
-        run: bash .github/scripts/publish/pin_reflex_base.sh
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: uv run --no-config --locked --script scripts/release.py pin-reflex-base
+
+      # uv-dynamic-versioning derives each package's version from the newest
+      # reachable tag with the package's prefix, so tagging HEAD locally is
+      # what selects the version being built. The tag is only pushed after a
+      # successful upload (tag-and-release job).
+      - name: Tag local checkout
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+        run: git tag "$TAG"
 
       - name: Build
-        run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
+        if: steps.prepare.outputs.skipped != 'true'
+        run: uv build --directory "${{ steps.prepare.outputs.build_dir }}"
+
+      - name: Verify built artifact versions
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: uv run --no-config --locked --script scripts/release.py verify-dist
 
       - name: Verify .pyi files in wheel
-        if: steps.parse.outputs.package == 'reflex'
+        if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex'
         env:
-          BUILD_DIR: ${{ steps.parse.outputs.build_dir }}
+          BUILD_DIR: ${{ steps.prepare.outputs.build_dir }}
         run: bash .github/scripts/publish/verify_pyi.sh
 
+      - name: Extract release notes from changelog
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ steps.prepare.outputs.version }}
+          NOTES_PATH: release_notes.md
+        run: uv run --no-config --locked --script scripts/release.py extract-notes
+
+      # The manifest lets the gated publish job re-verify (with coreutils
+      # only) that what it uploads is byte-identical to what was built and
+      # verified here — everything the human approves is covered by it.
+      - name: Write checksum manifest
+        if: steps.prepare.outputs.skipped != 'true'
+        run: sha256sum dist/* release_notes.md > SHA256SUMS
+
+      - name: Upload artifacts for the gated publish
+        if: steps.prepare.outputs.skipped != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publish-${{ inputs.package }}
+          path: |
+            dist/*
+            release_notes.md
+            SHA256SUMS
+          if-no-files-found: error
+          overwrite: true
+
+  # The human approval gate: this job targets the `pypi` environment, whose
+  # required reviewers must approve before it starts. It holds the only OIDC
+  # privilege and deliberately runs no repository code and resolves no script
+  # dependencies — it only uploads the artifact built above.
+  publish:
+    needs: build
+    if: needs.build.outputs.skipped != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      # Reading the environment's protection rules needs repository read
+      # access on GITHUB_TOKEN (contents) plus actions: read.
+      actions: read
+      contents: read
+    steps:
+      - name: Require a human-approval gate on the pypi environment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Fail closed: uploads must never run unattended. If this job
+          # started without reviewers configured on the pypi environment,
+          # nothing paused it — refuse to publish and tell the admins how to
+          # fix it. The two failure modes get distinct messages so a token
+          # scope problem is not mistaken for missing reviewers.
+          if ! rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/pypi" --jq '[.protection_rules[]?.type]' 2>"$RUNNER_TEMP/gh_api_error.txt"); then
+            echo "::error::Could not read the pypi environment's protection rules ($(tail -n1 "$RUNNER_TEMP/gh_api_error.txt")); refusing to publish unattended. This is a token or configuration problem, not a missing-reviewers problem: the job needs contents: read and actions: read on GITHUB_TOKEN, and the pypi environment must exist."
+            exit 1
+          fi
+          if [[ "$rules" != *'"required_reviewers"'* ]]; then
+            echo "::error::The pypi environment has no required reviewers. Every PyPI upload must be approved by a human: add required reviewers to the pypi environment (Settings -> Environments) and re-run."
+            exit 1
+          fi
+          echo "pypi environment protection rules: $rules"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.14"
+          enable-cache: false
+          restore-cache: false
+          save-cache: false
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: publish-${{ inputs.package }}
+
+      - name: Verify artifact integrity
+        run: sha256sum -c SHA256SUMS
+
+      # --check-url makes a retried run skip files that already made it to
+      # PyPI (e.g. when the upload succeeded but tagging failed), instead of
+      # erroring on the duplicate upload.
       - name: Publish
-        run: uv publish dist/*
+        run: uv publish --check-url https://pypi.org/simple/ dist/*
+
+  tag-and-release:
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: publish-${{ inputs.package }}
+
+      - name: Push tag
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/publish/push_tag.sh
+
+      - name: Create GitHub release
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          PKG: ${{ inputs.package }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+          MARK_LATEST: ${{ needs.build.outputs.mark_latest }}
+          NOTES_PATH: release_notes.md
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/publish/create_release.sh

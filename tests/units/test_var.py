@@ -1,18 +1,27 @@
 import decimal
 import json
 import math
+import operator as op
+import re
 import typing
 from collections.abc import Mapping, Sequence
+from datetime import date, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
 from pandas import DataFrame
 from pytest_mock import MockerFixture
-from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.base import (
+    REFLEX_VAR_CLOSING_TAG,
+    REFLEX_VAR_OPENING_TAG,
+    Dirs,
+)
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
+    ReflexError,
     UntypedComputedVarError,
+    VarTypeError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_default_value_for_type
@@ -21,10 +30,13 @@ from reflex_base.vars.base import (
     ComputedVar,
     LiteralVar,
     Var,
+    _decode_var_immutable,
     computed_var,
+    insert_app_wraps,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.datetime import DateTimeVar
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
@@ -363,6 +375,58 @@ def test_basic_operations(TestObj):
     )
     assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
     assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
+
+
+@pytest.mark.parametrize(
+    ("operation", "operator"),
+    [
+        (op.eq, "==="),
+        (op.ne, "!=="),
+        (op.lt, "<"),
+        (op.le, "<="),
+        (op.gt, ">"),
+        (op.ge, ">="),
+    ],
+)
+def test_datetime_comparison_uses_timestamps(operation, operator):
+    lhs = v(datetime(2024, 1, 1, 1, tzinfo=timezone(timedelta(hours=1))))
+    rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    assert str(operation(lhs, rhs)) == (
+        f'(compareDatetime("2024-01-01 01:00:00+01:00", '
+        f'"2024-01-01 00:00:00+00:00") {operator} 0)'
+    )
+
+
+def test_datetime_comparison_preserves_microseconds():
+    lhs = cast(
+        DateTimeVar,
+        v(datetime(2024, 1, 1, microsecond=1, tzinfo=timezone.utc)),
+    )
+    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=timezone.utc)
+
+    assert str(lhs < rhs) == (
+        '(compareDatetime("2024-01-01 00:00:00.000001+00:00", '
+        '"2024-01-01 00:00:00.000999+00:00") < 0)'
+    )
+
+
+def test_date_comparison_uses_compare_datetime():
+    lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
+    rhs = date(2024, 1, 2)
+
+    assert str(lhs < rhs) == '(compareDatetime("2024-01-01", "2024-01-02") < 0)'
+    assert str(lhs == rhs) == '(compareDatetime("2024-01-01", "2024-01-02") === 0)'
+
+
+def test_datetime_equality_with_other_type_uses_default_comparison():
+    value = v(datetime(2024, 1, 1))
+    expected_equality = (
+        '("2024-01-01 00:00:00"?.valueOf?.() === "2024-01-01 00:00:00"?.valueOf?.())'
+    )
+
+    assert str(value == "2024-01-01 00:00:00") == expected_equality
+    assert str(value != "2024-01-01 00:00:00") == f"!({expected_equality})"
 
 
 @pytest.mark.parametrize(
@@ -773,11 +837,10 @@ def test_computed_var_without_annotation_error(request, fixture):
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
-        full_name = state.var_without_annotation._var_full_name
-        assert (
-            err.value.args[0]
-            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
-        )
+    assert (
+        err.value.args[0]
+        == "Computed var 'var_without_annotation' must have a type annotation."
+    )
 
 
 @pytest.mark.parametrize(
@@ -818,11 +881,9 @@ def test_computed_var_with_annotation_error(request, fixture):
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
-        full_name = state.var_with_annotation._var_full_name
-        assert (
-            err.value.args[0]
-            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
-        )
+    assert err.value.args[0].endswith(
+        "of type <class 'str'> has no attribute 'foo' or may have been annotated wrongly."
+    )
 
 
 @pytest.mark.parametrize(
@@ -1001,8 +1062,15 @@ def test_string_operations():
 
     assert str(basic_string.length()) == '"Hello, World!".split("").length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.lstrip()) == 'pyLstrip("Hello, World!", null)'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
-    assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.strip()) == 'pyStrip("Hello, World!", null)'
+    assert str(basic_string.rstrip()) == 'pyRstrip("Hello, World!", null)'
+    assert str(basic_string.lstrip("!H")) == 'pyLstrip("Hello, World!", "!H")'
+    assert str(basic_string.strip("!H")) == 'pyStrip("Hello, World!", "!H")'
+    assert str(basic_string.rstrip("!H")) == 'pyRstrip("Hello, World!", "!H")'
+    chars_var = Var(_js_expr="state.chars").to(str)
+    assert str(basic_string.strip(chars_var)) == 'pyStrip("Hello, World!", state.chars)'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
@@ -1105,6 +1173,125 @@ def test_array_operations():
         str(ArrayVar.range(1, 10, -1))
         == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
     )
+
+
+def _assert_var_imports(var: Var, tag: str):
+    """Assert that the var's VarData includes an import of tag from the state module.
+
+    Args:
+        var: The var to check.
+        tag: The expected import tag.
+    """
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert any(
+        import_var.tag == tag
+        for import_var in dict(var_data.imports).get(f"$/{Dirs.STATE_PATH}", ())
+    )
+
+
+def test_array_map(mocker: MockerFixture):
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    mapped = array_var.map(lambda x: x * 2)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.map\(\(\((\w+)\) => \(\1 \* 2\)\)\)", str(mapped)
+    )
+    assert mapped._var_type == list[typing.Any]
+
+    # 0-argument functions are supported
+    assert str(array_var.map(lambda: 42)) == "[1, 2, 3].map((() => 42))"
+
+    # foreach is a deprecated alias of map
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.map\(\(\((\w+)\) => \(\1 \* 2\)\)\)",
+        str(array_var.foreach(lambda x: x * 2)),  # pyright: ignore[reportDeprecated]
+    )
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "ArrayVar.foreach"
+
+    with pytest.raises(VarTypeError):
+        array_var.map(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.map(42)
+
+
+def test_array_filter():
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    # no predicate: python truthiness of the elements themselves
+    truthy = array_var.filter()
+    assert str(truthy) == "[1, 2, 3].filter(isTrue)"
+    assert truthy._var_type == array_var._var_type
+    _assert_var_imports(truthy, "isTrue")
+
+    # boolean-returning predicates are used as-is
+    predicate = array_var.filter(lambda x: x > 1)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => \(\1 > 1\)\)\)", str(predicate)
+    )
+
+    # non-boolean results are evaluated with python truthiness
+    truthy_predicate = array_var.filter(lambda x: x % 2)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\1 % 2\)\)\)\)",
+        str(truthy_predicate),
+    )
+    _assert_var_imports(truthy_predicate, "isTrue")
+
+    with pytest.raises(VarTypeError):
+        array_var.filter(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.filter(42)
+
+
+def test_array_reduce():
+    array_var = LiteralArrayVar.create([1, 2, 3])
+
+    summed = array_var.reduce(lambda acc, x: acc + x)  # noqa: FURB118
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \(\1 \+ \2\)\)\)", str(summed)
+    )
+    assert summed._var_type is int
+    assert isinstance(summed, NumberVar)
+
+    with_initial = array_var.reduce(lambda acc, x: acc + x, 10)  # noqa: FURB118
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \(\1 \+ \2\)\), 10\)",
+        str(with_initial),
+    )
+    assert with_initial._var_type is int
+
+    # None is a valid initial value, distinct from no initial
+    with_none_initial = array_var.reduce(lambda acc, x: x, None)
+    assert re.fullmatch(
+        r"\[1, 2, 3\]\.reduce\(\(\((\w+), (\w+)\) => \2\), null\)",
+        str(with_none_initial),
+    )
+
+    with pytest.raises(VarTypeError):
+        array_var.reduce(lambda x: x)
+    with pytest.raises(VarTypeError):
+        array_var.reduce(lambda x, y, z: x)
+    with pytest.raises(VarTypeError):
+        array_var.reduce(42)
+
+
+def test_array_flat_map():
+    array_var = LiteralArrayVar.create([[1, 2], [3]])
+
+    flattened = array_var.flat_map(lambda x: x)
+    assert re.fullmatch(
+        r"pyFlatMap\(\[\[1, 2\], \[3\]\], \(\((\w+)\) => \1\)\)", str(flattened)
+    )
+    assert flattened._var_type == list[typing.Any]
+    _assert_var_imports(flattened, "pyFlatMap")
+
+    with pytest.raises(VarTypeError):
+        array_var.flat_map(lambda x, y: x)
+    with pytest.raises(VarTypeError):
+        array_var.flat_map(42)
 
 
 def test_object_operations():
@@ -1919,6 +2106,117 @@ def test_var_data_hooks():
 def test_var_data_with_hooks_value():
     var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
     assert var_data == VarData(hooks=["whott", "whot", "what"])
+
+
+def test_var_data_app_wraps_merge():
+    """Var-declared app_wraps merge and dedupe by the compiler registry key."""
+    wrapper_a = rx.fragment()
+    wrapper_b = rx.fragment()
+
+    vd_a = VarData(app_wraps=((10, wrapper_a),))
+    vd_b = VarData(app_wraps=((20, wrapper_b),))
+    vd_dup = VarData(app_wraps=((10, wrapper_a),))
+
+    merged = VarData.merge(vd_a, vd_b, vd_dup)
+    assert merged is not None
+    assert (10, wrapper_a) in merged.app_wraps
+    assert (20, wrapper_b) in merged.app_wraps
+    assert len(merged.app_wraps) == 2
+
+    # Equal wrappers at the same priority/tag dedupe even when they are fresh
+    # instances (wrapper_a and wrapper_b are both empty, hence equal).
+    vd_same_key = VarData(app_wraps=((10, wrapper_b),))
+    merged_same_key = VarData.merge(vd_a, vd_same_key)
+    assert merged_same_key is not None
+    assert merged_same_key.app_wraps == ((10, wrapper_a),)
+
+    # Same component at a different priority is a distinct entry.
+    vd_alt = VarData(app_wraps=((30, wrapper_a),))
+    merged_alt = VarData.merge(vd_a, vd_alt)
+    assert merged_alt is not None
+    assert len(merged_alt.app_wraps) == 2
+
+    # An empty VarData is falsy; one with app_wraps is truthy.
+    assert not VarData()
+    assert VarData(app_wraps=((10, wrapper_a),))
+
+
+def test_insert_app_wraps():
+    """The shared app-wrap primitive dedupes equal wraps and rejects conflicts."""
+    # Same tag ("Fragment") and priority; a/dup are equal, b is unequal.
+    wrap_a = rx.fragment(class_name="a")
+    wrap_a_dup = rx.fragment(class_name="a")
+    wrap_b = rx.fragment(class_name="b")
+
+    # Equal wraps at one key collapse to a single entry.
+    target: dict[tuple[int, str], rx.Component] = {}
+    insert_app_wraps(target, [(10, wrap_a), (10, wrap_a_dup)])
+    assert target == {(10, "Fragment"): wrap_a}
+
+    # A different wrapper at the same key is a conflict.
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        insert_app_wraps(target, [(10, wrap_b)])
+
+    # ``existing`` is consulted but never written: equal is skipped...
+    fresh: dict[tuple[int, str], rx.Component] = {}
+    insert_app_wraps(fresh, [(10, wrap_a_dup)], existing=target)
+    assert fresh == {}
+    # ...and a conflict against ``existing`` still raises.
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        insert_app_wraps({}, [(10, wrap_b)], existing=target)
+
+    # A different priority is a distinct slot.
+    insert_app_wraps(target, [(20, wrap_b)])
+    assert target[20, "Fragment"] is wrap_b
+
+
+def test_var_data_merge_raises_on_conflicting_app_wraps():
+    """The merge walk surfaces a conflict instead of silently keeping the first."""
+    # Same tag ("Fragment") and priority, unequal wrappers — a real conflict.
+    wrap_a = rx.fragment(class_name="a")
+    wrap_b = rx.fragment(class_name="b")
+
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        VarData.merge(
+            VarData(app_wraps=((10, wrap_a),)),
+            VarData(app_wraps=((10, wrap_b),)),
+        )
+
+
+def test_var_data_identity_hashes_component_metadata():
+    """VarData hashes component metadata without hashing components directly."""
+    wrapper_a = rx.fragment()
+    wrapper_b = rx.fragment()
+
+    base = VarData(hooks="useFoo")
+    wrap_with_a = VarData(hooks="useFoo", app_wraps=((10, wrapper_a),))
+    wrap_with_b = VarData(hooks="useFoo", app_wraps=((10, wrapper_b),))
+    component_with_a = VarData(hooks="useFoo", components=(wrapper_a,))
+    component_with_b = VarData(hooks="useFoo", components=(wrapper_b,))
+
+    assert base != wrap_with_a
+    assert wrap_with_a == wrap_with_b
+    assert hash(wrap_with_a) == hash(wrap_with_b)
+    assert component_with_a != component_with_b
+
+
+def test_var_hash_keeps_app_wrap_metadata_distinct():
+    """Formatted Var decode keeps app_wrap metadata when JS identity matches."""
+    wrapper = rx.fragment()
+    var_with_wrap = Var(
+        _js_expr="same",
+        _var_type=str,
+        _var_data=VarData(app_wraps=((10, wrapper),)),
+    )
+    plain_var = Var(_js_expr="same", _var_type=str, _var_data=VarData())
+
+    decoded_var_data, decoded_js_expr = _decode_var_immutable(
+        f"{var_with_wrap}{plain_var}"
+    )
+
+    assert decoded_js_expr == "samesame"
+    assert decoded_var_data is not None
+    assert decoded_var_data.app_wraps == ((10, wrapper),)
 
 
 def test_str_var_in_components(mocker: MockerFixture):

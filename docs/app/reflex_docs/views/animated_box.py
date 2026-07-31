@@ -154,7 +154,7 @@ def status_badge(icon: str, text: str, class_name: str = ""):
             )
         ),
         rx.text(text, class_name="text-xs font-medium text-secondary-11"),
-        class_name=f"flex h-5 p-[0rem_0.375rem_0rem_0.125rem] items-center gap-0.5 rounded-[0.375rem] border border-slate-5 bg-slate-1 {class_name}",
+        class_name=f"flex h-5 p-[0rem_0.375rem_0rem_0.125rem] items-center gap-0.5 rounded-[0.375rem] border border-secondary-5 bg-secondary-1 {class_name}",
     )
 
 
@@ -209,30 +209,30 @@ def terminal_box():
         rx.box(
             rx.text(
                 "$",
-                class_name="text-slate-9 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] mr-4 self-baseline",
+                class_name="text-secondary-9 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] mr-4 self-baseline",
             ),
             rx.box(
                 rx.box(
                     rx.text(
                         "",
-                        class_name="text-slate-12 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] reflex-deploy mr-0.5",
+                        class_name="text-secondary-12 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] reflex-deploy mr-0.5",
                     ),
                     # Square
                     rx.box(
-                        class_name="w-2 h-4 border-2 border-slate-9 typing-square opacity-100 transition-all duration-200 ease-out"
+                        class_name="w-2 h-4 border-2 border-secondary-9 typing-square opacity-100 transition-all duration-200 ease-out"
                     ),
                     class_name="flex flex-row",
                 ),
                 rx.text(
                     "Deploying...",
-                    class_name="text-slate-9 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] deploying-text self-start hidden",
+                    class_name="text-secondary-9 text-xs font-medium text-center leading-4 font-['JetBrains_Mono'] deploying-text self-start hidden",
                 ),
                 class_name="flex flex-col",
             ),
             class_name="flex items-center p-5",
         ),
         purple_gradient_circle(),
-        class_name="flex w-[20rem] h-[5rem] flex-col flex-shrink-0 rounded-xl rounded-b-none border-t-[1px] border-r-[1px] border-l-[1px] border-slate-4 bg-[light-dark(rgba(249, 249, 251, 0.48), rgba(26,27,29,0.48))] backdrop-filter backdrop-blur-[10px] terminal-box transition-all duration-[550ms] ease-in-out z-[5] origin-bottom translate-y-0 absolute bottom-0 overflow-hidden",
+        class_name="flex w-[20rem] h-[5rem] flex-col flex-shrink-0 rounded-xl rounded-b-none border-t-[1px] border-r-[1px] border-l-[1px] border-secondary-4 bg-[light-dark(rgba(249, 249, 251, 0.48), rgba(26,27,29,0.48))] backdrop-filter backdrop-blur-[10px] terminal-box transition-all duration-[550ms] ease-in-out z-[5] origin-bottom translate-y-0 absolute bottom-0 overflow-hidden",
     )
 
 
@@ -247,10 +247,10 @@ def deploy_box():
                 },
             ),
             rx.box(
-                rx.text("My App", class_name="text-sm font-medium text-slate-12"),
+                rx.text("My App", class_name="text-sm font-medium text-secondary-12"),
                 rx.text(
                     "my-app.reflex.run",
-                    class_name="text-sm font-medium text-slate-9",
+                    class_name="text-sm font-medium text-secondary-9",
                 ),
                 class_name="flex flex-col",
             ),
@@ -269,7 +269,7 @@ def deploy_box():
             class_name="flex flex-row relative items-center w-full",
         ),
         purple_gradient_circle(),
-        class_name="flex w-[20rem] h-[4.5rem] flex-row flex-shrink-0 rounded-xl rounded-b-none border-t-[1px] border-r-[1px] border-l-[1px] border-slate-4 bg-[light-dark(rgba(249, 249, 251, 0.48), rgba(26,27,29,0.48))] backdrop-filter backdrop-blur-[10px] deploy-box transition-all duration-[550ms] ease-in-out z-[6] origin-bottom absolute items-center p-[1rem_1.625rem_1rem_1.25rem] overflow-hidden",
+        class_name="flex w-[20rem] h-[4.5rem] flex-row flex-shrink-0 rounded-xl rounded-b-none border-t-[1px] border-r-[1px] border-l-[1px] border-secondary-4 bg-[light-dark(rgba(249, 249, 251, 0.48), rgba(26,27,29,0.48))] backdrop-filter backdrop-blur-[10px] deploy-box transition-all duration-[550ms] ease-in-out z-[6] origin-bottom absolute items-center p-[1rem_1.625rem_1rem_1.25rem] overflow-hidden",
     )
 
 
@@ -286,7 +286,7 @@ def animated_box(relative: bool = False) -> rx.Component:
                     <defs>
                         <radialGradient id="paint0_radial_12785_6973" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(213 136) rotate(90) scale(136 213)">
                             <stop stop-color="var(--violet-3)"/>
-                            <stop offset="1" stop-color="var(--slate-1)" stop-opacity="0"/>
+                            <stop offset="1" stop-color="var(--secondary-1)" stop-opacity="0"/>
                         </radialGradient>
                     </defs>
                 </svg>

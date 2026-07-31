@@ -112,6 +112,9 @@ jobs:
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: "1"
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -150,7 +153,7 @@ jobs:
 
       - name: Install reflex-docs dependencies
         working-directory: ./docs/app
-        run: sfw uv sync
+        run: sfw uv sync --frozen
 
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
@@ -160,6 +163,10 @@ jobs:
           # Verify sfw wrappers are on PATH
           which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+
+      - name: Validate /docs links against generated sitemap
+        working-directory: ./docs/app
+        run: uv run --active --no-sync pytest --runxfail tests/test_doc_links.py -v
 
       - name: Upload Socket.dev Firewall report
         if: always()
@@ -216,6 +223,10 @@ jobs:
       matrix:
         # Note: py311 version chosen due to available arm64 darwin builds.
         python-version: ["3.11", "3.12"]
+    env:
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
