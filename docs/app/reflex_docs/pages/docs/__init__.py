@@ -74,11 +74,27 @@ def build_nested_namespace(
     return parent_namespace
 
 
+# Leading YAML frontmatter block, mirroring reflex_docgen's parser.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+
+
 @lru_cache(maxsize=None)
 def _frontmatter_for(filepath: str) -> FrontMatter | None:
-    """Parse a doc's frontmatter once per file (cached for the process lifetime)."""
-    source = Path(filepath).read_text(encoding="utf-8")
-    return parse_document(source).frontmatter
+    """Parse a doc's frontmatter once per file (cached for the process lifetime).
+
+    Only the frontmatter block is fed to the parser so this stays cheap even
+    when called for every doc at startup; the body is parsed separately by the
+    rendering pipeline. Read failures yield None (like docs without
+    frontmatter) so a missing/unreadable file can't abort route registration.
+    """
+    try:
+        source = Path(filepath).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    block = _FRONTMATTER_BLOCK_RE.match(source)
+    if block is None:
+        return None
+    return parse_document(block.group(0)).frontmatter
 
 
 def get_components_from_frontmatter(filepath: str) -> list:

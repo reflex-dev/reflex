@@ -29,7 +29,7 @@ def public_url(path: str = "", fallback_base: str | None = None) -> str:
         return fallback_base.rstrip("/") + path
 
     config = get_config()
-    deploy_url = (config.deploy_url or "").removesuffix("/")
+    deploy_url = (config.deploy_url or "").rstrip("/")
     frontend_path = (config.frontend_path or "").strip("/")
     if frontend_path:
         base = f"{deploy_url}/{frontend_path}" if deploy_url else f"/{frontend_path}"
