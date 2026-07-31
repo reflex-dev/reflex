@@ -40,8 +40,8 @@
     "mergician": "v2.0.2",
     "moment": "2.30.1",
     "moment-timezone": "0.6.2",
-    "plotly.js": "3.7.0",
-    "plotly.js-locales": "3.7.0",
+    "plotly.js": "3.5.1",
+    "plotly.js-locales": "3.5.0",
     "react": "19.2.8",
     "react-colorful": "5.7.0",
     "react-debounce-input": "3.3.0",
@@ -54,7 +54,7 @@
     "react-markdown": "10.1.0",
     "react-moment": "1.2.2",
     "react-player": "3.4.0",
-    "react-plotly.js": "4.0.0",
+    "react-plotly.js": "2.6.0",
     "react-responsive-carousel": "3.2.23",
     "react-router": "7.18.1",
     "react-router-dom": "7.18.1",
@@ -70,7 +70,7 @@
     "remark-emoji": "5.0.2",
     "remark-gfm": "4.0.1",
     "remark-math": "6.0.0",
-    "shiki": "4.3.1",
+    "shiki": "3.3.0",
     "socket.io-client": "4.8.3",
     "sonner": "2.0.7",
     "tailwindcss-animated": "2.0.0",
@@ -91,6 +91,7 @@
     "vite": "8.0.16"
   },
   "overrides": {
-    "cookie": "1.1.1"
+    "cookie": "1.1.1",
+    "postcss": "8.5.21"
   }
 }
