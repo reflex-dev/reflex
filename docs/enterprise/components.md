@@ -71,7 +71,7 @@ def enterprise_component_grid():
         cards.append(
             rx.box(
                 rx.link(
-                    rx.el.h1(
+                    rx.el.h2(
                         section["title"],
                         class_name="font-large text-secondary-12",
                     ),

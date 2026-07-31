@@ -2,7 +2,7 @@ import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.components.icons import get_icon
 
-from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
+from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
 
 def get_display_name(name: str) -> str:
@@ -47,7 +47,7 @@ def component_grid():
         sidebar = [
             rx.box(
                 rx.link(
-                    rx.el.h1(
+                    rx.el.h2(
                         get_display_name(category),
                         class_name="font-large text-secondary-12",
                     ),
@@ -94,7 +94,7 @@ def component_grid():
             class_name="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6",
         ),
         rx.box(
-            h1_comp(
+            h2_comp(
                 text="Graphing Components",
             ),
             text_comp_2(

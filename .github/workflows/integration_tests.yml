@@ -112,6 +112,9 @@ jobs:
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: "1"
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -220,6 +223,10 @@ jobs:
       matrix:
         # Note: py311 version chosen due to available arm64 darwin builds.
         python-version: ["3.11", "3.12"]
+    env:
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

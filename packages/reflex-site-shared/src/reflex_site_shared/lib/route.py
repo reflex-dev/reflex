@@ -15,8 +15,14 @@ class Route:
     # The path of the route.
     path: str
 
-    # The page title.
+    # The page title. Used as the human-readable label in the sidebar/nav and,
+    # unless `seo_title` is set, as the HTML <title>.
     title: str | rx.Var | None = None
+
+    # An optional, longer SEO <title> that overrides `title` in the HTML head
+    # only. Lets a page keep a short sidebar/nav label (`title`) while emitting
+    # a descriptive, search-friendly <title> (e.g. API-reference/CLI pages).
+    seo_title: str | None = None
 
     # The page description.
     description: str | None = None

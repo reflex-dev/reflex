@@ -20,6 +20,7 @@ It is straightforward to create accounts and API tokens with PyPI. There is offi
 rx.center(
     rx.image(
         src="https://web.reflex-assets.dev/custom_components/pypi_register.webp",
+        alt="PyPI account registration page",
         style=image_style,
         margin_bottom="16px",
         loading="lazy",
@@ -33,6 +34,7 @@ A user can use username and password to authenticate with PyPI when publishing.
 rx.center(
     rx.image(
         src="https://web.reflex-assets.dev/custom_components/pypi_account_settings.webp",
+        alt="PyPI account settings page",
         style=image_style,
         margin_bottom="16px",
         loading="lazy",
@@ -46,6 +48,7 @@ Scroll down to the API tokens section and click on the "Add API token" button. F
 rx.center(
     rx.image(
         src="https://web.reflex-assets.dev/custom_components/pypi_api_tokens.webp",
+        alt="PyPI API tokens settings page",
         style=image_style,
         width="700px",
         loading="lazy",

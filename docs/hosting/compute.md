@@ -2,6 +2,8 @@
 import reflex as rx
 ```
 
+# Compute
+
 ## Compute Usage
 
 Reflex Cloud is billed on a per second basis so you only pay for when your app is being used by your end users. When your app is idle, you are not charged. 

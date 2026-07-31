@@ -233,9 +233,17 @@ def test_hybrid_properties(
     set_info_a = driver.find_element(By.ID, "set_info_a")
     set_info_a.send_keys(Keys.CONTROL + "a")
     set_info_a.send_keys(Keys.DELETE)
-    set_info_a.send_keys("z")
+    # Wait for the cleared value to round-trip before typing. The input is controlled
+    # by State.info.a, so typing while the clear is still in flight is racy: a late
+    # empty-state delta can drop the new key ("- b") or it can be appended to a stale
+    # "a" ("az - b"). Polling the backend-derived text gates on the clear landing.
     assert (
         hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: a - b")
+        == "info_a_b: - b"
+    )
+    set_info_a.send_keys("z")
+    assert (
+        hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: - b")
         == "info_a_b: z - b"
     )
 

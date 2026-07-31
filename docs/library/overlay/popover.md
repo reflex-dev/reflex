@@ -188,9 +188,10 @@ class PopoverState(rx.State):
 def popover_example():
     return rx.flex(
         rx.heading(
-            f"Number of times popover opened or closed: {PopoverState.num_opens}"
+            f"Number of times popover opened or closed: {PopoverState.num_opens}",
+            as_="h2",
         ),
-        rx.heading(f"Popover open: {PopoverState.opened}"),
+        rx.heading(f"Popover open: {PopoverState.opened}", as_="h2"),
         rx.popover.root(
             rx.popover.trigger(
                 rx.button("Popover"),

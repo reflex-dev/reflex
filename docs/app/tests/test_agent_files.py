@@ -271,6 +271,14 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     )
 
 
+def test_section_for_root_level_markdown_strips_extension():
+    """Root-level docs (e.g. the changelog index) get a clean section name."""
+    from agent_files._plugin import _section_for_path
+
+    assert _section_for_path(Path("changelog.md")) == "Changelog"
+    assert _section_for_path(Path("changelog/reflex-base.md")) == "Changelog"
+
+
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
     monkeypatch.setattr(

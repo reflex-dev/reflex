@@ -93,12 +93,17 @@ def with_cwd_in_syspath():
             sys.path[:] = orig_sys_path
 
 
-def preload_color_theme():
+def preload_color_theme(default_color_mode: str = "system"):
     """Create a script component that preloads the color theme to prevent FOUC.
 
     This script runs immediately in the document head before React hydration,
     reading the saved theme from localStorage and applying the correct CSS classes
     to prevent flash of unstyled content.
+
+    Args:
+        default_color_mode: The color mode to apply when the browser has no saved
+            theme. Must match the compiled context default so the pre-hydration
+            paint agrees with React.
 
     Returns:
         Script: A script component to add to App.head_components
@@ -106,11 +111,11 @@ def preload_color_theme():
     from reflex_components_core.el.elements.scripts import Script
 
     # Create direct inline script content (like next-themes dangerouslySetInnerHTML)
-    script_content = """
+    script_content = f"""
 // Only run in browser environment, not during SSR
-if (typeof document !== 'undefined') {
-    try {
-        const theme = localStorage.getItem("theme") || "system";
+if (typeof document !== 'undefined') {{
+    try {{
+        const theme = localStorage.getItem("theme") || {default_color_mode!r};
         const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         const resolvedTheme = theme === "system" ? systemPreference : theme;
 
@@ -120,14 +125,14 @@ if (typeof document !== 'undefined') {
         document.documentElement.classList.add(resolvedTheme);
         document.documentElement.style.colorScheme = resolvedTheme;
 
-    } catch (e) {
+    }} catch (e) {{
         // Fallback to system preference on any error (resolve "system" to actual theme)
         const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         document.documentElement.classList.remove("light", "dark");
         document.documentElement.classList.add(fallbackTheme);
         document.documentElement.style.colorScheme = fallbackTheme;
-    }
-}
+    }}
+}}
 """
 
     return Script.create(script_content)

@@ -1,6 +1,7 @@
 """This module contains the pixel trackers for the website."""
 
 from reflex_components_internal.blocks.telemetry import (
+    get_ahrefs_trackers,
     get_default_telemetry_script,
     get_google_analytics_trackers,
     get_leadpipe_trackers,
@@ -29,4 +30,5 @@ def get_pixel_website_trackers() -> list[rx.Component]:
         get_posthog_trackers(
             project_id="phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb"
         ),
+        get_ahrefs_trackers(data_key="jfWzj2SzNXnkj1KsOs5WEg"),
     ]

@@ -20,12 +20,19 @@ from reflex_docs.views.docs_navbar import docs_navbar
 @rx.page(
     route="/",
     title="Reflex Documentation - Build Web Apps in Pure Python",
-    meta=create_meta_tags(
-        title="Reflex Documentation - Build Web Apps in Pure Python",
-        description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
-        image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
-        url="https://reflex.dev/docs",
-    ),
+    # og:image is emitted once by the compiler from `image`; drop it from the
+    # create_meta_tags list to avoid a favicon-default + preview duplicate.
+    image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
+    meta=[
+        m
+        for m in create_meta_tags(
+            title="Reflex Documentation - Build Web Apps in Pure Python",
+            description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
+            image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
+            url="https://reflex.dev/docs/",
+        )
+        if not (isinstance(m, dict) and m.get("property") == "og:image")
+    ],
 )
 def docs_landing() -> rx.Component:
     return rx.el.div(

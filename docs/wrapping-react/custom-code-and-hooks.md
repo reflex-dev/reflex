@@ -1,3 +1,5 @@
+# Custom Code and Hooks
+
 When wrapping a React component, you may need to define custom code or hooks that are specific to the component. This is done by defining the `add_custom_code`or `add_hooks` methods in your component class.
 
 ## Custom Code

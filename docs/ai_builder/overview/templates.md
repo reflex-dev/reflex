@@ -10,6 +10,7 @@ import reflex as rx
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/templates_light.avif",
+        alt="Reflex AI Builder templates gallery",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
@@ -25,6 +26,7 @@ To use a template, simply click the template and then in the bottom right corner
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/fork_template_light.avif",
+        alt="Forking a template in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

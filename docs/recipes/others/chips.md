@@ -91,7 +91,7 @@ def item_selector() -> rx.Component:
     return rx.vstack(
         rx.hstack(
             rx.icon("clock", size=20),
-            rx.heading("Select your reservation time:", size="4"),
+            rx.heading("Select your reservation time:", as_="h2", size="4"),
             spacing="2",
             align="center",
             width="100%",
@@ -205,7 +205,9 @@ def items_selector() -> rx.Component:
             rx.hstack(
                 rx.icon("lightbulb", size=20),
                 rx.heading(
-                    "Skills" + f" ({BasicChipsState.selected_items.length()})", size="4"
+                    "Skills" + f" ({BasicChipsState.selected_items.length()})",
+                    as_="h2",
+                    size="4",
                 ),
                 spacing="1",
                 align="center",

@@ -40,7 +40,13 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 
 #: Known frontmatter keys that are not component preview lambdas.
-_KNOWN_KEYS = frozenset({"components", "only_low_level", "title"})
+_KNOWN_KEYS = frozenset({
+    "components",
+    "only_low_level",
+    "title",
+    "meta_description",
+    "description",
+})
 
 
 def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:

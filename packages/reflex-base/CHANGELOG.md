@@ -1,3 +1,63 @@
+## v0.9.7 (2026-07-15)
+
+### Deprecations
+
+- `ArrayVar.foreach` is deprecated; use `ArrayVar.map` instead. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+
+### Features
+
+- `ArrayVar` gained `map`, `filter`, `reduce`, and `flat_map` operations, and `StringVar.strip` now accepts a `chars` argument alongside new `lstrip`/`rstrip` methods. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+- Added `default_color_mode` to `rx.Config` (`"system"`, `"light"`, or `"dark"`, also settable via `REFLEX_DEFAULT_COLOR_MODE`) and moved the shared `LiteralColorMode` type and color-mode string constants into `reflex_base.constants`. This lets apps set the initial color mode without depending on the Radix themes appearance prop. ([#6716](https://github.com/reflex-dev/reflex/issues/6716))
+- `@rx.memo` now accepts a `wrapper=` argument controlling the JS function that wraps the compiled component definition: keep the default React `memo`, pass a custom function `Var` (e.g. an `rx.vars.FunctionStringVar` carrying its own imports), or pass `wrapper=None` to export the bare function component. ([#6730](https://github.com/reflex-dev/reflex/issues/6730))
+- Added `frozen_lockfile` to `rx.Config` (default `True`, also settable via `REFLEX_FROZEN_LOCKFILE`), controlling whether the frontend package manager runs in lockfile-enforcing mode. Reflex still creates, manages, and syncs the lockfile regardless; the option only controls whether a lockfile/`package.json` mismatch is treated as an error. ([#6763](https://github.com/reflex-dev/reflex/issues/6763))
+
+### Bug Fixes
+
+- Custom attributes set on a `Field` are now preserved (deep-copied) when the state metaclass rebuilds fields, instead of being silently discarded. The reserved `annotation` attribute is never carried over so rebuilt fields are not misidentified as pydantic fields. ([#6726](https://github.com/reflex-dev/reflex/issues/6726))
+- Fix `_get_all_hooks_internal` mutating each component's cached internal hooks with its descendants' hooks, which made memo tag hashes order-dependent and duplicated hooks into memo bodies. ([#6741](https://github.com/reflex-dev/reflex/issues/6741))
+
+### Performance
+
+- Cache framework-path checks in `console.deprecate`'s call-stack walk, making repeat calls ~150x faster (deprecated attributes on hot paths, like `RouterData.page`, no longer cost multiple milliseconds per access). ([#6736](https://github.com/reflex-dev/reflex/issues/6736))
+- Event chaining (`yield OtherState.handler(rows)`) no longer deep-copies payload values that are not attached to any state: only state-bound `MutableProxy` subtrees are copied, making proxy-free payloads ~5x faster to chain. ([#6739](https://github.com/reflex-dev/reflex/issues/6739))
+- `Var.to()` and `Var.guess_type()` resolve their target Var subclass through cached registry lookups instead of scanning the full registry with `safe_issubclass` on every call (~70% of the cost of constructing a var operation). ([#6742](https://github.com/reflex-dev/reflex/issues/6742))
+
+
+## v0.9.6.post1 (2026-06-26)
+
+### Features
+
+- Added the `REFLEX_EXTRA_PLUGINS` environment variable, a colon-separated list of fully qualified plugin import paths appended to the config's `plugins` list. Unlike `REFLEX_PLUGINS`, which replaces the list entirely, this preserves plugins configured in `rxconfig.py`; an entry is skipped when a plugin of the same type is already present or when its type is listed in `disable_plugins`. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+### Bug Fixes
+
+- Stop warning when a non-built-in plugin is listed in `disable_plugins`, so config can opt out of an env-provided plugin without a spurious warning. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+- Improve error message when plugin spec from environment cannot be used. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+
+## v0.9.6 (2026-06-25)
+
+### Features
+
+- `StringVar` now includes `lstrip` and `rstrip` methods. The `strip` method now accepts an optional `chars` argument for consistency with Python’s str API. ([#5417](https://github.com/reflex-dev/reflex/issues/5417))
+- Added `reflex_base.utils.memo_paths`, which translates a memo's Python source module into the mirrored `.web/app_components/` JSX path and `$/...` library specifier used by the compiler. The memo component and compiler plugin now route each memo's compiled output through these helpers so it lands alongside its source module's layout, falling back to the per-name `utils/components/<name>` path when the module can't be mirrored. The helpers also derive a per-module-unique JS symbol for each mirrored memo, and the memo registry is keyed by `(name, source module)` so same-named memos defined in different modules coexist instead of colliding. ([#6457](https://github.com/reflex-dev/reflex/issues/6457))
+- `ObjectVar` attribute access now resolves `HybridProperty` descriptors defined on the underlying type, evaluating the property's frontend logic with the object var substituted as `self`. `HybridProperty` moved to `reflex_base.vars.hybrid_property` (still available as `rx._x.hybrid_property`). ([#6617](https://github.com/reflex-dev/reflex/issues/6617))
+- Add `AgentsMd` constants (canonical URL, managed-section markers, and `CLAUDE.md` bridge) supporting `reflex init` AGENTS.md generation. ([#6620](https://github.com/reflex-dev/reflex/issues/6620))
+- Added `HybridPropertyError`, raised when a hybrid property's frontend logic accesses a backend (underscore-prefixed) var on a state while building its frontend var. ([#6621](https://github.com/reflex-dev/reflex/issues/6621))
+- `package_json_template` accepts `**additional_keys` to include extra fields (e.g. `name`, `packageManager`, `engines`) in the rendered package.json. ([#6658](https://github.com/reflex-dev/reflex/issues/6658))
+
+### Bug Fixes
+
+- Preserve extra bound event arguments when `rx.upload_files` is used in an upload handler. ([#5290](https://github.com/reflex-dev/reflex/issues/5290))
+- Avoid re-entering config loading when a `State` subclass is defined in `rxconfig.py`. ([#6662](https://github.com/reflex-dev/reflex/issues/6662))
+- Bump the bundled `vite` dev dependency to 8.0.16, fixing a `server.fs.deny` bypass on Windows alternate paths (CVE-2026-53571) in the dev server of generated apps. ([#6665](https://github.com/reflex-dev/reflex/issues/6665))
+- `pyi_hashes.json` entries are now computed from the final `.pyi` content after `ruff format` / `ruff check --fix` post-processing, instead of the intermediate generator output. A pyi_generator change that only affects pre-format output no longer flags hash changes for stubs whose final content is identical.
+
+### Miscellaneous
+
+- `Component` gained a private `_get_tag_name()` helper returning the JS expression that references the component's tag (quoted for global-scope DOM tags without a library); `Component._render` and `DebounceInput` now share it instead of duplicating the quoting logic. ([#6637](https://github.com/reflex-dev/reflex/issues/6637))
+
+
 ## v0.9.5 (2026-06-10)
 
 ### Features

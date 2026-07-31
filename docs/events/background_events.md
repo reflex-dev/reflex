@@ -87,7 +87,7 @@ class MyTaskState(rx.State):
 
 def background_task_example():
     return rx.hstack(
-        rx.heading(MyTaskState.counter, " /"),
+        rx.heading(MyTaskState.counter, " /", as_="h2"),
         rx.input(
             value=MyTaskState.max_counter,
             on_change=MyTaskState.set_max_counter,
@@ -103,6 +103,40 @@ def background_task_example():
         ),
     )
 ```
+
+## Passing Mutable Values to Helpers
+
+A helper that only receives a mutable state value can enter that value as an
+async context manager. This refreshes the value from its owning state and holds
+the same exclusive state lock as `async with self`.
+
+```python
+import asyncio
+
+import reflex as rx
+
+
+async def advance_job(job):
+    async with job:
+        job["progress"] += 1
+
+
+class JobState(rx.State):
+    jobs: dict[str, dict[str, int]] = {"build": {"progress": 0}}
+
+    @rx.event(background=True)
+    async def run_job(self):
+        job = self.jobs["build"]
+        await asyncio.sleep(1)
+        await advance_job(job)
+```
+
+Root mutable state fields and nested values reached through stable dictionary
+keys or object attributes can be refreshed this way. Values taken from list
+indexes, list slices, iteration, or a missing `dict.get()` default cannot be
+safely identified after concurrent state changes, so using those values as
+async context managers raises `RuntimeError`. Enter `async with self` and
+retrieve the current list item again while holding the state lock instead.
 
 ## Terminating Background Tasks on Page Close or Navigation
 

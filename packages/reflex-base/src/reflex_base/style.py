@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal
+from typing import Any
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints, breakpoints_values
+from reflex_base.constants.base import DARK_COLOR_MODE as DARK_COLOR_MODE
+from reflex_base.constants.base import LIGHT_COLOR_MODE as LIGHT_COLOR_MODE
+from reflex_base.constants.base import SYSTEM_COLOR_MODE as SYSTEM_COLOR_MODE
+from reflex_base.constants.base import LiteralColorMode as LiteralColorMode
 from reflex_base.event import EventChain, EventHandler, EventSpec, run_script
 from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexError
@@ -16,11 +20,6 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
-
-SYSTEM_COLOR_MODE: str = "system"
-LIGHT_COLOR_MODE: str = "light"
-DARK_COLOR_MODE: str = "dark"
-LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
 color_mode_imports = {
