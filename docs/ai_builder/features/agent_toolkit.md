@@ -42,4 +42,4 @@ Skills add reusable Reflex-specific workflows to a local coding assistant. The A
 
 Use MCP for current structured documentation and component context. Use Skills for repeatable setup, development, validation, and debugging behavior. They can be used together.
 
-For the complete onboarding workflow, see [AI Onboarding](/docs/ai/integrations/ai-onboarding/).
+For the complete onboarding workflow, see the [Agent Toolkit guide](/docs/ai/integrations/agent-toolkit/).

@@ -172,9 +172,13 @@ for route in routes:
 
 # Add redirects.
 redirects = [
-    (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
-    for route in routes
-    if route.path.startswith("/ai/")
+    ("/ai/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
+    ("/ai-builder/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
+    *[
+        (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
+        for route in routes
+        if route.path.startswith("/ai/")
+    ],
 ]
 redirects.extend([
     ("/ai/features/ide/", "/ai/features/editor-modes/"),
