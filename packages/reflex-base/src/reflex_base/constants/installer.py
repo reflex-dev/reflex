@@ -86,7 +86,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.18.1"
+    default_version = "7.15.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
