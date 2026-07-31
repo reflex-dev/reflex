@@ -180,6 +180,14 @@ redirects = [
         if route.path.startswith("/ai/")
     ],
 ]
+redirects.extend([
+    ("/ai/features/ide/", "/ai/features/editor-modes/"),
+    ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
+    ("/ai/features/customization/", "/ai/features/design-systems/"),
+    ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
+    ("/hosting/adding-members/", "/hosting/project-members/"),
+    ("/hosting/projects/", "/hosting/project-members/"),
+])
 
 
 def _redirect_page():
