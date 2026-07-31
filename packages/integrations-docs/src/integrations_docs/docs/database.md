@@ -35,7 +35,7 @@ For PostgreSQL, MySQL, and MSSQL, choose the database type and enter:
 - `username` and `password`: the database credentials.
 - `database_name`: the database to connect to.
 
-For MSSQL, enable **Trust Server Certificate** only if your server requires that setting.
+For MSSQL, **Trust Server Certificate** skips certificate identity validation. Use it only as a temporary workaround for an untrusted or self-signed server certificate, and prefer configuring a certificate that the client trusts.
 
 For SQLite, select **SQLite** and enter an HTTP or HTTPS **SQLite Download URL**. Reflex Build downloads the database file before using it.
 
@@ -69,7 +69,7 @@ Enter database passwords, connection URIs, and SSH private keys only in the inte
 
 ## Enable the Integration for an App
 
-Open the app's **Integrations** panel and enable the saved database connection. Reflex Build then connects to the database and, when the app does not already have a model file, derives SQLAlchemy models from its schema.
+Open the app's **Integrations** panel and enable the saved database connection. Reflex Build then connects to the database and, when the app does not already have a model file, creates the app's data models from the schema.
 
 If the connection fails, check that:
 

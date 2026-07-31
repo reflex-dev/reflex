@@ -25,4 +25,4 @@ The archive contains the app source, assets, dependency manifests, and Reflex co
 
 Secrets, integration credentials, and other protected project values are not a portable part of the source export. Configure them separately in the destination environment and never commit them to source control.
 
-For ongoing source control, [connect this app to GitHub](/docs/ai/features/connect-to-github/) to push and pull its code. To start Builder work from an existing GitHub, GitLab, Bitbucket, Azure DevOps, or other Git repository, connect a [Project Repository](/docs/ai/features/connect-to-git-providers/).
+For ongoing source control, [connect this app to GitHub](/docs/ai/features/connect-to-github/) to push and pull its code. To start Reflex Build work from an existing GitHub, GitLab, Bitbucket, Azure DevOps, or other Git repository, connect a [Project Repository](/docs/ai/features/connect-to-git-providers/).
