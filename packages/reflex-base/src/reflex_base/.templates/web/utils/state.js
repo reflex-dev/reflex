@@ -474,7 +474,7 @@ const NON_FINITE_REPLACEMENTS = {
   "-Infinity": `"${NEG_INF_SENTINEL}"`,
   NaN: `"${NAN_SENTINEL}"`,
 };
-const rewriteBareNonFiniteFloats = (str) =>
+export const rewriteBareNonFiniteFloats = (str) =>
   str.replace(NON_FINITE_FLOAT_RE, (match) =>
     match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
   );
@@ -487,6 +487,12 @@ export const reviveNonFiniteFloats = (_k, v) => {
     return v.slice(SENTINEL_ESCAPE_PREFIX.length);
   return v;
 };
+// Passing a reviver disables the engine's fast JSON parser (~4-12x slower),
+// so only pay for it when a sentinel can actually appear in the payload.
+export const parseNonFiniteAwareJSON = (str) =>
+  str.includes("__reflex_")
+    ? JSON.parse(str, reviveNonFiniteFloats)
+    : JSON.parse(str);
 
 /**
  * Queue events to be processed and trigger processing of queue.
@@ -593,7 +599,7 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str, reviveNonFiniteFloats);
+      return parseNonFiniteAwareJSON(str);
     } catch (e) {
       try {
         return JSON.parse(
