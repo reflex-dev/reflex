@@ -16,15 +16,21 @@ from agent_files._plugin import (
 )
 
 
+def _patch_config(monkeypatch, deploy_url: str, frontend_path: str = "/docs"):
+    """Patch the site config everywhere it is read.
+
+    Public URLs are built via ``reflex_site_shared.utils.url.public_url``, which
+    reads the config through its own module-level ``get_config`` import, so
+    patching only ``agent_files._plugin.get_config`` is not enough.
+    """
+    config = SimpleNamespace(deploy_url=deploy_url, frontend_path=frontend_path)
+    monkeypatch.setattr("agent_files._plugin.get_config", lambda: config)
+    monkeypatch.setattr("reflex_site_shared.utils.url.get_config", lambda: config)
+
+
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     """The docs mount exposes public-root llms.txt as /docs/llms.txt."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     path, content = generate_llms_txt([
         MarkdownIndexEntry(
@@ -127,13 +133,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
 
 def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_path):
     """Generated markdown pages advertise the docs index and markdown access."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="http://localhost:3000",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="http://localhost:3000")
     source = tmp_path / "overview.md"
     source.write_text(
         "# Overview\n\nBuild full-stack apps in Python.\n",
@@ -161,13 +161,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
     monkeypatch, tmp_path
 ):
     """Component docs markdown includes generated API reference props tables."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     source = tmp_path / "button.md"
     source.write_text(
         "---\n"
@@ -217,13 +211,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 
 def test_generate_dynamic_api_reference_files(monkeypatch):
     """Dynamic API reference pages have generated markdown assets."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     raw_files = generate_dynamic_api_reference_files()
     files = dict(raw_files)
@@ -281,13 +269,7 @@ def test_section_for_root_level_markdown_strips_extension():
 
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     introduction = tmp_path / "introduction.md"
     introduction.write_text(
         "# Introduction\n\nBuild full-stack apps in Python.\n",

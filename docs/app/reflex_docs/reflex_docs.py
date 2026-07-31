@@ -87,16 +87,13 @@ def _canonical_url(path: str) -> str:
 
 
 # Add the pages to the app.
+_DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
 for route in routes:
     # print(f"Adding route: {route}")
     if _check_whitelisted_path(route.path):
-        # Normalize image to CDN URL when it's a relative path
         image_url = (
-            f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
-            if route.image is None
-            else to_cdn_image_url(route.image)
-            or f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
-        )
+            to_cdn_image_url(route.image) if route.image else None
+        ) or _DEFAULT_PREVIEW
 
         # Build a complete, page-specific set of SEO meta tags (description,
         # Open Graph, Twitter card, canonical) from the route's own title and
