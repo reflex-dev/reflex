@@ -40,4 +40,4 @@ Each project has its own **Audit Logs** page in the project sidebar, covering ac
 ## Related
 
 - [Roles & permissions](/docs/ai/organization/roles-and-permissions/) — who can see each audit log.
-- [Deployment approvals](/docs/ai/organization/deployment-approvals/) — a checkpoint before deployments run.
+- [Project approvals](/docs/ai/organization/deployment-approvals/) — checkpoints before deployments and protected membership changes run.

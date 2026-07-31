@@ -21,7 +21,7 @@ Start with the smallest relevant time range and region, then broaden the filters
 reflex cloud apps logs [OPTIONS] [APP_ID]
 ```
 
-Use the CLI for local debugging, automation, or when you need to stream output in a terminal.
+Use the CLI for local debugging, automation, or terminal-based inspection. It retrieves logs in batches and prompts before loading the next page.
 
 ## Deployment History and Build Output
 

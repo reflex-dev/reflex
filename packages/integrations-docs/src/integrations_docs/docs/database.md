@@ -1,10 +1,10 @@
 ---
 tags: Data Infrastructure
-description: Connect Builder apps to PostgreSQL, MySQL, MSSQL, or SQLite databases.
+description: Connect Reflex Build apps to PostgreSQL, MySQL, MSSQL, or SQLite databases.
 ---
 # Database Integration
 
-The Database Integration connects Builder apps to an existing SQL database. When you enable the connection for an app, Builder can inspect its schema and use that structure while generating the app.
+The Database Integration connects Reflex Build apps to an existing SQL database. When you enable the connection for an app, Reflex Build can inspect its schema and use that structure while generating the app.
 
 ## Supported Databases
 
@@ -30,22 +30,24 @@ Use **Connection Details** to enter each part of the connection separately.
 
 For PostgreSQL, MySQL, and MSSQL, choose the database type and enter:
 
-- **hostname**: the database server address.
-- **port**: defaults to `5432` for PostgreSQL, `3306` for MySQL, or `1433` for MSSQL.
-- **username** and **password**: the database credentials.
-- **database_name**: the database to connect to.
+- `hostname`: the database server address.
+- `port`: defaults to `5432` for PostgreSQL, `3306` for MySQL, or `1433` for MSSQL.
+- `username` and `password`: the database credentials.
+- `database_name`: the database to connect to.
 
-For SQLite, select **SQLite** and enter an HTTP or HTTPS **SQLite Download URL**. Builder downloads the database file before using it.
+For MSSQL, enable **Trust Server Certificate** only if your server requires that setting.
+
+For SQLite, select **SQLite** and enter an HTTP or HTTPS **SQLite Download URL**. Reflex Build downloads the database file before using it.
 
 ## Database URI
 
-Use **Database URI** when you already have a complete SQLAlchemy-compatible connection string. For example:
+Use **Database URI** when you have a complete connection URI for one of the supported database types. For example:
 
 ```text
 postgresql://username:password@hostname:5432/database_name
 ```
 
-Enter the URI in **db_url**, then select **Save Changes**. Include any required driver or connection options in the URI supplied by your database provider.
+Enter the URI in `db_url`, then select **Save Changes**. Reflex Build selects the database driver automatically. Include provider-required connection options as query parameters when needed.
 
 ## Connect through an SSH Tunnel
 
@@ -53,11 +55,11 @@ Use an SSH tunnel when the database is on a private network but can be reached t
 
 1. Enter the database connection details or URI. Keep the database hostname and port set to the address the bastion host uses to reach the database.
 2. Turn on **Connect via SSH tunnel**.
-3. Enter the **ssh_hostname**, **ssh_port** (usually `22`), and **ssh_username** for the bastion host.
+3. Enter the `ssh_hostname`, `ssh_port` (usually `22`), and `ssh_username` for the bastion host.
 4. Paste the corresponding PEM-formatted **SSH private key**.
 5. Select **Save Changes**.
 
-The SSH account must allow port forwarding to the database host and port. Use a dedicated, restricted SSH key and database user for Builder.
+The SSH account must allow port forwarding to the database host and port. Use a dedicated, restricted SSH key and database user for Reflex Build.
 
 ```md alert warning
 # Keep credentials private
@@ -67,7 +69,7 @@ Enter database passwords, connection URIs, and SSH private keys only in the inte
 
 ## Enable the Integration for an App
 
-Open the app's **Integrations** panel and enable the saved database connection. Builder then connects to the database and, when the app does not already have a model file, derives SQLAlchemy models from its schema.
+Open the app's **Integrations** panel and enable the saved database connection. Reflex Build then connects to the database and, when the app does not already have a model file, derives SQLAlchemy models from its schema.
 
 If the connection fails, check that:
 

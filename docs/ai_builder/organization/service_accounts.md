@@ -11,7 +11,7 @@ Because the organization owns the identity, its credentials can keep working whe
 
 ```md alert info
 # Plan availability
-Service accounts are available on supported plans. If the creation control is unavailable, [contact sales](https://reflex.dev/pricing/).
+Service accounts are available on supported plans and only to organization admins. If you are not an admin, ask one to create or manage the account. If an admin cannot see the creation control, [contact sales](https://reflex.dev/pricing/) to confirm plan availability.
 ```
 
 ## Create a service account

@@ -101,7 +101,7 @@ rx.image(
 
 ## 6. Review the Result
 
-Open **Preview** and test the result. For feedback tied to a specific visual area, select **Review mode**, draw around the chart spacing and title, and add a comment such as:
+Open **Preview** and test the result. Switch Preview to a desktop width so **Review mode** is available. For feedback tied to a specific visual area, select **Review mode**, draw around the chart spacing and title, and add a comment such as:
 
 ```text
 Keep the table behavior unchanged. Reduce the empty space above the chart and

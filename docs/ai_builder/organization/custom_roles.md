@@ -46,7 +46,7 @@ Permissions that come with the base level are shown ticked and greyed out; they'
 | | Reveal secret values | See the value of a secret |
 | | Edit secrets | Add, change, and remove secrets |
 | **Approvals** | Approve deployments | Approve or reject deployments that need sign-off |
-| | Approve project changes | Approve or reject member additions, removals, and role changes |
+| | Approve project changes | Approve or reject member additions, removals, role changes, and team access grants |
 | **Activity** | View audit log | See the project's activity history |
 
 ```md alert info

@@ -26,8 +26,8 @@ import reflex as rx
 ```python eval
 rx.el.div(
     rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/add_images_to_assets.avif",
-        alt="Uploading an image to app assets in Reflex Build",
+        src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/image_prompt_attachment.webp",
+        alt="An image attached to a prompt in Reflex Build",
         class_name="rounded-md h-auto mb-4",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

@@ -35,7 +35,7 @@ For a Member, Manager, or custom organization role, you can also select one or m
 
 ```md alert info
 # Project access is optional
-Organization membership alone does not grant project access. Select projects while adding the member, or add them later from organization or project settings. If you leave every project unselected, the person joins the organization but cannot open a project. See [Managing project access](/docs/ai/organization/project-access/).
+For non-admin organization roles, membership alone does not grant project access. Select projects while adding the member, or add them later from organization or project settings. If you leave every project unselected, the person joins the organization but cannot open a project. Organization admins inherit Admin access to every project. See [Managing project access](/docs/ai/organization/project-access/).
 ```
 
 ## Pending invitations

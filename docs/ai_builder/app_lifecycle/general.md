@@ -23,7 +23,7 @@ Settings links to the app's reuse and export workflows:
 - [Copy the app](/docs/ai/app-lifecycle/copy-app/)
 - [Download the source](/docs/ai/app-lifecycle/download-app/)
 
-These actions are also available from the menu next to **Deploy** when applicable.
+All three actions are available in **Settings**. The menu next to **Deploy** also provides shortcuts for **Copy** and **Download**.
 
 ## Delete the App
 

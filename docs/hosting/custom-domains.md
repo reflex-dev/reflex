@@ -43,4 +43,4 @@ If verification fails:
 - Verify that the DNS provider did not append the domain twice.
 - Wait for propagation and retry.
 
-Once verified, the domain appears on the app's **Deployment** page.
+Once verification succeeds, deploy the app again to activate the domain. The verified domain then appears on the app's **Deployment** page.

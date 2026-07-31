@@ -8,9 +8,11 @@ description: Add supported Python libraries to a Reflex Build app and give the a
 Reflex Build can add supported Python packages to an app. Ask for the behavior you need and name a package when you have already chosen one:
 
 ```text
-Use pandas to validate the attached CSV. Show rows with missing email addresses
-or invalid dates before the user confirms the import.
+Use pandas to build a CSV upload and validation workflow. Show rows with missing
+email addresses or invalid dates before the user confirms the import.
 ```
+
+The prompt attachment gives the agent context; it does not become a runtime upload automatically. Ask the agent to build an upload workflow when app users need to provide CSV files.
 
 The agent can use web search to check current package documentation when needed. Review the selected package, version, and license before shipping the app.
 

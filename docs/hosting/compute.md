@@ -22,6 +22,6 @@ The deployment form may show a disabled **Persistent Machine** option. This feat
 
 ## Monitor usage
 
-Open **Usage** in the organization sidebar, then select **Cloud** to review deployment usage. Use the app and region filters to narrow the results.
+Open **Usage** in the organization sidebar, then select **Cloud** to review deployment usage. Choose a project and app to narrow the charts. Select an app-region series in a chart legend to show or hide it.
 
 See [Billing](/docs/hosting/billing/) for how compute and seats contribute to billing.

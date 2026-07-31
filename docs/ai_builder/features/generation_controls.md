@@ -28,7 +28,7 @@ You can continue browsing **Preview** and **Plan** while the work runs. Review t
 
 ## Work with Teammates
 
-When an app is already being edited in another session, Reflex Build shows its status so you can avoid overlapping work. Before starting a large generation:
+When an app is already being edited in another session, Reflex Build locks it against overlapping edits. Wait for the active generation to finish and the edit lock to clear before starting work in another session. Then, before starting a large generation:
 
 1. Check whether someone else is editing the affected area.
 2. Keep the request scoped to a clear workflow.

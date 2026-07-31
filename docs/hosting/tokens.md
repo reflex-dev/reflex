@@ -68,10 +68,11 @@ Each resource group supports **No access**, **Read-only**, or **Read & write**:
 | **Threads** | Conversations and their generated code and secrets |
 | **Organization** | Organization members, billing, and creating projects or teams |
 
-Use a token with commands that support `--token`, or set it as `REFLEX_AUTH_TOKEN`.
+Use a token with commands that support `--token`, or set the recognized `REFLEX_ACCESS_TOKEN` environment variable.
 
 ```bash
-reflex cloud scan --token "$REFLEX_AUTH_TOKEN" --no-interactive
+export REFLEX_ACCESS_TOKEN="<token>"
+reflex cloud scan --no-interactive
 ```
 
 ## Security

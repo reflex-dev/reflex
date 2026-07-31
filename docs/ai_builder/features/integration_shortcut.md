@@ -126,5 +126,5 @@ Before using a custom integration with a sensitive system:
 
 - Give its credential the least privilege required.
 - Use separate development and production credentials.
-- Confirm the app's members and [effective permissions](/docs/ai/organization/project-access/).
+- Confirm the project's members and [effective permissions](/docs/ai/organization/project-access/#viewing-effective-permissions).
 - Review generated calls and run them against safe data before production.

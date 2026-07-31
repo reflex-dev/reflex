@@ -1,10 +1,10 @@
 # Project Members & Access
 
-Organization membership does not automatically grant access to every project. Use **Members** in the project sidebar to control who can open a project and what they can do there.
+Ordinary organization membership does not automatically grant access to every project. Organization admins are the exception: they inherit Admin access to every project. Use **Members** in the project sidebar to control everyone else's project access.
 
 ## Add a member
 
-Select **Add user**, choose an existing organization member, and assign a project role. Add someone to the organization first if they do not appear in the member picker.
+Select **Add user**, choose an existing organization member, and assign a project role. If someone does not appear, check whether they already have a direct project role. Otherwise, add them to the organization first.
 
 See [Managing Project Access](/docs/ai/organization/project-access/) for the complete member workflow.
 
@@ -16,6 +16,6 @@ Teams can receive Viewer, Editor, or a non-Admin custom role. Give Admin directl
 
 ## Review access
 
-Before changing or removing an assignment, select **View effective permissions**. This shows access inherited from the organization, a team, or a direct project role.
+Before changing or removing an assignment, select **View effective permissions**. This shows permissions from a direct project-role assignment and access inherited from the organization or a team.
 
 See [Roles & Permissions](/docs/ai/organization/roles-and-permissions/) for the built-in roles and [Custom Project Roles](/docs/ai/organization/custom-roles/) for narrower permission sets.

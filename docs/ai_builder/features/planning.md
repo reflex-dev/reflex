@@ -34,9 +34,7 @@ Open **Plan** in the app workspace to review the current sections and tasks. You
 - Comment on plan items or ask the agent to revise them.
 - Adjust the plan during generation; the agent picks up the latest changes.
 
-Check that each task has a clear outcome and that dependencies appear in the right order. Keep manual edits focused so the plan remains useful as a progress record.
-
-A useful plan should show the actual work, not an empty Plan view. For a multi-page or integration-heavy request, wait until the agent has produced the plan, then confirm that its sections describe concrete outcomes, dependencies, and validation before implementation begins.
+For a multi-page or integration-heavy request, wait until the agent produces the plan. Confirm that each section describes a concrete outcome, dependencies appear in the right order, and validation is included before implementation begins. Keep manual edits focused so the plan remains useful as a progress record.
 
 ## Move Between Plan and Implementation
 

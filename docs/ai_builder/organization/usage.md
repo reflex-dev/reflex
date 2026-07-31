@@ -38,6 +38,6 @@ An empty chart can mean there was no usage for the selected project, app, or per
 2. For AI usage, compare the member series and inspect the detailed event table.
 3. For Cloud usage, narrow the view to one app and compare CPU with memory.
 4. Check [recent project activity](/docs/ai/overview/project-overview/) and [audit logs](/docs/ai/organization/audit-logs/) for related changes.
-5. Review [billing](/docs/hosting/billing/) when you need plan, credit, or invoice information.
+5. Review [billing](/docs/hosting/billing/) when you need to understand seat and Cloud compute charges.
 
 Usage data is operational and billing-sensitive. Share screenshots only after removing member identities, customer data, and project names that are not approved for publication.

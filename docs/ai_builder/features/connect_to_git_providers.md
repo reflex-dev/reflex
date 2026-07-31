@@ -24,7 +24,7 @@ rx.image(
 )
 ```
 
-Create a fine-grained personal access token with access only to the intended repository. The Repos page provides provider-specific instructions. For example, a GitHub token needs **Contents: Read and write** for the selected repository.
+Create a credential supported by your Git provider and grant it only the repository access required by this connection. The Repos page provides provider-specific instructions. For example, use a fine-grained GitHub token limited to the selected repository with **Contents: Read and write**.
 
 Use the repository's HTTPS clone URL:
 
@@ -44,7 +44,7 @@ The repository is cloned before the agent starts, so the first prompt can work f
 
 ## Security
 
-- Prefer a dedicated fine-grained token over a broad account token.
+- Prefer a dedicated, least-privilege credential over a broad account token.
 - Restrict the token to the required repository and permissions.
 - Rotate or revoke the token when access changes.
 - Do not paste the token into a prompt or commit it to the repository.

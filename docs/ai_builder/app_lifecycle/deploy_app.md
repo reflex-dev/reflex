@@ -32,9 +32,9 @@ Depending on your plan and organization configuration, the deployment flow can i
 - App secrets and environment variables.
 - A deployment approval request.
 
-## Deployment Approvals
+## Project Approvals
 
-When **Require approval to deploy** is enabled for the project, the deployment waits in the **Approvals** queue. It runs automatically after a member with **Approve deployments** permission approves it. See [Deployment Approvals](/docs/ai/organization/deployment-approvals/).
+When **Require approval to deploy** is enabled for the project, the deployment waits in the **Approvals** queue. It runs automatically after a member with **Approve deployments** permission approves it. See [Project Approvals](/docs/ai/organization/deployment-approvals/).
 
 ## After Deployment
 

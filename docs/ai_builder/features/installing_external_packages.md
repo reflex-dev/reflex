@@ -53,7 +53,7 @@ rx.el.div(
 )
 ```
 
-Pin a version only when the app depends on behavior from that version. After installation, check **Preview** and the build output for compatibility or import errors.
+Pin or constrain dependencies used by a deployed app so future builds remain repeatable. Update those versions deliberately after reviewing compatibility. After installation, check **Preview** and the build output for import or compatibility errors.
 
 Some packages are too large or require system dependencies that are unavailable in the Builder environment. When that happens, use a hosted API or another supported service instead.
 

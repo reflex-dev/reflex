@@ -102,7 +102,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         in content
     )
     assert "Resend Integration" not in content
-    assert "Reflex Build IDE" not in content
+    assert "Code and Review" not in content
     assert "### AI Onboarding\n\n" in content
     assert (
         "- [AI Onboarding](https://reflex.dev/docs/ai/integrations/ai-onboarding.md)"

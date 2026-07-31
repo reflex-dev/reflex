@@ -9,7 +9,7 @@ description: Connect Reflex Build to GitHub to version your app, sync code local
 import reflex as rx
 ```
 
-Use this workflow to create and synchronize a GitHub repository for an individual Builder app through the `reflex-build` GitHub App. It gives the app a version history, lets you edit the code locally, and records each sync as an ordinary Git commit.
+Use this workflow to create and synchronize a GitHub repository for an individual Builder app through the `reflex-build` GitHub App. It gives the app a version history, lets you edit the code locally, and records each push as an ordinary Git commit.
 
 ```python eval
 rx.el.div(

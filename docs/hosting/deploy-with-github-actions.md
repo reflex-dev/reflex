@@ -94,7 +94,7 @@ Store the Reflex authentication token and project ID as GitHub repository secret
 
 1. Go to your GitHub repository.
 2. Open **Settings > Secrets and variables > Actions**.
-3. Create `REFLEX_AUTH_TOKEN` with a token from the organization's **Tokens** page. See [Tokens](/docs/hosting/tokens/).
+3. From the organization's **Tokens** page, create a token from the **Deploy** template and limit it to the target project. Store it as `REFLEX_AUTH_TOKEN`. See [Tokens](/docs/hosting/tokens/).
 4. Create `REFLEX_PROJECT_ID` with the project ID copied from the project's settings in Reflex Build.
 
 ### Inputs

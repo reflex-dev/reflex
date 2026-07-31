@@ -1,6 +1,6 @@
 ---
 tags: AI Builder
-description: Send app events to an external service through an incoming webhook without exposing its URL or payload data.
+description: Send app events to an external service through an incoming webhook without exposing its URL in client-side code or logs.
 ---
 
 # Webhooks

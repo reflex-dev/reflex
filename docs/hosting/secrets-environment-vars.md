@@ -14,7 +14,7 @@ Open **Secrets** in the project sidebar to add, edit, or remove project-level va
 - **Reveal secret values** allows reading stored values.
 - **Edit secrets** allows adding and changing values.
 
-An app can also open **Secrets** from its more menu. Store credentials in Secrets or an integration form, never in a prompt or source file.
+An app can also open **Secrets** from its more menu to manage values for that app only. An app-level secret overrides a project secret with the same name. Store credentials in Secrets or an integration form, never in a prompt or source file.
 
 ## Hosted App Secrets
 
