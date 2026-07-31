@@ -2,6 +2,8 @@
 
 The `rxe.flow.api` module provides hooks to interact with the Flow instance. These hooks are wrappers around the `useReactFlow` hook from React Flow.
 
+These hooks rely on the flow being wrapped in `rxe.flow.provider`.
+
 ## Node Hooks
 
 - `get_nodes()`: Returns an array of all nodes in the flow.
@@ -24,6 +26,23 @@ The `rxe.flow.api` module provides hooks to interact with the Flow instance. The
 
 - `screen_to_flow_position(x, y, snap_to_grid=False)`: Translates a screen pixel position to a flow position.
 - `flow_to_screen_position(x, y)`: Translates a position inside the flow’s canvas to a screen pixel position.
+
+Use `screen_to_flow_position` to convert pointer coordinates from an event into canvas coordinates — for example, to place a node where the user dropped an unfinished connection:
+
+```python
+rxe.flow(
+    ...,
+    on_connect_end=lambda connection_status, event: FlowState.handle_connect_end(
+        connection_status,
+        rxe.flow.api.screen_to_flow_position(
+            x=event.client_x,
+            y=event.client_y,
+        ),
+    ),
+)
+```
+
+The conversion happens on the client, and the resulting `XYPosition` is passed to the state event handler as an argument. See the "Add Node on Edge Drop" example on the Examples page for a complete implementation.
 
 ## Other Hooks
 
