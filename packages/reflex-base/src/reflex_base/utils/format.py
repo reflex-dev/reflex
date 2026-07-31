@@ -808,6 +808,36 @@ def _replace_non_finite_floats(obj: Any) -> Any:
     return obj
 
 
+def _json_dumps_socket_fallback(obj: Any) -> str:
+    """Serialize a socket payload with stdlib json using dump-then-scan.
+
+    Bare NaN/Infinity tokens are restored by the frontend's bare-token
+    rewriter, so the sentinel walk only runs when the output contains the
+    sentinel prefix (a possible collision). The re-dump must escape strings
+    produced by ``serializers.serialize`` for custom types (e.g. the delta
+    inside a ``StateUpdate``), which the plain walker cannot reach — hence
+    the walking ``default`` callback.
+
+    Args:
+        obj: The object to serialize.
+
+    Returns:
+        A compact JSON string ready for socket emit.
+    """
+    out = json_dumps(obj, separators=(",", ":"))
+    if _SENTINEL_COMMON_PREFIX not in out:
+        return out
+
+    from reflex_base.utils import serializers
+
+    def _default(o: Any) -> Any:
+        return _replace_non_finite_floats(serializers.serialize(o))
+
+    return json_dumps(
+        _replace_non_finite_floats(obj), default=_default, separators=(",", ":")
+    )
+
+
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats via sentinels.
 
@@ -834,10 +864,7 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     from reflex_base.utils import serializers
 
     if orjson is None:
-        out = json_dumps(obj, separators=(",", ":"))
-        if _SENTINEL_COMMON_PREFIX in out:
-            out = json_dumps(_replace_non_finite_floats(obj), separators=(",", ":"))
-        return out
+        return _json_dumps_socket_fallback(obj)
 
     def _default_fast(o: Any) -> Any:
         # orjson passes float subclasses (not int/str) to default.
@@ -848,7 +875,7 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     try:
         out = orjson.dumps(obj, default=_default_fast, option=_ORJSON_SOCKET_OPTS)
     except TypeError:
-        return json_dumps(_replace_non_finite_floats(obj), separators=(",", ":"))
+        return _json_dumps_socket_fallback(obj)
 
     if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
         return out.decode()
@@ -865,7 +892,7 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
             walked, default=_default_walked, option=_ORJSON_SOCKET_OPTS
         ).decode()
     except TypeError:
-        return json_dumps(walked, separators=(",", ":"))
+        return _json_dumps_socket_fallback(obj)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

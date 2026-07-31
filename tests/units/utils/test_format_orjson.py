@@ -448,3 +448,51 @@ def test_orjson_none_and_nan_together():
     """Real None stays null while NaN in the same payload becomes a sentinel."""
     out = orjson_dumps_socket({"a": None, "b": float("nan")})
     assert orjson_loads(out) == {"a": None, "b": NAN_SENTINEL}
+
+
+# real packet shape: sentinels inside StateUpdate must survive every fallback
+
+
+def _wire_packet(delta_values: dict) -> list:
+    from reflex.state import StateUpdate
+
+    return ["event", StateUpdate(delta={"state": delta_values})]
+
+
+def _delta_values(wire: str) -> dict:
+    return json.loads(wire)[1]["delta"]["state"]
+
+
+def test_fallback_escapes_collision_inside_state_update(no_orjson):
+    """Sentinel-colliding strings nested in a StateUpdate must be escaped by
+    the stdlib fallback, not shipped raw for the JS reviver to corrupt.
+    """
+    wire = orjson_dumps_socket(
+        _wire_packet({"v": NAN_SENTINEL, "e": SENTINEL_ESCAPE_PREFIX + "x"})
+    )
+    assert _delta_values(wire) == {
+        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
+        "e": SENTINEL_ESCAPE_PREFIX + SENTINEL_ESCAPE_PREFIX + "x",
+    }
+
+
+def test_fallback_nan_inside_state_update_with_collision(no_orjson):
+    """When a collision forces the walking re-dump, NaN nested in the
+    StateUpdate becomes a sentinel so the output stays strict JSON.
+    """
+    wire = orjson_dumps_socket(_wire_packet({"v": NAN_SENTINEL, "f": float("nan")}))
+    assert _delta_values(wire) == {
+        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
+        "f": NAN_SENTINEL,
+    }
+
+
+def test_type_error_fallback_escapes_collision_inside_state_update():
+    """Orjson raises TypeError for >64-bit ints; the stdlib fallback must
+    still escape colliding strings nested in the StateUpdate.
+    """
+    wire = orjson_dumps_socket(_wire_packet({"big": 2**70, "v": NAN_SENTINEL}))
+    assert _delta_values(wire) == {
+        "big": 2**70,
+        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
+    }
