@@ -165,8 +165,8 @@ class ReactRouter(Javascript):
     DEV_FRONTEND_LISTENING_REGEX = r"Local:[\s]+"
 
     # Regex to pattern the route path in the config file
-    # INFO  Accepting connections at http://localhost:3000
-    PROD_FRONTEND_LISTENING_REGEX = r"Accepting connections at[\s]+"
+    # Matches output from sirv ("Accepting connections at") or ssr-serve ("[ssr-serve]").
+    PROD_FRONTEND_LISTENING_REGEX = r"(?:Accepting connections at|\[ssr-serve\])[\s]+"
 
     FRONTEND_LISTENING_REGEX = (
         rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"
@@ -201,6 +201,19 @@ class Env(str, Enum):
 
     DEV = "dev"
     PROD = "prod"
+
+
+class SsrMode(str, Enum):
+    """Server-side rendering modes.
+
+    OFF:      No SSR — static SPA (default, same as before).
+    BOT_ONLY: SSR for crawlers/bots only — regular users get the SPA shell.
+    ALWAYS:   SSR for all users — better FCP/LCP, higher server load.
+    """
+
+    OFF = "off"
+    BOT_ONLY = "bot_only"
+    ALWAYS = "always"
 
 
 class RunningMode(str, Enum):

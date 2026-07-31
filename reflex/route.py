@@ -96,6 +96,39 @@ def get_route_args(route: str) -> dict[str, str]:
     return args
 
 
+def extract_route_params(path: str, route: str) -> dict[str, str]:
+    """Extract dynamic route parameter values from a concrete path.
+
+    Given a concrete path (e.g. "/blog/hello-world") and a route pattern
+    (e.g. "blog/[slug]"), extract the parameter values by positional matching.
+
+    Args:
+        path: The concrete URL path (e.g. "/blog/hello-world").
+        route: The route pattern with brackets (e.g. "blog/[slug]").
+
+    Returns:
+        Dict mapping parameter names to their values,
+        e.g. {"slug": "hello-world"}.
+    """
+    route_args = get_route_args(route)
+    if not route_args:
+        return {}
+
+    params: dict[str, str] = {}
+    route_parts = route.strip("/").split("/")
+    path_parts = path.strip("/").split("/")
+    for i, route_part in enumerate(route_parts):
+        if i < len(path_parts):
+            arg_match = re.match(
+                r"^\[{1,2}(?:\.\.\.)?([a-zA-Z_]\w*)\]{1,2}$", route_part
+            )
+            if arg_match:
+                param_name = arg_match.group(1)
+                if param_name in route_args:
+                    params[param_name] = path_parts[i]
+    return params
+
+
 def replace_brackets_with_keywords(input_string: str) -> str:
     """Replace brackets and everything inside it in a string with a keyword.
 
