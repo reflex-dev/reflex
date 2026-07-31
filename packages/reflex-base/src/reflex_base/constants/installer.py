@@ -71,7 +71,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "22.12.0"
+    MIN_VERSION = "22.22.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -86,8 +86,9 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    # Pinned within 7.x (8.x not yet adopted); 7.18.2 carries a security fix.
-    default_version = "7.18.2"
+    # Requires Node >= 22.22.0 and React >= 19.2.7; keep Node.MIN_VERSION and
+    # _determine_react_version in step when bumping.
+    default_version = "8.3.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -135,7 +136,6 @@ class PackageJson(SimpleNamespace):
         """
         return {
             "react-router": cls._react_router_version,
-            "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
             "react": cls._react_version,
             "react-helmet": "6.1.0",
