@@ -556,10 +556,8 @@ class SankeyNodePayload(TypedDict):
     """The payload for a Sankey chart node."""
 
     name: str
-    sourceNodes: list[int]
-    sourceLinks: list[int]
-    targetLinks: list[int]
-    targetNodes: list[int]
+    sourceLinks: list[SankeyLinkPayload]
+    targetLinks: list[SankeyLinkPayload]
     value: int | float
     depth: int
     x: int | float
@@ -582,11 +580,10 @@ class SankeyNodeProps(TypedDict):
 class SankeyLinkPayload(TypedDict):
     """The payload for a Sankey chart link."""
 
-    source: int
-    target: int
+    source: SankeyNodePayload
+    target: SankeyNodePayload
     value: int | float
-    index: int
-    width: int | float
+    dy: int | float
     sy: int | float
     ty: int | float
 

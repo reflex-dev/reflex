@@ -1,3 +1,5 @@
+from typing import get_type_hints
+
 from reflex_components_recharts.charts import (
     AreaChart,
     BarChart,
@@ -6,6 +8,9 @@ from reflex_components_recharts.charts import (
     RadarChart,
     RadialBarChart,
     SankeyChart,
+    SankeyLinkPayload,
+    SankeyLinkProps,
+    SankeyNodePayload,
     ScatterChart,
 )
 from reflex_components_recharts.general import ResponsiveContainer, use_chart_width
@@ -73,6 +78,17 @@ def test_sankey_chart_accepts_unannotated_state_data():
 
     sc = SankeyChart.create(data=SankeyState.data)
     assert isinstance(sc, ResponsiveContainer)
+
+
+def test_sankey_link_payload_matches_recharts_runtime_shape():
+    link_payload_hints = get_type_hints(SankeyLinkPayload)
+    assert link_payload_hints["source"] is SankeyNodePayload
+    assert link_payload_hints["target"] is SankeyNodePayload
+    assert "dy" in link_payload_hints
+    assert "width" not in link_payload_hints
+    assert "index" not in link_payload_hints
+
+    assert get_type_hints(SankeyLinkProps)["index"] is int
 
 
 def test_use_chart_width():
