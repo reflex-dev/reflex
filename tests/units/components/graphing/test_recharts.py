@@ -1,5 +1,6 @@
 from typing import get_type_hints
 
+import pytest
 from reflex_components_recharts.charts import (
     AreaChart,
     BarChart,
@@ -11,7 +12,9 @@ from reflex_components_recharts.charts import (
     SankeyLinkPayload,
     SankeyLinkProps,
     SankeyNodePayload,
+    SankeyNodeProps,
     ScatterChart,
+    sankey_chart,
 )
 from reflex_components_recharts.general import ResponsiveContainer, use_chart_width
 from reflex_components_recharts.recharts import Recharts
@@ -88,7 +91,42 @@ def test_sankey_link_payload_matches_recharts_runtime_shape():
     assert "width" not in link_payload_hints
     assert "index" not in link_payload_hints
 
-    assert get_type_hints(SankeyLinkProps)["index"] is int
+    link_props_hints = get_type_hints(SankeyLinkProps)
+    assert link_props_hints["index"] is int
+    assert link_props_hints["linkWidth"] == (int | float)
+
+
+def test_sankey_renderer_decorators_accept_deferred_annotations():
+    namespace = {
+        "rx": rx,
+        "SankeyLinkProps": SankeyLinkProps,
+        "SankeyNodeProps": SankeyNodeProps,
+    }
+    exec(
+        """
+from __future__ import annotations
+
+
+def custom_node(node: rx.Var[SankeyNodeProps]) -> rx.Component:
+    return rx.fragment()
+
+
+def custom_link(link: rx.Var[SankeyLinkProps]) -> rx.Component:
+    return rx.fragment()
+""",
+        namespace,
+    )
+
+    assert callable(sankey_chart.node(namespace["custom_node"]))
+    assert callable(sankey_chart.link(namespace["custom_link"]))
+
+
+def test_sankey_renderer_decorator_rejects_positional_only_parameter():
+    def custom_node(node: rx.Var[SankeyNodeProps], /) -> rx.Component:
+        return rx.fragment()
+
+    with pytest.raises(TypeError, match="keyword"):
+        sankey_chart.node(custom_node)
 
 
 def test_use_chart_width():

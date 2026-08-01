@@ -1,12 +1,31 @@
 """Special Vars for rendering values from the environment."""
 
-from typing import Any
+from types import UnionType
+from typing import Any, TypeVar, cast, overload
+
+from typing_extensions import TypeForm
 
 from reflex_base.utils.types import GenericType
 from reflex_base.vars.base import Var, VarData, get_unique_variable_name
 
+HOOK_VAR_TYPE = TypeVar("HOOK_VAR_TYPE")
 
-def use_hook_var(library: str, hook: str, _var_type: GenericType = Any) -> Var:
+
+@overload
+def use_hook_var(library: str, hook: str) -> Var[Any]: ...
+
+
+@overload
+def use_hook_var(
+    library: str, hook: str, _var_type: TypeForm[HOOK_VAR_TYPE]
+) -> Var[HOOK_VAR_TYPE]: ...
+
+
+@overload
+def use_hook_var(library: str, hook: str, _var_type: UnionType) -> Var: ...
+
+
+def use_hook_var(library: str, hook: str, _var_type: Any = Any) -> Var:
     """Get a Var representing a React hook's value.
 
     The value will depend on the context of the component in which it is used.
@@ -21,7 +40,7 @@ def use_hook_var(library: str, hook: str, _var_type: GenericType = Any) -> Var:
     """
     return Var(
         var_name := get_unique_variable_name(),
-        _var_type=_var_type,
+        _var_type=cast(GenericType, _var_type),
         _var_data=VarData(
             imports={library: hook},
             hooks=(f"const {var_name} = {hook}();",),

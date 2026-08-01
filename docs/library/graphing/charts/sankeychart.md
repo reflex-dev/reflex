@@ -152,7 +152,7 @@ def sankey_custom_render():
                 x=rx.cond(is_out, node.x - 6, node.x + node.width + 6),
                 y=node.y + node.height / 2,
                 text_anchor=rx.cond(is_out, "end", "start"),
-                stroke=rx.color("gray", 12),
+                fill=rx.color("gray", 12),
                 font_size=10,
             ),
             rx.el.svg.rect(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Mapping, Sequence
 from types import SimpleNamespace
-from typing import Any, ClassVar, TypedDict, get_args, get_origin
+from typing import Any, ClassVar, TypedDict, get_args, get_origin, get_type_hints
 
 from reflex_base.components.component import Component, field
 from reflex_base.components.memo import _MemoComponentWrapper, memo
@@ -569,12 +569,12 @@ class SankeyNodePayload(TypedDict):
 class SankeyNodeProps(TypedDict):
     """The props for a custom Sankey chart node."""
 
-    height: int
-    width: int
+    height: int | float
+    width: int | float
     payload: SankeyNodePayload
     index: int
-    x: int
-    y: int
+    x: int | float
+    y: int | float
 
 
 class SankeyLinkPayload(TypedDict):
@@ -591,17 +591,72 @@ class SankeyLinkPayload(TypedDict):
 class SankeyLinkProps(TypedDict):
     """The props for a custom Sankey chart link."""
 
-    sourceX: int
-    targetX: int
-    sourceY: int
-    targetY: int
-    sourceControlX: int
-    targetControlX: int
-    sourceRelativeY: int
-    targetRelativeY: int
-    linkWidth: int
+    sourceX: int | float
+    targetX: int | float
+    sourceY: int | float
+    targetY: int | float
+    sourceControlX: int | float
+    targetControlX: int | float
+    sourceRelativeY: int | float
+    targetRelativeY: int | float
+    linkWidth: int | float
     index: int
     payload: SankeyLinkPayload
+
+
+def _sankey_renderer(
+    fn: Callable,
+    props_type: type,
+    decorator_name: str,
+) -> _MemoComponentWrapper:
+    """Create a memoized Sankey renderer with a typed rest-prop parameter.
+
+    Args:
+        fn: The renderer function to wrap.
+        props_type: The TypedDict props type expected by the renderer.
+        decorator_name: The public decorator name used in error messages.
+
+    Returns:
+        A memoized renderer wrapper.
+    """
+    sig = inspect.signature(fn)
+    if len(sig.parameters) != 1:
+        msg = (
+            f"@{decorator_name} decorated function must take a single argument "
+            f"of type {props_type.__name__}, got {sig.parameters}"
+        )
+        raise TypeError(msg)
+
+    first_param = next(iter(sig.parameters.values()))
+    if first_param.kind not in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    ):
+        msg = (
+            f"@{decorator_name} decorated function parameter must be callable "
+            f"by keyword, got {first_param.kind.description}"
+        )
+        raise TypeError(msg)
+
+    hints = get_type_hints(fn, include_extras=True)
+    param_annotation = hints.get(first_param.name, first_param.annotation)
+    if (
+        get_origin(param_annotation) is not Var
+        or not (args := get_args(param_annotation))
+        or args[0] is not props_type
+    ):
+        msg = (
+            f"@{decorator_name} decorated function must take a single argument "
+            f"of type {props_type.__name__}, got {sig.parameters}"
+        )
+        raise TypeError(msg)
+
+    def _wrapper(rest: RestProp) -> Component:
+        return fn(**{first_param.name: rest.to(props_type)})
+
+    _wrapper.__name__ = fn.__name__
+    _wrapper.__module__ = fn.__module__
+    return memo(wrapper=None)(_wrapper)
 
 
 def sankey_node(
@@ -615,23 +670,7 @@ def sankey_node(
     Returns:
         A function that takes a SankeyNodeProps and returns a Reflex component.
     """
-    sig = inspect.signature(fn)
-    if (
-        len(sig.parameters) != 1
-        or (first_param := sig.parameters[next(iter(sig.parameters))]) is None
-        or get_origin(first_param.annotation) is not Var
-        or not (args := get_args(first_param.annotation))
-        or args[0] is not SankeyNodeProps
-    ):
-        msg = f"@sankey_node decorated function must take a single argument of type SankeyNodeProps, got {sig.parameters}"
-        raise TypeError(msg)
-
-    def _wrapper(rest: RestProp) -> Component:
-        return fn(**{first_param.name: rest.to(SankeyNodeProps)})
-
-    _wrapper.__name__ = fn.__name__
-    _wrapper.__module__ = fn.__module__
-    return memo(wrapper=None)(_wrapper)
+    return _sankey_renderer(fn, SankeyNodeProps, "sankey_node")
 
 
 def sankey_link(
@@ -645,23 +684,7 @@ def sankey_link(
     Returns:
         A function that takes a SankeyLinkProps and returns a Reflex component.
     """
-    sig = inspect.signature(fn)
-    if (
-        len(sig.parameters) != 1
-        or (first_param := sig.parameters[next(iter(sig.parameters))]) is None
-        or get_origin(first_param.annotation) is not Var
-        or not (args := get_args(first_param.annotation))
-        or args[0] is not SankeyLinkProps
-    ):
-        msg = f"@sankey_link decorated function must take a single argument of type SankeyLinkProps, got {sig.parameters}"
-        raise TypeError(msg)
-
-    def _wrapper(rest: RestProp) -> Component:
-        return fn(**{first_param.name: rest.to(SankeyLinkProps)})
-
-    _wrapper.__name__ = fn.__name__
-    _wrapper.__module__ = fn.__module__
-    return memo(wrapper=None)(_wrapper)
+    return _sankey_renderer(fn, SankeyLinkProps, "sankey_link")
 
 
 class SankeyChart(ChartBase):
