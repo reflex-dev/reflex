@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable, Mapping, Sequence
-from types import SimpleNamespace
 from typing import Any, ClassVar, TypedDict, get_args, get_origin, get_type_hints
 
-from reflex_base.components.component import Component, field
-from reflex_base.components.memo import _MemoComponentWrapper, memo
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.components.memo import memo
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
@@ -608,7 +607,7 @@ def _sankey_renderer(
     fn: Callable,
     props_type: type,
     decorator_name: str,
-) -> _MemoComponentWrapper:
+) -> Callable[..., Component]:
     """Create a memoized Sankey renderer with a typed rest-prop parameter.
 
     Args:
@@ -661,7 +660,7 @@ def _sankey_renderer(
 
 def sankey_node(
     fn: Callable,
-) -> _MemoComponentWrapper:
+) -> Callable[..., Component]:
     """A decorator to create a custom Sankey chart node.
 
     Args:
@@ -675,7 +674,7 @@ def sankey_node(
 
 def sankey_link(
     fn: Callable,
-) -> _MemoComponentWrapper:
+) -> Callable[..., Component]:
     """A decorator to create a custom Sankey chart link.
 
     Args:
@@ -736,7 +735,7 @@ class SankeyChart(ChartBase):
     ]
 
 
-class SankeyNamespace(SimpleNamespace):
+class SankeyNamespace(ComponentNamespace):
     """A namespace for the Sankey chart components."""
 
     node = staticmethod(sankey_node)

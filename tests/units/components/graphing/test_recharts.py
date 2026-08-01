@@ -1,6 +1,10 @@
 from typing import get_type_hints
 
 import pytest
+from reflex_base.components.component import (
+    ComponentNamespace,
+    evaluate_style_namespaces,
+)
 from reflex_components_recharts.charts import (
     AreaChart,
     BarChart,
@@ -72,6 +76,13 @@ def test_sankey_chart():
     assert "link_width" not in SankeyChart.get_props()
 
 
+def test_sankey_chart_namespace_can_be_used_as_style_key():
+    assert isinstance(sankey_chart, ComponentNamespace)
+    assert evaluate_style_namespaces({sankey_chart: {"height": "20rem"}}) == {
+        SankeyChart.create: {"height": "20rem"}
+    }
+
+
 def test_sankey_chart_accepts_unannotated_state_data():
     class SankeyState(rx.State):
         data = {
@@ -134,7 +145,8 @@ def test_use_chart_width():
     assert width._var_type == (int | None)
     var_data = width._get_all_var_data()
     assert var_data is not None
-    assert var_data.hooks == (f"const {width!s} = useChartWidth();",)
+    hook_alias = f"useChartWidth_{width!s}"
+    assert var_data.hooks == (f"const {width!s} = {hook_alias}();",)
     assert dict(var_data.imports)[Recharts.library or ""] == (
-        rx.ImportVar(tag="useChartWidth"),
+        rx.ImportVar(tag="useChartWidth", alias=hook_alias),
     )

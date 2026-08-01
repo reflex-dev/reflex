@@ -5,6 +5,7 @@ from typing import Any, TypeVar, cast, overload
 
 from typing_extensions import TypeForm
 
+from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
 from reflex_base.vars.base import Var, VarData, get_unique_variable_name
 
@@ -38,12 +39,14 @@ def use_hook_var(library: str, hook: str, _var_type: Any = Any) -> Var:
     Returns:
         A Var representing the React hook.
     """
+    var_name = get_unique_variable_name()
+    hook_alias = f"{hook}_{var_name}"
     return Var(
-        var_name := get_unique_variable_name(),
+        var_name,
         _var_type=cast(GenericType, _var_type),
         _var_data=VarData(
-            imports={library: hook},
-            hooks=(f"const {var_name} = {hook}();",),
+            imports={library: ImportVar(tag=hook, alias=hook_alias)},
+            hooks=(f"const {var_name} = {hook_alias}();",),
         ),
     ).guess_type()
 

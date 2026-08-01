@@ -9,6 +9,7 @@ meta_description: "Create Sankey charts in Python with Reflex. Build interactive
 
 ```python exec
 import random
+from typing import Any
 
 import reflex as rx
 ```
@@ -55,7 +56,7 @@ Chart data can be tied to a State var. This example randomizes the flow values w
 
 ```python demo exec
 class SankeyState(rx.State):
-    data = {
+    data: dict[str, Any] = {
         "nodes": [
             {"name": "Marketing"},
             {"name": "Trial"},
@@ -185,7 +186,7 @@ def sankey_custom_render():
                 x=(link.sourceX + link.targetX) / 2,
                 y=(link.sourceY + link.targetY) / 2,
                 text_anchor="middle",
-                stroke=rx.color("gray", 12),
+                fill=rx.color("gray", 12),
                 font_size=10,
             ),
             rx.el.svg.path(
