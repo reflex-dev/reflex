@@ -813,10 +813,12 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    # Page roots may be shared by the construction cache; copy before appending
+    # metadata so repeated reuse does not accumulate duplicate tags.
+    new_page = copy.copy(page)
+    new_page.children = [*page.children, *children, *meta_tags]
+    new_page._clear_compile_caches()
+    return new_page
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:
@@ -846,7 +848,14 @@ def write_file(path: str | Path, code: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
-    path.write_text(code, encoding="utf-8")
+    # Write atomically so readers never observe a half-written file.
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(code, encoding="utf-8")
+        tmp.replace(path)
+    finally:
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"

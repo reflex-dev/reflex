@@ -601,6 +601,9 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         log_level=loglevel.value,
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
+        # uvicorn's reload filter defaults to *.py only, so markdown/data edits
+        # would never trigger a reload; include the content suffixes too.
+        reload_includes=["*.py", "*.md", "*.mdx"],
         reload_delay=0.1,
     )
 

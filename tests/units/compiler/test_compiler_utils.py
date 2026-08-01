@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from reflex.compiler.utils import compile_state
+from reflex.compiler.utils import compile_state, write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
 from reflex.vars.base import computed_var
@@ -48,3 +48,31 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"a{FIELD_MARKER}"] == 1
     assert values[f"b{FIELD_MARKER}"] == 2
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
+
+
+def test_write_file_creates_and_updates(tmp_path):
+    path = tmp_path / "sub" / "page.jsx"
+    write_file(path, "v1")
+    assert path.read_text() == "v1"
+    write_file(path, "v2")
+    assert path.read_text() == "v2"
+
+
+def test_write_file_atomic_leaves_no_temp_files(tmp_path):
+    path = tmp_path / "page.jsx"
+    write_file(path, "content")
+    # The temp file used for the atomic replace must not linger.
+    assert [p.name for p in tmp_path.iterdir()] == ["page.jsx"]
+
+
+def test_write_file_skips_byte_identical_write(tmp_path):
+    """An identical write must not touch the file (so vite isn't told to HMR)."""
+    path = tmp_path / "page.jsx"
+    write_file(path, "same")
+    before = path.stat().st_mtime_ns
+    import os
+
+    os.utime(path, ns=(before + 1_000_000_000, before + 1_000_000_000))
+    bumped = path.stat().st_mtime_ns
+    write_file(path, "same")  # identical -> no rewrite
+    assert path.stat().st_mtime_ns == bumped
