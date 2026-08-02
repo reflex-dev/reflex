@@ -67,13 +67,13 @@ The following sections are currently a work in progress and may be incomplete.
 
 ### Azure
 
-In the Azure load balancer, per-message deflate is not supported. Add the following
-to your `rxconfig.py` to workaround this issue.
+In the Azure load balancer, per-message deflate is not supported. This only
+affects the legacy Uvicorn/Gunicorn backend (opted into via
+`REFLEX_USE_GRANIAN=0`). To work around it, define a custom worker class in
+`rxconfig.py`:
 
 ```python
 import uvicorn.workers
-
-import reflex as rx
 
 
 class NoWSPerMessageDeflate(uvicorn.workers.UvicornH11Worker):
@@ -81,12 +81,12 @@ class NoWSPerMessageDeflate(uvicorn.workers.UvicornH11Worker):
         **uvicorn.workers.UvicornH11Worker.CONFIG_KWARGS,
         "ws_per_message_deflate": False,
     }
+```
 
+and select it with the `GUNICORN_CMD_ARGS` environment variable:
 
-config = rx.Config(
-    app_name="my_app",
-    gunicorn_worker_class="rxconfig.NoWSPerMessageDeflate",
-)
+```
+GUNICORN_CMD_ARGS="--worker-class rxconfig.NoWSPerMessageDeflate"
 ```
 
 #### Persistent Storage

@@ -3,7 +3,7 @@
 This docker deployment runs Reflex in prod mode, exposing two HTTP ports:
 
 - `3000` - node server using optimized production build
-- `8000` - python gunicorn server hosting the Reflex backend
+- `8000` - python granian server hosting the Reflex backend
 
 The deployment also runs a local Redis server to store state for each user.
 

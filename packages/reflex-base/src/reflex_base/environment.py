@@ -571,8 +571,9 @@ class EnvironmentVariables:
     # The npm registry to use.
     NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
-    # Whether to use Granian for the backend. By default, the backend uses Uvicorn if available.
-    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
+    # Whether to use Granian for the backend. Disable to use the legacy
+    # Uvicorn/Gunicorn backend, which requires its packages to be installed.
+    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(True)
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)

@@ -21,7 +21,6 @@ from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console
-from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
@@ -374,27 +373,38 @@ def run_frontend_prod(host: str, port: int):
         )
 
 
-@once
-def _warn_user_about_uvicorn():
-    console.warn(
-        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
-    )
-
-
 def should_use_granian():
     """Whether to use Granian for backend.
 
+    Granian is the default backend. The legacy Uvicorn/Gunicorn backend is
+    used only when REFLEX_USE_GRANIAN is explicitly disabled and its required
+    packages are installed.
+
     Returns:
         True if Granian should be used.
+
+    Raises:
+        SystemExit: If REFLEX_USE_GRANIAN is disabled but the packages
+            required by the Uvicorn/Gunicorn backend are not installed.
     """
-    if environment.REFLEX_USE_GRANIAN.is_set():
-        return environment.REFLEX_USE_GRANIAN.get()
-    if (
-        importlib.util.find_spec("uvicorn") is None
-        or importlib.util.find_spec("gunicorn") is None
-    ):
+    if environment.REFLEX_USE_GRANIAN.get():
         return True
-    _warn_user_about_uvicorn()
+    required_packages = (
+        ("uvicorn",) if constants.IS_WINDOWS else ("uvicorn", "gunicorn")
+    )
+    missing = [
+        package
+        for package in required_packages
+        if importlib.util.find_spec(package) is None
+    ]
+    if missing:
+        console.error(
+            f"REFLEX_USE_GRANIAN is disabled, but the Uvicorn backend requires the "
+            f"missing package(s): {', '.join(missing)}. Install them "
+            f"(e.g. `pip install {' '.join(missing)}`) or unset REFLEX_USE_GRANIAN "
+            "to use the default Granian backend."
+        )
+        raise SystemExit(1)
     return False
 
 

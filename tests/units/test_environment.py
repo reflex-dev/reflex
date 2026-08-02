@@ -595,7 +595,7 @@ class TestEnvironmentVariables:
     def test_environment_variables_defaults(self):
         """Test that environment variables have the expected defaults."""
         assert environment.REFLEX_USE_NPM.get() is False
-        assert environment.REFLEX_USE_GRANIAN.get() is False
+        assert environment.REFLEX_USE_GRANIAN.get() is True
         assert environment.REFLEX_USE_SYSTEM_BUN.get() is False
         assert environment.REFLEX_WEB_WORKDIR.get() == Path(constants.Dirs.WEB)
         assert environment.REFLEX_STATES_WORKDIR.get() == Path(constants.Dirs.STATES)
