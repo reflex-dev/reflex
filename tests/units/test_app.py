@@ -3913,8 +3913,16 @@ def test_add_page_invalidates_router_cache():
 def test_compile_registers_plugin_routes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Compilation includes pages contributed by configured plugins."""
+    """Compilation includes pages contributed by configured plugins.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
 
     class RoutePlugin(Plugin):
         """Plugin contributing one page for the compile test."""
