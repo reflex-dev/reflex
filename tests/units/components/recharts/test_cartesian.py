@@ -1,4 +1,5 @@
 import pytest
+from reflex_base.vars.function import FunctionStringVar
 from reflex_components_recharts import (
     Area,
     Bar,
@@ -74,6 +75,19 @@ def test_yaxis_tick_formatter():
 def test_xaxis_tick_formatter_rejects_non_callable():
     with pytest.raises(TypeError):
         XAxis.create(tick_formatter=123)  # pyright: ignore [reportArgumentType]
+
+
+def test_xaxis_tick_formatter_rejects_python_callable():
+    with pytest.raises(TypeError, match="Python"):
+        XAxis.create(
+            tick_formatter=lambda value: value  # pyright: ignore [reportArgumentType]
+        )
+
+
+def test_xaxis_tick_formatter_accepts_prebuilt_function_var():
+    x_axis = XAxis.create(tick_formatter=FunctionStringVar.create("myGlobalFormatter"))
+    props = x_axis.render()["props"]
+    assert "tickFormatter:myGlobalFormatter" in props
 
 
 def test_scatter():

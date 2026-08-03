@@ -10,7 +10,7 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.function import FunctionStringVar, FunctionVar
 
 from .recharts import (
     ACTIVE_DOT_TYPE,
@@ -136,11 +136,28 @@ class Axis(Recharts):
         Returns:
             The Axis component.
         """
-        if isinstance(tick_formatter := props.get("tick_formatter"), str):
-            props["tick_formatter"] = FunctionStringVar.create(
-                tick_formatter,
-                _var_type=Callable[..., Any],  # pyright: ignore [reportArgumentType]
-            )
+        if (tick_formatter := props.get("tick_formatter")) is not None:
+            if isinstance(tick_formatter, str):
+                props["tick_formatter"] = FunctionStringVar.create(
+                    tick_formatter,
+                    _var_type=Callable[..., Any],  # pyright: ignore [reportArgumentType]
+                )
+            elif isinstance(tick_formatter, FunctionVar):
+                # Normalize to a consistent _var_type regardless of how the
+                # caller constructed the FunctionVar, so it satisfies the
+                # declared field type below.
+                props["tick_formatter"] = tick_formatter._replace(
+                    _var_type=Callable[..., Any]  # pyright: ignore [reportArgumentType]
+                )
+            elif not isinstance(tick_formatter, Var):
+                msg = (
+                    "tick_formatter must be a raw JS function expression string "
+                    f'(e.g. "(value) => value.toFixed(2)") or a Var, got a Python '
+                    f"{type(tick_formatter).__name__}. Python values (including "
+                    "plain callables like lambdas) cannot be sent to the client "
+                    "as-is and are not supported."
+                )
+                raise TypeError(msg)
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(
