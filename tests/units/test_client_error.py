@@ -22,6 +22,21 @@ def event_namespace() -> EventNamespace:
 
 
 @pytest.fixture
+def frontend_errors(event_namespace: EventNamespace) -> list[str]:
+    """Capture exceptions routed to the app's frontend exception handler.
+
+    Args:
+        event_namespace: The event namespace.
+
+    Returns:
+        The captured exception messages.
+    """
+    errors: list[str] = []
+    event_namespace.app.frontend_exception_handler = lambda exc: errors.append(str(exc))
+    return errors
+
+
+@pytest.fixture
 def console_output(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
     """Capture messages logged through reflex.utils.console.
 
@@ -42,14 +57,14 @@ def console_output(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
 
 
 @pytest.mark.asyncio
-async def test_dispatch_missing_logs_actionable_error(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+async def test_dispatch_missing_reports_actionable_error(
+    event_namespace: EventNamespace, frontend_errors: list[str]
 ):
-    """A dispatch_function_missing error logs the substate and remediation steps.
+    """A dispatch_function_missing error reports the substate and remediation steps.
 
     Args:
         event_namespace: The event namespace.
-        console_output: Captured console messages.
+        frontend_errors: Captured frontend exception handler messages.
     """
     await event_namespace.on_client_error(
         "known_sid",
@@ -59,21 +74,21 @@ async def test_dispatch_missing_logs_actionable_error(
             "substate": "reflex___state____state.my___state____my_state",
         },
     )
-    assert len(console_output["error"]) == 1
-    message = console_output["error"][0]
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
     assert "reflex___state____state.my___state____my_state" in message
     assert "rebuild" in message.lower()
 
 
 @pytest.mark.asyncio
-async def test_generic_error_logs_type_and_message(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+async def test_generic_error_reports_type_and_message(
+    event_namespace: EventNamespace, frontend_errors: list[str]
 ):
-    """A generic client error logs the error type and message.
+    """A generic client error reports the error type and message.
 
     Args:
         event_namespace: The event namespace.
-        console_output: Captured console messages.
+        frontend_errors: Captured frontend exception handler messages.
     """
     await event_namespace.on_client_error(
         "known_sid",
@@ -82,8 +97,8 @@ async def test_generic_error_logs_type_and_message(
             "message": "boom",
         },
     )
-    assert len(console_output["error"]) == 1
-    message = console_output["error"][0]
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
     assert constants.ClientErrorType.STATE_UPDATE in message
     assert "boom" in message
 
@@ -92,28 +107,31 @@ async def test_generic_error_logs_type_and_message(
 @pytest.mark.parametrize("payload", ["not a dict", None, ["list"], 42])
 async def test_malformed_payload_is_ignored(
     event_namespace: EventNamespace,
-    console_output: dict[str, list[str]],
+    frontend_errors: list[str],
     payload,
 ):
-    """Non-dict payloads are dropped without raising or logging errors.
+    """Non-dict payloads are dropped without raising or reporting errors.
 
     Args:
         event_namespace: The event namespace.
-        console_output: Captured console messages.
+        frontend_errors: Captured frontend exception handler messages.
         payload: The malformed payload to send.
     """
     await event_namespace.on_client_error("known_sid", payload)
-    assert not console_output["error"]
+    assert not frontend_errors
 
 
 @pytest.mark.asyncio
-async def test_unknown_sid_does_not_log_error(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+async def test_unknown_sid_does_not_report_error(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    console_output: dict[str, list[str]],
 ):
-    """Errors from sockets without a linked token do not produce error-level logs.
+    """Errors from sockets without a linked token are not reported.
 
     Args:
         event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
         console_output: Captured console messages.
     """
     await event_namespace.on_client_error(
@@ -123,26 +141,27 @@ async def test_unknown_sid_does_not_log_error(
             "message": "spam from unauthenticated socket",
         },
     )
+    assert not frontend_errors
     assert not console_output["error"]
 
 
 @pytest.mark.asyncio
 async def test_client_values_are_sanitized_and_truncated(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+    event_namespace: EventNamespace, frontend_errors: list[str]
 ):
-    """Control characters are stripped and long messages truncated before logging.
+    """Control characters are stripped and long messages truncated before reporting.
 
     Args:
         event_namespace: The event namespace.
-        console_output: Captured console messages.
+        frontend_errors: Captured frontend exception handler messages.
     """
     evil = "\x1b[31mINJECT\x1b[0m\nFAKE LOG LINE\t" + "A" * 5000
     await event_namespace.on_client_error(
         "known_sid",
         {"error_type": "custom_type", "message": evil},
     )
-    assert len(console_output["error"]) == 1
-    message = console_output["error"][0]
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
     assert "\x1b" not in message
     assert "\n" not in message
     assert "\t" not in message
@@ -172,21 +191,21 @@ def test_sanitized_markup_does_not_break_console():
 
 
 @pytest.mark.asyncio
-async def test_error_level_logging_is_rate_limited_per_sid(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+async def test_error_reporting_is_rate_limited_per_sid(
+    event_namespace: EventNamespace, frontend_errors: list[str]
 ):
-    """A single session cannot flood the backend logs with error-level entries.
+    """A single session cannot flood the backend logs with error reports.
 
     Args:
         event_namespace: The event namespace.
-        console_output: Captured console messages.
+        frontend_errors: Captured frontend exception handler messages.
     """
     for _ in range(20):
         await event_namespace.on_client_error(
             "known_sid",
             {"error_type": "custom_type", "message": "spam"},
         )
-    assert len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
     # Disconnecting removes the counter so the mapping cannot grow unboundedly.
     task = event_namespace.on_disconnect("known_sid")
     if task is not None:
@@ -195,13 +214,16 @@ async def test_error_level_logging_is_rate_limited_per_sid(
 
 
 @pytest.mark.asyncio
-async def test_error_logging_bounded_across_reconnects(
-    event_namespace: EventNamespace, console_output: dict[str, list[str]]
+async def test_error_reporting_bounded_across_reconnects(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    console_output: dict[str, list[str]],
 ):
-    """Reconnecting with fresh SIDs does not grant an unlimited log budget.
+    """Reconnecting with fresh SIDs does not grant an unlimited report budget.
 
     Args:
         event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
         console_output: Captured console messages.
     """
     for reconnect in range(50):
@@ -211,8 +233,14 @@ async def test_error_logging_bounded_across_reconnects(
             await event_namespace.on_client_error(
                 sid, {"error_type": "custom_type", "message": "spam"}
             )
-    assert len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
-    # Once the window elapses, errors are logged again (not silenced forever).
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
+    # Suppression is not silent: one warning is logged when the cap trips, so
+    # a flooding client cannot invisibly starve reports from other sessions.
+    assert (
+        len([msg for msg in console_output["warn"] if "suppressing" in msg.lower()])
+        == 1
+    )
+    # Once the window elapses, errors are reported again (not silenced forever).
     event_namespace._client_error_window_start -= (
         EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
     )
@@ -220,9 +248,7 @@ async def test_error_logging_bounded_across_reconnects(
     await event_namespace.on_client_error(
         "sid_fresh", {"error_type": "custom_type", "message": "after window"}
     )
-    assert (
-        len(console_output["error"]) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
-    )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
 
 
 def test_client_error_event_name_matches_handler():

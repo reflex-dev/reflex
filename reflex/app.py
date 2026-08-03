@@ -2034,12 +2034,6 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Log the substates being sent for debugging mismatches. The is_debug
-        # check avoids building the message on the hot path when disabled.
-        if update.delta and console.is_debug():
-            console.debug(
-                f"Emitting state update for substates: {list(update.delta.keys())} to client {token!r}"
-            )
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
@@ -2170,8 +2164,9 @@ class EventNamespace(AsyncNamespace):
     async def on_client_error(self, sid: str, data: Any):
         """Handle errors reported by the frontend.
 
-        This allows frontend errors (especially state update processing errors)
-        to be visible in backend logs, improving debuggability.
+        Reports are routed through the app's ``frontend_exception_handler``,
+        so frontend errors (especially state update processing errors) are
+        visible in backend logs and reach custom exception handlers.
 
         Args:
             sid: The Socket.IO session id.
@@ -2206,19 +2201,32 @@ class EventNamespace(AsyncNamespace):
             self._client_error_window_start = now
             self._client_error_window_count = 0
         if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self._client_error_window_count += 1
+                console.warn(
+                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
+                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
+                    "suppressing further reports for this window."
+                )
             return
         self._client_error_window_count += 1
         self._client_error_counts[sid] = error_count + 1
 
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
-            console.error(
-                f"[Frontend Error - SID: {sid}] State update failed: "
+            report = (
+                f"[SID: {sid}] State update failed: "
                 f"no dispatch function for substate(s) '{substate}'. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
         else:
-            console.error(f"[Frontend Error - SID: {sid}] {error_type}: {message}")
+            report = f"[SID: {sid}] {error_type}: {message}"
+        # Route through the app's frontend exception handler so custom
+        # handlers (e.g. error trackers) receive client errors too.
+        self.app.frontend_exception_handler(Exception(report))
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.

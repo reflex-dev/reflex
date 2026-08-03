@@ -726,7 +726,7 @@ export const connect = async (
     if (missing_substates.length > 0) {
       const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
         '", "',
-      )}". This usually indicates a mismatch between frontend and backend state definitions. Please rebuild the frontend or check that api_url is correct.`;
+      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
       console.error(errorMsg);
       // Surface the error in the backend terminal logs.
       socket.current.emit(CLIENT_ERROR_EVENT, {
