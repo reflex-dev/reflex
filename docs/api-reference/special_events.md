@@ -29,6 +29,8 @@ rx.button("Scroll to download button", on_click=rx.scroll_to("download button"))
 
 When this is triggered, it scrolls to an element passed by id as parameter. Click on button to scroll to download button (rx.download section) at the bottom of the page
 
+To keep a container automatically scrolled to the bottom as new content is added — for example a chat or log view — use the [`rx.auto_scroll`](/docs/library/dynamic-rendering/auto-scroll/) component instead.
+
 ## rx.redirect
 
 Redirect the user to a new path within the application.
@@ -86,6 +88,29 @@ This event allows you to copy a given text or content to the user's clipboard.
 It's handy when you want to provide a "Copy to Clipboard" feature in your application,
 allowing users to easily copy information to paste elsewhere.
 
+`rx.set_clipboard` also accepts state Vars, so you can copy dynamic content,
+such as the current value of an input field:
+
+```python demo exec
+class CopyState(rx.State):
+    text: str = ""
+
+    @rx.event
+    def set_text(self, value: str):
+        self.text = value
+
+
+def copy_input_example():
+    return rx.hstack(
+        rx.input(
+            placeholder="Type something to copy",
+            value=CopyState.text,
+            on_change=CopyState.set_text,
+        ),
+        rx.button("Copy", on_click=rx.set_clipboard(CopyState.text)),
+    )
+```
+
 ## rx.set_value
 
 Set the value of a specified reference element.
@@ -129,4 +154,27 @@ rx.button(
     ),
     id="download button",
 )
+```
+
+When the data to download is not already available at a known URL, return
+`rx.download` from an event handler and pass the `data` directly:
+
+```python demo exec
+import random
+
+
+class DownloadState(rx.State):
+    @rx.event
+    def download_random_data(self):
+        return rx.download(
+            data=",".join([str(random.randint(0, 100)) for _ in range(10)]),
+            filename="random_numbers.csv",
+        )
+
+
+def download_random_data_button():
+    return rx.button(
+        "Download random numbers",
+        on_click=DownloadState.download_random_data,
+    )
 ```

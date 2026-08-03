@@ -3500,8 +3500,9 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
             annotated_type: The annotated type for the field.
-            source_field: If given, deep-copy custom (non-reserved) attributes
-                from this field that the new field did not compute itself.
+            source_field: If given, carry custom (non-reserved) attributes
+                from this field that the new field did not compute itself,
+                by reference.
         """
         self.default = default
         self.default_factory = default_factory
@@ -3533,9 +3534,14 @@ class Field(Generic[FIELD_TYPE]):
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
         if source_field is not None:
+            # Carry custom attrs by reference: the source field is a throwaway
+            # namespace value replaced during class creation, and tag consumers
+            # rely on identity (deep-copying cloned stateful callable markers
+            # and crashed outright on non-copyable values like locks). This
+            # matches how _copy_fn carries a function's __dict__.
             for key, value in source_field.__dict__.items():
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
-                    self.__dict__[key] = copy.deepcopy(value)
+                    self.__dict__[key] = value
 
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.

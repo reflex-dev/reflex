@@ -24,7 +24,7 @@
 > Build faster with Reflex:
 >
 > - **[AI Builder](https://build.reflex.dev/)** - Generate full-stack Reflex apps in seconds.
-> - **[Agent Toolkit](https://reflex.dev/docs/ai/integrations/ai-onboarding/)** - Connect MCP and Skills to your coding assistant.
+> - **[Agent Toolkit](https://reflex.dev/docs/ai/integrations/agent-toolkit/)** - Connect MCP and Skills to your coding assistant.
 > - **[App Management](https://reflex.dev/hosting)** - Deploy and manage your Reflex apps.
 
 ---

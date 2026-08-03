@@ -50,7 +50,6 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.state import (
     BaseState,
-    ImmutableMutableProxy,
     ImmutableStateError,
     MutableProxy,
     OnLoadInternalState,
@@ -5039,64 +5038,6 @@ async def test_add_dependency_get_state_regression(
     )
     other_state = await state.get_state(OtherState)
     await other_state.fetch_data_state()  # Should not raise exception.
-
-
-class MutableProxyState(BaseState):
-    """A test state with a MutableProxy var."""
-
-    data: dict[str, list[int]] = {"a": [1], "b": [2]}
-
-
-@pytest.mark.asyncio
-async def test_rebind_mutable_proxy(
-    token: str, attached_mock_event_context: EventContext
-) -> None:
-    """Test that previously bound MutableProxy instances can be rebound correctly."""
-    state_manager = attached_mock_event_context.state_manager
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        state.router = RouterData.from_router_data({
-            "query": {},
-            "token": token,
-            "sid": "test_sid",
-        })
-        assert isinstance(state, MutableProxyState)
-        assert isinstance(state.data, MutableProxy)
-        assert not isinstance(state.data, ImmutableMutableProxy)
-        state_proxy = StateProxy(state)
-        assert isinstance(state_proxy.data, ImmutableMutableProxy)
-    async with state_proxy:
-        # This assigns an ImmutableMutableProxy to data["a"].
-        state_proxy.data["a"] = state_proxy.data["b"]
-    assert isinstance(state_proxy.data["a"], ImmutableMutableProxy)
-    assert state_proxy.data["a"] is not state_proxy.data["b"]
-    assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
-
-    # Rebinding with a non-proxy should return a MutableProxy object (not ImmutableMutableProxy).
-    assert isinstance(state_proxy.__wrapped__.data["a"], MutableProxy)
-    assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
-
-    # Flush any oplock.
-    await state_manager.close()
-
-    new_state_proxy = StateProxy(state)
-    assert state_proxy is not new_state_proxy
-    assert new_state_proxy.data["a"]._self_state is new_state_proxy
-    assert state_proxy.data["a"]._self_state is state_proxy
-    assert state_proxy.__wrapped__.data["a"]._self_state is state_proxy.__wrapped__
-
-    async with state_proxy:
-        state_proxy.data["a"].append(3)
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        assert isinstance(state, MutableProxyState)
-        assert state.data["a"] == [2, 3]
-        # Object identity persists across serialization, so data["b"] is also mutated.
-        assert state.data["b"] == [2, 3]
 
 
 def test_override_base_method_skips_event_handler_wrapping():

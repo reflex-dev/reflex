@@ -104,6 +104,14 @@ def get_sidebar_items_enterprise_components():
                     link=enterprise.ag_grid.pivot_mode.path,
                 ),
                 SideBarItem(
+                    names="Tree Data",
+                    link=enterprise.ag_grid.tree_data.path,
+                ),
+                SideBarItem(
+                    names="Master Detail",
+                    link=enterprise.ag_grid.master_detail.path,
+                ),
+                SideBarItem(
                     names="Theme",
                     link=enterprise.ag_grid.theme.path,
                 ),
