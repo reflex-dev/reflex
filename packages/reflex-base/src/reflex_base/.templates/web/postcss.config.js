@@ -1,4 +1,4 @@
-const noVendorPrefix = /^(1|true)$/i.test(
+const noVendorPrefix = /^(1|true|y|yes)$/i.test(
   process.env.REFLEX_NO_AUTOPREFIXER ?? "",
 );
 

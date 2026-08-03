@@ -16,6 +16,8 @@ from reflex_cli.v2.deployments import hosting_cli
 from reflex.custom_components.custom_components import custom_components_cli
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
@@ -630,7 +632,7 @@ def export(
     backend_only: bool,
     zip_dest_dir: str,
     upload_db_file: bool,
-    env: LITERAL_ENV,
+    env: Literal["dev", "prod"],
     backend_excluded_dirs: tuple[Path, ...] = (),
     ssr: bool = True,
 ):
