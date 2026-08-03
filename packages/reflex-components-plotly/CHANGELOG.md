@@ -1,3 +1,10 @@
+## v0.9.4a1 (2026-08-03)
+
+### Miscellaneous
+
+- Bumped `react-plotly.js` 2.6.0 → 4.0.0, with `plotly.js` (and its dist-min / locale variants) 3.5.x → 3.7.0. ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+
+
 ## v0.9.3 (2026-06-25)
 
 ### Features

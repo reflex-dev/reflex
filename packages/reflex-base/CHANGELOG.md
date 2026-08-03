@@ -1,3 +1,39 @@
+## v0.9.8a1 (2026-08-03)
+
+### Features
+
+- Add `Env.PREVIEW`, the `VITE_MINIFY` and `REFLEX_NO_AUTOPREFIXER` environment variables, a `minify`/`cssMinify` option on the vite config template, and a `REFLEX_NO_AUTOPREFIXER` toggle in the generated `postcss.config.js` to support the new `preview` run mode. ([#6663](https://github.com/reflex-dev/reflex/issues/6663))
+- Add a staged `Plugin.register_route` hook with `add_page` and `has_app_page` capabilities that runs once per app before its first compilation, and `rx.plugins.get_plugin()` to look up the configured plugin instance by type (raising `ConfigError` on ambiguous matches). ([#6728](https://github.com/reflex-dev/reflex/issues/6728))
+
+### Bug Fixes
+
+- Preserve runtime value types for unannotated `@rx.memo` component parameters. ([#6659](https://github.com/reflex-dev/reflex/issues/6659))
+- Compare timezone-aware datetime Vars by their instants instead of their serialized UTC offsets. ([#6767](https://github.com/reflex-dev/reflex/issues/6767))
+- In python 3.13+, the EventProcessor loop was not catching asyncio.QueueShutdown resulting in uncaught exceptions during shutdown. ([#6773](https://github.com/reflex-dev/reflex/issues/6773))
+- Prevented edits to unloaded routes from poisoning React Router's browser-side HMR queue and blocking all later hot updates until a full page reload. ([#6774](https://github.com/reflex-dev/reflex/issues/6774))
+- Drain queued same-token events during graceful event processor shutdown. ([#6791](https://github.com/reflex-dev/reflex/issues/6791))
+- Custom attributes on a `Field` are now carried onto the rebuilt field by reference instead of deep copy, so stateful callable markers keep their identity and markers holding non-copyable values (locks, clients) no longer crash state class creation. ([#6809](https://github.com/reflex-dev/reflex/issues/6809))
+
+### Miscellaneous
+
+- Bumped bundled frontend dependency pins to their current releases:
+
+  - `react` / `react-dom`: 19.2.6 → 19.2.8
+  - `react-router`, `react-router-dom`, `@react-router/node`, `@react-router/dev`, `@react-router/fs-routes`: 7.15.0 → 7.18.2
+  - `isbot`: 5.1.40 → 5.2.1
+  - `universal-cookie`: 7.2.2 → 8.1.2
+  - `postcss`: 8.5.14 → 8.5.23
+  - `autoprefixer`: 10.5.0 → 10.5.4
+  - `vite`: 8.0.16 → 8.2.0
+  - `@tailwindcss/typography`: 0.5.19 → 0.5.20
+  - Bun: 1.3.13 → 1.3.14
+
+  Also raised the `rich` upper bound to `<16` (adopting rich 15). Replaced the now-redundant `cookie` `package.json` override (`universal-cookie` 8 and `react-router` resolve `cookie` to 1.x on their own) with a `postcss` override pinning it to 8.5.23 (also satisfying `vite` 8.2.0's `^8.5.23`) so transitive resolutions stay on a patched release (>= 8.5.18) for a security advisory.
+
+  ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+- Remove the unused `REFLEX_USE_TURBOPACK` environment variable. Turbopack is a Next.js bundler; the flag has had no effect since Reflex moved to React Router and Vite in 0.8. ([#6803](https://github.com/reflex-dev/reflex/issues/6803))
+
+
 ## v0.9.7 (2026-07-15)
 
 ### Deprecations

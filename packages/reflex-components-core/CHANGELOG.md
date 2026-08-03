@@ -1,3 +1,10 @@
+## v0.9.8a1 (2026-08-03)
+
+### Miscellaneous
+
+- Bumped `react-error-boundary` 6.1.1 → 6.1.2. ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+
+
 ## v0.9.7 (2026-07-15)
 
 ### Miscellaneous
