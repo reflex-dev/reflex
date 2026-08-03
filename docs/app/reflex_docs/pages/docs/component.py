@@ -902,8 +902,9 @@ def multi_docs(
     previews: dict[str, str],
     component_list: list,
     title: str,
-    ll_component_list: list | None = None,
     description: str | None = None,
+    image: str | None = None,
+    ll_component_list: list | None = None,
     source: str | None = None,
 ):
     components = [
@@ -965,7 +966,7 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title, description=description)
+    @docpage(set_path=path, t=title, description=description, image=image)
     def out():
         toc = get_docgen_toc(actual_path)
         # Reuse the source already read by the caller to avoid a second read.
@@ -1009,7 +1010,10 @@ def multi_docs(
     )
 
     @docpage(
-        set_path=path + "low", t=title + " (Low Level)", description=ll_description
+        set_path=path + "low",
+        t=title + " (Low Level)",
+        description=ll_description,
+        image=image,
     )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")
