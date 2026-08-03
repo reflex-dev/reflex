@@ -100,7 +100,6 @@ class ComponentPropsComponent(MyBaseComponent):
 Event handlers are props that expect to receive a function that will be called when an event occurs. They are defined as `rx.EventHandler` with a signature function to define the spec of the event.
 
 ```python
-from reflex.vars.event_handler import EventHandler
 from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 

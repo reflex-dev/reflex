@@ -45,6 +45,8 @@ COUNTRIES_CODES = {
 }
 ```
 
+# Regions
+
 ## Regions
 
 To scale your app you can choose different regions. Regions are different locations around the world where your app can be deployed. 
@@ -54,6 +56,7 @@ To scale your app to multiple regions in the Cloud UI, click on the `Settings` t
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/other/scaling_regions.webp",
+    alt="Selecting deployment regions for scaling",
     padding_bottom="20px",
 )
 ```
@@ -77,7 +80,7 @@ rx.el.table(
                 class_name="px-6 py-3 text-left text-sm font-semibold text-secondary-12 text-nowrap",
             ),
         ),
-        class_name="bg-slate-2",
+        class_name="bg-secondary-2",
     ),
     rx.el.tbody(
         *[
@@ -85,7 +88,7 @@ rx.el.table(
                 rx.el.td(
                     rx.el.div(
                         region,
-                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-slate-1 text-xs font-medium shrink-0 px-1.5 w-fit text-slate-12 border-slate-6",
+                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-secondary-1 text-xs font-medium shrink-0 px-1.5 w-fit text-secondary-12 border-secondary-6",
                     ),
                     class_name="px-6 py-3",
                 ),
@@ -93,20 +96,21 @@ rx.el.table(
                     rx.el.div(
                         rx.image(
                             src=f"https://build.reflex.dev/flags/{COUNTRIES_CODES[region]}.svg",
+                            alt="Region country flag",
                             class_name="rounded-[2px] mr-2 w-5 h-4",
                         ),
                         REGIONS_DICT[region],
                         class_name="flex flex-row items-center gap-2",
                     ),
-                    class_name="px-6 py-3 text-sm font-medium text-slate-9",
+                    class_name="px-6 py-3 text-sm font-medium text-secondary-9",
                 ),
-                class_name="even:bg-slate-2 odd:bg-slate-1 hover:bg-secondary-3",
+                class_name="even:bg-secondary-2 odd:bg-secondary-1 hover:bg-secondary-3",
             )
             for region in REGIONS_DICT.keys()
         ],
-        class_name="divide-y divide-slate-4",
+        class_name="divide-y divide-secondary-4",
     ),
-    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-slate-4",
+    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-secondary-4",
 )
 ```
 

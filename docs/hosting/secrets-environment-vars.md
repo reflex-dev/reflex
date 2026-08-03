@@ -39,13 +39,19 @@ You access the values of `envs` by referencing `os.environ` with their names as 
 To find the secrets tab, click on the `Settings` tab in the Cloud UI on the app page.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/environment_variables.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/environment_variables.webp",
+    alt="Environment variables panel in Reflex Cloud UI",
+)
 ```
 
 Then click on the `Secrets` tab as shown below.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/environment_variables_2.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/environment_variables_2.webp",
+    alt="Adding environment variables in Reflex Cloud UI",
+)
 ```
 
 From here you can add or edit your environment variables. You will need to restart your app for these changes to take effect.

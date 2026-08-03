@@ -1,10 +1,14 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
+from reflex_base.components.component import BaseComponent, Component
+from reflex_base.plugins import CompileContext, PageContext
 
 import reflex as rx
+from reflex.compiler.plugins import DefaultCollectorPlugin
 
 
 class SideBarState(rx.State):
@@ -219,6 +223,53 @@ class NestedElement(BaseModel):
 
     identifier: str
     value: list[int]
+
+
+@dataclass(frozen=True, slots=True)
+class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
+    """Collect only imports — same scope as Component._get_all_imports.
+
+    Inherits import collection from DefaultCollectorPlugin but disables
+    hooks, custom code, app_wrap, and stateful code rendering.
+    """
+
+    _compiler_stateful_only_leave_component = False
+
+    def leave_component(self, *_args: Any, **_kwargs: Any) -> None:
+        """No-op: skip stateful code rendering."""
+
+    def _compiler_bind_leave_component(
+        self, *_args: Any, **_kwargs: Any
+    ) -> Callable[..., None]:
+        """Return a no-op leave hook."""
+
+        def _noop(*_a: Any, **_kw: Any) -> None:
+            pass
+
+        return _noop
+
+    def _compiler_bind_enter_component(
+        self,
+        page_context: PageContext,
+        compile_context: CompileContext,
+    ) -> Callable[[BaseComponent, bool], None]:
+        del compile_context
+
+        frontend_imports = page_context.frontend_imports
+        extend_imports = self._extend_imports
+
+        def enter_component(
+            comp: BaseComponent,
+            in_prop_tree: bool,
+        ) -> None:
+            if not isinstance(comp, Component) or in_prop_tree:
+                return
+
+            imports = comp._get_imports()
+            if imports:
+                extend_imports(frontend_imports, imports)
+
+        return enter_component
 
 
 class BenchmarkState(rx.State):

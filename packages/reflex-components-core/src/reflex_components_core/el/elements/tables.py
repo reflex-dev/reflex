@@ -5,7 +5,7 @@ from typing import Literal
 from reflex_base.components.component import field
 from reflex_base.vars.base import Var
 
-from .base import BaseHTML
+from .base import BaseHTML, VoidBaseHTML
 
 
 class Caption(BaseHTML):
@@ -14,7 +14,7 @@ class Caption(BaseHTML):
     tag = "caption"
 
 
-class Col(BaseHTML):
+class Col(VoidBaseHTML):
     """Display the col element."""
 
     tag = "col"

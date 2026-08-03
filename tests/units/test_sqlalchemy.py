@@ -7,7 +7,14 @@ from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model
-from reflex.model import Model, ModelRegistry, sqla_session
+from reflex.model import (
+    ModelRegistry,
+    alembic_autogenerate,
+    alembic_init,
+    get_engine,
+    migrate,
+    sqla_session,
+)
 from reflex.state import MutableProxy
 
 pytest.importorskip("sqlalchemy")
@@ -168,7 +175,7 @@ def test_automigration(
 
     assert alembic_ini.exists() is False
     assert versions.exists() is False
-    Model.alembic_init()
+    alembic_init()
     assert alembic_ini.exists()
     assert versions.exists()
 
@@ -187,11 +194,9 @@ def test_automigration(
     class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t1: Mapped[str] = mapped_column(default="")
 
-    with Model.get_db_engine().connect() as connection:
-        assert Model.alembic_autogenerate(
-            connection=connection, message="Initial Revision"
-        )
-    assert Model.migrate()
+    with get_engine().connect() as connection:
+        assert alembic_autogenerate(connection=connection, message="Initial Revision")
+    assert migrate()
     version_scripts = list(versions.glob("*.py"))
     assert len(version_scripts) == 1
     assert version_scripts[0].name.endswith("initial_revision.py")
@@ -207,7 +212,7 @@ def test_automigration(
         t1: Mapped[str | None] = mapped_column(default="default")
         t2: Mapped[str] = mapped_column(default="bar")
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 2
 
     with sqla_session() as session:
@@ -226,7 +231,7 @@ def test_automigration(
     class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t2: Mapped[str] = mapped_column(default="bar")
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 3
 
     with sqla_session() as session:
@@ -240,7 +245,7 @@ def test_automigration(
         a: Mapped[int] = mapped_column(default=42)
         b: Mapped[float] = mapped_column(default=4.2)
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
     with reflex.model.session() as session:
@@ -252,7 +257,7 @@ def test_automigration(
         assert math.isclose(result[0].b, 4.2)
 
     # No-op
-    # assert Model.migrate(autogenerate=True) #noqa: ERA001
+    # assert migrate(autogenerate=True) #noqa: ERA001
     # assert len(list(versions.glob("*.py"))) == 4 #noqa: ERA001
 
     # drop table (AlembicSecond)
@@ -261,7 +266,7 @@ def test_automigration(
     class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t2: Mapped[str] = mapped_column(default="bar")
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     with reflex.model.session() as session:
@@ -280,12 +285,12 @@ def test_automigration(
         # changing column type not supported by default
         t2: Mapped[int] = mapped_column(default=42)
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     # clear all metadata to avoid influencing subsequent tests
     model_registry.get_metadata().clear()
 
     # drop remaining tables
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 6

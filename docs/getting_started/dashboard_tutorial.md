@@ -6,7 +6,7 @@ import reflex as rx
 
 **~20 min hands-on** · Build a small data dashboard where users can input data that renders in a table and a graph.
 
-This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting_started/basics) first. The techniques you'll learn are fundamental to any Reflex app.
+This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting-started/basics) first. The techniques you'll learn are fundamental to any Reflex app.
 
 This tutorial is divided into several sections:
 
@@ -216,7 +216,7 @@ rx.box(
 
 ## Setup
 
-1. [Install Reflex](/docs/getting_started/installation) if you haven't already.
+1. [Install Reflex](/docs/getting-started/installation) if you haven't already.
 2. Create a folder called `dashboard_tutorial` and `cd` into it.
 3. Run `uv init` and `uv add reflex`.
 4. Run `uv run reflex init` and choose template `0` (the blank template).
@@ -226,7 +226,7 @@ rx.box(
 
 ### Starter code
 
-The `reflex init` command scaffolds an `rxconfig.py` (app [config](/docs/advanced_onboarding/configuration)), an `assets/` folder for static files, and a `dashboard_tutorial/dashboard_tutorial.py` module containing your app. Open that module and replace its contents — we'll build the app up from scratch.
+The `reflex init` command scaffolds an `rxconfig.py` (app [config](/docs/advanced-onboarding/configuration)), an `assets/` folder for static files, and a `dashboard_tutorial/dashboard_tutorial.py` module containing your app. Open that module and replace its contents — we'll build the app up from scratch.
 
 A minimal Reflex page is just a component function plus an app that registers it:
 
@@ -310,7 +310,7 @@ def index() -> rx.Component:
 
 ## Dynamic data with State
 
-The table above is static — the rows are hardcoded. To make it dynamic, we move the data onto **state**: a Python class whose fields ([state vars](/docs/state/overview)) hold the app's data and whose methods ([event handlers](/docs/events/events_overview)) mutate them.
+The table above is static — the rows are hardcoded. To make it dynamic, we move the data onto **state**: a Python class whose fields ([state vars](/docs/state/overview)) hold the app's data and whose methods ([event handlers](/docs/events/events-overview)) mutate them.
 
 We'll model each row as a `User` dataclass so we can access fields by name (`user.name`) instead of by index:
 
@@ -332,7 +332,7 @@ class State(rx.State):
     ]
 ```
 
-To iterate a list state var, use [`rx.foreach`](/docs/components/rendering_iterables) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
+To iterate a list state var, use [`rx.foreach`](/docs/components/rendering-iterables) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
 
 ```python
 def show_user(user: User) -> rx.Component:
@@ -363,7 +363,7 @@ def index() -> rx.Component:
 ```md alert info
 # Why not a `for` loop?
 
-A regular `for` loop runs at compile time, but state vars change at runtime — so the rendered rows wouldn't update. `rx.foreach` tells the compiler to re-render when the state var changes. See [compile-time vs runtime](/docs/getting_started/basics#compile-time-vs.-runtime).
+A regular `for` loop runs at compile time, but state vars change at runtime — so the rendered rows wouldn't update. `rx.foreach` tells the compiler to re-render when the state var changes. See [compile-time vs runtime](/docs/getting-started/basics#compile-time-vs.-runtime).
 ```
 
 ```python exec
@@ -463,7 +463,7 @@ rx.form(
 
 Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked.
 
-In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events_overview).
+In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview).
 
 Components have special props called event triggers, such as `on_submit`, that can be used to make components interactive. Event triggers connect components to event handlers, which update the state. Different event triggers expect the event handler that you hook them up to, to take in different arguments (and some do not take in any arguments).
 

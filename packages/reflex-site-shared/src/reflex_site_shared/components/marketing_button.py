@@ -34,7 +34,7 @@ class Button(rx.Component):
             The component.
         """
         return {
-            "clsx-for-tailwind": "cn",
+            "clsx-for-tailwind@1.0.0": "cn",
         }
 
 

@@ -1,8 +1,8 @@
 """Template for documentation pages."""
 
 import functools
+from collections.abc import Callable, Collection
 from datetime import datetime
-from typing import Callable
 
 import reflex as rx
 import reflex_components_internal as ui
@@ -19,9 +19,62 @@ from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.route import Route, get_path
-from reflex_site_shared.styles.colors import c_color
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 from reflex_site_shared.views.footer import dark_mode_toggle
+
+_REGISTERED_DOC_ROUTES: set[str] = set()
+
+# Title-cased breadcrumb labels that should be displayed as acronyms.
+_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
+    "Ai": "AI",
+    "Api": "API",
+    "Sdk": "SDK",
+    "Cli": "CLI",
+    "Css": "CSS",
+}
+
+
+def _normalize_doc_route(path: str) -> str:
+    """Normalize a docs route to use leading and trailing slashes."""
+    route = f"/{path.strip('/')}"
+    return "/" if route == "/" else f"{route}/"
+
+
+def _register_doc_route(path: str) -> None:
+    """Track a route registered through the docpage template."""
+    _REGISTERED_DOC_ROUTES.add(_normalize_doc_route(path))
+
+
+def _resolve_breadcrumb_href(
+    href: str, registered_routes: Collection[str] | None = None
+) -> str | None:
+    """Resolve a generated breadcrumb href to a registered docs route.
+
+    Breadcrumbs are built from path segments, but intermediate segments (e.g.
+    ``/ai`` or ``/hosting``) are often just categories with no page of their
+    own. This returns the matching route, preferring an ``overview`` child when
+    the bare path is not itself a page, or ``None`` when no registered route
+    exists so the caller can render the segment as non-clickable text instead of
+    a broken link.
+
+    Args:
+        href: The generated, app-relative breadcrumb href (no ``/docs`` prefix).
+        registered_routes: Routes to match against. Defaults to the routes
+            registered through the docpage template.
+
+    Returns:
+        The resolved route, or ``None`` if no registered route matches.
+    """
+    routes = _REGISTERED_DOC_ROUTES if registered_routes is None else registered_routes
+    route = _normalize_doc_route(href)
+    if route in routes:
+        return route
+
+    overview_route = _normalize_doc_route(f"{route}overview")
+    if overview_route in routes:
+        return overview_route
+
+    return None
 
 
 class FeedbackState(rx.State):
@@ -36,48 +89,116 @@ class FeedbackState(rx.State):
         pass
 
 
-def footer_link(text: str, href: str):
-    return rx.link(
-        text,
-        class_name="font-small text-slate-9 hover:!text-slate-11 transition-color",
-        href=href,
-        underline="none",
+def footer_link(text: str, href: str, *, root_site: bool = False) -> rx.Component:
+    """Create a footer link, optionally bypassing the docs router basename.
+
+    Args:
+        text: The visible link label.
+        href: The link destination.
+        root_site: Whether the destination is outside the docs router basename.
+
+    Returns:
+        The styled footer link.
+    """
+    class_name = (
+        "font-small text-secondary-9 hover:!text-secondary-11 "
+        "transition-color no-underline"
     )
+    if root_site:
+        return rx.el.elements.a(text, href=href, class_name=class_name)
+    return rx.link(text, href=href, class_name=class_name, underline="none")
 
 
 def footer_link_flex(heading: str, links):
     return rx.box(
         rx.el.h4(
             heading,
-            class_name="font-semibold text-slate-12 text-sm tracking-[-0.01313rem]",
+            class_name="font-semibold text-secondary-12 text-sm tracking-[-0.01313rem]",
         ),
         *links,
         class_name="flex flex-col gap-4",
     )
 
 
-def thumb_card(score: int, icon: str) -> rx.Component:
+def social_menu_item(icon: str, url: str, name: str) -> rx.Component:
+    return rx.el.elements.a(
+        marketing_button(
+            get_icon(icon, class_name="shrink-0"),
+            variant="ghost",
+            size="icon-sm",
+            class_name="text-secondary-11",
+            native_button=False,
+        ),
+        href=url,
+        custom_attrs={"aria-label": "Social link for " + name},
+        target="_blank",
+    )
+
+
+def menu_socials() -> rx.Component:
+    from reflex_site_shared.constants import (
+        DISCORD_URL,
+        FORUM_URL,
+        GITHUB_URL,
+        LINKEDIN_URL,
+        TWITTER_URL,
+    )
+
+    return rx.box(
+        social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
+        social_menu_item("github_navbar", GITHUB_URL, "Github"),
+        social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
+        social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
+        social_menu_item("forum_footer", FORUM_URL, "Forum"),
+        class_name="flex flex-row items-center gap-2",
+    )
+
+
+def thumb_card(score: int, icon: str, label: str) -> rx.Component:
     return rx.el.button(
         ui.icon(
             icon,
-            color=rx.cond(
-                FeedbackState.score == score, c_color("slate", 11), c_color("slate", 9)
-            ),
             size=16,
         ),
-        background_color=rx.cond(
-            FeedbackState.score == score, c_color("slate", 3), c_color("white", 1)
-        ),
+        label,
+        type="button",
         on_click=FeedbackState.set_score(score),
-        class_name="transition-bg hover:bg-slate-3 shadow-medium border border-slate-4 rounded-lg items-center justify-center cursor-pointer p-2 size-9 flex",
+        class_name=rx.cond(
+            FeedbackState.score == score,
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-primary-6 bg-primary-3 px-3 text-sm font-medium text-primary-11 transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-secondary-5 bg-secondary-1 px-3 text-sm font-medium text-secondary-9 transition-colors hover:bg-secondary-3 hover:text-secondary-11",
+        ),
     )
 
 
 def thumbs_cards() -> rx.Component:
     return rx.hstack(
-        thumb_card(1, "ThumbsUpIcon"),
-        thumb_card(0, "ThumbsDownIcon"),
+        thumb_card(1, "ThumbsUpIcon", "Helpful"),
+        thumb_card(0, "ThumbsDownIcon", "Not helpful"),
         gap="8px",
+        wrap="wrap",
+    )
+
+
+def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
+    active = FeedbackState.score == score
+    return rx.el.button(
+        ui.icon(icon),
+        label,
+        type="button",
+        class_name=rx.cond(
+            active,
+            ui.cn(
+                "border-primary-6 bg-primary-3 text-primary-11 shadow-none",
+                class_name,
+            ),
+            ui.cn(
+                "border-secondary-5 bg-secondary-1 text-secondary-9 shadow-large hover:bg-secondary-3 hover:text-secondary-11",
+                class_name,
+            ),
+        ),
+        aria_label=label,
+        on_click=FeedbackState.set_score(score),
     )
 
 
@@ -122,40 +243,28 @@ def feedback_content() -> rx.Component:
 
 
 def feedback_button() -> rx.Component:
-    thumb_cn = " flex flex-row items-center justify-center gap-2 text-slate-9 whitespace-nowrap border border-slate-5 bg-slate-1 shadow-large cursor-pointer transition-bg hover:bg-slate-3 font-small"
+    thumb_cn = "w-full gap-2 px-3 py-0.5 flex flex-row items-center justify-center whitespace-nowrap border cursor-pointer transition-colors font-small"
     return ui.popover.root(
         ui.popover.trigger(
             render_=rx.el.div(
-                rx.el.button(
-                    ui.icon("ThumbsUpIcon"),
+                feedback_choice_button(
                     "Yes",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[20px_0_0_20px]",
-                        thumb_cn,
-                    ),
-                    aria_label="Yes",
-                    on_click=FeedbackState.set_score(1),
+                    "ThumbsUpIcon",
+                    1,
+                    ui.cn("rounded-[20px_0_0_20px] border-r-0", thumb_cn),
                 ),
-                rx.el.button(
-                    ui.icon("ThumbsDownIcon"),
+                feedback_choice_button(
                     "No",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[0_20px_20px_0]",
-                        thumb_cn,
-                    ),
-                    aria_label="No",
-                    on_click=FeedbackState.set_score(0),
+                    "ThumbsDownIcon",
+                    0,
+                    ui.cn("rounded-[0_20px_20px_0]", thumb_cn),
                 ),
                 class_name="w-full lg:w-auto items-center flex flex-row",
             ),
         ),
         ui.popover.portal(
             ui.popover.positioner(
-                ui.popover.popup(
-                    render_=feedback_content(),
-                ),
+                ui.popover.popup(feedback_content()),
             ),
         ),
     )
@@ -170,14 +279,14 @@ def feedback_button_toc() -> rx.Component:
             size="sm",
             type="button",
             on_click=FeedbackState.set_score(1),
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11",
         ),
         content=feedback_content(),
     )
 
 
 @rx.memo
-def copy_to_markdown(text: str) -> rx.Component:
+def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
     copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
     return marketing_button(
         rx.cond(
@@ -191,7 +300,7 @@ def copy_to_markdown(text: str) -> rx.Component:
         type="button",
         size="sm",
         variant="ghost",
-        class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+        class_name="justify-start pl-0 text-secondary-11",
         on_click=[
             rx.call_function(copied.set_value(True)),
             rx.set_clipboard(text),
@@ -207,10 +316,10 @@ def ask_ai_chat() -> rx.Component:
             "Ask AI about this page",
             size="sm",
             variant="ghost",
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11",
             native_button=False,
         ),
-        to="/ai-builder/integrations/mcp-overview/",
+        to="/ai/integrations/mcp-overview/",
     )
 
 
@@ -219,37 +328,42 @@ def link_pill(text: str, href: str) -> rx.Component:
         text,
         href=href,
         underline="none",
-        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-slate-5 bg-slate-3 lg:bg-slate-1 hover:bg-slate-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-slate-9 !hover:text-slate-11 hover:!text-slate-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
+        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-secondary-9 !hover:text-secondary-11 hover:!text-secondary-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
     )
 
 
 @rx.memo
-def docpage_footer(path: str):
+def docpage_footer(path: rx.Var[str]) -> rx.Component:
     from reflex_site_shared.constants import FORUM_URL, ROADMAP_URL
-    from reflex_site_shared.views.footer import menu_socials
 
     return rx.el.footer(
         rx.box(
             rx.box(
                 rx.text(
                     "Did you find this useful?",
-                    class_name="font-small text-slate-11 lg:text-slate-9 whitespace-nowrap",
+                    class_name="font-small text-secondary-11 lg:text-secondary-9 whitespace-nowrap",
                 ),
                 feedback_button(),
-                class_name="flex lg:flex-row flex-col items-center gap-3 lg:gap-4 bg-slate-3 lg:bg-transparent p-4 lg:p-0 rounded-lg w-full",
+                class_name="flex lg:flex-row flex-col items-center gap-3 lg:gap-4 bg-secondary-3 lg:bg-transparent p-4 lg:p-0 rounded-lg w-full",
             ),
             rx.box(
                 link_pill(
                     "Raise an issue",
-                    href=f"https://github.com/reflex-dev/reflex-web/issues/new?title=Issue with reflex.dev documentation&amp;body=Path: {path}",
+                    href=(
+                        "https://github.com/reflex-dev/reflex/issues/new"
+                        "?template=documentation.md"
+                        "&labels=documentation"
+                        f"&title=Issue with reflex.dev{path}"
+                        f"&body=Path: {path}%0A%0A"
+                    ),
                 ),
                 link_pill(
                     "Edit this page",
-                    f"https://github.com/reflex-dev/reflex-web/tree/main{path}.md",
+                    f"https://github.com/reflex-dev/reflex/blob/main/docs{path}.md",
                 ),
                 class_name="lg:flex hidden flex-row items-center gap-2 w-auto",
             ),
-            class_name="flex flex-row justify-center lg:justify-between items-center border-slate-4 border-y-0 lg:border-y pt-0 lg:pt-8 pb-6 lg:pb-8 w-full",
+            class_name="flex flex-row justify-center lg:justify-between items-center border-secondary-4 border-y-0 lg:border-y pt-0 lg:pt-8 pb-6 lg:pb-8 w-full",
         ),
         rx.box(
             rx.box(
@@ -257,10 +371,8 @@ def docpage_footer(path: str):
                     "Links",
                     [
                         footer_link("Home", "/"),
-                        footer_link("Blog", "/blog"),
-                        footer_link(
-                            "Changelog", "https://github.com/reflex-dev/reflex/releases"
-                        ),
+                        footer_link("Blog", "/blog/", root_site=True),
+                        footer_link("Changelog", "/changelog/"),
                     ],
                 ),
                 footer_link_flex(
@@ -275,7 +387,7 @@ def docpage_footer(path: str):
                 footer_link_flex(
                     "Resources",
                     [
-                        footer_link("FAQ", "/faq/"),
+                        footer_link("FAQ", "/faq/", root_site=True),
                         footer_link("Roadmap", ROADMAP_URL),
                         footer_link("Forum", FORUM_URL),
                     ],
@@ -290,7 +402,7 @@ def docpage_footer(path: str):
             rx.el.div(
                 rx.text(
                     f"Copyright © {datetime.now().year} Pynecone, Inc.",
-                    class_name="font-small text-slate-9",
+                    class_name="font-small text-secondary-9",
                 ),
                 server_status(StatusState.status),
                 class_name="flex flex-row items-center gap-4 justify-between w-full",
@@ -311,15 +423,15 @@ def _copy_page_menu_item(
     row = rx.el.div(
         rx.el.div(
             icon,
-            class_name="flex size-8 items-center justify-center rounded-md border border-slate-5 bg-slate-2 text-slate-11 shrink-0",
+            class_name="flex size-8 items-center justify-center rounded-md border border-secondary-5 bg-secondary-2 text-secondary-11 shrink-0",
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span(title, class_name="text-sm font-medium text-slate-12"),
+                rx.el.span(title, class_name="text-sm font-medium text-secondary-12"),
                 ui.icon(
                     "ArrowUpRight01Icon",
                     size=12,
-                    class_name="!text-slate-9",
+                    class_name="text-secondary-9",
                 )
                 if href
                 else rx.fragment(),
@@ -327,11 +439,11 @@ def _copy_page_menu_item(
             ),
             rx.el.span(
                 description,
-                class_name="text-xs text-slate-10",
+                class_name="text-xs text-secondary-10",
             ),
             class_name="flex flex-col items-start gap-0.5",
         ),
-        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-slate-3 transition-colors cursor-pointer",
+        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-secondary-3 transition-colors cursor-pointer",
     )
     if href:
         return rx.el.a(
@@ -350,6 +462,7 @@ def _copy_page_menu_item(
 
 
 DOCS_PROD_BASE = "https://reflex.dev/docs"
+LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
 def _build_prefill_url(base_url: str, path: str, action: str) -> str:
@@ -372,43 +485,46 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
                 ui.icon(
                     "AiMagicIcon",
                     size=16,
-                    class_name="!text-white",
+                    class_name="text-primary-contrast",
                 ),
                 class_name=(
                     "flex size-8 items-center justify-center rounded-md "
-                    "bg-gradient-to-br from-violet-9 to-violet-11 "
-                    "shadow-[0_0_0_1px_var(--violet-7),0_2px_8px_-2px_var(--violet-a8)] shrink-0"
+                    "bg-gradient-to-br from-primary-9 to-primary-11 "
+                    "dark:from-primary-7 dark:to-primary-9 "
+                    "shadow-[0_0_0_1px_var(--primary-7),0_2px_8px_-2px_var(--primary-a8)] shrink-0"
                 ),
             ),
             rx.el.div(
                 rx.el.div(
                     rx.el.span(
                         "Build this with AI",
-                        class_name="text-sm font-semibold text-slate-12",
+                        class_name="text-sm font-semibold text-secondary-12",
                     ),
                     ui.icon(
                         "ArrowUpRight01Icon",
                         size=12,
-                        class_name="!text-violet-11",
+                        class_name="!text-primary-11",
                     ),
                     class_name="flex items-center gap-1",
                 ),
                 rx.el.span(
                     "Open in Reflex Build",
-                    class_name="text-xs text-slate-10",
+                    class_name="text-xs text-secondary-10",
                 ),
                 class_name="flex flex-col items-start gap-0.5",
             ),
-            class_name="flex items-start gap-3 px-3 py-2.5 w-full",
+            class_name="flex items-start gap-3 px-3 py-3 w-full",
         ),
         href=href,
         target="_blank",
         rel="noopener noreferrer",
         class_name=(
             "no-underline w-full text-left block "
-            "bg-gradient-to-br from-violet-2 to-slate-1 "
-            "hover:from-violet-3 hover:to-violet-2 "
-            "border-b border-slate-4 transition-colors cursor-pointer"
+            "bg-gradient-to-br from-primary-2 to-secondary-1 "
+            "hover:from-primary-3 hover:to-primary-2 "
+            "dark:from-primary-a3 dark:to-secondary-2 "
+            "dark:hover:from-primary-a4 dark:hover:to-secondary-3 "
+            "border-b border-secondary-4 transition-colors cursor-pointer"
         ),
     )
 
@@ -423,7 +539,10 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     copy_action = run_script(
         """
 ((function() {
-  const mdUrl = window.location.pathname.replace(/\\/$/, '') + '.md';
+  const cleanPath = window.location.pathname.replace(/\\/$/, '');
+  const mdUrl = cleanPath.endsWith('/low')
+    ? cleanPath.replace(/\\/low$/, '-ll.md')
+    : cleanPath + '.md';
   const animate = () => {
     document.querySelectorAll('[data-copy-icon]').forEach((icon) => {
       if (icon.dataset.animating === '1') return;
@@ -453,20 +572,32 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     });
   };
   animate();
+  if (navigator.clipboard && typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+    const blobPromise = fetch(mdUrl).then((r) => {
+      if (!r.ok) throw new Error(r.status);
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('markdown') && !ct.includes('text/plain')) {
+        throw new Error('not-markdown');
+      }
+      return r.text().then((t) => new Blob([t], { type: 'text/plain' }));
+    });
+    navigator.clipboard
+      .write([new ClipboardItem({ 'text/plain': blobPromise })])
+      .catch((err) => console.error('Copy page failed:', err));
+    return;
+  }
   fetch(mdUrl)
-    .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+    .then((r) => {
+      if (!r.ok) return Promise.reject(r.status);
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('markdown') && !ct.includes('text/plain')) {
+        return Promise.reject('not-markdown');
+      }
+      return r.text();
+    })
     .then((text) => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          try { document.execCommand('copy'); } catch (e) {}
-          document.body.removeChild(ta);
-        });
+        return navigator.clipboard.writeText(text);
       }
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -493,8 +624,8 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
             on_click=copy_action,
             class_name=(
                 "flex items-center justify-center px-2.5 h-8 "
-                "border border-slate-5 border-r-0 rounded-l-md text-slate-11 "
-                "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                "border border-secondary-5 border-r-0 rounded-l-md text-secondary-11 "
+                "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
                 "transition-all cursor-pointer"
             ),
         ),
@@ -506,8 +637,8 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                     aria_label="Copy page options",
                     class_name=(
                         "flex items-center justify-center px-1.5 h-8 "
-                        "border border-slate-5 rounded-r-md text-slate-11 "
-                        "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                        "border border-secondary-5 rounded-r-md text-secondary-11 "
+                        "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
                         "transition-all cursor-pointer"
                     ),
                 ),
@@ -515,7 +646,7 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
             ui.popover.portal(
                 ui.popover.positioner(
                     ui.popover.popup(
-                        render_=rx.el.div(
+                        rx.el.div(
                             _build_reflex_menu_item(path=path),
                             _copy_page_menu_item(
                                 icon=ui.icon("Copy01Icon", size=16),
@@ -524,12 +655,12 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 on_click=copy_action,
                             ),
                             _copy_page_menu_item(
-                                icon=ui.icon("File01Icon", size=16),
+                                icon=ui.icon("DocumentValidationIcon", size=16),
                                 title="llms-full.txt",
                                 description="View all docs as Markdown for LLMs",
-                                href="/docs/llms-full.txt",
+                                href=LLMS_FULL_TXT_PATH,
                             ),
-                            rx.el.div(class_name="h-px bg-slate-4 my-1 mx-2"),
+                            rx.el.div(class_name="h-px bg-secondary-4"),
                             _copy_page_menu_item(
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
                                 title="Open in ChatGPT",
@@ -547,16 +678,16 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 ),
                             ),
                             class_name=(
-                                "flex flex-col min-w-[260px] py-1 "
-                                "bg-slate-1 border border-slate-5 rounded-lg shadow-lg "
+                                "flex flex-col min-w-[260px] "
+                                "bg-white dark:bg-secondary-2 border border-secondary-5 rounded-lg shadow-lg "
                                 "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
                                 "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
                             ),
                         ),
+                        class_name="p-0 overflow-hidden",
                     ),
-                    side="bottom",
                     align="end",
-                    side_offset=6,
+                    align_offset=-4,
                 ),
             ),
         ),
@@ -570,12 +701,8 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs' and capitalizing each segment
-    segments = [
-        segment.capitalize()
-        for segment in path.split("/")
-        if segment and segment != "docs"
-    ]
+    # Split the path into segments, removing 'docs'.
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
 
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
@@ -583,31 +710,45 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
     current_path = ""
     for i, segment in enumerate(segments):
-        current_path += f"/{segment.lower()}"
+        current_path += f"/{segment}"
 
-        # Add the breadcrumb item to the list
-        breadcrumbs.append(
-            rx.el.a(
-                to_title_case(to_snake_case(segment), sep=" "),
-                class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
-                + (" truncate" if i == len(segments) - 1 else ""),
-                underline="none",
-                href=current_path,
-            )
+        label = to_title_case(to_snake_case(segment), sep=" ")
+        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
+        base_class = ui.cn(
+            "min-h-8 flex items-center text-sm font-[525] text-secondary-12 last:text-secondary-11",
+            "truncate" if i == len(segments) - 1 else "",
         )
+
+        # Category segments (e.g. /ai, /hosting) often have no page of their own.
+        # Render those as plain text so the breadcrumb doesn't link to a 404.
+        href = _resolve_breadcrumb_href(current_path)
+        if href is None:
+            breadcrumbs.append(rx.el.span(label, class_name=base_class))
+        else:
+            breadcrumbs.append(
+                rx.el.a(
+                    label,
+                    class_name=ui.cn(
+                        base_class,
+                        "hover:text-primary-10 dark:hover:text-primary-9",
+                    ),
+                    underline="none",
+                    href=href,
+                )
+            )
 
         # If it's not the last segment, add a separator
         if i < len(segments) - 1:
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
-                    class_name="lg:flex hidden dark:text-m-slate-6 text-m-slate-7 size-4",
+                    class_name="lg:flex hidden text-secondary-11 size-4",
                 ),
             )
             breadcrumbs.append(
                 rx.text(
                     "/",
-                    class_name="font-sm dark:text-m-slate-6 text-m-slate-7 lg:hidden flex",
+                    class_name="font-sm text-secondary-11 lg:hidden flex",
                 )
             )
     from reflex_site_shared.views.hosting_banner import HostingBannerState
@@ -629,12 +770,12 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             ui.icon(
                 "ArrowDown01Icon",
                 size=14,
-                class_name="!text-slate-9 lg:hidden flex",
+                class_name="!text-secondary-9 lg:hidden flex",
             ),
             class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
         ),
         class_name=ui.cn(
-            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-slate-4 bg-slate-1 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
+            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-secondary-4 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
             rx.cond(
                 HostingBannerState.is_banner_visible,
                 "lg:mt-[139px]",
@@ -650,6 +791,7 @@ def docpage(
     right_sidebar: bool = True,
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
+    description: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -661,6 +803,9 @@ def docpage(
         right_sidebar: Whether to show the right sidebar.
         page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
         pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        description: The meta description for the page. If None, a descriptive
+            fallback derived from the page title is used so the page always has
+            a non-empty, page-specific meta description.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -676,6 +821,7 @@ def docpage(
             The final route with the template applied.
         """
         path = get_path(contents, "reflex-docs/pages") if set_path is None else set_path
+        _register_doc_route(path)
 
         title = contents.__name__.replace("_", " ").title() if t is None else t
 
@@ -717,9 +863,11 @@ def docpage(
                             ),
                             underline="none",
                             href=prev.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-slate-9 hover:!text-slate-11 transition-color",
+                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
                         ),
-                        rx.text(next_prev_name, class_name="font-smbold text-slate-12"),
+                        rx.text(
+                            next_prev_name, class_name="font-smbold text-secondary-12"
+                        ),
                         class_name="flex flex-col justify-start gap-1",
                     )
                 )
@@ -739,9 +887,11 @@ def docpage(
                             ),
                             underline="none",
                             href=next.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-slate-9 hover:!text-slate-11 transition-color",
+                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
                         ),
-                        rx.text(next_prev_name, class_name="font-smbold text-slate-12"),
+                        rx.text(
+                            next_prev_name, class_name="font-smbold text-secondary-12"
+                        ),
                         class_name="flex flex-col justify-start gap-1 items-end",
                     )
                 )
@@ -772,8 +922,8 @@ def docpage(
                     rx.box(
                         sidebar,
                         class_name=(
-                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-m-slate-11 before:-z-10 "
+                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-secondary-4 sticky left-0 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 before:-z-10 "
                             + rx.cond(
                                 HostingBannerState.is_banner_visible,
                                 " top-[113px] h-[calc(100vh-113px)]",
@@ -818,10 +968,10 @@ def docpage(
                                     rx.icon(
                                         "align-left",
                                         size=14,
-                                        class_name="dark:text-m-slate-3 text-m-slate-12",
+                                        class_name="text-secondary-12",
                                     ),
                                     "On This Page",
-                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] dark:text-m-slate-3 text-m-slate-12",
+                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] text-secondary-12",
                                 ),
                                 rx.el.ul(
                                     *[
@@ -829,7 +979,7 @@ def docpage(
                                             rx.el.li(
                                                 rx.el.a(
                                                     text,
-                                                    class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                    class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                     href=path
                                                     + "#"
                                                     + text.lower().replace(" ", "-"),
@@ -840,7 +990,7 @@ def docpage(
                                                 rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -852,7 +1002,7 @@ def docpage(
                                                 else rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-8 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-8 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -865,14 +1015,10 @@ def docpage(
                                         for level, text in toc
                                     ],
                                     id="toc-navigation",
-                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] max-h-[80vh]",
+                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--secondary-4)_inset] max-h-[60vh] overflow-y-auto scroll-mask-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),
-                                    copy_to_markdown(text=doc_content)
-                                    if doc_content
-                                    else None,
-                                    ask_ai_chat(),
                                     class_name="flex flex-col mt-1.5 justify-start",
                                 ),
                                 class_name="flex flex-col justify-start gap-y-4 overflow-y-auto sticky top-4",
@@ -896,27 +1042,61 @@ def docpage(
                     ),
                     class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
-                class_name="flex flex-col justify-center bg-m-slate-1 dark:bg-m-slate-12 w-full relative",
+                class_name="flex flex-col justify-center bg-secondary-1 w-full relative",
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
-        components = path.split("/")
+        # Section is the first path segment (these routes are mounted under
+        # /docs at runtime, so the path itself has no "docs" prefix).
+        segments = [c for c in path.split("/") if c]
+        section = segments[0] if len(segments) > 1 else None
         category = (
-            " ".join(
-                word.capitalize() for word in components[2].replace("-", " ").split()
-            )
-            if len(components) > 2
+            " ".join(word.capitalize() for word in section.replace("-", " ").split())
+            if section
             else None
         )
+        # Drop the section if it just repeats the page title (avoids titles like
+        # "Introduction · Introduction · Reflex Docs").
+        if category and category.lower() == title.lower():
+            category = None
+
+        # Build a descriptive, length-appropriate <title>. Nested docs pages
+        # previously used the bare title (e.g. "Styling"), which is too short
+        # for search engines; suffix the section and site so every doc title is
+        # unique and substantial, dropping the section if it would push the
+        # title past the ~60 char SERP truncation point.
         if page_title:
-            return Route(
-                path=path,
-                title=page_title,
-                component=wrapper,
+            seo_title = page_title
+        else:
+            with_category = (
+                f"{title} · {category} · Reflex Docs"
+                if category
+                else f"{title} · Reflex Docs"
             )
+            fallback = f"{title} · Reflex Docs"
+            seo_title = (
+                with_category
+                if len(with_category) <= 60
+                else (fallback if len(fallback) <= 60 else title)
+            )
+
+        # Always provide a non-empty, page-specific meta description. Real
+        # descriptions come from the doc (see make_docpage); otherwise fall back
+        # to a concise, title-derived sentence so the page is never description-less.
+        from reflex_docs.pages.docs.metadata import truncate_meta_description
+
+        seo_description = truncate_meta_description(
+            description
+            or (
+                f"{title} — Reflex docs. Reflex is the open-source Python framework "
+                "for building full-stack web apps and internal tools."
+            )
+        )
+
         return Route(
             path=path,
-            title=f"{title} · Reflex Docs" if category is None else title,
+            title=seo_title,
+            description=seo_description,
             component=wrapper,
         )
 
@@ -944,7 +1124,7 @@ def hover_item(component: rx.Component, component_str: str) -> rx.Component:
                     class_name="flex-1 font-small truncate",
                 ),
                 on_click=rx.set_clipboard(component_str),
-                class_name="flex flex-row items-center gap-1.5 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-slate-11 transition-bg cursor-pointer",
+                class_name="flex flex-row items-center gap-1.5 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-secondary-11 transition-bg cursor-pointer",
             ),
         ),
     )
@@ -1028,7 +1208,7 @@ def style_grid(
         rx.grid(
             rx.text("", size="5"),
             *[
-                rx.text(variant, class_name=text_cn + " text-slate-11")
+                rx.text(variant, class_name=text_cn + " text-secondary-11")
                 for variant in variants
             ],
             rx.text(
@@ -1065,7 +1245,7 @@ def style_grid(
                 )
                 for variant in variants
             ],
-            rx.text("Gray", class_name=text_cn + " text-slate-11"),
+            rx.text("Gray", class_name=text_cn + " text-secondary-11"),
             *[
                 hover_item(
                     component=used_component(
@@ -1097,7 +1277,7 @@ def style_grid(
             ],
             (
                 rx.fragment(
-                    rx.text("Disabled", class_name=text_cn + " text-slate-11"),
+                    rx.text("Disabled", class_name=text_cn + " text-secondary-11"),
                     *[
                         hover_item(
                             component=used_component(
@@ -1144,7 +1324,7 @@ def style_grid(
                             rx.icon(
                                 "check",
                                 size=15,
-                                class_name="top-1/2 left-1/2 absolute text-gray-12 transform -translate-x-1/2 -translate-y-1/2"
+                                class_name="top-1/2 left-1/2 absolute text-secondary-12 transform -translate-x-1/2 -translate-y-1/2"
                                 + rx.cond(
                                     RadixDocState.color == color,
                                     " block",
@@ -1156,7 +1336,7 @@ def style_grid(
                             class_name="relative rounded-md cursor-pointer shrink-0 size-[30px]"
                             + rx.cond(
                                 RadixDocState.color == color,
-                                " border-2 border-gray-12",
+                                " border-2 border-secondary-12",
                                 "",
                             ),
                         )
@@ -1167,5 +1347,5 @@ def style_grid(
                 ),
             ),
         ),
-        class_name="flex flex-col justify-center items-center gap-6 border-slate-4 bg-slate-2 mb-4 p-6 border rounded-xl",
+        class_name="flex flex-col justify-center items-center gap-6 border-secondary-4 bg-secondary-2 mb-4 p-6 border rounded-xl",
     )

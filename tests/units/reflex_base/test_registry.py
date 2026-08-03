@@ -266,39 +266,6 @@ def test_decorated_pages_isolated_between_contexts():
     assert ctx_a.decorated_pages != ctx_b.decorated_pages
 
 
-def test_custom_components_isolated_between_contexts():
-    """@custom_component registrations in one context do not leak to another."""
-    from reflex_base.components.component import custom_component
-
-    import reflex as rx
-
-    def _tag_component_fn(prop1: str, prop2: int) -> rx.Component:
-        return rx.text(prop1)
-
-    with RegistrationContext() as ctx_a:
-        custom_component(_tag_component_fn)
-        assert "TagComponentFn" in ctx_a.custom_components
-
-    with RegistrationContext() as ctx_b:
-        assert ctx_b.custom_components == {}
-
-
-def test_memo_definitions_isolated_between_contexts():
-    """@rx._x.memo registrations in one context do not leak to another."""
-    import reflex as rx
-
-    with RegistrationContext() as ctx_a:
-
-        @rx._x.memo
-        def greet(name: rx.Var[str]) -> rx.Var[str]:
-            return name.to(str)
-
-        assert "greet" in ctx_a.memo_definitions
-
-    with RegistrationContext() as ctx_b:
-        assert ctx_b.memo_definitions == {}
-
-
 def test_app_registers_on_instantiation(
     clean_registration_context: RegistrationContext,
 ):

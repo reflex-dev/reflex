@@ -174,7 +174,7 @@ def download_random_data_button():
 
 The `data` arg accepts `str` or `bytes` data, a `data:` URI, `PIL.Image`, or any state Var. If the Var is not already a string, it will be converted to a string using `JSON.stringify`. This allows complex state structures to be offered as JSON downloads.
 
-Reference page for `rx.download` [here](/docs/api-reference/special_events#rx.download).
+Reference page for `rx.download` [here](/docs/api-reference/special-events#rx.download).
 
 ## Upload
 

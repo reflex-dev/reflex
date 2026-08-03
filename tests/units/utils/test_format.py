@@ -659,7 +659,16 @@ def test_format_query_params(input, output):
 
 formatted_router = {
     "route_id": "",
-    "url": "",
+    "url": {
+        "scheme": "",
+        "netloc": "",
+        "origin": "://",
+        "path": "",
+        "query": "",
+        "query_parameters": {},
+        "fragment": "",
+        "href": "",
+    },
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
     "headers": {
         "host": "",

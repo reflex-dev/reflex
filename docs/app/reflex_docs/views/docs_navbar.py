@@ -70,7 +70,7 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
 
     # For paths starting with "/" (like Start), use exact match
     # For "framework", it's the default - active when in /docs but not matching other sections
-    # For other segments (like "ai-builder"), use contains
+    # For other segments (like "ai"), use contains
     if active_str.startswith("/"):
         if active_str == "/":
             active = (router_path == "/") | (router_path == "/index")
@@ -78,9 +78,13 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
             active = router_path == active_str
     elif active_str == "framework":
         is_overview = (router_path == "/") | (router_path == "/index")
-        is_ai_builder = router_path.contains("ai-builder")
+        is_ai_builder = router_path.startswith("/ai/") | router_path.startswith(
+            "/docs/ai/"
+        )
         is_hosting = router_path.contains("hosting")
         active = ~is_overview & ~is_ai_builder & ~is_hosting
+    elif active_str == "ai":
+        active = router_path.startswith("/ai/") | router_path.startswith("/docs/ai/")
     else:
         active = router_path.contains(active_str)
 
@@ -106,9 +110,7 @@ def navigation_menu() -> rx.Component:
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
             menu_item("Overview", "/", "/"),
-            menu_item(
-                "Build with AI", ai_builder.overview.best_practices.path, "ai-builder"
-            ),
+            menu_item("Build with AI", ai_builder.overview.best_practices.path, "ai"),
             menu_item("Framework", getting_started.introduction.path, "framework"),
             menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
             class_name="flex flex-row items-center gap-2 m-0 h-full list-none",
@@ -181,7 +183,7 @@ def docs_navbar() -> rx.Component:
                 navigation_menu(),
                 class_name="relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row max-w-[108rem]",
             ),
-            class_name="w-full max-full h-[4.5rem] mx-auto flex flex-row items-center 3xl:px-16 px-6 backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
+            class_name="w-full max-full h-[4.5rem] mx-auto flex flex-row items-center 3xl:px-16 px-6 backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-b dark:border-secondary-4 bg-gradient-to-b from-secondary-2 to-secondary-1",
         ),
         class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
     )

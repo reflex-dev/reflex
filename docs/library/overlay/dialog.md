@@ -169,8 +169,11 @@ class DialogState(rx.State):
 
 def dialog_example():
     return rx.flex(
-        rx.heading(f"Number of times dialog opened or closed: {DialogState.num_opens}"),
-        rx.heading(f"Dialog open: {DialogState.opened}"),
+        rx.heading(
+            f"Number of times dialog opened or closed: {DialogState.num_opens}",
+            as_="h2",
+        ),
+        rx.heading(f"Dialog open: {DialogState.opened}", as_="h2"),
         rx.dialog.root(
             rx.dialog.trigger(rx.button("Open Dialog")),
             rx.dialog.content(
@@ -189,7 +192,7 @@ def dialog_example():
     )
 ```
 
-Check out the [menu docs](/docs/library/overlay/dropdown_menu) for an example of opening a dialog from within a dropdown menu.
+Check out the [menu docs](/docs/library/overlay/dropdown-menu) for an example of opening a dialog from within a dropdown menu.
 
 ## Form Submission to a Database from a Dialog
 

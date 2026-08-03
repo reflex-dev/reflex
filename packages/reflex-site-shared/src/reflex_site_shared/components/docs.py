@@ -16,11 +16,11 @@ def right_sidebar_item_highlight():
         const tocLinks = document.querySelectorAll('#toc-navigation a');
         const activeClasses = [
             'text-primary-9',
-            'dark:text-primary-11',
+            'dark:text-primary-10',
             'shadow-[1.5px_0_0_0_var(--primary-11)_inset]',
             'dark:shadow-[1.5px_0_0_0_var(--primary-9)_inset]',
         ];
-        const defaultClasses = ['text-m-slate-7', 'dark:text-m-slate-6'];
+        const defaultClasses = ['text-secondary-11'];
 
         function normalizeId(id) {
             return id.toLowerCase().replace(/\s+/g, '-');

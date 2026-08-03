@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
+from reflex_base.components.memo import MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
@@ -501,3 +502,18 @@ def clean_registration_context() -> Generator[RegistrationContext, None, None]:
     """
     with RegistrationContext() as ctx:
         yield ctx
+
+
+@pytest.fixture
+def preserve_memo_registries():
+    """Save and restore the global memo registry around a test.
+
+    Yields:
+        None
+    """
+    memos = dict(MEMOS)
+    try:
+        yield
+    finally:
+        MEMOS.clear()
+        MEMOS.update(memos)

@@ -3,7 +3,7 @@ components:
   - rx.progress
 
 Progress: |
-  lambda **props: rx.progress(value=50, **props)
+  lambda **props: rx.box(rx.progress(value=50, **props), width="20rem")
 ---
 
 # Progress

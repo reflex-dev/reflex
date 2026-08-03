@@ -1,6 +1,18 @@
 ---
 components:
   - rx.center
+
+Center: |
+  lambda **props: rx.center(
+      rx.card("Card 1", size="2"),
+      rx.card("Card 2", size="2"),
+      rx.card("Card 3", size="2"),
+      gap="0.75rem",
+      width="100%",
+      height="10rem",
+      border_radius="0.5rem",
+      **props,
+  )
 ---
 
 ```python exec

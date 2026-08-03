@@ -113,6 +113,135 @@ _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
+@functools.cache
+def _var_subclass_for_conversion(python_type: GenericType) -> VarSubclassEntry | None:
+    """Find the registry entry ``Var.to`` maps a python type to.
+
+    Later-registered entries take priority, matching the reversed scan the
+    cache replaces. The registry only grows at import time; registration
+    clears this cache (see ``Var.__init_subclass__``).
+
+    Args:
+        python_type: The (origin-normalized) python type to look up.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if python_type in var_subclass.python_types or safe_issubclass(
+            python_type, var_subclass.python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_matching_python_types(
+    python_types: tuple[GenericType, ...],
+) -> VarSubclassEntry | None:
+    """Find the registry entry whose python types cover all ``python_types``.
+
+    Used by ``Var.guess_type`` with the (origin-normalized) inner types of
+    the var type — a 1-tuple for plain types, the union members otherwise.
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        python_types: The python types that must all match one entry.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if all(
+            safe_issubclass(python_type, var_subclass.python_types)
+            for python_type in python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_for_var_output(output: type) -> VarSubclassEntry | None:
+    """Find the registry entry for a ``Var``-subclass conversion target.
+
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        output: The ``Var`` subclass passed to ``Var.to``.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if safe_issubclass(output, var_subclass.var_subclass):
+            return var_subclass
+    return None
+
+
+def _clear_var_subclass_lookup_caches() -> None:
+    """Drop cached registry lookups after a new Var subclass registers."""
+    _var_subclass_for_conversion.cache_clear()
+    _var_subclass_matching_python_types.cache_clear()
+    _var_subclass_for_var_output.cache_clear()
+
+
+def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
+    """Register a Var subclass entry and invalidate cached lookups.
+
+    Every append to ``_var_subclasses`` must go through here — including
+    manual registrations like ``ReflexURLVar`` — since a bare append would
+    leave previously cached lookups returning stale results for types the
+    new entry claims.
+
+    Args:
+        entry: The entry to append to the registry.
+    """
+    _var_subclasses.append(entry)
+    _clear_var_subclass_lookup_caches()
+
+
+_AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
+
+
+def insert_app_wraps(
+    target: dict[tuple[int, str], _AppWrap],
+    sources: Iterable[tuple[int, _AppWrap]],
+    *,
+    existing: Mapping[tuple[int, str], _AppWrap] | None = None,
+) -> None:
+    """Merge app-wrap requests into ``target`` keyed by ``(priority, tag)``.
+
+    App wraps model a set of required wrapper roles: at most one wrapper per
+    ``(priority, tag)``. Requests resolving to an equal wrapper are deduped;
+    two different wrappers claiming one role is a conflict and raises. This is
+    the single place that rule lives, shared by ``VarData.merge`` (within one
+    Var) and the compiler's page-wide collection.
+
+    Args:
+        target: Registry that receives newly seen wraps.
+        sources: ``(priority, wrapper)`` requests to merge in.
+        existing: Already-committed wraps to dedupe against without writing,
+            letting callers collect only the wraps they newly contribute.
+
+    Raises:
+        ReflexError: If two different wrappers claim one ``(priority, tag)``.
+    """
+    for priority, wrapper in sources:
+        key = (priority, wrapper.tag or type(wrapper).__name__)
+        seen = existing.get(key) if existing is not None else None
+        if seen is None:
+            seen = target.get(key)
+        if seen is not None:
+            if seen != wrapper:
+                msg = (
+                    f"Conflicting app wraps for {key!r}: two different "
+                    "components claim the same (priority, tag) slot."
+                )
+                raise exceptions.ReflexError(msg)
+            continue
+        target[key] = wrapper
+
+
 @dataclasses.dataclass(
     eq=True,
     frozen=True,
@@ -141,6 +270,12 @@ class VarData:
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
+    # App-level wrapper components this var requires when used (priority, component).
+    # Higher priority wraps further out, matching Component._get_app_wrap_components semantics.
+    app_wraps: tuple[tuple[int, BaseComponent], ...] = dataclasses.field(
+        default_factory=tuple
+    )
+
     def __init__(
         self,
         state: str = "",
@@ -150,6 +285,7 @@ class VarData:
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
+        app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
     ):
         """Initialize the var data.
 
@@ -161,6 +297,7 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
+            app_wraps: App-level wrapper components this var requires when used.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -176,6 +313,7 @@ class VarData:
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
+        object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
@@ -188,6 +326,7 @@ class VarData:
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
+                object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -259,6 +398,10 @@ class VarData:
             component for var_data in all_var_datas for component in var_data.components
         )
 
+        app_wraps: dict[tuple[int, str], BaseComponent] = {}
+        for var_data in all_var_datas:
+            insert_app_wraps(app_wraps, var_data.app_wraps)
+
         return VarData(
             state=state,
             field_name=field_name,
@@ -267,6 +410,9 @@ class VarData:
             deps=deps,
             position=position,
             components=components,
+            app_wraps=tuple(
+                (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
+            ),
         )
 
     def __bool__(self) -> bool:
@@ -283,7 +429,57 @@ class VarData:
             or self.deps
             or self.position
             or self.components
+            or self.app_wraps
         )
+
+    def _identity_key(self) -> tuple:
+        """Return a hashable key for ``__eq__`` and ``__hash__``.
+
+        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
+        ``__eq__`` override drops the default hash. Use component identity for
+        embedded components because they can contribute hooks/imports, and use
+        the compiler's app-wrap registry key for wrappers so fresh provider
+        instances with the same role still compare equal. App wraps are a set
+        of required roles, so a ``frozenset`` keeps identity insensitive to the
+        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
+
+        Returns:
+            A hashable tuple uniquely identifying this VarData.
+        """
+        return (
+            self.state,
+            self.field_name,
+            self.imports,
+            self.hooks,
+            self.deps,
+            self.position,
+            tuple(id(component) for component in self.components),
+            frozenset(
+                (priority, component.tag or type(component).__name__)
+                for priority, component in self.app_wraps
+            ),
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Compare two VarData by render-time identity.
+
+        Args:
+            other: The value to compare against.
+
+        Returns:
+            True if ``other`` is a VarData with matching render-time fields.
+        """
+        if not isinstance(other, VarData):
+            return NotImplemented
+        return self._identity_key() == other._identity_key()
+
+    def __hash__(self) -> int:
+        """Hash consistent with ``__eq__``.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key())
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -296,6 +492,8 @@ class VarData:
         Returns:
             The var with the set state.
         """
+        # Lazy import: state_context imports VarData from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
@@ -311,6 +509,9 @@ class VarData:
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
+            # State Vars read ``StateContexts``/``EventLoopContext``, so the
+            # providers must enclose every component that uses them.
+            app_wraps=get_event_app_wraps(),
         )
 
 
@@ -362,7 +563,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         Whether the class can be used in an ObjectVar.
     """
     if types.is_union(cls):
-        return all(can_use_in_object_var(t) for t in types.get_args(cls))
+        return all(can_use_in_object_var(t) for t in get_args(cls))
     return (
         isinstance(cls, type)
         and not safe_issubclass(cls, Var)
@@ -472,7 +673,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             )
             ToVarOperation.__name__ = new_to_var_operation_name
 
-            _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
+            _register_var_subclass_entry(
+                VarSubclassEntry(cls, ToVarOperation, python_types)
+            )
 
     def __post_init__(self):
         """Post-initialize the var.
@@ -799,11 +1002,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
-        for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types or safe_issubclass(
-                fixed_output_type, var_subclass.python_types
-            ):
-                return self.to(var_subclass.var_subclass, output)
+        conversion_entry = _var_subclass_for_conversion(fixed_output_type)
+        if conversion_entry is not None:
+            return self.to(conversion_entry.var_subclass, output)
 
         if fixed_output_type is None:
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
@@ -813,16 +1014,16 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return self.to(ObjectVar, output)
 
         if isinstance(output, type):
-            for var_subclass in _var_subclasses[::-1]:
-                if safe_issubclass(output, var_subclass.var_subclass):
-                    current_var_type = self._var_type
-                    if current_var_type is Any:
-                        new_var_type = var_type
-                    else:
-                        new_var_type = var_type or current_var_type
-                    return var_subclass.to_var_subclass.create(  # pyright: ignore [reportReturnType]
-                        value=self, _var_type=new_var_type
-                    )
+            output_entry = _var_subclass_for_var_output(output)
+            if output_entry is not None:
+                current_var_type = self._var_type
+                if current_var_type is Any:
+                    new_var_type = var_type
+                else:
+                    new_var_type = var_type or current_var_type
+                return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
+                    value=self, _var_type=new_var_type
+                )
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not safe_issubclass(output, Var) or var_type is None:
@@ -889,12 +1090,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 for inner_type in non_optional_inner_types
             ]
 
-            for var_subclass in _var_subclasses[::-1]:
-                if all(
-                    safe_issubclass(t, var_subclass.python_types)
-                    for t in fixed_inner_types
-                ):
-                    return self.to(var_subclass.var_subclass, self._var_type)
+            union_entry = _var_subclass_matching_python_types(tuple(fixed_inner_types))
+            if union_entry is not None:
+                return self.to(union_entry.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -912,9 +1110,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if fixed_type is None:
             return self.to(None)
 
-        for var_subclass in _var_subclasses[::-1]:
-            if safe_issubclass(fixed_type, var_subclass.python_types):
-                return self.to(var_subclass.var_subclass, self._var_type)
+        guessed_entry = _var_subclass_matching_python_types((fixed_type,))
+        if guessed_entry is not None:
+            return self.to(guessed_entry.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
@@ -1955,6 +2153,15 @@ class CachedVarOperation:
         ))
 
 
+_PY_AND_IMPORT: ImportDict = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyAnd")],
+}
+
+_PY_OR_IMPORT: ImportDict = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyOr")],
+}
+
+
 def and_operation(
     a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
 ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
@@ -1982,8 +2189,9 @@ def _and_operation(a: Var, b: Var):
         The result of the logical AND operation.
     """
     return var_operation_return(
-        js_expression=f"({a} && {b})",
+        js_expression=f"pyAnd({a}, () => ({b}))",
         var_type=unionize(a._var_type, b._var_type),
+        var_data=VarData(imports=_PY_AND_IMPORT),
     )
 
 
@@ -2014,8 +2222,9 @@ def _or_operation(a: Var, b: Var):
         The result of the logical OR operation.
     """
     return var_operation_return(
-        js_expression=f"({a} || {b})",
+        js_expression=f"pyOr({a}, () => ({b}))",
         var_type=unionize(a._var_type, b._var_type),
+        var_data=VarData(imports=_PY_OR_IMPORT),
     )
 
 
@@ -3261,6 +3470,11 @@ if TYPE_CHECKING:
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
+# Custom attrs never copied from a source field: get_field_type duck-types
+# pydantic fields on `.annotation`, so carrying it over would shadow the
+# real class annotation.
+_RESERVED_FIELD_ATTRS = frozenset({"annotation"})
+
 
 class Field(Generic[FIELD_TYPE]):
     """A field for a state."""
@@ -3277,6 +3491,7 @@ class Field(Generic[FIELD_TYPE]):
         is_var: bool = True,
         annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
         | _MISSING_TYPE = MISSING,
+        source_field: Field | None = None,
     ) -> None:
         """Initialize the field.
 
@@ -3285,6 +3500,8 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
             annotated_type: The annotated type for the field.
+            source_field: If given, deep-copy custom (non-reserved) attributes
+                from this field that the new field did not compute itself.
         """
         self.default = default
         self.default_factory = default_factory
@@ -3315,6 +3532,10 @@ class Field(Generic[FIELD_TYPE]):
             self.type_ = self.type_origin = type_origin
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
+        if source_field is not None:
+            for key, value in source_field.__dict__.items():
+                if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
+                    self.__dict__[key] = copy.deepcopy(value)
 
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.
@@ -3561,12 +3782,14 @@ class BaseStateMeta(ABCMeta):
                         default=value.default,
                         is_var=value.is_var,
                         annotated_type=figure_out_type(value.default),
+                        source_field=value,
                     )
                 else:
                     new_value = Field(
                         default_factory=value.default_factory,
                         is_var=value.is_var,
                         annotated_type=Any,
+                        source_field=value,
                     )
             elif (
                 not key.startswith("__")
@@ -3616,6 +3839,7 @@ class BaseStateMeta(ABCMeta):
                     default_factory=value.default_factory,
                     is_var=value.is_var,
                     annotated_type=annotation,
+                    source_field=value,
                 )
 
             own_fields[key] = value
@@ -3691,3 +3915,7 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
                 annotated_type=var._var_type,
             )
         cls.__fields__[name] = new_field
+
+
+EMPTY_VAR_STR: Var[str] = LiteralVar.create("")
+EMPTY_VAR_INT: Var[int] = LiteralVar.create(0)

@@ -98,7 +98,7 @@ import reflex.components.radix.primitives as rdxp
 ```
 
 ```md warning info
-# Low Level Form is Experimental
+## Low Level Form is Experimental
 
 Please use the High Level Form for now for production.
 ```
@@ -143,7 +143,7 @@ In this example, the `rx.input` has an attribute `type="email"` and the `form.me
 ## Form Anatomy
 
 ```python eval
-rx._x.code_block(
+rx.code_block(
     """form.root(
     form.field(
         form.label(...),

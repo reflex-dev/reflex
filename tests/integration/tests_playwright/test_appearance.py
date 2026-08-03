@@ -173,6 +173,83 @@ def test_appearance_system_mode(system_mode_app: AppHarness, page: Page):
     expect(page.get_by_text("system")).to_be_visible()
 
 
+def SegmentedControlManyItemsApp():
+    import reflex as rx
+
+    class SegmentedState(rx.State):
+        options: list[str] = [str(i) for i in range(1, 12)]
+        control: str = "1"
+
+        @rx.event
+        def set_control(self, value: str | list[str]):
+            self.control = value if isinstance(value, str) else value[0]
+
+    app = rx.App(theme=rx.theme(appearance="light"))
+
+    @app.add_page
+    def index():
+        return rx.box(
+            rx.segmented_control.root(
+                rx.foreach(
+                    SegmentedState.options,
+                    lambda label: rx.segmented_control.item(label, value=label),
+                ),
+                on_change=SegmentedState.set_control,
+                value=SegmentedState.control,
+                id="segmented_control",
+            ),
+            rx.text(SegmentedState.control, id="selected_value"),
+        )
+
+
+@pytest.fixture
+def segmented_control_many_items_app(
+    tmp_path_factory,
+) -> Generator[AppHarness, None, None]:
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("segmented_many"),
+        app_source=SegmentedControlManyItemsApp,
+    ) as harness:
+        assert harness.app_instance is not None, "app is not running"
+        yield harness
+
+
+def test_segmented_control_indicator_with_11_items(
+    segmented_control_many_items_app: AppHarness, page: Page
+):
+    assert segmented_control_many_items_app.frontend_url is not None
+    page.goto(segmented_control_many_items_app.frontend_url)
+
+    selected_value = page.locator("id=selected_value")
+    expect(selected_value).to_have_text("1")
+
+    last_item = page.get_by_role("radio").nth(10)
+    last_item.click()
+    expect(selected_value).to_have_text("11")
+
+    indicator = page.locator("#segmented_control .rt-SegmentedControlIndicator")
+    expect(indicator).to_be_visible()
+
+    # Radix runs a CSS transform transition on selection change; await every
+    # in-flight animation so the bounding box reflects the final position.
+    indicator.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
+
+    indicator_box = indicator.bounding_box()
+    last_item_box = last_item.bounding_box()
+    assert indicator_box is not None
+    assert last_item_box is not None
+
+    assert indicator_box["width"] > 0, (
+        f"indicator width is {indicator_box['width']}; indicator CSS failed to "
+        "apply for the 11th item (Radix Themes 3.3.0 only ships nth-child rules "
+        "for up to 10 items)"
+    )
+    assert abs(indicator_box["x"] - last_item_box["x"]) < 2, (
+        f"indicator x={indicator_box['x']} does not align with 11th item "
+        f"x={last_item_box['x']}"
+    )
+
+
 def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     assert color_toggle_app.frontend_url is not None
     page.goto(color_toggle_app.frontend_url)

@@ -1,3 +1,8 @@
+---
+components:
+  - rx.auto_scroll
+---
+
 ```python exec
 import reflex as rx
 ```

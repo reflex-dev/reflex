@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import concurrent.futures
 import dataclasses
 import enum
 import importlib
-import multiprocessing
 import os
-import platform
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -149,6 +146,29 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return Path(value)
 
 
+@dataclasses.dataclass
+class _InvalidPlugin(Plugin):
+    """Placeholder for a plugin spec that could not be resolved or instantiated.
+
+    Returned by the plugin env-var interpreters instead of raising, so a single
+    bad entry does not abort interpretation of an entire plugin list. ``Config``
+    inspects the resulting list and either raises ``ConfigError`` (for
+    ``Config.plugins`` / ``REFLEX_PLUGINS``) or warns and drops the entry (for
+    ``REFLEX_EXTRA_PLUGINS`` and ``disable_plugins``).
+    """
+
+    spec: str
+    error: str
+
+    def describe(self) -> str:
+        """Describe the failed plugin spec for warning/error messages.
+
+        Returns:
+            A string combining the import path and the recorded error.
+        """
+        return f"{self.spec!r} ({self.error})"
+
+
 def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
     """Interpret an environment variable value as a Plugin subclass.
 
@@ -177,7 +197,7 @@ def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
         raise EnvironmentVarValueError(msg) from e
 
     try:
-        plugin_class = getattr(module, plugin_name, None)
+        plugin_class = getattr(module, plugin_name)
     except Exception as e:
         msg = f"Failed to get plugin class {plugin_name!r} from module {import_path!r} for {field_name}: {e}"
         raise EnvironmentVarValueError(msg) from e
@@ -193,24 +213,29 @@ def interpret_plugin_env(value: str, field_name: str) -> Plugin:
     """Interpret a plugin environment variable value.
 
     Resolves a fully qualified import path and returns an instance of the Plugin.
+    On failure (bad import path or instantiation error) an ``_InvalidPlugin``
+    recording the error is returned instead of raising, so callers can decide
+    whether a bad entry is fatal.
 
     Args:
         value: The environment variable value (e.g. "reflex.plugins.sitemap.SitemapPlugin").
         field_name: The field name.
 
     Returns:
-        An instance of the Plugin subclass.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
+        An instance of the Plugin subclass, or an ``_InvalidPlugin`` on failure.
     """
-    plugin_class = interpret_plugin_class_env(value, field_name)
+    try:
+        plugin_class = interpret_plugin_class_env(value, field_name)
+    except EnvironmentVarValueError as e:
+        return _InvalidPlugin(spec=value, error=str(e))
 
     try:
         return plugin_class()
     except Exception as e:
-        msg = f"Failed to instantiate plugin {plugin_class.__name__!r} for {field_name}: {e}"
-        raise EnvironmentVarValueError(msg) from e
+        return _InvalidPlugin(
+            spec=value,
+            error=f"failed to instantiate plugin {plugin_class.__name__!r}: {e}",
+        )
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
@@ -313,7 +338,10 @@ def interpret_env_var_value(
             and isinstance(type_args[0], type)
             and issubclass(type_args[0], Plugin)
         ):
-            return interpret_plugin_class_env(value, field_name)
+            try:
+                return interpret_plugin_class_env(value, field_name)
+            except EnvironmentVarValueError as e:
+                return _InvalidPlugin(spec=value, error=str(e))
     if get_origin(field_type) is Literal:
         literal_values = get_args(field_type)
         for literal_value in literal_values:
@@ -529,97 +557,6 @@ class PerformanceMode(enum.Enum):
     OFF = "off"
 
 
-class ExecutorType(enum.Enum):
-    """Executor for compiling the frontend."""
-
-    THREAD = "thread"
-    PROCESS = "process"
-    MAIN_THREAD = "main_thread"
-
-    @classmethod
-    def get_executor_from_environment(cls):
-        """Get the executor based on the environment variables.
-
-        Returns:
-            The executor.
-        """
-        from reflex_base.utils import console
-
-        executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
-
-        reflex_compile_processes = environment.REFLEX_COMPILE_PROCESSES.get()
-        reflex_compile_threads = environment.REFLEX_COMPILE_THREADS.get()
-        # By default, use the main thread. Unless the user has specified a different executor.
-        # Using a process pool is much faster, but not supported on all platforms. It's gated behind a flag.
-        if executor_type is None:
-            if (
-                platform.system() not in ("Linux", "Darwin")
-                and reflex_compile_processes is not None
-            ):
-                console.warn("Multiprocessing is only supported on Linux and MacOS.")
-
-            if (
-                platform.system() in ("Linux", "Darwin")
-                and reflex_compile_processes is not None
-            ):
-                if reflex_compile_processes == 0:
-                    console.warn(
-                        "Number of processes must be greater than 0. If you want to use the default number of processes, set REFLEX_COMPILE_EXECUTOR to 'process'. Defaulting to None."
-                    )
-                    reflex_compile_processes = None
-                elif reflex_compile_processes < 0:
-                    console.warn(
-                        "Number of processes must be greater than 0. Defaulting to None."
-                    )
-                    reflex_compile_processes = None
-                executor_type = ExecutorType.PROCESS
-            elif reflex_compile_threads is not None:
-                if reflex_compile_threads == 0:
-                    console.warn(
-                        "Number of threads must be greater than 0. If you want to use the default number of threads, set REFLEX_COMPILE_EXECUTOR to 'thread'. Defaulting to None."
-                    )
-                    reflex_compile_threads = None
-                elif reflex_compile_threads < 0:
-                    console.warn(
-                        "Number of threads must be greater than 0. Defaulting to None."
-                    )
-                    reflex_compile_threads = None
-                executor_type = ExecutorType.THREAD
-            else:
-                executor_type = ExecutorType.MAIN_THREAD
-
-        match executor_type:
-            case ExecutorType.PROCESS:
-                executor = concurrent.futures.ProcessPoolExecutor(
-                    max_workers=reflex_compile_processes,
-                    mp_context=multiprocessing.get_context("fork"),
-                )
-            case ExecutorType.THREAD:
-                executor = concurrent.futures.ThreadPoolExecutor(
-                    max_workers=reflex_compile_threads
-                )
-            case ExecutorType.MAIN_THREAD:
-                FUTURE_RESULT_TYPE = TypeVar("FUTURE_RESULT_TYPE")
-
-                class MainThreadExecutor:
-                    def __enter__(self):
-                        return self
-
-                    def __exit__(self, *args):
-                        pass
-
-                    def submit(
-                        self, fn: Callable[..., FUTURE_RESULT_TYPE], *args, **kwargs
-                    ) -> concurrent.futures.Future[FUTURE_RESULT_TYPE]:
-                        future_job = concurrent.futures.Future()
-                        future_job.set_result(fn(*args, **kwargs))
-                        return future_job
-
-                executor = MainThreadExecutor()
-
-        return executor
-
-
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
@@ -659,14 +596,6 @@ class EnvironmentVariables:
     REFLEX_UPLOADED_FILES_DIR: EnvVar[Path] = env_var(
         Path(constants.Dirs.UPLOADED_FILES)
     )
-
-    REFLEX_COMPILE_EXECUTOR: EnvVar[ExecutorType | None] = env_var(None)
-
-    # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
-    REFLEX_COMPILE_PROCESSES: EnvVar[int | None] = env_var(None)
-
-    # Whether to use separate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
-    REFLEX_COMPILE_THREADS: EnvVar[int | None] = env_var(None)
 
     # The directory to store reflex dependencies.
     REFLEX_DIR: EnvVar[Path] = env_var(constants.Reflex.DIR)
@@ -713,6 +642,10 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Inherited by uvicorn/granian reload workers so the backend can distinguish
+    # dev reload-capable worker boots from other backend starts. Never set in prod.
+    REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)
+
     # Whether to run app harness tests in headless mode.
     APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
 
@@ -739,6 +672,9 @@ class EnvironmentVariables:
 
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
+
+    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by a colon.
+    REFLEX_HOT_RELOAD_OVERRIDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.
     REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
@@ -804,6 +740,9 @@ class EnvironmentVariables:
 
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
+
+    # Extra plugins to append to the config's plugins list.
+    REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 
 
 environment = EnvironmentVariables()

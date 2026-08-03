@@ -48,7 +48,7 @@ style = {
         "text_decoration": "underline",
     },
     # Apply global css id styles.
-    "#special-input": \{"width": "20vw"},
+    "#special-input": {"width": "20vw"},
     # Apply styles to specific components.
     rx.text: {
         "font_family": "Comic Sans MS",
@@ -117,7 +117,13 @@ text_style = {
 ```
 
 ```python
-text_style = {text_style}
+text_style = {
+    "color": "green",
+    "font_family": "Comic Sans MS",
+    "font_size": "1.2em",
+    "font_weight": "bold",
+    "box_shadow": "rgba(240, 46, 170, 0.4) 5px 5px, rgba(240, 46, 170, 0.3) 10px 10px",
+}
 ```
 
 ```python demo
@@ -142,8 +148,17 @@ style2 = {
 ```
 
 ```python
-style1 = {style1}
-style2 = {style2}
+style1 = {
+    "color": "green",
+    "font_family": "Comic Sans MS",
+    "border_radius": "10px",
+    "background_color": "rgb(107,99,246)",
+}
+style2 = {
+    "color": "white",
+    "border": "5px solid #EE756A",
+    "padding": "10px",
+}
 ```
 
 ```python demo

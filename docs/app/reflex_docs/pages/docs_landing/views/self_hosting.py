@@ -34,5 +34,5 @@ def self_hosting_section() -> rx.Component:
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-secondary-4 relative",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--docs-layout-max-width) mx-auto w-full justify-start lg:mb-24 mb-10 max-xl:px-6 overflow-hidden max-lg:pt-10",
+        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start lg:mb-24 mb-10 max-xl:px-6 overflow-hidden max-lg:pt-10",
     )

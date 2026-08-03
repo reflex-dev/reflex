@@ -2,6 +2,8 @@
 import reflex as rx
 ```
 
+# Billing
+
 ## Overview 
 
 Billing for Reflex Cloud is monthly per project. Project owners and admins are able to view and manage the billing page. 

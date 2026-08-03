@@ -2,6 +2,8 @@
 components:
   - rx.recharts.ScatterChart
   - rx.recharts.Scatter
+title: Scatter Chart
+meta_description: "Create scatter plots and bubble charts in Python with Reflex. Build interactive Recharts scatter charts with multiple series, custom axes, sizing, and tooltips — all in pure Python."
 ---
 
 # Scatter Chart
@@ -10,7 +12,7 @@ components:
 import reflex as rx
 ```
 
-A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
+Scatter charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A scatter plot (or scatter chart) always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
 
 ## Simple Example
 
@@ -207,3 +209,41 @@ def scatter_shape():
         width="100%",
     )
 ```
+
+## Bubble Chart
+
+Adding an `rx.recharts.z_axis()` turns a scatter chart into a bubble chart: the `z` value of each point controls the bubble size, mapped to a pixel `range`. This lets you encode a third dimension of data alongside the x and y position.
+
+```python demo graphing
+data = [
+    {"x": 100, "y": 200, "z": 200},
+    {"x": 120, "y": 100, "z": 260},
+    {"x": 170, "y": 300, "z": 400},
+    {"x": 140, "y": 250, "z": 280},
+    {"x": 150, "y": 400, "z": 500},
+    {"x": 110, "y": 280, "z": 200},
+]
+
+
+def bubble_chart():
+    return rx.recharts.scatter_chart(
+        rx.recharts.scatter(
+            data=data,
+            fill=rx.color("accent", 8),
+        ),
+        rx.recharts.x_axis(data_key="x", name="x", type_="number"),
+        rx.recharts.y_axis(data_key="y", name="y", type_="number"),
+        rx.recharts.z_axis(data_key="z", range=[60, 400], name="size"),
+        rx.recharts.graphing_tooltip(),
+        width="100%",
+        height=300,
+    )
+```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Line Chart](/docs/library/graphing/charts/linechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Error Bar](/docs/library/graphing/charts/errorbar)

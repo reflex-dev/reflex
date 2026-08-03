@@ -224,7 +224,7 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
+def update_json_file(file_path: str | Path, update_dict: dict[str, object]):
     """Update the contents of a json file.
 
     Args:

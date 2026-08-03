@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Union
 
 from reflex_base import constants
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -27,6 +27,12 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
+def reset_bundled_libraries() -> None:
+    """Reset the bundled library registry to its default values."""
+    bundled = RegistrationContext.ensure_context().bundled_libraries
+    bundled[:] = _default_bundled_libraries()
+
+
 def bundle_library(component: Union["Component", str]):
     """Bundle a library with the component.
 
@@ -38,7 +44,7 @@ def bundle_library(component: Union["Component", str]):
     """
     bundled = RegistrationContext.ensure_context().bundled_libraries
     if isinstance(component, str):
-        bundled.append(component)
+        bundled.append(format_library_name(component))
         return
     if component.library is None:
         msg = "Component must have a library to bundle."
@@ -79,9 +85,8 @@ def load_dynamic_serializer():
         rendered_components.update(component._get_all_custom_code())
 
         rendered_components[
-            templates.stateful_component_template(
+            templates.dynamic_component_template(
                 tag_name="MySSRComponent",
-                memo_trigger_hooks=[],
                 component=component,
                 export=True,
             )
@@ -102,7 +107,7 @@ def load_dynamic_serializer():
             else:
                 imports[lib] = names
 
-        module_code_lines = templates.stateful_components_template(
+        module_code_lines = templates.dynamic_components_module_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
         ).splitlines()
@@ -183,6 +188,7 @@ def load_dynamic_serializer():
                             imports.ImportVar(tag="evalReactComponent"),
                         ],
                         "react": [
+                            imports.ImportVar(tag="createElement"),
                             imports.ImportVar(tag="useState"),
                             imports.ImportVar(tag="useEffect"),
                         ],
@@ -194,7 +200,7 @@ def load_dynamic_serializer():
                         f"evalReactComponent({js_string!s})"
                         ".then((component) => {"
                         "if (isMounted) {"
-                        f"set_{unique_var_name}(component);"
+                        f"set_{unique_var_name}(() => createElement(component));"
                         "}"
                         "});"
                         "return () => {"

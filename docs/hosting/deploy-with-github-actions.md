@@ -15,7 +15,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--c-slate-11)",
+    "color": "var(--secondary-11)",
 }
 
 github_actions_configs = [
@@ -84,8 +84,8 @@ jobs:
       - name: Deploy to Reflex Cloud
         uses: reflex-dev/reflex-deploy-action@v1
         with:
-          auth_token: ${\{ secrets.REFLEX_PROJECT_ID }}
-          project_id: ${\{ secrets.REFLEX_PROJECT_ID }}
+          auth_token: ${{ secrets.REFLEX_PROJECT_ID }}
+          project_id: ${{ secrets.REFLEX_PROJECT_ID }}
           app_directory: "my-app-folder" # Optional, defaults to root
           extra_args: "--env THIRD_PARTY_APIKEY=***" # Optional
           python_version: "3.12" # Optional

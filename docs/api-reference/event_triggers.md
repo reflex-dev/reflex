@@ -73,9 +73,9 @@ def protected_page():
     return rx.text("Protected content")
 ```
 
-For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).
+For more details on page load events, see the [page load events documentation](/docs/events/page-load-events).
 
-# Event Reference
+## Event Reference
 
 ---
 
@@ -225,7 +225,7 @@ class MountState(rx.State):
 
 def mount_example():
     return rx.vstack(
-        rx.heading("Component Lifecycle Demo"),
+        rx.heading("Component Lifecycle Demo", as_="h2"),
         rx.foreach(MountState.events, rx.text),
         rx.cond(
             MountState.loading,
@@ -261,7 +261,7 @@ class UnmountState(rx.State):
 
 def unmount_example():
     return rx.vstack(
-        rx.heading("Unmount Demo"),
+        rx.heading("Unmount Demo", as_="h2"),
         rx.foreach(UnmountState.events, rx.text),
         rx.text(UnmountState.status),
         rx.link(

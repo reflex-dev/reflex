@@ -10,6 +10,26 @@ Stack: |
       height="20vh",
       **props,
   )
+
+VStack: |
+  lambda **props: rx.vstack(
+      rx.card("Card 1", size="2"),
+      rx.card("Card 2", size="2"),
+      rx.card("Card 3", size="2"),
+      width="100%",
+      border_radius="0.5rem",
+      **props,
+  )
+
+HStack: |
+  lambda **props: rx.hstack(
+      rx.card("Card 1", size="2"),
+      rx.card("Card 2", size="2"),
+      rx.card("Card 3", size="2"),
+      width="100%",
+      border_radius="0.5rem",
+      **props,
+  )
 ---
 
 ```python exec
@@ -151,7 +171,7 @@ rx.vstack(
 ```python demo
 rx.hstack(
     rx.box(
-        rx.heading("Saving Money"),
+        rx.heading("Saving Money", as_="h2"),
         rx.text(
             "Saving money is an art that combines discipline, strategic planning, and the wisdom to foresee future needs and emergencies. It begins with the simple act of setting aside a portion of one's income, creating a buffer that can grow over time through interest or investments.",
             margin_top="0.5em",
@@ -160,7 +180,7 @@ rx.hstack(
         border_width="1px",
     ),
     rx.box(
-        rx.heading("Spending Money"),
+        rx.heading("Spending Money", as_="h2"),
         rx.text(
             "Spending money is a balancing act between fulfilling immediate desires and maintaining long-term financial health. It's about making choices, sometimes indulging in the pleasures of the moment, and at other times, prioritizing essential expenses.",
             margin_top="0.5em",

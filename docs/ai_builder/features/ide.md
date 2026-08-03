@@ -9,11 +9,11 @@ import reflex as rx
 ```python eval
 rx.el.div(
     rx.video(
-        url="https://www.youtube.com/embed/UAj9vUweQ5g",
+        src="https://www.youtube.com/embed/UAj9vUweQ5g",
         width="100%",
         height="400px",
     ),
-    class_name="p-1 my-4 rounded-lg bg-slate-5",
+    class_name="p-1 my-4 rounded-lg bg-secondary-5",
 )
 ```
 

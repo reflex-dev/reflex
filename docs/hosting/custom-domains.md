@@ -23,7 +23,10 @@ Once you have purchased your domain, you can add it to your Reflex Cloud app by 
 2 - Once your app is deployed click the `Custom Domain` tab and add your custom domain to the input field and press the Add domain button. You should now see a page like below:
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/custom-domains-DNS-inputs.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/custom-domains-DNS-inputs.webp",
+    alt="Custom domain DNS record inputs",
+)
 ```
 
 ```python eval
@@ -33,7 +36,10 @@ rx.box(height="20px")
 3 - On the domain registrar's website, navigate to the DNS settings for your domain. It should look something like the image below:
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/custom-domains-DNS-before.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/custom-domains-DNS-before.webp",
+    alt="DNS settings before adding custom domain records",
+)
 ```
 
 ```python eval
@@ -43,7 +49,10 @@ rx.box(height="20px")
 4 - Add all four of the DNS records provided by Reflex Cloud to your domain registrar's DNS settings. If there is already an A name record, delete it and replace it with the one provided by Reflex Cloud. Your DNS settings should look like the image below:
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/custom-domains-DNS-after.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/custom-domains-DNS-after.webp",
+    alt="DNS settings after adding custom domain records",
+)
 ```
 
 ```md alert warning
@@ -63,7 +72,10 @@ rx.box(height="20px")
 5 - Once you have added the DNS records, refresh the page on the Reflex Cloud page (it may take a few minutes to a few hours to update successfully). If the records are correct, you should see a success message like the one below:
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/custom-domains-success.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/custom-domains-success.webp",
+    alt="Custom domain successfully configured",
+)
 ```
 
 ```python eval

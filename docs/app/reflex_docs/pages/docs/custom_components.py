@@ -137,9 +137,9 @@ def filter_item(
                 class_name="size-2 justify-end bg-violet-9 rounded-full",
             ),
         ),
-        class_name="flex flex-row gap-[14px] items-center justify-start w-full cursor-pointer hover:bg-slate-3 transition-bg text-nowrap overflow-hidden p-[8px_14px]",
-        border_top=f"1px solid {c_color('slate', 5)}" if border else "none",
-        border_bottom=f"1px solid {c_color('slate', 5)}" if border else "none",
+        class_name="flex flex-row gap-[14px] items-center justify-start w-full cursor-pointer hover:bg-secondary-3 transition-bg text-nowrap overflow-hidden p-[8px_14px]",
+        border_top="1px solid var(--secondary-4)" if border else "none",
+        border_bottom="1px solid var(--secondary-4)" if border else "none",
         on_click=on_click,
     )
 
@@ -174,11 +174,11 @@ menu_item_style = {
     "overflow": "hidden",
     "padding": "0px",
     "cursor": "default",
-    "background_color": c_color("slate", 2),
-    "border": f"1px solid {c_color('slate', 5)}",
+    "background_color": "var(--secondary-2)",
+    "border": "1px solid var(--secondary-4)",
     "box-shadow": "0px 2px 4px rgba(0, 0, 0, 0.05)",
     "border-radius": "12px",
-    "color": c_color("slate", 9),
+    "color": "var(--secondary-9)",
     **base,
 }
 
@@ -282,7 +282,7 @@ def download(download_url: str) -> rx.Component:
         underline="none",
         href=download_url,
         is_external=True,
-        class_name="text-slate-9 hover:!text-slate-9 bg-slate-1 hover:bg-slate-3 transition-bg cursor-pointer rounded-[6px]",
+        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-[6px]",
         title="Documentation",
     )
 
@@ -309,7 +309,7 @@ def table_rows(category: dict):
                 ),
                 get_icon(icon="copy", class_name="p-[5px]"),
                 on_click=rx.set_clipboard("pip install " + category["package_name"]),
-                class_name="flex flex-row gap-1.5 text-slate-9 w-full items-center overflow-hidden border border-slate-5 bg-slate-1 hover:bg-slate-3 transition-bg cursor-pointer shadow-small rounded-[6px] px-1.5 max-w-[20rem]",
+                class_name="flex flex-row gap-1.5 text-secondary-9 w-full items-center overflow-hidden border border-secondary-5 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer shadow-small rounded-[6px] px-1.5 max-w-[20rem]",
             )
         ),
         rx.table.cell(download(category["download_url"])),

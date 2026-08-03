@@ -39,7 +39,7 @@ class FlowState(rx.State):
     ]
 ```
 
-# Add Event Handlers
+## Add Event Handlers
 
 Event handlers allow the flow to respond to user interactions such as dragging nodes, updating edges, or creating new connections.
 

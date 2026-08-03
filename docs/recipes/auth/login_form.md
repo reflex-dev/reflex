@@ -15,6 +15,7 @@ def login_default() -> rx.Component:
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -87,6 +88,7 @@ def login_default_icons() -> rx.Component:
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -164,6 +166,7 @@ def login_single_thirdparty() -> rx.Component:
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -232,8 +235,8 @@ def login_single_thirdparty() -> rx.Component:
                 width="100%",
             ),
             rx.button(
-                rx.icon(tag="github"),
-                "Sign in with Github",
+                rx.text("GH", weight="bold"),
+                "Sign in with GitHub",
                 variant="outline",
                 size="3",
                 width="100%",
@@ -256,6 +259,7 @@ def login_multiple_thirdparty() -> rx.Component:
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -318,9 +322,9 @@ def login_multiple_thirdparty() -> rx.Component:
                 width="100%",
             ),
             rx.center(
-                rx.icon_button(rx.icon(tag="github"), variant="soft", size="3"),
-                rx.icon_button(rx.icon(tag="facebook"), variant="soft", size="3"),
-                rx.icon_button(rx.icon(tag="twitter"), variant="soft", size="3"),
+                rx.icon_button(rx.text("GH", weight="bold"), variant="soft", size="3"),
+                rx.icon_button(rx.text("f", weight="bold"), variant="soft", size="3"),
+                rx.icon_button(rx.text("X", weight="bold"), variant="soft", size="3"),
                 spacing="4",
                 direction="row",
                 width="100%",

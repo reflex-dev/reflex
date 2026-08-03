@@ -12,11 +12,11 @@ We have solutions that currently exist outside of the core framework:
 5. Clerk Auth: A community member wrapped this component and hooked it up in this app: https://github.com/TimChild/reflex-clerk-api
 6. Descope Auth: Enables authentication with Descope, supporting passwordless, social login, SSO, and MFA: https://github.com/descope-sample-apps/reflex-descope-auth
 
-If you're using the AI Builder, you can also use the built-in [Authentication Integrations](/docs/ai-builder/integrations/overview) which include Azure Auth, Google Auth, Okta Auth, and Descope.
+If you're using the AI Builder, you can also use the built-in [Authentication Integrations](/docs/ai/integrations/overview) which include Azure Auth, Google Auth, Okta Auth, and Descope.
 
 ## Guidance for Implementing Authentication
 
-- Store sensitive user tokens and information in [backend-only vars](/docs/vars/base_vars#backend-only-vars).
+- Store sensitive user tokens and information in [backend-only vars](/docs/vars/base-vars#backend-only-vars).
 - Validate user session and permissions for each event handler that performs an authenticated action and all computed vars or loader events that access private data.
 - All content that is statically rendered in the frontend (for example, data hardcoded or loaded at compile time in the UI) will be publicly available, even if the page redirects to a login or uses `rx.cond` to hide content.
 - Only data that originates from state can be truly private and protected.

@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
     from reflex.app import App
     from reflex.state import BaseState
-    from reflex_base.components.component import StatefulComponent
     from reflex_base.config import Config
     from reflex_base.event import EventHandler
 
@@ -30,11 +29,9 @@ def _default_bundled_libraries() -> list[str]:
 
     return [
         "react",
-        "@radix-ui/themes",
         "@emotion/react",
         f"$/{constants.Dirs.UTILS}/context",
         f"$/{constants.Dirs.UTILS}/state",
-        f"$/{constants.Dirs.UTILS}/components",
     ]
 
 
@@ -62,21 +59,9 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
-    tag_to_stateful_component: dict[str, StatefulComponent] = dataclasses.field(
-        default_factory=dict,
-        repr=False,
-    )
     _config: Config | None = dataclasses.field(default=None, repr=False)
     decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
         default_factory=list,
-        repr=False,
-    )
-    custom_components: dict[str, Any] = dataclasses.field(
-        default_factory=dict,
-        repr=False,
-    )
-    memo_definitions: dict[str, Any] = dataclasses.field(
-        default_factory=dict,
         repr=False,
     )
     bundled_libraries: list[str] = dataclasses.field(
@@ -152,10 +137,7 @@ class RegistrationContext(BaseContext):
             base_state_substates={
                 k: set(v) for k, v in self.base_state_substates.items()
             },
-            tag_to_stateful_component=dict(self.tag_to_stateful_component),
             decorated_pages=list(self.decorated_pages),
-            custom_components=dict(self.custom_components),
-            memo_definitions=dict(self.memo_definitions),
             bundled_libraries=list(self.bundled_libraries),
         )
 

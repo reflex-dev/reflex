@@ -17,7 +17,9 @@ To stop an app follow the arrow in the image below and press on the `Stop app` b
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/stopping_app.webp", padding_bottom="20px"
+    src="https://web.reflex-assets.dev/other/stopping_app.webp",
+    alt="Stopping an app in Reflex Cloud",
+    padding_bottom="20px",
 )
 ```
 
@@ -31,13 +33,19 @@ rx.image(
 To delete an app click on the `Settings` tab in the Cloud UI on the app page.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/environment_variables.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/environment_variables.webp",
+    alt="App environment variables in Reflex Cloud",
+)
 ```
 
 Then click on the `Danger` tab as shown below.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/deleting_app.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/deleting_app.webp",
+    alt="Deleting an app in Reflex Cloud",
+)
 ```
 
 Here there is a `Delete app` button. Pressing this button will delete the app and all of its data. This action is irreversible.

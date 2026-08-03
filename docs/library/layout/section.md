@@ -1,6 +1,20 @@
 ---
 components:
   - rx.section
+
+Section: |
+  lambda **props: rx.section(
+      rx.text("Section content", color="black"),
+      background="white",
+      border_radius="0.5rem",
+      width="100%",
+      justify="center",
+      border="1px solid var(--gray-3)",
+      align="center",
+      display="flex",
+      padding="4rem",
+      **props,
+  )
 ---
 
 ```python exec
@@ -18,14 +32,14 @@ Primarily this is a semantic component that is used to group related textual con
 ```python demo
 rx.box(
     rx.section(
-        rx.heading("First"),
+        rx.heading("First", as_="h2"),
         rx.text("This is the first content section"),
         padding_left="12px",
         padding_right="12px",
         background_color="var(--gray-2)",
     ),
     rx.section(
-        rx.heading("Second"),
+        rx.heading("Second", as_="h2"),
         rx.text("This is the second content section"),
         padding_left="12px",
         padding_right="12px",

@@ -21,6 +21,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    Final,
     ParamSpec,
     TypeVar,
     get_type_hints,
@@ -30,7 +31,6 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
-    BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
@@ -60,6 +60,7 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    ToOperation,
     Var,
     computed_var,
     dispatch,
@@ -266,14 +267,25 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     )
 
 
+# Sentinel a delta-value coroutine may resolve to in order to suppress its key:
+# when ``_resolve_delta`` awaits a coroutine value and gets this object back, it
+# drops the key from the delta instead of writing it. Lets a value whose
+# inclusion can only be decided asynchronously be deferred into the delta as a
+# coroutine and then omitted post-hoc. Compared by identity (the object itself is
+# the contract); never serialized into a delta sent to the client.
+_DROP_FROM_DELTA: Final = object()
+
+
 async def _resolve_delta(delta: Delta) -> Delta:
-    """Await all coroutines in the delta.
+    """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
 
     Args:
         delta: The delta to process.
 
     Returns:
-        The same delta dict with all coroutines resolved to their return value.
+        The same delta dict with all coroutines resolved to their return value,
+        and any key whose coroutine resolved to ``_DROP_FROM_DELTA`` removed
+        (along with any state subdict left empty by such removals).
     """
     tasks = {}
     for state_name, state_delta in delta.items():
@@ -284,7 +296,13 @@ async def _resolve_delta(delta: Delta) -> Delta:
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
                 )
     for (state_name, var_name), task in tasks.items():
-        delta[state_name][var_name] = await task
+        resolved = await task
+        if resolved is _DROP_FROM_DELTA:
+            del delta[state_name][var_name]
+            if not delta[state_name]:
+                del delta[state_name]
+        else:
+            delta[state_name][var_name] = resolved
     return delta
 
 
@@ -303,6 +321,38 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     """
     fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
     return fn
+
+
+def _is_user_descriptor(value: Any) -> bool:
+    """Whether a class attribute is a user-defined descriptor.
+
+    Excludes framework-recognized callables and var types so user-defined
+    descriptors (with __get__/__set__) are surfaced for computed-var dependency
+    tracking without being shadowed by backend-var storage.
+
+    Args:
+        value: The class attribute value to check.
+
+    Returns:
+        True if the value is a custom descriptor.
+    """
+    if not hasattr(type(value), "__get__"):
+        return False
+    if isinstance(
+        value,
+        (
+            FunctionType,
+            classmethod,
+            staticmethod,
+            property,
+            functools.cached_property,
+            EventHandler,
+            Var,
+            Field,
+        ),
+    ):
+        return False
+    return not is_computed_var(value)
 
 
 all_base_state_classes: dict[str, None] = {}
@@ -529,6 +579,28 @@ class BaseState(EvenMoreBasicBaseState):
                 )
                 raise StateValueError(msg)
 
+        # A descriptor defined directly on this class overrides any same-named
+        # entry inherited from a parent state. Drop those names from the
+        # inherited maps so backend var assembly, dependency tracking, and the
+        # __setattr__ routing all resolve to the descriptor on this class.
+        hints = cls._get_type_hints()
+        own_descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in hints and _is_user_descriptor(value)
+        }
+        if own_descriptor_names:
+            cls.inherited_vars = {
+                k: v
+                for k, v in cls.inherited_vars.items()
+                if k not in own_descriptor_names
+            }
+            cls.inherited_backend_vars = {
+                k: v
+                for k, v in cls.inherited_backend_vars.items()
+                if k not in own_descriptor_names
+            }
+
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
         cls._check_overridden_computed_vars()
@@ -559,11 +631,40 @@ class BaseState(EvenMoreBasicBaseState):
             for name, f in cls.get_fields().items()
             if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
+        # Surface user-defined descriptors as vars so computed vars can declare
+        # dependencies on them. Descriptors on this class always win over
+        # inherited or mixin-provided entries with the same name; mixin entries
+        # are skipped if already recorded.
+        descriptor_vars: dict[str, Var] = {}
+        for source_cls in (*cls._mixins(), cls):
+            is_self = source_cls is cls
+            for dname, dvalue in source_cls.__dict__.items():
+                if (
+                    dname not in hints
+                    or dname in cls.base_vars
+                    or not _is_user_descriptor(dvalue)
+                ):
+                    continue
+                if not is_self and (
+                    dname in descriptor_vars
+                    or dname in cls.inherited_vars
+                    or dname in cls.inherited_backend_vars
+                ):
+                    continue
+                descriptor_vars[dname] = dispatch(
+                    field_name=format.format_state_name(cls.get_full_name())
+                    + "."
+                    + dname
+                    + FIELD_MARKER,
+                    var_data=VarData.from_state(cls, dname),
+                    result_var_type=hints[dname],
+                )
         cls.computed_vars = {
             name: v._replace(merge_var_data=VarData.from_state(cls))
             for name, v in computed_vars
         }
         cls.vars = {
+            **descriptor_vars,
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
@@ -653,11 +754,8 @@ class BaseState(EvenMoreBasicBaseState):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
-        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
-            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
-        # Preserve event_actions from @rx.event decorator
-        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
-            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
+        newfn.__kwdefaults__ = fn.__kwdefaults__
+        newfn.__dict__.update(fn.__dict__)
         return newfn
 
     @staticmethod
@@ -675,6 +773,7 @@ class BaseState(EvenMoreBasicBaseState):
             not name.startswith("_")
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
+            and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
         )
 
@@ -1052,7 +1151,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_config
+        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1064,7 +1163,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is True:
+        if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
@@ -1659,19 +1758,35 @@ class BaseState(EvenMoreBasicBaseState):
         ) is not unset and not isinstance(var_value, Var):
             return var_value  # pyright: ignore [reportReturnType]
 
-        var_data = var._get_all_var_data()
-        if var_data is None or not var_data.state:
+        # Unwrap any cast wrappers and resolve via the underlying var's *own*
+        # var data, not the recursive _get_all_var_data(). For an operation or
+        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
+        # merge back-fills state/field_name from the first operand, which would
+        # make us silently return that operand's value instead of the operation's
+        # result. Only a plain field or computed var reference carries
+        # state + field_name on its own var data.
+        inner_var = var
+        while isinstance(inner_var, ToOperation):
+            inner_var = inner_var._original
+        var_data = inner_var._var_data
+        if var_data is None or not var_data.state or not var_data.field_name:
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
         if var_data.state == self.get_full_name():
-            return getattr(self, var_data.field_name)
+            value = getattr(self, var_data.field_name)
+            if inspect.isawaitable(value):
+                return await value
+            return value
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
             self._get_root_state().get_class_substate(var_data.state)
         )
-        return getattr(other_state, var_data.field_name)
+        value = getattr(other_state, var_data.field_name)
+        if inspect.isawaitable(value):
+            return await value
+        return value
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""

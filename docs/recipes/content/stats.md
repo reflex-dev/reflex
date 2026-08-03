@@ -39,7 +39,7 @@ def stats(
                     padding="0.7rem",
                 ),
                 rx.vstack(
-                    rx.heading(f"{value:,}", size="6", weight="bold"),
+                    rx.heading(f"{value:,}", as_="h2", size="6", weight="bold"),
                     rx.text(stat_name, size="4", weight="medium"),
                     spacing="1",
                     height="100%",
@@ -130,7 +130,7 @@ def stats_2(
                     width="100%",
                 ),
                 rx.hstack(
-                    rx.heading(f"{value:,}", size="7", weight="bold"),
+                    rx.heading(f"{value:,}", as_="h2", size="7", weight="bold"),
                     rx.text(
                         f"from {prev_value:,}", size="3", color=rx.color("gray", 10)
                     ),

@@ -142,10 +142,10 @@ const searchBarProps = {
           type: "style",
           value: `
             [data-theme='light'] .ikp-search-bar__button {
-              color: var(--m-slate-7);
+              color: var(--secondary-11);
               padding: 0.375rem 0.5rem;
               border-radius: 0.5rem;
-              background: var(--m-slate-1);
+              background: var(--secondary-1);
               display: flex;
               flex-direction: row;
               align-items: center;
@@ -170,13 +170,13 @@ const searchBarProps = {
               transition: none;
             }
             [data-theme='dark'] .ikp-search-bar__button {
-              color: var(--m-slate-6);
+              color: var(--secondary-11);
               transition: none;
               height: 2rem !important;
               min-height: 2rem !important;
               padding: 0.375rem 0.5rem;
               border-radius: 0.5rem;
-              background: var(--m-slate-11);
+              background: var(--secondary-2);
               display: flex;
               max-width: 10rem;
               flex-direction: row;
@@ -197,10 +197,10 @@ const searchBarProps = {
               border: none;
             }
             [data-theme='light'] .ikp-search-bar__button:hover {
-              background: var(--m-slate-2);
+              background: var(--secondary-2);
             }
             [data-theme='dark'] .ikp-search-bar__button:hover {
-              background: var(--m-slate-10);
+              background: var(--secondary-3);
             }
             @media (min-width: 1024px) {
               .ikp-search-bar__button {
@@ -220,10 +220,10 @@ const searchBarProps = {
             }
 
             [data-theme='light'] .ikp-search-bar__button:hover {
-              background-color: var(--m-slate-2);
+              background-color: var(--secondary-2);
             }
             [data-theme='dark'] .ikp-search-bar__button:hover {
-              background-color: var(--m-slate-10);
+              background-color: var(--secondary-3);
             }
 
             [data-theme='dark'] .ikp-modal__overlay {
@@ -286,10 +286,10 @@ const searchBarProps = {
               align-items: center;
               border-radius: 0.25rem;
               box-shadow: none;
-              color: var(--m-slate-7, #67707E);
+              color: var(--secondary-11);
               font-family: "Instrument Sans";
-              --ikp-colors-transparent: var(--c-slate-3, #FCFCFD);
-              background: var(--c-slate-3, #F0F0F3) !important;
+              --ikp-colors-transparent: var(--secondary-3, #fcfcfd);
+              background: var(--secondary-3, #f0f0f3) !important;
               font-size: 0.8125rem;
               font-weight: 475;
               line-height: 1.25rem;
@@ -301,7 +301,7 @@ const searchBarProps = {
 
             .ikp-search-bar__text,
             .ikp-search-bar__icon {
-              color: var(--m-slate-7, #67707E);
+              color: var(--secondary-11);
               font-weight: 500;
               font-style: normal;
               line-height: 1.5rem;

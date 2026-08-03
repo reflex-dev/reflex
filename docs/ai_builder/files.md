@@ -2,7 +2,7 @@
 
 To upload a file to the AI Builder click the `📎 Attach` button and select the file you want to upload from your computer. You can also drag and drop files directly into the chat window.
 
-This section does not cover uploading images. Check out [Images](/docs/ai-builder/images/) to learn more about uploading images.
+This section does not cover uploading images. Check out [Images](/docs/ai/images/) to learn more about uploading images.
 
 ```md alert
 ## Supported File Types

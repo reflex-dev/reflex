@@ -23,7 +23,7 @@ any necessary clean up.
 
 ```python
 async def long_running_task(foo, bar):
-    print(f"Starting \{foo} \{bar} task")
+    print(f"Starting {foo} {bar} task")
     some_api = SomeApi(foo)
     try:
         while True:
@@ -40,8 +40,11 @@ async def long_running_task(foo, bar):
 To register a lifespan task, use `app.register_lifespan_task(coro_func, **kwargs)`.
 Any keyword arguments specified during registration will be passed to the task.
 
-If the task accepts the special argument, `app`, it will be passed the `Starlette`
-application instance.
+If the task accepts the special argument, `app`, it will be passed the Reflex app
+instance (`rx.App`/`LifespanMixin`).
+
+If the task accepts the special argument, `starlette_app`, it will be passed the
+underlying `Starlette` application instance.
 
 ```python
 app = rx.App()
@@ -74,7 +77,7 @@ def fake_answer_to_everything_ml_model(x: float):
     return x * 42
 
 
-ml_models = \{}
+ml_models = {}
 
 
 @asynccontextmanager
@@ -84,6 +87,7 @@ async def setup_model(app):
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
+
 
 ...
 

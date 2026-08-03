@@ -12,7 +12,13 @@ only_low_level:
 
 DropdownMenuRoot: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Click to open Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E"),
           rx.menu.item("Share"),
@@ -26,12 +32,18 @@ DropdownMenuRoot: |
               ),
           ),
       ),
-      **props
+      **props,
   )
 
 DropdownMenuContent: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Click to open Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E"),
           rx.menu.item("Share"),
@@ -50,7 +62,13 @@ DropdownMenuContent: |
 
 DropdownMenuItem: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Click to open Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E", **props),
           rx.menu.item("Share", **props),
@@ -68,7 +86,13 @@ DropdownMenuItem: |
 
 DropdownMenuSub: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E"),
           rx.menu.item("Share"),
@@ -87,7 +111,13 @@ DropdownMenuSub: |
 
 DropdownMenuSubTrigger: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E"),
           rx.menu.item("Share"),
@@ -105,7 +135,13 @@ DropdownMenuSubTrigger: |
 
 DropdownMenuSubContent: |
   lambda **props: rx.menu.root(
-      rx.menu.trigger(rx.button("drop down menu")),
+      rx.menu.trigger(
+          rx.button(
+              "Click to open Dropdown Menu",
+              color_scheme=props.get("color_scheme"),
+              variant=props.get("variant"),
+          ),
+      ),
       rx.menu.content(
           rx.menu.item("Edit", shortcut="⌘ E"),
           rx.menu.item("Share"),
@@ -185,9 +221,10 @@ class DropdownMenuState(rx.State):
 def dropdown_menu_example():
     return rx.flex(
         rx.heading(
-            f"Number of times Dropdown Menu opened or closed: {DropdownMenuState.num_opens}"
+            f"Number of times Dropdown Menu opened or closed: {DropdownMenuState.num_opens}",
+            as_="h2",
         ),
-        rx.heading(f"Dropdown Menu open: {DropdownMenuState.opened}"),
+        rx.heading(f"Dropdown Menu open: {DropdownMenuState.opened}", as_="h2"),
         rx.menu.root(
             rx.menu.trigger(
                 rx.button("Options", variant="soft", size="2"),
@@ -308,7 +345,9 @@ def menu_call_dialog() -> rx.Component:
         ),
         rx.cond(
             DropdownMenuState2.which_dialog_open,
-            rx.heading(f"{DropdownMenuState2.which_dialog_open} dialog is open"),
+            rx.heading(
+                f"{DropdownMenuState2.which_dialog_open} dialog is open", as_="h2"
+            ),
         ),
         delete_dialog(),
         settings_dialog(),

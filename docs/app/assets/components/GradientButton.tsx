@@ -24,16 +24,16 @@ interface GradientButtonProps
 }
 
 const BASE_CLASSES =
-  'relative inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:border disabled:border-m-slate-4/80 disabled:bg-m-slate-3 disabled:text-m-slate-8 [&_svg]:pointer-events-none [&_svg:not([class*="size-"])]:size-4 shrink-0 [&_svg]:shrink-0 cursor-pointer box-border font-[525] overflow-hidden';
+  'relative inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:border disabled:border-secondary-4/80 disabled:bg-secondary-3 disabled:text-secondary-11 [&_svg]:pointer-events-none [&_svg:not([class*="size-"])]:size-4 shrink-0 [&_svg]:shrink-0 cursor-pointer box-border font-[525] overflow-hidden';
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
     "bg-primary-9 text-primary-2 dark:text-primary-contrast hover:bg-primary-10 shadow-[0_0_1px_var(--primary-9,#6E56CF)_inset,0_2px_0_0_rgba(255,255,255,0.22)_inset]",
   destructive: "bg-destructive-9 hover:bg-destructive-10 text-primary-contrast",
   outline:
-    "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white dark:bg-m-slate-10 hover:bg-m-slate-2 dark:hover:bg-m-slate-9 text-m-slate-12 dark:text-m-slate-3",
+    "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white dark:bg-secondary-4 hover:bg-secondary-2 dark:hover:bg-secondary-5 text-secondary-12",
   ghost:
-    "text-m-slate-12 dark:text-m-slate-3 hover:text-primary-10 dark:hover:text-primary-9",
+    "text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

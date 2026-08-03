@@ -6,7 +6,7 @@ from reflex.vars.base import VarData
 
 CN = Var(
     "cn",
-    _var_data=VarData(imports={"clsx-for-tailwind": ImportVar(tag="cn")}),
+    _var_data=VarData(imports={"clsx-for-tailwind@1.0.0": ImportVar(tag="cn")}),
 ).to(FunctionVar)
 
 

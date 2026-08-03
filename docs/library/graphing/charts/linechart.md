@@ -2,6 +2,8 @@
 components:
   - rx.recharts.LineChart
   - rx.recharts.Line
+title: Line Chart
+meta_description: "Build interactive line charts in pure Python with Reflex. Plot single or multi-line Recharts time series with custom axes, tooltips, legends, and styling — no JavaScript needed."
 ---
 
 # Line Chart
@@ -12,11 +14,11 @@ from typing import Any
 import reflex as rx
 ```
 
-A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
+Line charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and are created in pure Python. A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
 
 ## Simple Example
 
-For a line chart we must define an `rx.recharts.line()` component for each set of values we wish to plot. Each `rx.recharts.line()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `pv` and `uv` as separate lines against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`.
+For a line chart we must define an `rx.recharts.line()` component for each set of values we wish to plot. Each `rx.recharts.line()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `pv` and `uv` as separate lines against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`. Plotting more than one line like this creates a multi-line chart.
 
 ```python demo graphing
 data = [
@@ -195,3 +197,11 @@ def line_dynamic():
 ```
 
 To learn how to use the `sync_id`, `x_axis_id` and `y_axis_id` props check out the of the area chart [documentation](/docs/library/graphing/charts/areachart), where these props are all described with examples.
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Area Chart](/docs/library/graphing/charts/areachart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Scatter Chart](/docs/library/graphing/charts/scatterchart)

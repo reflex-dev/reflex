@@ -18,7 +18,7 @@ import reflex as rx
 - Create pages and navigate between them
 ```
 
-If you haven't yet, [install Reflex](/docs/getting_started/installation) before continuing. Every example below imports the library as `rx`:
+If you haven't yet, [install Reflex](/docs/getting-started/installation) before continuing. Every example below imports the library as `rx`:
 
 ```python
 import reflex as rx
@@ -48,7 +48,7 @@ def my_container():
     )
 ```
 
-You can also use any base HTML element through the [rx.el](/docs/library/other/html) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
+You can also use any base HTML element through the [rx.el](/docs/library/html/) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
 
 ```python demo exec
 def my_div():
@@ -101,7 +101,7 @@ In summary, components are made up of children and props.
 
 Apps need to store and display data that changes over time. Reflex handles this through [State](/docs/state/overview), which is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
 
-To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base_vars)) should have a type annotation, and can be initialized with a default value.
+To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base-vars)) should have a type annotation, and can be initialized with a default value.
 
 ```python
 class MyState(rx.State):
@@ -123,9 +123,9 @@ class MyState(rx.State):
 def counter():
     return rx.hstack(
         # The heading `color` prop is set to the `color` var in MyState.
-        rx.heading("Count: ", color=MyState.color),
+        rx.heading("Count: ", as_="h2", color=MyState.color),
         # The `count` var in `MyState` is passed as a child to the heading component.
-        rx.heading(MyState.count),
+        rx.heading(MyState.count, as_="h2"),
     )
 ```
 
@@ -133,7 +133,7 @@ Vars can be referenced in multiple components, and will automatically update whe
 
 ## Responding to events and updating the screen
 
-So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events_overview).
+So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview).
 
 ```md alert
 Event handlers are the **only** way to change state in Reflex.
@@ -152,7 +152,7 @@ class CounterState(rx.State):
 
 def counter_increment():
     return rx.hstack(
-        rx.heading(CounterState.count),
+        rx.heading(CounterState.count, as_="h2"),
         rx.button("Increment", on_click=CounterState.increment),
     )
 ```
@@ -180,7 +180,7 @@ class CounterState2(rx.State):
 
 def counter_variable():
     return rx.hstack(
-        rx.heading(CounterState2.count),
+        rx.heading(CounterState2.count, as_="h2"),
         rx.button("Increment by 1", on_click=lambda: CounterState2.increment(1)),
         rx.button("Increment by 5", on_click=lambda: CounterState2.increment(5)),
     )
@@ -199,7 +199,7 @@ class TextState(rx.State):
 
 def text_input():
     return rx.vstack(
-        rx.heading(TextState.text),
+        rx.heading(TextState.text, as_="h2"),
         rx.input(default_value=TextState.text, on_blur=TextState.update_text),
     )
 ```
@@ -246,7 +246,8 @@ class MyState3(rx.State):
 
 def count_and_check():
     return rx.box(
-        rx.heading(MyState3.text), rx.button("Increment", on_click=MyState3.increment)
+        rx.heading(MyState3.text, as_="h2"),
+        rx.button("Increment", on_click=MyState3.increment),
     )
 ```
 
@@ -268,7 +269,7 @@ class BadState(rx.State):
 
 def count_if_even():
     return rx.box(
-        rx.heading("Count: "),
+        rx.heading("Count: ", as_="h2"),
         # This will raise a compile error, as BadState.count is a var and not known at compile time.
         rx.text(BadState.count if BadState.count % 2 == 0 else "Odd"),
         # Using an if statement with a var as a prop will NOT work either.
@@ -308,7 +309,7 @@ In the next sections, we will show how to handle these cases.
 
 ## Conditional rendering
 
-As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [rx.cond](/docs/components/conditional_rendering) function to conditionally render components.
+As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [rx.cond](/docs/components/conditional-rendering) function to conditionally render components.
 
 ```python demo exec
 class LoginState(rx.State):
@@ -323,8 +324,8 @@ def show_login():
     return rx.box(
         rx.cond(
             LoginState.logged_in,
-            rx.heading("Logged In"),
-            rx.heading("Not Logged In"),
+            rx.heading("Logged In", as_="h2"),
+            rx.heading("Not Logged In", as_="h2"),
         ),
         rx.button("Toggle Login", on_click=LoginState.toggle_login),
     )
@@ -332,7 +333,7 @@ def show_login():
 
 ## Rendering lists
 
-To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering_iterables) function to render a list of components.
+To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering-iterables) function to render a list of components.
 
 Pass the list var and a function that returns a component as arguments to `rx.foreach`.
 
@@ -372,7 +373,7 @@ class CountEvenState(rx.State):
 
 def count_if_even():
     return rx.box(
-        rx.heading("Count: "),
+        rx.heading("Count: ", as_="h2"),
         rx.cond(
             # Here we use the `%` and `==` var operations to check if the count is even.
             CountEvenState.count % 2 == 0,
@@ -401,17 +402,16 @@ app.add_page(index, route="/")
 You've got the core pieces — components, state, events, compile-time vs. runtime. Time to build.
 
 ```md alert info
-# Build something real →
+# Build something real
 
-- [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — a data app with tables, forms, and state.
-- [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — streaming AI responses end-to-end.
-- [Open-source templates](/docs/getting_started/open_source_templates) — full apps to fork.
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial) — a data app with tables, forms, and state.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial) — streaming AI responses end-to-end.
 ```
 
 ```md alert info
-# Go deeper →
+# Go deeper
 
-- [Vars](/docs/vars/base_vars) and [var operations](/docs/vars/var-operations) — the full API.
-- [Events](/docs/events/events_overview) and [pages](/docs/pages/overview) — routing, triggers, handlers.
-- [How Reflex works](/docs/advanced_onboarding/how-reflex-works) — what runs where, and why.
+- [Vars](/docs/vars/base-vars) and [var operations](/docs/vars/var-operations) — the full API.
+- [Events](/docs/events/events-overview) and [pages](/docs/pages/overview) — routing, triggers, handlers.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works) — what runs where, and why.
 ```

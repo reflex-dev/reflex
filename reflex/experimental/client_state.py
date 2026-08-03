@@ -22,28 +22,36 @@ _refs_import = {
 }
 
 
-def _client_state_ref(var_name: str) -> str:
-    """Get the ref path for a ClientStateVar.
+def _client_state_ref(var_name: str) -> Var:
+    """Get the ref accessor Var for a ClientStateVar.
 
     Args:
         var_name: The name of the variable.
 
     Returns:
-        An accessor for ClientStateVar ref as a string.
+        A Var that accesses the ClientStateVar ref slot, carrying the
+        ``refs`` import from ``$/utils/state``.
     """
-    return f"refs['_client_state_{var_name}']"
+    return Var(
+        _js_expr=f"refs['_client_state_{var_name}']",
+        _var_data=VarData(imports=_refs_import),
+    )
 
 
-def _client_state_ref_dict(var_name: str) -> str:
-    """Get the ref path for a ClientStateVar.
+def _client_state_ref_dict(var_name: str) -> Var:
+    """Get the per-instance ref-dict accessor Var for a ClientStateVar.
 
     Args:
         var_name: The name of the variable.
 
     Returns:
-        An accessor for ClientStateVar ref as a string.
+        A Var that accesses the ClientStateVar's per-instance ref dict,
+        carrying the ``refs`` import from ``$/utils/state``.
     """
-    return f"refs['_client_state_dict_{var_name}']"
+    return Var(
+        _js_expr=f"refs['_client_state_dict_{var_name}']",
+        _var_data=VarData(imports=_refs_import),
+    )
 
 
 @dataclasses.dataclass(
@@ -132,6 +140,10 @@ class ClientStateVar(Var):
         }
         if global_ref:
             arg_name = get_unique_variable_name()
+            setter_ref = _client_state_ref(setter_name)
+            var_ref = _client_state_ref(var_name)
+            var_dict_ref = _client_state_ref_dict(var_name)
+            setter_dict_ref = _client_state_ref_dict(setter_name)
             func = ArgsFunctionOperationBuilder.create(
                 args_names=(arg_name,),
                 return_expr=Var("Array.prototype.forEach.call")
@@ -140,13 +152,13 @@ class ClientStateVar(Var):
                     (
                         Var("Object.values")
                         .to(FunctionVar)
-                        .call(Var(_client_state_ref_dict(setter_name)))
+                        .call(setter_dict_ref)
                         .to(list)
                         .to(list)
                     )
-                    + Var.create([
-                        Var(f"(value) => {{ {_client_state_ref(var_name)} = value; }}")
-                    ]).to(list),
+                    + Var.create([Var(f"(value) => {{ {var_ref} = value; }}")]).to(
+                        list
+                    ),
                     ArgsFunctionOperationBuilder.create(
                         args_names=("setter",),
                         return_expr=Var("setter").to(FunctionVar).call(Var(arg_name)),
@@ -154,17 +166,16 @@ class ClientStateVar(Var):
                 ),
             )
 
-            hooks[f"{_client_state_ref(setter_name)} = {func!s}"] = None
-            hooks[f"{_client_state_ref(var_name)} ??= {var_name!s}"] = None
-            hooks[f"{_client_state_ref_dict(var_name)} ??= {{}}"] = None
-            hooks[f"{_client_state_ref_dict(setter_name)} ??= {{}}"] = None
-            hooks[
-                f"{_client_state_ref_dict(var_name)}[{id_name}] = {_client_state_ref(var_name)}"
-            ] = None
-            hooks[
-                f"{_client_state_ref_dict(setter_name)}[{id_name}] = {setter_name}"
-            ] = None
-            imports.update(_refs_import)
+            hooks[f"{setter_ref!s} = {func!s}"] = setter_ref._get_all_var_data()
+            hooks[f"{var_ref!s} ??= {var_name!s}"] = var_ref._get_all_var_data()
+            hooks[f"{var_dict_ref!s} ??= {{}}"] = var_dict_ref._get_all_var_data()
+            hooks[f"{setter_dict_ref!s} ??= {{}}"] = setter_dict_ref._get_all_var_data()
+            hooks[f"{var_dict_ref!s}[{id_name}] = {var_ref!s}"] = VarData.merge(
+                var_dict_ref._get_all_var_data(), var_ref._get_all_var_data()
+            )
+            hooks[f"{setter_dict_ref!s}[{id_name}] = {setter_name}"] = (
+                setter_dict_ref._get_all_var_data()
+            )
         return cls(
             _js_expr="null",
             _setter_name=setter_name,
@@ -192,20 +203,12 @@ class ClientStateVar(Var):
         Returns:
             an accessor for the client state variable.
         """
-        return (
-            Var(
-                _js_expr=(
-                    _client_state_ref_dict(self._getter_name) + f"[{self._id_name}]"
-                    if self._global_ref
-                    else self._getter_name
-                ),
-                _var_data=self._var_data,
-            )
-            .to(self._var_type)
-            ._replace(
-                merge_var_data=VarData(imports=_refs_import if self._global_ref else {})
-            )
+        js_expr = (
+            f"{_client_state_ref_dict(self._getter_name)}[{self._id_name}]"
+            if self._global_ref
+            else self._getter_name
         )
+        return Var(_js_expr=js_expr, _var_data=self._var_data).to(self._var_type)
 
     def set_value(self, value: Any = NoValue) -> Var:
         """Set the value of the client state variable.
@@ -220,12 +223,10 @@ class ClientStateVar(Var):
         Returns:
             A special EventChain Var which will set the value when triggered.
         """
-        var_data = VarData(imports=_refs_import if self._global_ref else {})
-
         setter = (
-            Var(_client_state_ref(self._setter_name))
+            _client_state_ref(self._setter_name)
             if self._global_ref
-            else Var(self._setter_name, _var_data=var_data)
+            else Var(self._setter_name)
         ).to(FunctionVar)
 
         if value is not NoValue:

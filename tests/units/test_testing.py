@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 import reflex_base.config
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants import IS_WINDOWS
 from reflex_base.registry import RegistrationContext
 
@@ -89,8 +90,8 @@ def test_app_harness_initialize_isolates_memo_registries(
 ):
     """Each AppHarness initialization yields a fresh registration context.
 
-    Entries registered in a prior context do not leak into the new harness's
-    registrations.
+    The global memo registry is also cleared so entries registered by a prior
+    app do not leak into the new harness's registrations.
 
     Args:
         tmp_path: pytest tmp_path fixture
@@ -104,8 +105,7 @@ def test_app_harness_initialize_isolates_memo_registries(
     base = RegistrationContext()
     monkeypatch.setattr(AppHarness, "_base_registration_context", base)
 
-    outer.custom_components["FooComponent"] = mock.sentinel.component
-    outer.memo_definitions["format_value"] = mock.sentinel.memo
+    MEMOS["format_value", None] = mock.sentinel.memo
 
     harness = AppHarness.create(
         root=tmp_path / "memo_app",
@@ -118,17 +118,13 @@ def test_app_harness_initialize_isolates_memo_registries(
 
         new_ctx = RegistrationContext.get()
         assert new_ctx is not outer
-        assert "FooComponent" not in new_ctx.custom_components
-        assert "format_value" not in new_ctx.memo_definitions
+        assert ("format_value", None) not in MEMOS
         harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
     finally:
         # `_initialize_app` attaches a new context without a matching __exit__.
         # Restore the outer context so other tests do not observe the leaked one.
         if harness._registry_token is not None:
             RegistrationContext.reset(harness._registry_token)
-        # Clean up the sentinels we added to `outer`.
-        outer.custom_components.pop("FooComponent", None)
-        outer.memo_definitions.pop("format_value", None)
 
 
 def test_app_harness_initialize_reloads_existing_imported_app(

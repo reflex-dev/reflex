@@ -9,7 +9,7 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
     "packaging >=24.2,<27",
-    "pydantic >=1.10.21,<3.0",
+    "pydantic >=2.12.0,<3.0",
     "rich >=13,<15",
     "typing_extensions >=4.13.0",
     "platformdirs >=4.3.7,<5.0",

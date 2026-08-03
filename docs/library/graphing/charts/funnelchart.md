@@ -2,6 +2,8 @@
 components:
   - rx.recharts.FunnelChart
   - rx.recharts.Funnel
+title: Funnel Chart
+meta_description: "Create funnel charts in Python with Reflex. Build interactive Recharts funnel charts to visualize conversion stages and user flow with custom colors, labels, and tooltips."
 ---
 
 ```python exec
@@ -13,7 +15,7 @@ rx.toast.provider()
 
 # Funnel Chart
 
-A funnel chart is a graphical representation used to visualize how data moves through a process. In a funnel chart, the dependent variable’s value diminishes in the subsequent stages of the process. It can be used to demonstrate the flow of users through a business or sales process.
+Funnel charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A funnel chart is a graphical representation used to visualize how data moves through a process. In a funnel chart, the dependent variable’s value diminishes in the subsequent stages of the process. It can be used to demonstrate the flow of users through a business or sales process.
 
 ## Simple Example
 
@@ -150,3 +152,11 @@ def funnel_animation():
         height=300,
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Pie Chart](/docs/library/graphing/charts/piechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Composed Chart](/docs/library/graphing/charts/composedchart)

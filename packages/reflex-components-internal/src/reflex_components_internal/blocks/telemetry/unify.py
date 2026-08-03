@@ -12,4 +12,4 @@ def get_unify_trackers() -> rx.Component:
     Returns:
         rx.Component: The PIXEL_SCRIPT_UNIFY script component
     """
-    return rx.script(PIXEL_SCRIPT_UNIFY)
+    return rx.el.script(PIXEL_SCRIPT_UNIFY, type="module")

@@ -100,6 +100,27 @@ class PageNames(SimpleNamespace):
     STATEFUL_COMPONENTS = "stateful_components"
 
 
+class Embed(SimpleNamespace):
+    """Public artifacts for ``mount_target`` (embed) builds.
+
+    These paths form the host-page contract: a host script tag points at
+    ``ENTRY_PATH`` (relative to the frontend origin), which loads the route
+    manifest at ``MANIFEST_FILE`` and dispatches into the embedded app. They
+    are intentionally stable across dev and prod so the same host HTML works
+    in both modes.
+    """
+
+    # Host pages reference this path (e.g. ``<script src="/app/entry.client.js">``).
+    # In dev, Vite serves the source file at this URL; in prod, a shim emitted
+    # by ``_emit_stable_entry_bootloader`` re-exports the hashed Vite entry.
+    ENTRY_PATH = "app/entry.client.js"
+    # Embed-aware variant of the entry, swapped in only when ``mount_target``
+    # is set so non-embed builds remain byte-identical to the framework default.
+    ENTRY_EMBED_TEMPLATE = "app/entry.client.embed.js"
+    # Compile-time-emitted route manifest the embed entry imports at runtime.
+    MANIFEST_FILE = "__reflex_embed_manifest.js"
+
+
 class ComponentName(Enum):
     """Component names."""
 
@@ -127,20 +148,34 @@ class CompileContext(str, Enum):
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
+    # ``addEvents`` is a module-level callable populated by
+    # ``EventLoopProvider``; importing it sidesteps the lexical-scope
+    # constraint a ``useContext(EventLoopContext)`` hoist would impose.
     EVENTS = {
-        "react": [ImportVar(tag="useContext")],
-        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag=CompileVars.ADD_EVENTS)],
         f"$/{Dirs.STATE_PATH}": [
             ImportVar(tag=CompileVars.TO_EVENT),
             ImportVar(tag=CompileVars.APPLY_EVENT_ACTIONS),
         ],
     }
 
+    # ``connectErrors`` is reactive — it drives connection-banner
+    # re-renders — so its consumers still go through ``useContext``.
+    CONNECT_ERRORS = {
+        "react": [ImportVar(tag="useContext")],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+    }
+
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
+    # Kept for legacy callers that still key off this string; the
+    # compiler no longer auto-hoists it.
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+    CONNECT_ERRORS = (
+        f"const {CompileVars.CONNECT_ERROR} = useContext(EventLoopContext)[1];"
+    )
 
     class HookPosition(enum.Enum):
         """The position of the hook in the component."""

@@ -2,33 +2,82 @@ import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
+def get_display_name(name: str) -> str:
+    normalized = to_snake_case(name)
+    if normalized == "html":
+        return "HTML"
+    if normalized == "svg":
+        return "SVG"
+    return to_title_case(normalized, sep=" ")
+
+
+HTML_COMPONENT_ORDER = {
+    "html": 0,
+    "text": 1,
+    "layout": 2,
+    "forms": 3,
+    "media": 4,
+    "tables": 5,
+    "svg": 6,
+}
+
+HTML_CARD_PREVIEWS = {
+    "html": ("layout", "box"),
+    "text": ("typography", "text"),
+    "layout": ("layout", "grid"),
+    "forms": ("forms", "input"),
+    "media": ("media", "image"),
+    "tables": ("tables-and-data-grids", "table"),
+    "svg": ("data-display", "icon"),
+}
+
+
+def get_components_for_category(category: str, components: list) -> list:
+    if to_snake_case(category) != "html":
+        return components
+    return sorted(
+        components,
+        key=lambda component: HTML_COMPONENT_ORDER.get(
+            to_snake_case(component[0]), len(HTML_COMPONENT_ORDER)
+        ),
+    )
+
+
+def get_preview_asset(name: str, section: str) -> tuple[str, str]:
+    if to_snake_case(section) == "html":
+        return HTML_CARD_PREVIEWS.get(to_snake_case(name), ("layout", "box"))
+    return section.lower(), name.lower()
+
+
 def component_card(name: str, link: str, section: str) -> rx.Component:
+    preview_section, preview_name = get_preview_asset(name, section)
     return rx.link(
         rx.box(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{section.lower()}/light/{name.lower()}.svg",
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{section.lower()}/dark/{name.lower()}.svg",
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:block hidden",
             ),
             rx.box(
                 rx.text(
-                    to_title_case(to_snake_case(name), sep=" "),
-                    class_name="truncate font-base text-slate-12",
+                    get_display_name(name),
+                    class_name="truncate font-base text-secondary-12",
                 ),
-                rx.icon("chevron-right", size=14, class_name="!text-slate-9"),
+                rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
                 class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
             ),
-            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-slate-2 hover:bg-slate-3 transition-bg border-slate-5",
+            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-secondary-2 hover:bg-secondary-3 transition-bg border-secondary-5",
         ),
         href=link,
     )
@@ -52,10 +101,13 @@ def create_previews(
     prefix: str = "",
     type: str = "core",
 ):
+    meta_description = truncate_meta_description(description)
+
     @docpage(
         right_sidebar=False,
         set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
-        page_title=component_category + " Library",
+        page_title=f"{get_display_name(component_category)} Component Library · Reflex Docs",
+        description=meta_description,
     )
     def page() -> rx.Component:
         from reflex_docs.templates.docpage.sidebar.sidebar_items import (
@@ -65,7 +117,7 @@ def create_previews(
         component_list = get_component_list(type)
         return rx.box(
             rx.box(
-                h1_comp(text=to_title_case(to_snake_case(component_category), sep=" ")),
+                h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
                 ),
@@ -82,7 +134,9 @@ def create_previews(
                         ),
                         section=component_category,
                     )
-                    for component in component_list[component_category]
+                    for component in get_components_for_category(
+                        component_category, component_list[component_category]
+                    )
                 ],
                 class_name="gap-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
             ),
@@ -120,7 +174,7 @@ core_components_dict = {
     },
     "html": {
         "path": "html",
-        "description": "Components that help with dynamic rendering, such as conditional rendering and dynamic components. These are useful for creating responsive and interactive user interfaces.",
+        "description": "Low-level HTML elements exposed through the rx.el namespace. These are useful when you need native browser elements with direct styling control.",
         "component_category": "Html",
     },
     "layout": {
@@ -145,7 +199,7 @@ core_components_dict = {
     },
     "tables_and_data_grids": {
         "path": "tables-and-data-grids",
-        "description": "Powerful table components for organizing and displaying data efficiently. Includes versatile options like standard tables, interactive datatables, and editable data grids. Perfect for creating responsive, user-friendly interfaces that present information clearly and allow for easy data manipulation.",
+        "description": "Build tables and data grids in Python with Reflex. Includes a composable table, a searchable and sortable data table for pandas DataFrames, and an editable data grid — perfect for dashboards and data apps, all in pure Python.",
         "component_category": "Tables-And-Data-Grids",
     },
     "typography": {
@@ -174,17 +228,17 @@ library_previews = [
 graphing_components_dict = {
     "charts": {
         "path": "charts",
-        "description": "Components for creating various types of charts and graphs. These are useful for data visualization and presenting complex information in an easily understandable format.",
+        "description": "Create interactive charts and graphs in Python with Reflex. Build bar, line, area, pie, scatter, radar, and more chart types on top of Recharts for data visualization — all in pure Python, no JavaScript.",
         "component_category": "Charts",
     },
     "general": {
         "path": "general",
-        "description": "General-purpose graphing components that provide foundational elements for creating custom visualizations. These components offer flexibility and can be combined to create more complex graphical representations.",
+        "description": "General-purpose graphing components — axes, legends, tooltips, grids, and more — for customizing your Python charts and data visualizations in Reflex. Combine them to build clear, interactive charts in pure Python.",
         "component_category": "General",
     },
     "other-charts": {
         "path": "other-charts",
-        "description": "Other graphing components that provide additional functionality and customization options for creating custom visualizations. These components can be used to enhance the graphical representation of data and improve user experience.",
+        "description": "Additional Python charting options in Reflex, including Plotly and Matplotlib (pyplot). Render interactive Plotly Express figures and any Matplotlib plot in your web app — all in pure Python.",
         "component_category": "Other-Charts",
     },
 }

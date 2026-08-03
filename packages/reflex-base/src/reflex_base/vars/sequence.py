@@ -8,16 +8,17 @@ import decimal
 import inspect
 import json
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex_base import constants
-from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex_base.utils import types
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, Dirs
+from reflex_base.utils import console, types
 from reflex_base.utils.exceptions import VarTypeError
-from reflex_base.utils.types import GenericType, get_origin
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.utils.types import GenericType, get_origin, unionize
 
 from .base import (
     CachedVarOperation,
@@ -29,18 +30,21 @@ from .base import (
     cached_property_no_lock,
     figure_out_type,
     get_unique_variable_name,
-    unionize,
     var_operation,
     var_operation_return,
 )
 from .number import (
+    _IS_TRUE_IMPORT,
     BooleanVar,
     LiteralNumberVar,
     NumberVar,
+    boolify,
     raise_unsupported_operand_types,
 )
 
 if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
     from .base import DATACLASS_TYPE, SQLA_TYPE
     from .function import FunctionVar
     from .object import ObjectVar
@@ -417,51 +421,185 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
         return array_ge_operation(self, other)
 
-    def foreach(self, fn: Any):
-        """Apply a function to each element of the array.
-
-        Args:
-            fn: The function to apply.
+    def _element_placeholder(self) -> Var:
+        """Create a placeholder var typed like this array's elements.
 
         Returns:
-            The array after applying the function.
+            A var with a unique name and the array's element type.
+        """
+        element_type = self[Var("").to(NumberVar, int)]._var_type
+        return Var(
+            _js_expr=get_unique_variable_name(),
+            _var_type=element_type,
+        ).guess_type()
+
+    def _trace_element_fn(
+        self, fn: Any, operation_name: str
+    ) -> tuple[tuple[str, ...], Var]:
+        """Call fn with a placeholder element to get function arg names and return expression.
+
+        Args:
+            fn: The function to trace, taking at most one argument.
+            operation_name: The name of the calling operation, for error messages.
+
+        Returns:
+            A tuple of the function's argument names and its return expression.
 
         Raises:
             VarTypeError: If the function takes more than one argument.
         """
+        if not callable(fn):
+            raise_unsupported_operand_types(operation_name, (type(self), type(fn)))
+        num_args = len(inspect.signature(fn).parameters)
+        if num_args > 1:
+            msg = f"The function passed to {operation_name} should take at most one argument."
+            raise VarTypeError(msg)
+        if num_args == 0:
+            return (), Var.create(fn())
+        element = self._element_placeholder()
+        return (element._js_expr,), Var.create(fn(element))
+
+    def map(self, fn: Any):
+        """Apply a function to each element of the array.
+
+        Args:
+            fn: The function to apply, taking at most one argument.
+
+        Returns:
+            The array after applying the function.
+        """
+        from .function import ArgsFunctionOperation
+
+        args, return_expr = self._trace_element_fn(fn, "map")
+        return map_array_operation(
+            self, ArgsFunctionOperation.create(args, return_expr)
+        )
+
+    if TYPE_CHECKING:
+
+        @deprecated("Use `ArrayVar.map` instead.")
+        def foreach(self, fn: Any) -> Var[list[Any]]:
+            """Apply a function to each element of the array (deprecated, use map).
+
+            Args:
+                fn: The function to apply, taking at most one argument.
+
+            Returns:
+                The array after applying the function.
+            """
+            ...
+
+    else:
+
+        def foreach(self, fn: Any):
+            """Apply a function to each element of the array (deprecated, use map).
+
+            Args:
+                fn: The function to apply, taking at most one argument.
+
+            Returns:
+                The array after applying the function.
+            """
+            console.deprecate(
+                feature_name="ArrayVar.foreach",
+                reason="Use ArrayVar.map instead.",
+                deprecation_version="0.9.7",
+                removal_version="1.0",
+            )
+            return self.map(fn)
+
+    def filter(self, fn: Any = None):
+        """Filter the array to the elements for which fn returns a truthy value.
+
+        Truthiness follows Python semantics: 0, empty strings, empty arrays,
+        and empty objects are falsy.
+
+        Args:
+            fn: The predicate, taking at most one argument. If None, filter by the truthiness of the elements themselves, like ``filter(None, xs)``.
+
+        Returns:
+            The filtered array.
+        """
+        from .function import ArgsFunctionOperation, FunctionVar
+
+        if fn is None:
+            predicate = Var(
+                _js_expr="isTrue",
+                _var_data=VarData(imports=_IS_TRUE_IMPORT),
+            ).to(FunctionVar)
+        else:
+            args, return_expr = self._trace_element_fn(fn, "filter")
+            if not isinstance(return_expr, BooleanVar):
+                return_expr = boolify(return_expr)
+            predicate = ArgsFunctionOperation.create(args, return_expr)
+        return filter_array_operation(self, predicate)
+
+    def reduce(self, fn: Any, initial: Any = types.Unset()):
+        """Reduce the array to a single value, like functools.reduce.
+
+        The reducer is applied from left to right. When initial is not
+        provided, the first element is the initial accumulator, and reducing
+        an empty array raises a TypeError at runtime.
+
+        Args:
+            fn: The reducer, taking the accumulator and the current element.
+            initial: The initial accumulator value.
+
+        Returns:
+            The reduced value.
+
+        Raises:
+            VarTypeError: If the function does not take exactly two arguments.
+        """
         from .function import ArgsFunctionOperation
 
         if not callable(fn):
-            raise_unsupported_operand_types("foreach", (type(self), type(fn)))
-        # get the number of arguments of the function
-        num_args = len(inspect.signature(fn).parameters)
-        if num_args > 1:
-            msg = "The function passed to foreach should take at most one argument."
+            raise_unsupported_operand_types("reduce", (type(self), type(fn)))
+        if len(inspect.signature(fn).parameters) != 2:
+            msg = "The function passed to reduce should take exactly two arguments (accumulator, element)."
             raise VarTypeError(msg)
 
-        if num_args == 0:
-            return_value = fn()
-            function_var = ArgsFunctionOperation.create((), return_value)
-        else:
-            # generic number var
-            number_var = Var("").to(NumberVar, int)
+        element = self._element_placeholder()
+        initial_var = None if isinstance(initial, types.Unset) else Var.create(initial)
+        accumulator_type = (
+            element._var_type if initial_var is None else initial_var._var_type
+        )
+        accumulator = Var(
+            _js_expr=get_unique_variable_name(),
+            _var_type=accumulator_type,
+        ).guess_type()
+        return_expr = Var.create(fn(accumulator, element))
+        function_var = ArgsFunctionOperation.create(
+            (accumulator._js_expr, element._js_expr),
+            return_expr,
+            _var_type=Callable[
+                [accumulator_type, element._var_type], return_expr._var_type
+            ],
+        )
+        if initial_var is None:
+            return reduce_array_operation(self, function_var)
+        return reduce_array_operation(self, function_var, initial_var)
 
-            first_arg_type = self[number_var]._var_type
+    def flat_map(self, fn: Any):
+        """Apply a function to each element of the array and flatten the results.
 
-            arg_name = get_unique_variable_name()
+        Each result is flattened one level, iterating it the way Python
+        does: arrays yield their elements, strings yield characters, and
+        objects yield their keys. A non-iterable result raises a TypeError
+        at runtime.
 
-            # get first argument type
-            first_arg = Var(
-                _js_expr=arg_name,
-                _var_type=first_arg_type,
-            ).guess_type()
+        Args:
+            fn: The function to apply, taking at most one argument.
 
-            function_var = ArgsFunctionOperation.create(
-                (arg_name,),
-                Var.create(fn(first_arg)),
-            )
+        Returns:
+            The flattened array of the mapped results.
+        """
+        from .function import ArgsFunctionOperation
 
-        return map_array_operation(self, function_var)
+        args, return_expr = self._trace_element_fn(fn, "flat_map")
+        return flat_map_array_operation(
+            self, ArgsFunctionOperation.create(args, return_expr)
+        )
 
 
 @dataclasses.dataclass(
@@ -674,6 +812,20 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         return string_lower_operation(self)
 
+    def lstrip(self, chars: StringVar | str | None = None) -> StringVar:
+        """Left strip the string.
+
+        Args:
+            chars: Characters to remove from the left side. If None, strip whitespace.
+
+        Returns:
+            The string lstrip operation.
+        """
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("lstrip", (type(self), type(chars)))
+
+        return string_lstrip_operation(self, chars)
+
     def upper(self) -> StringVar:
         """Convert the string to uppercase.
 
@@ -698,13 +850,19 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         return string_capitalize_operation(self)
 
-    def strip(self) -> StringVar:
+    def strip(self, chars: StringVar | str | None = None) -> StringVar:
         """Strip the string.
+
+        Args:
+            chars: Characters to remove from both ends. If None, strip whitespace.
 
         Returns:
             The string strip operation.
         """
-        return string_strip_operation(self)
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("strip", (type(self), type(chars)))
+
+        return string_strip_operation(self, chars)
 
     def reversed(self) -> StringVar:
         """Reverse the string.
@@ -713,6 +871,20 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string reverse operation.
         """
         return self.split().reverse().join()
+
+    def rstrip(self, chars: StringVar | str | None = None) -> StringVar:
+        """Right strip the string.
+
+        Args:
+            chars: Characters to remove from the right side. If None, strip whitespace.
+
+        Returns:
+            The string rstrip operation.
+        """
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("rstrip", (type(self), type(chars)))
+
+        return string_rstrip_operation(self, chars)
 
     def contains(
         self, other: StringVar | str, field: StringVar | str | None = None
@@ -971,17 +1143,80 @@ def string_capitalize_operation(string: StringVar[Any]):
     )
 
 
+_PY_STRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrip")],
+}
+
+_PY_LSTRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyLstrip")],
+}
+
+_PY_RSTRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
+}
+
+
 @var_operation
-def string_strip_operation(string: StringVar[Any]):
-    """Strip a string.
+def string_strip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Strip whitespace or the given characters from both ends of a string.
 
     Args:
         string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
 
     Returns:
         The stripped string.
     """
-    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+    return var_operation_return(
+        js_expression=f"pyStrip({string}, {chars})",
+        var_type=str,
+        var_data=VarData(imports=_PY_STRIP_IMPORT),
+    )
+
+
+@var_operation
+def string_lstrip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Strip whitespace or the given characters from the start of a string.
+
+    Args:
+        string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
+
+    Returns:
+        The stripped string.
+    """
+    return var_operation_return(
+        js_expression=f"pyLstrip({string}, {chars})",
+        var_type=str,
+        var_data=VarData(imports=_PY_LSTRIP_IMPORT),
+    )
+
+
+@var_operation
+def string_rstrip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Strip whitespace or the given characters from the end of a string.
+
+    Args:
+        string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
+
+    Returns:
+        The stripped string.
+    """
+    return var_operation_return(
+        js_expression=f"pyRstrip({string}, {chars})",
+        var_type=str,
+        var_data=VarData(imports=_PY_RSTRIP_IMPORT),
+    )
 
 
 @var_operation
@@ -1741,6 +1976,87 @@ def map_array_operation(
     """
     return var_operation_return(
         js_expression=f"{array}.map({function})", var_type=list[Any]
+    )
+
+
+@var_operation
+def filter_array_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    predicate: FunctionVar,
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Filter an array with a predicate function.
+
+    Args:
+        array: The array to filter.
+        predicate: The predicate deciding which elements to keep.
+
+    Returns:
+        The filtered array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.filter({predicate})",
+        var_type=array._var_type,
+    )
+
+
+@var_operation
+def reduce_array_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    function: FunctionVar,
+    initial: Var | None = None,
+) -> CustomVarOperationReturn[Any]:
+    """Reduce an array to a single value with a two-argument function.
+
+    Args:
+        array: The array to reduce.
+        function: The reducer, called with the accumulator and the current element.
+        initial: The initial accumulator value. If None, the first element is used.
+
+    Returns:
+        The reduced value.
+    """
+    callable_args = get_args(function._var_type)
+    return_type = callable_args[-1] if callable_args else Any
+    if initial is not None:
+        return var_operation_return(
+            js_expression=f"{array}.reduce({function}, {initial})",
+            var_type=unionize(return_type, initial._var_type),
+        )
+    param_types = callable_args[0] if callable_args else None
+    element_type = (
+        param_types[1]
+        if isinstance(param_types, list) and len(param_types) == 2
+        else Any
+    )
+    return var_operation_return(
+        js_expression=f"{array}.reduce({function})",
+        var_type=unionize(return_type, element_type),
+    )
+
+
+_PY_FLAT_MAP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyFlatMap")],
+}
+
+
+@var_operation
+def flat_map_array_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    function: FunctionVar,
+) -> CustomVarOperationReturn[list[Any]]:
+    """Map a function over an array and flatten the iterable results one level.
+
+    Args:
+        array: The array to map over.
+        function: The function to apply to each element.
+
+    Returns:
+        The flattened array of mapped results.
+    """
+    return var_operation_return(
+        js_expression=f"pyFlatMap({array}, {function})",
+        var_type=list[Any],
+        var_data=VarData(imports=_PY_FLAT_MAP_IMPORT),
     )
 
 

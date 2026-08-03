@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
 from reflex_base.constants import Hooks
+from reflex_base.utils import memo_paths
 from reflex_base.utils.format import format_state_name, json_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
-    from reflex_base.components.component import Component, StatefulComponent
+    from reflex_base.components.component import Component
 
 
 def _sort_hooks(
@@ -169,6 +171,7 @@ def app_root_template(
     window_libraries: list[tuple[str, str]],
     render: dict[str, Any],
     dynamic_imports: set[str],
+    hydrate_fallback_export: str | None = None,
 ):
     """Template for the App root.
 
@@ -179,12 +182,20 @@ def app_root_template(
         window_libraries: The list of window libraries.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         Rendered App root component as string.
     """
     imports_str = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
+
+    hydrate_fallback_str = ""
+    if hydrate_fallback_export is not None:
+        hydrate_fallback_str = (
+            f"export {{ {hydrate_fallback_export} as HydrateFallback }} "
+            f'from "{memo_paths.unmirrored_library_specifier(hydrate_fallback_export)}";'
+        )
 
     custom_code_str = "\n".join(custom_codes)
 
@@ -200,7 +211,7 @@ def app_root_template(
     return f"""
 {imports_str}
 {dynamic_imports_str}
-import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
+import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
@@ -208,13 +219,7 @@ import {{ Outlet }} from 'react-router';
 
 {custom_code_str}
 
-function AppWrap({{children}}) {{
-{_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
-}}
-
-
-export function Layout({{children}}) {{
+function ReflexProviders({{children}}) {{
   useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {{
@@ -223,21 +228,32 @@ export function Layout({{children}}) {{
     window["__reflex"] = windowImports;
   }}, []);
 
-  return jsx(AppLayout, {{}},
-    jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
-        jsx(EventLoopProvider, {{}},
-          jsx(AppWrap, {{}}, children)
-        )
-      )
-    )
+  return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
+    jsx(AppWrap, {{}}, children)
   );
+}}
+
+
+function AppWrap({{children}}) {{
+{_render_hooks(hooks)}
+return ({_RenderUtils.render(render)})
+}}
+
+export function Layout({{children}}) {{
+  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+}}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({{children}}) {{
+  return jsx(ReflexProviders, {{}}, children);
 }}
 
 export default function App() {{
   return jsx(Outlet, {{}});
 }}
-
+{hydrate_fallback_str}
 """
 
 
@@ -348,7 +364,12 @@ import {{ jsx }} from "@emotion/react";
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext(null);
+export const ColorModeContext = createContext({{
+  colorMode: defaultColorMode,
+  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
+  toggleColorMode: () => {{}},
+  setColorMode: () => {{}},
+}});
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
@@ -358,6 +379,24 @@ export const clientStorage = {"{}" if client_storage is None else json.dumps(cli
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
+
+// Module-level event dispatchers populated by ``EventLoopProvider`` on each
+// render. Components reach addEvents/connectErrors via this import instead of
+// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
+// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
+// without depending on lexical hook hoisting.
+let _addEventsImpl = (events, args, event_actions) => {{
+  console.warn("addEvents called before EventLoopProvider mounted", events);
+}};
+let _connectErrorsImpl = [];
+
+export function addEvents(events, args, event_actions) {{
+  return _addEventsImpl(events, args, event_actions);
+}}
+
+export function getConnectErrors() {{
+  return _connectErrorsImpl;
+}}
 
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
@@ -389,14 +428,19 @@ export function ClientSide(component) {{
 
 export function EventLoopProvider({{ children }}) {{
   const dispatch = useContext(DispatchContext)
-  const [addEvents, connectErrors] = useEventLoop(
+  const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
+  // Populate the module-level dispatchers so JSX literals constructed
+  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
+  // ``addEvents`` without needing the events hook hoisted in their scope.
+  _addEventsImpl = addEventsLocal;
+  _connectErrorsImpl = connectErrors;
   return createElement(
     EventLoopContext.Provider,
-    {{ value: [addEvents, connectErrors] }},
+    {{ value: [addEventsLocal, connectErrors] }},
     children
   );
 }}
@@ -417,7 +461,7 @@ export function StateProvider({{ children }}) {{
 }}"""
 
 
-def component_template(component: Component | StatefulComponent):
+def component_template(component: Component):
     """Template to render a component tag.
 
     Args:
@@ -473,6 +517,7 @@ def package_json_template(
     dependencies: dict[str, str],
     dev_dependencies: dict[str, str],
     overrides: dict[str, str],
+    **additional_keys: Any,
 ):
     """Template for package.json.
 
@@ -481,17 +526,21 @@ def package_json_template(
         dependencies: The dependencies to include in the package.json file.
         dev_dependencies: The devDependencies to include in the package.json file.
         overrides: The overrides to include in the package.json file.
+        additional_keys: Additional keys to include in the package.json file.
 
     Returns:
         Rendered package.json content as string.
     """
+    # Ensure "type" is not duplicated since it's always set to "module"
+    additional_keys.pop("type", None)
     return json.dumps({
-        "name": "reflex",
+        "name": additional_keys.pop("name", "reflex"),
         "type": "module",
         "scripts": scripts,
         "dependencies": dependencies,
         "devDependencies": dev_dependencies,
         "overrides": overrides,
+        **additional_keys,
     })
 
 
@@ -618,24 +667,23 @@ export default defineConfig((config) => ({{
 }}));"""
 
 
-def stateful_component_template(
-    tag_name: str, memo_trigger_hooks: list[str], component: Component, export: bool
-):
-    """Template for stateful component.
+def dynamic_component_template(
+    tag_name: str, component: Component, export: bool
+) -> str:
+    """Template for a dynamic SSR component function declaration.
 
     Args:
         tag_name: The tag name for the component.
-        memo_trigger_hooks: The memo trigger hooks for the component.
         component: The component to render.
         export: Whether to export the component.
 
     Returns:
-        Rendered stateful component code as string.
+        Rendered dynamic component code as string.
     """
     all_hooks = component._get_all_hooks()
     return f"""
 {"export " if export else ""}function {tag_name} () {{
-  {_render_hooks(all_hooks, memo_trigger_hooks)}
+  {_render_hooks(all_hooks)}
   return (
     {_RenderUtils.render(component.render())}
   )
@@ -643,18 +691,54 @@ def stateful_component_template(
 """
 
 
-def stateful_components_template(imports: list[_ImportDict], memoized_code: str) -> str:
-    """Template for stateful components.
+def dynamic_components_module_template(
+    imports: list[_ImportDict], memoized_code: str
+) -> str:
+    """Template for a dynamic-SSR components module.
 
     Args:
         imports: List of import statements.
-        memoized_code: Memoized code for stateful components.
+        memoized_code: Code for the module body.
 
     Returns:
-        Rendered stateful components code as string.
+        Rendered module code as string.
     """
     imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     return f"{imports_str}\n{memoized_code}"
+
+
+# Wrapper expressions that are unambiguous JS callees — identifier or member
+# chains like ``memo`` / ``React.memo``. Anything else (an inline arrow
+# function, a call expression, bracket access) is parenthesized before the
+# component function is appended, so the parens bind as the wrapper's call
+# rather than being swallowed by the wrapper expression's own grammar (e.g.
+# ``(c) => track(c)`` followed by ``(...)`` would otherwise parse the call as
+# part of the arrow body).
+_MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
+
+
+def _render_memo_component(component: dict[str, Any]) -> str:
+    """Render the ``export const`` statement for one memoized component.
+
+    Args:
+        component: The component render dict (name, signature, render, hooks,
+            and the optional ``wrapper`` JS expression the function component
+            is wrapped in).
+
+    Returns:
+        Rendered component export as string.
+    """
+    function_expr = f"""(({component["signature"]}) => {{
+    {_render_hooks(component.get("hooks", {}))}
+    return(
+        {_RenderUtils.render(component["render"])}
+    )
+}})"""
+    wrapper = component.get("wrapper")
+    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        wrapper = f"({wrapper})"
+    export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
+    return f"\nexport const {component['name']} = {export_expr};\n"
 
 
 def memo_components_template(
@@ -680,16 +764,7 @@ def memo_components_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
-    components_code = ""
-    for component in components:
-        components_code += f"""
-export const {component["name"]} = memo(({component["signature"]}) => {{
-    {_render_hooks(component.get("hooks", {}))}
-    return(
-        {_RenderUtils.render(component["render"])}
-    )
-}});
-"""
+    components_code = "".join(map(_render_memo_component, components))
 
     functions_code = ""
     for function in functions:
@@ -707,6 +782,60 @@ export const {component["name"]} = memo(({component["signature"]}) => {{
 {functions_code}
 
 {components_code}"""
+
+
+def memo_single_component_template(
+    imports: list[_ImportDict],
+    component: dict[str, Any],
+    dynamic_imports: Iterable[str],
+    custom_codes: Iterable[str],
+) -> str:
+    """Template for a single memoized component in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        component: The single component definition to render.
+        dynamic_imports: Dynamic import statements scoped to this memo.
+        custom_codes: Custom code snippets scoped to this memo.
+
+    Returns:
+        The rendered standalone memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    dynamic_imports_str = "\n".join(dynamic_imports)
+    custom_code_str = "\n".join(custom_codes)
+
+    component_code = _render_memo_component(component)
+
+    return f"""
+{imports_str}
+
+{dynamic_imports_str}
+
+{custom_code_str}
+
+{component_code}"""
+
+
+def memo_single_function_template(
+    imports: list[_ImportDict],
+    function: dict[str, Any],
+) -> str:
+    """Template for a single function memo in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        function: The single function memo definition.
+
+    Returns:
+        The rendered standalone function memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    return f"""
+{imports_str}
+
+export const {function["name"]} = {function["function"]};
+"""
 
 
 def styles_template(stylesheets: list[str]) -> str:

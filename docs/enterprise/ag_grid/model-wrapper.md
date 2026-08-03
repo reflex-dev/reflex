@@ -1,4 +1,5 @@
 ---
+meta_description: "Wire AG Grid to a pandas DataFrame or a Reflex database model in Python. The model wrapper renders and edits your data in an interactive data grid, all in pure Python."
 order: 6
 ---
 

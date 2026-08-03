@@ -16,7 +16,7 @@ from reflex_components_internal.blocks.telemetry.posthog import (
 )
 from reflex_components_internal.components.base.button import button
 from reflex_components_internal.components.base.dialog import dialog
-from reflex_components_internal.components.base.input import input
+from reflex_components_internal.components.base.input import INPUT_SIZE_VARIANTS, input
 from reflex_components_internal.components.base.textarea import textarea
 from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.components.icons.others import select_arrow
@@ -256,20 +256,26 @@ def select_field(
                 required=required,
                 class_name=cn(
                     "w-full appearance-none pr-9",
-                    button.class_names.for_button("outline", "md"),
-                    "outline-primary-6 focus:border-primary-6",
+                    input.class_names.DIV,
+                    INPUT_SIZE_VARIANTS["md"],
+                    input.class_names.INPUT,
+                    "block cursor-pointer bg-white dark:bg-secondary-3",
                 ),
             ),
             select_arrow(
                 class_name="size-4 text-secondary-9 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             ),
-            class_name="relative",
+            class_name="relative w-full min-w-0",
         ),
-        class_name="flex flex-col gap-1.5 min-w-0",
+        class_name="flex flex-col gap-1.5 min-w-0 w-full",
     )
 
 
-def demo_form(id_prefix: str = "", **props) -> rx.Component:
+def demo_form(
+    id_prefix: str = "",
+    on_submit: EventType[dict[str, Any]] | None = None,
+    **props,
+) -> rx.Component:
     """Create and return the demo form component.
 
     Builds a complete form with all required fields, validation,
@@ -279,6 +285,7 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
     Args:
         id_prefix: Optional prefix for all element IDs to ensure uniqueness when multiple forms exist.
                 If empty, a unique prefix will be auto-generated.
+        on_submit: Additional event handler(s) appended after the built-in submit handlers (PostHog tracking + dialog close).
         **props: Additional properties to pass to the form component
 
     Returns:
@@ -286,6 +293,9 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
     """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
+    extra_on_submit = (
+        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
+    )
     form = rx.el.form(
         rx.el.div(
             input_field("First name", "John", "first_name", "text", True),
@@ -334,13 +344,19 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
                 ],
                 required=True,
             ),
+            select_field(
+                "What are you interested in?",
+                "interested_in",
+                ["AI builder", "MCP", "On-Prem", "App Management"],
+                required=True,
+            ),
+            select_field(
+                "How technical are you?",
+                "technical_level",
+                ["Non-technical", "Neutral", "Technical"],
+                True,
+            ),
             class_name="grid grid-cols-1 md:grid-cols-2 gap-4",
-        ),
-        select_field(
-            "How technical are you?",
-            "technical_level",
-            ["Non-technical", "Neutral", "Technical"],
-            True,
         ),
         rx.cond(
             demo_form_error_message.value,
@@ -361,6 +377,7 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
         on_submit=[
             DemoFormStateUI.track_demo_form_posthog,
             rx.call_function(demo_form_open_cs.set_value(False)),
+            *extra_on_submit,
         ],
         data_default_form_id="965991",
         **props,
@@ -371,13 +388,17 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
 
 
 def demo_form_dialog(
-    trigger: rx.Component | None = None, id_prefix: str = "", **props
+    trigger: rx.Component | None = None,
+    id_prefix: str = "",
+    on_submit: EventType[dict[str, Any]] | None = None,
+    **props,
 ) -> rx.Component:
     """Return a demo form dialog container element.
 
     Args:
         trigger: The component that triggers the dialog
         id_prefix: Optional prefix for all element IDs to ensure uniqueness when multiple dialogs exist
+        on_submit: Additional event handler(s) forwarded to the inner demo form's on_submit.
         **props: Additional properties to pass to the dialog root
 
     Returns:
@@ -407,7 +428,11 @@ def demo_form_dialog(
                         ),
                         class_name="flex flex-row justify-between items-center gap-1 px-6 pt-4 -mb-4",
                     ),
-                    demo_form(id_prefix=id_prefix, class_name="w-full max-w-md"),
+                    demo_form(
+                        id_prefix=id_prefix,
+                        on_submit=on_submit,
+                        class_name="w-full max-w-md",
+                    ),
                     class_name="relative isolate overflow-hidden -m-px w-full max-w-md",
                 ),
                 class_name="h-fit mt-1 overflow-hidden w-full max-w-md",

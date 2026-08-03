@@ -14,7 +14,7 @@ def code_block() -> rx.Component:
   <defs>
     <radialGradient id="paint0_radial_10744_8795" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(299 123.5) rotate(90) scale(123.5 299)">
       <stop stop-color="var(--violet-3)"/>
-      <stop offset="1" stop-color="var(--c-slate-1)" stop-opacity="0"/>
+      <stop offset="1" stop-color="var(--secondary-1)" stop-opacity="0"/>
     </radialGradient>
   </defs>
 </svg>""",
@@ -26,19 +26,19 @@ def code_block() -> rx.Component:
                 rx.el.p("$ pip install reflex"),
                 rx.el.p("$ reflex init"),
                 rx.el.p("$ reflex run"),
-                class_name="font-['JetBrains_Mono'] !font-semibold text-[0.8125rem] text-slate-12 leading-6 tracking-[-0.01219rem]",
+                class_name="font-['JetBrains_Mono'] !font-semibold text-[0.8125rem] text-secondary-12 leading-6 tracking-[-0.01219rem]",
             ),
             hint(
                 text="Copy",
                 content=rx.el.button(
                     get_icon(
                         "clipboard",
-                        class_name="!text-slate-9",
+                        class_name="!text-secondary-9",
                     ),
                     on_click=rx.set_clipboard(
                         "pip install reflex\nreflex init\nreflex run"
                     ),
-                    class_name="cursor-pointer self-baseline h-fit p-2 rounded-[0.625rem] hover:bg-slate-3 transition-bg",
+                    class_name="cursor-pointer self-baseline h-fit p-2 rounded-[0.625rem] hover:bg-secondary-3 transition-bg",
                     custom_attrs={"aria-label": "Copy code"},
                 ),
                 side="bottom",
@@ -62,7 +62,7 @@ def code_block() -> rx.Component:
             class_name="flex flex-row justify-between items-center gap-2",
         ),
         box_shadow="0px 24px 12px 0px light-dark(rgba(28, 32, 36, 0.02), rgba(0, 0, 0, 0.00)), 0px 8px 8px 0px light-dark(rgba(28, 32, 36, 0.02), rgba(0, 0, 0, 0.00)), 0px 2px 6px 0px light-dark(rgba(28, 32, 36, 0.02), rgba(0, 0, 0, 0.00))",
-        class_name="relative flex flex-col gap-4 bg-[rgba(249,249,251,0.48)] dark:bg-[rgba(26,27,29,0.48)] backdrop-filter backdrop-blur-[6px] p-4 rounded-2xl max-w-[24.5rem] self-center w-full border border-slate-3",
+        class_name="relative flex flex-col gap-4 bg-[rgba(249,249,251,0.48)] dark:bg-[rgba(26,27,29,0.48)] backdrop-filter backdrop-blur-[6px] p-4 rounded-2xl max-w-[24.5rem] self-center w-full border border-secondary-3",
     )
 
 

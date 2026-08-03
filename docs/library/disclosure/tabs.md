@@ -59,9 +59,9 @@ TabsList: |
 TabsTrigger: |
   lambda **props: rx.tabs.root(
       rx.tabs.list(
-          rx.tabs.trigger("Account", value="account", **props,),
-          rx.tabs.trigger("Documents", value="documents"),
-          rx.tabs.trigger("Settings", value="settings"),
+          rx.tabs.trigger("Account", value="account", **props),
+          rx.tabs.trigger("Documents", value="documents", **props),
+          rx.tabs.trigger("Settings", value="settings", **props),
       ),
       rx.box(
           rx.tabs.content(

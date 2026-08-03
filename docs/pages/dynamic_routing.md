@@ -25,7 +25,7 @@ Example:
 def post():
     """A page that updates based on the route."""
     # Displays the dynamic part of the URL, the post ID
-    return rx.heading(rx.State.pid)
+    return rx.heading(rx.State.pid, as_="h2")
 
 
 app = rx.App()
@@ -69,7 +69,7 @@ class State(rx.State):
     def user_post(self) -> str:
         args = self.router.page.params
         usernames = args.get("splat", [])
-        return f"Posts by \{', '.join(usernames)}"
+        return f"Posts by {', '.join(usernames)}"
 
 
 @rx.page(route="/users/[id]/posts/[[...splat]]")

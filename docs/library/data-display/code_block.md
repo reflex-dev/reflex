@@ -23,3 +23,28 @@ rx.code_block(
     show_line_numbers=True,
 )
 ```
+
+## Themes
+
+The `theme` prop must be set to a `Theme` value accessed from the `rx.code_block.themes` namespace; strings are not accepted. By default, the code block uses `one_light` in light mode and `one_dark` in dark mode.
+
+```python demo
+rx.code_block(
+    """print("Hello, world!")""",
+    language="python",
+    theme=rx.code_block.themes.dracula,
+)
+```
+
+To pick a theme that responds to the global color mode, pass `rx.color_mode_cond` with the desired light and dark variants:
+
+```python demo
+rx.code_block(
+    """print("Hello, world!")""",
+    language="python",
+    theme=rx.color_mode_cond(
+        light=rx.code_block.themes.one_light,
+        dark=rx.code_block.themes.one_dark,
+    ),
+)
+```
