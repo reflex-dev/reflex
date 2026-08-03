@@ -45,20 +45,29 @@ COUNTRIES_CODES = {
 }
 ```
 
-## Regions
+# Regions
 
-To scale your app you can choose different regions. Regions are different locations around the world where your app can be deployed. 
+Regions are the locations where Reflex runs your app. Add regions closer to your users to improve latency and availability.
 
-To scale your app to multiple regions in the Cloud UI, click on the `Settings` tab in the Cloud UI on the app page, and then click on the `Regions` tab as shown below. Clicking on the `Add new region` button will allow you to scale your app to multiple regions.
+## Manage regions in Reflex Build
+
+1. Open **Deployments** and select the app.
+2. Open **Settings > Regions**.
+3. Select **Add new region**.
+4. Choose the region and number of instances, then review the resource change before confirming.
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/scaling_regions.webp",
-    padding_bottom="20px",
+    src="https://web.reflex-assets.dev/docs-preview/hosting/settings_regions.webp",
+    alt="Region settings with the current and available deployment regions",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-The table below show all the regions that can be deployed in.
+You can remove a region when the app has more than one. Removing it makes the app unavailable in that region.
+
+The table below lists the Reflex Cloud region codes. A connected Google Cloud account uses the region chosen in the organization's Cloud Provider settings.
 
 ```python eval
 rx.el.table(
@@ -93,6 +102,7 @@ rx.el.table(
                     rx.el.div(
                         rx.image(
                             src=f"https://build.reflex.dev/flags/{COUNTRIES_CODES[region]}.svg",
+                            alt="Region country flag",
                             class_name="rounded-[2px] mr-2 w-5 h-4",
                         ),
                         REGIONS_DICT[region],
@@ -110,38 +120,12 @@ rx.el.table(
 )
 ```
 
-### Selecting Regions to Deploy in the CLI
+## Select regions from the CLI
 
-Below is an example of how to deploy your app in several regions:
-
-```bash
-reflex deploy --project f88b1574-f101-####-####-5f########## --region sjc --region iad
-```
-
-By default all apps are deloyed in `sjc` if no other regions are given. If you wish to deploy in another region or several regions you can pass the `--region` flag (`-r` also works) with the region code. Check out all the regions that we can deploy to below:
-
-
-## Config File
-
-To create a `config.yml` file for your app run the command below:
+Repeat `--region` to deploy to more than one Reflex Cloud region:
 
 ```bash
-reflex cloud config
+reflex deploy --project <PROJECT_ID> --region sjc --region iad
 ```
 
-This will create a yaml file similar to the one below where you can edit the app configuration:
-
-```yaml
-name: medo
-description: ''
-regions:
-  sjc: 1
-  lhr: 2
-vmtype: c1m1
-hostname: null
-envfile: .env
-project: null
-packages:
-- procps
-```
-
+Apps use `sjc` by default when no region is configured. The `-r` short form is also supported. CLI arguments override the corresponding value in `cloud.yml` or `pyproject.toml`; see [Cloud Configuration File](/docs/hosting/config-file/).

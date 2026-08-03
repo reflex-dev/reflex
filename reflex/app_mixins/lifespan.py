@@ -130,7 +130,10 @@ class LifespanMixin(AppMixin):
         else:
             try:
                 if event_namespace:
-                    await event_namespace._token_manager.disconnect_all()
+                    try:
+                        await event_namespace._token_manager.disconnect_all()
+                    finally:
+                        await event_namespace._token_manager.close()
             except Exception as e:
                 console.error(f"Error during lifespan cleanup: {e}")
         # Flush any pending writes from the state manager.

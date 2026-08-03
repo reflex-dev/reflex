@@ -81,6 +81,12 @@ def MemoApp():
         # element id so each row is locatable after reordering.
         return rx.input(id=label)
 
+    @rx.memo(wrapper=None)
+    def unwrapped_label(value: rx.Var[str]) -> rx.Component:
+        # Compiled without the React ``memo`` wrapper: a bare function
+        # component that must still render and follow its prop.
+        return rx.text(value, id="unwrapped-label")
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.text(MemoState.last_value, id="memo-last-value"),
@@ -100,6 +106,7 @@ def MemoApp():
                 ),
                 id="keyed-rows",
             ),
+            unwrapped_label(value=MemoState.last_value),
         )
 
     app = rx.App()
@@ -222,3 +229,23 @@ def test_memo_key_preserves_identity_across_reorder(
     # ... while each row kept the value typed into it, by key, not by slot.
     for row_id in ("row-a", "row-b", "row-c"):
         expect(page.locator(f"#{row_id}")).to_have_value(row_id.upper())
+
+
+def test_memo_wrapper_none_renders_and_updates(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A ``wrapper=None`` memo renders as a bare function component.
+
+    The compiled module exports the component without React's ``memo``
+    wrapper; it must still mount and re-render when its prop changes.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+
+    expect(page.locator("#unwrapped-label")).to_have_text("")
+    page.locator("#memo-input").fill("unwrapped_update")
+    expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")

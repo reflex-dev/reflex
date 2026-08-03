@@ -25,7 +25,7 @@ Example:
 def post():
     """A page that updates based on the route."""
     # Displays the dynamic part of the URL, the post ID
-    return rx.heading(rx.State.pid)
+    return rx.heading(rx.State.pid, as_="h2")
 
 
 app = rx.App()

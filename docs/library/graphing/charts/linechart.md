@@ -2,6 +2,8 @@
 components:
   - rx.recharts.LineChart
   - rx.recharts.Line
+title: Line Chart
+meta_description: "Build interactive line charts in pure Python with Reflex. Plot single or multi-line Recharts time series with custom axes, tooltips, legends, and styling — no JavaScript needed."
 ---
 
 # Line Chart
@@ -12,11 +14,11 @@ from typing import Any
 import reflex as rx
 ```
 
-A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
+Line charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and are created in pure Python. A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
 
 ## Simple Example
 
-For a line chart we must define an `rx.recharts.line()` component for each set of values we wish to plot. Each `rx.recharts.line()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `pv` and `uv` as separate lines against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`.
+For a line chart we must define an `rx.recharts.line()` component for each set of values we wish to plot. Each `rx.recharts.line()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `pv` and `uv` as separate lines against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`. Plotting more than one line like this creates a multi-line chart.
 
 ```python demo graphing
 data = [
@@ -80,6 +82,54 @@ def line_features():
         rx.recharts.graphing_tooltip(),
         rx.recharts.legend(),
         data=data,
+        width="100%",
+        height=300,
+    )
+```
+
+## Axis Labels
+
+Nest an `rx.recharts.label` inside `rx.recharts.x_axis` or `rx.recharts.y_axis` to title the axes. Use the `position` prop to place the label, and rotate the y-axis label with `custom_attrs={"angle": 270}`. Give the x-axis some extra `height` and the chart a left `margin` so the labels have room. The axes here also use `axis_line=False` and `tick_line=False` for a cleaner look.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def line_axis_labels():
+    return rx.recharts.line_chart(
+        rx.recharts.line(
+            data_key="uv",
+            stroke=rx.color("accent", 9),
+            stroke_width=2,
+            type_="natural",
+        ),
+        rx.recharts.x_axis(
+            rx.recharts.label(value="Page", position="center"),
+            data_key="name",
+            height=60,
+            axis_line=False,
+            tick_line=False,
+        ),
+        rx.recharts.y_axis(
+            rx.recharts.label(
+                value="Visits",
+                position="left",
+                custom_attrs={"angle": 270},
+            ),
+            axis_line=False,
+            tick_line=False,
+        ),
+        rx.recharts.graphing_tooltip(),
+        data=data,
+        margin={"left": 20, "right": 20, "top": 20},
         width="100%",
         height=300,
     )
@@ -195,3 +245,11 @@ def line_dynamic():
 ```
 
 To learn how to use the `sync_id`, `x_axis_id` and `y_axis_id` props check out the of the area chart [documentation](/docs/library/graphing/charts/areachart), where these props are all described with examples.
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Area Chart](/docs/library/graphing/charts/areachart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Scatter Chart](/docs/library/graphing/charts/scatterchart)

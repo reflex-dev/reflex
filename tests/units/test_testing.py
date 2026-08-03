@@ -97,7 +97,7 @@ def test_app_harness_initialize_clears_memo_registries(
     """
     monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
 
-    MEMOS["format_value"] = mock.sentinel.memo
+    MEMOS["format_value", None] = mock.sentinel.memo
 
     harness = AppHarness.create(
         root=tmp_path / "memo_app",
@@ -107,7 +107,7 @@ def test_app_harness_initialize_clears_memo_registries(
     harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
     harness._initialize_app()
 
-    assert "format_value" not in MEMOS
+    assert ("format_value", None) not in MEMOS
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 
 

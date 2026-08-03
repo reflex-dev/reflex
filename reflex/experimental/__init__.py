@@ -5,13 +5,13 @@ from typing import Any
 
 from reflex_base.components.memo import memo as _memo
 from reflex_base.utils.console import warn
+from reflex_base.vars.hybrid_property import hybrid_property as hybrid_property
 from reflex_components_code.shiki_code_block import code_block as code_block
 
 from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
-from .hybrid_property import hybrid_property as hybrid_property
 
 
 class ExperimentalNamespace(SimpleNamespace):

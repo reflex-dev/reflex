@@ -1175,6 +1175,18 @@ class Component(BaseComponent, ABC):
         """
         return []
 
+    def _get_tag_name(self) -> str:
+        """Get the JS expression used to reference this component's tag.
+
+        Returns:
+            The alias (or tag) identifier, quoted as a string literal when the
+            tag is a global scope element like ``"input"``.
+        """
+        name = (self.tag if not self.alias else self.alias) or ""
+        if self._is_tag_in_global_scope and self.library is None:
+            name = '"' + name + '"'
+        return name
+
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
@@ -1185,13 +1197,8 @@ class Component(BaseComponent, ABC):
             The tag to render.
         """
         # Create the base tag.
-        name = (self.tag if not self.alias else self.alias) or ""
-        if self._is_tag_in_global_scope and self.library is None:
-            name = '"' + name + '"'
-
-        # Create the base tag.
         tag = Tag(
-            name=name,
+            name=self._get_tag_name(),
             special_props=self.special_props.copy(),
         )
 
@@ -2129,8 +2136,9 @@ class Component(BaseComponent, ABC):
         Returns:
             The code that should appear just before user-defined hooks.
         """
-        # Store the code in a set to avoid duplicates.
-        code = self._get_hooks_internal()
+        # Copy the cached dict from _get_hooks_internal so updating it with
+        # the children's hooks below does not pollute this node's cache.
+        code = dict(self._get_hooks_internal())
 
         # Add the hook code for the children.
         for child in self.children:

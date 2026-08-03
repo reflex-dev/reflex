@@ -1172,7 +1172,7 @@ def test_compile_context_memoize_wrappers_registers_shared_subtree_tag() -> None
     # Both pages share the same subtree hash, so exactly one wrapper tag is registered.
     assert len(compile_ctx.memoize_wrappers) == 1
     wrapper_tag = next(iter(compile_ctx.memoize_wrappers))
-    assert list(compile_ctx.auto_memo_components) == [wrapper_tag]
+    assert [key for key, _ in compile_ctx.auto_memo_components] == [wrapper_tag]
     # Each page imports the generated experimental memo component.
     page_a_code = compile_ctx.compiled_pages["/a"].output_code or ""
     assert (
@@ -1194,7 +1194,7 @@ def test_compile_context_resets_memoize_wrappers_between_runs() -> None:
     with ctx:
         ctx.compile()
     first_tags = set(ctx.memoize_wrappers)
-    first_defs = set(ctx.auto_memo_components)
+    first_defs = {tag for tag, _ in ctx.auto_memo_components}
     assert first_tags  # memoize wrapper was registered
     assert first_defs == first_tags
 
@@ -1208,7 +1208,7 @@ def test_compile_context_resets_memoize_wrappers_between_runs() -> None:
 
     # Same shared component → same tag, not a union across runs.
     assert set(ctx2.memoize_wrappers) == first_tags
-    assert set(ctx2.auto_memo_components) == first_tags
+    assert {tag for tag, _ in ctx2.auto_memo_components} == first_tags
     page_ctx = ctx2.compiled_pages["/c"]
     assert "react-moment" in page_ctx.frontend_imports
     assert "$/utils/stateful_components" not in (page_ctx.output_code or "")

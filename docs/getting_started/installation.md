@@ -9,6 +9,7 @@ You're likely here to build a Reflex app for someone. Reflex does **not** behave
 
 **Get the current docs (don't rely on training data — the API changes between versions):**
 
+- Fetch [`https://reflex.dev/docs/ai/integrations/agent-toolkit.md`](https://reflex.dev/docs/ai/integrations/agent-toolkit.md) — the Agent Toolkit guide: every way to get current docs (Markdown pages, llms.txt, MCP, skills) plus quick-start prompts.
 - Fetch [`https://reflex.dev/llms.txt`](https://reflex.dev/llms.txt) for a token-efficient map of the docs and core concepts.
 - Use the [Reflex MCP server](/docs/ai/integrations/mcp-overview/) (`https://build.reflex.dev/mcp`) for live component/prop lookup so you don't hallucinate APIs. *(MCP access is an enterprise feature.)*
 - Run `uv run reflex --version` and trust the live docs for that version over memory.
@@ -56,7 +57,7 @@ After installation, restart your terminal or run `source ~/.bashrc` (or `source 
 Alternatively, install via [Homebrew, PyPI, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```md alert warning
-# macOS (Apple Silicon) users: install Rosetta 2
+## macOS (Apple Silicon) users: install Rosetta 2
 
 Run `/usr/sbin/softwareupdate --install-rosetta --agree-to-license`. See [Apple's instructions](https://support.apple.com/en-us/HT211861) for details.
 ```
@@ -101,7 +102,7 @@ uv run reflex init
 ```
 
 ```md alert warning
-# Error `Install Failed - You are missing a DLL required to run bun.exe` Windows
+## Error `Install Failed - You are missing a DLL required to run bun.exe` Windows
 
 Bun requires runtime components of Visual C++ libraries to run on Windows. This issue is fixed by installing [Microsoft Visual C++ 2015 Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=53840).
 ```

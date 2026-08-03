@@ -40,7 +40,7 @@ Now let's take a look at a more complex component, which has other components ne
 
 ```python demo
 rx.vstack(
-    rx.heading("Sample Form"),
+    rx.heading("Sample Form", as_="h2"),
     rx.input(placeholder="Name"),
     rx.checkbox("Subscribe to Newsletter"),
 )

@@ -9,8 +9,9 @@ see the original components and collect their imports/hooks as usual.
 
 Each unique subtree shape contributes:
 
-- One generated experimental memo component definition, compiled into its own
-  per-memo module at ``$/utils/components/<name>``.
+- One generated experimental memo component definition, compiled into a module
+  mirroring its source module under ``$/app_components/`` (or, when it can't be
+  mirrored, a per-memo module at ``$/utils/components/<name>``).
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
@@ -381,10 +382,15 @@ class MemoizeStatefulPlugin(Plugin):
         # ``create_passthrough_component_memo`` after the ``{children}`` hole
         # is substituted, so passthrough wrappers that differ only in their
         # children collapse to a single definition.
-        wrapper_factory, definition = create_passthrough_component_memo(comp)
+        wrapper_factory, definition = create_passthrough_component_memo(
+            comp, source_module=page_context.source_module
+        )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
-        compile_context.auto_memo_components[tag] = definition
+        # Key by (tag, source_module) so identical-rendering subtrees from
+        # different user modules each get their own entry and emit into the
+        # right mirrored memo file.
+        compile_context.auto_memo_components[tag, definition.source_module] = definition
 
         wrapper = wrapper_factory()
         # The wrapper has no structural children at the page level, but parents

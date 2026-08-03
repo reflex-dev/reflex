@@ -21,6 +21,7 @@ from reflex_base.components.memoize_helpers import (
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import memo_paths
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
@@ -44,6 +45,7 @@ from reflex_components_core.el.elements.metadata import Base, Link, Meta, StyleE
 from reflex_components_core.el.elements.scripts import Noscript, Script
 from reflex_components_core.el.elements.tables import Col
 from reflex_components_core.el.elements.typography import Hr
+from reflex_components_moment.moment import Moment
 from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
@@ -133,6 +135,7 @@ class FakePage:
     description: Any = None
     image: str = ""
     meta: tuple[dict[str, Any], ...] = ()
+    _source_module: str | None = None
 
 
 def _compile_single_page(
@@ -217,7 +220,7 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     wrapper_tag = next(iter(ctx.memoize_wrappers))
-    assert wrapper_tag in ctx.auto_memo_components
+    assert (wrapper_tag, None) in ctx.auto_memo_components
     output = page_ctx.output_code or ""
     assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
@@ -245,7 +248,7 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     )
     assert len(ctx.memoize_wrappers) == 1
     wrapper_tag = next(iter(ctx.memoize_wrappers))
-    assert list(ctx.auto_memo_components) == [wrapper_tag]
+    assert list(ctx.auto_memo_components) == [(wrapper_tag, None)]
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
@@ -615,8 +618,14 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         lambda comp, page_context: comp,
     )
 
-    def fake_create_passthrough_component_memo(component: Component):
-        definition = SimpleNamespace(export_name=tag, component=component)
+    def fake_create_passthrough_component_memo(
+        component: Component, source_module: str | None = None
+    ):
+        definition = SimpleNamespace(
+            export_name=tag,
+            component=component,
+            source_module=source_module,
+        )
         return (lambda definition=definition: definition), definition
 
     monkeypatch.setattr(
@@ -627,7 +636,7 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
 
     first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
     second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    page_context = cast(PageContext, SimpleNamespace())
+    page_context = cast(PageContext, SimpleNamespace(source_module=None))
 
     MemoizeStatefulPlugin._build_wrapper(
         first_component,
@@ -640,8 +649,8 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         compile_context=second_compile,
     )
 
-    first_definition = first_compile.auto_memo_components[tag]
-    second_definition = second_compile.auto_memo_components[tag]
+    first_definition = first_compile.auto_memo_components[tag, None]
+    second_definition = second_compile.auto_memo_components[tag, None]
     assert first_definition.component is first_component
     assert second_definition.component is second_component
     assert second_definition is not first_definition
@@ -661,11 +670,82 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     tag = next(iter(ctx.memoize_wrappers))
-    assert list(ctx.auto_memo_components) == [tag]
+    assert list(ctx.auto_memo_components) == [(tag, None)]
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
         assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
+
+
+def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
+    """Identical subtrees in different user modules emit one memo per module.
+
+    Regression: the auto-memo registry was keyed by tag only, so when two
+    pages from different user modules produced the same memoizable subtree
+    (and therefore the same tag), the second registration overwrote the
+    first. Only the surviving definition's source module got a mirrored
+    memo file, leaving the other page importing a tag from a file that
+    never exported it.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/a",
+                component=lambda: Plain.create(STATE_VAR),
+                _source_module="memo_collision_test.module_a",
+            ),
+            FakePage(
+                route="/b",
+                component=lambda: Plain.create(STATE_VAR),
+                _source_module="memo_collision_test.module_b",
+            ),
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert len(ctx.memoize_wrappers) == 1
+    tag = next(iter(ctx.memoize_wrappers))
+    # Both source modules survive registration as distinct entries.
+    assert set(ctx.auto_memo_components) == {
+        (tag, "memo_collision_test.module_a"),
+        (tag, "memo_collision_test.module_b"),
+    }
+
+    # Each module emits and imports the tag under a per-module symbol so the
+    # two pages never collide on a shared JS identifier.
+    symbol_a = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_a")
+    symbol_b = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_b")
+    page_a_output = ctx.compiled_pages["/a"].output_code or ""
+    page_b_output = ctx.compiled_pages["/b"].output_code or ""
+    assert (
+        f'import {{{symbol_a}}} from "$/app_components/memo_collision_test/module_a"'
+        in page_a_output
+    )
+    assert (
+        f'import {{{symbol_b}}} from "$/app_components/memo_collision_test/module_b"'
+        in page_b_output
+    )
+
+    output_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    emitted = {Path(path).as_posix(): code for path, code in output_files}
+
+    def find_emitted(suffix: str) -> str | None:
+        return next(
+            (code for path, code in emitted.items() if path.endswith(suffix)), None
+        )
+
+    matched_a = find_emitted("memo_collision_test/module_a.jsx")
+    matched_b = find_emitted("memo_collision_test/module_b.jsx")
+    assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
+    assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
+    assert f"export const {symbol_a} = memo" in matched_a
+    assert f"export const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -1509,6 +1589,60 @@ def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> Non
     )
 
 
+def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
+    """``rx.moment(state_var)`` must not produce a Bare component child.
+
+    react-moment feeds its children into ``moment()``; a memo-wrapped child
+    element parses like ``moment({})`` — today at midnight.
+    """
+    moment = Moment.create(STATE_VAR, format="DD.MM.YYYY HH:mm:ss")
+    ctx, page_ctx = _compile_single_page(lambda: moment)
+
+    assert len(ctx.memoize_wrappers) == 1, (
+        "Expected exactly one snapshot wrapper for the moment; got: "
+        f"{list(ctx.memoize_wrappers)}"
+    )
+    wrapper_tag = next(iter(ctx.memoize_wrappers))
+    assert wrapper_tag.lower().startswith("moment_"), (
+        f"Wrapper should be derived from Moment, got: {wrapper_tag!r}"
+    )
+    output = page_ctx.output_code
+    assert output is not None
+    assert f"jsx({wrapper_tag}," in output, (
+        "The page output must call the snapshot wrapper.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+    assert "useTestState" not in output, (
+        "The state-bearing hook should live inside the memo body, not the page.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+    assert "TestState" not in output, (
+        "The state-context wiring should live inside the memo body, not the page.\n"
+        f"Page output snippet: {output[:2000]}"
+    )
+
+
+def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
+    """The moment's memo body must interpolate the state Var as text, not a Bare wrapper."""
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Moment.create(STATE_VAR, format="DD.MM.YYYY HH:mm:ss")
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "jsx(Moment" in memo_code, (
+        "Moment snapshot body should contain a literal ``jsx(Moment, …)`` "
+        f"call. Memo code:\n{memo_code[:2000]}"
+    )
+    assert "useTestState" in memo_code, (
+        "Moment memo body should carry the stateful hook so the Bare child is "
+        f"interpolated inline, not lifted out.\nMemo code:\n{memo_code[:2000]}"
+    )
+    assert "Bare_" not in memo_code, (
+        "Moment's child must render as a text interpolation, not a Bare "
+        f"component wrapper.\nMemo code:\n{memo_code[:2000]}"
+    )
+
+
 def test_meta_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
     """``rx.el.meta(state_var)`` must not produce a Bare component child.
 
@@ -2206,11 +2340,11 @@ def test_restricted_content_element_with_id_and_stateful_child_still_memoizes() 
 
 
 def test_each_memo_wrapper_emits_one_component_module_file() -> None:
-    """Every wrapper tag corresponds to exactly one ``components/{tag}.jsx`` file.
+    """Every wrapper tag corresponds to exactly one ``utils/components/{tag}.jsx`` file.
 
-    Locks the per-wrapper file invariant: ``compile_memo_components`` must
-    emit one module per wrapper (plus the shared index), so that React can
-    code-split per wrapper. A wrapper without a file (or a file without a
+    Locks the per-wrapper file invariant for un-mirrored memos:
+    ``compile_memo_components`` must emit one module per wrapper, so that React
+    can code-split per wrapper. A wrapper without a file (or a file without a
     wrapper) would mean broken imports at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components

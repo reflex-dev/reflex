@@ -1,9 +1,10 @@
 """Tests for reflex-docgen."""
 
 import dataclasses
-import inspect
 import sys
+from collections.abc import Callable
 from importlib.util import find_spec
+from typing import Any, Literal
 
 import pytest
 from reflex_base.components.component import (
@@ -15,10 +16,13 @@ from reflex_base.components.component import (
 from reflex_base.constants import EventTriggers
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_docgen import (
+    format_type,
     generate_class_documentation,
     generate_documentation,
     get_component_event_handlers,
 )
+from reflex_docgen._class import _format_annotation, _format_signature
+from typing_extensions import TypeAliasType
 
 
 def test_default_triggers_have_descriptions():
@@ -204,11 +208,12 @@ def test_dataclass_methods():
     doc = generate_class_documentation(_SampleDataclass)
     methods_by_name = {m.name: m for m in doc.methods}
 
-    # public_method
+    # public_method: self is dropped from the rendered signature
     assert "public_method" in methods_by_name
     pub = methods_by_name["public_method"]
     assert pub.description == "Do something useful."
-    assert "self" in pub.signature
+    assert "self" not in pub.signature
+    assert pub.signature == "() -> None"
 
     # class_method
     assert "class_method" in methods_by_name
@@ -227,11 +232,42 @@ def test_dataclass_methods():
 
 
 def test_dataclass_class_name_and_description():
-    """Name matches module.qualname and description matches cleandoc."""
+    """Name matches module.qualname; description is the prose body sans Attributes section."""
     doc = generate_class_documentation(_SampleDataclass)
     assert doc.name == f"{_SampleDataclass.__module__}.{_SampleDataclass.__qualname__}"
-    assert _SampleDataclass.__doc__ is not None
-    assert doc.description == inspect.cleandoc(_SampleDataclass.__doc__)
+    # The Attributes section is rendered as a fields table, so it is stripped from the
+    # prose description to avoid duplicating every attribute as body text.
+    assert doc.description == "A sample dataclass for testing."
+
+
+def test_class_description_excludes_attributes_section():
+    """The class description omits the Attributes section, which renders as a fields table.
+
+    Regression: the Attributes block was rendered both as body text and in the fields
+    table, duplicating every attribute description on the API reference page.
+    """
+    doc = generate_class_documentation(_SampleDataclass)
+    assert doc.description is not None
+    assert "Attributes:" not in doc.description
+    assert "The name of the item." not in doc.description
+    assert "A list of items." not in doc.description
+
+
+def test_class_description_keeps_prose_and_code_blocks():
+    """Stripping the Attributes section preserves the prose body but not the attribute text."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    assert doc.description is not None
+    # A fenced code example from the docstring body is retained.
+    assert "```python" in doc.description
+    assert "Attributes:" not in doc.description
+    # An attribute shown in the fields table must not be duplicated in the prose. Pull
+    # the description from the parsed field so the check can't pass vacuously if the
+    # attribute is renamed or reworded (next() raises instead).
+    sio = next(f for f in doc.fields if f.name == "sio")
+    assert sio.description
+    assert sio.description not in doc.description
 
 
 def test_string_annotations_resolve():
@@ -320,3 +356,264 @@ def test_field_doc_takes_priority():
     doc = generate_class_documentation(_DataclassWithFieldDoc)
     fields_by_name = {f.name: f for f in doc.fields}
     assert fields_by_name["name"].description == "From field.doc"
+
+
+_SampleAlias = TypeAliasType("_SampleAlias", Callable[[int], int])
+
+
+@pytest.mark.parametrize(
+    ("type_", "expected"),
+    [
+        (str, "str"),
+        (None, "None"),
+        (type(None), "None"),
+        (int | None, "Optional[int]"),
+        (int | str, "int | str"),
+        (int | str | None, "Optional[int | str]"),
+        (list[str], "list[str]"),
+        (dict[str, Any], "dict[str, Any]"),
+        (dict[str, int | None], "dict[str, Optional[int]]"),
+        (Literal["a", "b"], 'Literal["a", "b"]'),
+        (Literal[1, True], "Literal[1, True]"),
+        (Callable[[int, str], bool], "Callable[[int, str], bool]"),
+        (Callable[..., None], "Callable[..., None]"),
+        (Callable[[], int] | None, "Optional[Callable[[], int]]"),
+        (_SampleAlias, "_SampleAlias"),
+        (list[_SampleAlias], "list[_SampleAlias]"),
+    ],
+)
+def test_format_type(type_, expected):
+    """format_type renders concise, unqualified type strings."""
+    assert format_type(type_) == expected
+
+
+def test_format_type_strips_module_qualifiers():
+    """Module-qualified classes render with their bare name only, with optionality explicit."""
+    from reflex_base.components.component import Component
+
+    assert format_type(Component | None) == "Optional[Component]"
+
+
+def test_format_type_callable_with_paramspec():
+    """A Callable parameterized by a ParamSpec renders without crashing."""
+    from typing import ParamSpec
+
+    P = ParamSpec("P")
+    # Subscript dynamically: a bare ``Callable[P, int]`` has no static meaning
+    # with an unbound ParamSpec, but format_type must still render it at runtime.
+    callable_ctor: Any = Callable
+    assert format_type(callable_ctor[P, int]) == "Callable[P, int]"
+
+
+def test_api_transformer_type_display_is_readable():
+    """The App.api_transformer field renders via its ASGIApp alias, not a fully expanded blob."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    api_transformer = next(f for f in doc.fields if f.name == "api_transformer")
+
+    display = api_transformer.type_display
+    assert display.startswith("Optional[")
+    assert "ASGIApp" in display
+    assert "Starlette" in display
+    for noise in ("collections.abc", "typing.", "MutableMapping", "Awaitable"):
+        assert noise not in display, f"{noise!r} leaked into {display!r}"
+
+
+def _sample_default_handler() -> None:
+    """A module-level callable used as a default value in tests."""
+
+
+def _sample_list_factory() -> list:
+    """A module-level named factory used as a default_factory in tests.
+
+    Returns:
+        An empty list.
+    """
+    return []
+
+
+@dataclasses.dataclass
+class _DataclassWithCallableDefaults:
+    """A dataclass whose defaults are callables and factories.
+
+    Attributes:
+        handler: A function default.
+        items: A list factory default.
+        data: A dict factory default.
+        built: A named-function factory default.
+        made: An opaque (lambda) factory default.
+    """
+
+    handler: Callable[[], None] = _sample_default_handler
+    items: list = dataclasses.field(default_factory=list)
+    data: dict = dataclasses.field(default_factory=dict)
+    built: list = dataclasses.field(default_factory=_sample_list_factory)
+    made: object = dataclasses.field(default_factory=lambda: object())
+
+
+def test_callable_and_factory_defaults_are_clean():
+    """Callable/factory defaults render as names or empty literals, never volatile reprs."""
+    doc = generate_class_documentation(_DataclassWithCallableDefaults)
+    defaults = {f.name: f.default for f in doc.fields}
+
+    assert defaults["handler"] == "_sample_default_handler"
+    assert defaults["items"] == "[]"
+    assert defaults["data"] == "{}"
+    # A named factory shows its name so the field reads as having a default.
+    assert defaults["built"] == "_sample_list_factory"
+    # Opaque factories (lambdas) are omitted rather than shown as <function ... at 0x...>.
+    assert defaults["made"] is None
+
+
+def test_app_field_defaults_have_no_memory_addresses():
+    """No App field default leaks a function object repr with a memory address."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    for f in doc.fields:
+        if f.default is None:
+            continue
+        assert "0x" not in f.default, f"{f.name} default has an address: {f.default!r}"
+        assert "<function" not in f.default
+        assert "<bound method" not in f.default
+
+    defaults = {f.name: f.default for f in doc.fields}
+    assert (
+        defaults["frontend_exception_handler"] == "default_frontend_exception_handler"
+    )
+    # A factory-backed default is shown (not dropped), so the field reads as optional.
+    assert defaults["toaster"] is not None
+    assert "<" not in defaults["toaster"]
+
+
+@dataclasses.dataclass
+class _DataclassWithDocumentedCallableField:
+    """A dataclass whose field default is a documented function.
+
+    Attributes:
+        handler: A callable field whose default has a docstring.
+    """
+
+    handler: Callable[[], None] = _sample_default_handler
+
+    def real_method(self) -> None:
+        """An actual method that should appear in the methods list."""
+
+
+def test_callable_field_default_not_listed_as_method():
+    """A field whose default is a function is a field, not a method."""
+    doc = generate_class_documentation(_DataclassWithDocumentedCallableField)
+    field_names = {f.name for f in doc.fields}
+    method_names = {m.name for m in doc.methods}
+
+    assert "handler" in field_names
+    assert "handler" not in method_names
+    assert "real_method" in method_names
+
+
+def test_app_methods_exclude_fields():
+    """App field-defaults that are functions don't leak into the methods table."""
+    import dataclasses as dc
+
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    field_names = {f.name for f in dc.fields(rx.App)}
+    method_names = {m.name for m in doc.methods}
+
+    assert not (method_names & field_names), (
+        f"fields leaked into methods: {sorted(method_names & field_names)}"
+    )
+    # The real methods are still present.
+    assert {"add_page", "modify_state"} <= method_names
+
+
+def test_method_signatures_are_readable():
+    """Method signatures drop self, unquote annotations, and keep clean defaults."""
+    import reflex as rx
+
+    methods = {
+        m.name: m.signature for m in generate_class_documentation(rx.App).methods
+    }
+
+    add_page = methods["add_page"]
+    assert "self" not in add_page
+    # Forward-ref annotation strings are unquoted and optionality is explicit...
+    assert "route: Optional[str] = None" in add_page
+    assert "'str | None'" not in add_page
+    assert "component: Optional[Component | ComponentCallable] = None" in add_page
+    # Bracketed types wrap correctly, and params without None are left untouched.
+    assert "on_load: Optional[EventType[()]] = None" in add_page
+    assert "meta: Sequence[Mapping[str, Any] | Component] = []" in add_page
+    # ...while genuine string-literal defaults keep their quotes.
+    assert "image: str = 'favicon.ico'" in add_page
+
+
+@pytest.mark.parametrize(
+    ("annotation", "expected"),
+    [
+        ("str | None", "Optional[str]"),
+        ("None | str", "Optional[str]"),
+        ("int | None | str", "Optional[int | str]"),
+        ("str", "str"),
+        ("int | str", "int | str"),
+        # None nested inside a subscript is not top-level optionality.
+        ("Callable[[int], None]", "Callable[[int], None]"),
+        ("dict[str, int | None]", "dict[str, int | None]"),
+        ("EventType[()] | None", "Optional[EventType[()]]"),
+        # An unresolvable forward-ref name is preserved verbatim.
+        ("SomeAlias | None", "Optional[SomeAlias]"),
+    ],
+)
+def test_format_annotation_from_string(annotation, expected):
+    """Forward-ref unions normalize to Optional[...] wherever None sits, top-level only."""
+    assert _format_annotation(annotation) == expected
+
+
+def test_signature_renders_each_annotation_independently():
+    """One unresolvable forward-ref annotation doesn't poison the rest of the signature."""
+
+    def fn(resolvable, unresolvable, plain): ...
+
+    # Forward-ref strings (as produced by ``from __future__ import annotations``);
+    # ``Missing`` is a TYPE_CHECKING-only name that cannot be resolved.
+    fn.__annotations__ = {
+        "resolvable": "int | None",
+        "unresolvable": "str | Missing | None",
+        "plain": "list[str]",
+        "return": "Missing | None",
+    }
+
+    assert _format_signature(fn) == (
+        "(resolvable: Optional[int], "
+        "unresolvable: Optional[str | Missing], "
+        "plain: list[str]) -> Optional[Missing]"
+    )
+
+
+def test_signature_strips_module_qualifiers_from_forward_refs():
+    """Forward-ref annotations get module qualifiers stripped, like resolved types do."""
+
+    def fn(a, b): ...
+
+    fn.__annotations__ = {
+        "a": "contextlib.AbstractContextManager | None",
+        "b": "Sequence[collections.abc.Mapping]",
+        "return": "contextlib.AbstractContextManager",
+    }
+
+    assert _format_signature(fn) == (
+        "(a: Optional[AbstractContextManager], b: Sequence[Mapping])"
+        " -> AbstractContextManager"
+    )
+
+
+def test_signature_qualifier_stripping_is_quote_safe():
+    """A dotted value inside a Literal string is not mistaken for a module path."""
+
+    def fn(mode): ...
+
+    fn.__annotations__ = {"mode": 'Literal["a.b.c"] | None'}
+
+    assert _format_signature(fn) == '(mode: Optional[Literal["a.b.c"]])'

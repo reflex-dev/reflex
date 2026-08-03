@@ -1,0 +1,1 @@
+Added Google Cloud (GCP) as a managed deploy target for `reflex deploy`. When your organization has a GCP account connected (Enterprise tier), `reflex deploy` asks whether to deploy to Reflex Cloud or your GCP account (or pass `--provider gcp` / set `provider: gcp` in your config to skip the prompt), and `reflex cloud providers status` / `list` report the connection state.

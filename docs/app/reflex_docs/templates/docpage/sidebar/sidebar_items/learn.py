@@ -139,6 +139,7 @@ def get_sidebar_items_backend():
             children=[
                 vars.base_vars,
                 vars.computed_vars,
+                vars.hybrid_properties,
                 vars.var_operations,
                 vars.custom_vars,
             ],
@@ -218,7 +219,8 @@ def get_sidebar_items_hosting():
         create_item(
             "Project",
             children=[
-                hosting.adding_members,
+                hosting.project_members,
+                hosting.project_settings,
             ],
         ),
         create_item(
@@ -232,6 +234,7 @@ def get_sidebar_items_hosting():
                 hosting.custom_domains,
                 hosting.config_file,
                 hosting.tokens,
+                hosting.security_scan,
                 hosting.deploy_with_github_actions,
             ],
         ),
@@ -248,6 +251,7 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.cloud_providers,
                 hosting.bring_your_own_cloud,
                 hosting.deploy_to_gcp,
             ],

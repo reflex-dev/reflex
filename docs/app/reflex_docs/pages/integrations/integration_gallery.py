@@ -54,6 +54,7 @@ def integration_gallery_cards(data):
                             get_integration_logo_url(integration_name, "light"),
                             get_integration_logo_url(integration_name, "dark"),
                         ),
+                        alt=f"{integration_name} logo",
                         unstyled=True,
                         class_name="size-full",
                     ),
