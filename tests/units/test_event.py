@@ -173,6 +173,110 @@ def test_fix_events(arg1, arg2):
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 
+class _ProxyPayloadState(BaseState):
+    rows: list[dict[str, int]] = [{"a": 1}]
+
+
+def _payload_for(value: Any) -> Any:
+    """Build an event passing value as the single handler arg.
+
+    Args:
+        value: The value to pass to the handler.
+
+    Returns:
+        The processed payload value delivered to the handler.
+    """
+
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    event = Event.from_event_type([EventHandler(fn=fn_with_arg)(value)])[0]
+    return event.payload["arg"]
+
+
+def test_from_event_type_shares_plain_payload_values():
+    """Payload values without state-bound proxies pass by reference."""
+    rows = [{"a": 1}, {"b": 2}]
+    assert _payload_for(rows) is rows
+    mapping = {"x": [1, 2], "y": (3, 4)}
+    assert _payload_for(mapping) is mapping
+
+
+def test_from_event_type_detaches_proxied_payload_values():
+    """A MutableProxy payload value is detached from the state by copy."""
+    from reflex.istate.proxy import MutableProxy
+
+    state = _ProxyPayloadState()
+    proxied = state.rows
+    assert isinstance(proxied, MutableProxy)
+
+    detached = _payload_for(proxied)
+    assert not isinstance(detached, MutableProxy)
+    assert detached == [{"a": 1}]
+    # Mutating the payload must not touch (or dirty) the state.
+    detached[0]["a"] = 42
+    assert state.rows == [{"a": 1}]
+    assert "rows" not in state.dirty_vars
+
+
+def test_from_event_type_detaches_nested_proxied_payload_values():
+    """Proxies nested in plain containers are detached; clean parts shared."""
+    from reflex.istate.proxy import MutableProxy
+
+    state = _ProxyPayloadState()
+    plain = [{"z": 9}]
+    # Iterating a proxied list wraps each mutable element in a proxy.
+    listed_rows = list(state.rows)
+    assert any(isinstance(item, MutableProxy) for item in listed_rows)
+
+    value = {"wrapped": listed_rows, "plain": plain}
+    detached = _payload_for(value)
+    assert detached is not value
+    assert detached["plain"] is plain
+    assert not any(isinstance(item, MutableProxy) for item in detached["wrapped"])
+    detached["wrapped"][0]["a"] = 42
+    assert state.rows == [{"a": 1}]
+
+
+def test_from_event_type_copies_opaque_payload_objects():
+    """Non-container mutable objects are still snapshotted by deepcopy."""
+    import dataclasses as dc
+
+    @dc.dataclass
+    class Opaque:
+        items: list[int]
+
+    obj = Opaque(items=[1])
+    detached = _payload_for([obj])
+    assert detached[0] is not obj
+    assert detached[0].items == [1]
+    detached[0].items.append(2)
+    assert obj.items == [1]
+
+
+def test_detach_state_proxies_handles_cyclic_payloads():
+    """Self-referential containers fall back to deepcopy, preserving cycles."""
+    # The reflex_base.event module replaces itself in sys.modules with the
+    # EventNamespace class, so private module names are only reachable
+    # through the globals of a function defined in that module.
+    detach = Event.from_event_type.__func__.__globals__["_detach_state_proxies"]
+
+    cyclic_list: list = [1]
+    cyclic_list.append(cyclic_list)
+    out = detach(cyclic_list)
+    assert out is not cyclic_list
+    assert out[0] == 1
+    assert out[1] is out
+
+    cyclic_dict: dict = {"a": 1}
+    cyclic_dict["self"] = cyclic_dict
+    out = detach(cyclic_dict)
+    assert out is not cyclic_dict
+    assert out["a"] == 1
+    assert out["self"] is out
+
+
 @pytest.mark.parametrize(
     ("input", "output"),
     [

@@ -20,6 +20,7 @@ def create_item(route: Route, children=None):
             "Mcp": "MCP",
             "Ai": "AI",
             "Gcp": "GCP",
+            "Sso": "SSO",
         }
         name = re.sub(
             r"\b(" + "|".join(acronyms.keys()) + r")\b",
