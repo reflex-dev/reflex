@@ -138,11 +138,26 @@ To enable the fill handle, configure the `cell_selection` prop with a dictionary
 
 ```python
 cell_selection = {
+    "mode": "multiCell",  # or "singleCell" to restrict selection to one cell
     "handle": {
         "mode": "fill",  # Enable fill handle
-    }
+        "direction": "xy",  # "x" (horizontal), "y" (vertical), or "xy" (both)
+    },
 }
 ```
+
+The fill handle is configured entirely through `cell_selection` — props like `enable_fill_handle`, `fill_handle`, or `grid_options={"enableFillHandle": True}` do not exist. Similarly, range selection is enabled with `cell_selection=True`, not `enable_range_selection`.
+
+To exclude specific columns from fill operations (typically text columns where an incremental series makes no sense), set `suppress_fill_handle: True` on the column definition:
+
+```python
+column_defs = [
+    {"field": "athlete", "suppress_fill_handle": True},
+    {"field": "age", "editable": True, "type": "numericColumn"},
+]
+```
+
+Fill behavior depends on the data type: numbers extend as an incremental series, while text and dates are copied to the filled cells.
 
 ### Fill Handle Events
 

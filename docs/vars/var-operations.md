@@ -397,6 +397,35 @@ def var_list_example():
     )
 ```
 
+### Map, Filter, Reduce and Flat Map
+
+The `map` operation applies a function to each element of a list var. The function is called with a var representing one element and must build its result out of other var operations. (`foreach` is a deprecated alias for `map`.)
+
+The `filter` operation keeps the elements for which the function returns a truthy value, following Python truthiness semantics: `0`, `""`, empty lists, and empty dicts are all falsy. Calling `filter()` with no arguments keeps the truthy elements themselves, like `filter(None, xs)` in Python.
+
+The `reduce` operation combines the elements into a single value like `functools.reduce`, calling the function with the accumulator and the current element. Pass a second argument to provide the initial accumulator value; without it, the first element is used, and reducing an empty list raises a `TypeError` in the browser.
+
+The `flat_map` operation maps a function over the list and flattens the results one level, iterating each result the way Python does: lists yield their elements, strings yield their characters, and dicts yield their keys.
+
+```python demo exec
+class MapFilterReduceState(rx.State):
+    numbers: list[int] = [1, 2, 3, 4, 5]
+    words: list[str] = ["hello", "", "world"]
+    nested: list[list[int]] = [[1, 2], [3], [4, 5]]
+
+
+def var_map_filter_reduce_example():
+    return rx.vstack(
+        rx.text(f"Doubled: {MapFilterReduceState.numbers.map(lambda x: x * 2)}"),
+        rx.text(f"Evens: {MapFilterReduceState.numbers.filter(lambda x: x % 2 == 0)}"),
+        rx.text(f"Non-empty words: {MapFilterReduceState.words.filter()}"),
+        rx.text(
+            f"Total: {MapFilterReduceState.numbers.reduce(lambda total, x: total + x, 0)}"
+        ),
+        rx.text(f"Flattened: {MapFilterReduceState.nested.flat_map(lambda x: x)}"),
+    )
+```
+
 ### Lower, Upper, Split
 
 The `lower` operator converts a string var to lowercase. The `upper` operator converts a string var to uppercase. The `split` operator splits a string var into a list.

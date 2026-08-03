@@ -49,9 +49,9 @@ def _patch_frontend_package_manager(
 
     # Forward the initial-install helper through the same stub so tests can
     # inspect the install args without mocking subprocess primitives.
-    def _stub_initial_install(primary_pm, env):
+    def _stub_initial_install(primary_pm, env, frozen_lockfile):
         args = [primary_pm, "install", "--legacy-peer-deps"]
-        if js_runtimes._is_bun_package_manager(primary_pm):
+        if frozen_lockfile and js_runtimes._is_bun_package_manager(primary_pm):
             args.append("--frozen-lockfile")
         run_package_manager(
             args,
@@ -332,6 +332,25 @@ def test_sync_root_lockfiles_to_web_keeps_web_package_json(tmp_path, monkeypatch
 
     assert web_pkg.read_text() == '{"name": "reflex"}'
     assert not web_lock.exists()
+
+
+def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch):
+    """Persisted package.json is rendered into .web instead of byte-copied."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    with chdir(tmp_path):
+        frontend_skeleton.sync_root_lockfiles_to_web()
+
+    web_pkg = json.loads((web_dir / constants.PackageJson.PATH).read_text())
+    assert web_pkg["dependencies"] == {"react": "19.2.5"}
+    assert web_pkg["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
@@ -874,6 +893,23 @@ def test_install_frontend_packages_bun_keeps_frozen_lockfile(
     assert any("--frozen-lockfile" in c for c in install_calls)
 
 
+def test_install_frontend_packages_bun_skips_frozen_lockfile_when_disabled(
+    install_packages_env: InstallPackagesEnv,
+):
+    """``frozen_lockfile=False`` drops ``--frozen-lockfile`` even for bun."""
+    env = install_packages_env
+    env.config.frozen_lockfile = False
+    env.root_lock.write_text("bun-lock")
+    calls = _record_calls_with_pm(env, "bun")
+
+    env.install({"some-pkg"})
+
+    install_calls = [c for c in calls if "install" in c]
+    assert install_calls, "expected an initial `bun install` call"
+    for call in install_calls:
+        assert "--frozen-lockfile" not in call
+
+
 def test_install_frontend_packages_persists_package_json_to_root(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -888,6 +924,26 @@ def test_install_frontend_packages_persists_package_json_to_root(
     assert env.root_package_json.read_text() == (
         '{"name": "reflex", "dependencies": {}}'
     )
+
+
+def test_install_frontend_packages_repairs_missing_package_json_scripts(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A damaged persisted package.json is repaired before it reaches .web."""
+    env = install_packages_env
+    env.root_package_json.write_text(json.dumps({}))
+    calls = _record_calls(env)
+
+    env.install()
+
+    web_package_json = json.loads(env.web_package_json.read_text())
+    root_package_json = json.loads(env.root_package_json.read_text())
+    assert web_package_json["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert (
+        web_package_json["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+    )
+    assert root_package_json == web_package_json
+    assert calls == []
 
 
 def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
@@ -1297,7 +1353,7 @@ def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, 
     )
 
     with pytest.raises(SystemExit):
-        js_runtimes._run_initial_install("bun", env={})
+        js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
     captured = capsys.readouterr()
     output = captured.out + captured.err
@@ -1326,7 +1382,7 @@ def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
     )
 
     with pytest.raises(SystemExit):
-        js_runtimes._run_initial_install("bun", env={})
+        js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
     captured = capsys.readouterr()
     assert "network unreachable" in captured.out + captured.err
@@ -1455,6 +1511,85 @@ from new_name import something_else as alias
 from new_name
 """
     assert updated_content == expected_content
+
+
+def test_rename_imports_and_app_name_preserves_utf8(
+    temp_directory, monkeypatch: pytest.MonkeyPatch
+):
+    """UTF-8 source is preserved even when the platform default encoding is not UTF-8.
+
+    Simulates a Western Windows locale (cp1252) where ``Path.read_text`` /
+    ``write_text`` without an explicit ``encoding`` would mis-decode UTF-8 source,
+    silently corrupting or aborting on non-ASCII characters (curly quotes, accents).
+
+    Args:
+        temp_directory: A temporary directory fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    original_open = Path.open
+
+    def open_file(
+        self, mode="r", buffering=-1, encoding=None, errors=None, newline=None
+    ):
+        return original_open(
+            self,
+            mode=mode,
+            buffering=buffering,
+            encoding=(encoding if encoding is not None or "b" in mode else "cp1252"),
+            errors=errors,
+            newline=newline,
+        )
+
+    monkeypatch.setattr(Path, "open", open_file)
+
+    source = "import old_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("utf-8"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"  # codespell:ignore
+    assert file_path.read_bytes() == expected.encode("utf-8")
+
+
+def test_rename_imports_and_app_name_preserves_declared_encoding(temp_directory):
+    """Python source encoding cookies are honored during rename.
+
+    Args:
+        temp_directory: A temporary directory fixture.
+    """
+    source = (
+        "# -*- coding: cp1252 -*-\nimport old_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("cp1252"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = (
+        "# -*- coding: cp1252 -*-\nimport new_name  # caf\u00e9\n"  # codespell:ignore
+    )
+    assert file_path.read_bytes() == expected.encode("cp1252")
+
+
+@pytest.mark.parametrize("line_ending", ["\n", "\r\n"])
+def test_rename_imports_and_app_name_preserves_line_endings(
+    temp_directory, line_ending
+):
+    """Source line endings are preserved during rename.
+
+    Args:
+        temp_directory: A temporary directory fixture.
+        line_ending: The line ending used in the source file.
+    """
+    source = line_ending.join(("import old_name", "# comment", ""))
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode())
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = line_ending.join(("import new_name", "# comment", ""))
+    assert file_path.read_bytes() == expected.encode()
 
 
 def test_cli_rename_command(temp_directory):

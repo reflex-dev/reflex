@@ -602,6 +602,68 @@ def VarOperations():
             rx.text(ArrayVar.range(2, 10, 2).join(","), id="list_join_range2"),
             rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),
             rx.text(ArrayVar.range(0, 3).join(","), id="list_join_range4"),
+            rx.text(
+                ArrayVar.range(1, 5).map(lambda x: x * 2).to_string(),
+                id="list_map",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),
+                id="list_foreach_alias",
+            ),
+            rx.text(
+                LiteralVar
+                .create([0, 1, "", "hello", [], [1], {}, {"key": 1}])
+                .filter()
+                .to_string(),
+                id="list_filter_truthiness",
+            ),
+            rx.text(
+                ArrayVar.range(1, 6).filter(lambda x: x % 2 == 0).to_string(),
+                id="list_filter_predicate",
+            ),
+            rx.text(
+                ArrayVar.range(1, 6).filter(lambda x: x % 3).to_string(),
+                id="list_filter_nonbool_predicate",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).reduce(lambda acc, x: acc + x),  # noqa: FURB118
+                id="list_reduce",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).reduce(
+                    lambda acc, x: acc + x,  # noqa: FURB118
+                    100,
+                ),
+                id="list_reduce_initial",
+            ),
+            rx.text(
+                LiteralVar.create(["a", "b", "c"]).reduce(
+                    lambda acc, x: acc + x  # noqa: FURB118
+                ),
+                id="list_reduce_str",
+            ),
+            rx.text(
+                LiteralVar
+                .create([[1, 2], [3], [4, 5]])
+                .flat_map(lambda x: x)
+                .to_string(),
+                id="list_flat_map",
+            ),
+            rx.text(
+                LiteralVar.create(["ab", "cd"]).flat_map(lambda x: x).to_string(),
+                id="list_flat_map_str",
+            ),
+            rx.text(
+                ArrayVar.range(1, 4).flat_map(lambda x: [x, x * 10]).to_string(),
+                id="list_flat_map_fn",
+            ),
+            rx.text(
+                LiteralVar
+                .create([{"a": 1}, {"b": 2}])
+                .flat_map(lambda x: x)
+                .to_string(),
+                id="list_flat_map_dict",
+            ),
             rx.box(
                 # Test that foreach works with various non-array inputs without throwing
                 rx.foreach(
@@ -1003,6 +1065,18 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_join_range2", "2,4,6,8"),
         ("list_join_range3", "5,4,3,2,1"),
         ("list_join_range4", "0,1,2"),
+        ("list_map", "[2,4,6,8]"),
+        ("list_foreach_alias", "[2,4,6,8]"),
+        ("list_filter_truthiness", '[1,"hello",[1],{"key":1}]'),
+        ("list_filter_predicate", "[2,4]"),
+        ("list_filter_nonbool_predicate", "[1,2,4,5]"),
+        ("list_reduce", "10"),
+        ("list_reduce_initial", "110"),
+        ("list_reduce_str", "abc"),
+        ("list_flat_map", "[1,2,3,4,5]"),
+        ("list_flat_map_str", '["a","b","c","d"]'),
+        ("list_flat_map_fn", "[1,10,2,20,3,30]"),
+        ("list_flat_map_dict", '["a","b"]'),
         # list, int
         ("list_mult_int", "[1,2,1,2,1,2,1,2,1,2]"),
         ("list_or_int", "[1,2]"),

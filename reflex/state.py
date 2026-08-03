@@ -31,7 +31,6 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
-    BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
@@ -755,11 +754,8 @@ class BaseState(EvenMoreBasicBaseState):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
-        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
-            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
-        # Preserve event_actions from @rx.event decorator
-        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
-            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
+        newfn.__kwdefaults__ = fn.__kwdefaults__
+        newfn.__dict__.update(fn.__dict__)
         return newfn
 
     @staticmethod
@@ -1347,6 +1343,23 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
+    def _dynamic_route_arg_types(cls) -> dict[str, str]:
+        """Map installed dynamic route argument names to their route arg type.
+
+        Returns:
+            A mapping of dynamic route argument name to ``RouteArgType`` value.
+        """
+        return {
+            name: (
+                constants.RouteArgType.LIST
+                if computed_var._var_type == list[str]
+                else constants.RouteArgType.SINGLE
+            )
+            for name, computed_var in cls.computed_vars.items()
+            if isinstance(computed_var, DynamicRouteVar)
+        }
+
+    @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
         """Set up args for easy access in renderer.
 
@@ -1354,14 +1367,8 @@ class BaseState(EvenMoreBasicBaseState):
             args: a dict of args
         """
         # Skip dynamic args that have already been registered by a previous route.
-        args = {
-            k: v
-            for k, v in args.items()
-            if not (
-                (computed_var := cls.computed_vars.get(k)) is not None
-                and isinstance(computed_var, DynamicRouteVar)
-            )
-        }
+        installed = cls._dynamic_route_arg_types()
+        args = {k: v for k, v in args.items() if k not in installed}
         if not args:
             return
 

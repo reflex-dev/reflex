@@ -50,7 +50,7 @@ cell_style = {
 
 
 # General styles.
-SANS = "Instrument Sans"
+SANS = "var(--font-instrument-sans)"
 BOLD_WEIGHT = font_weights["bold"]
 
 DOC_BORDER_RADIUS = "6px"
@@ -72,10 +72,3 @@ BASE_STYLE = {
         "background": "transparent",
     },
 }
-
-# Fonts to include.
-STYLESHEETS = [
-    "fonts.css",
-    "custom-colors.css",
-    "tailwind-theme.css",
-]

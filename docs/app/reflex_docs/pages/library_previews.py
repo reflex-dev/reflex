@@ -2,6 +2,7 @@ import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
@@ -100,11 +101,13 @@ def create_previews(
     prefix: str = "",
     type: str = "core",
 ):
+    meta_description = truncate_meta_description(description)
+
     @docpage(
         right_sidebar=False,
         set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
         page_title=f"{get_display_name(component_category)} Component Library · Reflex Docs",
-        description=description,
+        description=meta_description,
     )
     def page() -> rx.Component:
         from reflex_docs.templates.docpage.sidebar.sidebar_items import (
