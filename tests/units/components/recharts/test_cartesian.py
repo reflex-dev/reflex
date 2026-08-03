@@ -1,3 +1,4 @@
+import pytest
 from reflex_components_recharts import (
     Area,
     Bar,
@@ -68,6 +69,11 @@ def test_yaxis_tick_formatter():
     props = y_axis.render()["props"]
     assert "tickFormatter:(value) => value.toFixed(2)" in props
     assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_xaxis_tick_formatter_rejects_non_callable():
+    with pytest.raises(TypeError):
+        XAxis.create(tick_formatter=123)  # pyright: ignore [reportArgumentType]
 
 
 def test_scatter():

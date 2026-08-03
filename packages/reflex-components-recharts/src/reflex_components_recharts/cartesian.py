@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, ClassVar, TypedDict
 
 from reflex_base.components.component import field
@@ -115,9 +115,9 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
-    tick_formatter: Var[Any] = field(
+    tick_formatter: Var[str | Callable[..., Any]] = field(
         doc="A function to format the tick value shown in the axis. Pass a "
-        "raw JS function body as a string, e.g. tick_formatter="
+        "raw JS function expression as a string, e.g. tick_formatter="
         '"(value) => value.toFixed(2)".'
     )
 
@@ -137,7 +137,10 @@ class Axis(Recharts):
             The Axis component.
         """
         if isinstance(tick_formatter := props.get("tick_formatter"), str):
-            props["tick_formatter"] = FunctionStringVar.create(tick_formatter)
+            props["tick_formatter"] = FunctionStringVar.create(
+                tick_formatter,
+                _var_type=Callable[..., Any],  # pyright: ignore [reportArgumentType]
+            )
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(
