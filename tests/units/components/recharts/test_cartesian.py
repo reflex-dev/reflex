@@ -3,6 +3,7 @@ from reflex_components_recharts import (
     Bar,
     Brush,
     Line,
+    ReferenceLine,
     Scatter,
     XAxis,
     YAxis,
@@ -43,6 +44,22 @@ def test_bar():
 def test_line():
     line = Line.create().render()
     assert line["name"] == "RechartsLine"
+
+
+def test_reference_line_stroke_dasharray():
+    reference_line = ReferenceLine.create(stroke_dasharray="8 8")
+    assert "strokeDasharray" not in reference_line.style
+    props = reference_line.render()["props"]
+    assert any("strokeDasharray" in prop for prop in props)
+    assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_xaxis_tick_formatter():
+    x_axis = XAxis.create(tick_formatter="(value) => value")
+    assert "tickFormatter" not in x_axis.style
+    props = x_axis.render()["props"]
+    assert any("tickFormatter" in prop for prop in props)
+    assert not any("wrapperStyle" in prop for prop in props)
 
 
 def test_scatter():

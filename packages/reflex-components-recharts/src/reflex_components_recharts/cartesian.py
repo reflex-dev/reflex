@@ -114,6 +114,10 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
+    tick_formatter: Var[str] = field(
+        doc="A function to format the tick value shown in the axis."
+    )
+
     min_tick_gap: Var[int] = field(
         doc="The minimum gap between two adjacent labels. Default: 5"
     )
@@ -814,6 +818,10 @@ class ReferenceLine(Reference):
 
     stroke_width: Var[str | int | float] = field(
         doc="The width of the stroke. Default: 1"
+    )
+
+    stroke_dasharray: Var[str] = field(
+        doc="The pattern of dashes and gaps used to paint the reference line."
     )
 
     # Valid children components
