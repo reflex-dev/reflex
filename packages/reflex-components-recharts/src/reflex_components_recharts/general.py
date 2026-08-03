@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from reflex_base.components.component import MemoizationLeaf, field
+from reflex_base.components.component import Component, MemoizationLeaf, field
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
@@ -299,7 +299,21 @@ class Cell(Recharts):
     )
 
 
-class Layer(Recharts):
+class SvgElement(Recharts):
+    """A Recharts component that renders a plain SVG element, which accepts
+    the style prop directly rather than through recharts' wrapperStyle.
+    """
+
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        return Component._get_style(self)
+
+
+class Layer(SvgElement):
     """A Layer component in Recharts. Renders an SVG <g> element that groups
     other SVG elements, e.g. when constructing custom node elements.
     """
@@ -309,7 +323,7 @@ class Layer(Recharts):
     alias = "RechartsLayer"
 
 
-class Rectangle(Recharts):
+class Rectangle(SvgElement):
     """A Rectangle shape component in Recharts, e.g. used as a building block
     for custom node elements.
     """

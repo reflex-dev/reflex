@@ -41,3 +41,15 @@ def test_rectangle_props():
     assert 'stroke:"none"' in props
     assert "strokeWidth:2" in props
     assert "isAnimationActive:false" in props
+
+
+def test_layer_style_passthrough():
+    props = Layer.create(style={"opacity": 0.5}).render()["props"]
+    assert not any(p.startswith("wrapperStyle:") for p in props)
+    assert any(p.startswith("css:") for p in props)
+
+
+def test_rectangle_style_passthrough():
+    props = Rectangle.create(style={"cursor": "pointer"}).render()["props"]
+    assert not any(p.startswith("wrapperStyle:") for p in props)
+    assert any(p.startswith("css:") for p in props)
