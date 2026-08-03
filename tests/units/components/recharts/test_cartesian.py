@@ -50,15 +50,23 @@ def test_reference_line_stroke_dasharray():
     reference_line = ReferenceLine.create(stroke_dasharray="8 8")
     assert "strokeDasharray" not in reference_line.style
     props = reference_line.render()["props"]
-    assert any("strokeDasharray" in prop for prop in props)
+    assert 'strokeDasharray:"8 8"' in props
     assert not any("wrapperStyle" in prop for prop in props)
 
 
 def test_xaxis_tick_formatter():
-    x_axis = XAxis.create(tick_formatter="(value) => value")
+    x_axis = XAxis.create(tick_formatter="(value) => value.toFixed(2)")
     assert "tickFormatter" not in x_axis.style
     props = x_axis.render()["props"]
-    assert any("tickFormatter" in prop for prop in props)
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
+    assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_yaxis_tick_formatter():
+    y_axis = YAxis.create(tick_formatter="(value) => value.toFixed(2)")
+    assert "tickFormatter" not in y_axis.style
+    props = y_axis.render()["props"]
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
     assert not any("wrapperStyle" in prop for prop in props)
 
 

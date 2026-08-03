@@ -10,6 +10,7 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionStringVar
 
 from .recharts import (
     ACTIVE_DOT_TYPE,
@@ -114,13 +115,30 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
-    tick_formatter: Var[str] = field(
-        doc="A function to format the tick value shown in the axis."
+    tick_formatter: Var[Any] = field(
+        doc="A function to format the tick value shown in the axis. Pass a "
+        "raw JS function body as a string, e.g. tick_formatter="
+        '"(value) => value.toFixed(2)".'
     )
 
     min_tick_gap: Var[int] = field(
         doc="The minimum gap between two adjacent labels. Default: 5"
     )
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an Axis component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Axis component.
+        """
+        if isinstance(tick_formatter := props.get("tick_formatter"), str):
+            props["tick_formatter"] = FunctionStringVar.create(tick_formatter)
+        return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(
         default=LiteralVar.create(Color("gray", 9)),
