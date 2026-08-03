@@ -90,7 +90,7 @@
     "postcss": "8.5.23",
     "postcss-import": "16.1.1",
     "tailwindcss": "4.3.0",
-    "vite": "8.2.0"
+    "vite": "8.0.16"
   },
   "overrides": {
     "postcss": "8.5.23"
