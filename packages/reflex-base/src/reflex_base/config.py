@@ -804,6 +804,12 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
+# Project-local modules first imported while loading rxconfig.py; evicted
+# before the next load so projects don't reuse each other's dependencies.
+# Only mutated under _load_config_lock.
+_config_module_deps: set[str] = set()
+
+
 def _get_config() -> Config:
     """Import rxconfig.py fresh and return its config object.
 
@@ -817,10 +823,27 @@ def _get_config() -> Config:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
         return Config(app_name="", _skip_plugins_checks=True)
-    # Never cache rxconfig — each load goes to disk so different
-    # RegistrationContexts can hold independent Config instances.
+    # Never cache rxconfig or its project-local dependencies — each load goes
+    # to disk so different RegistrationContexts hold independent Config
+    # instances resolved against the current project.
     sys.modules.pop(constants.Config.MODULE, None)
-    rxconfig = importlib.import_module(constants.Config.MODULE)
+    for dep in _config_module_deps:
+        sys.modules.pop(dep, None)
+    _config_module_deps.clear()
+    before = set(sys.modules)
+    try:
+        rxconfig = importlib.import_module(constants.Config.MODULE)
+    finally:
+        # Record even on failure so a retry evicts partially-imported deps.
+        project_root = Path.cwd()
+        for name in set(sys.modules) - before:
+            origin = getattr(sys.modules[name], "__file__", None)
+            if (
+                origin
+                and (path := Path(origin)).is_relative_to(project_root)
+                and "site-packages" not in path.parts
+            ):
+                _config_module_deps.add(name)
     return rxconfig.config
 
 
@@ -889,7 +912,10 @@ def get_config() -> Config:
     """
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
-        ctx._set_config(_load_config())
+        # Serialize check/load/set so threads sharing a context load once.
+        with _load_config_lock:
+            if ctx._config is None:
+                ctx._set_config(_load_config())
     return ctx.config
 
 

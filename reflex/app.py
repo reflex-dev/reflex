@@ -1576,7 +1576,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
-        for render, kwargs in RegistrationContext.ensure_context().decorated_pages:
+        for render, kwargs in self._registration_context.decorated_pages:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:

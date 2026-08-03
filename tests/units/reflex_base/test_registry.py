@@ -1,5 +1,6 @@
 """Tests for RegistrationContext."""
 
+import sys
 from textwrap import dedent
 
 import pytest
@@ -227,6 +228,42 @@ def test_two_contexts_hold_independent_configs(tmp_path):
     assert ctx_b.config is config_b
 
 
+def test_rxconfig_dependencies_isolated_between_projects(tmp_path):
+    """Project-local modules imported by rxconfig.py do not leak across projects.
+
+    Two projects each define a `shared_settings.py` consumed by their
+    rxconfig.py; loading the second project must not reuse the first project's
+    cached dependency module.
+
+    Args:
+        tmp_path: Pytest tmp dir fixture.
+    """
+    for name in ("app_a", "app_b"):
+        proj = tmp_path / name
+        proj.mkdir()
+        (proj / "shared_settings.py").write_text(f'APP_NAME = "{name}"\n')
+        (proj / "rxconfig.py").write_text(
+            dedent(
+                """
+                import reflex as rx
+
+                from shared_settings import APP_NAME
+
+                config = rx.Config(app_name=APP_NAME)
+                """
+            )
+        )
+
+    try:
+        with RegistrationContext(), chdir(tmp_path / "app_a"):
+            assert get_config().app_name == "app_a"
+
+        with RegistrationContext(), chdir(tmp_path / "app_b"):
+            assert get_config().app_name == "app_b"
+    finally:
+        sys.modules.pop("shared_settings", None)
+
+
 def test_get_config_outside_context_auto_attaches():
     """Calling get_config with no active context attaches one automatically."""
     import contextvars
@@ -297,6 +334,28 @@ def test_second_app_in_same_context_raises(
     rx.App()
     with pytest.raises(ReflexRuntimeError, match=r"\.fork\(\)"):
         rx.App()
+
+
+def test_fork_preserves_framework_state_event_resolution():
+    """Framework-state events resolve in a fork, unlike in a bare fresh context.
+
+    A bare RegistrationContext() has empty base_states, so resolving an event
+    for a framework state raises KeyError; fork() carries registrations
+    forward, which is why the single-App error recommends it exclusively.
+    """
+    from reflex_base.event import Event
+
+    from reflex.state import FrontendEventExceptionState
+
+    event = Event(
+        name=f"{FrontendEventExceptionState.get_full_name()}.handle_frontend_exception"
+    )
+
+    with RegistrationContext(), pytest.raises(KeyError):
+        _ = event.state_cls
+
+    with RegistrationContext.get().fork():
+        assert event.state_cls is FrontendEventExceptionState
 
 
 def test_fork_clears_app_and_preserves_registrations(

@@ -306,6 +306,32 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+def test_apply_decorated_pages_uses_app_context(
+    forked_registration_context: RegistrationContext,
+    app: App,
+    index_page: ComponentCallable,
+):
+    """_apply_decorated_pages reads the App's captured registration context.
+
+    The compiler calls it outside a request, where the ambient context may
+    differ from the one the App was created in; pages registered on the App's
+    own context must still be applied.
+
+    Args:
+        forked_registration_context: The forked registration context.
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app._registration_context is forked_registration_context
+    forked_registration_context.decorated_pages.append((
+        index_page,
+        {"route": "decorated"},
+    ))
+    with RegistrationContext():
+        app._apply_decorated_pages()
+    assert "decorated" in app._unevaluated_pages
+
+
 def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 

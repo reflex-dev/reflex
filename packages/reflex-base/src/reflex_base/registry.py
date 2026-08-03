@@ -30,8 +30,8 @@ def _default_bundled_libraries() -> list[str]:
     return [
         "react",
         "@emotion/react",
-        f"$/{constants.Dirs.UTILS}/context",
-        f"$/{constants.Dirs.UTILS}/state",
+        f"$/{constants.Dirs.CONTEXTS_PATH}",
+        f"$/{constants.Dirs.STATE_PATH}",
     ]
 
 
@@ -113,9 +113,10 @@ class RegistrationContext(BaseContext):
             msg = (
                 "A RegistrationContext can only be associated with a single App "
                 "instance. To create another App, call `.fork()` on the current "
-                "RegistrationContext to obtain a fresh context that preserves "
-                "existing registrations, or instantiate a new RegistrationContext "
-                "and set it as the current context before instantiating the new App."
+                "RegistrationContext and set the fork as the current context "
+                "before instantiating the new App; forking preserves existing "
+                "state and event handler registrations, which a bare "
+                "RegistrationContext() would lose."
             )
             raise ReflexRuntimeError(msg)
         object.__setattr__(self, "_app", app)
