@@ -87,9 +87,7 @@ fetch-retries=0
 
 def _determine_react_router_version() -> str:
     # Pinned within 7.x (8.x not yet adopted); 7.18.2 carries a security fix.
-    # TEMP BISECT: reverted to 7.15.0 (main's known-green) to isolate the
-    # Chrome-148 memo re-render regression; restore 7.18.2 once confirmed.
-    default_version = "7.15.0"
+    default_version = "7.18.2"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -154,8 +152,11 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        # TEMP BISECT: reverted to 8.0.16 (main's known-green, paired with
-        # react-router 7.15.0) to isolate the Chrome-148 memo regression.
+        # Held at 8.0.16: vite 8.2.0 breaks memoized-component re-rendering under
+        # the full integration suite — stateful memo components render their
+        # initial value but never update on subsequent state changes (bisected:
+        # 8.0.16 green, 8.2.0 red, all other deps identical). Root-cause pending;
+        # only bump once the regression is understood.
         "vite": "8.0.16",
     }
     # Force specific transitive npm deps to a single resolved version when needed.
