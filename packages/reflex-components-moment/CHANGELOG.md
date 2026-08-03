@@ -1,3 +1,10 @@
+## v0.9.3a1 (2026-08-03)
+
+### Bug Fixes
+
+- Make `rx.moment` a `MemoizationLeaf` so a stateful date child is not memo-wrapped, which react-moment parsed like `moment({})` (today at midnight).
+
+
 ## v0.9.2 (2026-06-25)
 
 ### Bug Fixes
