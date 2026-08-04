@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 from unittest import mock
 
@@ -18,7 +19,15 @@ hosting_cli = (
 
 runner = CliRunner()
 
-DOCKERFILE = "FROM python:3.13-slim\nWORKDIR /app\n"
+# Realistic Dockerfile shape: the multi-line `reflex export` RUN is what needs
+# the Reflex access token (reflex-enterprise refuses to export without one).
+EXPORT_RUN = (
+    "RUN uv run reflex export --frontend-only \\\n"
+    "    && mkdir -p .web/_static \\\n"
+    "    && unzip -oq frontend.zip -d .web/_static \\\n"
+    "    && rm frontend.zip\n"
+)
+DOCKERFILE = f'FROM python:3.13-slim\nWORKDIR /app\n{EXPORT_RUN}CMD ["run"]\n'
 # A realistic-shaped Reflex deploy script — the rewrite logic targets the
 # `gcloud builds submit ... .` block in here.
 DEPLOY_SCRIPT = (
@@ -33,6 +42,57 @@ DEPLOY_SCRIPT = (
     'gcloud run deploy "${SERVICE_NAME}" --image "${IMAGE}"\n'
 )
 MANIFEST = {"dockerfile": DOCKERFILE, "deploy_command": DEPLOY_SCRIPT}
+STAGED_VERSION = "projects/my-gcp-project/secrets/reflex-access-token/versions/4"
+
+
+def _patch_gcloud(
+    mocker: MockFixture,
+    failures: tuple[str, ...] = (),
+    secret_exists: bool = True,
+    create_fails_once: bool = False,
+) -> list[tuple[list[str], str | None]]:
+    """Patch `_run_gcloud`, recording every invocation.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        failures: gcloud subcommands (matched as a prefix of the args) to fail.
+        secret_exists: Whether `gcloud secrets describe` finds the secret.
+        create_fails_once: Whether the first `gcloud secrets create` fails, as it
+            does when the Secret Manager API isn't enabled on the project yet.
+
+    Returns:
+        The list `(args, stdin)` tuples are appended to, in call order.
+    """
+    calls: list[tuple[list[str], str | None]] = []
+    creates = 0
+
+    def fake_run(
+        gcloud_path: str,
+        args: list[str],
+        input_text: str | None = None,
+        timeout: int = 30,
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal creates
+        calls.append((list(args), input_text))
+        if any(" ".join(args).startswith(failure) for failure in failures):
+            return subprocess.CompletedProcess(args, 1, "", "gcloud said no")
+        if args[:2] == ["secrets", "describe"] and not secret_exists:
+            return subprocess.CompletedProcess(args, 1, "", "NOT_FOUND")
+        if args[:2] == ["secrets", "create"]:
+            creates += 1
+            if create_fails_once and creates == 1:
+                return subprocess.CompletedProcess(
+                    args, 1, "", "FAILED_PRECONDITION: API has not been used"
+                )
+        stdout = ""
+        if args[:3] == ["secrets", "versions", "add"]:
+            stdout = STAGED_VERSION + "\n"
+        elif args[:2] == ["projects", "describe"]:
+            stdout = "123456789\n"
+        return subprocess.CompletedProcess(args, 0, stdout, "")
+
+    mocker.patch("reflex_cli.v2.gcp._run_gcloud", side_effect=fake_run)
+    return calls
 
 
 def _patch_environment(
@@ -49,6 +109,7 @@ def _patch_environment(
 
     mocker.patch("reflex_cli.v2.gcp.shutil.which", side_effect=fake_which)
     mocker.patch("reflex_cli.v2.gcp._get_active_gcp_account", return_value=account)
+    _patch_gcloud(mocker)
     return mocker.patch("reflex_cli.v2.gcp._run_deploy_script", return_value=0)
 
 
@@ -132,10 +193,22 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     # cloudbuild.yaml embeds the Reflex Dockerfile via heredoc and builds/pushes.
     yaml = captured["cloudbuild_yaml"]
     assert "cat > Dockerfile <<'REFLEX_DOCKERFILE_EOF'" in yaml
-    # Each Dockerfile line shows up in the YAML (indented under the literal block).
+    # Each Dockerfile line shows up in the YAML (indented under the literal
+    # block); the `reflex export` RUN gains the token secret mount.
     for line in DOCKERFILE.splitlines():
+        if line.startswith("RUN "):
+            continue
         assert f"      {line}" in yaml
-    assert 'docker build -t "$_IMAGE" .' in yaml
+    assert (
+        "      RUN --mount=type=secret,id=reflex_access_token,mode=0444 \\\n"
+        "          if [ -s /run/secrets/reflex_access_token ]; then export "
+        'REFLEX_ACCESS_TOKEN="$$(cat /run/secrets/reflex_access_token)"; fi; \\\n'
+        "          uv run reflex export --frontend-only \\\n"
+    ) in yaml
+    assert (
+        "docker build --secret id=reflex_access_token,"
+        'src=/tmp/reflex-access-token -t "$_IMAGE" .' in yaml
+    )
     assert 'docker push "$_IMAGE"' in yaml
     assert "images:" in yaml
 
@@ -156,6 +229,454 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert run_mock.call_count == 1
     # X-API-Token header is sent.
     assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
+
+
+def test_gcp_deploy_stages_token_in_secret_manager(mocker: MockFixture, tmp_path: Path):
+    """The access token reaches the build through Secret Manager, then is destroyed.
+
+    Cloud Build only reads secrets from Secret Manager: a value inlined in the
+    build config or passed via --substitutions would stay readable in the
+    build's metadata afterwards. The staged version is destroyed once the deploy
+    finishes so the token isn't left behind in the user's project.
+    """
+    captured: dict = {}
+
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    def capture(**kwargs):
+        cloudbuild_path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_yaml"] = cloudbuild_path.read_text()
+        # The version must still exist while the build runs.
+        captured["calls_during_run"] = [args for args, _ in calls]
+        return 0
+
+    run_mock.side_effect = capture
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "my-gcp-project",
+            "--source",
+            str(tmp_path),
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+
+    # The secret is created, written from stdin, and shared with Cloud Build.
+    assert calls[0][0][:3] == ["secrets", "describe", "reflex-access-token"]
+    add_args, add_stdin = next(
+        call for call in calls if call[0][:3] == ["secrets", "versions", "add"]
+    )
+    assert "--data-file=-" in add_args
+    # The token goes over stdin, never in argv (visible to other processes).
+    assert add_stdin == "fake-token"
+    assert all("fake-token" not in " ".join(args) for args, _ in calls)
+    bindings = [
+        args for args, _ in calls if args[:2] == ["secrets", "add-iam-policy-binding"]
+    ]
+    members = [arg for args in bindings for arg in args if arg.startswith("--member=")]
+    assert members == [
+        "--member=serviceAccount:123456789@cloudbuild.gserviceaccount.com",
+        "--member=serviceAccount:123456789-compute@developer.gserviceaccount.com",
+    ]
+    assert all("--role=roles/secretmanager.secretAccessor" in args for args in bindings)
+
+    # cloudbuild.yaml references the version by name and never carries the value.
+    yaml = captured["cloudbuild_yaml"]
+    assert (
+        f"    - versionName: {STAGED_VERSION}\n      env: REFLEX_ACCESS_TOKEN" in yaml
+    )
+    assert "  secretEnv:\n    - REFLEX_ACCESS_TOKEN\n" in yaml
+    assert "  env:\n    - DOCKER_BUILDKIT=1\n" in yaml
+    assert "printf '%s' \"$$REFLEX_ACCESS_TOKEN\" > /tmp/reflex-access-token" in yaml
+    assert "rm -f /tmp/reflex-access-token" in yaml
+    assert "fake-token" not in yaml
+
+    # The version is destroyed only after the build, and only that version.
+    assert not [
+        args
+        for args in captured["calls_during_run"]
+        if args[:3] == ["secrets", "versions", "destroy"]
+    ]
+    assert calls[-1][0] == [
+        "secrets",
+        "versions",
+        "destroy",
+        "4",
+        "--secret=reflex-access-token",
+        "--project",
+        "my-gcp-project",
+        "--quiet",
+    ]
+
+
+def test_gcp_deploy_no_build_token_skips_secret_manager(
+    mocker: MockFixture, tmp_path: Path
+):
+    """--no-build-token leaves Secret Manager and the Dockerfile alone."""
+    captured: dict = {}
+
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_yaml"] = path.read_text()
+        return 0
+
+    run_mock.side_effect = capture
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-build-token",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert not [args for args, _ in calls if args[0] == "secrets"]
+    yaml = captured["cloudbuild_yaml"]
+    assert "availableSecrets" not in yaml
+    assert "secretEnv" not in yaml
+    assert "--mount=type=secret" not in yaml
+    assert 'docker build -t "$_IMAGE" .' in yaml
+
+
+@pytest.mark.parametrize(
+    "failures",
+    [
+        # Nothing about Secret Manager is permitted.
+        ("secrets create", "services enable"),
+        # The API enables, but the secret still can't be created.
+        ("secrets create",),
+        # The secret exists, but no version can be added to it.
+        ("secrets versions add",),
+    ],
+)
+def test_gcp_deploy_builds_without_token_when_staging_fails(
+    mocker: MockFixture, tmp_path: Path, failures: tuple[str, ...]
+):
+    """A project the deployer can't write secrets to still deploys, with a warning.
+
+    Only apps using reflex-enterprise need the token, so a missing Secret
+    Manager permission shouldn't block a deploy that would otherwise work.
+    """
+    captured: dict = {}
+
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(
+        mocker,
+        failures=failures,
+        secret_exists="secrets versions add" in failures,
+    )
+    _mock_manifest_response(mocker)
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_yaml"] = path.read_text()
+        return 0
+
+    run_mock.side_effect = capture
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "reflex-enterprise" in result.output
+    # Nothing was stored, so nothing is destroyed either.
+    assert not [
+        args for args, _ in calls if args[:3] == ["secrets", "versions", "destroy"]
+    ]
+    # The build falls back to the plain config rather than mounting a secret
+    # that isn't there.
+    yaml = captured["cloudbuild_yaml"]
+    assert "availableSecrets" not in yaml
+    assert "--mount=type=secret" not in yaml
+
+
+def test_gcp_deploy_creates_missing_secret(mocker: MockFixture, tmp_path: Path):
+    """A project without the secret yet gets it created, then written to."""
+    _patch_environment(mocker)
+    calls = _patch_gcloud(mocker, secret_exists=False)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert [args[:3] for args, _ in calls][:3] == [
+        ["secrets", "describe", "reflex-access-token"],
+        ["secrets", "create", "reflex-access-token"],
+        ["secrets", "versions", "add"],
+    ]
+
+
+def test_gcp_deploy_creates_secret_after_enabling_api(
+    mocker: MockFixture, tmp_path: Path
+):
+    """A first deploy creates the secret, enabling the API if that's what blocked it."""
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker, secret_exists=False, create_fails_once=True)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    subcommands = [" ".join(args[:2]) for args, _ in calls]
+    # create -> enable the API -> create again -> store the token.
+    assert subcommands[:4] == [
+        "secrets describe",
+        "secrets create",
+        "services enable",
+        "secrets create",
+    ]
+    assert ["secrets", "versions", "add"] in [args[:3] for args, _ in calls]
+    assert "--replication-policy=automatic" in calls[1][0]
+    assert "--labels=managed-by=reflex-cli" in calls[1][0]
+    assert run_mock.call_count == 1
+
+
+def test_gcp_deploy_reuses_existing_secret(mocker: MockFixture, tmp_path: Path):
+    """When the secret already exists, no create (or API enable) is attempted."""
+    _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    subcommands = [" ".join(args[:2]) for args, _ in calls]
+    assert "secrets create" not in subcommands
+    assert "services enable" not in subcommands
+
+
+def test_gcp_deploy_user_managed_token_secret(mocker: MockFixture, tmp_path: Path):
+    """A full version resource is referenced as-is; the CLI writes nothing."""
+    captured: dict = {}
+    version = "projects/other/secrets/my-reflex-token/versions/2"
+
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_yaml"] = path.read_text()
+        return 0
+
+    run_mock.side_effect = capture
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--token-secret",
+            version,
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert not [args for args, _ in calls if args[0] in ("secrets", "services")]
+    assert f"    - versionName: {version}" in captured["cloudbuild_yaml"]
+    assert "--mount=type=secret,id=reflex_access_token" in captured["cloudbuild_yaml"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "projects/p/secrets/s",
+        "projects/p/secrets/s/versions",
+        "secrets/s/versions/1",
+        "bad name",
+        "",
+    ],
+)
+def test_gcp_deploy_rejects_malformed_token_secret(
+    mocker: MockFixture, tmp_path: Path, value: str
+):
+    """A typo'd --token-secret fails at the CLI, not mid-deploy inside gcloud."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--token-secret",
+            value,
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "--token-secret" in result.output
+    assert run_mock.call_count == 0
+
+
+def test_gcp_deploy_warns_when_dockerfile_has_no_export_step(
+    mocker: MockFixture, tmp_path: Path
+):
+    """If Reflex's Dockerfile stops running `reflex export`, say so loudly.
+
+    Silently skipping would reproduce the original failure — the export dying on
+    a missing token — with nothing pointing at the cause.
+    """
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(
+        mocker,
+        body={
+            "dockerfile": "FROM python:3.13-slim\nRUN uv sync --frozen\n",
+            "deploy_command": DEPLOY_SCRIPT,
+        },
+    )
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "reflex export" in result.output
+    assert "reflex-enterprise" in result.output
+    assert not [args for args, _ in calls if args[0] == "secrets"]
+    assert run_mock.call_count == 1
+
+
+def test_gcp_deploy_destroys_staged_version_when_script_fails(
+    mocker: MockFixture, tmp_path: Path
+):
+    """A failed deploy still cleans up the staged token."""
+    run_mock = _patch_environment(mocker)
+    run_mock.return_value = 7
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 7
+    assert calls[-1][0][:3] == ["secrets", "versions", "destroy"]
+
+
+@pytest.mark.parametrize(
+    "failures", [("secrets add-iam-policy-binding",), ("projects describe",)]
+)
+def test_gcp_deploy_warns_but_continues_when_iam_grant_fails(
+    mocker: MockFixture, tmp_path: Path, failures: tuple[str, ...]
+):
+    """An ungrantable secret still deploys: the build SA may already have access."""
+    captured: dict = {}
+
+    run_mock = _patch_environment(mocker)
+    calls = _patch_gcloud(mocker, failures=failures)
+    _mock_manifest_response(mocker)
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_yaml"] = path.read_text()
+        return 0
+
+    run_mock.side_effect = capture
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    # The secret is still wired up, and still cleaned up.
+    assert f"versionName: {STAGED_VERSION}" in captured["cloudbuild_yaml"]
+    assert calls[-1][0][:3] == ["secrets", "versions", "destroy"]
+
+
+def test_gcp_deploy_warns_with_cleanup_command_when_destroy_fails(
+    mocker: MockFixture, tmp_path: Path
+):
+    """If the staged version can't be destroyed, say how to remove it by hand."""
+    _patch_environment(mocker)
+    _patch_gcloud(mocker, failures=("secrets versions destroy",))
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "gcloud secrets versions destroy 4" in " ".join(result.output.split())
+
+
+def test_gcp_deploy_dry_run_stages_nothing(mocker: MockFixture, tmp_path: Path):
+    """--dry-run previews the secret wiring without touching the project."""
+    _patch_environment(mocker)
+    calls = _patch_gcloud(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert not calls
+    assert "availableSecrets" in result.output
+    # The version doesn't exist yet, so the preview stands in for it.
+    assert "versions/NEW" in result.output
+    assert "--mount=type=secret,id=reflex_access_token" in result.output
 
 
 def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
@@ -831,6 +1352,9 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     mocker.patch(
         "reflex_cli.v2.gcp._get_active_gcp_account", return_value="u@example.com"
     )
+    # Secret Manager calls go through _run_gcloud, which subprocess.run is
+    # stubbed out from under; the deploy script's env is what's under test here.
+    _patch_gcloud(mocker)
     _mock_manifest_response(mocker)
 
     captured: dict[str, dict[str, str]] = {}
@@ -931,6 +1455,129 @@ def test_build_cloudbuild_yaml_embeds_dockerfile_via_heredoc():
     assert 'docker build -t "$_IMAGE" .' in yaml
     assert 'docker push "$_IMAGE"' in yaml
     assert "images:\n  - $_IMAGE\n" in yaml
+
+
+def test_inject_token_secret_mount_rewrites_the_export_run():
+    """The export RUN gets a secret mount; every other instruction is untouched."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    dockerfile = (
+        "FROM python:3.13-slim\n"
+        "RUN uv sync --frozen\n"
+        "  RUN uv run reflex export --frontend-only \\\n"
+        "      && unzip -oq frontend.zip -d .web/_static\n"
+        'CMD ["uv", "run", "reflex", "run"]\n'
+    )
+
+    injected = gcp_module._inject_token_secret_mount(dockerfile)
+
+    assert injected == (
+        "FROM python:3.13-slim\n"
+        "RUN uv sync --frozen\n"
+        # Original indentation is preserved.
+        "  RUN --mount=type=secret,id=reflex_access_token,mode=0444 \\\n"
+        "      if [ -s /run/secrets/reflex_access_token ]; then export "
+        'REFLEX_ACCESS_TOKEN="$(cat /run/secrets/reflex_access_token)"; fi; \\\n'
+        "      uv run reflex export --frontend-only \\\n"
+        "      && unzip -oq frontend.zip -d .web/_static\n"
+        'CMD ["uv", "run", "reflex", "run"]\n'
+    )
+
+
+def test_inject_token_secret_mount_matches_lowercase_run():
+    """Dockerfile instructions are case-insensitive, so `run` counts too."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    injected = gcp_module._inject_token_secret_mount(
+        "FROM python:3.13-slim\nrun uv run reflex export --frontend-only\n"
+    )
+
+    assert injected is not None
+    assert injected.endswith(
+        "RUN --mount=type=secret,id=reflex_access_token,mode=0444 \\\n"
+        "    if [ -s /run/secrets/reflex_access_token ]; then export "
+        'REFLEX_ACCESS_TOKEN="$(cat /run/secrets/reflex_access_token)"; fi; \\\n'
+        "    uv run reflex export --frontend-only\n"
+    )
+
+
+def test_inject_token_secret_mount_without_export_step():
+    """No `reflex export` means nothing consumes a token, so none is staged."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    assert (
+        gcp_module._inject_token_secret_mount(
+            "FROM python:3.13-slim\nRUN uv sync --frozen\n"
+        )
+        is None
+    )
+
+
+def test_inject_token_secret_mount_keeps_dockerfile_that_declares_the_mount():
+    """A Dockerfile that already mounts the secret is passed through unchanged."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    dockerfile = (
+        "FROM python:3.13-slim\n"
+        "RUN --mount=type=secret,id=reflex_access_token \\\n"
+        "    uv run reflex export --frontend-only\n"
+    )
+
+    assert gcp_module._inject_token_secret_mount(dockerfile) == dockerfile
+
+
+def test_build_cloudbuild_yaml_without_token_secret_is_unchanged():
+    """No secret version means no BuildKit flags, env, or availableSecrets block."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    yaml = gcp_module._build_cloudbuild_yaml("FROM python:3.13-slim\n")
+
+    assert "availableSecrets" not in yaml
+    assert "secretEnv" not in yaml
+    assert "DOCKER_BUILDKIT" not in yaml
+    assert 'docker build -t "$_IMAGE" .' in yaml
+    # A failing build reports the build's error instead of a confusing push error.
+    assert yaml.count("      set -e\n") == 1
+
+
+def test_build_cloudbuild_yaml_keeps_token_out_of_the_config():
+    """Only the secret's resource name is embedded, and `$` stays escaped.
+
+    Cloud Build stores the build config and its substitutions in the Build
+    resource, readable by anyone with roles/cloudbuild.builds.viewer, so the
+    token value must never be part of it.
+    """
+    from reflex_cli.v2 import gcp as gcp_module
+
+    version = "projects/p/secrets/reflex-access-token/versions/9"
+    yaml = gcp_module._build_cloudbuild_yaml(
+        "FROM python:3.13-slim\n", token_secret_version=version
+    )
+
+    assert yaml.endswith(
+        "availableSecrets:\n"
+        "  secretManager:\n"
+        f"    - versionName: {version}\n"
+        "      env: REFLEX_ACCESS_TOKEN\n"
+    )
+    assert (
+        "  env:\n    - DOCKER_BUILDKIT=1\n  secretEnv:\n    - REFLEX_ACCESS_TOKEN\n"
+        in yaml
+    )
+    # `$$` survives Cloud Build's substitution pass as a literal `$`; a single
+    # `$REFLEX_ACCESS_TOKEN` would be rejected as an unknown substitution.
+    assert (
+        "      printf '%s' \"$$REFLEX_ACCESS_TOKEN\" > /tmp/reflex-access-token\n"
+        in yaml
+    )
+    assert (
+        "      docker build --secret id=reflex_access_token,"
+        'src=/tmp/reflex-access-token -t "$_IMAGE" .\n' in yaml
+    )
+    assert "      rm -f /tmp/reflex-access-token\n" in yaml
+    # The staging path sits outside /workspace, so it can't reach the build
+    # context (and from there a `COPY . .` layer).
+    assert gcp_module.TOKEN_SECRET_STAGE_PATH.startswith("/tmp/")
 
 
 def test_build_cloudbuild_yaml_rejects_marker_collision():

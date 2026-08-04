@@ -10,6 +10,13 @@ CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
 CLOUD_RUN_MAX_INSTANCES, CLOUD_RUN_ALLOW_UNAUTHENTICATED,
 CLOUD_RUN_SERVICE_ACCOUNT, REFLEX_CLOUDBUILD_YAML,
 REFLEX_ENV_VARS_FILE).
+
+The image build runs ``reflex export``, which refuses to run for apps that
+use ``reflex-enterprise`` unless a Reflex access token is available. The
+token is handed to the build through Secret Manager (referenced by resource
+name from the build config, never inlined into it) and mounted into the
+``docker build`` as a BuildKit secret, so it stays out of the build metadata,
+the build logs, and the pushed image's layers and history.
 """
 
 from __future__ import annotations
@@ -54,6 +61,22 @@ ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
 # script passes it to ``gcloud run deploy --env-vars-file=...``.
 ENV_REFLEX_ENV_VARS_FILE = "REFLEX_ENV_VARS_FILE"
 
+# Env var `reflex export` reads the Reflex access token from, both in the
+# Cloud Build step (populated from Secret Manager) and inside the image build.
+ENV_REFLEX_ACCESS_TOKEN = "REFLEX_ACCESS_TOKEN"
+# BuildKit secret id and the path it is mounted at inside the image build.
+TOKEN_SECRET_ID = "reflex_access_token"
+TOKEN_SECRET_MOUNT_PATH = f"/run/secrets/{TOKEN_SECRET_ID}"
+# Where the build step stages the token for `docker build --secret src=`.
+# Outside /workspace so it is never part of the docker build context.
+TOKEN_SECRET_STAGE_PATH = "/tmp/reflex-access-token"
+# Default Secret Manager secret the token is staged in.
+DEFAULT_TOKEN_SECRET_NAME = "reflex-access-token"
+# Applied to secrets this CLI creates, so they're identifiable in the project.
+TOKEN_SECRET_LABEL = "managed-by=reflex-cli"
+SECRETMANAGER_SERVICE = "secretmanager.googleapis.com"
+SECRET_ACCESSOR_ROLE = "roles/secretmanager.secretAccessor"
+
 # Pattern for the start of the `gcloud builds submit` invocation in the
 # Reflex deploy script. We rewrite that whole multi-line command to use
 # `--config=` so the Dockerfile lives inside a cloudbuild.yaml instead of
@@ -61,6 +84,22 @@ ENV_REFLEX_ENV_VARS_FILE = "REFLEX_ENV_VARS_FILE"
 _BUILDS_SUBMIT_PATTERN = re.compile(
     r"(?P<indent>^[ \t]*)gcloud[ \t]+builds[ \t]+submit\b",
     re.MULTILINE,
+)
+
+# A whole `RUN` instruction in the Reflex Dockerfile, backslash continuations
+# included, so the one that runs `reflex export` can be given the token secret.
+# Dockerfile instructions are case-insensitive.
+_RUN_INSTRUCTION_PATTERN = re.compile(
+    r"^(?P<indent>[ \t]*)RUN[ \t]+(?P<body>(?:[^\n]*\\\r?\n)*[^\n]*)",
+    re.MULTILINE | re.IGNORECASE,
+)
+# The command that needs the Reflex access token.
+_REFLEX_EXPORT_PATTERN = re.compile(r"\breflex[ \t]+export\b")
+
+# `--token-secret` accepts a bare secret name or a full version resource.
+_SECRET_NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,255}")
+_SECRET_VERSION_PATTERN = re.compile(
+    r"projects/[^/\s]+/secrets/[A-Za-z0-9_-]{1,255}/versions/[A-Za-z0-9_-]+"
 )
 
 # Manifest response field names from Reflex.
@@ -213,6 +252,29 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
 )
 @click.option("--token", help="The Reflex authentication token.")
 @click.option(
+    "--build-token/--no-build-token",
+    "build_token",
+    default=True,
+    show_default=True,
+    help="Whether to make the Reflex access token available to the image build. "
+    "`reflex export` needs it to validate a reflex-enterprise license. The token is "
+    "staged as a Secret Manager version, referenced by resource name from the build "
+    "config, mounted into `docker build` as a BuildKit secret (so it never reaches an "
+    "image layer, `docker history`, or the build logs), and destroyed when the deploy "
+    "finishes. Use --no-build-token to deploy without it.",
+)
+@click.option(
+    "--token-secret",
+    "token_secret",
+    default=DEFAULT_TOKEN_SECRET_NAME,
+    show_default=True,
+    help="Secret Manager secret to stage the access token in, created on first use. "
+    "Pass a full version resource (projects/P/secrets/S/versions/V) to reference a "
+    "secret you manage yourself; the CLI then only reads it and never creates, "
+    "updates, or destroys anything, and the Cloud Build service account needs "
+    f"{SECRET_ACCESSOR_ROLE} on it.",
+)
+@click.option(
     "--interactive/--no-interactive",
     is_flag=True,
     default=True,
@@ -247,6 +309,8 @@ def deploy_command(
     envs: tuple[str, ...],
     source_dir: str,
     token: str | None,
+    build_token: bool,
+    token_secret: str,
     interactive: bool,
     dry_run: bool,
     loglevel: str,
@@ -275,6 +339,18 @@ def deploy_command(
     if max_instances < min_instances:
         console.error(
             f"--max-instances ({max_instances}) must be >= --min-instances ({min_instances})."
+        )
+        raise click.exceptions.Exit(2)
+
+    # A secret the user manages themselves is referenced as-is; a bare name is
+    # one we create/stage/destroy versions in.
+    user_managed_secret = "/" in token_secret
+    pattern = _SECRET_VERSION_PATTERN if user_managed_secret else _SECRET_NAME_PATTERN
+    if not pattern.fullmatch(token_secret):
+        console.error(
+            "--token-secret must be a Secret Manager secret name "
+            "([A-Za-z0-9_-], up to 255 chars) or a full version resource "
+            "(projects/PROJECT/secrets/SECRET/versions/VERSION)."
         )
         raise click.exceptions.Exit(2)
 
@@ -335,7 +411,35 @@ def deploy_command(
         console.error(f"Source directory does not exist: {source_path}")
         raise click.exceptions.Exit(1)
 
-    cloudbuild_yaml = _build_cloudbuild_yaml(dockerfile)
+    # `reflex export` needs the access token for reflex-enterprise licensing, so
+    # the RUN that exports the frontend gets a BuildKit secret mount. None means
+    # nothing in the Dockerfile consumes a token, so none has to be staged.
+    token_dockerfile = _inject_token_secret_mount(dockerfile) if build_token else None
+    if build_token and token_dockerfile is None:
+        console.warn(
+            "Reflex's Dockerfile has no `reflex export` step to hand the access "
+            "token to, so the build runs without it. Apps using reflex-enterprise "
+            "will fail the frontend export — upgrade `reflex-hosting-cli` (or pass "
+            "--no-build-token to silence this)."
+        )
+    # The version we stage doesn't exist until the user confirms the run, so the
+    # preview stands in for it. Building the config now also fails fast on a
+    # Dockerfile we can't embed, before anything is created in the project.
+    preview_secret_version = None
+    if token_dockerfile is not None:
+        preview_secret_version = (
+            token_secret
+            if user_managed_secret
+            else f"projects/{gcp_project}/secrets/{token_secret}/versions/NEW"
+        )
+    try:
+        preview_yaml = _build_cloudbuild_yaml(
+            token_dockerfile if token_dockerfile is not None else dockerfile,
+            token_secret_version=preview_secret_version,
+        )
+    except ValueError as ex:
+        console.error(str(ex))
+        raise click.exceptions.Exit(1) from ex
     try:
         deploy_script = _rewrite_builds_submit(deploy_script)
     except ValueError as ex:
@@ -380,6 +484,20 @@ def deploy_command(
         "The Dockerfile is embedded in a Cloud Build config written to a "
         "tempfile; your source directory is not modified."
     )
+    if preview_secret_version is not None:
+        if user_managed_secret:
+            console.info(
+                f"The Reflex access token is read from {token_secret} and mounted into "
+                "the image build as a BuildKit secret. The Cloud Build service account "
+                f"needs {SECRET_ACCESSOR_ROLE} on that secret."
+            )
+        else:
+            console.info(
+                "The Reflex access token is staged as a new version of Secret Manager "
+                f"secret '{token_secret}' in {gcp_project}, mounted into the image "
+                "build as a BuildKit secret (so it never lands in an image layer), and "
+                "destroyed when the deploy finishes."
+            )
 
     env_vars_yaml = _format_env_vars_yaml(parsed_envs) if parsed_envs else None
 
@@ -387,12 +505,12 @@ def deploy_command(
         console.print("")
         console.print("cloudbuild.yaml contents:")
         console.print("─" * 60)
-        console.print(cloudbuild_yaml)
+        console.print(preview_yaml)
         console.print("─" * 60)
         console.print("")
         console.print("Dockerfile contents (embedded in the build step):")
         console.print("─" * 60)
-        console.print(dockerfile)
+        console.print(token_dockerfile if token_dockerfile is not None else dockerfile)
         console.print("─" * 60)
         if env_vars_yaml is not None:
             console.print("")
@@ -412,6 +530,28 @@ def deploy_command(
             raise click.exceptions.Exit(1)
 
     with contextlib.ExitStack() as stack:
+        secret_version = None
+        if token_dockerfile is not None:
+            secret_version = (
+                token_secret
+                if user_managed_secret
+                else stack.enter_context(
+                    _staged_token_secret(
+                        gcloud_path=gcloud_path,
+                        project=gcp_project,
+                        secret_name=token_secret,
+                        token=authenticated_client.token,
+                    )
+                )
+            )
+        # Staging can fail on a project without Secret Manager access; fall back
+        # to a build without the token rather than blocking the deploy.
+        if secret_version is None or token_dockerfile is None:
+            cloudbuild_yaml = _build_cloudbuild_yaml(dockerfile)
+        else:
+            cloudbuild_yaml = _build_cloudbuild_yaml(
+                token_dockerfile, token_secret_version=secret_version
+            )
         cloudbuild_path = stack.enter_context(_temp_cloudbuild_yaml(cloudbuild_yaml))
         env_overrides = {
             **deploy_env,
@@ -433,6 +573,56 @@ def deploy_command(
     console.success("Deployment finished.")
 
 
+def _run_gcloud(
+    gcloud_path: str,
+    args: list[str],
+    input_text: str | None = None,
+    timeout: int = 30,
+) -> subprocess.CompletedProcess[str] | None:
+    """Run a gcloud command, capturing its output.
+
+    Secret values are passed on stdin via ``input_text`` rather than in argv,
+    which is visible to other processes on the machine.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        args: Arguments to pass to gcloud.
+        input_text: Data to write to the command's stdin.
+        timeout: Seconds to wait before giving up on the command.
+
+    Returns:
+        The completed process, or None if gcloud could not be run at all.
+
+    """
+    try:
+        return subprocess.run(
+            [gcloud_path, *args],
+            input=input_text,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except (OSError, subprocess.SubprocessError) as ex:
+        console.debug(f"Failed to run `gcloud {' '.join(args)}`: {ex}")
+        return None
+
+
+def _gcloud_error(result: subprocess.CompletedProcess[str] | None) -> str:
+    """Summarize a failed gcloud invocation for a user-facing message.
+
+    Args:
+        result: The completed process, or None if gcloud could not be run.
+
+    Returns:
+        The command's stderr, or a generic message when there is none.
+
+    """
+    if result is None:
+        return "gcloud could not be run."
+    return result.stderr.strip() or f"gcloud exited with status {result.returncode}."
+
+
 def _get_active_gcp_account(gcloud_path: str) -> str | None:
     """Return the email of the active gcloud account, or None.
 
@@ -443,22 +633,12 @@ def _get_active_gcp_account(gcloud_path: str) -> str | None:
         The active account email or None if not logged in.
 
     """
-    try:
-        result = subprocess.run(
-            [
-                gcloud_path,
-                "auth",
-                "list",
-                "--filter=status:ACTIVE",
-                "--format=value(account)",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.SubprocessError) as ex:
-        console.debug(f"Failed to query gcloud auth list: {ex}")
+    result = _run_gcloud(
+        gcloud_path,
+        ["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
+        timeout=10,
+    )
+    if result is None or result.returncode != 0:
         return None
     account = result.stdout.strip().splitlines()
     return account[0] if account else None
@@ -531,7 +711,52 @@ def _request_manifest(token: str) -> tuple[str, str]:
     return dockerfile, deploy_command
 
 
-def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
+def _inject_token_secret_mount(dockerfile: str) -> str | None:
+    """Give the Dockerfile's `reflex export` step access to the Reflex token.
+
+    ``reflex export`` refuses to run when the app uses ``reflex-enterprise`` and
+    no Reflex access token is available, so the token has to reach the image
+    build. It is mounted as a BuildKit secret and read inside the RUN rather
+    than passed as a build arg or ``ENV``, so it never becomes part of an image
+    layer, of ``docker history``, or of the image pushed to Artifact Registry.
+
+    Args:
+        dockerfile: The Dockerfile body from Reflex.
+
+    Returns:
+        The Dockerfile with the secret wired into the export step, or None if
+        no instruction consumes the token (nothing has to be staged then).
+
+    """
+    if f"id={TOKEN_SECRET_ID}" in dockerfile:
+        # Reflex's Dockerfile already declares the mount itself.
+        return dockerfile
+
+    injected = False
+
+    def rewrite(match: re.Match[str]) -> str:
+        nonlocal injected
+        instruction = match.group(0)
+        if not _REFLEX_EXPORT_PATTERN.search(instruction):
+            return instruction
+        injected = True
+        indent = match.group("indent")
+        # mode=0444 so the mount is still readable if the export runs as a
+        # non-root USER; the secret only exists inside the ephemeral build.
+        return (
+            f"{indent}RUN --mount=type=secret,id={TOKEN_SECRET_ID},mode=0444 \\\n"
+            f"{indent}    if [ -s {TOKEN_SECRET_MOUNT_PATH} ]; then export "
+            f'{ENV_REFLEX_ACCESS_TOKEN}="$(cat {TOKEN_SECRET_MOUNT_PATH})"; fi; \\\n'
+            f"{indent}    {match.group('body')}"
+        )
+
+    rewritten = _RUN_INSTRUCTION_PATTERN.sub(rewrite, dockerfile)
+    return rewritten if injected else None
+
+
+def _build_cloudbuild_yaml(
+    dockerfile_contents: str, token_secret_version: str | None = None
+) -> str:
     r"""Generate a Cloud Build config that materializes the Dockerfile inline.
 
     The Dockerfile body is dropped into a bash heredoc (``cat <<'MARKER' >
@@ -540,8 +765,16 @@ def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
     ``\``. YAML literal-block indentation gets stripped uniformly so the
     closing marker line ends up at column 0 where bash expects it.
 
+    When ``token_secret_version`` is given, the step pulls the Reflex access
+    token from Secret Manager into ``secretEnv`` and hands it to ``docker build``
+    as a BuildKit secret. Only the secret's resource name goes into the config —
+    the value itself never appears in the build config (readable by anyone with
+    ``roles/cloudbuild.builds.viewer``) or in the build logs.
+
     Args:
         dockerfile_contents: The Dockerfile body from Reflex.
+        token_secret_version: Fully-qualified Secret Manager version holding the
+            Reflex access token, or None to build without one.
 
     Returns:
         A complete ``cloudbuild.yaml`` body, ready to write to disk.
@@ -565,20 +798,52 @@ def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
     # 6 spaces to fit inside the YAML literal block under `args:\n  - -c\n  - |`.
     indent = "      "
     body = "".join(f"{indent}{line}\n" for line in escaped.splitlines())
+    step_env = ""
+    stage_secret = ""
+    build_flags = ""
+    discard_secret = ""
+    available_secrets = ""
+    if token_secret_version:
+        # `--secret` needs BuildKit; `$$` escapes Cloud Build's substitution pass
+        # so bash sees the secretEnv variable.
+        step_env = (
+            "  env:\n"
+            "    - DOCKER_BUILDKIT=1\n"
+            "  secretEnv:\n"
+            f"    - {ENV_REFLEX_ACCESS_TOKEN}\n"
+        )
+        stage_secret = (
+            f"{indent}umask 077\n"
+            f"{indent}printf '%s' \"$${ENV_REFLEX_ACCESS_TOKEN}\" "
+            f"> {TOKEN_SECRET_STAGE_PATH}\n"
+        )
+        build_flags = f" --secret id={TOKEN_SECRET_ID},src={TOKEN_SECRET_STAGE_PATH}"
+        discard_secret = f"{indent}rm -f {TOKEN_SECRET_STAGE_PATH}\n"
+        available_secrets = (
+            "availableSecrets:\n"
+            "  secretManager:\n"
+            f"    - versionName: {token_secret_version}\n"
+            f"      env: {ENV_REFLEX_ACCESS_TOKEN}\n"
+        )
     return (
         "steps:\n"
         "- name: gcr.io/cloud-builders/docker\n"
         "  entrypoint: bash\n"
+        f"{step_env}"
         "  args:\n"
         "    - -c\n"
         "    - |\n"
+        f"{indent}set -e\n"
         f"{indent}cat > Dockerfile <<'{marker}'\n"
         f"{body}"
         f"{indent}{marker}\n"
-        f'{indent}docker build -t "$_IMAGE" .\n'
+        f"{stage_secret}"
+        f'{indent}docker build{build_flags} -t "$_IMAGE" .\n'
+        f"{discard_secret}"
         f'{indent}docker push "$_IMAGE"\n'
         "images:\n"
         "  - $_IMAGE\n"
+        f"{available_secrets}"
     )
 
 
@@ -628,6 +893,279 @@ def _rewrite_builds_submit(script: str) -> str:
         f"{indent}    ."
     )
     return script[:line_start] + replacement + script[cmd_end:]
+
+
+@contextlib.contextmanager
+def _staged_token_secret(gcloud_path: str, project: str, secret_name: str, token: str):
+    """Stage the Reflex access token in Secret Manager for the duration of the build.
+
+    Cloud Build can only read secrets from Secret Manager — a value passed
+    through the build config or ``--substitutions`` would be readable from the
+    build's metadata afterwards. The version is destroyed on the way out so the
+    token isn't left sitting in the user's project.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID to stage the secret in.
+        secret_name: Name of the Secret Manager secret to add a version to.
+        token: The Reflex access token to store.
+
+    Yields:
+        The fully-qualified version resource name, or None if staging failed.
+
+    """
+    version = _stage_token_secret(gcloud_path, project, secret_name, token)
+    try:
+        yield version
+    finally:
+        if version is not None:
+            _destroy_secret_version(gcloud_path, project, secret_name, version)
+
+
+def _stage_token_secret(
+    gcloud_path: str, project: str, secret_name: str, token: str
+) -> str | None:
+    """Add the Reflex access token as a new version of a Secret Manager secret.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID to stage the secret in.
+        secret_name: Name of the Secret Manager secret to add a version to.
+        token: The Reflex access token to store.
+
+    Returns:
+        The fully-qualified version resource name, or None if any step failed.
+
+    """
+    if not _ensure_secret_exists(gcloud_path, project, secret_name):
+        return None
+    result = _run_gcloud(
+        gcloud_path,
+        [
+            "secrets",
+            "versions",
+            "add",
+            secret_name,
+            "--project",
+            project,
+            "--data-file=-",
+            "--format=value(name)",
+        ],
+        input_text=token,
+        timeout=60,
+    )
+    if result is None or result.returncode != 0:
+        console.warn(
+            f"Couldn't store the Reflex access token in Secret Manager secret "
+            f"'{secret_name}': {_gcloud_error(result)}\nBuilding without it — the "
+            "frontend export will fail if your app uses reflex-enterprise."
+        )
+        return None
+    # `versions add` prints the created resource name; fall back to the alias if
+    # a future gcloud stops doing that.
+    version = result.stdout.strip().splitlines()
+    version_name = (
+        version[0]
+        if version
+        else f"projects/{project}/secrets/{secret_name}/versions/latest"
+    )
+    _grant_secret_access(gcloud_path, project, secret_name)
+    return version_name
+
+
+def _ensure_secret_exists(gcloud_path: str, project: str, secret_name: str) -> bool:
+    """Create the Secret Manager secret if it doesn't exist yet.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID the secret lives in.
+        secret_name: Name of the Secret Manager secret.
+
+    Returns:
+        Whether the secret exists and can be written to.
+
+    """
+    describe = _run_gcloud(
+        gcloud_path,
+        [
+            "secrets",
+            "describe",
+            secret_name,
+            "--project",
+            project,
+            "--format=value(name)",
+        ],
+    )
+    if describe is not None and describe.returncode == 0:
+        return True
+
+    create_args = [
+        "secrets",
+        "create",
+        secret_name,
+        "--project",
+        project,
+        "--replication-policy=automatic",
+        f"--labels={TOKEN_SECRET_LABEL}",
+        "--quiet",
+    ]
+    create = _run_gcloud(gcloud_path, create_args, timeout=60)
+    if _secret_created(create):
+        return True
+
+    # The most likely reason a first create fails is the Secret Manager API not
+    # being enabled on the project; enable it (the deploy script does the same
+    # for the APIs it needs) and try once more.
+    console.info(f"Enabling {SECRETMANAGER_SERVICE} on {project}...")
+    enable = _run_gcloud(
+        gcloud_path,
+        ["services", "enable", SECRETMANAGER_SERVICE, "--project", project, "--quiet"],
+        timeout=180,
+    )
+    if enable is None or enable.returncode != 0:
+        console.warn(
+            f"Couldn't enable {SECRETMANAGER_SERVICE} on {project}: "
+            f"{_gcloud_error(enable)}\nBuilding without the Reflex access token — the "
+            "frontend export will fail if your app uses reflex-enterprise."
+        )
+        return False
+    retry = _run_gcloud(gcloud_path, create_args, timeout=60)
+    if _secret_created(retry):
+        return True
+    console.warn(
+        f"Couldn't create Secret Manager secret '{secret_name}' in {project}: "
+        f"{_gcloud_error(retry)}\nBuilding without the Reflex access token — the "
+        "frontend export will fail if your app uses reflex-enterprise. Pass "
+        "--token-secret with a secret you manage yourself, or --no-build-token."
+    )
+    return False
+
+
+def _secret_created(result: subprocess.CompletedProcess[str] | None) -> bool:
+    """Report whether a `gcloud secrets create` left the secret in place.
+
+    Args:
+        result: The completed process, or None if gcloud could not be run.
+
+    Returns:
+        True when the secret was created, or already existed.
+
+    """
+    if result is None:
+        return False
+    return result.returncode == 0 or "already exists" in result.stderr.lower()
+
+
+def _grant_secret_access(gcloud_path: str, project: str, secret_name: str) -> None:
+    """Let the Cloud Build service accounts read the staged secret.
+
+    Builds run as either the legacy Cloud Build service account or the project's
+    default compute service account depending on when the project was created,
+    so both are granted access to this one secret; whichever doesn't exist just
+    fails its own binding.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID the secret lives in.
+        secret_name: Name of the Secret Manager secret.
+
+    """
+    project_number = _get_project_number(gcloud_path, project)
+    if project_number is None:
+        console.debug(f"Couldn't resolve the project number for {project}.")
+        return
+    granted = False
+    for account in (
+        f"{project_number}@cloudbuild.gserviceaccount.com",
+        f"{project_number}-compute@developer.gserviceaccount.com",
+    ):
+        result = _run_gcloud(
+            gcloud_path,
+            [
+                "secrets",
+                "add-iam-policy-binding",
+                secret_name,
+                "--project",
+                project,
+                f"--member=serviceAccount:{account}",
+                f"--role={SECRET_ACCESSOR_ROLE}",
+                "--condition=None",
+                "--quiet",
+            ],
+            timeout=60,
+        )
+        if result is not None and result.returncode == 0:
+            granted = True
+        else:
+            console.debug(
+                f"Couldn't grant {SECRET_ACCESSOR_ROLE} on '{secret_name}' to "
+                f"{account}: {_gcloud_error(result)}"
+            )
+    if not granted:
+        console.warn(
+            f"Couldn't grant the Cloud Build service account {SECRET_ACCESSOR_ROLE} "
+            f"on '{secret_name}'. If the build fails to access the secret, run:\n"
+            f"  gcloud secrets add-iam-policy-binding {secret_name} "
+            f"--project {project} --role={SECRET_ACCESSOR_ROLE} "
+            "--member=serviceAccount:<cloud-build-service-account>"
+        )
+
+
+def _get_project_number(gcloud_path: str, project: str) -> str | None:
+    """Look up the numeric project number for a project ID.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID.
+
+    Returns:
+        The project number, or None if it couldn't be resolved.
+
+    """
+    result = _run_gcloud(
+        gcloud_path,
+        ["projects", "describe", project, "--format=value(projectNumber)"],
+    )
+    if result is None or result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def _destroy_secret_version(
+    gcloud_path: str, project: str, secret_name: str, version_name: str
+) -> None:
+    """Destroy the secret version staged for this deploy.
+
+    Args:
+        gcloud_path: Resolved path to the gcloud executable.
+        project: The GCP project ID the secret lives in.
+        secret_name: Name of the Secret Manager secret.
+        version_name: Fully-qualified version resource name to destroy.
+
+    """
+    version_id = version_name.rsplit("/", 1)[-1]
+    result = _run_gcloud(
+        gcloud_path,
+        [
+            "secrets",
+            "versions",
+            "destroy",
+            version_id,
+            f"--secret={secret_name}",
+            "--project",
+            project,
+            "--quiet",
+        ],
+        timeout=60,
+    )
+    if result is None or result.returncode != 0:
+        console.warn(
+            f"Couldn't destroy the staged access token ({version_name}): "
+            f"{_gcloud_error(result)}\nDestroy it with: gcloud secrets versions "
+            f"destroy {version_id} --secret={secret_name} --project {project}"
+        )
+        return
+    console.debug(f"Destroyed staged access token version {version_name}.")
 
 
 @contextlib.contextmanager
