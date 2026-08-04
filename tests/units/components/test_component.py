@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
 
 import pytest
+from reflex_base.components import component
 from reflex_base.components.component import Component, _deterministic_hash, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
@@ -2446,3 +2447,62 @@ def test_component_hash_includes_lifecycle_hooks():
     assert plain._get_component_hash(shallow=True) != with_mount._get_component_hash(
         shallow=True
     )
+
+
+@dataclass(frozen=True)
+class _HashFrozenScalars:
+    a: int | bool
+    b: str = "x"
+
+
+@dataclass(frozen=True)
+class _HashFrozenContainer:
+    items: list[int]
+
+
+@dataclass
+class _HashMutable:
+    a: int
+
+
+def test_deterministic_hash_caches_frozen_dataclasses_by_identity():
+    """Cached and freshly encoded instances of the same content hash the same."""
+    shared = ImportVar(tag="Shared")
+    equal = ImportVar(tag="Shared")
+
+    # First encode populates the cache, the second must reuse it, and an equal
+    # but distinct instance must encode to the same bytes either way.
+    assert _deterministic_hash([shared, shared]) == _deterministic_hash([shared, equal])
+    assert _deterministic_hash([equal, shared]) == _deterministic_hash([shared, shared])
+
+
+def test_deterministic_hash_never_conflates_equal_but_differently_typed_fields():
+    """``True`` and ``1`` compare equal but must never share an encoding."""
+    assert _deterministic_hash(_HashFrozenScalars(a=True)) != _deterministic_hash(
+        _HashFrozenScalars(a=1)
+    )
+
+
+def test_deterministic_hash_tracks_mutation_of_uncacheable_dataclasses():
+    """Dataclasses that can still change must be re-encoded every time."""
+    mutable = _HashMutable(a=1)
+    before = _deterministic_hash(mutable)
+    mutable.a = 2
+    assert _deterministic_hash(mutable) != before
+
+    # Frozen, but a field holds a mutable container.
+    container = _HashFrozenContainer(items=[1])
+    before = _deterministic_hash(container)
+    container.items.append(2)
+    assert _deterministic_hash(container) != before
+
+
+def test_deterministic_hash_survives_encoding_cache_eviction(monkeypatch):
+    """Evicting the encoding cache must not change any digest."""
+    values = [ImportVar(tag=f"Evict{index}") for index in range(32)]
+    expected = [_deterministic_hash(value) for value in values]
+
+    monkeypatch.setattr(component, "_MAX_ENCODED_DATACLASSES", 4)
+    component._ENCODED_DATACLASSES.clear()
+    assert [_deterministic_hash(value) for value in values] == expected
+    assert len(component._ENCODED_DATACLASSES) <= 4

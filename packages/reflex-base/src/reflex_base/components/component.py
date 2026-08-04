@@ -662,6 +662,36 @@ def _encode_dataclass(buf: bytearray, value: Any) -> None:
         _encode_deterministic(buf, getattr(value, field_name))
 
 
+_IMMUTABLE_FIELD_TYPES = (str, bool, int, float, type(None))
+_MAX_ENCODED_DATACLASSES = 8192
+# Encodings of frozen dataclass instances whose fields are all immutable
+# scalars, keyed by ``id``. Each entry keeps the instance alive, so its id
+# cannot be reused while cached and a lookup hit is always the same object,
+# whose encoding can never have changed.
+_ENCODED_DATACLASSES: dict[int, tuple[object, bytes]] = {}
+
+
+def _encode_frozen_dataclass(buf: bytearray, value: Any) -> None:
+    entry = _ENCODED_DATACLASSES.get(id(value))
+    if entry is not None:
+        buf += entry[1]
+        return
+    start = len(buf)
+    _encode_dataclass(buf, value)
+    value_type = type(value)
+    if all(
+        type(getattr(value, field_name)) in _IMMUTABLE_FIELD_TYPES
+        for field_name, _ in _dataclass_fields_to_encode(value_type)
+    ):
+        if len(_ENCODED_DATACLASSES) >= _MAX_ENCODED_DATACLASSES:
+            _ENCODED_DATACLASSES.clear()
+        _ENCODED_DATACLASSES[id(value)] = (value, bytes(buf[start:]))
+    else:
+        # A field holds something mutable (or a Var, dict, component, ...), so
+        # this class is never cacheable: stop paying for the check.
+        _ENCODERS[value_type] = _encode_dataclass
+
+
 def _encode_component(buf: bytearray, value: BaseComponent) -> None:
     buf += b"C"
     _encode_deterministic(buf, value.render())
@@ -690,6 +720,8 @@ def _resolve_encoder(value: object) -> Callable[[bytearray, Any], None] | None:
     if isinstance(value, Var):
         return _encode_var
     if dataclasses.is_dataclass(value):
+        if not isinstance(value, type) and type(value).__dataclass_params__.frozen:  # pyright: ignore[reportAttributeAccessIssue]
+            return _encode_frozen_dataclass
         return _encode_dataclass
     if isinstance(value, BaseComponent):
         return _encode_component
@@ -740,18 +772,28 @@ def _encode_deterministic(buf: bytearray, value: object) -> None:
     encoder(buf, value)
 
 
-def _deterministic_hash(value: object) -> str:
-    """Hash a rendered dictionary.
+def _deterministic_hash(*values: object) -> str:
+    """Hash values into a single digest, in the order given.
+
+    Encoding into a buffer instead of feeding the hasher node by node is what
+    makes hashing cheap, at the cost of holding one value's encoding in memory
+    (a few MB for a large page). Each value is flushed into the hasher before
+    the next one is encoded, so peak memory stays at the largest single value
+    rather than their sum.
 
     Args:
-        value: The dictionary to hash.
+        *values: The values to hash.
 
     Returns:
-        The hash of the dictionary.
+        The hex digest over all values.
     """
+    hasher = md5(usedforsecurity=False)
     buf = bytearray()
-    _encode_deterministic(buf, value)
-    return md5(buf, usedforsecurity=False).hexdigest()
+    for value in values:
+        _encode_deterministic(buf, value)
+        hasher.update(buf)
+        buf.clear()
+    return hasher.hexdigest()
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
@@ -1576,23 +1618,25 @@ class Component(BaseComponent, ABC):
         Returns:
             The hex digest content hash.
         """
-        buf = bytearray()
-        _encode_deterministic(buf, self.render())
         if shallow:
             # For non-snapshot strategies, we only hash the component's own hooks, imports, custom code, and app-wrap components
-            _encode_deterministic(buf, dict(self._get_imports()))
-            _encode_deterministic(buf, dict(self._get_hooks_internal()))
-            _encode_deterministic(buf, dict(self._get_added_hooks()))
-            _encode_deterministic(buf, self._get_hooks())
-            _encode_deterministic(buf, self._get_custom_code())
-            _encode_deterministic(buf, dict(self._get_app_wrap_components()))
-        else:
-            _encode_deterministic(buf, dict(self._get_all_imports()))
-            _encode_deterministic(buf, dict(self._get_all_hooks_internal()))
-            _encode_deterministic(buf, dict(self._get_all_hooks()))
-            _encode_deterministic(buf, dict(self._get_all_custom_code()))
-            _encode_deterministic(buf, dict(self._get_all_app_wrap_components()))
-        return md5(buf, usedforsecurity=False).hexdigest()
+            return _deterministic_hash(
+                self.render(),
+                dict(self._get_imports()),
+                dict(self._get_hooks_internal()),
+                dict(self._get_added_hooks()),
+                self._get_hooks(),
+                self._get_custom_code(),
+                dict(self._get_app_wrap_components()),
+            )
+        return _deterministic_hash(
+            self.render(),
+            dict(self._get_all_imports()),
+            dict(self._get_all_hooks_internal()),
+            dict(self._get_all_hooks()),
+            dict(self._get_all_custom_code()),
+            dict(self._get_all_app_wrap_components()),
+        )
 
     def _compute_memo_tag(self) -> str:
         """Compute a stable tag name for memoizing this component.
