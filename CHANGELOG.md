@@ -1,3 +1,10 @@
+## v0.9.8a3 (2026-08-04)
+
+### Bug Fixes
+
+- Fixed `reflex run` failing with `error: lockfile had changes, but lockfile is frozen` after upgrading to a Reflex version that adds a `package.json` override. Overrides are now applied after the lockfile saved in `reflex.lock/` has been installed, so it is no longer treated as out of date. ([#6844](https://github.com/reflex-dev/reflex/issues/6844))
+
+
 ## v0.9.8a2 (2026-08-03)
 
 ### Miscellaneous
