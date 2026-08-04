@@ -115,6 +115,9 @@ async def _patch_state(
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
+        # For regular linked-state events this router dirtiness is temporary:
+        # it forces router-dependent computed vars to resolve for the patched
+        # tree, but should not leak into the event's final delta.
         root_state = original_state._get_root_state()
         root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
