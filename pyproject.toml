@@ -113,6 +113,7 @@ dev = [
   "starlette-admin",
   "toml",
   "towncrier",
+  "ty",
   "typer",
   "uvicorn",
 ]
