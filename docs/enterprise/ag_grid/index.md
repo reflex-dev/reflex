@@ -170,6 +170,29 @@ def ag_grid_column_filter_types():
 
 📊 **Dataset source:** [GanttChart-updated.csv](https://raw.githubusercontent.com/plotly/datasets/master/GanttChart-updated.csv)
 
+To show an inline filter input below the column headers, set `floating_filter: True` in the column definition (or in `default_col_def` to apply it to every column).
+
+### Multi-Column Filter (Enterprise)
+
+The enterprise `agMultiColumnFilter` combines several filter types on a single column:
+
+```python
+column_defs = [
+    {
+        "field": "athlete",
+        "filter": "agMultiColumnFilter",
+        "filter_params": {
+            "filters": [
+                {"filter": "agTextColumnFilter"},
+                {"filter": "agSetColumnFilter"},
+            ],
+        },
+    },
+]
+```
+
+Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-availableworking-in-reflex) below.
+
 ## Row Sorting
 
 By default, the rows can be sorted by any column by clicking on the column header. You can disable sorting of the rows for a column by setting the `sortable` key to `False` in the column definition.
@@ -234,6 +257,34 @@ def ag_grid_simple_row_selection():
 ```
 
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
+
+### Handling Selection Changes
+
+Use the `on_selection_changed` event trigger to react to selection changes. The event handler receives the selected rows directly as a `list[dict]` — not an event object, so don't try to read the rows from `event["rows"]` or through the grid API:
+
+```python
+class GridSelectionState(rx.State):
+    selected_rows: list[dict] = []
+
+    @rx.event
+    def handle_selection_changed(self, selected_rows: list[dict]):
+        self.selected_rows = selected_rows
+        return rx.toast(f"Selected {len(selected_rows)} rows")
+
+
+def grid_with_selection():
+    return rxe.ag_grid(
+        id="selection_grid",
+        row_data=df.to_dict("records"),
+        column_defs=column_defs,
+        row_selection={"mode": "multiRow"},
+        on_selection_changed=GridSelectionState.handle_selection_changed,
+        width="100%",
+        height="40vh",
+    )
+```
+
+An event handler annotated as `def handle(self, event: dict)` raises an `EventHandlerArgTypeMismatchError`, since the trigger passes a `list[dict]`.
 
 ## Editing
 

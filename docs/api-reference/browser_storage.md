@@ -25,6 +25,15 @@ class CookieState(rx.State):
     c6: str = rx.Cookie(name="c6-custom-name")
 ```
 
+```md alert info
+# The default value is the first positional argument.
+
+`rx.Cookie`, `rx.LocalStorage`, and `rx.SessionStorage` all take the default
+value as their first positional argument, e.g. `rx.LocalStorage("light")`. It
+cannot be passed as a keyword argument — the keyword arguments (`name`,
+`max_age`, `sync`, etc.) only configure the storage behavior.
+```
+
 ```md alert warning
 # **The default value of a Cookie is never set in the browser!**
 

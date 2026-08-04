@@ -1,0 +1,1 @@
+Update locked `aiohttp==3.14.3` and `cryptography==50.0.0`, clearing CVE-2026-59881, CVE-2026-69243, CVE-2026-69244 and CVE-2026-69247. Both are transitive development dependencies of the docs app and are not installed with Reflex.

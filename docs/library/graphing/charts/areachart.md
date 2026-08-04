@@ -137,6 +137,50 @@ def area_stack():
     )
 ```
 
+## Gradient Fill
+
+An SVG linear gradient can give the filled area a smooth fade-out effect. Define the gradient inside an `rx.el.svg.defs` block as the first child of the chart, then reference it from the area's `fill` prop with `"url(#gradient-id)"`.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def area_gradient():
+    return rx.recharts.area_chart(
+        rx.el.svg.defs(
+            rx.el.svg.linear_gradient(
+                rx.el.svg.stop(offset="5%", stop_color="#8884d8", stop_opacity=0.8),
+                rx.el.svg.stop(offset="95%", stop_color="#8884d8", stop_opacity=0),
+                id="area_gradient",
+                x1=0,
+                x2=0,
+                y1=0,
+                y2=1,
+            ),
+        ),
+        rx.recharts.area(
+            data_key="uv",
+            stroke="#8884d8",
+            fill="url(#area_gradient)",
+            type_="natural",
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        rx.recharts.graphing_tooltip(),
+        data=data,
+        width="100%",
+        height=300,
+    )
+```
+
 ## Multiple Axis
 
 Multiple axes can be used for displaying different data series with varying scales or units on the same chart. This allows for a more comprehensive comparison and analysis of the data.
