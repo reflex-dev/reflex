@@ -111,10 +111,12 @@ async def _patch_state(
         root_state.dirty_vars.add("router")
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        await root_state._get_resolved_delta()
-        if not full_delta:
-            root_state.dirty_vars = root_dirty_vars
-            root_state.dirty_substates = root_dirty_substates
+        try:
+            await root_state._get_resolved_delta()
+        finally:
+            if not full_delta:
+                root_state.dirty_vars = root_dirty_vars
+                root_state.dirty_substates = root_dirty_substates
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
