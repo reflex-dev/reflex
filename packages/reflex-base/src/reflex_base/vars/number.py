@@ -958,12 +958,17 @@ class LiteralNumberVar(LiteralVar[NUMBER_T], NumberVar[NUMBER_T]):
         Raises:
             PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
-        if isinstance(self._var_value, decimal.Decimal):
-            return orjson_dumps(float(self._var_value))
-        if math.isinf(self._var_value) or math.isnan(self._var_value):
+        value = (
+            float(self._var_value)
+            if isinstance(self._var_value, decimal.Decimal)
+            else self._var_value
+        )
+        # A Decimal can convert to a non-finite float, which orjson would emit
+        # as null; reject it like the float path does.
+        if math.isinf(value) or math.isnan(value):
             msg = f"No valid JSON representation for {self}"
             raise PrimitiveUnserializableToJSONError(msg)
-        return orjson_dumps(self._var_value)
+        return orjson_dumps(value)
 
     def __hash__(self) -> int:
         """Calculate the hash value of the object.

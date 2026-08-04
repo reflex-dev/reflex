@@ -1,5 +1,6 @@
 """This module provides utility functions to initialize the frontend skeleton."""
 
+import json
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -12,7 +13,7 @@ from reflex_base.plugins.embed import get_embed_plugin
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
 from reflex.utils import console, net, path_ops
-from reflex.utils.format import orjson_dumps, orjson_loads
+from reflex.utils.format import orjson_dumps
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -364,12 +365,12 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    if output_path.exists() and output_path.read_text(encoding="utf-8") == rendered:
         return False
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered)
+    output_path.write_text(rendered, encoding="utf-8")
     return changed
 
 
@@ -420,8 +421,8 @@ def _read_package_json_object(package_json_path: Path) -> dict:
     if not package_json_path.exists():
         return {}
     try:
-        parsed = orjson_loads(package_json_path.read_bytes())
-    except (ValueError, OSError) as e:
+        parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as e:
         console.warn(f"Failed to read {package_json_path}: {e}; treating it as empty.")
         return {}
     if not isinstance(parsed, dict):
@@ -593,14 +594,14 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     console.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(orjson_dumps(package_json))
+    package_json_path.write_text(orjson_dumps(package_json), encoding="utf-8")
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    output_path.write_text(_compile_package_json(), encoding="utf-8")
 
 
 def _compile_vite_config(config: Config):

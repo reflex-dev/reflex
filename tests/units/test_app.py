@@ -222,6 +222,52 @@ def test_default_app(app: App):
     assert app.admin_dash is None
 
 
+@pytest.fixture
+def restore_socketio_codec() -> Generator[None, None, None]:
+    """Restore the socket.io packet codec, which is a shared class attribute.
+
+    Yields:
+        None.
+    """
+    import socketio.packet
+
+    original = socketio.packet.Packet.json
+    try:
+        yield
+    finally:
+        socketio.packet.Packet.json = original
+
+
+def test_custom_sio_gets_sentinel_aware_codec(restore_socketio_codec: None):
+    """A custom server keeping the default codec gets Reflex's, so non-finite
+    floats and strings colliding with its sentinels round-trip escaped.
+    """
+    import socketio
+
+    from reflex.app import _SOCKET_JSON_CODEC
+
+    sio = socketio.AsyncServer(async_mode="asgi")
+    App(sio=sio)._enable_state()
+
+    packet_class: Any = sio.packet_class
+    assert packet_class.json is _SOCKET_JSON_CODEC
+    assert packet_class.json.dumps({"v": format.NAN_SENTINEL}) == (
+        f'{{"v":"{format.SENTINEL_ESCAPE_PREFIX}{format.NAN_SENTINEL}"}}'
+    )
+
+
+def test_custom_sio_keeps_explicit_codec(restore_socketio_codec: None):
+    """A codec the user passed to their own server is left alone."""
+    import socketio
+
+    codec = unittest.mock.Mock()
+    sio = socketio.AsyncServer(async_mode="asgi", json=codec)
+    App(sio=sio)._enable_state()
+
+    packet_class: Any = sio.packet_class
+    assert packet_class.json is codec
+
+
 def test_multiple_states_error(
     monkeypatch: pytest.MonkeyPatch,
     test_state: BaseState,

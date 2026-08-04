@@ -18,6 +18,7 @@ import {
   exception_state_name,
 } from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
+import { parseNonFiniteAwareJSON } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
@@ -460,40 +461,6 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
-// Sentinels for non-finite floats, emitted by reflex_base.utils.format and
-// restored by the reviver below. Colliding user strings arrive escaped; the
-// reviver strips one escape level. The rewriter handles bare NaN/Infinity
-// tokens from stdlib json.dumps (defense-in-depth).
-const NAN_SENTINEL = "__reflex_nan__";
-const INF_SENTINEL = "__reflex_inf__";
-const NEG_INF_SENTINEL = "__reflex_neg_inf__";
-const SENTINEL_ESCAPE_PREFIX = "__reflex_esc__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: `"${INF_SENTINEL}"`,
-  "-Infinity": `"${NEG_INF_SENTINEL}"`,
-  NaN: `"${NAN_SENTINEL}"`,
-};
-export const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-export const reviveNonFiniteFloats = (_k, v) => {
-  if (typeof v !== "string" || !v.startsWith("__reflex_")) return v;
-  if (v === NAN_SENTINEL) return NaN;
-  if (v === INF_SENTINEL) return Infinity;
-  if (v === NEG_INF_SENTINEL) return -Infinity;
-  if (v.startsWith(SENTINEL_ESCAPE_PREFIX))
-    return v.slice(SENTINEL_ESCAPE_PREFIX.length);
-  return v;
-};
-// Passing a reviver disables the engine's fast JSON parser (~4-12x slower),
-// so only pay for it when a sentinel can actually appear in the payload.
-export const parseNonFiniteAwareJSON = (str) =>
-  str.includes("__reflex_")
-    ? JSON.parse(str, reviveNonFiniteFloats)
-    : JSON.parse(str);
-
 /**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
@@ -600,15 +567,9 @@ export const connect = async (
   socket.current.io.decoder.tryParse = (str) => {
     try {
       return parseNonFiniteAwareJSON(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
-      }
+    } catch {
+      // socket.io's decoder expects false for an undecodable packet.
+      return false;
     }
   };
   // Set up a reconnect helper function

@@ -6,6 +6,7 @@ import contextlib
 import importlib
 import importlib.metadata
 import inspect
+import json
 import re
 import sys
 import typing
@@ -25,7 +26,6 @@ from reflex_base.utils.decorator import once
 
 from reflex import model
 from reflex.utils import console, net, path_ops
-from reflex.utils.format import orjson_loads
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
@@ -114,7 +114,7 @@ def get_or_set_last_reflex_version_check_datetime():
     if not reflex_json_file.exists():
         return None
     # Open and read the file
-    data = orjson_loads(reflex_json_file.read_bytes())
+    data = json.loads(reflex_json_file.read_text())
     last_version_check_datetime = data.get("last_version_check_datetime")
     if not last_version_check_datetime:
         data.update({"last_version_check_datetime": str(datetime.now())})
@@ -507,7 +507,9 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists() and not raise_on_fail:
         return None
-    data = orjson_loads(json_file.read_bytes())
+    # Must use stdlib json: orjson rounds integers beyond 64 bits to floats and
+    # project_hash is a 128-bit uuid int.
+    data = json.loads(json_file.read_text())
     return data.get("project_hash")
 
 
@@ -616,7 +618,7 @@ def _is_app_compiled_with_same_reflex_version() -> bool:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists():
         return False
-    app_version = orjson_loads(json_file.read_bytes()).get("version")
+    app_version = json.loads(json_file.read_text()).get("version")
     return app_version == constants.Reflex.VERSION
 
 

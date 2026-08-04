@@ -132,7 +132,10 @@ def get_cpu_info() -> CpuInfo | None:
     cpu_info = _retrieve_cpu_info()
     if cpu_info:
         cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
-        cpu_info_file.write_text(orjson_dumps(dataclasses.asdict(cpu_info)))
+        # orjson emits non-ASCII verbatim, so the write must match the UTF-8 read.
+        cpu_info_file.write_text(
+            orjson_dumps(dataclasses.asdict(cpu_info)), encoding="utf-8"
+        )
     return cpu_info
 
 

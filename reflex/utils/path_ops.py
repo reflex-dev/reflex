@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -10,7 +11,6 @@ from pathlib import Path
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
-from reflex_base.utils.format import orjson_dumps, orjson_loads
 
 # Shorthand for join.
 join = os.linesep.join
@@ -245,13 +245,15 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, object]):
     # Read the existing json object from the file.
     json_object = {}
     if fp.stat().st_size:
-        json_object = orjson_loads(fp.read_bytes())
+        with fp.open() as f:
+            json_object = json.load(f)
 
     # Update the json object with the new data.
     json_object.update(update_dict)
 
     # Write the updated json object to the file
-    fp.write_text(orjson_dumps(json_object))
+    with fp.open("w") as f:
+        json.dump(json_object, f, ensure_ascii=False)
 
 
 def find_replace(directory: str | Path, find: str, replace: str):

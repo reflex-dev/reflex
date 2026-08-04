@@ -15,7 +15,7 @@ from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
+from reflex.utils import frontend_skeleton, js_runtimes, path_ops, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -1953,3 +1953,37 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+def test_project_hash_survives_reflex_json_update(tmp_path, monkeypatch):
+    """A 128-bit project_hash round-trips through reflex.json rewrites unchanged."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+
+    project_hash = uuid.uuid4().int
+    frontend_skeleton.init_reflex_json(project_hash=project_hash)
+
+    # A later update (e.g. the version check timestamp) rewrites the whole file.
+    path_ops.update_json_file(
+        web_dir / constants.Reflex.JSON,
+        {"last_version_check_datetime": "2024-01-01 00:00:00"},
+    )
+
+    read_hash = prerequisites.get_project_hash()
+    assert isinstance(read_hash, int)
+    assert read_hash == project_hash
+    # Telemetry re-encodes the hash as a UUID, which requires the exact int.
+    assert uuid.UUID(int=read_hash).version == 4
+
+
+def test_read_package_json_object_preserves_large_ints(tmp_path):
+    """User-owned >64-bit integers in package.json are read back exactly."""
+    package_json_path = tmp_path / constants.PackageJson.PATH
+    package_json = {"name": "app", "customId": 2**70 + 1}
+    package_json_path.write_text(json.dumps(package_json))
+
+    assert (
+        frontend_skeleton._read_package_json_object(package_json_path) == package_json
+    )

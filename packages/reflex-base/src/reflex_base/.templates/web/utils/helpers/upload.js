@@ -1,9 +1,5 @@
 import env from "$/env.json";
-import {
-  parseNonFiniteAwareJSON,
-  reviveNonFiniteFloats,
-  rewriteBareNonFiniteFloats,
-} from "$/utils/state";
+import { parseNonFiniteAwareJSON } from "$/utils/helpers/json";
 
 /**
  * Upload files to the server.
@@ -51,17 +47,7 @@ export const uploadFiles = async (
     // So only process _new_ chunks beyond resp_idx.
     chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        let chunk;
-        try {
-          chunk = parseNonFiniteAwareJSON(chunk_json);
-        } catch {
-          // Without orjson the backend emits bare NaN/Infinity tokens
-          // (stdlib json); rewrite them to sentinels and retry.
-          chunk = JSON.parse(
-            rewriteBareNonFiniteFloats(chunk_json),
-            reviveNonFiniteFloats,
-          );
-        }
+        const chunk = parseNonFiniteAwareJSON(chunk_json);
         event_callbacks.map((f, ix) => {
           f(chunk)
             .then(() => {

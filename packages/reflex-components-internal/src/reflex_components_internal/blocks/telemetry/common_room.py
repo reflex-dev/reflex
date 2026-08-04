@@ -1,6 +1,6 @@
 """Common Room website visitor tracking integration for Reflex applications."""
 
-from reflex_base.utils.format import orjson_dumps
+import json
 
 import reflex as rx
 
@@ -67,7 +67,7 @@ def identify_common_room_user(
     if name:
         identify_data["name"] = name
 
-    js_data = orjson_dumps(identify_data)
+    js_data = json.dumps(identify_data)
 
     return rx.call_script(
         f"""

@@ -688,9 +688,22 @@ def json_dumps(obj: Any, **kwargs) -> str:
     return json.dumps(obj, **kwargs)
 
 
+# Types orjson serializes natively but Reflex has its own serializers for:
+# route them through default= so both backends agree. Dataclasses would
+# otherwise become field dicts instead of e.g. a Color's CSS string, and
+# datetimes would use an ISO 'T' separator instead of the space-separated
+# form that ``serializers.serialize_datetime`` produces.
+_ORJSON_PASSTHROUGH_OPTS = (
+    (orjson.OPT_PASSTHROUGH_DATACLASS | orjson.OPT_PASSTHROUGH_DATETIME)
+    if orjson is not None
+    else 0
+)
+
+
 def orjson_dumps(obj: Any, **kwargs) -> str:
     """Serialize obj to a JSON string, using orjson when available.
 
+    Custom types go through ``serializers.serialize``, matching ``json_dumps``.
     Supports orjson's two-space indentation and key sorting, falling back to
     ``json_dumps`` for unsupported arguments or values.
 
@@ -710,20 +723,23 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         orjson is None
         # orjson only supports two-space indentation and always emits UTF-8.
         or indent not in (None, 2)
+        or kwargs.get("ensure_ascii")
         or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
     ):
         return json_dumps(obj, **kwargs)
 
-    option = 0
+    from reflex_base.utils import serializers
+
+    option = _ORJSON_PASSTHROUGH_OPTS
     if indent:
         option |= orjson.OPT_INDENT_2
     if kwargs.get("sort_keys"):
         option |= orjson.OPT_SORT_KEYS
 
     try:
-        return orjson.dumps(obj, option=option or None).decode()
+        return orjson.dumps(obj, default=serializers.serialize, option=option).decode()
     except TypeError:
-        # json_dumps handles large integers and registered custom types.
+        # json_dumps handles values orjson rejects, such as large integers.
         return json_dumps(obj, **kwargs)
 
 
@@ -731,6 +747,10 @@ def orjson_loads(data: str | bytes) -> Any:
     """Deserialize a JSON string or bytes, using orjson when available.
 
     Falls back to stdlib json.loads if orjson is not installed.
+
+    orjson rounds integers outside the signed 64-bit range to floats, so use
+    stdlib ``json.loads`` for payloads that may carry arbitrary-precision
+    integers (e.g. the 128-bit ``project_hash`` in ``reflex.json``).
 
     Args:
         data: JSON string or bytes to deserialize.
@@ -756,16 +776,7 @@ _SENTINEL_PREFIX_BYTES = b"__reflex_"
 _INF = float("inf")
 
 _ORJSON_SOCKET_OPTS = (
-    (
-        orjson.OPT_NON_STR_KEYS
-        | orjson.OPT_PASSTHROUGH_DATACLASS
-        # Route datetimes through default= so they get the same
-        # space-separated format that ``serializers.serialize_datetime``
-        # produces; orjson's native output uses an ISO 'T' separator.
-        | orjson.OPT_PASSTHROUGH_DATETIME
-    )
-    if orjson is not None
-    else 0
+    (orjson.OPT_NON_STR_KEYS | _ORJSON_PASSTHROUGH_OPTS) if orjson is not None else 0
 )
 
 

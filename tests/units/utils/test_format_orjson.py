@@ -496,3 +496,44 @@ def test_type_error_fallback_escapes_collision_inside_state_update():
         "big": 2**70,
         "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
     }
+
+
+# orjson_dumps routes custom types through the serializer registry
+
+
+def test_orjson_dumps_serializes_dataclass_via_registry():
+    """Regression: orjson natively renders a dataclass as its field dict,
+    which would turn a Color into ``{"color": ..., "shade": ...}`` instead of
+    the CSS string ``serializers.serialize_color`` produces.
+    """
+    import reflex as rx
+
+    assert orjson_dumps({"c": rx.color("blue", 9)}) == '{"c":"var(--blue-9)"}'
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        datetime.datetime(2026, 4, 25, 10, 30, 45),
+        datetime.date(2026, 4, 25),
+        datetime.timedelta(seconds=90),
+        Path("a/b"),
+        UUID(int=5),
+        Decimal("1.5"),
+        {"nested": [datetime.date(2026, 4, 25)]},
+    ],
+)
+def test_orjson_dumps_matches_json_dumps_for_custom_types(value):
+    """``orjson_dumps`` must agree with ``json_dumps`` on every type the
+    serializer registry handles, including the ones orjson supports natively.
+    """
+    assert orjson_loads(orjson_dumps({"v": value})) == json.loads(
+        json_dumps({"v": value})
+    )
+
+
+def test_orjson_dumps_ensure_ascii_true_falls_back_to_stdlib():
+    """Orjson always emits UTF-8, so an explicit ``ensure_ascii=True`` has to
+    go through stdlib instead of being silently ignored.
+    """
+    assert orjson_dumps({"a": "é"}, ensure_ascii=True) == json.dumps({"a": "é"})
