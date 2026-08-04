@@ -40,6 +40,17 @@ repos:
     language: system
     types: [python]
     require_serial: true
+- repo: local
+  hooks:
+  # pyright already covers tests/type_checking through the hook above; this is
+  # the second opinion the assert_type examples exist for.
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
+    language: system
+    files: ^tests/type_checking/
+    pass_filenames: false
+    require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
   hooks:
