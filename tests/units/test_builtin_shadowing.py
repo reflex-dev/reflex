@@ -96,7 +96,9 @@ def _source_files() -> list[pathlib.Path]:
     )
 
 
-@pytest.mark.parametrize("path", _source_files(), ids=lambda p: str(p.name))
+@pytest.mark.parametrize(
+    "path", _source_files(), ids=lambda p: str(p.relative_to(REPO_ROOT))
+)
 def test_no_builtin_shadowed_in_annotations(path: pathlib.Path):
     """A class member must not shadow a builtin the same class body uses as an annotation.
 
