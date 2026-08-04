@@ -102,11 +102,19 @@ async def _patch_state(
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
+        # For regular linked-state events this router dirtiness is temporary:
+        # it forces router-dependent computed vars to resolve for the patched
+        # tree, but should not leak into the event's final delta.
         root_state = original_state._get_root_state()
+        root_dirty_vars = set(root_state.dirty_vars)
+        root_dirty_substates = set(root_state.dirty_substates)
         root_state.dirty_vars.add("router")
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
         await root_state._get_resolved_delta()
+        if not full_delta:
+            root_state.dirty_vars = root_dirty_vars
+            root_state.dirty_substates = root_dirty_substates
         yield
     finally:
         original_parent_state.substates[state_name] = original_state

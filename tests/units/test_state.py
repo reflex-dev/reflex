@@ -922,6 +922,41 @@ def test_setting_inherited_backend_var_does_not_mark_child_touched(
     assert not child_touched
 
 
+class _LinkedStatePatchRoot(BaseState):
+    """Root state for testing linked-state dirty propagation."""
+
+
+class _LinkedStatePatchShared(_LinkedStatePatchRoot):
+    """Substate used to exercise _patch_state without full SharedState setup."""
+
+    counter: int = 0
+
+
+@pytest.mark.asyncio
+async def test_linked_state_event_does_not_dirty_root_state():
+    """Linked-state events should not leak temporary router dirtiness."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert isinstance(private_state, _LinkedStatePatchShared)
+    assert isinstance(linked_state, _LinkedStatePatchShared)
+
+    private_tree._clean()
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        linked_state.counter = 1
+
+    assert "router" not in private_tree.dirty_vars
+    assert constants.ROUTER_DATA not in private_tree.dirty_vars
+    assert private_tree.get_full_name() not in private_tree.get_delta()
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
