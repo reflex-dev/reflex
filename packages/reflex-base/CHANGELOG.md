@@ -1,3 +1,8 @@
+## v0.9.8a2 (2026-08-03)
+
+No significant changes.
+
+
 ## v0.9.8a1 (2026-08-03)
 
 ### Features
