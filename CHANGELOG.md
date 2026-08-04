@@ -1,3 +1,11 @@
+## v0.9.8a2 (2026-08-03)
+
+### Miscellaneous
+
+- Update dev pin Pillow==12.3.0 to avoid various CVE reports ([#6836](https://github.com/reflex-dev/reflex/issues/6836))
+- Update locked `aiohttp==3.14.3` and `cryptography==50.0.0`, clearing CVE-2026-59881, CVE-2026-69243, CVE-2026-69244 and CVE-2026-69247. Both are transitive development dependencies of the docs app and are not installed with Reflex. ([#6837](https://github.com/reflex-dev/reflex/issues/6837))
+
+
 ## v0.9.8a1 (2026-08-03)
 
 ### Features
