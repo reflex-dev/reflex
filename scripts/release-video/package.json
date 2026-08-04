@@ -1,0 +1,25 @@
+{
+  "name": "reflex-release-video",
+  "version": "0.9.8",
+  "private": true,
+  "description": "Remotion release video for Reflex 0.9.8",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render Release out/reflex-0.9.8.mp4",
+    "render:gif": "remotion render Release out/reflex-0.9.8.gif",
+    "still": "remotion still Release out/still.png"
+  },
+  "dependencies": {
+    "@fontsource-variable/instrument-sans": "5.2.8",
+    "@fontsource-variable/jetbrains-mono": "5.2.8",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.506",
+    "@remotion/cli": "4.0.506"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "typescript": "5.9.2"
+  }
+}
