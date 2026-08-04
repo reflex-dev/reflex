@@ -195,7 +195,7 @@ def products_panel() -> rx.Component:
                 drawer_panel_item(
                     nav_icon("RoboticIcon"),
                     "Agent Toolkit",
-                    "/docs/ai/integrations/ai-onboarding/",
+                    "/docs/ai/integrations/agent-toolkit/",
                 ),
             ),
             drawer_category(

@@ -166,6 +166,8 @@ class AreaChart(CategoricalChartBase):
         "GraphingTooltip",
         "Area",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 
@@ -211,6 +213,8 @@ class BarChart(CategoricalChartBase):
         "GraphingTooltip",
         "Bar",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 
@@ -234,6 +238,8 @@ class LineChart(CategoricalChartBase):
         "GraphingTooltip",
         "Line",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 
@@ -279,6 +285,8 @@ class ComposedChart(CategoricalChartBase):
         "Line",
         "Bar",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 
@@ -302,6 +310,8 @@ class PieChart(ChartBase):
         "GraphingTooltip",
         "Pie",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
     on_mouse_down: EventHandler[no_args_event_spec] = field(
@@ -369,6 +379,8 @@ class RadarChart(ChartBase):
         "GraphingTooltip",
         "Radar",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
     @classmethod
@@ -445,6 +457,8 @@ class RadialBarChart(ChartBase):
         "GraphingTooltip",
         "RadialBar",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 
@@ -473,6 +487,8 @@ class ScatterChart(ChartBase):
         "GraphingTooltip",
         "Scatter",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
     @classmethod
@@ -517,6 +533,8 @@ class FunnelChart(ChartBase):
         "GraphingTooltip",
         "Funnel",
         "Defs",
+        "Layer",
+        "Rectangle",
     ]
 
 

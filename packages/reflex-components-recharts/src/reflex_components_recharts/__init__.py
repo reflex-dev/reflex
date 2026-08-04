@@ -76,6 +76,10 @@ _SUBMOD_ATTRS: dict = {
         "cell",
         "Cell",
         "use_chart_width",
+        "layer",
+        "Layer",
+        "rectangle",
+        "Rectangle",
     ],
     "polar": [
         "pie",
