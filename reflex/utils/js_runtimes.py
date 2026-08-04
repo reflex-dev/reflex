@@ -589,7 +589,8 @@ def _frontend_packages_cache_payload(
     return (
         f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
         f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
-        f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r}"
+        f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r},"
+        f"{sorted(constants.PackageJson.OVERRIDES.items())!r}"
     )
 
 
@@ -706,6 +707,11 @@ def _install_frontend_packages(
     ):
         _run_initial_install(primary_package_manager, env, config.frozen_lockfile)
 
+    # Framework overrides are withheld while the persisted package.json is
+    # restored so the frozen install above sees exactly the file that produced
+    # the persisted lockfile. Merge them now, before any resolution happens.
+    overrides_changed = frontend_skeleton.update_package_json_overrides()
+
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
 
@@ -752,6 +758,14 @@ def _install_frontend_packages(
         run_package_manager(
             [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
             show_status_message="Installing frontend packages",
+        )
+
+    if overrides_changed and not (dev_deps_to_add or deps_to_add):
+        # Newly merged overrides with no add to carry them into the lockfile:
+        # resolve them now so the persisted pair stays frozen-install ready.
+        run_package_manager(
+            [primary_package_manager, "install", "--legacy-peer-deps"],
+            show_status_message="Applying frontend package overrides",
         )
 
 

@@ -1,1 +1,0 @@
-`reflex deploy` now accepts `--provider` (deploy to Reflex Cloud or a GCP account connected to your organization) and `--description` (record an optional changelog note on the deployment, shown in `reflex cloud apps history`).
