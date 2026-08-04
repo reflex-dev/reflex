@@ -1,188 +1,89 @@
-# Reflex Build: Best Practices
+# Reflex Build Best Practices
 
-> A comprehensive guide to working effectively with AI Builder. This guide outlines how to get the most reliable and efficient results when working with the AI Builder inside Reflex Build. The key to success is clarity, structure, and iteration.
+Reliable results come from clear context, focused prompts, and short review cycles. Start with the smallest useful version of your app, then add one workflow at a time.
 
----
+## Plan the First Version
 
-## Core Workflow
+Before generating, write down:
 
-### Foundation: Planning Before You Build
+- The app's primary user and goal.
+- The first page or workflow that must work.
+- The data that page needs.
+- Three to five essential features.
+- Any visual references or design rules.
 
-Before jumping into the AI Builder, take time to plan your approach. Good preparation leads to better results and fewer iterations.
+For a large specification, ask the agent to break it into ordered, buildable tasks. Build and verify each task instead of requesting the entire product in one generation.
 
-- **Define your core purpose and users** — Write a 2-3 sentence app description and identify your target users and their needs.
-- **Prioritize 3-5 key features** — Focus on the most important functionality first, then expand from there.
-- **Gather visual references** — Collect screenshots, wireframes, or sketches of layouts you want to emulate.
-- **Structure your data** — List what information each page needs to display and how users will interact with it.
-- **Start with your most important page** — Usually your main dashboard, home screen, or primary workflow. Get this right first.
+## Write Outcome-Oriented Prompts
 
-### Auto-Generate Prompts from App Specs
-
-To save time and get higher-quality prompts, you can feed your full app spec into the AI Builder and ask it to break the spec into structured, build-ready prompts.
-
-The AI Builder can translate your vision into:
-
-- Layout instructions
-- UI component definitions
-- Data model requirements
-- Styling preferences
-- Follow-up test plans
-
-**Example workflow:**
-
-1. Paste your full app specification into the AI Builder
-2. Ask **"Break this into a series of buildable prompts."**
-3. Execute each generated prompt in sequence
-4. Build iteratively using the structured prompts
-
-### Working with Text Specifications
-
-If you have a structured app specification, don't paste the entire document into the builder at once. Break it down into logical sections and feed them in sequence.
-
-**Pro tip:** Let the AI Builder help prepare prompts:
-
-Paste your full app spec and ask:
-
-  - **"Break this into buildable prompts."**
-  - **"Write one prompt per feature/page to build this app."**
-
-This approach — planning first, then building iteratively — lets you move faster and build smarter.
-
-### Writing Clear, Task-Oriented Prompts
-
-The AI performs best when it receives **specific, outcome-driven instructions**. Avoid vague, broad prompts.
-
+State the desired behavior, important components, data, and constraints. Replace subjective language with details the agent can verify.
 
 ```diff
-- Build me an admin dashboard. # <- Bad
-+ Create a 2-column layout with a sidebar for navigation and a top navbar. # <- Good
+- Build a nice admin dashboard.
++ Create a responsive admin dashboard with a collapsible left navigation,
++ four summary cards, and a searchable user table. Use compact spacing and
++ large rounded corners. Preserve the existing color palette.
 ```
 
-Whenever possible, split large tasks into smaller steps:
-
-- Define the layout first (columns, rows, sidebar)
-- Add UI components (buttons, inputs, modals)
-- Handle data models and states later
-- Use follow-ups to style and polish
-
-Use precise styling language, for example:
+When correcting a result, identify what should stay and what should change:
 
 ```diff
-- Grid items have small spacing and sharp corners.
-+ Add medium spacing between grid items and use large rounded corners on cards.
+- Fix the sidebar.
++ Keep the current navigation items and colors. Make the sidebar collapsible,
++ preserve the selected item after navigation, and use a drawer below 768 px.
 ```
 
-Avoid subjective terms like "**nice**," "**modern**," or "**clean**." Treat your prompt as interface documentation for the builder.
+## Build in Focused Steps
 
-### Working with Images and Visual References
+A useful sequence is:
 
-You can drop in screenshots of websites, dashboards, apps, or even hand-drawn wireframes. The builder will extract layout, design, and functionality ideas from these images.
+1. Create the layout and navigation.
+2. Add the primary components and sample data.
+3. Implement state and user interactions.
+4. Connect real data or external services.
+5. Add validation, empty states, loading states, and error handling.
+6. Test the critical workflow and polish the interface.
 
-**Tips for images:**
+Review **Preview** after every meaningful step. Use **Review mode** to draw on a specific UI area, add a comment, and send the annotated screenshot to the agent. When something is unclear, ask the agent to summarize what changed, then verify the affected workflow in the preview.
 
-- Clear screenshots work best
-- Include any elements you want: forms, tables, nav, charts
-- You can annotate them with arrows, notes, or labels
+If the agent is already working, queue a short follow-up only when it adds a clear constraint. For a change in direction, wait for the current step, review it, and send one consolidated request. See [Generation Controls & Collaboration](/docs/ai/features/generation-controls/).
 
-**Get UI/UX feedback:**
+## Use Images as References
 
-Upload a screenshot and ask: **"What are 5 things I could do to improve the UI/UX of this?"**
+Attach screenshots, wireframes, or annotated sketches when visual structure matters. Explain what to copy, what to ignore, and which existing styles must remain. See [Images and Attachments](/docs/ai/features/image-as-prompt/) for a complete example and current upload guidance.
 
-Follow up with: **Implement items 1, 2, and 4.**
+When you need an original visual instead of a reference, ask the agent to generate it and specify its composition, intended size, and where text will appear. See [Agent Tools](/docs/ai/features/agent-tools/).
 
-Or request specific improvements: **Make this more minimal and mobile-first.**
+## Choose Agent Effort and Planning
 
----
+The create screen lets you control **Agent Effort** and whether the agent should **Plan first**.
 
-## Optimizing Your Workflow
+- Keep **Agent Effort** on **Auto** for most work. Use a higher setting for complex, cross-cutting tasks and a lower setting for small, well-defined edits.
+- Keep **Plan first** on **Auto** unless you want to require a plan for a complex task or skip planning for a small change.
 
-### Building Iteratively
+Higher effort can improve difficult tasks, but it can also take longer. A precise prompt is still more important than the setting.
 
-Trying to generate your full app in a single prompt almost never works well. Instead, approach your build in clear stages:
+## Store Reusable Instructions in Knowledge
 
-1. **Layout** — Grid, Flex, responsive columns/rows
-2. **Components** — Tables, buttons, modals, charts, etc.
-3. **State** — Bindings, stores, mock data
-4. **Refinement** — Tweaks, visual polish, edge case handling
+Use **Knowledge** for guidance that should apply beyond one prompt:
 
-At each stage, give feedback and iterate. If the AI builder makes something close, you can say:
+- Add project-wide conventions to project knowledge.
+- Add app-specific architecture, behavior, or content rules to app instructions.
+- Use a design system for reusable visual tokens and component guidance.
 
-```diff
-- Modal is included and sidebar is static.
-+ Remove modal and make sidebar collapsible.
+Keep these instructions concrete and remove rules that no longer apply. See [Knowledge](/docs/ai/features/knowledge/) for details.
 
-- Buttons vary across pages.
-+ Use same button style from home page.
+## Connect and Test Deliberately
 
-- Card layout differs across sections.
-+ Repeat card layout from dashboard section.
-```
+Add an integration before asking the agent to build against it, and describe the intended data flow. Store credentials in the integration or [Secrets](/docs/ai/features/secrets/) rather than in prompts or source code.
 
+Create browser tests for the workflows users depend on and unit tests for isolated logic. After a major change, rerun the affected tests and manually check the most important path in **Preview**.
 
-### Improving UI/UX
+## Before You Ship
 
-To improve your design, ask the builder for more polished layouts, better structure, or more modern styles.
-
-```diff
-- Layout feels cluttered with small headings and dense sections.
-+ Increase heading sizes and spacing between sections for better hierarchy.
-
-- Navigation buttons are inconsistent.
-+ Standardize button sizes and colors for consistent UX.
-```
-
-**Suggested workflow:**
-
-1. Upload an image or describe the layout.
-2. Ask: **"Tell me 5 things that would improve the UI/UX of this page."**
-3. Review the suggestions and decide which ones you want to apply.
-4. Implement: **"Improve visual hierarchy by increasing heading sizes and adding more spacing between sections."**
-
-### Using Knowledge to Guide the Build
-
-The **Knowledge** panel lets you provide long-form references that influence how the agent builds your app. Add design systems, style guides, brand guidelines, or architecture rules.
-
-Once added, the builder will try to honor these rules throughout the session, ensuring consistency without repeating instructions.
-
-Try combining Knowledge with your prompts:
-
-  - **Use the style guide in Knowledge to improve this page.**
-
-  - **Is the current layout aligned with our design system in Knowledge?**
-
-
-### Local Development Integration
-
-We have an MCP server available for enterprise customers to connect local AI development tools such as Claude Desktop, Windsurf, or Codex.
-
-This enables a hybrid workflow: generate your app and make major changes in the App Builder, then move to local development for detailed refinements and custom functionality.
-
-> **Enterprise Feature:** The Reflex MCP integration is currently only available for enterprise customers. [Book a demo](https://reflex.dev/pricing/) to discuss access.
-
-#### Quick Setup
-
-**Prerequisites:**
-
-- MCP-compatible AI tool (Claude Desktop, Windsurf, Codex)
-- Valid Reflex account for OAuth authentication
-- Internet connection to the hosted MCP server
-
-**Benefits:**
-
-- **Seamless handoff** — Move between web builder and local development
-- **AI-powered local development** — Use your preferred AI tools with Reflex projects
-- **No local installation** — Hosted MCP server requires no additional Python packages
-- **Secure authentication** — OAuth 2.1 integration with your Reflex account
-
-For complete setup instructions for Claude Desktop, Windsurf, Codex, and other MCP clients, visit our [MCP integration](https://reflex.dev/docs/ai/integrations/mcp-installation/) documentation.
-
----
-
-## Key Takeaways
-
-- **Plan before you build**. A few minutes of preparation saves hours of iteration.
-- **Think modularly**. Focus on atomic parts before the full system.
-- **Write like a designer-developer**. Clear, structural, and functional language wins.
-- **Iterate continuously**. Let each prompt get you 80% there, then refine.
-
-With these techniques, the AI Builder becomes a reliable extension of your creative and technical intent.
+- Verify the primary workflow with realistic data.
+- Check loading, empty, error, and validation states.
+- Test the pages at desktop and mobile widths.
+- Confirm secrets and credentials are not exposed.
+- Review app visibility before sharing.
+- Copy or download the app before a large experimental change.

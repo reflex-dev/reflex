@@ -29,9 +29,11 @@ for key in "${ORDER[@]}"; do
 done
 
 if [[ ${#PACKAGES[@]} -eq 0 ]]; then
-  echo "Error: select at least one package"
-  exit 1
+  # No explicit selection: the plan step auto-detects packages with pending
+  # news fragments (or, for release-from-prerelease, packages whose changelog
+  # is topped by an alpha).
+  echo "No packages checked; deferring to auto-detection in the plan step."
 fi
 
-JOINED=$(IFS=,; echo "${PACKAGES[*]}")
+JOINED=$(IFS=,; echo "${PACKAGES[*]:-}")
 echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"

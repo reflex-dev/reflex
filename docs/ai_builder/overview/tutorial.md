@@ -1,135 +1,140 @@
 # Your First Reflex Build App
 
-In this tutorial, you'll build a data dashboard application that displays employee information in both table and chart formats, with interactive features for filtering and adding new data. We'll also add a simple chatbot page to demonstrate multi-page navigation.
-
-## What You'll Build
-
-By the end of this tutorial, you'll have created:
-- A dashboard displaying employee data in a table and bar chart
-- Interactive filtering to search through your data
-- A modal form for adding new employees
-- A separate page with a simple chatbot interface
-
-This tutorial assumes you're starting with a new project in AI Builder.
-
----
-
-## Creating Your Dashboard
-
-Let's start by building the core of our application - a dashboard that displays employee data.
-
-**Prompt:**
-```
-Create a dashboard page with a table showing sample employee data with columns: Name, Department, and Salary. Below the table, add a bar chart that visualizes the salary data. Include at least 5 sample employees with different departments and salary ranges.
-```
-
-This will create your main dashboard page with both tabular and visual representations of your data. The AI will generate sample employee records and create a bar chart that makes it easy to compare salaries across your team.
+In this tutorial, you will create an employee dashboard, improve it through focused prompts, test the main workflow, and prepare it to share.
 
 ```python exec
 import reflex as rx
 ```
 
+## 1. Create the App
+
+Open a project, select **Builder**, and start from the **Your Apps** tab. Enter this prompt:
+
+```text
+Create a responsive employee dashboard. Add a table with sample employees and
+columns for name, department, and salary. Below it, add a bar chart that compares
+salary by employee. Use five sample employees from different departments.
+```
+
+Before sending the prompt, you can attach a visual reference, choose a design system, set the app visibility, or add an integration. Keep **Agent Effort** on **Auto** unless you know the task needs more or less reasoning.
+
 ```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_1_light.avif",
-        alt="Creating a dashboard in Reflex AI Builder",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/builder_dashboard.webp",
+    alt="Reflex Build dashboard with the app creation prompt",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-## Adding Interactive Filtering
+## 2. Check the First Result
 
-Now that you have your basic dashboard, let's make it more interactive by adding the ability to filter and search through your employee data.
+When generation finishes, use **Preview** to interact with the app. Check that the table and chart render and that the page works at different widths.
 
-**Prompt:**
-```
-Add filtering functionality to the employee table. Include a search input above the table that filters rows based on name, and dropdown filters for department. Make sure the filters work together and update the table in real-time.
-```
-
-Your dashboard now becomes much more useful with real-time filtering. Users can quickly find specific employees by name or narrow down results by department. The filters work together, so you can combine a department filter with a name search.
+If the result is close, keep it and ask for one targeted improvement at a time.
 
 ```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_2_light.avif",
-        alt="Adding interactive filtering in Reflex AI Builder",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_first_result.webp",
+    alt="The first generated employee dashboard shown in Preview",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
+## 3. Add Filtering
 
-## Enabling Data Entry
-
-A static dashboard is useful, but being able to add new data makes your app much more practical. Let's add the ability to create new employee records.
-
-**Prompt:**
-```
-Add an "Add Employee" button above the table. When clicked, open a modal with input fields for Name, Department, and Salary. When the form is submitted, add the new employee to the table and update the bar chart. Include form validation for required fields.
+```text
+Above the employee table, add a name search input and a department filter.
+Apply both filters together and update the table and chart immediately.
+Include a clear-filters action.
 ```
 
-Your app now has full CRUD capability for employee records. The modal form provides a clean interface for data entry, and both your table and chart update immediately when new employees are added.
-
+Confirm that the table and chart stay in sync for a name search, a department selection, and the combined filters.
 
 ```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_3_light.avif",
-        alt="Enabling data entry in Reflex AI Builder",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_filtering.webp",
+    alt="The employee dashboard with its department filter open",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
+## 4. Add Employee Management
 
-## Building a Multi-Page App
-
-Most real applications have multiple pages. Let's add a chatbot page to demonstrate navigation and create a more complete user experience.
-
-**Prompt:**
-```
-Create a new page called "Chat" and add it to the navigation. Build a simple chatbot interface with a message input field, send button, and chat history display. For now, make the bot echo back the user's messages with "Bot says: [user message]".
+```text
+Add an "Add employee" button that opens a form for name, department, and salary.
+Validate every required field. Also add edit and delete actions for each row,
+and keep the table and chart synchronized after every change.
 ```
 
-Your app now has proper navigation between the dashboard and chat functionality. The chatbot page demonstrates how easy it is to add new features and pages to your AI Builder application.
-
+This prompt explicitly requests create, edit, and delete behavior. If the generated app uses only sample in-memory data, ask the agent to connect a database before relying on the data in production.
 
 ```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_4_light.avif",
-        alt="Building a multi-page app in Reflex AI Builder",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_employee_management.webp",
+    alt="The Add employee form generated for the employee dashboard",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-## What's Next?
+## 5. Add a Second Page
 
-You've successfully built a complete web application with data visualization, interactive filtering, data entry, and multi-page navigation. Your app demonstrates many common patterns used in modern web applications:
+```text
+Create a Chat page and add it to the navigation. Include a message history,
+message input, and send button. For now, reply by echoing the user's message.
+Match the dashboard's layout, spacing, and component styles.
+```
 
-- **Data presentation** with tables and charts
-- **User interaction** through filtering and forms
-- **Real-time updates** when data changes
-- **Multi-page architecture** with navigation
+Use the route selector in **Preview** to check both pages and verify that navigation works in each direction.
 
-## Exploring Further
+```python eval
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_second_page.webp",
+    alt="The generated Chat page open in Preview",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
+```
 
-Now that you have a working foundation, try experimenting with these ideas:
+## 6. Review the Result
 
-- **Customize the data model** - change the employee fields or add new columns
-- **Enhance the visualizations** - try different chart types or add more charts
-- **Improve the chatbot** - give it more sophisticated responses or integrate it with your employee data
-- **Add more pages** - create additional features like employee profiles or reporting dashboards
+Open **Preview** and test the result. Switch Preview to a desktop width so **Review mode** is available. For feedback tied to a specific visual area, select **Review mode**, draw around the chart spacing and title, and add a comment such as:
 
-The power of AI Builder is that you can iterate quickly with natural language prompts. Each new feature is just a conversation away!
+```text
+Keep the table behavior unchanged. Reduce the empty space above the chart and
+align the chart title with the left edge of the table.
+```
+
+Select **Send review** to send the annotation and marked screenshot to the agent. Wait for the follow-up generation to finish, then check the same area again. Use a normal chat prompt for feedback that does not point to a specific UI region.
+
+See [Code and Review](/docs/ai/features/editor-modes/) for the complete workflow.
+
+## 7. Test the Main Workflow
+
+Select **Testing** in the app workspace and create a browser test in plain language:
+
+```text
+Open the dashboard, search for an employee, clear the filters, add a valid
+employee, edit that employee, and delete it. Verify the table and chart update
+after each action.
+```
+
+Generate the test, run it, and use the result to fix any broken interaction. See [Testing](/docs/ai/features/automated-testing/) for the complete workflow.
+
+```python eval
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/testing_browser.webp",
+    alt="Passing tests in the Reflex Build Testing panel",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
+```
+
+## 8. Share or Deploy
+
+Use the menu next to **Deploy** to copy or download the app. Public apps can also be shared with a read-only link. When the app is ready for production, select **Deploy** and follow the deployment steps.
+
+You now have a useful first version and a repeatable workflow: create, preview, refine, test, and ship.

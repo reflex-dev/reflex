@@ -32,6 +32,8 @@ from reflex_cli.utils.exceptions import (
     ResponseError,
     ScaleAppError,
     ScaleParamError,
+    TokenAccessDeniedError,
+    TokenValidationError,
 )
 
 
@@ -389,6 +391,24 @@ def is_reflex_enterprise_installed() -> bool:
         return True
 
 
+_last_auth_request_id: str = ""
+
+
+def get_auth_request_id() -> str:
+    """Get the request id sent with the most recent token validation request.
+
+    The id is sent to the control plane as the ``X-Request-ID`` header, so it
+    can be quoted to support to correlate a failed authentication with the
+    server-side logs.
+
+    Returns:
+        The request id of the last ``validate_token`` call, or an empty string
+        if no validation request has been made in this process.
+
+    """
+    return _last_auth_request_id
+
+
 def validate_token(token: str) -> dict[str, Any]:
     """Validate the token with the control plane.
 
@@ -399,11 +419,14 @@ def validate_token(token: str) -> dict[str, Any]:
         Information about the user associated with the token.
 
     Raises:
-        ValueError: if access denied.
-        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
+        TokenAccessDeniedError: if access denied.
+        TokenValidationError: if runs into timeout, failed requests, unexpected errors. These should be tried again.
 
     """
     import httpx
+
+    global _last_auth_request_id
+    request_id = _last_auth_request_id = uuid.uuid4().hex
 
     try:
         # Add reflex-enterprise detection flag as query parameter
@@ -415,24 +438,28 @@ def validate_token(token: str) -> dict[str, Any]:
 
         response = httpx.post(
             urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/authenticate/me"),
-            headers=authorization_header(token),
+            headers={**authorization_header(token), "X-Request-ID": request_id},
             params=params,
             timeout=constants.Hosting.TIMEOUT,
         )
         response.raise_for_status()
         return response.json()
     except httpx.RequestError as re:
-        console.debug(f"Request to auth server failed due to {re}")
-        raise Exception(str(re)) from re
+        console.debug(
+            f"Request to auth server failed due to {re} (request id: {request_id})"
+        )
+        raise TokenValidationError(str(re), request_id=request_id) from re
     except httpx.HTTPError as ex:
-        console.debug(f"Unable to validate the token due to: {ex}")
-        raise Exception("server error") from ex
+        console.debug(
+            f"Unable to validate the token due to: {ex} (request id: {request_id})"
+        )
+        raise TokenValidationError("server error", request_id=request_id) from ex
     except ValueError as ve:
-        console.debug("Access denied")
-        raise ValueError("access denied") from ve
+        console.debug(f"Access denied (request id: {request_id})")
+        raise TokenAccessDeniedError("access denied", request_id=request_id) from ve
     except Exception as ex:
-        console.debug(f"Unexpected error: {ex}")
-        raise Exception("internal errors") from ex
+        console.debug(f"Unexpected error: {ex} (request id: {request_id})")
+        raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
 def delete_token_from_config():
@@ -780,6 +807,7 @@ def create_app(
     client: AuthenticatedClient,
     description: str,
     project_id: str | None,
+    provider: str | None = None,
 ):
     """Create a new application.
 
@@ -788,6 +816,8 @@ def create_app(
         description: The description of the application.
         project_id: The ID of the project to associate the application with.
         client: The authenticated client
+        provider: The hosting provider to pin the app to (e.g. "gcp"). ``None``
+            keeps the Reflex Cloud default.
 
     Returns:
         dict: The created application details as a dictionary.
@@ -803,9 +833,16 @@ def create_app(
         raise ValueError("app_name should be a string")
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
+    payload: dict[str, Any] = {
+        "name": app_name,
+        "description": description,
+        "project": project_id,
+    }
+    if provider is not None:
+        payload["provider"] = provider
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps/"),
-        json={"name": app_name, "description": description, "project": project_id},
+        json=payload,
         headers=authorization_header(client.token),
         timeout=constants.Hosting.TIMEOUT,
     )
@@ -815,6 +852,304 @@ def create_app(
     response.raise_for_status()
     response_json = response.json()
     return response_json
+
+
+# Hosting provider identifiers understood by the backend. Reflex Cloud is the
+# managed platform (its backend wire value happens to be "fly", an
+# implementation detail kept out of user-facing names); "gcp" is a
+# customer-connected GCP Cloud Run target (bring-your-own-cloud, Enterprise tier).
+PROVIDER_REFLEX_CLOUD = "fly"
+PROVIDER_GCP = "gcp"
+
+# User-facing provider names accepted on the CLI, mapped to backend values. Only
+# provider-agnostic names are exposed — the "fly" wire value is deliberately not
+# an alias so deploy scripts don't couple to how Reflex Cloud is hosted.
+PROVIDER_ALIASES = {
+    "reflex-cloud": PROVIDER_REFLEX_CLOUD,
+    "reflex": PROVIDER_REFLEX_CLOUD,
+    "cloud": PROVIDER_REFLEX_CLOUD,
+    "gcp": PROVIDER_GCP,
+    "google": PROVIDER_GCP,
+    "google-cloud": PROVIDER_GCP,
+}
+
+
+def normalize_provider(provider: str) -> str | None:
+    """Map a user-facing provider name to the backend provider value.
+
+    Args:
+        provider: A provider name from the CLI (e.g. "reflex-cloud", "gcp").
+
+    Returns:
+        The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
+        ``PROVIDER_GCP``), or None if unrecognized.
+
+    """
+    return PROVIDER_ALIASES.get(provider.strip().lower())
+
+
+def provider_display_name(provider: str | None) -> str:
+    """Return a human-facing label for a backend provider value.
+
+    Args:
+        provider: The backend provider value (``PROVIDER_GCP`` for GCP; anything
+            else, including None, is treated as Reflex Cloud).
+
+    Returns:
+        A display label, defaulting to "Reflex Cloud".
+
+    """
+    return "Google Cloud (GCP)" if provider == PROVIDER_GCP else "Reflex Cloud"
+
+
+def get_token_org_id(client: AuthenticatedClient) -> str | None:
+    """Return the organization id the caller's token is scoped to.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The org id string, or None if unavailable.
+
+    """
+    org_id = client.validated_data.get("org_id")
+    return org_id if isinstance(org_id, str) and org_id else None
+
+
+def get_token_tier(client: AuthenticatedClient) -> str | None:
+    """Return the subscription tier of the caller's token org.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The tier name (e.g. "Enterprise"), or None if unavailable.
+
+    """
+    tier = client.validated_data.get("tier")
+    return tier if isinstance(tier, str) and tier else None
+
+
+def get_gcp_provider_status(org_id: str, client: AuthenticatedClient) -> dict:
+    """Fetch the org's GCP deploy availability.
+
+    Args:
+        org_id: The organization id to query.
+        client: The authenticated client.
+
+    Returns:
+        A dict ``{configured, allowed, project_id, region}``: ``configured`` is
+        whether a GCP account is connected, ``allowed`` whether the org's tier
+        permits GCP deploys.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.get(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"/api/v1/orgs/{org_id}/provider-accounts/gcp/status",
+        ),
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def gcp_deploy_available(client: AuthenticatedClient) -> dict | None:
+    """Best-effort check of whether GCP is a usable deploy target for the caller.
+
+    Never raises: it decides whether to *offer* GCP in ``reflex deploy``, so a
+    lookup failure (older backend, permissions, network) simply falls back to
+    the Reflex Cloud default rather than aborting the deploy.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The GCP status dict when GCP is both configured and allowed for the
+        caller's org, otherwise None.
+
+    """
+    org_id = get_token_org_id(client)
+    if not org_id:
+        return None
+    try:
+        status = get_gcp_provider_status(org_id, client)
+    except Exception as ex:
+        console.debug(f"Unable to determine GCP availability: {ex}")
+        return None
+    if status.get("configured") and status.get("allowed"):
+        return status
+    return None
+
+
+def list_provider_accounts(org_id: str, client: AuthenticatedClient) -> list[dict]:
+    """List the cloud provider accounts connected to an organization.
+
+    Args:
+        org_id: The organization id to query.
+        client: The authenticated client.
+
+    Returns:
+        A list of ``{provider, config, created_by, created_at, updated_at}``
+        dicts (no secret material).
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.get(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"/api/v1/orgs/{org_id}/provider-accounts",
+        ),
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) -> str:
+    """Choose which hosting platform an app deploys to.
+
+    Switching providers on a deployed app tears down its resources on the
+    previous provider and demotes its deployments; the app must be redeployed to
+    come back up on the new provider.
+
+    Args:
+        app_id: The id of the application.
+        provider: The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
+            ``PROVIDER_GCP``).
+        client: The authenticated client.
+
+    Returns:
+        The provider now set on the app, or a ``"... failed: ..."`` string on
+        error.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.post(
+        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/provider"),
+        json={"provider": provider},
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        try:
+            ex_details = ex.response.json().get("detail")
+        except (ValueError, AttributeError):
+            ex_details = ex.response.text
+        return f"set provider failed: {ex_details}"
+    return response.json().get("provider", provider)
+
+
+def rollback_deployment(
+    app_id: str, deployment_id: str, client: AuthenticatedClient
+) -> str | None:
+    """Roll an app back to one of its previous deployments.
+
+    Redeploys the target deployment's already-built image and makes it the
+    current deployment again, without rebuilding from source.
+
+    Args:
+        app_id: The id of the application.
+        deployment_id: The id of the deployment to roll back to.
+        client: The authenticated client.
+
+    Returns:
+        None on success, or a ``"rollback failed: ..."`` string on error.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.post(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"/api/v1/apps/{app_id}/deployments/{deployment_id}/rollback",
+        ),
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        try:
+            ex_details = ex.response.json().get("detail")
+        except (ValueError, AttributeError):
+            ex_details = ex.response.text
+        return f"rollback failed: {ex_details}"
+    return None
+
+
+def update_deployment_description(
+    app_id: str,
+    deployment_id: str,
+    description: str,
+    client: AuthenticatedClient,
+) -> str | None:
+    """Set or clear the changelog note on a single deployment.
+
+    Args:
+        app_id: The id of the application.
+        deployment_id: The id of the deployment to annotate.
+        description: The note to store (empty string clears it).
+        client: The authenticated client.
+
+    Returns:
+        None on success, or a ``"update description failed: ..."`` string on
+        error.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.post(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"/api/v1/apps/{app_id}/deployments/{deployment_id}/description",
+        ),
+        json={"description": description},
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        try:
+            ex_details = ex.response.json().get("detail")
+        except (ValueError, AttributeError):
+            ex_details = ex.response.text
+        return f"update description failed: {ex_details}"
+    return None
 
 
 def get_hostname(
@@ -1364,6 +1699,7 @@ def create_deployment(
     packages: list | None,
     strategy: str | None,
     app_id: str | None,
+    description: str | None = None,
 ) -> str:
     """Create a new deployment for an application.
 
@@ -1379,9 +1715,11 @@ def create_deployment(
         packages: The list of packages to install on the VM.
         strategy: The deployment strategy to use.
         app_id: The ID of the application.
+        description: An optional changelog note recorded on this deployment and
+            shown in ``reflex cloud apps history``.
 
     Returns:
-        The deployment id.git c
+        The deployment id.
 
     Raises:
         NotAuthenticatedError: If the token is not valid.
@@ -1430,6 +1768,8 @@ def create_deployment(
         payload["packages"] = json.dumps(packages)
     if strategy:
         payload["deployment_strategy"] = strategy
+    if description:
+        payload["description"] = description
 
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
@@ -1824,6 +2164,8 @@ def get_app_history(app_id: str, client: AuthenticatedClient) -> list:
             "reflex version": deployment["reflex_version"],
             "vm type": deployment["vm_type"],
             "timestamp": deployment["timestamp"],
+            "description": deployment.get("description") or "",
+            "can rollback": deployment.get("can_rollback", False),
         }
         for deployment in response_json
     ]
@@ -1993,6 +2335,11 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
             if "completed successfully" in status:
                 console.success(status)
                 break
+            if "AwaitingApproval" in status:
+                console.success(
+                    "build submitted for approval; it will deploy automatically once an approver approves it."
+                )
+                break
             if "build error" in status:
                 console.warn(status)
                 console.warn(
@@ -2008,10 +2355,9 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
             if "bad response" in status:
                 console.warn(status)
                 return True
-            if status == current_status:
-                continue
-            current_status = status
-            console.info(status)
+            if status != current_status:
+                current_status = status
+                console.info(status)
             time.sleep(0.5)
     return True
 
@@ -2171,11 +2517,16 @@ def validate_token_with_retries(access_token: str) -> dict[str, Any]:
     with console.status("Validating access token ..."):
         try:
             return validate_token(access_token)
-        except ValueError:
-            console.error("Access denied")
+        except ValueError as ex:
+            # getattr: mocks/foreign ValueErrors don't carry a request id.
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
+            console.error(f"Access denied (auth request id: {request_id})")
             delete_token_from_config()
         except Exception as ex:
-            console.debug(f"Unable to validate token due to: {ex}")
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
+            console.warn(
+                f"Unable to validate access token: {ex} (auth request id: {request_id})"
+            )
     return {}
 
 
