@@ -10,6 +10,7 @@ import functools
 import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
+from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
 from hashlib import md5
@@ -664,11 +665,15 @@ def _encode_dataclass(buf: bytearray, value: Any) -> None:
 
 _IMMUTABLE_FIELD_TYPES = (str, bool, int, float, type(None))
 _MAX_ENCODED_DATACLASSES = 8192
+_MAX_ENCODED_DATACLASS_SIZE = 512
 # Encodings of frozen dataclass instances whose fields are all immutable
-# scalars, keyed by ``id``. Each entry keeps the instance alive, so its id
+# scalars, keyed by ``id``. Each entry keeps its instance alive, so an id
 # cannot be reused while cached and a lookup hit is always the same object,
-# whose encoding can never have changed.
-_ENCODED_DATACLASSES: dict[int, tuple[object, bytes]] = {}
+# whose encoding can never have changed. Retention is bounded to
+# _MAX_ENCODED_DATACLASSES entries of at most _MAX_ENCODED_DATACLASS_SIZE
+# bytes each, evicted oldest-first so a working set past the cap degrades
+# entry by entry instead of being dropped wholesale.
+_ENCODED_DATACLASSES: OrderedDict[int, tuple[object, bytes]] = OrderedDict()
 
 
 def _encode_frozen_dataclass(buf: bytearray, value: Any) -> None:
@@ -683,9 +688,10 @@ def _encode_frozen_dataclass(buf: bytearray, value: Any) -> None:
         type(getattr(value, field_name)) in _IMMUTABLE_FIELD_TYPES
         for field_name, _ in _dataclass_fields_to_encode(value_type)
     ):
-        if len(_ENCODED_DATACLASSES) >= _MAX_ENCODED_DATACLASSES:
-            _ENCODED_DATACLASSES.clear()
-        _ENCODED_DATACLASSES[id(value)] = (value, bytes(buf[start:]))
+        if len(buf) - start <= _MAX_ENCODED_DATACLASS_SIZE:
+            if len(_ENCODED_DATACLASSES) >= _MAX_ENCODED_DATACLASSES:
+                _ENCODED_DATACLASSES.popitem(last=False)
+            _ENCODED_DATACLASSES[id(value)] = (value, bytes(buf[start:]))
     else:
         # A field holds something mutable (or a Var, dict, component, ...), so
         # this class is never cacheable: stop paying for the check.

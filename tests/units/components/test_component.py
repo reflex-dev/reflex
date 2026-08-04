@@ -2465,15 +2465,52 @@ class _HashMutable:
     a: int
 
 
-def test_deterministic_hash_caches_frozen_dataclasses_by_identity():
-    """Cached and freshly encoded instances of the same content hash the same."""
+def test_deterministic_hash_reuses_frozen_dataclass_encoding(monkeypatch):
+    """A frozen scalar dataclass is encoded once and then reused by identity."""
+    shared = ImportVar(tag="Shared")
+    component._ENCODED_DATACLASSES.clear()
+
+    digest = _deterministic_hash(shared)
+    assert id(shared) in component._ENCODED_DATACLASSES
+
+    def unreachable(buf: bytearray, value: object) -> None:
+        pytest.fail("cached encoding was re-encoded instead of reused")
+
+    monkeypatch.setattr(component, "_encode_dataclass", unreachable)
+    assert _deterministic_hash(shared) == digest
+
+
+def test_deterministic_hash_matches_uncached_encoding():
+    """A cached encoding must equal a freshly encoded, equal instance."""
     shared = ImportVar(tag="Shared")
     equal = ImportVar(tag="Shared")
 
-    # First encode populates the cache, the second must reuse it, and an equal
-    # but distinct instance must encode to the same bytes either way.
     assert _deterministic_hash([shared, shared]) == _deterministic_hash([shared, equal])
     assert _deterministic_hash([equal, shared]) == _deterministic_hash([shared, shared])
+
+
+def test_encoding_cache_evicts_only_the_oldest_entry(monkeypatch):
+    """Passing the cap drops the oldest entry, not the whole working set."""
+    monkeypatch.setattr(component, "_MAX_ENCODED_DATACLASSES", 2)
+    component._ENCODED_DATACLASSES.clear()
+    values = [ImportVar(tag=f"Evict{index}") for index in range(3)]
+    digests = [_deterministic_hash(value) for value in values]
+
+    assert len(component._ENCODED_DATACLASSES) == 2
+    assert id(values[0]) not in component._ENCODED_DATACLASSES
+    assert id(values[1]) in component._ENCODED_DATACLASSES
+    assert id(values[2]) in component._ENCODED_DATACLASSES
+    assert [_deterministic_hash(value) for value in values] == digests
+
+
+def test_encoding_cache_skips_oversized_encodings():
+    """Outsized encodings are not retained, keeping the cache's memory bounded."""
+    component._ENCODED_DATACLASSES.clear()
+    oversized = ImportVar(tag="x" * (component._MAX_ENCODED_DATACLASS_SIZE + 1))
+
+    digest = _deterministic_hash(oversized)
+    assert id(oversized) not in component._ENCODED_DATACLASSES
+    assert _deterministic_hash(oversized) == digest
 
 
 def test_deterministic_hash_never_conflates_equal_but_differently_typed_fields():
