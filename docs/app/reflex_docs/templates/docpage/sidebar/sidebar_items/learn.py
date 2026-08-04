@@ -226,7 +226,8 @@ def get_sidebar_items_hosting():
         create_item(
             "Project",
             children=[
-                hosting.adding_members,
+                hosting.project_members,
+                hosting.project_settings,
             ],
         ),
         create_item(

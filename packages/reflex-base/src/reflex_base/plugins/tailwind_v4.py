@@ -16,7 +16,9 @@ from reflex_base.plugins.shared_tailwind import (
 class Constants(SimpleNamespace):
     """Tailwind constants."""
 
-    # The Tailwindcss version
+    # The Tailwindcss version. Held at 4.3.0: 4.3.1+ reworked source-file
+    # scanning (tailwindlabs/tailwindcss#20214, #20217, #20203) and walks the
+    # git-ignored `.web` tree, which collapses the docs prod build at scale.
     VERSION = "tailwindcss@4.3.0"
     # The Tailwind config.
     CONFIG = "tailwind.config.js"
