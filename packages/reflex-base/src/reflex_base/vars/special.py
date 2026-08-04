@@ -23,7 +23,7 @@ def use_hook_var(
 
 
 @overload
-def use_hook_var(library: str, hook: str, _var_type: UnionType) -> Var: ...
+def use_hook_var(library: str, hook: str, _var_type: UnionType) -> Var[Any]: ...
 
 
 def use_hook_var(library: str, hook: str, _var_type: Any = Any) -> Var:

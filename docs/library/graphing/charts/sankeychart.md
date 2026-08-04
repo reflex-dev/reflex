@@ -181,14 +181,6 @@ def sankey_custom_render():
                 rx.el.svg.stop(offset="100%", stop_color=target["fill"]),
                 id=link_id,
             ),
-            rx.el.svg.text(
-                link.payload.value,
-                x=(link.sourceX + link.targetX) / 2,
-                y=(link.sourceY + link.targetY) / 2,
-                text_anchor="middle",
-                fill=rx.color("gray", 12),
-                font_size=10,
-            ),
             rx.el.svg.path(
                 d=(
                     f"M{link.sourceX},{link.sourceY} "
@@ -200,6 +192,14 @@ def sankey_custom_render():
                 stroke=f"url(#{link_id})",
                 stroke_opacity=0.35,
                 stroke_width=link.linkWidth,
+            ),
+            rx.el.svg.text(
+                link.payload.value,
+                x=(link.sourceX + link.targetX) / 2,
+                y=(link.sourceY + link.targetY) / 2,
+                text_anchor="middle",
+                fill=rx.color("gray", 12),
+                font_size=10,
             ),
         )
 
