@@ -1,6 +1,8 @@
 """Inferred types for `reflex.vars` that are part of the public contract."""
 
-from typing import Any, Literal, assert_type
+from typing import Any, Literal
+
+from typing_extensions import assert_type
 
 from reflex.vars.base import Var
 from reflex.vars.number import (

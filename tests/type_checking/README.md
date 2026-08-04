@@ -8,9 +8,15 @@ These are not runtime tests. Nothing here is executed; the assertions are
 them checker-agnostic: the same file proves the contract to pyright, ty, and
 anything added later.
 
-pyright covers this directory through the existing `pyright` pre-commit hook,
-which runs over `reflex` and `tests`. ty has its own hook scoped to this
-directory, since it is not run over the whole repo yet.
+Both checkers gate this directory through pre-commit. The `pyright` hook is
+passed the files being committed, so locally it sees these examples only when
+they change; CI runs `pre-commit run --all-files`, where it sees all of them.
+The `ty` hook always runs over this directory regardless of what changed, since
+what these examples catch is a source edit elsewhere altering an inferred type.
+
+The examples must type-check at the `requires-python` floor, not just on the
+interpreter you happen to run. That is why `assert_type` comes from
+`typing_extensions`: `typing.assert_type` is 3.11+, and reflex supports 3.10.
 
 Write an example here when the thing worth protecting is what a user's editor
 shows, rather than what the code does:
