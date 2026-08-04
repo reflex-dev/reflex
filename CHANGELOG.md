@@ -1,19 +1,4 @@
-## v0.9.8a3 (2026-08-04)
-
-### Bug Fixes
-
-- Fixed `reflex run` failing with `error: lockfile had changes, but lockfile is frozen` after upgrading to a Reflex version that adds a `package.json` override. Overrides are now applied after the lockfile saved in `reflex.lock/` has been installed, so it is no longer treated as out of date. ([#6844](https://github.com/reflex-dev/reflex/issues/6844))
-
-
-## v0.9.8a2 (2026-08-03)
-
-### Miscellaneous
-
-- Update dev pin Pillow==12.3.0 to avoid various CVE reports ([#6836](https://github.com/reflex-dev/reflex/issues/6836))
-- Update locked `aiohttp==3.14.3` and `cryptography==50.0.0`, clearing CVE-2026-59881, CVE-2026-69243, CVE-2026-69244 and CVE-2026-69247. Both are transitive development dependencies of the docs app and are not installed with Reflex. ([#6837](https://github.com/reflex-dev/reflex/issues/6837))
-
-
-## v0.9.8a1 (2026-08-03)
+## v0.9.8 (2026-08-04)
 
 ### Features
 
@@ -30,6 +15,12 @@
 - Fixed nested/subfolder stylesheets failing to load on Windows because the generated CSS `@import` used backslash path separators (which CSS treats as escape sequences); the import URL is now always POSIX-normalized. ([#6762](https://github.com/reflex-dev/reflex/issues/6762))
 - Process persisted package.json files before mirroring them into the web directory. ([#6765](https://github.com/reflex-dev/reflex/issues/6765))
 - Fix production frontend hydration on Windows when the system MIME registry maps JavaScript files to `text/plain`. ([#6831](https://github.com/reflex-dev/reflex/issues/6831))
+- Fixed `reflex run` failing with `error: lockfile had changes, but lockfile is frozen` after upgrading to a Reflex version that adds a `package.json` override. Overrides are now applied after the lockfile saved in `reflex.lock/` has been installed, so it is no longer treated as out of date. ([#6844](https://github.com/reflex-dev/reflex/issues/6844))
+
+### Miscellaneous
+
+- Update dev pin Pillow==12.3.0 to avoid various CVE reports ([#6836](https://github.com/reflex-dev/reflex/issues/6836))
+- Update locked `aiohttp==3.14.3` and `cryptography==50.0.0`, clearing CVE-2026-59881, CVE-2026-69243, CVE-2026-69244 and CVE-2026-69247. Both are transitive development dependencies of the docs app and are not installed with Reflex. ([#6837](https://github.com/reflex-dev/reflex/issues/6837))
 
 
 ## v0.9.7 (2026-07-15)
