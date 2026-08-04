@@ -119,13 +119,20 @@ async def _patch_state(
         # it forces router-dependent computed vars to resolve for the patched
         # tree, but should not leak into the event's final delta.
         root_state = original_state._get_root_state()
+        root_dirty_vars = set(root_state.dirty_vars)
+        root_dirty_substates = set(root_state.dirty_substates)
         root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        # The delta is discarded: it is only resolved to refresh computed vars,
-        # so its values must not count as sent to the client.
-        with _suppress_delta_recording():
-            await root_state._get_resolved_delta()
+        try:
+            # The delta is discarded: it is only resolved to refresh computed vars,
+            # so its values must not count as sent to the client.
+            with _suppress_delta_recording():
+                await root_state._get_resolved_delta()
+        finally:
+            if not full_delta:
+                root_state.dirty_vars = root_dirty_vars
+                root_state.dirty_substates = root_dirty_substates
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
