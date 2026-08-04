@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import dataclasses
 from typing import Any, Literal
 
@@ -137,7 +138,7 @@ class ToastProps(NoExtrasAllowedProps):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Any | None
 
-    def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def dict(self, *args: Any, **kwargs: Any) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
