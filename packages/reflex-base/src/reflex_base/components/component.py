@@ -610,37 +610,99 @@ def _hash_str(value: str) -> str:
     return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
 
 
+def _encode_str(buf: bytearray, value: str) -> None:
+    encoded = value.encode()
+    buf += b"s"
+    buf += len(encoded).to_bytes(8, "little")
+    buf += encoded
+
+
+def _encode_number(buf: bytearray, value: int | float | enum.Enum) -> None:
+    buf += b"n"
+    buf += str(value).encode()
+
+
+def _encode_dict(buf: bytearray, value: Mapping[Any, Any]) -> None:
+    items = sorted(value.items(), key=operator.itemgetter(0))
+    buf += b"d"
+    buf += len(items).to_bytes(8, "little")
+    for k, v in items:
+        _encode_deterministic(buf, k)
+        _encode_deterministic(buf, v)
+
+
+def _encode_sequence(buf: bytearray, value: Sequence[Any]) -> None:
+    buf += b"l"
+    buf += len(value).to_bytes(8, "little")
+    for item in value:
+        _encode_deterministic(buf, item)
+
+
+def _encode_var(buf: bytearray, value: Var) -> None:
+    buf += b"v"
+    _encode_deterministic(buf, value._js_expr)
+    _encode_deterministic(buf, value._get_all_var_data())
+
+
 @functools.cache
-def _deterministic_hash_dataclass_fields(cls: type) -> tuple[tuple[str, bytes], ...]:
-    """Per-class cache of dataclass field names and their encoded bytes.
-
-    ``dataclasses.fields`` rebuilds its result tuple on every call; hashing a
-    large app calls it millions of times (mostly for ``VarData``), so cache
-    the derived (name, encoded name) pairs per class.
-
-    Args:
-        cls: The dataclass type to introspect.
-
-    Returns:
-        The (field name, encoded field name) pairs in definition order.
-    """
+def _dataclass_fields_to_encode(cls: type) -> tuple[tuple[str, bytes], ...]:
+    # dataclasses.fields rebuilds its result tuple on every call; hashing a
+    # large app calls it millions of times for a handful of classes.
     return tuple((f.name, f.name.encode()) for f in dataclasses.fields(cls))
 
 
+def _encode_dataclass(buf: bytearray, value: Any) -> None:
+    fields = _dataclass_fields_to_encode(
+        value if isinstance(value, type) else type(value)
+    )
+    buf += b"D"
+    buf += len(fields).to_bytes(8, "little")
+    for field_name, encoded_field_name in fields:
+        buf += encoded_field_name
+        _encode_deterministic(buf, getattr(value, field_name))
+
+
+def _encode_component(buf: bytearray, value: BaseComponent) -> None:
+    buf += b"C"
+    _encode_deterministic(buf, value.render())
+
+
+_ENCODERS: dict[type, Callable[[bytearray, Any], None]] = {
+    dict: _encode_dict,
+    list: _encode_sequence,
+    tuple: _encode_sequence,
+    int: _encode_number,
+    float: _encode_number,
+}
+
+
+def _resolve_encoder(value: object) -> Callable[[bytearray, Any], None] | None:
+    # Branch order decides the encoding of values matching several branches
+    # (e.g. an IntEnum encodes as a number, not as a dataclass).
+    if isinstance(value, (int, float, enum.Enum)):
+        return _encode_number
+    if isinstance(value, str):
+        return _encode_str
+    if isinstance(value, dict):
+        return _encode_dict
+    if isinstance(value, (tuple, list)):
+        return _encode_sequence
+    if isinstance(value, Var):
+        return _encode_var
+    if dataclasses.is_dataclass(value):
+        return _encode_dataclass
+    if isinstance(value, BaseComponent):
+        return _encode_component
+    return None
+
+
 def _encode_deterministic(buf: bytearray, value: object) -> None:
-    """Append ``value`` to ``buf`` using a self-delimiting, type-tagged encoding.
+    """Append ``value`` to ``buf`` in a self-delimiting, type-tagged encoding.
 
-    Each branch writes a distinct type tag plus length-prefixed payload, which
-    keeps the encoding injective without building intermediate strings — the
-    nested ``str([...])`` approach this replaces was the dominant cost of
-    ``_deterministic_hash`` (~4x speedup on synthetic, ~2x on real renders).
-
-    Exact-type checks front-run the isinstance ladder: auto-memoization hashes
-    hundreds of millions of values per compile, nearly all of them plain
-    ``str``/``dict``/``list``/``tuple`` nodes from rendered component dicts,
-    and the ladder's isinstance calls dominated the compile profile. Subclasses
-    fall through to the ladder, which keeps the original branch order so the
-    encoding is byte-identical to the pre-dispatch implementation.
+    Every type writes a distinct tag plus a length-prefixed payload, keeping the
+    encoding injective without building intermediate strings. Encoders are looked
+    up by exact type and memoized per type, since auto-memoization encodes
+    hundreds of millions of values per compile.
 
     Args:
         buf: The output buffer to append to.
@@ -649,99 +711,33 @@ def _encode_deterministic(buf: bytearray, value: object) -> None:
     Raises:
         TypeError: If the value is not hashable.
     """
+    # str, bool and None are the most common leaves by far, so they skip the
+    # table lookup (str inlines _encode_str). bool must come first because it
+    # would otherwise resolve to the numeric encoding.
     if type(value) is str:
         encoded = value.encode()
         buf += b"s"
         buf += len(encoded).to_bytes(8, "little")
         buf += encoded
         return
-    if type(value) is dict:
-        items = sorted(value.items(), key=operator.itemgetter(0))
-        buf += b"d"
-        buf += len(items).to_bytes(8, "little")
-        for k, v in items:
-            _encode_deterministic(buf, k)
-            _encode_deterministic(buf, v)
-        return
-    if type(value) is list or type(value) is tuple:
-        buf += b"l"
-        buf += len(value).to_bytes(8, "little")
-        for item in value:
-            _encode_deterministic(buf, item)
+    value_type = type(value)
+    if value_type is bool:
+        buf += b"T" if value else b"F"
         return
     if value is None:
         buf += b"N"
         return
-    if type(value) is bool:
-        buf += b"T" if value else b"F"
-        return
-    if type(value) is int or type(value) is float:
-        buf += b"n"
-        buf += str(value).encode()
-        return
-    # Slow path for subclasses and structured types, in the original ladder
-    # order so subclass encodings stay identical (e.g. ``IntEnum`` must hit
-    # the numeric branch before the dataclass branch would see it).
-    if isinstance(value, bool):
-        buf += b"T" if value else b"F"
-    elif isinstance(value, (int, float, enum.Enum)):
-        buf += b"n"
-        buf += str(value).encode()
-    elif isinstance(value, str):
-        encoded = value.encode()
-        buf += b"s"
-        buf += len(encoded).to_bytes(8, "little")
-        buf += encoded
-    elif isinstance(value, dict):
-        items = sorted(value.items(), key=operator.itemgetter(0))
-        buf += b"d"
-        buf += len(items).to_bytes(8, "little")
-        for k, v in items:
-            _encode_deterministic(buf, k)
-            _encode_deterministic(buf, v)
-    elif isinstance(value, (tuple, list)):
-        buf += b"l"
-        buf += len(value).to_bytes(8, "little")
-        for item in value:
-            _encode_deterministic(buf, item)
-    elif isinstance(value, Var):
-        buf += b"v"
-        _encode_deterministic(buf, value._js_expr)
-        _encode_deterministic(buf, value._get_all_var_data())
-    elif dataclasses.is_dataclass(value):
-        fields = _deterministic_hash_dataclass_fields(
-            value if isinstance(value, type) else type(value)
-        )
-        buf += b"D"
-        buf += len(fields).to_bytes(8, "little")
-        for field_name, encoded_field_name in fields:
-            buf += encoded_field_name
-            _encode_deterministic(buf, getattr(value, field_name))
-    elif isinstance(value, BaseComponent):
-        buf += b"C"
-        _encode_deterministic(buf, value.render())
-    else:
-        msg = (
-            f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
-            "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
-        )
-        raise TypeError(msg)
-
-
-def _update_deterministic_hash(hasher: Any, value: object) -> None:
-    """Feed ``value`` into ``hasher`` via :func:`_encode_deterministic`.
-
-    Buffering the whole encoding and updating the hasher once replaces the
-    per-node ``hasher.update`` calls (hundreds of millions per compile) with
-    cheap bytearray appends.
-
-    Args:
-        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
-        value: The value to fold into the hasher.
-    """
-    buf = bytearray()
-    _encode_deterministic(buf, value)
-    hasher.update(buf)
+    encoder = _ENCODERS.get(value_type)
+    if encoder is None:
+        encoder = _resolve_encoder(value)
+        if encoder is None:
+            msg = (
+                f"Cannot hash value `{value}` of type `{value_type.__name__}`. "
+                "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
+            )
+            raise TypeError(msg)
+        _ENCODERS[value_type] = encoder
+    encoder(buf, value)
 
 
 def _deterministic_hash(value: object) -> str:
@@ -752,13 +748,10 @@ def _deterministic_hash(value: object) -> str:
 
     Returns:
         The hash of the dictionary.
-
-    Raises:
-        TypeError: If the value is not hashable.
     """
-    hasher = md5(usedforsecurity=False)
-    _update_deterministic_hash(hasher, value)
-    return hasher.hexdigest()
+    buf = bytearray()
+    _encode_deterministic(buf, value)
+    return md5(buf, usedforsecurity=False).hexdigest()
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
@@ -1583,25 +1576,23 @@ class Component(BaseComponent, ABC):
         Returns:
             The hex digest content hash.
         """
-        hasher = md5(usedforsecurity=False)
-        _update_deterministic_hash(hasher, self.render())
+        buf = bytearray()
+        _encode_deterministic(buf, self.render())
         if shallow:
             # For non-snapshot strategies, we only hash the component's own hooks, imports, custom code, and app-wrap components
-            _update_deterministic_hash(hasher, dict(self._get_imports()))
-            _update_deterministic_hash(hasher, dict(self._get_hooks_internal()))
-            _update_deterministic_hash(hasher, dict(self._get_added_hooks()))
-            _update_deterministic_hash(hasher, self._get_hooks())
-            _update_deterministic_hash(hasher, self._get_custom_code())
-            _update_deterministic_hash(hasher, dict(self._get_app_wrap_components()))
+            _encode_deterministic(buf, dict(self._get_imports()))
+            _encode_deterministic(buf, dict(self._get_hooks_internal()))
+            _encode_deterministic(buf, dict(self._get_added_hooks()))
+            _encode_deterministic(buf, self._get_hooks())
+            _encode_deterministic(buf, self._get_custom_code())
+            _encode_deterministic(buf, dict(self._get_app_wrap_components()))
         else:
-            _update_deterministic_hash(hasher, dict(self._get_all_imports()))
-            _update_deterministic_hash(hasher, dict(self._get_all_hooks_internal()))
-            _update_deterministic_hash(hasher, dict(self._get_all_hooks()))
-            _update_deterministic_hash(hasher, dict(self._get_all_custom_code()))
-            _update_deterministic_hash(
-                hasher, dict(self._get_all_app_wrap_components())
-            )
-        return hasher.hexdigest()
+            _encode_deterministic(buf, dict(self._get_all_imports()))
+            _encode_deterministic(buf, dict(self._get_all_hooks_internal()))
+            _encode_deterministic(buf, dict(self._get_all_hooks()))
+            _encode_deterministic(buf, dict(self._get_all_custom_code()))
+            _encode_deterministic(buf, dict(self._get_all_app_wrap_components()))
+        return md5(buf, usedforsecurity=False).hexdigest()
 
     def _compute_memo_tag(self) -> str:
         """Compute a stable tag name for memoizing this component.

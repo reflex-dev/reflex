@@ -1,10 +1,12 @@
 import copy
+import enum
+from collections import namedtuple
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
 
 import pytest
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component, _deterministic_hash, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -2341,3 +2343,106 @@ def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
     assert dict(parent._get_hooks_internal()) == parent_own_hooks
     # And repeated collection yields the same result.
     assert parent._get_all_hooks_internal() == combined
+
+
+class _HashColor(enum.Enum):
+    RED = "red"
+
+
+class _HashStr(str):
+    pass
+
+
+class _HashDict(dict):
+    pass
+
+
+class _HashList(list):
+    pass
+
+
+_HashPoint = namedtuple("_HashPoint", ["x", "y"])
+
+
+@dataclass
+class _HashDefaults:
+    a: int = 1
+
+
+def test_deterministic_hash_distinguishes_values():
+    """Structurally different values must not collide."""
+    values = [
+        None,
+        True,
+        False,
+        0,
+        1,
+        1.5,
+        "",
+        "1",
+        "true",
+        _HashColor.RED,
+        [],
+        [1],
+        [1, 2],
+        {},
+        {"a": 1},
+        {"a": "1"},
+        {"a": {"b": 1}},
+        ImportVar(tag="Foo"),
+        ImportVar(tag="Foo", is_default=True),
+        VarData(imports={"react": [ImportVar(tag="useState")]}),
+        Bare.create(contents="a"),
+    ]
+    hashes = [_deterministic_hash(value) for value in values]
+    assert len(set(hashes)) == len(values)
+
+
+def test_deterministic_hash_ignores_dict_order():
+    """Dicts with the same items hash the same regardless of insertion order."""
+    assert _deterministic_hash({"a": 1, "b": [2, "3"]}) == _deterministic_hash({
+        "b": [2, "3"],
+        "a": 1,
+    })
+
+
+def test_deterministic_hash_normalizes_subclasses():
+    """Subclasses hash like the built-in type they encode as."""
+    assert _deterministic_hash(_HashStr("x")) == _deterministic_hash("x")
+    assert _deterministic_hash(_HashDict({"a": 1})) == _deterministic_hash({"a": 1})
+    assert _deterministic_hash(_HashList([1, 2])) == _deterministic_hash([1, 2])
+    assert _deterministic_hash(_HashPoint(1, 2)) == _deterministic_hash((1, 2))
+    # A bool is an int subclass, but must not encode as a number.
+    assert _deterministic_hash(True) != _deterministic_hash(1)
+
+
+def test_deterministic_hash_vars_include_var_data():
+    """Vars with the same JS expression but different data hash differently."""
+    plain = Var(_js_expr="foo")
+    with_data = Var(
+        _js_expr="foo",
+        _var_data=VarData(imports={"react": [ImportVar(tag="useState")]}),
+    )
+    assert _deterministic_hash(plain) != _deterministic_hash(with_data)
+
+
+def test_deterministic_hash_rejects_unsupported_values():
+    """Unsupported values raise, and the failure is not cached for other types."""
+    with pytest.raises(TypeError):
+        _deterministic_hash(object())
+    # Dataclass types are supported (their fields are read off the class).
+    assert _deterministic_hash(_HashDefaults) == _deterministic_hash(_HashDefaults)
+    with pytest.raises(TypeError):
+        _deterministic_hash(_HashStr)
+
+
+def test_component_hash_includes_lifecycle_hooks():
+    """Components differing only in on_mount must not share a hash."""
+    plain = Box.create(id="hash_box")
+    with_mount = Box.create(id="hash_box", on_mount=rx.console_log("mounted"))
+
+    assert plain.render() == with_mount.render()
+    assert plain._get_component_hash() != with_mount._get_component_hash()
+    assert plain._get_component_hash(shallow=True) != with_mount._get_component_hash(
+        shallow=True
+    )
