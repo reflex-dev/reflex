@@ -78,6 +78,7 @@ reflex = "reflex.reflex:cli"
 dev = [
   "alembic",
   "asynctest",
+  "reflex-i18n",
   "codespell",
   "darglint",
   "dill",
@@ -395,6 +396,7 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+reflex-i18n = false
 # Pulled in transitively (docs app -> reflex-enterprise -> joserfc), so there is no floor
 # to pin here; exempt it so security fixes (CVE-2026-69247 shipped in 50.0.0) resolve as
 # soon as they publish instead of waiting out the exclude-newer window.
@@ -418,6 +420,7 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-i18n.workspace = true
 reflex-docgen.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
