@@ -864,7 +864,7 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.cache
-    def _get_type_hints(cls) -> dict[str, Any]:
+    def _get_type_hints(cls) -> builtins.dict[str, Any]:
         """Get the type hints for this class.
 
         If the class is dynamic, evaluate the type hints with the original
@@ -1309,7 +1309,7 @@ class BaseState(EvenMoreBasicBaseState):
         return None
 
     @staticmethod
-    def _get_base_functions() -> dict[str, FunctionType]:
+    def _get_base_functions() -> builtins.dict[str, FunctionType]:
         """Get all functions of the state class excluding dunder methods.
 
         Returns:
@@ -1322,7 +1322,7 @@ class BaseState(EvenMoreBasicBaseState):
         }
 
     @classmethod
-    def _update_substate_inherited_vars(cls, vars_to_add: dict[str, Var]):
+    def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 
         Also updates the var dependency tracking dicts after adding vars.
@@ -1343,7 +1343,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _dynamic_route_arg_types(cls) -> dict[str, str]:
+    def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
         """Map installed dynamic route argument names to their route arg type.
 
         Returns:
@@ -1360,7 +1360,7 @@ class BaseState(EvenMoreBasicBaseState):
         }
 
     @classmethod
-    def setup_dynamic_args(cls, args: dict[str, str]):
+    def setup_dynamic_args(cls, args: builtins.dict[str, str]):
         """Set up args for easy access in renderer.
 
         Args:
@@ -1984,7 +1984,7 @@ class BaseState(EvenMoreBasicBaseState):
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
-    ) -> dict[str, Any]:
+    ) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -2081,7 +2081,7 @@ class BaseState(EvenMoreBasicBaseState):
             state.pop(inherited_var_name, None)
         return state
 
-    def __setstate__(self, state: dict[str, Any]):
+    def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
 
         This method is called by pickle to deserialize the object.

@@ -266,7 +266,7 @@ def products_content() -> rx.Component:
                         (
                             "Agent Toolkit",
                             "McpServerIcon",
-                            "/docs/ai/integrations/ai-onboarding/",
+                            "/docs/ai/integrations/agent-toolkit/",
                         ),
                         (
                             "Integrations",

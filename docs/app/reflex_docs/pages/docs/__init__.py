@@ -1,12 +1,13 @@
 import os
 import re
 from collections import defaultdict, namedtuple
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 
 import reflex as rx
 from reflex_components_core.core.cond import Cond
-from reflex_docgen.markdown import parse_document
+from reflex_docgen.markdown import FrontMatter, parse_document
 
 # External Components
 from reflex_pyplot import pyplot as pyplot
@@ -73,14 +74,36 @@ def build_nested_namespace(
     return parent_namespace
 
 
+# Leading YAML frontmatter block, mirroring reflex_docgen's parser.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+
+
+@lru_cache(maxsize=None)
+def _frontmatter_for(filepath: str) -> FrontMatter | None:
+    """Parse a doc's frontmatter once per file (cached for the process lifetime).
+
+    Only the frontmatter block is fed to the parser so this stays cheap even
+    when called for every doc at startup; the body is parsed separately by the
+    rendering pipeline. Read failures yield None (like docs without
+    frontmatter) so a missing/unreadable file can't abort route registration.
+    """
+    try:
+        source = Path(filepath).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    block = _FRONTMATTER_BLOCK_RE.match(source)
+    if block is None:
+        return None
+    return parse_document(block.group(0)).frontmatter
+
+
 def get_components_from_frontmatter(filepath: str) -> list:
     """Extract component tuples from a doc's frontmatter."""
-    source = Path(filepath).read_text(encoding="utf-8")
-    doc = parse_document(source)
-    if doc.frontmatter is None:
+    fm = _frontmatter_for(filepath)
+    if fm is None:
         return []
     components = []
-    for comp_str in doc.frontmatter.components:
+    for comp_str in fm.components:
         if component := SPECIAL_COMPONENT_DOCS.get(comp_str):
             components.append((component, comp_str))
             continue
@@ -98,11 +121,16 @@ def get_components_from_frontmatter(filepath: str) -> list:
 
 def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
     """Extract component preview sources from a doc's frontmatter."""
-    source = Path(filepath).read_text(encoding="utf-8")
-    doc = parse_document(source)
-    if doc.frontmatter is None:
+    fm = _frontmatter_for(filepath)
+    if fm is None:
         return {}
-    return {p.name: p.source for p in doc.frontmatter.component_previews}
+    return {p.name: p.source for p in fm.component_previews}
+
+
+def get_image_from_frontmatter(filepath: str) -> str | None:
+    """Resolve a per-page social preview image from frontmatter, if any."""
+    fm = _frontmatter_for(filepath)
+    return fm.image if fm is not None else None
 
 
 # ---------------------------------------------------------------------------
@@ -327,14 +355,21 @@ def extract_doc_description(
 
 
 def make_docpage(
-    route: str, title: str, doc_virtual: str, render_fn, description: str | None = None
+    route: str,
+    title: str,
+    doc_virtual: str,
+    render_fn,
+    description: str | None = None,
+    image: str | None = None,
 ):
     """Wrap a render function as a docpage, setting module metadata."""
     doc_path = Path(doc_virtual)
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title, description=description)(render_fn)
+    return docpage(set_path=route, t=title, description=description, image=image)(
+        render_fn
+    )
 
 
 CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
@@ -366,6 +401,7 @@ def handle_library_doc(
     """Handle docs/library/** docs — component API reference via multi_docs."""
     clist = [title, *get_components_from_frontmatter(actual_path)]
     previews = get_previews_from_frontmatter(actual_path)
+    image = get_image_from_frontmatter(actual_path)
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_clist: list | None = None
     if os.path.exists(ll_actual_path):
@@ -405,6 +441,7 @@ def handle_library_doc(
         title=display_title,
         ll_component_list=ll_clist,
         description=description,
+        image=image,
         source=source,
     )
 
@@ -443,12 +480,14 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
         return ((toc, doc_content), body)
 
     description = extract_doc_description(doc_text)
+    image = get_image_from_frontmatter(actual_path)
     return make_docpage(
         resolved.route,
         resolved.display_title,
         virtual_doc,
         comp,
         description=description,
+        image=image,
     )
 
 

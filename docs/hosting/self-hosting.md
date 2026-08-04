@@ -4,7 +4,7 @@ import reflex as rx
 
 # Self Hosting
 
-We recommend using `reflex deploy`, but if this does not fit your use case then you can also host your apps yourself.
+Use `reflex deploy` for the managed workflow. Follow this page when you need to run the frontend and backend on your own infrastructure.
 
 Clone your code to a server and install the [requirements](/docs/getting-started/installation/).
 
@@ -14,7 +14,7 @@ Edit your `rxconfig.py` file and set `api_url` to the publicly accessible IP
 address or hostname of your server, with the port `:8000` at the end. Setting
 this correctly is essential for the frontend to interact with the backend state.
 
-For example if your server is at `app.example.com`, your config would look like this:
+For example, if your server is at `app.example.com`, use:
 
 ```python
 config = rx.Config(
@@ -70,7 +70,7 @@ Because the backend uses websockets, some reverse proxy servers, like [nginx](ht
 ## Exporting a Static Build
 
 Exporting a static build of the frontend allows the app to be served using a
-static hosting provider, like Netlify or Github Pages. Be sure `api_url` is set
+static hosting provider, such as Netlify or GitHub Pages. Make sure `api_url` is set
 to an accessible backend URL when the frontend is exported.
 
 ```bash
@@ -80,7 +80,7 @@ API_URL=http://app.example.com:8000 reflex export
 This will create a `frontend.zip` file with your app's minified HTML,
 Javascript, and CSS build that can be uploaded to your static hosting service.
 
-It also creates a `backend.zip` file with your app's backend python code to
+It also creates a `backend.zip` file with your app's backend Python code to
 upload to your server and run.
 
 You can export only the frontend or backend by passing in the `--frontend-only`
@@ -97,9 +97,8 @@ Another option is to run your Reflex service in a container. For this
 purpose, a `Dockerfile` and additional documentation is available in the Reflex
 project in the directory `docker-example`.
 
-For the build of the container image it is necessary to edit the `rxconfig.py`
-and the add the `requirements.txt`
-to your project folder. The following changes are necessary in `rxconfig.py`:
+Before building the image, update `rxconfig.py` and add `requirements.txt` to
+the project folder:
 
 ```python
 config = rx.Config(
@@ -115,7 +114,7 @@ interactivity.
 You can find the `requirements.txt` in the `docker-example` folder of the
 project too.
 
-The project structure should looks like this:
+The project structure should look like this:
 
 ```bash
 hello

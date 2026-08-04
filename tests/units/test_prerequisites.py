@@ -81,9 +81,10 @@ class InstallPackagesEnv:
 
 
 def _stub_framework_packages(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Empty out framework deps so install call counts are predictable."""
+    """Empty out framework deps and overrides so install call counts are predictable."""
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {})
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {})
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
 
 
 @pytest.fixture
@@ -910,6 +911,136 @@ def test_install_frontend_packages_bun_skips_frozen_lockfile_when_disabled(
         assert "--frozen-lockfile" not in call
 
 
+def _write_restored_package_json(env: InstallPackagesEnv, overrides: dict[str, str]):
+    """Persist a package.json as a completed previous run would have left it.
+
+    Dependencies are left empty so no stale-removal call muddies the counts.
+
+    Args:
+        env: The install_packages_env fixture instance.
+        overrides: The overrides the persisted lockfile was resolved against.
+    """
+    env.root_package_json.write_text(
+        json.dumps({
+            "name": "reflex",
+            "type": "module",
+            "scripts": {
+                "dev": constants.PackageJson.Commands.DEV,
+                "export": constants.PackageJson.Commands.EXPORT,
+            },
+            "dependencies": {},
+            "devDependencies": {},
+            "overrides": overrides,
+        })
+    )
+
+
+def test_install_frontend_packages_applies_overrides_after_frozen_install(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A newly introduced framework override lands only after the frozen install.
+
+    Upgrading Reflex can add an override that the persisted lockfile knows
+    nothing about. Merging it before the frozen install would desync the pair
+    and abort with "lockfile had changes, but lockfile is frozen".
+    """
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {"user-pkg": "2.0.0"})
+
+    seen: list[tuple[list[str], dict]] = []
+
+    def run_package_manager(args, **kwargs):
+        seen.append((
+            list(args),
+            json.loads(env.web_package_json.read_text())["overrides"],
+        ))
+
+    env.patch_pm(["bun"], run_package_manager)
+    env.install({"some-pkg@1.0.0"})
+
+    # The frozen install must see the persisted overrides untouched.
+    frozen_installs = [
+        (args, overrides) for args, overrides in seen if "install" in args
+    ]
+    assert len(frozen_installs) == 1
+    assert "--frozen-lockfile" in frozen_installs[0][0]
+    assert frozen_installs[0][1] == {"user-pkg": "2.0.0"}
+
+    # Every subsequent add resolves against the merged overrides.
+    merged = {"user-pkg": "2.0.0", "postcss": "8.5.23"}
+    add_calls = [(args, overrides) for args, overrides in seen if "add" in args]
+    assert add_calls
+    assert all(overrides == merged for _, overrides in add_calls)
+
+    assert json.loads(env.web_package_json.read_text())["overrides"] == merged
+    assert json.loads(env.root_package_json.read_text())["overrides"] == merged
+
+
+def test_install_frontend_packages_reconciles_lockfile_for_overrides_only_change(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """New overrides with nothing to add still refresh the lockfile."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {})
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert [c for c in calls if "add" in c] == []
+    install_calls = [c for c in calls if "install" in c]
+    assert len(install_calls) == 2
+    # Frozen first (against the restored pair), then non-frozen to resolve the
+    # merged overrides into the lockfile.
+    assert "--frozen-lockfile" in install_calls[0]
+    assert "--frozen-lockfile" not in install_calls[1]
+
+
+def test_install_frontend_packages_skips_reconcile_when_overrides_unchanged(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """Already-applied overrides do not trigger an extra install."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {"postcss": "8.5.23"})
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert len([c for c in calls if "install" in c]) == 1
+
+
+def test_install_frontend_packages_cache_invalidated_by_new_override(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A changed framework override busts the install cache so it gets applied."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {})
+    calls = _record_calls(env)
+
+    env.install()
+    env.install()
+    assert len(calls) == 1
+
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.install()
+
+    assert len(calls) == 3
+    assert json.loads(env.web_package_json.read_text())["overrides"] == {
+        "postcss": "8.5.23"
+    }
+
+
 def test_install_frontend_packages_persists_package_json_to_root(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -967,14 +1098,15 @@ def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {"react": "19.2.5"}
     assert rendered["devDependencies"] == {"vite": "8.0.9"}
-    assert rendered["overrides"] == {"old-override": "1.0", "cookie": "1.1.1"}
+    # Framework overrides are merged after the frozen install, not here.
+    assert rendered["overrides"] == {"old-override": "1.0"}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
     assert rendered["scripts"]["old"] == "x"
 
 
 def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
-    """Without a persisted file, deps/devDeps are empty."""
+    """Without a persisted file, deps/devDeps/overrides are empty."""
     monkeypatch.setattr(
         constants.PackageJson,
         "OVERRIDES",
@@ -986,7 +1118,7 @@ def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == {"cookie": "1.1.1"}
+    assert rendered["overrides"] == {}
 
 
 def test_compile_package_json_preserves_user_scripts(tmp_path):
@@ -1015,8 +1147,10 @@ def test_compile_package_json_preserves_user_scripts(tmp_path):
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
-def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
-    """User-added overrides survive init; framework overrides win conflicts."""
+def test_compile_package_json_preserves_persisted_overrides_verbatim(
+    tmp_path, monkeypatch
+):
+    """Persisted overrides round-trip untouched so they still pair with the lockfile."""
     root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
     root_pkg.parent.mkdir(parents=True, exist_ok=True)
     root_pkg.write_text(
@@ -1036,7 +1170,88 @@ def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
     with chdir(tmp_path):
         rendered = json.loads(frontend_skeleton._compile_package_json())
 
-    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "0.0.1"}
+
+
+def test_update_package_json_overrides_merges_framework_entries(tmp_path, monkeypatch):
+    """User-added overrides survive the merge; framework overrides win conflicts."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(
+        json.dumps({
+            "name": "reflex",
+            "dependencies": {"react": "19.2.5"},
+            "overrides": {"user-pkg": "2.0.0", "cookie": "0.0.1"},
+        })
+    )
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    updated = json.loads(web_pkg.read_text())
+    assert updated["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+    # Untouched fields are preserved as-is.
+    assert updated["name"] == "reflex"
+    assert updated["dependencies"] == {"react": "19.2.5"}
+
+
+def test_update_package_json_overrides_adds_missing_section(tmp_path, monkeypatch):
+    """A package.json without an overrides section gets one."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(json.dumps({"name": "reflex"}))
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    assert json.loads(web_pkg.read_text())["overrides"] == {"cookie": "1.1.1"}
+
+
+def test_update_package_json_overrides_noop_when_already_applied(tmp_path, monkeypatch):
+    """An up-to-date package.json is left byte-identical so no reinstall is triggered."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    original = json.dumps({
+        "name": "reflex",
+        "overrides": {"user-pkg": "2.0.0", "cookie": "1.1.1"},
+    })
+    web_pkg.write_text(original)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    assert web_pkg.read_text() == original
+
+
+@pytest.mark.parametrize("content", [None, "{not json", "[]"])
+def test_update_package_json_overrides_skips_unusable_file(
+    tmp_path, monkeypatch, content
+):
+    """A missing or malformed .web/package.json is left for the dependency adds."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    if content is not None:
+        web_pkg.write_text(content)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    if content is None:
+        assert not web_pkg.exists()
+    else:
+        assert web_pkg.read_text() == content
 
 
 def test_compile_package_json_preserves_additional_fields(tmp_path):
@@ -1082,7 +1297,7 @@ def test_compile_package_json_null_fields(tmp_path):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["overrides"] == {}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
 
 
@@ -1098,7 +1313,7 @@ def test_compile_package_json_non_object_root(tmp_path, content):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["overrides"] == {}
 
 
 def test_install_frontend_packages_removes_stale_dependencies(
