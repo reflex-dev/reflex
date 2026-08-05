@@ -186,8 +186,10 @@ class Plotly(NoSSRComponent):
             The imports for the plotly component.
         """
         imports: ImportDict = {
-            # For merging plotly data/layout/templates.
-            "mergician@v2.0.2": "mergician",
+            # For merging plotly data/layout/templates. Unversioned so it
+            # collapses into the base dependency during package collection —
+            # ``PackageJson.DEPENDENCIES`` owns the pin.
+            "mergician": "mergician",
         }
         if self.locale is not None:
             # For locale dictionaries injected into plot config.locales.
