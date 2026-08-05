@@ -2376,31 +2376,56 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
     )
 
 
-def test_passthrough_memo_forwards_ref_to_root() -> None:
-    """Passthrough wrappers implement the React ref-forwarding protocol.
+def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
+    """Passthrough wrappers are transparent to their parent.
 
-    A ref set on the generated memo wrapper at runtime (e.g. injected by a
-    Radix ``Slot``/``asChild`` parent cloning its child element) must attach
-    to the root element inside the memo body. The wrapper's compiled function
-    destructures only declared props, so without explicit forwarding the ref
-    is silently dropped and the parent never sees the DOM node.
+    Props and refs set on the generated memo wrapper at runtime (e.g.
+    injected by a Radix ``Slot``/``asChild`` parent cloning its child
+    element) must reach the root element inside the memo body. The wrapper's
+    compiled function destructures only declared props, so without explicit
+    forwarding the injections are silently dropped — regression for
+    reflex-dev/reflex#6849, where a Slot-injected ``name`` never reached a
+    stateful form input and the field was missing from ``form_data``.
     """
     ctx, page_ctx = _compile_single_page(
         lambda: Plain.create("content", on_click=rx.console_log("x"))
     )
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "{children, ref}" in memo_code, (
-        "Passthrough memo signature must destructure the incoming ref.\n"
+    assert "{children, ref, ...rest}" in memo_code, (
+        "Passthrough memo signature must destructure the incoming ref and "
+        "collect injected props into a rest param.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
     assert "ref:ref" in memo_code, (
         "The memo body root must render the forwarded ref.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    # The page-side call site is unchanged; the ref only arrives at runtime.
+    assert "...mergeSlotProps(rest, ({" in memo_code, (
+        "The root's compiled-in props must be merged with the injected rest "
+        "props.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert re.search(
+        r'^import\s*\{[^}]*\bmergeSlotProps\b[^}]*\}\s*from\s*"\$/utils/state"',
+        memo_code,
+        flags=re.MULTILINE,
+    ), (
+        "The memo module must import mergeSlotProps from $/utils/state.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    # The helper referenced by the generated code must exist in the runtime
+    # template, otherwise every wrapper render is a ReferenceError.
+    import reflex_base
+
+    state_js = (
+        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
+    )
+    assert "export const mergeSlotProps" in state_js.read_text()
+    # The page-side call site is unchanged; injections only arrive at runtime.
     page_output = page_ctx.output_code or ""
     assert "ref:ref" not in page_output
+    assert "mergeSlotProps" not in page_output
 
 
 def test_memo_forwarded_ref_merges_with_id_ref() -> None:
@@ -2453,22 +2478,27 @@ def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
     )
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "{children, ref}" in memo_code, (
-        "Snapshot memo signature must destructure the incoming ref.\n"
+    assert "{children, ref, ...rest}" in memo_code, (
+        "Snapshot memo signature must destructure the incoming ref and rest "
+        "props.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
     assert "ref:mergeRefs(ref_myinput, ref)" in memo_code, (
         "The snapshot root must merge its id ref with the forwarded ref.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
+    assert "...mergeSlotProps(rest, ({" in memo_code, (
+        "The snapshot root must merge injected props with its own.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
 
 
 def test_untagged_memo_roots_do_not_forward_ref() -> None:
-    """Roots that render no element get no ref parameter.
+    """Roots that render no element get no ref or rest parameter.
 
     ``Bare`` renders a raw expression, ``Cond``/``Match`` render ternaries,
-    ``Foreach`` renders an ``Array.map`` — none can carry a ref, and
-    ``Fragment`` rejects one at runtime.
+    ``Foreach`` renders an ``Array.map`` — none can carry props or a ref, and
+    ``Fragment`` rejects both at runtime.
     """
     from reflex_components_core.core.foreach import Foreach
 
@@ -2481,27 +2511,29 @@ def test_untagged_memo_roots_do_not_forward_ref() -> None:
         ),
     ):
         _factory, definition = create_passthrough_component_memo(component)
-        assert not definition.forward_root_ref, (
-            f"{type(component).__name__} root must not forward refs"
+        assert not definition.forward_root_props, (
+            f"{type(component).__name__} root must not forward props/refs"
         )
 
     _factory, definition = create_passthrough_component_memo(Plain.create(STATE_VAR))
-    assert definition.forward_root_ref, "tagged passthrough root must forward refs"
+    assert definition.forward_root_props, "tagged passthrough root must forward"
     _factory, definition = create_passthrough_component_memo(
         LeafComponent.create(Plain.create())
     )
-    assert definition.forward_root_ref, "tagged snapshot root must forward refs"
+    assert definition.forward_root_props, "tagged snapshot root must forward"
 
-    # End-to-end: a Bare wrapper's compiled module has no ref in its signature.
+    # End-to-end: a Bare wrapper's compiled module keeps its bare signature.
     ctx, _page_ctx = _compile_single_page(
         lambda: WithProp.create(Bare.create(STATE_VAR), label=STATE_VAR)
     )
     memo_code = _compile_memo_module_text(ctx)
-    assert "{children, ref}" in memo_code  # the WithProp wrapper
+    assert "{children, ref, ...rest}" in memo_code  # the WithProp wrapper
     bare_tag = next(tag for tag in ctx.memoize_wrappers if tag.startswith("Bare"))
-    bare_code = memo_code.partition(f"export const {bare_tag}")[2]
-    assert "ref" not in bare_code.partition("=>")[0], (
-        f"Bare wrapper signature must not take a ref: {bare_code[:200]}"
+    bare_signature = memo_code.partition(f"export const {bare_tag}")[2].partition("=>")[
+        0
+    ]
+    assert "({children})" in bare_signature, (
+        f"Bare wrapper signature must not take a ref or rest: {bare_signature!r}"
     )
 
 
@@ -2510,7 +2542,7 @@ def test_user_memo_definition_does_not_forward_ref() -> None:
 
     Base props (including ``ref``) are deliberately not forwardable on user
     memos without an ``rx.RestProp``; only compiler-generated wrappers opt
-    into root ref forwarding.
+    into root prop/ref transparency.
     """
     from reflex.compiler import utils as compiler_utils
 
@@ -2519,11 +2551,17 @@ def test_user_memo_definition_does_not_forward_ref() -> None:
         return Plain.create(children)
 
     definition = user_memo_no_ref_forward._definition
-    assert not definition.forward_root_ref
+    assert not definition.forward_root_props
 
     render_dict, _imports = compiler_utils.compile_experimental_component_memo(
         definition
     )
     assert "ref" not in render_dict["signature"], (
         f"User memo signature must not destructure ref: {render_dict['signature']}"
+    )
+    assert "..." not in render_dict["signature"], (
+        f"User memo signature must not gain a rest param: {render_dict['signature']}"
+    )
+    assert "mergeSlotProps" not in str(render_dict["render"]), (
+        "User memo bodies must not merge injected props onto their root"
     )

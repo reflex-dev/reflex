@@ -413,7 +413,7 @@ def compile_experimental_component_memo(
 
         ref_var_data = (
             _forward_incoming_ref_to_root(render)
-            if definition.forward_root_ref
+            if definition.forward_root_props
             else None
         )
         # Swap children for JSX render: the memo body template emits a
@@ -424,7 +424,7 @@ def compile_experimental_component_memo(
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         ref_var_data = (
             _forward_incoming_ref_to_root(render)
-            if definition.forward_root_ref
+            if definition.forward_root_props
             else None
         )
         hooks = render._get_all_hooks()
@@ -432,6 +432,17 @@ def compile_experimental_component_memo(
         custom_code = render._get_all_custom_code()
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
+
+    if definition.forward_root_props:
+        # Make the wrapper prop-transparent: merge runtime-injected props
+        # (``...rest`` from the destructured signature) with the root's
+        # compiled-in props. ``mergeSlotProps`` applies Radix ``Slot``
+        # semantics — own props win, ``on*`` handlers compose, ``style`` and
+        # ``className`` merge — so a Slot parent cloning the wrapper behaves
+        # as if it had cloned the root element directly.
+        rendered["props"] = [
+            f"...mergeSlotProps(rest, ({{ {', '.join(rendered['props'])} }}))"
+        ]
 
     # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
     # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
@@ -451,8 +462,14 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
-    # The injected root ref rides outside ``_get_vars`` (``Component.ref`` is
-    # not a JS property), so its imports (``mergeRefs``) are merged explicitly.
+    # The injected root ref and rest-props merge ride outside ``_get_vars``
+    # (``Component.ref`` is not a JS property and the ``mergeSlotProps`` call
+    # is spliced into the rendered props), so their imports are merged
+    # explicitly.
+    if definition.forward_root_props:
+        imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+            ImportVar(tag="mergeSlotProps")
+        )
     if ref_var_data is not None:
         for lib, fields in ref_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
@@ -466,12 +483,16 @@ def compile_experimental_component_memo(
     if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
 
-    if definition.forward_root_ref:
+    if definition.forward_root_props:
         signature_fields.append("ref")
 
     rest_param = next(
         (p for p in definition.params if p.kind is MemoParamKind.REST), None
     )
+    if rest_param is not None:
+        rest_name = rest_param.placeholder_name
+    else:
+        rest_name = "rest" if definition.forward_root_props else None
 
     return (
         {
@@ -481,7 +502,7 @@ def compile_experimental_component_memo(
             )[1],
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
-                rest=rest_param.placeholder_name if rest_param is not None else None,
+                rest=rest_name,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
             "render": rendered,
