@@ -325,8 +325,9 @@ class MemoComponentDefinition(MemoDefinition):
     # ``({children, ...rest})`` — ``rest`` includes ``ref`` via React 19
     # ref-as-prop — and the root renders ``mergeSlotProps(rest, {...own})``,
     # which merges following Radix ``Slot`` semantics (own props win, ``on*``
-    # handlers compose, refs compose, ``className`` concatenates). Set only
-    # when the root renders a tag that can carry props and a ref.
+    # handlers compose, refs compose, ``className`` concatenates, and
+    # object-valued props deep-merge). Set only when the root renders a tag
+    # that can carry props and a ref.
     forward_root_props: bool = False
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The

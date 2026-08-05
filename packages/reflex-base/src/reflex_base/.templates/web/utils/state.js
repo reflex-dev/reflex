@@ -1,5 +1,6 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
+import { mergician } from "mergician";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -1277,14 +1278,56 @@ export const mergeRefs =
     };
   };
 
+// Composed callback refs keyed by (own ref, injected ref) identity. When a
+// mounted wrapper rerenders with stable inputs, the same composed callback is
+// reused, so React does not detach and reattach the underlying refs (running
+// callback cleanup or transiently nulling object refs) for an unchanged node.
+const composedRefsCache = new WeakMap();
+
+const canWeakKey = (value) =>
+  value !== null && (typeof value === "object" || typeof value === "function");
+
+const composeRefsCached = (own, injected) => {
+  if (!canWeakKey(own) || !canWeakKey(injected)) {
+    return mergeRefs(own, injected);
+  }
+  let byInjected = composedRefsCache.get(own);
+  if (byInjected === undefined) {
+    byInjected = new WeakMap();
+    composedRefsCache.set(own, byInjected);
+  }
+  let composed = byInjected.get(injected);
+  if (composed === undefined) {
+    composed = mergeRefs(own, injected);
+    byInjected.set(injected, composed);
+  }
+  return composed;
+};
+
+// Whether a prop value can be deeply merged: plain objects only — never
+// arrays, React elements (tagged with $$typeof), or class instances.
+const isPlainObjectProp = (value) => {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    value.$$typeof !== undefined
+  ) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
 /**
  * Merge props injected by a parent at runtime (e.g. a Radix Slot cloning its
  * child) with a component's own compiled-in props.
  *
  * Follows Radix Slot semantics with the own props in the child role: own
  * props win for plain props, `on*` event handlers compose (own handler first,
- * then the injected one), refs compose via `mergeRefs`, and `className`
- * strings concatenate.
+ * then the injected one), refs compose via `mergeRefs` (with a stable
+ * identity across rerenders), `className` strings concatenate, and
+ * object-valued props (e.g. `style`) merge deeply via `mergician` with own
+ * keys winning.
  * @param injectedProps The props injected by the parent at runtime.
  * @param ownProps The component's own compiled-in props.
  * @returns The merged props object.
@@ -1313,9 +1356,11 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
           }
         : injected;
     } else if (propName === "ref") {
-      merged[propName] = mergeRefs(own, injected);
+      merged[propName] = composeRefsCached(own, injected);
     } else if (propName === "className") {
       merged[propName] = [injected, own].filter(Boolean).join(" ");
+    } else if (isPlainObjectProp(injected) && isPlainObjectProp(own)) {
+      merged[propName] = mergician(injected, own);
     }
   }
   return merged;

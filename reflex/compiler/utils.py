@@ -428,9 +428,9 @@ def compile_experimental_component_memo(
         # (``...rest`` from the destructured signature, which includes ``ref``
         # via React 19 ref-as-prop) with the root's compiled-in props.
         # ``mergeSlotProps`` applies Radix ``Slot`` semantics — own props win,
-        # ``on*`` handlers compose, refs compose, ``className`` concatenates —
-        # so a Slot parent cloning the wrapper behaves as if it had cloned the
-        # root element directly.
+        # ``on*`` handlers compose, refs compose, ``className`` concatenates,
+        # object-valued props deep-merge — so a Slot parent cloning the
+        # wrapper behaves as if it had cloned the root element directly.
         rendered["props"] = [
             f"...mergeSlotProps(rest, ({{ {', '.join(rendered['props'])} }}))"
         ]

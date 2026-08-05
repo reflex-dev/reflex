@@ -141,6 +141,9 @@ class PackageJson(SimpleNamespace):
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
             "isbot": "5.2.1",
+            # Deep prop merging in $/utils/state's mergeSlotProps; pinned to
+            # the same version the plotly wrapper requests.
+            "mergician": "v2.0.2",
             "socket.io-client": "4.8.3",
             "universal-cookie": "8.1.2",
         }
