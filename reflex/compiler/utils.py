@@ -411,12 +411,22 @@ def compile_experimental_component_memo(
         # aliasing above is fine.
         all_imports = render._get_all_imports()
 
+        ref_var_data = (
+            _forward_incoming_ref_to_root(render)
+            if definition.forward_root_ref
+            else None
+        )
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
         render.children = [hole_child]
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
+        ref_var_data = (
+            _forward_incoming_ref_to_root(render)
+            if definition.forward_root_ref
+            else None
+        )
         hooks = render._get_all_hooks()
         rendered = render.render()
         custom_code = render._get_all_custom_code()
@@ -441,6 +451,12 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
+    # The injected root ref rides outside ``_get_vars`` (``Component.ref`` is
+    # not a JS property), so its imports (``mergeRefs``) are merged explicitly.
+    if ref_var_data is not None:
+        for lib, fields in ref_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
+
     signature_fields = [
         field
         for param in definition.params
@@ -449,6 +465,9 @@ def compile_experimental_component_memo(
 
     if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
+
+    if definition.forward_root_ref:
+        signature_fields.append("ref")
 
     rest_param = next(
         (p for p in definition.params if p.kind is MemoParamKind.REST), None
@@ -472,6 +491,39 @@ def compile_experimental_component_memo(
         },
         imports,
     )
+
+
+def _forward_incoming_ref_to_root(render: Component) -> VarData | None:
+    """Attach the memo wrapper's incoming ``ref`` prop to the memo body root.
+
+    The generated function component destructures ``ref`` from its props
+    (React 19 ref-as-prop) and the root element renders it directly — or via
+    ``mergeRefs`` when the root already carries a ref of its own (an explicit
+    ``ref`` Var or the ``useRef`` derived from a static ``id``).
+
+    Args:
+        render: The compile-local copy of the memo body root component.
+
+    Returns:
+        VarData with extra imports required by the injected ref expression,
+        or ``None`` when the incoming ref is attached directly.
+    """
+    own_ref = render.ref
+    if own_ref is None and (ref_name := render.get_ref()) is not None:
+        own_ref = Var(_js_expr=ref_name)
+    if own_ref is None:
+        render.ref = Var(_js_expr="ref")
+        return None
+    render.ref = Var(
+        _js_expr=f"mergeRefs({own_ref!s}, ref)",
+        _var_data=VarData.merge(
+            own_ref._get_all_var_data(),
+            VarData(
+                imports={f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="mergeRefs")]}
+            ),
+        ),
+    )
+    return render.ref._get_all_var_data()
 
 
 def _root_only_hooks(component: Component) -> dict[str, VarData | None]:

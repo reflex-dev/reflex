@@ -2374,3 +2374,156 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def test_passthrough_memo_forwards_ref_to_root() -> None:
+    """Passthrough wrappers implement the React ref-forwarding protocol.
+
+    A ref set on the generated memo wrapper at runtime (e.g. injected by a
+    Radix ``Slot``/``asChild`` parent cloning its child element) must attach
+    to the root element inside the memo body. The wrapper's compiled function
+    destructures only declared props, so without explicit forwarding the ref
+    is silently dropped and the parent never sees the DOM node.
+    """
+    ctx, page_ctx = _compile_single_page(
+        lambda: Plain.create("content", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "{children, ref}" in memo_code, (
+        "Passthrough memo signature must destructure the incoming ref.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "ref:ref" in memo_code, (
+        "The memo body root must render the forwarded ref.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    # The page-side call site is unchanged; the ref only arrives at runtime.
+    page_output = page_ctx.output_code or ""
+    assert "ref:ref" not in page_output
+
+
+def test_memo_forwarded_ref_merges_with_id_ref() -> None:
+    """A root with its own ``id``-derived ref merges it with the forwarded ref.
+
+    The forwarded ref must not clobber the ``useRef`` that backs
+    ``refs['ref_<id>']`` (form value collection, focus helpers), and vice
+    versa — both must receive the DOM node via ``mergeRefs``.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Plain.create("content", id="plain-id", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "const ref_plain_id = useRef(null)" in memo_code, (
+        "The id-derived ref hook must stay in the memo body.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "ref:mergeRefs(ref_plain_id, ref)" in memo_code, (
+        "The root must render both refs via mergeRefs.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert re.search(
+        r'^import\s*\{[^}]*\bmergeRefs\b[^}]*\}\s*from\s*"\$/utils/state"',
+        memo_code,
+        flags=re.MULTILINE,
+    ), (
+        "The memo module must import mergeRefs from $/utils/state.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    # The helper referenced by the generated code must exist in the runtime
+    # template, otherwise every merged ref is a ReferenceError.
+    import reflex_base
+
+    state_js = (
+        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
+    )
+    assert "export const mergeRefs" in state_js.read_text()
+
+
+def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
+    """Snapshot wrappers with a tagged root also forward the incoming ref.
+
+    Void/raw-text elements (``<input>``, ``<textarea>``) memoize as snapshot
+    boundaries, but their memo body still renders the element itself as the
+    one and only root — a ref on the wrapper must reach it the same way.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: BaseInput.create(id="myinput", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "{children, ref}" in memo_code, (
+        "Snapshot memo signature must destructure the incoming ref.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "ref:mergeRefs(ref_myinput, ref)" in memo_code, (
+        "The snapshot root must merge its id ref with the forwarded ref.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+
+
+def test_untagged_memo_roots_do_not_forward_ref() -> None:
+    """Roots that render no element get no ref parameter.
+
+    ``Bare`` renders a raw expression, ``Cond``/``Match`` render ternaries,
+    ``Foreach`` renders an ``Array.map`` — none can carry a ref, and
+    ``Fragment`` rejects one at runtime.
+    """
+    from reflex_components_core.core.foreach import Foreach
+
+    for component in (
+        Bare.create(STATE_VAR),
+        Fragment.create(Plain.create(), on_mount=rx.console_log("x")),
+        Foreach.create(
+            SpecialFormMemoState.items,
+            render_fn=lambda item: Plain.create(item),
+        ),
+    ):
+        _factory, definition = create_passthrough_component_memo(component)
+        assert not definition.forward_root_ref, (
+            f"{type(component).__name__} root must not forward refs"
+        )
+
+    _factory, definition = create_passthrough_component_memo(Plain.create(STATE_VAR))
+    assert definition.forward_root_ref, "tagged passthrough root must forward refs"
+    _factory, definition = create_passthrough_component_memo(
+        LeafComponent.create(Plain.create())
+    )
+    assert definition.forward_root_ref, "tagged snapshot root must forward refs"
+
+    # End-to-end: a Bare wrapper's compiled module has no ref in its signature.
+    ctx, _page_ctx = _compile_single_page(
+        lambda: WithProp.create(Bare.create(STATE_VAR), label=STATE_VAR)
+    )
+    memo_code = _compile_memo_module_text(ctx)
+    assert "{children, ref}" in memo_code  # the WithProp wrapper
+    bare_tag = next(tag for tag in ctx.memoize_wrappers if tag.startswith("Bare"))
+    bare_code = memo_code.partition(f"export const {bare_tag}")[2]
+    assert "ref" not in bare_code.partition("=>")[0], (
+        f"Bare wrapper signature must not take a ref: {bare_code[:200]}"
+    )
+
+
+def test_user_memo_definition_does_not_forward_ref() -> None:
+    """User-defined ``@rx.memo`` components keep their documented contract.
+
+    Base props (including ``ref``) are deliberately not forwardable on user
+    memos without an ``rx.RestProp``; only compiler-generated wrappers opt
+    into root ref forwarding.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    @rx.memo
+    def user_memo_no_ref_forward(children: rx.Var[rx.Component]) -> rx.Component:
+        return Plain.create(children)
+
+    definition = user_memo_no_ref_forward._definition
+    assert not definition.forward_root_ref
+
+    render_dict, _imports = compiler_utils.compile_experimental_component_memo(
+        definition
+    )
+    assert "ref" not in render_dict["signature"], (
+        f"User memo signature must not destructure ref: {render_dict['signature']}"
+    )

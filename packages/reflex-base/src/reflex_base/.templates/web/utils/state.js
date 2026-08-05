@@ -1247,6 +1247,37 @@ export const pyFlatMap = (arr, fn) =>
   });
 
 /**
+ * Merge refs into a single callback ref, attaching the node to all of them.
+ *
+ * Handles ref objects and callback refs, including React 19 callback refs
+ * that return a cleanup function.
+ * @param refsToMerge The refs to merge.
+ * @returns The merged callback ref.
+ */
+export const mergeRefs =
+  (...refsToMerge) =>
+  (node) => {
+    const cleanups = refsToMerge.map((ref) => {
+      if (ref == null) {
+        return null;
+      }
+      if (typeof ref === "function") {
+        const cleanup = ref(node);
+        return typeof cleanup === "function" ? cleanup : () => ref(null);
+      }
+      ref.current = node;
+      return () => {
+        ref.current = null;
+      };
+    });
+    return () => {
+      for (const cleanup of cleanups) {
+        cleanup?.();
+      }
+    };
+  };
+
+/**
  * Get the value from a ref.
  * @param ref The ref to get the value from.
  * @returns The value.
