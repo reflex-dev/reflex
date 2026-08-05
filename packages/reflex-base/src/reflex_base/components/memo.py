@@ -320,13 +320,13 @@ class MemoComponentDefinition(MemoDefinition):
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
     # For wrappers built by the auto-memoize plugin: make the wrapper
-    # transparent to its parent by forwarding runtime-injected props and refs
-    # to the root component of the memo body. The compiled function
-    # destructures ``({children, ref, ...rest})``; ``ref`` (React 19
-    # ref-as-prop) attaches to the root merged with the root's own ref, and
-    # ``rest`` is merged with the root's compiled-in props following Radix
-    # ``Slot`` semantics. Set only when the root renders a tag that can carry
-    # props and a ref.
+    # transparent to its parent by forwarding runtime-injected props to the
+    # root component of the memo body. The compiled function destructures
+    # ``({children, ...rest})`` — ``rest`` includes ``ref`` via React 19
+    # ref-as-prop — and the root renders ``mergeSlotProps(rest, {...own})``,
+    # which merges following Radix ``Slot`` semantics (own props win, ``on*``
+    # handlers compose, refs compose, ``className`` concatenates). Set only
+    # when the root renders a tag that can carry props and a ref.
     forward_root_props: bool = False
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The

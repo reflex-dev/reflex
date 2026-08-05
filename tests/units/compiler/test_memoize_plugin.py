@@ -2392,13 +2392,9 @@ def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
     )
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "{children, ref, ...rest}" in memo_code, (
-        "Passthrough memo signature must destructure the incoming ref and "
-        "collect injected props into a rest param.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
-    assert "ref:ref" in memo_code, (
-        "The memo body root must render the forwarded ref.\n"
+    assert "{children, ...rest}" in memo_code, (
+        "Passthrough memo signature must collect injected props (including "
+        "the React 19 ref-as-prop) into a rest param.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
     assert "...mergeSlotProps(rest, ({" in memo_code, (
@@ -2414,26 +2410,28 @@ def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
         "The memo module must import mergeSlotProps from $/utils/state.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    # The helper referenced by the generated code must exist in the runtime
-    # template, otherwise every wrapper render is a ReferenceError.
+    # The helpers referenced at runtime must exist in the template, otherwise
+    # every wrapper render is a ReferenceError (mergeSlotProps composes refs
+    # through mergeRefs).
     import reflex_base
 
-    state_js = (
+    state_js_text = (
         Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
-    )
-    assert "export const mergeSlotProps" in state_js.read_text()
+    ).read_text()
+    assert "export const mergeSlotProps" in state_js_text
+    assert "export const mergeRefs" in state_js_text
     # The page-side call site is unchanged; injections only arrive at runtime.
     page_output = page_ctx.output_code or ""
-    assert "ref:ref" not in page_output
     assert "mergeSlotProps" not in page_output
 
 
 def test_memo_forwarded_ref_merges_with_id_ref() -> None:
-    """A root with its own ``id``-derived ref merges it with the forwarded ref.
+    """A root's own ``id``-derived ref rides its props into the runtime merge.
 
-    The forwarded ref must not clobber the ``useRef`` that backs
+    An injected ref must not clobber the ``useRef`` that backs
     ``refs['ref_<id>']`` (form value collection, focus helpers), and vice
-    versa — both must receive the DOM node via ``mergeRefs``.
+    versa — ``mergeSlotProps`` composes both at runtime via ``mergeRefs``, so
+    the compiled body must keep the plain ``ref_<id>`` inside its own props.
     """
     ctx, _page_ctx = _compile_single_page(
         lambda: Plain.create("content", id="plain-id", on_click=rx.console_log("x"))
@@ -2444,26 +2442,13 @@ def test_memo_forwarded_ref_merges_with_id_ref() -> None:
         "The id-derived ref hook must stay in the memo body.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    assert "ref:mergeRefs(ref_plain_id, ref)" in memo_code, (
-        "The root must render both refs via mergeRefs.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
     assert re.search(
-        r'^import\s*\{[^}]*\bmergeRefs\b[^}]*\}\s*from\s*"\$/utils/state"',
+        r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*ref:ref_plain_id[^)]*\}\)\)",
         memo_code,
-        flags=re.MULTILINE,
     ), (
-        "The memo module must import mergeRefs from $/utils/state.\n"
+        "The id-derived ref must ride the own-props side of the merge.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    # The helper referenced by the generated code must exist in the runtime
-    # template, otherwise every merged ref is a ReferenceError.
-    import reflex_base
-
-    state_js = (
-        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
-    )
-    assert "export const mergeRefs" in state_js.read_text()
 
 
 def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
@@ -2478,17 +2463,18 @@ def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
     )
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "{children, ref, ...rest}" in memo_code, (
-        "Snapshot memo signature must destructure the incoming ref and rest "
-        "props.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
-    assert "ref:mergeRefs(ref_myinput, ref)" in memo_code, (
-        "The snapshot root must merge its id ref with the forwarded ref.\n"
+    assert "{children, ...rest}" in memo_code, (
+        "Snapshot memo signature must collect injected props into a rest "
+        "param.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
     assert "...mergeSlotProps(rest, ({" in memo_code, (
         "The snapshot root must merge injected props with its own.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "ref:ref_myinput" in memo_code, (
+        "The snapshot root's id ref must ride the own-props side of the "
+        "merge.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
 
@@ -2527,7 +2513,7 @@ def test_untagged_memo_roots_do_not_forward_ref() -> None:
         lambda: WithProp.create(Bare.create(STATE_VAR), label=STATE_VAR)
     )
     memo_code = _compile_memo_module_text(ctx)
-    assert "{children, ref, ...rest}" in memo_code  # the WithProp wrapper
+    assert "{children, ...rest}" in memo_code  # the WithProp wrapper
     bare_tag = next(tag for tag in ctx.memoize_wrappers if tag.startswith("Bare"))
     bare_signature = memo_code.partition(f"export const {bare_tag}")[2].partition("=>")[
         0

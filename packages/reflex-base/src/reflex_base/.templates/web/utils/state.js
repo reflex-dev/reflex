@@ -1247,50 +1247,6 @@ export const pyFlatMap = (arr, fn) =>
   });
 
 /**
- * Merge props injected by a parent at runtime (e.g. a Radix Slot cloning its
- * child) with a component's own compiled-in props.
- *
- * Follows Radix Slot semantics with the own props in the child role: own
- * props win for plain props, `on*` event handlers compose (own handler first,
- * then the injected one), `style` objects merge per-key with own keys winning,
- * and `className` strings concatenate.
- * @param injectedProps The props injected by the parent at runtime.
- * @param ownProps The component's own compiled-in props.
- * @returns The merged props object.
- */
-export const mergeSlotProps = (injectedProps, ownProps) => {
-  let hasInjected = false;
-  for (const _ in injectedProps) {
-    hasInjected = true;
-    break;
-  }
-  if (!hasInjected) {
-    return ownProps;
-  }
-  const merged = { ...injectedProps, ...ownProps };
-  for (const propName in ownProps) {
-    const injected = injectedProps[propName];
-    if (injected === undefined) {
-      continue;
-    }
-    const own = ownProps[propName];
-    if (/^on[A-Z]/.test(propName)) {
-      merged[propName] = own
-        ? (...args) => {
-            own(...args);
-            injected(...args);
-          }
-        : injected;
-    } else if (propName === "style") {
-      merged[propName] = { ...injected, ...own };
-    } else if (propName === "className") {
-      merged[propName] = [injected, own].filter(Boolean).join(" ");
-    }
-  }
-  return merged;
-};
-
-/**
  * Merge refs into a single callback ref, attaching the node to all of them.
  *
  * Handles ref objects and callback refs, including React 19 callback refs
@@ -1320,6 +1276,50 @@ export const mergeRefs =
       }
     };
   };
+
+/**
+ * Merge props injected by a parent at runtime (e.g. a Radix Slot cloning its
+ * child) with a component's own compiled-in props.
+ *
+ * Follows Radix Slot semantics with the own props in the child role: own
+ * props win for plain props, `on*` event handlers compose (own handler first,
+ * then the injected one), refs compose via `mergeRefs`, and `className`
+ * strings concatenate.
+ * @param injectedProps The props injected by the parent at runtime.
+ * @param ownProps The component's own compiled-in props.
+ * @returns The merged props object.
+ */
+export const mergeSlotProps = (injectedProps, ownProps) => {
+  let hasInjected = false;
+  for (const _ in injectedProps) {
+    hasInjected = true;
+    break;
+  }
+  if (!hasInjected) {
+    return ownProps;
+  }
+  const merged = { ...injectedProps, ...ownProps };
+  for (const propName in ownProps) {
+    const injected = injectedProps[propName];
+    if (injected == null) {
+      continue;
+    }
+    const own = ownProps[propName];
+    if (/^on[A-Z]/.test(propName)) {
+      merged[propName] = own
+        ? (...args) => {
+            own(...args);
+            injected(...args);
+          }
+        : injected;
+    } else if (propName === "ref") {
+      merged[propName] = mergeRefs(own, injected);
+    } else if (propName === "className") {
+      merged[propName] = [injected, own].filter(Boolean).join(" ");
+    }
+  }
+  return merged;
+};
 
 /**
  * Get the value from a ref.
