@@ -2417,8 +2417,13 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
+        # Escape rich markup so a JS error message containing square brackets
+        # (e.g. "x[/bold]y is not a function") cannot style backend logs or
+        # raise MarkupError when printed through the console helpers. The text
+        # is not otherwise sanitized: stack traces are multi-line by nature and
+        # truncating them would lose the information this handler exists for.
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
+            Exception(escape(info))
         )
 
 

@@ -57,7 +57,6 @@ from reflex_components_core.core.banner import (
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_sonner.toast import toast
-from rich.markup import escape as escape_markup
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
@@ -2138,31 +2137,17 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-    @staticmethod
-    def _sanitize_client_log_value(value: Any, max_length: int = 500) -> str:
-        """Make a client-supplied value safe to write to backend logs.
-
-        Args:
-            value: The client-supplied value.
-            max_length: Maximum length of the returned string.
-
-        Returns:
-            The value as a printable, length-bounded string with control
-            characters (newlines, ANSI escapes) replaced by spaces and rich
-            markup escaped.
-        """
-        text = value if isinstance(value, str) else str(value)
-        text = "".join(char if char.isprintable() else " " for char in text)
-        # Escape rich markup so client values cannot style backend logs or
-        # raise MarkupError when printed through the console helpers.
-        text = escape_markup(text)
-        if len(text) > max_length:
-            suffix = "... (truncated)"
-            text = text[: max_length - len(suffix)] + suffix
-        return text
-
     async def on_client_error(self, sid: str, data: Any):
         """Handle errors reported by the frontend.
+
+        This is a dedicated socket event rather than a state event
+        (``FrontendEventExceptionState.handle_frontend_exception``) because a
+        state event is addressed by a handler name the frontend derives from
+        its own state definitions. When those definitions are what disagree
+        with the backend -- the case this handler exists to report -- the name
+        may not resolve and the report is lost. A fixed socket event name
+        cannot drift, and it still gets through after the frontend has stopped
+        sending events on detecting the mismatch.
 
         Reports are routed through the app's ``frontend_exception_handler``,
         so frontend errors (especially state update processing errors) are
@@ -2175,18 +2160,14 @@ class EventNamespace(AsyncNamespace):
         if not isinstance(data, dict):
             console.debug(f"Ignoring malformed client_error payload from SID {sid}.")
             return
-        error_type = self._sanitize_client_log_value(data.get("error_type", "unknown"))
-        message = self._sanitize_client_log_value(
-            data.get("message", "No error message provided")
-        )
-        substate = self._sanitize_client_log_value(data.get("substate", ""))
 
+        # Check the sender and the rate limits before sanitizing: sanitizing is
+        # linear in the size of the client-supplied values, and reports that are
+        # dropped here must not cost more than the check itself.
         if sid not in self.sid_to_token:
             # Sockets without a linked token are not known clients; don't let
             # them write error-level entries into the backend logs.
-            console.debug(
-                f"[Frontend Error - unknown SID: {sid}] {error_type}: {message}"
-            )
+            console.debug(f"Ignoring client_error report from unknown SID {sid}.")
             return
 
         # Rate limit per session so a client cannot flood the backend logs.
@@ -2215,7 +2196,9 @@ class EventNamespace(AsyncNamespace):
         self._client_error_window_count += 1
         self._client_error_counts[sid] = error_count + 1
 
+        error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
+            substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
                 f"[SID: {sid}] State update failed: "
                 f"no dispatch function for substate(s) '{substate}'. "
@@ -2223,6 +2206,9 @@ class EventNamespace(AsyncNamespace):
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
         else:
+            message = format.sanitize_client_log_value(
+                data.get("message", "No error message provided")
+            )
             report = f"[SID: {sid}] {error_type}: {message}"
         # Route through the app's frontend exception handler so custom
         # handlers (e.g. error trackers) receive client errors too.
