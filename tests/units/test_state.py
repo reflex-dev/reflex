@@ -4441,7 +4441,7 @@ async def test_state_manager_disk_set_state_updates_queued_write(tmp_path, token
         token: A token.
     """
     state_manager = StateManagerDisk()
-    state_manager.__dict__["states_directory"] = tmp_path
+    object.__setattr__(state_manager, "states_directory", tmp_path)
     state_manager._write_debounce_seconds = 60
 
     state_token = StateToken(ident=token, cls=int)
@@ -4454,7 +4454,7 @@ async def test_state_manager_disk_set_state_updates_queued_write(tmp_path, token
     await state_manager.close()
 
     reloaded_state_manager = StateManagerDisk()
-    reloaded_state_manager.__dict__["states_directory"] = tmp_path
+    object.__setattr__(reloaded_state_manager, "states_directory", tmp_path)
     assert await reloaded_state_manager.load_state(state_token) == 2
     await reloaded_state_manager.close()
 
