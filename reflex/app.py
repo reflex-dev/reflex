@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants
 from reflex_base.components.component import Component, ComponentStyle
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import environment
 from reflex_base.event import (
@@ -75,7 +75,6 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
-from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -510,7 +509,9 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             raise ValueError(msg)
 
-        get_config(reload=True)
+        self._registration_context._set_app(self)
+
+        reload_config()
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -1590,8 +1591,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
-        app_name = get_config().app_name
-        for render, kwargs in DECORATED_PAGES[app_name]:
+        for render, kwargs in self._registration_context.decorated_pages:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:

@@ -25,6 +25,7 @@ from reflex_base.components.memo import (
     _strip_optional,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, memo_paths
 from reflex_base.utils import format as format_utils
@@ -1334,9 +1335,7 @@ def test_experimental_component_memo_get_imports():
     assert "inner" in imports
 
 
-def test_compile_experimental_component_memo_does_not_mutate_definition(
-    monkeypatch: pytest.MonkeyPatch,
-):
+def test_compile_experimental_component_memo_does_not_mutate_definition():
     """Experimental component memo compilation should not mutate stored components."""
 
     @rx.memo
@@ -1348,16 +1347,12 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     # Reading ``.component`` triggers the deferred body evaluation.
     assert definition.component.style == Style()
 
-    monkeypatch.setattr(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        lambda: SimpleNamespace(
-            app=SimpleNamespace(
-                style={type(definition.component): Style({"color": "red"})}
-            )
-        ),
+    fake_app = SimpleNamespace(
+        style={type(definition.component): Style({"color": "red"})}
     )
-
-    render, _ = compiler_utils.compile_experimental_component_memo(definition)
+    with RegistrationContext() as ctx:
+        ctx._set_app(cast(Any, fake_app))
+        render, _ = compiler_utils.compile_experimental_component_memo(definition)
 
     assert render["render"]["props"] == ['css:({ ["color"] : "red" })']
     assert definition.component.style == Style()
