@@ -364,13 +364,15 @@ def sync_root_package_json_to_web() -> bool:
         return sync_root_lockfile_to_web(constants.PackageJson.PATH, prune=False)
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
-    rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text(encoding="utf-8") == rendered:
+    rendered = _compile_package_json().encode("utf-8")
+    # Compare bytes so a damaged (non-UTF-8) .web copy is overwritten rather
+    # than raising a decode error out of the sync.
+    if output_path.exists() and output_path.read_bytes() == rendered:
         return False
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered, encoding="utf-8")
+    output_path.write_bytes(rendered)
     return changed
 
 
@@ -422,7 +424,8 @@ def _read_package_json_object(package_json_path: Path) -> dict:
         return {}
     try:
         parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as e:
+    # ValueError covers both json.JSONDecodeError and UnicodeDecodeError.
+    except (ValueError, OSError) as e:
         console.warn(f"Failed to read {package_json_path}: {e}; treating it as empty.")
         return {}
     if not isinstance(parsed, dict):
@@ -601,7 +604,9 @@ def update_package_json_overrides() -> bool:
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json(), encoding="utf-8")
+    # Bytes, matching sync_root_package_json_to_web() so the file it writes is
+    # byte-identical to the rendered content on every platform.
+    output_path.write_bytes(_compile_package_json().encode("utf-8"))
 
 
 def _compile_vite_config(config: Config):

@@ -700,12 +700,33 @@ _ORJSON_PASSTHROUGH_OPTS = (
 )
 
 
+def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
+    """Serialize with the stdlib, matching orjson's output byte for byte.
+
+    Generated artifacts (``package.json``, config files, ``pyi_hashes.json``)
+    must not depend on whether the optional extra is installed. Two-space
+    indentation already agrees between the backends; only the separators of
+    non-indented output differ.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Optional keyword arguments (indent, sort_keys, ensure_ascii).
+
+    Returns:
+        A JSON string.
+    """
+    if kwargs.get("indent") is None:
+        kwargs["separators"] = (",", ":")
+    return json_dumps(obj, **kwargs)
+
+
 def orjson_dumps(obj: Any, **kwargs) -> str:
     """Serialize obj to a JSON string, using orjson when available.
 
     Custom types go through ``serializers.serialize``, matching ``json_dumps``.
     Supports orjson's two-space indentation and key sorting, falling back to
-    ``json_dumps`` for unsupported arguments or values.
+    the stdlib for unsupported arguments or values. Output is identical with
+    and without orjson installed.
 
     Non-finite floats diverge between the backends: orjson emits ``null``
     while stdlib emits bare ``NaN``/``Infinity`` tokens. Use
@@ -720,13 +741,15 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
     """
     indent = kwargs.get("indent")
     if (
-        orjson is None
         # orjson only supports two-space indentation and always emits UTF-8.
-        or indent not in (None, 2)
+        indent not in (None, 2)
         or kwargs.get("ensure_ascii")
         or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
     ):
         return json_dumps(obj, **kwargs)
+
+    if orjson is None:
+        return _json_dumps_like_orjson(obj, **kwargs)
 
     from reflex_base.utils import serializers
 
@@ -739,8 +762,8 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
     try:
         return orjson.dumps(obj, default=serializers.serialize, option=option).decode()
     except TypeError:
-        # json_dumps handles values orjson rejects, such as large integers.
-        return json_dumps(obj, **kwargs)
+        # The stdlib handles values orjson rejects, such as large integers.
+        return _json_dumps_like_orjson(obj, **kwargs)
 
 
 def orjson_loads(data: str | bytes) -> Any:
@@ -763,9 +786,9 @@ def orjson_loads(data: str | bytes) -> Any:
     return orjson.loads(data)
 
 
-# Shared with the JS-side reviver in state.js: non-finite floats become
-# sentinel strings (orjson would emit null). Colliding user strings get the
-# escape prefix; the reviver strips one level.
+# Shared with the JS-side reviver in utils/helpers/json.js, which rewrites bare
+# NaN/Infinity tokens to these sentinel strings before parsing. Colliding user
+# strings get the escape prefix; the reviver strips one level.
 NAN_SENTINEL = "__reflex_nan__"
 INF_SENTINEL = "__reflex_inf__"
 NEG_INF_SENTINEL = "__reflex_neg_inf__"
@@ -850,15 +873,18 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
 
 
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
-    """Serialize obj for socket emit, preserving non-finite floats via sentinels.
+    """Serialize obj for socket emit, preserving non-finite floats.
 
-    Routes custom types through ``serializers.serialize`` (matching the
-    stdlib ``json_dumps`` behavior), substitutes sentinel strings for
-    NaN/Infinity floats, and escapes colliding user strings.
+    Routes custom types through ``serializers.serialize`` (matching the stdlib
+    ``json_dumps`` behavior). NaN/Infinity survive as bare tokens (stdlib) or
+    sentinel strings (collision escaping); the frontend restores both.
 
-    The object graph is only walked when the first serialization finds a
-    possible non-finite value or sentinel collision. The stdlib fallback keeps
-    bare non-finite tokens, which the frontend restores.
+    Tries orjson first and keeps its output only when the payload provably
+    contains no non-finite float, i.e. when no ``null`` was emitted. orjson
+    collapses NaN/Infinity to ``null``, which is indistinguishable from a
+    genuine ``None``, and telling the two apart means visiting every value in
+    Python -- measurably more expensive than letting the stdlib serialize the
+    payload once. So an ambiguous payload is handed to the stdlib instead.
 
     Accepts and ignores ``**kwargs`` so the callable is compatible with
     socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
@@ -872,35 +898,26 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
         A JSON string ready for socket emit.
     """
     del kwargs  # Output is always compact; socket.io's separators arg is moot.
-    from reflex_base.utils import serializers
-
     if orjson is None:
         return _json_dumps_socket_fallback(obj)
 
-    def _default_fast(o: Any) -> Any:
+    from reflex_base.utils import serializers
+
+    def _default(o: Any) -> Any:
         # orjson passes float subclasses (not int/str) to default.
         if isinstance(o, float):
             return float(o)
         return serializers.serialize(o)
 
-    # orjson converts non-finite floats to null; sentinel prefixes may collide.
-    def _default_walked(o: Any) -> Any:
-        if isinstance(o, float):
-            return float(o)
-        return _replace_non_finite_floats(serializers.serialize(o))
-
     try:
-        out = orjson.dumps(obj, default=_default_fast, option=_ORJSON_SOCKET_OPTS)
-        if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
-            return out.decode()
-        return orjson.dumps(
-            _replace_non_finite_floats(obj),
-            default=_default_walked,
-            option=_ORJSON_SOCKET_OPTS,
-        ).decode()
+        out = orjson.dumps(obj, default=_default, option=_ORJSON_SOCKET_OPTS)
     except TypeError:
         # Payloads orjson can't represent even via default (e.g. int > 64-bit).
         return _json_dumps_socket_fallback(obj)
+
+    if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
+        return out.decode()
+    return _json_dumps_socket_fallback(obj)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

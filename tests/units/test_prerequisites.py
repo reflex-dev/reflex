@@ -354,6 +354,46 @@ def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch
     assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
+def test_sync_root_package_json_to_web_noop_when_already_rendered(
+    tmp_path, monkeypatch
+):
+    """An already up-to-date .web copy is left untouched so no reinstall is triggered."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.sync_root_package_json_to_web() is False
+        assert frontend_skeleton.sync_root_package_json_to_web() is False
+
+
+def test_sync_root_package_json_to_web_replaces_undecodable_web_copy(
+    tmp_path, monkeypatch
+):
+    """A .web/package.json holding undecodable bytes is overwritten, not raised on."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_bytes(b'{"name": "\xff\xfe"}')
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.sync_root_package_json_to_web() is True
+
+    assert json.loads(web_pkg.read_text(encoding="utf-8"))["dependencies"] == {
+        "react": "19.2.5"
+    }
+
+
 def test_install_frontend_packages_syncs_root_bun_lock(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -1987,3 +2027,14 @@ def test_read_package_json_object_preserves_large_ints(tmp_path):
     assert (
         frontend_skeleton._read_package_json_object(package_json_path) == package_json
     )
+
+
+def test_read_package_json_object_undecodable_bytes(tmp_path, capsys):
+    """A package.json that is not valid UTF-8 is warned about and treated as empty."""
+    package_json_path = tmp_path / constants.PackageJson.PATH
+    package_json_path.write_bytes(b'{"name": "\xff\xfe"}')
+
+    assert frontend_skeleton._read_package_json_object(package_json_path) == {}
+
+    captured = capsys.readouterr()
+    assert "treating it as empty" in captured.out + captured.err

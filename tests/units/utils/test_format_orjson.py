@@ -9,9 +9,11 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
+import math
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -72,43 +74,68 @@ def test_orjson_dumps_socket_ignores_arbitrary_kwargs():
     assert orjson_loads(out) == [1, 2, 3]
 
 
-# non-finite float sentinels
+# non-finite floats survive the wire in both backends
+
+
+def _wire(out: str) -> Any:
+    """Decode a socket payload the way the frontend does.
+
+    Non-finite floats come back as ``'nan'``/``'inf'``/``'-inf'`` so they
+    compare by value; sentinel strings stay strings (escaped user data).
+
+    Args:
+        out: The serialized socket payload.
+
+    Returns:
+        The decoded payload with non-finite floats named.
+    """
+
+    def named(value: Any) -> Any:
+        if isinstance(value, float) and not math.isfinite(value):
+            return repr(value)
+        if isinstance(value, dict):
+            return {k: named(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [named(v) for v in value]
+        return value
+
+    # stdlib json accepts the bare NaN/Infinity tokens the frontend rewrites.
+    return named(json.loads(out))
 
 
 def test_nan_top_level():
-    assert orjson_dumps_socket(float("nan")) == f'"{NAN_SENTINEL}"'
+    assert _wire(orjson_dumps_socket(float("nan"))) == "nan"
 
 
 def test_inf_top_level():
-    assert orjson_dumps_socket(float("inf")) == f'"{INF_SENTINEL}"'
+    assert _wire(orjson_dumps_socket(float("inf"))) == "inf"
 
 
 def test_neg_inf_top_level():
-    assert orjson_dumps_socket(float("-inf")) == f'"{NEG_INF_SENTINEL}"'
+    assert _wire(orjson_dumps_socket(float("-inf"))) == "-inf"
 
 
 def test_nan_in_list():
-    out = orjson_dumps_socket([1.0, float("nan"), 2.0])
-    assert orjson_loads(out) == [1.0, NAN_SENTINEL, 2.0]
+    assert _wire(orjson_dumps_socket([1.0, float("nan"), 2.0])) == [1.0, "nan", 2.0]
 
 
 def test_nan_in_dict():
     out = orjson_dumps_socket({"x": float("nan"), "y": 1.0})
-    assert orjson_loads(out) == {"x": NAN_SENTINEL, "y": 1.0}
+    assert _wire(out) == {"x": "nan", "y": 1.0}
 
 
 def test_non_finite_floats_deeply_nested():
     out = orjson_dumps_socket({"a": {"b": [{"c": float("nan")}, float("inf")]}})
-    assert orjson_loads(out) == {"a": {"b": [{"c": NAN_SENTINEL}, INF_SENTINEL]}}
+    assert _wire(out) == {"a": {"b": [{"c": "nan"}, "inf"]}}
 
 
-def test_all_three_sentinels():
+def test_all_three_non_finite_floats():
     out = orjson_dumps_socket([float("nan"), float("inf"), float("-inf")])
-    assert orjson_loads(out) == [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL]
+    assert _wire(out) == ["nan", "inf", "-inf"]
 
 
 def test_nan_inside_dataclass_field():
-    """Dataclass fields with NaN must still get the sentinel."""
+    """Dataclass fields with NaN must survive too."""
 
     @dataclasses.dataclass
     class Point:
@@ -116,7 +143,7 @@ def test_nan_inside_dataclass_field():
         y: float
 
     out = orjson_dumps_socket({"p": Point(float("nan"), 1.0)})
-    assert orjson_loads(out) == {"p": {"x": NAN_SENTINEL, "y": 1.0}}
+    assert _wire(out) == {"p": {"x": "nan", "y": 1.0}}
 
 
 # user strings colliding with a sentinel must be escaped, not revived
@@ -420,34 +447,36 @@ def test_orjson_dumps_type_error_fallback_preserves_kwargs():
     assert out.index('"a"') < out.index('"b"')
 
 
-def test_orjson_skips_walk_on_clean_payload(monkeypatch: pytest.MonkeyPatch):
-    """A payload without None/NaN/collisions must serialize in one pass."""
+def test_orjson_serializes_clean_payload_in_one_pass(monkeypatch: pytest.MonkeyPatch):
+    """A payload without None/NaN/collisions must not reach the stdlib path."""
     from reflex_base.utils import format as format_module
 
     def _fail(_obj):
-        pytest.fail("walker ran on a clean payload")
+        pytest.fail("stdlib path ran on a clean payload")
 
-    monkeypatch.setattr(format_module, "_replace_non_finite_floats", _fail)
+    monkeypatch.setattr(format_module, "_json_dumps_socket_fallback", _fail)
     payload = {"rows": [{"id": 1, "name": "x", "balance": 1.5}] * 3}
     assert orjson_loads(orjson_dumps_socket(payload)) == payload
 
 
 def test_orjson_none_values_stay_null():
-    """None triggers the verification walk but must still serialize as null."""
+    """None is indistinguishable from a dropped NaN, so it takes the stdlib
+    path, but it must still serialize as null.
+    """
     payload = {"a": None, "b": [None, 1.0], "c": "x"}
     assert orjson_loads(orjson_dumps_socket(payload)) == payload
 
 
 def test_orjson_null_substring_in_string_is_safe():
-    """A user string containing 'null' may trigger the walk but not corruption."""
+    """A user string containing 'null' must not be corrupted."""
     payload = {"msg": "the null hypothesis", "n": 1}
     assert orjson_loads(orjson_dumps_socket(payload)) == payload
 
 
 def test_orjson_none_and_nan_together():
-    """Real None stays null while NaN in the same payload becomes a sentinel."""
+    """Real None stays null while NaN in the same payload stays non-finite."""
     out = orjson_dumps_socket({"a": None, "b": float("nan")})
-    assert orjson_loads(out) == {"a": None, "b": NAN_SENTINEL}
+    assert _wire(out) == {"a": None, "b": "nan"}
 
 
 # real packet shape: sentinels inside StateUpdate must survive every fallback
@@ -537,3 +566,32 @@ def test_orjson_dumps_ensure_ascii_true_falls_back_to_stdlib():
     go through stdlib instead of being silently ignored.
     """
     assert orjson_dumps({"a": "é"}, ensure_ascii=True) == json.dumps({"a": "é"})
+
+
+# generated artifacts must not depend on the optional extra
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [{}, {"indent": 2}, {"sort_keys": True}, {"indent": 2, "sort_keys": True}],
+)
+def test_orjson_dumps_output_is_backend_independent(
+    kwargs: dict, monkeypatch: pytest.MonkeyPatch
+):
+    """Files rendered with ``orjson_dumps`` (package.json, config files,
+    pyi_hashes.json) must be byte-identical with and without orjson.
+    """
+    from reflex_base.utils import format as format_module
+
+    payload = {"b": {"nested": [1, 2.5, None, "café"], "empty": {}}, "a": True}
+    with_orjson = orjson_dumps(payload, **kwargs)
+
+    monkeypatch.setattr(format_module, "orjson", None)
+    assert orjson_dumps(payload, **kwargs) == with_orjson
+
+
+def test_orjson_dumps_large_int_fallback_stays_compact():
+    """The >64-bit fallback must keep orjson's compact separators, so one big
+    number in an artifact cannot reformat the whole file.
+    """
+    assert orjson_dumps({"a": 2**70, "b": 1}) == f'{{"a":{2**70},"b":1}}'

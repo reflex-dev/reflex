@@ -50,7 +50,13 @@ export const parseNonFiniteAwareJSON = (str) => {
     return str.includes(SENTINEL_PREFIX)
       ? JSON.parse(str, reviveNonFiniteFloats)
       : JSON.parse(str);
-  } catch {
-    return JSON.parse(rewriteBareNonFiniteFloats(str), reviveNonFiniteFloats);
+  } catch (e) {
+    // Bare tokens are the only recoverable failure, so a payload the rewrite
+    // leaves untouched is simply malformed -- report the original error rather
+    // than paying for a second parse. Partial upload chunks hit this on every
+    // progress event.
+    const rewritten = rewriteBareNonFiniteFloats(str);
+    if (rewritten === str) throw e;
+    return JSON.parse(rewritten, reviveNonFiniteFloats);
   }
 };
