@@ -17,12 +17,14 @@ const reviveNonFiniteFloats = (_k, v) => {
   return v;
 };
 
-// Without orjson the backend falls back to stdlib json, which emits bare
-// Infinity/-Infinity/NaN tokens (invalid JSON). Rewrite them to sentinels
+// The backend emits bare Infinity/-Infinity/NaN tokens (invalid JSON) wherever
+// it serializes non-finite floats with stdlib json. Rewrite them to sentinels
 // outside string literals. The alternation matches whole string literals first
 // (passed through unchanged), guaranteeing bare-token matches only land in
-// numeric positions.
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
+// numeric positions. A token followed by ':' is a key no serializer produces,
+// so it is left alone for JSON.parse to reject rather than turned into one.
+const NON_FINITE_FLOAT_RE =
+  /"(?:[^"\\]|\\.)*"|(?:-?\bInfinity\b|\bNaN\b)(?!\s*:)/g;
 const NON_FINITE_REPLACEMENTS = {
   Infinity: `"${INF_SENTINEL}"`,
   "-Infinity": `"${NEG_INF_SENTINEL}"`,

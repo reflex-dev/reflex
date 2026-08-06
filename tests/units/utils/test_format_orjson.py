@@ -70,8 +70,12 @@ def test_orjson_dumps_socket_accepts_separators_kwarg():
 
 
 def test_orjson_dumps_socket_ignores_arbitrary_kwargs():
-    out = orjson_dumps_socket([1, 2, 3], separators=(",", ":"), sort_keys=True)
-    assert orjson_loads(out) == [1, 2, 3]
+    """Encoder kwargs must not reach the backend: output stays compact and
+    keeps insertion order whatever separators/sort_keys are passed.
+    """
+    payload = {"b": 1, "a": [2, 3]}
+    out = orjson_dumps_socket(payload, separators=(" | ", " = "), sort_keys=True)
+    assert out == orjson_dumps_socket(payload) == '{"b":1,"a":[2,3]}'
 
 
 # non-finite floats survive the wire in both backends
@@ -583,11 +587,22 @@ def test_orjson_dumps_output_is_backend_independent(
     """
     from reflex_base.utils import format as format_module
 
-    payload = {"b": {"nested": [1, 2.5, None, "café"], "empty": {}}, "a": True}
+    payload = {
+        "b": {"nested": [1, 2.5, None, "café", float("inf")], "empty": {}},
+        "a": True,
+    }
     with_orjson = orjson_dumps(payload, **kwargs)
 
     monkeypatch.setattr(format_module, "orjson", None)
     assert orjson_dumps(payload, **kwargs) == with_orjson
+
+
+def test_orjson_dumps_keeps_non_finite_floats_as_bare_tokens():
+    """Orjson would emit null for these; the stdlib tokens are valid literals
+    in the JS files ``orjson_dumps`` renders, so it takes over instead.
+    """
+    out = orjson_dumps({"x": float("inf"), "y": float("nan"), "z": None})
+    assert out == '{"x":Infinity,"y":NaN,"z":null}'
 
 
 def test_orjson_dumps_large_int_fallback_stays_compact():

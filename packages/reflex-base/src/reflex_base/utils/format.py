@@ -756,12 +756,11 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
 
     Custom types go through ``serializers.serialize``, matching ``json_dumps``.
     Supports orjson's two-space indentation and key sorting, falling back to
-    the stdlib for unsupported arguments or values. Output is identical with
-    and without orjson installed.
+    the stdlib for unsupported arguments or values. Output is byte-identical
+    with and without orjson installed.
 
-    Non-finite floats diverge between the backends: orjson emits ``null``
-    while stdlib emits bare ``NaN``/``Infinity`` tokens. Use
-    ``orjson_dumps_socket`` for payloads that may contain them.
+    Use ``orjson_dumps_socket`` for socket payloads: it also escapes user
+    strings that collide with the sentinels the frontend reviver strips.
 
     Args:
         obj: The object to serialize.
@@ -791,10 +790,18 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         option |= orjson.OPT_SORT_KEYS
 
     try:
-        return orjson.dumps(obj, default=serializers.serialize, option=option).decode()
+        out = orjson.dumps(obj, default=serializers.serialize, option=option)
     except TypeError:
         # The stdlib handles values orjson rejects, such as large integers.
         return _json_dumps_like_orjson(obj, **kwargs)
+
+    if b"null" in out:
+        # That null may be a NaN/Infinity orjson dropped, which the stdlib
+        # keeps as a bare token -- a valid literal in the JS this renders.
+        # Re-serializing every null-bearing payload is what makes the output
+        # backend-independent, and these are compile-time artifacts.
+        return _json_dumps_like_orjson(obj, **kwargs)
+    return out.decode()
 
 
 def orjson_loads(data: str | bytes) -> Any:
