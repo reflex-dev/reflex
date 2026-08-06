@@ -42,6 +42,10 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    env:
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
 
     steps:
       - name: Checkout code

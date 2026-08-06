@@ -132,7 +132,7 @@ class DebounceInput(Component):
         props.setdefault(
             "element",
             Var(
-                _js_expr=str(child.alias or child.tag),
+                _js_expr=child._get_tag_name(),
                 _var_type=type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),

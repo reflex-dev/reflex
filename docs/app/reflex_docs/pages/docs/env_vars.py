@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import inspect
+import itertools
+from functools import partial
 from typing import Any, List, Optional, Tuple
 
 import reflex as rx
@@ -10,6 +12,8 @@ from reflex.config import EnvironmentVariables
 
 from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
+
+from .source import stacked_description_header, stacked_description_rows
 
 
 class EnvVarDocs:
@@ -69,67 +73,45 @@ class EnvVarDocs:
             env_vars = [
                 (name, var)
                 for name, var in env_vars
-                if not getattr(var, "internal", False)
+                if not getattr(var, "name", "").startswith("__")
             ]
 
         env_vars.sort(key=lambda x: x[0])
 
+        def env_var_rows(name: str, var: Any) -> tuple[rx.Component, rx.Component]:
+            type_name = str(
+                var.type_.__name__ if hasattr(var.type_, "__name__") else str(var.type_)
+            )
+            return stacked_description_rows(
+                [
+                    (rx.code(var.name, class_name="code-style"), "@4xl:w-[20%]"),
+                    (rx.code(type_name, class_name="code-style"), "@4xl:w-[15%]"),
+                    (
+                        rx.code(str(var.default), class_name="code-style"),
+                        "@4xl:w-[15%]",
+                    ),
+                ],
+                partial(render_markdown, cls.get_env_var_docstring(name) or ""),
+                "4xl",
+                description_cell_class="@4xl:w-[50%]",
+            )
+
         return rx.box(
             rx.table.root(
-                rx.table.header(
-                    rx.table.row(
-                        rx.table.column_header_cell(
-                            "Name",
-                            class_name="font-small text-slate-12 text-normal w-[20%] justify-start pl-4 font-bold",
-                        ),
-                        rx.table.column_header_cell(
-                            "Type",
-                            class_name="font-small text-slate-12 text-normal w-[15%] justify-start pl-4 font-bold",
-                        ),
-                        rx.table.column_header_cell(
-                            "Default",
-                            class_name="font-small text-slate-12 text-normal w-[15%] justify-start pl-4 font-bold",
-                        ),
-                        rx.table.column_header_cell(
-                            "Description",
-                            class_name="font-small text-slate-12 text-normal w-[50%] justify-start pl-4 font-bold",
-                        ),
-                    )
+                stacked_description_header(
+                    ["Name", "Type", "Default", "Description"],
+                    "4xl",
                 ),
                 rx.table.body(
-                    *[
-                        rx.table.row(
-                            rx.table.cell(
-                                rx.code(var.name, class_name="code-style"),
-                                class_name="w-[20%]",
-                            ),
-                            rx.table.cell(
-                                rx.code(
-                                    str(
-                                        var.type_.__name__
-                                        if hasattr(var.type_, "__name__")
-                                        else str(var.type_)
-                                    ),
-                                    class_name="code-style",
-                                ),
-                                class_name="w-[15%]",
-                            ),
-                            rx.table.cell(
-                                rx.code(str(var.default), class_name="code-style"),
-                                class_name="w-[15%]",
-                            ),
-                            rx.table.cell(
-                                render_markdown(cls.get_env_var_docstring(name) or ""),
-                                class_name="font-small text-slate-11 w-[50%]",
-                            ),
-                        )
-                        for name, var in env_vars
-                    ],
+                    *itertools.chain.from_iterable(
+                        env_var_rows(name, var) for name, var in env_vars
+                    ),
                 ),
                 width="100%",
                 overflow_x="visible",
                 class_name="w-full",
             ),
+            class_name="@container",
         )
 
 
@@ -150,7 +132,7 @@ def env_vars_page():
             Reflex provides a number of environment variables that can be used to configure the behavior of your application.
             These environment variables can be set in your shell environment or in a `.env` file.
 
-            This page documents all available environment variables in Reflex.
+            This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
             """
         ),
         h2_comp(text="Environment Variables"),

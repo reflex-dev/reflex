@@ -18,7 +18,7 @@ LiteralSliderDir = Literal["ltr", "rtl"]
 class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
-    library = "@radix-ui/react-slider@1.3.6"
+    library = "@radix-ui/react-slider@1.4.5"
 
 
 class SliderRoot(SliderComponent):
@@ -26,6 +26,7 @@ class SliderRoot(SliderComponent):
 
     tag = "Root"
     alias = "RadixSliderRoot"
+    _is_form_control = True
 
     default_value: Var[Sequence[int]]
 

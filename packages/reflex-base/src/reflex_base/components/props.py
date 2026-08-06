@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Any, TypeVar, get_args, get_origin
@@ -283,7 +284,7 @@ class PropsBase(metaclass=PropsBaseMeta):
                 )
 
     @classmethod
-    def get_fields(cls) -> dict[str, Any]:
+    def get_fields(cls) -> builtins.dict[str, Any]:
         """Get the fields of the object.
 
         Returns:

@@ -2,6 +2,8 @@
 
 from . import base, color, datetime, function, number, object, sequence
 from .base import (
+    EMPTY_VAR_INT,
+    EMPTY_VAR_STR,
     BaseStateMeta,
     EvenMoreBasicBaseState,
     Field,
@@ -28,6 +30,8 @@ from .sequence import (
 )
 
 __all__ = [
+    "EMPTY_VAR_INT",
+    "EMPTY_VAR_STR",
     "ArrayVar",
     "BaseStateMeta",
     "BooleanVar",

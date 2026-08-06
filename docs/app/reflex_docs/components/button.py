@@ -30,10 +30,10 @@ variant_styles = {
         "class_name": get_variant_class("red"),
     },
     "muted": {
-        "class_name": "bg-slate-3 hover:bg-slate-5 text-slate-9 border-t !border-slate-5",
+        "class_name": "bg-secondary-3 hover:bg-secondary-5 text-secondary-9 border-t !border-secondary-5",
     },
     "secondary": {
-        "class_name": "bg-slate-4 hover:bg-slate-5 text-slate-10 !border-none",
+        "class_name": "bg-secondary-4 hover:bg-secondary-5 text-secondary-10 !border-none",
     },
 }
 

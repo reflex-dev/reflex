@@ -6,7 +6,7 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@1.14.0"
+LUCIDE_LIBRARY = "lucide-react@1.26.0"
 
 
 class LucideIconComponent(Component):
@@ -21,6 +21,10 @@ class Icon(LucideIconComponent):
     tag = "None"
 
     size: Var[int] = field(doc="The size of the icon in pixels.")
+
+    # Deep-import subpath into lucide-react for this icon (e.g.
+    # "/dist/esm/icons/wifi-off.mjs"). Set during ``create``; not a rendered prop.
+    _import_path: str = field(default="")
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -83,7 +87,34 @@ class Icon(LucideIconComponent):
 
         props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(tag, format.to_title_case(tag))
         props["alias"] = f"Lucide{props['tag']}"
+        file_name = LUCIDE_ICON_FILENAME_OVERRIDE.get(tag, format.to_kebab_case(tag))
+        props["_import_path"] = f"/dist/esm/icons/{file_name}.mjs"
         return super().create(**props)
+
+    def _get_imports(self):
+        """Emit a deep per-icon import instead of a lucide-react barrel import.
+
+        Importing a static icon by name from the ``lucide-react`` barrel pulls
+        the whole library into the dev module graph once ``DynamicIcon`` (which
+        imports ``lucide-react/dynamic.mjs``) is also present, flooding the page
+        with a request per icon. A deep default import from the icon's own
+        module avoids this and is lucide's recommended form.
+
+        Returns:
+            The imports needed by the component.
+        """
+        imports_ = super()._get_imports()
+        if self.library and self._import_path:
+            imports_.pop(self.library, None)
+            imports_[LUCIDE_LIBRARY] = [
+                ImportVar(
+                    self.tag,
+                    is_default=True,
+                    alias=self.alias,
+                    package_path=self._import_path,
+                )
+            ]
+        return imports_
 
 
 class DynamicIcon(LucideIconComponent):
@@ -110,6 +141,7 @@ LUCIDE_ICON_LIST = [
     "a_large_small",
     "accessibility",
     "activity",
+    "ad",
     "air_vent",
     "airplay",
     "alarm_clock_check",
@@ -241,6 +273,7 @@ LUCIDE_ICON_LIST = [
     "banana",
     "bandage",
     "banknote_arrow_down",
+    "banknote_check",
     "banknote_x",
     "banknote",
     "bar_chart_2",
@@ -292,6 +325,7 @@ LUCIDE_ICON_LIST = [
     "birdhouse",
     "bitcoin",
     "blend",
+    "blender",
     "blinds",
     "blocks",
     "bluetooth_connected",
@@ -302,6 +336,7 @@ LUCIDE_ICON_LIST = [
     "bolt",
     "bomb",
     "bone",
+    "bone_fracture",
     "book_a",
     "book_alert",
     "book_audio",
@@ -356,6 +391,7 @@ LUCIDE_ICON_LIST = [
     "briefcase_medical",
     "briefcase",
     "bring_to_front",
+    "broccoli",
     "brush_cleaning",
     "brush",
     "bubbles",
@@ -492,6 +528,7 @@ LUCIDE_ICON_LIST = [
     "circle_dot",
     "circle_ellipsis",
     "circle_equal",
+    "circle_euro",
     "circle_fading_arrow_up",
     "circle_fading_plus",
     "circle_gauge",
@@ -545,6 +582,8 @@ LUCIDE_ICON_LIST = [
     "clock_9",
     "clock_alert",
     "clock_arrow_down",
+    "clock_arrow_left",
+    "clock_arrow_right",
     "clock_arrow_up",
     "clock_check",
     "clock_fading",
@@ -626,8 +665,14 @@ LUCIDE_ICON_LIST = [
     "currency",
     "cylinder",
     "dam",
+    "database_arrow_down",
+    "database_arrow_up",
     "database_backup",
+    "database_check",
+    "database_minus",
+    "database_plus",
     "database_search",
+    "database_x",
     "database_zap",
     "database",
     "decimals_arrow_left",
@@ -694,6 +739,7 @@ LUCIDE_ICON_LIST = [
     "expand",
     "external_link",
     "eye_closed",
+    "eye_dashed",
     "eye_off",
     "eye",
     "factory",
@@ -874,6 +920,7 @@ LUCIDE_ICON_LIST = [
     "git_pull_request",
     "glass_water",
     "glasses",
+    "globe_check",
     "globe_lock",
     "globe_off",
     "globe_x",
@@ -1042,6 +1089,8 @@ LUCIDE_ICON_LIST = [
     "list_ordered",
     "list_plus",
     "list_restart",
+    "list_sort_ascending",
+    "list_sort_descending",
     "list_start",
     "list_todo",
     "list_tree",
@@ -1255,7 +1304,9 @@ LUCIDE_ICON_LIST = [
     "panels_left_bottom",
     "panels_right_bottom",
     "panels_top_left",
+    "paper_bag",
     "paperclip",
+    "parasol",
     "parentheses",
     "parking_meter",
     "party_popper",
@@ -1270,9 +1321,11 @@ LUCIDE_ICON_LIST = [
     "pencil_off",
     "pencil_ruler",
     "pencil",
+    "pencil_sparkles",
     "pentagon",
     "percent",
     "person_standing",
+    "phi",
     "philippine_peso",
     "phone_call",
     "phone_forwarded",
@@ -1301,6 +1354,7 @@ LUCIDE_ICON_LIST = [
     "plane_takeoff",
     "plane",
     "play",
+    "play_off",
     "plug_2",
     "plug_zap_2",
     "plug_zap",
@@ -1308,6 +1362,7 @@ LUCIDE_ICON_LIST = [
     "plus",
     "pocket_knife",
     "podcast",
+    "podium",
     "pointer_off",
     "pointer",
     "popcorn",
@@ -1401,12 +1456,16 @@ LUCIDE_ICON_LIST = [
     "satellite",
     "saudi_riyal",
     "save_all",
+    "save_check",
     "save_off",
     "save",
+    "save_pen",
+    "save_plus",
     "scale_3d",
     "scale",
     "scaling",
     "scan_barcode",
+    "scan_box",
     "scan_eye",
     "scan_face",
     "scan_heart",
@@ -1440,6 +1499,7 @@ LUCIDE_ICON_LIST = [
     "server_crash",
     "server_off",
     "server",
+    "server_plus",
     "settings_2",
     "settings",
     "shapes",
@@ -1454,6 +1514,7 @@ LUCIDE_ICON_LIST = [
     "shield_cog",
     "shield_ellipsis",
     "shield_half",
+    "shield_keyhole",
     "shield_minus",
     "shield_off",
     "shield_plus",
@@ -1594,20 +1655,31 @@ LUCIDE_ICON_LIST = [
     "squircle",
     "squirrel",
     "stamp",
+    "star_check",
     "star_half",
+    "star_minus",
     "star_off",
     "star",
+    "star_plus",
+    "star_x",
     "step_back",
     "step_forward",
     "stethoscope",
     "sticker",
     "sticky_note",
+    "sticky_note_check",
+    "sticky_note_minus",
+    "sticky_note_off",
+    "sticky_note_plus",
+    "sticky_note_x",
+    "sticky_notes",
     "stone",
     "store",
     "stretch_horizontal",
     "stretch_vertical",
     "strikethrough",
     "subscript",
+    "summary",
     "sun_dim",
     "sun_medium",
     "sun_moon",
@@ -1634,6 +1706,8 @@ LUCIDE_ICON_LIST = [
     "tablet",
     "tablets",
     "tag",
+    "tag_plus",
+    "tag_x",
     "tags",
     "tally_1",
     "tally_2",
@@ -1740,6 +1814,7 @@ LUCIDE_ICON_LIST = [
     "user_minus",
     "user_pen",
     "user_plus",
+    "user_round_arrow_left",
     "user_round_check",
     "user_round_cog",
     "user_round_key",
@@ -1797,6 +1872,7 @@ LUCIDE_ICON_LIST = [
     "waves",
     "waypoints",
     "webcam",
+    "webcam_off",
     "webhook_off",
     "webhook",
     "weight_tilde",
@@ -1820,6 +1896,7 @@ LUCIDE_ICON_LIST = [
     "worm",
     "wrap_text",
     "wrench",
+    "wrench_off",
     "x_line_top",
     "x",
     "zap_off",
@@ -1833,4 +1910,18 @@ LUCIDE_ICON_LIST = [
 LUCIDE_ICON_MAPPING_OVERRIDE = {
     "grid_3x2": "Grid3x2Icon",
     "fingerprint": "FingerprintPattern",
+}
+
+# For deep per-icon imports, the kebab-case icon name must match Lucide's own
+# file name under dist/esm/icons. These are the entries where the default
+# kebab conversion doesn't produce the correct file name (verified against the
+# full LUCIDE_ICON_LIST): the digit-x-digit names gain a stray hyphen, and
+# "fingerprint" is an alias of the "fingerprint-pattern" module.
+LUCIDE_ICON_FILENAME_OVERRIDE = {
+    "fingerprint": "fingerprint-pattern",
+    "grid_2x_2": "grid-2x2",
+    "grid_2x_2_check": "grid-2x2-check",
+    "grid_2x_2_plus": "grid-2x2-plus",
+    "grid_2x_2_x": "grid-2x2-x",
+    "grid_3x_3": "grid-3x3",
 }

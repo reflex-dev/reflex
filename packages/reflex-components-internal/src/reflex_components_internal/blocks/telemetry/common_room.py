@@ -43,7 +43,9 @@ def get_common_room_trackers(site_id: str) -> rx.Component:
     """
     cdn_url = COMMON_ROOM_CDN_URL_TEMPLATE.format(site_id=site_id)
 
-    return rx.script(COMMON_ROOM_SCRIPT_TEMPLATE.format(cdn_url=cdn_url))
+    return rx.el.script(
+        COMMON_ROOM_SCRIPT_TEMPLATE.format(cdn_url=cdn_url), type="module"
+    )
 
 
 def identify_common_room_user(

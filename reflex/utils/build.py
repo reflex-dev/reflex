@@ -193,6 +193,43 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             _duplicate_index_html_to_parent_directory(child)
 
 
+def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
+    """Run the shared frontend compressor against the final static output tree.
+
+    Args:
+        directory: The static output directory.
+        formats: The configured frontend compression formats.
+
+    Raises:
+        SystemExit: If no JavaScript runtime is available or compression fails.
+    """
+    if not formats:
+        return
+
+    web_dir = prerequisites.get_web_dir().resolve()
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        console.error("Node.js or Bun is required to compress the exported frontend.")
+        raise SystemExit(1)
+
+    result = processes.new_process(
+        [
+            runtime,
+            web_dir / "compress-static.js",
+            directory.resolve(),
+            *formats,
+        ],
+        cwd=web_dir,
+        shell=constants.IS_WINDOWS,
+        run=True,
+    )
+    if result.returncode != 0:
+        console.error(
+            "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
+        )
+        raise SystemExit(1)
+
+
 def build():
     """Build the app for deployment.
 
@@ -232,10 +269,11 @@ def build():
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
-    _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
-
     config = get_config()
     static_dir = wdir / constants.Dirs.STATIC
+
+    _duplicate_index_html_to_parent_directory(static_dir)
+
     for plugin in config.plugins:
         plugin.post_build(static_dir=static_dir)
 
@@ -244,10 +282,12 @@ def build():
         spa_fallback = static_dir / "index.html"
 
     if spa_fallback.exists():
-        path_ops.cp(
-            spa_fallback,
-            static_dir / "404.html",
-        )
+        path_ops.cp(spa_fallback, static_dir / "404.html")
+
+    _compress_static_output(
+        static_dir,
+        tuple(config.frontend_compression_formats),
+    )
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.

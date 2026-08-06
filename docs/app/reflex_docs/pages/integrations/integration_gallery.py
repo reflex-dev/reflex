@@ -19,7 +19,9 @@ FilterOptions = [
 
 
 def integration_filter_button(data: dict):
-    active_pill = "border border-violet-8 bg-violet-3 hover:bg-violet-3 !text-violet-10"
+    active_pill = (
+        "border border-primary-8 bg-primary-3 hover:bg-primary-3 !text-primary-10"
+    )
 
     return ui.button(
         ui.icon(icon=data["icon"]),
@@ -52,6 +54,7 @@ def integration_gallery_cards(data):
                             get_integration_logo_url(integration_name, "light"),
                             get_integration_logo_url(integration_name, "dark"),
                         ),
+                        alt=f"{integration_name} logo",
                         unstyled=True,
                         class_name="size-full",
                     ),

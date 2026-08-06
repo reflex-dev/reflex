@@ -113,7 +113,7 @@ rx.select.root(
 ## Fully controlled
 
 The `on_change` event trigger is fired when the value of the select changes.
-In this example the `rx.select_root` `value` prop specifies which item is selected, and this
+In this example the `rx.select.root` `value` prop specifies which item is selected, and this
 can also be controlled using state and a button without direct interaction with the select component.
 
 ```python demo exec
@@ -233,7 +233,7 @@ def form_select():
             reset_on_submit=True,
         ),
         rx.divider(size="4"),
-        rx.heading("Results"),
+        rx.heading("Results", as_="h2"),
         rx.text(FormSelectState.form_data.to_string()),
         width="100%",
         direction="column",
@@ -248,12 +248,13 @@ rx.card(
     rx.flex(
         rx.image(
             src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            alt="Reflex banner image",
             width="100%",
             height="auto",
         ),
         rx.flex(
-            rx.heading("Reflex Swag", size="4", margin_bottom="4px"),
-            rx.heading("$99", size="6", margin_bottom="4px"),
+            rx.heading("Reflex Swag", as_="h2", size="4", margin_bottom="4px"),
+            rx.heading("$99", as_="h2", size="6", margin_bottom="4px"),
             direction="row",
             justify="between",
             width="100%",

@@ -22,8 +22,8 @@ from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.typography import Div
 
 connect_error_var_data: VarData = VarData(
-    imports=Imports.EVENTS,
-    hooks={Hooks.EVENTS: None},
+    imports=Imports.CONNECT_ERRORS,
+    hooks={Hooks.CONNECT_ERRORS: None},
 )
 
 connect_errors = Var(
@@ -173,7 +173,7 @@ setTimeout(() => {{
         ]
 
         return [
-            Hooks.EVENTS,
+            Hooks.CONNECT_ERRORS,
             *individual_hooks,
         ]
 

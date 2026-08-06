@@ -16,6 +16,7 @@ def collapsible_box(
     background_shade: int = 3,
     background_override: str | None = None,
     border_override: str | None = None,
+    foreground_override: str | None = None,
 ) -> rx.Component:
     """Collapsible accordion wrapper shared by alert and video directives.
 
@@ -24,6 +25,7 @@ def collapsible_box(
     """
     bg = background_override or f"{rx.color(color, background_shade)}"
     border_color = border_override or f"{rx.color(color, 4)}"
+    foreground = foreground_override or f"{rx.color(color, 11)}"
     return rx.box(
         rx.accordion.root(
             rx.accordion.item(
@@ -32,7 +34,7 @@ def collapsible_box(
                         rx.hstack(
                             *trigger_children,
                             rx.spacer(),
-                            rx.accordion.icon(color=f"{rx.color(color, 11)}"),
+                            rx.accordion.icon(color=foreground),
                             align_items="center",
                             justify_content="left",
                             text_align="left",
@@ -40,7 +42,7 @@ def collapsible_box(
                             width="100%",
                         ),
                         padding="0px",
-                        color=f"{rx.color(color, 11)} !important",
+                        color=f"{foreground} !important",
                         background_color="transparent !important",
                         border_radius="12px",
                         _hover={},

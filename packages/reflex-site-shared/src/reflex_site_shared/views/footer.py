@@ -231,7 +231,10 @@ def footer_legal(class_name: str = "") -> rx.Component:
 
 
 @rx.memo
-def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Component:
+def footer_index(
+    class_name: rx.Var[str] = rx.EMPTY_VAR_STR,
+    grid_class_name: rx.Var[str] = rx.EMPTY_VAR_STR,
+) -> rx.Component:
     """Full marketing footer: logo, newsletter, links, and legal.
 
     Returns:
@@ -261,31 +264,31 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                                 footer_link("AI Builder", REFLEX_BUILD_URL),
                                 footer_link(
                                     "Agent Toolkit",
-                                    "/docs/ai/integrations/overview/",
+                                    "/docs/ai/integrations/agent-toolkit/",
                                 ),
                                 footer_link(
                                     "Enterprise",
                                     "/docs/enterprise/overview/",
                                 ),
-                                footer_link("App Management", "/hosting"),
-                                footer_link("Pricing", "/pricing"),
+                                footer_link("App Management", "/hosting/"),
+                                footer_link("Pricing", "/pricing/"),
                             ],
                         ),
                         footer_link_flex(
                             "Solutions",
                             [
-                                footer_link("Enterprise", "/use-cases"),
-                                footer_link("Finance", "/use-cases/finance"),
-                                footer_link("Healthcare", "/use-cases/healthcare"),
-                                footer_link("Consulting", "/use-cases/consulting"),
-                                footer_link("Government", "/use-cases/government"),
+                                footer_link("Enterprise", "/use-cases/"),
+                                footer_link("Finance", "/use-cases/finance/"),
+                                footer_link("Healthcare", "/use-cases/healthcare/"),
+                                footer_link("Consulting", "/use-cases/consulting/"),
+                                footer_link("Government", "/use-cases/government/"),
                             ],
                         ),
                         footer_link_flex(
                             "Resources",
                             [
-                                footer_link("Blog", "/blog"),
-                                footer_link("Templates", "/templates"),
+                                footer_link("Blog", "/blog/"),
+                                footer_link("Templates", "/templates/"),
                                 footer_link(
                                     "Integrations",
                                     "/docs/ai/integrations/overview/",
@@ -310,15 +313,15 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                         footer_link_flex(
                             "Developers",
                             [
-                                footer_link("Documentation", "/docs"),
+                                footer_link("Documentation", "/docs/"),
                                 footer_link("Changelog", CHANGELOG_URL),
-                                footer_link("Common Errors", "/errors"),
+                                footer_link("Common Errors", "/errors/"),
                             ],
                         ),
                         footer_link_flex(
                             "Company",
                             [
-                                footer_link("About", "/about"),
+                                footer_link("About", "/about/"),
                                 footer_link(
                                     "Careers",
                                     "https://www.ycombinator.com/companies/reflex/jobs",

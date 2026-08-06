@@ -15,7 +15,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--c-slate-11)",
+    "color": "var(--secondary-11)",
 }
 
 github_actions_configs = [
@@ -52,21 +52,18 @@ github_actions_configs = [
 ]
 ```
 
-# Deploy with Github Actions
+# Deploy with GitHub Actions
 
-This GitHub Action simplifies the deployment of Reflex applications to Reflex Cloud. It handles setting up the environment, installing the Reflex CLI, and deploying your app with minimal configuration.
+Use the Reflex deploy action to deploy an app to Reflex Cloud from a GitHub Actions workflow.
 
 ```md alert info
 # This action requires `reflex>=0.6.6`
 ```
 
-**Features:**
-- Deploy Reflex apps directly from your GitHub repository to Reflex Cloud.
-- Supports subdirectory-based app structures.
-- Securely uses authentication tokens via GitHub Secrets.
-
 ## Usage
+
 ### Add the Action to Your Workflow
+
 Create a `.github/workflows/deploy.yml` file in your repository and add the following:
 
 ```yaml
@@ -84,26 +81,21 @@ jobs:
       - name: Deploy to Reflex Cloud
         uses: reflex-dev/reflex-deploy-action@v1
         with:
-          auth_token: ${{ secrets.REFLEX_PROJECT_ID }}
+          auth_token: ${{ secrets.REFLEX_AUTH_TOKEN }}
           project_id: ${{ secrets.REFLEX_PROJECT_ID }}
           app_directory: "my-app-folder" # Optional, defaults to root
-          extra_args: "--env THIRD_PARTY_APIKEY=***" # Optional
+          extra_args: "--region sjc" # Optional
           python_version: "3.12" # Optional
 ```
 
 ### Set Up Your Secrets
-Store your Reflex authentication token securely in your repository's secrets:
 
+Store the Reflex authentication token and project ID as GitHub repository secrets:
 
 1. Go to your GitHub repository.
-2. Navigate to Settings > Secrets and variables > Actions > New repository secret.
-3. Create new secrets for `REFLEX_AUTH_TOKEN` and `REFLEX_PROJECT_ID`. 
-
-(Create a `REFLEX_AUTH_TOKEN` in the tokens tab of your UI, check out these [docs](/docs/hosting/tokens/#tokens). 
-
-The `REFLEX_PROJECT_ID` can be found in the UI when you click on the How to deploy button on the top right when inside a project and copy the ID after the `--project` flag.)
-
-
+2. Open **Settings > Secrets and variables > Actions**.
+3. From the organization's **Tokens** page, create a token from the **Deploy** template and limit it to the target project. Store it as `REFLEX_AUTH_TOKEN`. See [Tokens](/docs/hosting/tokens/).
+4. Create `REFLEX_PROJECT_ID` with the project ID copied from the project's settings in Reflex Build.
 
 ### Inputs
 

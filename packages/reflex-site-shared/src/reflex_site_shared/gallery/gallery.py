@@ -58,9 +58,9 @@ def app_dialog_with_trigger(
                 rx.el.div(
                     rx.el.div(
                         rx.el.p(
-                            app_name, class_name="text-md !text-slate-11 font-bold"
+                            app_name, class_name="text-md !text-secondary-11 font-bold"
                         ),
-                        rx.el.p(app_author, class_name="text-sm !text-slate-9"),
+                        rx.el.p(app_author, class_name="text-sm !text-secondary-9"),
                         class_name="flex flex-row gap-x-2 items-center",
                     ),
                     rx.link(
@@ -101,6 +101,7 @@ def integration_image(integration: str, class_name: str = ""):
                 get_integration_logo_url(integration, "light"),
                 get_integration_logo_url(integration, "dark"),
             ),
+            alt=f"{integration} logo",
             unstyled=True,
             class_name="size-full",
         ),
@@ -163,6 +164,7 @@ def extended_gallery_grid_item(
                 rx.el.div(
                     rx.image(
                         src=app_image,
+                        alt=f"{app_name} app preview",
                         class_name="group-hover:scale-105 duration-200 ease-out object-center object-cover absolute inset-0 size-full blur-in transition-all z-10",
                     ),
                     rx.el.div(
@@ -194,12 +196,12 @@ def extended_gallery_grid_item(
                 rx.el.div(
                     rx.el.span(
                         app_name,
-                        class_name="text-sm font-semibold text-slate-12 dark:text-m-slate-3 truncate min-w-0 max-w-[90%]",
+                        class_name="text-sm font-semibold text-secondary-12 truncate min-w-0 max-w-[90%]",
                     ),
                     rx.el.div(
                         rx.el.span(
                             "App Integrations: ",
-                            class_name="text-slate-9 text-sm font-medium",
+                            class_name="text-secondary-9 text-sm font-medium",
                         ),
                         rx.el.div(
                             integrations_stack(app_integrations),
@@ -208,13 +210,13 @@ def extended_gallery_grid_item(
                         class_name="flex flex-row items-center gap-2 mt-2",
                     ),
                     class_name=(
-                        "flex flex-col w-full px-4 py-3 border-t border-m-slate-4 dark:border-m-slate-12 gap-2 relative pb-4",
+                        "flex flex-col w-full px-4 py-3 border-t border-secondary-4 gap-2 relative pb-4",
                     ),
                 ),
                 class_name="flex flex-col w-full",
             ),
             key=app_name,
-            class_name="group cursor-pointer rounded-2xl shadow-small border border-slate-4 dark:border-m-slate-12 bg-white-1 dark:bg-m-slate-14 flex flex-col w-full relative overflow-hidden",
+            class_name="group cursor-pointer rounded-2xl shadow-small border border-secondary-4 bg-secondary-1 flex flex-col w-full relative overflow-hidden",
         ),
     )
 
@@ -267,11 +269,11 @@ def create_header():
         rx.box(
             rx.el.h1(
                 "Reflex Build Templates",
-                class_name="text-slate-12 text-4xl font-bold mb-6",
+                class_name="text-secondary-12 text-4xl font-bold mb-6",
             ),
             rx.el.p(
                 "Production-ready app templates built with Reflex — explore dashboards, tools, and AI-powered apps.",
-                class_name="text-slate-11 text-lg leading-relaxed mb-12 max-w-lg font-medium",
+                class_name="text-secondary-11 text-lg leading-relaxed mb-12 max-w-lg font-medium",
             ),
             class_name="mb-8 lg:mb-0 text-center",
         ),

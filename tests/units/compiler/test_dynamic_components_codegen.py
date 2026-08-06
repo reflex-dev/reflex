@@ -25,13 +25,15 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
 
     assert isinstance(code, str)
     assert code.startswith("//__reflex_evaluate")
-    assert "const {Fragment,useContext,useEffect}" in code
-    assert "const {EventLoopContext} = window['__reflex'][\"$/utils/context\"]" in code
+    assert "const {Fragment,useEffect}" in code
+    # ``addEvents`` is now a module-level callable in ``$/utils/context``;
+    # no more ``useContext(EventLoopContext)`` hoist needed for dispatch.
+    assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
-    assert "const [addEvents, connectErrors] = useContext(EventLoopContext);" in code
+    assert "useContext(EventLoopContext)" not in code
     assert code.count("onClick:") == 2
     assert code.count("addEvents(") == 2
     assert code.count("ReflexEvent(") == 2
@@ -91,13 +93,13 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert "RadixThemesText" in code
     assert 'justify:"center"' in code
     assert 'gap:"5"' in code
-    assert "const {Fragment,useContext,useEffect}" in code
-    assert "const {EventLoopContext} = window['__reflex'][\"$/utils/context\"]" in code
+    assert "const {Fragment,useEffect}" in code
+    assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
-    assert "const [addEvents, connectErrors] = useContext(EventLoopContext);" in code
+    assert "useContext(EventLoopContext)" not in code
     assert code.count("onClick:") == 2
     assert code.count("addEvents(") == 2
     assert code.count("ReflexEvent(") == 2
