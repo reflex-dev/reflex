@@ -159,9 +159,10 @@ class PackageJson(SimpleNamespace):
         # only bump once the regression is understood.
         "vite": "8.0.16",
     }
-    # Force specific transitive npm deps to a single resolved version when needed.
-    OVERRIDES: dict[str, str] = {
-        # postcss < 8.5.18 carries a security advisory; force transitive
-        # resolutions up to a patched release.
-        "postcss": "8.5.23",
-    }
+    # Force specific transitive npm deps to a single resolved version when
+    # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is
+    # one we depend on directly: a top-level pin already satisfies and dedupes
+    # every transitive requirer, and unlike an override it is not persisted into
+    # a project's `reflex.lock/package.json` (where a later removal here cannot
+    # clean it up again). Reserve overrides for packages we do not declare.
+    OVERRIDES: dict[str, str] = {}
