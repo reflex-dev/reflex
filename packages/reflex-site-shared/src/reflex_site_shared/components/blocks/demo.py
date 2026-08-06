@@ -10,6 +10,10 @@ import reflex as rx
 from .code import code_block, code_block_dark
 from .tabs import doc_tab_card, doc_tab_list, doc_tab_trigger
 
+_VIEW_TAB_VALUE = "view"
+_CODE_TAB_VALUE = "code"
+_DATA_TAB_VALUE = "data"
+
 
 def docdemobox(*children, **props) -> rx.Component:
     """Create a documentation demo box with the output of the code.
@@ -83,7 +87,7 @@ def _doc_view_panel(
                 "[&>div]:!rounded-none [&>div]:!border-0 [&>div]:!bg-transparent"
             ),
         ),
-        value="view",
+        value=_VIEW_TAB_VALUE,
         class_name="w-full outline-none",
     )
 
@@ -155,18 +159,17 @@ def docdemo(
     if state is not None:
         code = state + code
 
-    demobox_props.pop("toggle", None)
     return rx.box(
         rx.tabs.root(
             doc_tab_list(
-                doc_tab_trigger("View", value="view", icon="eye"),
-                doc_tab_trigger("Code", value="code", icon="code-xml"),
+                doc_tab_trigger("View", value=_VIEW_TAB_VALUE, icon="eye"),
+                doc_tab_trigger("Code", value=_CODE_TAB_VALUE, icon="code-xml"),
             ),
             doc_tab_card(
                 _doc_view_panel(comp, demobox_props),
-                _doc_code_panel(code, "code", theme or "light"),
+                _doc_code_panel(code, _CODE_TAB_VALUE, theme or "light"),
             ),
-            default_value="view",
+            default_value=_VIEW_TAB_VALUE,
             class_name="w-full",
         ),
         class_name="w-full py-4",
@@ -191,25 +194,25 @@ def docgraphing(
     """
     tabs = [
         (
-            doc_tab_trigger("View", value="view", icon="eye"),
+            doc_tab_trigger("View", value=_VIEW_TAB_VALUE, icon="eye"),
             _doc_view_panel(comp),
         ),
         (
-            doc_tab_trigger("Code", value="code", icon="code-xml"),
-            _doc_code_panel(code, "code"),
+            doc_tab_trigger("Code", value=_CODE_TAB_VALUE, icon="code-xml"),
+            _doc_code_panel(code, _CODE_TAB_VALUE),
         ),
     ]
     if data:
         tabs.append((
-            doc_tab_trigger("Data", value="data", icon="database"),
-            _doc_code_panel(data, "data"),
+            doc_tab_trigger("Data", value=_DATA_TAB_VALUE, icon="database"),
+            _doc_code_panel(data, _DATA_TAB_VALUE),
         ))
 
     return rx.box(
         rx.tabs.root(
             doc_tab_list(*(trigger for trigger, _ in tabs)),
             doc_tab_card(*(panel for _, panel in tabs)),
-            default_value="view",
+            default_value=_VIEW_TAB_VALUE,
             class_name="w-full",
         ),
         class_name="w-full py-4 flex flex-col",

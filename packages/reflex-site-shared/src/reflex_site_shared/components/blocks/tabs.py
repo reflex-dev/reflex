@@ -17,8 +17,13 @@ _DOC_TAB_CLASS = (
     "!bg-secondary-3 !px-4 !py-2.5 !text-sm !font-medium "
     "!text-secondary-11 !shadow-none transition-colors duration-150 "
     "before:!hidden after:!hidden hover:!text-secondary-12 "
+    "dark:!bg-secondary-4 dark:!text-secondary-10 "
+    "dark:data-[state=inactive]:hover:!bg-secondary-5 "
+    "dark:data-[state=inactive]:hover:!text-secondary-11 "
     "data-[state=active]:!z-10 data-[state=active]:!border-b-transparent "
     "data-[state=active]:!bg-secondary-2 data-[state=active]:!text-secondary-12 "
+    "dark:data-[state=active]:!bg-secondary-2 "
+    "dark:data-[state=active]:!text-secondary-12 "
     "[&_.rt-BaseTabListTriggerInner]:!bg-transparent"
 )
 

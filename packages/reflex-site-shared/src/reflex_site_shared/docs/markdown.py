@@ -463,9 +463,6 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             k, sep, v = flag.partition("=")
             if sep:
                 demobox_props[k] = v
-        if "toggle" in flags:
-            demobox_props["toggle"] = True
-
         return docdemo(content, comp=comp, demobox_props=demobox_props, id=comp_id)
 
     def _render_demo_only(self, content: str, flags: set[str]) -> rx.Component:
