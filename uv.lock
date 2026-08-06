@@ -4030,7 +4030,7 @@ requires-dist = [
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
-    { name = "reflex-enterprise", specifier = ">=0.9.1" },
+    { name = "reflex-enterprise", specifier = ">=0.9.3" },
     { name = "reflex-hosting-cli", editable = "packages/reflex-hosting-cli" },
     { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "reflex-pyplot" },
@@ -4057,7 +4057,7 @@ source = { editable = "docs/package" }
 
 [[package]]
 name = "reflex-enterprise"
-version = "0.9.1"
+version = "0.9.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiproxy" },
@@ -4066,9 +4066,9 @@ dependencies = [
     { name = "psutil" },
     { name = "reflex", extra = ["db"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/33/0c/3385ce1e93ed096da734b7693dad48964046f52330f467fd55c6000565f6/reflex_enterprise-0.9.1.tar.gz", hash = "sha256:ea08e5e03fadbef19d16248a656384fb6f8f1d3fb2bd63b0face18b75b7a436b", size = 536435, upload-time = "2026-07-01T16:51:08.378Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/66/4b9554c4eb00cf9e636b77c65335452c2f27dcc5fcc363c19b69e4d2a392/reflex_enterprise-0.9.3.tar.gz", hash = "sha256:e44233390e695de59b495e87be130c3a19478300041e8558e9d23f08b7214bcf", size = 633010, upload-time = "2026-08-05T23:55:10.393Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/b3/fdd73e28c1ef5e482fac4cf2be688a7841c64397c976c928fec721499f63/reflex_enterprise-0.9.1-py3-none-any.whl", hash = "sha256:57530133bec00eca5d91784abb07be73fed3a3f516f22c7d76b045fb2741a288", size = 281745, upload-time = "2026-07-01T16:51:09.547Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/b6/19d2d909702b3d3ecf29ba48a134e5436a2bb067972648f5d545db826741/reflex_enterprise-0.9.3-py3-none-any.whl", hash = "sha256:886991f81f9238c624bea945066dcb3b04e58de07e904f3b2395acb198e709ea", size = 346112, upload-time = "2026-08-05T23:55:08.995Z" },
 ]
 
 [[package]]
