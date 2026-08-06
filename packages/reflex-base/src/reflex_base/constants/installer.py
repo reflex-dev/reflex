@@ -152,12 +152,7 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        # Held at 8.0.16: vite 8.2.0 breaks memoized-component re-rendering under
-        # the full integration suite — stateful memo components render their
-        # initial value but never update on subsequent state changes (bisected:
-        # 8.0.16 green, 8.2.0 red, all other deps identical). Root-cause pending;
-        # only bump once the regression is understood.
-        "vite": "8.0.16",
+        "vite": "8.2.0",
     }
     # Force specific transitive npm deps to a single resolved version when needed.
     OVERRIDES: dict[str, str] = {
