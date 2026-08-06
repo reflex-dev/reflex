@@ -29,30 +29,30 @@ reflex login
 
 You will be redirected to your browser where you can authenticate through Github or Gmail.
 
-### Web UI
+### Find the Deploy Command
 
-Once you are at this URL and you have successfully authenticated, click on the one project you have in your workspace. You should get a screen like this:
+Open **Deployments** in the project sidebar. If the project has no deployments yet, select **How to deploy**. This page shows the available workflows: one-click deployment from the Builder, deployment from the CLI, and deployment to a cloud provider.
+
+For the CLI workflow, copy the project-specific `reflex deploy --project ...` command.
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/cloud_project_page.webp",
-    alt="Reflex Cloud Dashboard",
+    src="https://web.reflex-assets.dev/docs-preview/hosting/how_to_deploy.webp",
+    alt="How to deploy page with Deployments selected and a project-specific Reflex CLI command",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
-
-This screen shows the login command and the deploy command. As we are already logged in, we can skip the login command.
 
 ### Deployment
 
 Now you can start deploying your app.
 
-In your cloud UI copy the `reflex deploy` command similar to the one shown below.
+From your project directory, where you normally run `reflex run`, run the command copied from the dashboard. It looks similar to:
 
 ```bash
 reflex deploy --project 2a432b8f-2605-4753-####-####0cd1####
 ```
-
-In your project directory (where you would normally run `reflex run`) paste this command.
 
 The command is by default interactive. It asks you a few questions for information required for the deployment.
 

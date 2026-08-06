@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -493,7 +494,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> builtins.set[str]:
         """Get dynamic imports for the component.
 
         Returns:
