@@ -135,10 +135,9 @@ def test_code_block_renders_code_language_line_numbers_and_code_tag_props(
     expect(code_tag).to_contain_text("return x + y")
     expect(code_tag).to_have_attribute("data-code-prop", "tag-prop")
 
-    assert code_tag.evaluate(
-        """el => Array.from(el.querySelectorAll('span'))
-            .some(span => span.textContent === 'def')"""
-    )
+    # PrismAsyncLight loads the language grammar asynchronously, so token
+    # spans appear after the initial plain-text render; wait for one.
+    expect(code_tag.get_by_text("def", exact=True)).to_be_visible()
 
     line_numbers = page.locator("#primary-code-block .linenumber")
     expect(line_numbers).to_have_count(2)
