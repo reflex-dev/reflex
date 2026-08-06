@@ -3,8 +3,9 @@
 A delta whose substate has no dispatch function in the compiled frontend means
 the frontend and backend disagree about the state tree. The frontend reports it
 back over the ``client_error`` socket event so the failure is visible in the
-backend logs instead of being dropped silently, and attempts one reload to pick
-up a matching frontend build.
+backend logs instead of being dropped silently, then stops sending events —
+the mismatch is fatal until the developer rebuilds the frontend or fixes
+``api_url``.
 """
 
 from __future__ import annotations
@@ -119,29 +120,45 @@ def test_unprocessable_delta_is_reported_to_backend(
     assert "rebuild" in report.lower()
 
 
-@pytest.mark.ignore_console_error
-def test_unprocessable_delta_reloads_once(client_error_app: AppHarness, page: Page):
-    """The frontend reloads once to pick up a matching build, and not again.
+def test_unprocessable_delta_is_fatal_without_reload(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """A mismatch is reported exactly once and does not reload the page.
 
-    The mismatch is reported through the default handler here, so this test
-    logs a real ``console.error`` in the backend.
+    Recovery (rebuild or api_url fix) is the developer's decision, so the
+    frontend must not reload on its own or keep re-reporting.
 
     Args:
         client_error_app: Running AppHarness instance.
         page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching the exception handler.
     """
     assert client_error_app.frontend_url is not None
+    assert client_error_app.app_instance is not None
     page.goto(client_error_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
 
-    page.click("#break-btn")
-
-    # The reload marks the session so a mismatch that survives it (e.g. a wrong
-    # api_url) does not put the page in a reload loop.
-    page.wait_for_function(
-        "() => window.sessionStorage.getItem('reflex_state_mismatch_reloaded') === '1'"
+    reports: list[str] = []
+    monkeypatch.setattr(
+        client_error_app.app_instance,
+        "frontend_exception_handler",
+        lambda exc: reports.append(str(exc)),
     )
-    # The page is usable again after the reload.
-    expect(page.locator("#token")).not_to_have_value("")
+
+    page.click("#break-btn")
+    assert AppHarness._poll_for(lambda: reports), (
+        "backend was not told about the unprocessable delta"
+    )
+
+    # No automatic reload: the page's original navigation entry is still live.
+    assert (
+        page.evaluate("() => performance.getEntriesByType('navigation')[0].type")
+        == "navigate"
+    )
+
+    # The mismatch is fatal: further clicks send no events and add no reports.
+    page.click("#break-btn")
     page.click("#bump-btn")
-    expect(page.locator("#counter")).not_to_have_text("")
+    page.wait_for_timeout(500)
+    expect(page.locator("#counter")).to_have_text("0")
+    assert len(reports) == 1

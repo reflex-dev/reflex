@@ -31,10 +31,6 @@ const CLIENT_ERROR_EVENT = "client_error";
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 
-// Session key marking that a reload was already attempted to recover from a
-// frontend/backend state mismatch.
-const STATE_MISMATCH_RELOAD_KEY = "reflex_state_mismatch_reloaded";
-
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -753,14 +749,6 @@ export const connect = async (
         error_type: ERROR_TYPE_DISPATCH_MISSING,
       });
       backend_state_mismatch = true;
-      // A stale frontend build is the usual cause and a reload picks up the
-      // matching one. Only try once per tab session: if the reload does not
-      // help (e.g. api_url points at a different app) the page stays up with
-      // the error reported rather than reloading in a loop.
-      if (!window.sessionStorage.getItem(STATE_MISMATCH_RELOAD_KEY)) {
-        window.sessionStorage.setItem(STATE_MISMATCH_RELOAD_KEY, "1");
-        window.location.reload();
-      }
       return;
     }
     try {
