@@ -66,11 +66,16 @@ The hook is called as `audit(action, outcome, context)`:
   enqueue internally and flush out-of-band, projecting the context down to the
   plain fields they need first.
 
-`AuditAction` and `AuditOutcome` are str-valued enums and `AuditContext` is a
-flat frozen dataclass, so events serialize into log/JSON sinks without
-importing framework internals. Always read `.value` when formatting: on
-Python 3.11+ `f"{action}"` renders `AuditAction.LOGIN_COMPLETED` while 3.10
-renders the bare value.
+`AuditAction` and `AuditOutcome` are str-valued enums, so `action.value` and
+`outcome.value` drop into any log or JSON record as plain strings. The context
+does not serialize as-is: `state`, `auth_user_state`, and `event_handler` are
+live framework objects and `payload` is arbitrary event input, so handing the
+whole `AuditContext` to a standard JSON encoder raises `TypeError`. Build the
+record from the plain fields the sink needs (`handler_name`, `provider`,
+`route`, `reason`, ...) — which also keeps framework internals out of your
+audit schema. Always read `.value` when formatting: on Python 3.11+
+`f"{action}"` renders `AuditAction.LOGIN_COMPLETED` while 3.10 renders the
+bare value.
 
 ## Actions and outcomes
 
@@ -115,7 +120,7 @@ over time, but the 3-argument hook signature never changes.
 | `auth_user_state` | The live per-token `AuthUserState` handle, or `None` if it could not be loaded. |
 | `userinfo` | A claims snapshot at emission time. Emissions adjacent to a session reset (logout, expiry) capture it *before* the reset, so the event still records who logged out. |
 | `provider` | The involved provider's name, when known. |
-| `route` | The current page URL, when available. |
+| `route` | The current page URL with query and fragment stripped (the query can carry OAuth `code`/invite tokens), when available. |
 | `session_id` | The router session id, when available. |
 | `handler_name` | The gated handler's function name (`event_handler` action only). |
 | `event_handler` | The gated `EventHandler` object (`event_handler` action only). |
