@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Iterator
 from typing import ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
@@ -516,6 +517,30 @@ class CodeBlock(Component, MarkdownComponentMap):
     def add_style(self):
         """Add style to the component."""
         self.custom_style.update(self.style)
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each var referenced by the component, including any embedded in
+            the custom_style dict, which is not a Var-typed prop.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        custom_style = self.custom_style
+        if isinstance(custom_style, Style) and custom_style._var_data:
+            yield Var(
+                _js_expr="custom_style",
+                _var_type=str,
+                _var_data=custom_style._var_data,
+            )
 
     def _render(self):
         out = super()._render()

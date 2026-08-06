@@ -7,11 +7,6 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
-PRIMARY_CODE = "def add(x, y):\n    return x + y"
-LONG_LINE_CODE = (
-    "message = 'this line is intentionally long so wrap_long_lines changes "
-    "the rendered whitespace behavior'"
-)
 DEFAULT_COPY_CODE = "print('copied from default button')"
 CUSTOM_COPY_CODE = "print('copied from custom button')"
 
