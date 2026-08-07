@@ -16,6 +16,8 @@ from reflex_cli.v2.deployments import hosting_cli
 from reflex.custom_components.custom_components import custom_components_cli
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
@@ -224,6 +226,52 @@ def _run_dev(
                 exec.kill(exec.frontend_process.pid)
 
 
+def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
+    """Run the app in preview mode.
+
+    Like dev mode, but instead of running the Vite dev server it serves a freshly
+    built (un-minified) frontend bundle mounted into the backend on a single port.
+    The backend still hot reloads, and each reload re-runs the frontend build
+    against the newly compiled output, so a manual browser refresh shows changes.
+    """
+    import atexit
+
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = get_config()
+
+    config._set_persistent(frontend_port=port, backend_port=port)
+
+    # Mount the compiled frontend into the dev backend so no Vite server is needed.
+    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
+        running_mode.has_frontend() and running_mode.has_backend()
+    )
+
+    if running_mode.has_frontend():
+        # Compile the app and produce the initial frontend build.
+        _compile_app()
+        build.setup_frontend_prod(Path.cwd())
+
+    # Post a telemetry event.
+    telemetry.send("run-preview")
+
+    # Display custom message when there is a keyboard interrupt.
+    atexit.register(processes.atexit_handler)
+
+    exec.notify_app_running()
+    exec.notify_frontend(
+        f"http://{host}:{port}",
+        backend_present=running_mode.has_backend(),
+    )
+
+    if running_mode.has_backend():
+        exec.run_backend(
+            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+        )
+    else:
+        exec.run_frontend_prod(host, port)
+
+
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
@@ -278,12 +326,14 @@ def _run(
         console.error("Cannot specify --backend-port when not running backend.")
         raise SystemExit(1)
     if (
-        env == constants.Env.PROD
+        env in (constants.Env.PROD, constants.Env.PREVIEW)
         and frontend_port
         and backend_port
         and frontend_port != backend_port
     ):
-        console.error("In production, frontend and backend must run on the same port.")
+        console.error(
+            f"In {env.value} mode, frontend and backend must run on the same port."
+        )
         raise SystemExit(1)
 
     config = get_config()
@@ -292,6 +342,17 @@ def _run(
 
     # Set env mode in the environment
     environment.REFLEX_ENV_MODE.set(env)
+
+    # Preview serves a real (but readable) frontend bundle: disable JS/CSS
+    # minification by default for readable output and to speed up rebuilds.
+    # Sourcemaps are left off (the default) since un-minified output is already
+    # debuggable, and autoprefixer is skipped (vendor prefixes are unnecessary for
+    # local dev). All remain overridable via the corresponding env vars.
+    if env == constants.Env.PREVIEW:
+        if not environment.VITE_MINIFY.is_set():
+            environment.VITE_MINIFY.set(False)
+        if not environment.REFLEX_NO_AUTOPREFIXER.is_set():
+            environment.REFLEX_NO_AUTOPREFIXER.set(True)
 
     # Show system info
     exec.output_system_info()
@@ -373,7 +434,10 @@ def _run(
             auto_increment=requested_port is None,
         )
 
-        _run_prod(running_mode, port, backend_host)
+        if env == constants.Env.PREVIEW:
+            _run_preview(running_mode, port, backend_host)
+        else:
+            _run_prod(running_mode, port, backend_host)
 
 
 @cli.command()
@@ -382,7 +446,10 @@ def _run(
     "--env",
     type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
     default=constants.Env.DEV.value,
-    help="The environment to run the app in.",
+    help=(
+        "The environment to run the app in. 'preview' hot reloads like 'dev' but "
+        "serves a freshly built, un-minified frontend bundle instead of the Vite dev server."
+    ),
 )
 @click.option(
     "--frontend-only",
@@ -464,7 +531,7 @@ def run(
     running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
 
     _run(
-        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
+        env=constants.Env(env),
         running_mode=running_mode,
         frontend_port=frontend_port,
         backend_port=backend_port,
@@ -538,7 +605,9 @@ def compile(dry: bool, rich: bool):
 )
 @click.option(
     "--env",
-    type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
+    type=click.Choice(
+        [constants.Env.DEV.value, constants.Env.PROD.value], case_sensitive=False
+    ),
     default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
@@ -563,7 +632,7 @@ def export(
     backend_only: bool,
     zip_dest_dir: str,
     upload_db_file: bool,
-    env: LITERAL_ENV,
+    env: Literal["dev", "prod"],
     backend_excluded_dirs: tuple[Path, ...] = (),
     ssr: bool = True,
 ):
@@ -790,6 +859,17 @@ def makemigrations(message: str | None):
     help="The hostname of the frontend.",
 )
 @click.option(
+    "--provider",
+    help="The hosting provider to deploy to: 'reflex-cloud' (default) or 'gcp' "
+    "(a GCP account connected to your org, Enterprise tier). When omitted and "
+    "GCP is connected, you'll be prompted in interactive mode.",
+)
+@click.option(
+    "--description",
+    help="An optional note recorded on this deployment and shown in "
+    "`reflex cloud apps history`.",
+)
+@click.option(
     "--interactive/--no-interactive",
     is_flag=True,
     default=True,
@@ -838,6 +918,8 @@ def deploy(
     env: tuple[str],
     vmtype: str | None,
     hostname: str | None,
+    provider: str | None,
+    description: str | None,
     interactive: bool,
     envfile: str | None,
     project: str | None,
@@ -909,6 +991,8 @@ def deploy(
         token=token,
         project=project,
         project_name=project_name,
+        provider=provider,
+        deployment_description=description,
         **({"config_path": config_path} if config_path is not None else {}),
     )
 

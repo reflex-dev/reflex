@@ -1,34 +1,34 @@
+---
+tags: AI Builder
+description: Attach supported documents and structured data to a Reflex Build prompt and give the agent a clear task for each file.
+---
+
 # Files
 
-To upload a file to the AI Builder click the `📎 Attach` button and select the file you want to upload from your computer. You can also drag and drop files directly into the chat window.
+Select the attachment control to upload a file as context for the Reflex Build agent. You can also drag a file directly into the chat.
 
-This section does not cover uploading images. Check out [Images](/docs/ai/images/) to learn more about uploading images.
+This page covers documents and structured data. See [Images](/docs/ai/images/) for image attachments.
 
-```md alert
 ## Supported File Types
-The AI Builder currently supports the following file types for upload and processing:
-1. `.pdf`
-2. `.doc`
-3. `.docx`
-4. `.xls`
-5. `.xlsx`
-6. `.ppt`
-7. `.pptx`
-8. `.odt`
-9. `.ods`
-10. `.odp`
-11. `.rtf`
-12. `.csv`
-13. `.txt`
-14. `.md`
-15. `.markdown`
-16. `.json`
-17. `.xml`
-18. `.yaml`
-19. `.yml`
-20. `.tsv`
+
+Reflex Build supports common:
+
+- Documents: `.pdf`, `.doc`, `.docx`, `.odt`, and `.rtf`.
+- Spreadsheets: `.xls`, `.xlsx`, `.ods`, `.csv`, and `.tsv`.
+- Presentations: `.ppt`, `.pptx`, and `.odp`.
+- Text and structured data: `.txt`, `.md`, `.markdown`, `.json`, `.xml`, `.yaml`, and `.yml`.
+
+General file uploads support files up to **50 MB** each. You can attach up to **20 files in one message**.
+
+## Give the Agent a Clear Task
+
+Tell the agent how to use the attachment:
+
+```text
+Use the attached CSV as sample data. Build an import preview that maps the
+columns, flags malformed dates, and lets the user exclude invalid rows.
 ```
 
-The files you upload will automatically be added to the `assets/` folder of your app, and the AI Builder will be able to read and process their contents as part of your prompts.
+An attachment is prompt context. If the app must serve or retain the file at runtime, ask the agent to add the appropriate app asset, upload workflow, database record, or external storage integration.
 
-The maximum number of files you can upload at a time is `5`. The maximum file size for uploads is `5MB`. If you need to work with larger files, consider breaking them into smaller chunks or using external storage solutions and linking to them via APIs.
+Do not attach secrets, credentials, or private production exports unless they are specifically approved for use in Reflex Build. Use [Secrets](/docs/ai/features/secrets/) or an integration form for credentials.

@@ -192,7 +192,7 @@ class ColorMode(SimpleNamespace):
     SET = "setColorMode"
 
 
-LITERAL_ENV = Literal["dev", "prod"]
+LITERAL_ENV = Literal["dev", "preview", "prod"]
 
 
 # Env modes
@@ -200,6 +200,7 @@ class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
+    PREVIEW = "preview"
     PROD = "prod"
 
 

@@ -54,6 +54,10 @@ def get_sidebar_items_enterprise_usage():
                     link=enterprise.auth.custom_pages.path,
                 ),
                 SideBarItem(
+                    names="Auditing Auth Actions",
+                    link=enterprise.auth.audit.path,
+                ),
+                SideBarItem(
                     names="Testing Guarded Code",
                     link=enterprise.auth.testing.path,
                 ),
@@ -102,6 +106,14 @@ def get_sidebar_items_enterprise_components():
                 SideBarItem(
                     names="Pivot Mode",
                     link=enterprise.ag_grid.pivot_mode.path,
+                ),
+                SideBarItem(
+                    names="Tree Data",
+                    link=enterprise.ag_grid.tree_data.path,
+                ),
+                SideBarItem(
+                    names="Master Detail",
+                    link=enterprise.ag_grid.master_detail.path,
                 ),
                 SideBarItem(
                     names="Theme",
