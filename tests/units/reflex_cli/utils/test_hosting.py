@@ -7,6 +7,7 @@ import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
+from reflex_cli.utils.exceptions import TokenValidationError
 from reflex_cli.utils.hosting import (
     AuthenticatedClient,
     ScaleParams,
@@ -18,6 +19,7 @@ from reflex_cli.utils.hosting import (
     delete_token_from_config,
     gcp_deploy_available,
     get_app_history,
+    get_auth_request_id,
     get_authenticated_client,
     get_existing_access_token,
     get_gcp_provider_status,
@@ -34,6 +36,8 @@ from reflex_cli.utils.hosting import (
     set_app_provider,
     submit_security_review,
     update_deployment_description,
+    validate_token,
+    validate_token_with_retries,
 )
 
 _CLIENT = AuthenticatedClient(token="fake-token", validated_data={})
@@ -592,3 +596,58 @@ def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFix
     assert history[0]["can rollback"] is True
     assert history[1]["description"] == ""
     assert history[1]["can rollback"] is False
+
+
+def test_validate_token_sends_request_id_header(mocker: MockerFixture):
+    """Each validation request carries a fresh X-Request-ID header."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"tier": "enterprise"})
+    )
+
+    assert validate_token("some-token") == {"tier": "enterprise"}
+
+    headers = mock_post.call_args.kwargs["headers"]
+    assert headers["X-API-TOKEN"] == "some-token"
+    assert headers["X-Request-ID"] == get_auth_request_id() != ""
+
+    first_request_id = get_auth_request_id()
+    validate_token("some-token")
+    assert get_auth_request_id() != first_request_id
+
+
+def test_validate_token_with_retries_warns_with_request_id(mocker: MockerFixture):
+    """A failed validation surfaces the request id for support correlation."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 500, "boom"))
+    mock_warn = mocker.patch("reflex_cli.utils.hosting.console.warn")
+
+    assert validate_token_with_retries("some-token") == {}
+
+    request_id = get_auth_request_id()
+    assert request_id
+    assert request_id in mock_warn.call_args.args[0]
+
+
+def test_validate_token_with_retries_access_denied_reports_request_id(
+    mocker: MockerFixture,
+):
+    """The access denied error message includes the auth request id."""
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = ValueError("bad json")
+    mocker.patch("httpx.post", return_value=response)
+    mock_error = mocker.patch("reflex_cli.utils.hosting.console.error")
+    mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    assert validate_token_with_retries("some-token") == {}
+
+    assert get_auth_request_id() in mock_error.call_args.args[0]
+
+
+def test_validate_token_failure_carries_request_id_on_exception(mocker: MockerFixture):
+    """Validation errors carry the request id of their own request."""
+    mocker.patch("httpx.post", return_value=_error(mocker, 500, "boom"))
+
+    with pytest.raises(TokenValidationError) as exc_info:
+        validate_token("some-token")
+
+    assert exc_info.value.request_id == get_auth_request_id() != ""

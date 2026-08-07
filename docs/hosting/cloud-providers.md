@@ -1,7 +1,3 @@
-```python exec
-import reflex as rx
-```
-
 # Cloud Providers
 
 By default, `reflex deploy` runs your app on Reflex Cloud's managed infrastructure. If your organization has connected its own cloud account, you can instead deploy the same app — with the same `reflex deploy` command and the same managed lifecycle (logs, scaling, history, rollbacks) — into **your own cloud account**. Today this is supported for **Google Cloud (GCP)**, where your app runs on [Cloud Run](https://cloud.google.com/run) in your GCP project.
@@ -20,9 +16,9 @@ This page covers the **managed** flow: an admin connects a GCP account to your o
 
 ## Connecting Google Cloud
 
-An organization admin connects the GCP account once, from the Reflex Cloud dashboard under **Organization → Cloud Providers**. You provide a service-account key, your GCP project number, and a region; Reflex validates that the service account has the permissions needed to deploy Cloud Run services and push images to Artifact Registry before storing the (encrypted) credentials.
+An organization admin connects the GCP account from **Cloud Providers** in the organization sidebar. See [Bring Your Own Cloud](/docs/ai/organization/cloud-providers/) for the setup, credential, and removal steps.
 
-Once connected, check availability from the CLI:
+After it is connected, check availability from the CLI:
 
 ```bash
 reflex cloud providers status
@@ -61,7 +57,9 @@ When you deploy to GCP, the region and machine sizing come from the connected GC
 
 ## Switching providers
 
-An app remembers its provider between deploys. You can switch it at any time by choosing a different provider on your next `reflex deploy` (or with `--provider`). Switching a **deployed** app tears down its resources on the previous provider and requires a redeploy to come back up on the new one — `reflex deploy` performs that redeploy as part of the switch. In interactive mode the CLI warns and asks for confirmation before switching a deployed app.
+An app remembers its provider between deploys. Choose a different provider on the next `reflex deploy`, or pass `--provider`, to switch it.
+
+Switching a deployed app removes its resources from the previous provider and redeploys it to the new one. In interactive mode, the CLI shows a warning and asks for confirmation first.
 
 ## What runs where
 

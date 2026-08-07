@@ -1,46 +1,43 @@
 # Knowledge
 
-The **Knowledge** feature lets you add context or rules that the AI Builder can reference when generating apps. This ensures your apps follow your guidelines, standards, or specific business logic.
+Knowledge gives the agent reusable context that should guide more than one prompt. Reflex Build separates project-wide knowledge from instructions that apply only to the current app.
 
 ```python exec
 import reflex as rx
-
-
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/features/knowledge_light.avif",
-            alt="Reflex AI Builder knowledge section",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
 ```
+
+## Project Knowledge
 
 ```python eval
-rx.el.div(render_image())
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/knowledge_project.webp",
+    alt="Project Knowledge entries and their automatic enablement state",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
 ```
 
-## How to Add Knowledge
+Use project knowledge for guidance shared by apps in the same project, such as:
 
-1. In the AI Builder top bar, click the more 3 dots icon and then click the **`Knowledge`** tab.
-2. Enter your rule, guideline, or context description.
-3. Save the entry. The AI Builder will automatically use it when generating apps.
+- Product terminology and audience.
+- Organization-wide architecture or security rules.
+- Shared data concepts and naming conventions.
+- Links or references that every app team should use.
 
-## How It Works
+You can manage project knowledge from **Knowledge** in the project sidebar or follow the project-knowledge link in the app's Knowledge panel.
 
-- The AI Builder references your knowledge entries as rules or guidelines.
-- Rules can define naming conventions, component usage, layout preferences, or other custom logic.
-- Multiple rules can be added to cover different aspects of app generation.
+## App Instructions
 
-## Common Use Cases
+Open the app's more menu and select **Knowledge**. Add instructions that should apply only to the current app, such as:
 
-- **Maintain Consistency**
-  Ensure all generated apps follow your company’s design or naming standards.
+```text
+Use "workspace" instead of "tenant" in user-facing copy.
+Keep state transformations in State methods rather than UI components.
+Every data table must include loading, empty, and error states.
+```
 
-- **Enforce Business Logic**
-  Guide the AI Builder to follow specific workflows, validations, or feature requirements.
+App instructions save when you select another control. Keep them short, specific, and current; contradictory or obsolete instructions make generation less predictable.
 
-- **Quickly Adapt AI Behavior**
-  Add or update rules to influence new app generations without manual edits.
+## Design Systems
+
+Use a design system for reusable visual guidance such as color tokens, typography, spacing, and component patterns. Keep behavior and architecture rules in Knowledge so each source of context has a clear purpose.
