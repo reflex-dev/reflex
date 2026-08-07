@@ -53,7 +53,7 @@ from .config import (
     UvLock,
 )
 from .custom_components import CustomComponents
-from .event import Endpoint, EventTriggers, SocketEvent
+from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
@@ -92,6 +92,7 @@ __all__ = [
     "SYSTEM_COLOR_MODE",
     "AgentsMd",
     "Bun",
+    "ClientErrorType",
     "ColorMode",
     "CompileContext",
     "CompileVars",

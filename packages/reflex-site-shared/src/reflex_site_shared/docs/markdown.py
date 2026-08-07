@@ -5,6 +5,7 @@
 
 import json
 import sys
+import textwrap
 import types
 from pathlib import Path
 
@@ -893,6 +894,7 @@ def render_markdown(
     *,
     virtual_filepath: str = "",
     filename: str = "",
+    dedent: bool = True,
 ) -> rx.Component:
     """Render a Markdown string into Reflex components.
 
@@ -900,10 +902,13 @@ def render_markdown(
         text: Markdown source to render.
         virtual_filepath: Stable document identity used by executable blocks.
         filename: Optional source filename included in execution errors.
+        dedent: If True, remove common leading whitespace from the source.
 
     Returns:
         The rendered component tree.
     """
+    if dedent:
+        text = textwrap.dedent(text)
     doc = parse_document(text)
     transformer = ReflexDocTransformer(
         virtual_filepath=virtual_filepath,
