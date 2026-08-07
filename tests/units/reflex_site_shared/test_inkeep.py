@@ -1,17 +1,11 @@
-"""Tests for the shared Inkeep configuration."""
+"""Tests for compatibility with the former shared search imports."""
 
-from types import SimpleNamespace
+from reflex_site_shared.components.algolia import AlgoliaSearch, Search, algolia_search
+from reflex_site_shared.components.inkeep import InkeepSearchBar, inkeep
 
-from reflex_site_shared.components.inkeep import Search
 
-
-def test_inkeep_uses_frontend_path_search_icon(monkeypatch) -> None:
-    """Preserve the official search icon under each site's frontend path."""
-    monkeypatch.setattr(
-        "reflex_site_shared.components.inkeep.get_config",
-        lambda: SimpleNamespace(frontend_path="/docs/product"),
-    )
-
-    hooks = "\n".join(str(hook) for hook in Search.create().add_hooks())
-
-    assert 'customIcons: {search: {custom: "/docs/product/icons/search.svg"}}' in hooks
+def test_inkeep_imports_alias_keyword_search() -> None:
+    """Keep downstream imports working without loading the Inkeep package."""
+    assert InkeepSearchBar is AlgoliaSearch
+    assert inkeep == algolia_search
+    assert Search.create().children[0].library == AlgoliaSearch.library

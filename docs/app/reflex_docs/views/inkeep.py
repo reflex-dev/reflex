@@ -1,4 +1,4 @@
-"""Compatibility import for the shared Inkeep search component."""
+"""Backward-compatible aliases for the former Inkeep search module."""
 
 from reflex_site_shared.components.inkeep import InkeepSearchBar, Search, inkeep
 
