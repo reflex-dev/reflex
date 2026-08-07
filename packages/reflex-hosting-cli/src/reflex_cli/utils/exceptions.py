@@ -9,6 +9,28 @@ class NotAuthenticatedError(ReflexHostingCliError):
     """Raised when the user is not authenticated."""
 
 
+class TokenValidationError(ReflexHostingCliError):
+    """Raised when validating an access token with the control plane fails.
+
+    Carries the X-Request-ID sent with the validation request so callers can
+    surface it for correlation with server-side logs.
+    """
+
+    def __init__(self, message: str, request_id: str = ""):
+        """Initialize the error.
+
+        Args:
+            message: The error message.
+            request_id: The X-Request-ID header sent with the failed request.
+        """
+        super().__init__(message)
+        self.request_id = request_id
+
+
+class TokenAccessDeniedError(TokenValidationError, ValueError):
+    """Raised when the control plane rejects the access token."""
+
+
 class GetAppError(ReflexHostingCliError):
     """Raised when retrieving an app fails."""
 

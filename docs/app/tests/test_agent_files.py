@@ -16,15 +16,21 @@ from agent_files._plugin import (
 )
 
 
+def _patch_config(monkeypatch, deploy_url: str, frontend_path: str = "/docs"):
+    """Patch the site config everywhere it is read.
+
+    Public URLs are built via ``reflex_site_shared.utils.url.public_url``, which
+    reads the config through its own module-level ``get_config`` import, so
+    patching only ``agent_files._plugin.get_config`` is not enough.
+    """
+    config = SimpleNamespace(deploy_url=deploy_url, frontend_path=frontend_path)
+    monkeypatch.setattr("agent_files._plugin.get_config", lambda: config)
+    monkeypatch.setattr("reflex_site_shared.utils.url.get_config", lambda: config)
+
+
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     """The docs mount exposes public-root llms.txt as /docs/llms.txt."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     path, content = generate_llms_txt([
         MarkdownIndexEntry(
@@ -58,9 +64,9 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="MCP",
         ),
         MarkdownIndexEntry(
-            url_path=Path("ai/integrations/ai-onboarding.md"),
-            title="AI Onboarding",
-            section="AI Onboarding",
+            url_path=Path("ai/integrations/agent-toolkit.md"),
+            title="Agent Toolkit",
+            section="Agent Toolkit",
         ),
         MarkdownIndexEntry(
             url_path=Path("ai/integrations/mcp-installation.md"),
@@ -73,8 +79,8 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="Skills",
         ),
         MarkdownIndexEntry(
-            url_path=Path("ai/features/ide.md"),
-            title="Reflex Build IDE",
+            url_path=Path("ai/features/editor-modes.md"),
+            title="Code and Review",
             section="AI Builder",
         ),
     ])
@@ -102,10 +108,10 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         in content
     )
     assert "Resend Integration" not in content
-    assert "Reflex Build IDE" not in content
-    assert "### AI Onboarding\n\n" in content
+    assert "Code and Review" not in content
+    assert "### Agent Toolkit\n\n" in content
     assert (
-        "- [AI Onboarding](https://reflex.dev/docs/ai/integrations/ai-onboarding.md)"
+        "- [Agent Toolkit](https://reflex.dev/docs/ai/integrations/agent-toolkit.md)"
         in content
     )
     assert "### MCP\n\n" in content
@@ -119,21 +125,15 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     )
     assert "### Skills\n\n" in content
     assert "- [Skills](https://reflex.dev/docs/ai/integrations/skills.md)" in content
-    assert content.index("### AI Builder") < content.index("### AI Onboarding")
-    assert content.index("### AI Onboarding") < content.index("### MCP")
+    assert content.index("### AI Builder") < content.index("### Agent Toolkit")
+    assert content.index("### Agent Toolkit") < content.index("### MCP")
     assert content.index("### MCP") < content.index("### Skills")
     assert content.index("mcp-overview.md") < content.index("mcp-installation.md")
 
 
 def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_path):
     """Generated markdown pages advertise the docs index and markdown access."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="http://localhost:3000",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="http://localhost:3000")
     source = tmp_path / "overview.md"
     source.write_text(
         "# Overview\n\nBuild full-stack apps in Python.\n",
@@ -161,13 +161,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
     monkeypatch, tmp_path
 ):
     """Component docs markdown includes generated API reference props tables."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     source = tmp_path / "button.md"
     source.write_text(
         "---\n"
@@ -217,13 +211,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 
 def test_generate_dynamic_api_reference_files(monkeypatch):
     """Dynamic API reference pages have generated markdown assets."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     raw_files = generate_dynamic_api_reference_files()
     files = dict(raw_files)
@@ -281,13 +269,7 @@ def test_section_for_root_level_markdown_strips_extension():
 
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
-    monkeypatch.setattr(
-        "agent_files._plugin.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     introduction = tmp_path / "introduction.md"
     introduction.write_text(
         "# Introduction\n\nBuild full-stack apps in Python.\n",
@@ -373,6 +355,10 @@ def test_generate_agent_files_emits_trailing_slash_variants():
         path for path in files if path.suffix == ".md" and path.name != ".md"
     ]
     assert markdown_paths, "expected at least one markdown asset"
+    assert (
+        files[Path("ai/integrations/ai-onboarding.md")]
+        == files[Path("ai/integrations/agent-toolkit.md")]
+    )
 
     for path in markdown_paths:
         twin = markdown_path_for_trailing_slash_url(path)
