@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, ClassVar
+import inspect
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, ClassVar, TypedDict, get_args, get_origin, get_type_hints
 
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.components.memo import memo
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
+from reflex_base.vars.object import RestProp
+from typing_extensions import NotRequired
 
 from reflex_components_recharts.general import ResponsiveContainer
 
@@ -534,6 +538,238 @@ class FunnelChart(ChartBase):
     ]
 
 
+class SankeyNode(TypedDict):
+    """A node in a Sankey chart."""
+
+    name: str
+    type: NotRequired[str]
+    fill: NotRequired[str | Color]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
+
+
+class SankeyLink(TypedDict):
+    """A weighted link between two Sankey chart nodes."""
+
+    source: int
+    target: int
+    value: int | float
+    fill: NotRequired[str | Color]
+    fillOpacity: NotRequired[int | float]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
+
+
+class SankeyData(TypedDict):
+    """The source data for a Sankey chart."""
+
+    nodes: Sequence[SankeyNode]
+    links: Sequence[SankeyLink]
+
+
+class SankeyNodePayload(TypedDict):
+    """The payload for a Sankey chart node."""
+
+    name: str
+    sourceLinks: list[SankeyLinkPayload]
+    targetLinks: list[SankeyLinkPayload]
+    value: int | float
+    depth: int
+    x: int | float
+    dx: int | float
+    y: int | float
+    dy: int | float
+
+
+class SankeyNodeProps(TypedDict):
+    """The props for a custom Sankey chart node."""
+
+    height: int | float
+    width: int | float
+    payload: SankeyNodePayload
+    index: int
+    x: int | float
+    y: int | float
+
+
+class SankeyLinkPayload(TypedDict):
+    """The payload for a Sankey chart link."""
+
+    source: SankeyNodePayload
+    target: SankeyNodePayload
+    value: int | float
+    dy: int | float
+    sy: int | float
+    ty: int | float
+
+
+class SankeyLinkProps(TypedDict):
+    """The props for a custom Sankey chart link."""
+
+    sourceX: int | float
+    targetX: int | float
+    sourceY: int | float
+    targetY: int | float
+    sourceControlX: int | float
+    targetControlX: int | float
+    sourceRelativeY: int | float
+    targetRelativeY: int | float
+    linkWidth: int | float
+    index: int
+    payload: SankeyLinkPayload
+
+
+def _sankey_renderer(
+    fn: Callable,
+    props_type: type,
+    decorator_name: str,
+) -> Callable[..., Component]:
+    """Create a memoized Sankey renderer with a typed rest-prop parameter.
+
+    Args:
+        fn: The renderer function to wrap.
+        props_type: The TypedDict props type expected by the renderer.
+        decorator_name: The public decorator name used in error messages.
+
+    Returns:
+        A memoized renderer wrapper.
+    """
+    sig = inspect.signature(fn)
+    if len(sig.parameters) != 1:
+        msg = (
+            f"@{decorator_name} decorated function must take a single argument "
+            f"of type {props_type.__name__}, got {sig.parameters}"
+        )
+        raise TypeError(msg)
+
+    first_param = next(iter(sig.parameters.values()))
+    if first_param.kind not in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    ):
+        msg = (
+            f"@{decorator_name} decorated function parameter must be callable "
+            f"by keyword, got {first_param.kind.description}"
+        )
+        raise TypeError(msg)
+
+    hints = get_type_hints(fn, include_extras=True)
+    param_annotation = hints.get(first_param.name, first_param.annotation)
+    if (
+        get_origin(param_annotation) is not Var
+        or not (args := get_args(param_annotation))
+        or args[0] is not props_type
+    ):
+        msg = (
+            f"@{decorator_name} decorated function must take a single argument "
+            f"of type {props_type.__name__}, got {sig.parameters}"
+        )
+        raise TypeError(msg)
+
+    def _wrapper(rest: RestProp) -> Component:
+        return fn(**{first_param.name: rest.to(props_type)})
+
+    _wrapper.__name__ = fn.__name__
+    _wrapper.__module__ = fn.__module__
+    return memo(wrapper=None)(_wrapper)
+
+
+def sankey_node(
+    fn: Callable,
+) -> Callable[..., Component]:
+    """A decorator to create a custom Sankey chart node.
+
+    Args:
+        fn: A function that takes a SankeyNodeProps and returns a Reflex component.
+
+    Returns:
+        A function that takes a SankeyNodeProps and returns a Reflex component.
+    """
+    return _sankey_renderer(fn, SankeyNodeProps, "sankey_node")
+
+
+def sankey_link(
+    fn: Callable,
+) -> Callable[..., Component]:
+    """A decorator to create a custom Sankey chart link.
+
+    Args:
+        fn: A function that takes a SankeyLinkProps and returns a Reflex component.
+
+    Returns:
+        A function that takes a SankeyLinkProps and returns a Reflex component.
+    """
+    return _sankey_renderer(fn, SankeyLinkProps, "sankey_link")
+
+
+class SankeyChart(ChartBase):
+    """A Sankey chart component in Recharts."""
+
+    tag = "Sankey"
+
+    alias = "RechartsSankeyChart"
+
+    name_key: Var[str] = field(doc='The key of each node name. Default: "name"')
+
+    data_key: Var[str | int] = field(doc='The key of each link value. Default: "value"')
+
+    data: Var[SankeyData | Mapping[str, Any]] = field(
+        doc="The source data, including nodes and the weighted links between them."
+    )
+
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}'
+    )
+
+    node: Var[Any] = field(
+        doc="The configuration object or custom renderer used to draw nodes."
+    )
+
+    link: Var[Any] = field(
+        doc="The configuration object or custom renderer used to draw links."
+    )
+
+    sort: Var[bool] = field(
+        doc="Whether to sort nodes on the y-axis or display them in data order."
+    )
+
+    node_padding: Var[int] = field(doc="The padding between nodes.")
+
+    node_width: Var[int] = field(doc="The width of each node.")
+
+    link_curvature: Var[float] = field(doc="The curvature of each link.")
+
+    iterations: Var[int] = field(
+        doc="The number of layout iterations used to position nodes and links."
+    )
+
+    # Valid children components
+    _valid_children: ClassVar[list[str]] = [
+        "Legend",
+        "GraphingTooltip",
+        "Defs",
+    ]
+
+
+class SankeyNamespace(ComponentNamespace):
+    """A namespace for the Sankey chart components."""
+
+    node = staticmethod(sankey_node)
+    link = staticmethod(sankey_link)
+    __call__ = staticmethod(SankeyChart.create)
+
+    # For type checking
+    SankeyNode = SankeyNode
+    SankeyLink = SankeyLink
+    SankeyData = SankeyData
+    SankeyNodePayload = SankeyNodePayload
+    SankeyNodeProps = SankeyNodeProps
+    SankeyLinkPayload = SankeyLinkPayload
+    SankeyLinkProps = SankeyLinkProps
+
+
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
 
@@ -616,4 +852,5 @@ radar_chart = RadarChart.create
 radial_bar_chart = RadialBarChart.create
 scatter_chart = ScatterChart.create
 funnel_chart = FunnelChart.create
+sankey_chart = SankeyNamespace()
 treemap = Treemap.create
