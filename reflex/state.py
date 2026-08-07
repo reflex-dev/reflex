@@ -65,6 +65,7 @@ from reflex_base.vars.base import (
     dispatch,
     is_computed_var,
 )
+from reflex_base.vars.hybrid_property import HybridProperty
 from rich.markup import escape
 from typing_extensions import Self
 
@@ -344,6 +345,7 @@ def _is_user_descriptor(value: Any) -> bool:
             classmethod,
             staticmethod,
             property,
+            HybridProperty,
             functools.cached_property,
             EventHandler,
             Var,
@@ -937,6 +939,30 @@ class BaseState(EvenMoreBasicBaseState):
         cls._to_schema.cache_clear()
 
     @classmethod
+    def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
+        """Iterate over the functions defined on the class and its bases.
+
+        Equivalent to `inspect.getmembers(cls, inspect.isfunction)`, except that
+        the class dicts are read directly instead of going through `getattr`, so
+        descriptors are not evaluated. Evaluating them here would run user code
+        (e.g. a hybrid property building its frontend var) while the class is
+        still being constructed.
+
+        Yields:
+            The name and function of each function defined on the class or its bases.
+        """
+        seen: set[str] = set()
+        for klass in cls.__mro__:
+            for name, value in klass.__dict__.items():
+                if name in seen:
+                    continue
+                seen.add(name)
+                if isinstance(value, staticmethod):
+                    value = value.__func__
+                if isinstance(value, FunctionType):
+                    yield name, value
+
+    @classmethod
     def _check_overridden_methods(cls):
         """Check for shadow methods and raise error if any.
 
@@ -945,7 +971,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
-        for name, method in inspect.getmembers(cls, inspect.isfunction):
+        for name, method in cls._iter_functions():
             # Check if the method is overridden and not a dunder method
             if (
                 not name.startswith("__")
