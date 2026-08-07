@@ -319,6 +319,16 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
+    # For wrappers built by the auto-memoize plugin: make the wrapper
+    # transparent to its parent by forwarding runtime-injected props to the
+    # root component of the memo body. The compiled function destructures
+    # ``({children, ...rest})`` — ``rest`` includes ``ref`` via React 19
+    # ref-as-prop — and the root renders ``mergeSlotProps(rest, {...own})``,
+    # which merges following Radix ``Slot`` semantics (own props win, ``on*``
+    # handlers compose, refs compose, ``className`` concatenates, and
+    # object-valued props deep-merge). Set only when the root renders a tag
+    # that can carry props and a ref.
+    forward_root_props: bool = False
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
@@ -1853,6 +1863,17 @@ def create_passthrough_component_memo(
         replacements["export_name"] = tag
     if captured_hole_child:
         replacements["passthrough_hole_child"] = captured_hole_child[0]
+    # Wrappers whose memo body renders ``component`` as its root are made
+    # transparent to their parent: props and refs set on the wrapper at
+    # runtime (e.g. injected by a Radix ``asChild``/``Slot`` parent cloning
+    # its child element) reach the root component instead of being dropped by
+    # the wrapper's destructured signature. This holds for passthrough and
+    # snapshot bodies alike — both render ``component`` as the outermost
+    # element. Untagged roots (``Bare``, ``Cond``, ``Match``, ``Foreach``)
+    # render no element to attach to, and ``Fragment`` accepts neither props
+    # nor refs.
+    if component.tag is not None and not isinstance(component, Fragment):
+        replacements["forward_root_props"] = True
     if replacements:
         definition = dataclasses.replace(definition, **replacements)
 

@@ -48,10 +48,16 @@ def MemoEdgeCasesApp():
         css_marker: str = "memo-css-light"
         counter: int = 0
         markdown_source: str = "Initial **memo-md-home** text"
+        form_default: str = "Ada"
+        submitted: rx.Field[dict] = rx.field(default_factory=dict)
 
         @rx.event
         def toggle_open(self):
             self.is_open = not self.is_open
+
+        @rx.event
+        def handle_submit(self, form_data: dict):
+            self.submitted = form_data
 
         @rx.event
         def set_title_about(self):
@@ -105,6 +111,26 @@ def MemoEdgeCasesApp():
                 rx.markdown(MemoState.markdown_source, id="md-host"),
                 id="md-section",
             ),
+            # Mirrors reflex-dev/reflex#6849: a stateful input under a Radix
+            # ``asChild`` Slot parent. The Slot clones its child (the input's
+            # auto-memo wrapper) and injects ``name``/``id``/a ref onto it —
+            # the wrapper must forward them to the real input or the field
+            # renders unnamed and submits an empty form payload.
+            rx.form.root(
+                rx.form.field(
+                    rx.form.control(
+                        rx.input(default_value=MemoState.form_default),
+                        as_child=True,
+                    ),
+                    rx.form.submit(
+                        rx.button("Submit", id="form-submit", type="submit"),
+                        as_child=True,
+                    ),
+                    name="full_name",
+                ),
+                on_submit=MemoState.handle_submit,
+            ),
+            rx.text(MemoState.submitted.to_string(), id="form-data-out"),
         )
 
     app = rx.App()
@@ -259,3 +285,32 @@ def test_markdown_with_state_var_renders_and_updates(
     expect(host.locator("strong")).to_have_text("memo-md-away")
     expect(host).not_to_contain_text("[object Object]")
     expect(static.locator("strong")).to_have_text("working")
+
+
+def test_as_child_slot_props_reach_memoized_input(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Slot-injected props reach a stateful input through its memo wrapper.
+
+    Regression for reflex-dev/reflex#6849: ``rx.form.control(..., as_child=True)``
+    clones its child element and injects ``name``, ``id``, ``aria-describedby``
+    and a ref onto it. When the child's props reference state, the child is an
+    auto-memo wrapper — if the wrapper drops the injected props, the input
+    renders unnamed and ``new FormData(form)`` omits the field entirely.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+
+    field_input = page.locator("input[name='full_name']")
+    expect(field_input).to_have_count(1)
+    expect(field_input).to_have_value("Ada")
+    assert field_input.get_attribute("id"), (
+        "Slot-injected id must reach the input (validation/aria wiring)"
+    )
+
+    page.click("#form-submit")
+    expect(page.locator("#form-data-out")).to_contain_text('"full_name":"Ada"')
