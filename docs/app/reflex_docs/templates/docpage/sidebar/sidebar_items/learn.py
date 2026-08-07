@@ -119,7 +119,6 @@ def get_sidebar_items_frontend():
 def get_sidebar_items_backend():
     from reflex_docs.pages.docs import (
         api_routes,
-        authentication,
         client_storage,
         database,
         events,
@@ -186,12 +185,6 @@ def get_sidebar_items_backend():
                 database.tables,
                 database.queries,
                 database.relationships,
-            ],
-        ),
-        create_item(
-            "Authentication",
-            children=[
-                authentication.authentication_overview,
             ],
         ),
         create_item(
