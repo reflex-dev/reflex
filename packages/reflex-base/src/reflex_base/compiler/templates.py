@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -549,6 +550,7 @@ def vite_config_template(
     force_full_reload: bool,
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
+    minify: bool = True,
     allowed_hosts: bool | list[str] = False,
 ):
     """Template for vite.config.js.
@@ -559,6 +561,7 @@ def vite_config_template(
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
+        minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
 
     Returns:
@@ -609,14 +612,42 @@ function fullReload() {{
   }};
 }}
 
+// React Router queues manifest updates for lazy routes even when their modules
+// are not loaded. Its HMR runtime throws on those entries before clearing the
+// queue, which blocks every later update until the browser is reloaded.
+function patchReactRouterHmrRuntime() {{
+  const unloadedRouteThrow = /if\s*\(!imported\)\s*\{{\s*throw\s+Error\(\s*`\[react-router:hmr\] No module update found for route [^`]+`,\s*\);\s*\}}/;
+  return {{
+    name: "reflex-patch-react-router-hmr-runtime",
+    apply: "serve",
+    enforce: "post",
+    transform(code, id) {{
+      if (id !== "\0virtual:react-router/hmr-runtime") return;
+      if (!unloadedRouteThrow.test(code)) {{
+        this.warn(
+          "react-router hmr runtime changed; unloaded-route HMR patch skipped",
+        );
+        return;
+      }}
+      return {{
+        code: code.replace(unloadedRouteThrow, "if (!imported) continue;"),
+        map: null,
+      }};
+    }},
+  }};
+}}
+
 export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
+    patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
+    minify: {"true" if minify else "false"},
+    cssMinify: {"true" if minify else "false"},
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{
@@ -706,6 +737,40 @@ def dynamic_components_module_template(
     return f"{imports_str}\n{memoized_code}"
 
 
+# Wrapper expressions that are unambiguous JS callees — identifier or member
+# chains like ``memo`` / ``React.memo``. Anything else (an inline arrow
+# function, a call expression, bracket access) is parenthesized before the
+# component function is appended, so the parens bind as the wrapper's call
+# rather than being swallowed by the wrapper expression's own grammar (e.g.
+# ``(c) => track(c)`` followed by ``(...)`` would otherwise parse the call as
+# part of the arrow body).
+_MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
+
+
+def _render_memo_component(component: dict[str, Any]) -> str:
+    """Render the ``export const`` statement for one memoized component.
+
+    Args:
+        component: The component render dict (name, signature, render, hooks,
+            and the optional ``wrapper`` JS expression the function component
+            is wrapped in).
+
+    Returns:
+        Rendered component export as string.
+    """
+    function_expr = f"""(({component["signature"]}) => {{
+    {_render_hooks(component.get("hooks", {}))}
+    return(
+        {_RenderUtils.render(component["render"])}
+    )
+}})"""
+    wrapper = component.get("wrapper")
+    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        wrapper = f"({wrapper})"
+    export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
+    return f"\nexport const {component['name']} = {export_expr};\n"
+
+
 def memo_components_template(
     imports: list[_ImportDict],
     components: list[dict[str, Any]],
@@ -729,16 +794,7 @@ def memo_components_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
-    components_code = ""
-    for component in components:
-        components_code += f"""
-export const {component["name"]} = memo(({component["signature"]}) => {{
-    {_render_hooks(component.get("hooks", {}))}
-    return(
-        {_RenderUtils.render(component["render"])}
-    )
-}});
-"""
+    components_code = "".join(map(_render_memo_component, components))
 
     functions_code = ""
     for function in functions:
@@ -779,14 +835,7 @@ def memo_single_component_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
-    component_code = f"""
-export const {component["name"]} = memo(({component["signature"]}) => {{
-    {_render_hooks(component.get("hooks", {}))}
-    return(
-        {_RenderUtils.render(component["render"])}
-    )
-}});
-"""
+    component_code = _render_memo_component(component)
 
     return f"""
 {imports_str}

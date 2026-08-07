@@ -1,3 +1,64 @@
+## v0.9.8 (2026-08-04)
+
+### Features
+
+- Add `Env.PREVIEW`, the `VITE_MINIFY` and `REFLEX_NO_AUTOPREFIXER` environment variables, a `minify`/`cssMinify` option on the vite config template, and a `REFLEX_NO_AUTOPREFIXER` toggle in the generated `postcss.config.js` to support the new `preview` run mode. ([#6663](https://github.com/reflex-dev/reflex/issues/6663))
+- Add a staged `Plugin.register_route` hook with `add_page` and `has_app_page` capabilities that runs once per app before its first compilation, and `rx.plugins.get_plugin()` to look up the configured plugin instance by type (raising `ConfigError` on ambiguous matches). ([#6728](https://github.com/reflex-dev/reflex/issues/6728))
+
+### Bug Fixes
+
+- Preserve runtime value types for unannotated `@rx.memo` component parameters. ([#6659](https://github.com/reflex-dev/reflex/issues/6659))
+- Compare timezone-aware datetime Vars by their instants instead of their serialized UTC offsets. ([#6767](https://github.com/reflex-dev/reflex/issues/6767))
+- In python 3.13+, the EventProcessor loop was not catching asyncio.QueueShutdown resulting in uncaught exceptions during shutdown. ([#6773](https://github.com/reflex-dev/reflex/issues/6773))
+- Prevented edits to unloaded routes from poisoning React Router's browser-side HMR queue and blocking all later hot updates until a full page reload. ([#6774](https://github.com/reflex-dev/reflex/issues/6774))
+- Drain queued same-token events during graceful event processor shutdown. ([#6791](https://github.com/reflex-dev/reflex/issues/6791))
+- Custom attributes on a `Field` are now carried onto the rebuilt field by reference instead of deep copy, so stateful callable markers keep their identity and markers holding non-copyable values (locks, clients) no longer crash state class creation. ([#6809](https://github.com/reflex-dev/reflex/issues/6809))
+
+### Miscellaneous
+
+- Bumped bundled frontend dependency pins to their current releases:
+
+  - `react` / `react-dom`: 19.2.6 → 19.2.8
+  - `react-router`, `react-router-dom`, `@react-router/node`, `@react-router/dev`, `@react-router/fs-routes`: 7.15.0 → 7.18.2
+  - `isbot`: 5.1.40 → 5.2.1
+  - `universal-cookie`: 7.2.2 → 8.1.2
+  - `postcss`: 8.5.14 → 8.5.23
+  - `autoprefixer`: 10.5.0 → 10.5.4
+  - `vite`: 8.0.16 → 8.2.0
+  - `@tailwindcss/typography`: 0.5.19 → 0.5.20
+  - Bun: 1.3.13 → 1.3.14
+
+  Also raised the `rich` upper bound to `<16` (adopting rich 15). Replaced the now-redundant `cookie` `package.json` override (`universal-cookie` 8 and `react-router` resolve `cookie` to 1.x on their own) with a `postcss` override pinning it to 8.5.23 (also satisfying `vite` 8.2.0's `^8.5.23`) so transitive resolutions stay on a patched release (>= 8.5.18) for a security advisory.
+
+  ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+- Remove the unused `REFLEX_USE_TURBOPACK` environment variable. Turbopack is a Next.js bundler; the flag has had no effect since Reflex moved to React Router and Vite in 0.8. ([#6803](https://github.com/reflex-dev/reflex/issues/6803))
+
+
+## v0.9.7 (2026-07-15)
+
+### Deprecations
+
+- `ArrayVar.foreach` is deprecated; use `ArrayVar.map` instead. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+
+### Features
+
+- `ArrayVar` gained `map`, `filter`, `reduce`, and `flat_map` operations, and `StringVar.strip` now accepts a `chars` argument alongside new `lstrip`/`rstrip` methods. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+- Added `default_color_mode` to `rx.Config` (`"system"`, `"light"`, or `"dark"`, also settable via `REFLEX_DEFAULT_COLOR_MODE`) and moved the shared `LiteralColorMode` type and color-mode string constants into `reflex_base.constants`. This lets apps set the initial color mode without depending on the Radix themes appearance prop. ([#6716](https://github.com/reflex-dev/reflex/issues/6716))
+- `@rx.memo` now accepts a `wrapper=` argument controlling the JS function that wraps the compiled component definition: keep the default React `memo`, pass a custom function `Var` (e.g. an `rx.vars.FunctionStringVar` carrying its own imports), or pass `wrapper=None` to export the bare function component. ([#6730](https://github.com/reflex-dev/reflex/issues/6730))
+- Added `frozen_lockfile` to `rx.Config` (default `True`, also settable via `REFLEX_FROZEN_LOCKFILE`), controlling whether the frontend package manager runs in lockfile-enforcing mode. Reflex still creates, manages, and syncs the lockfile regardless; the option only controls whether a lockfile/`package.json` mismatch is treated as an error. ([#6763](https://github.com/reflex-dev/reflex/issues/6763))
+
+### Bug Fixes
+
+- Custom attributes set on a `Field` are now preserved (deep-copied) when the state metaclass rebuilds fields, instead of being silently discarded. The reserved `annotation` attribute is never carried over so rebuilt fields are not misidentified as pydantic fields. ([#6726](https://github.com/reflex-dev/reflex/issues/6726))
+- Fix `_get_all_hooks_internal` mutating each component's cached internal hooks with its descendants' hooks, which made memo tag hashes order-dependent and duplicated hooks into memo bodies. ([#6741](https://github.com/reflex-dev/reflex/issues/6741))
+
+### Performance
+
+- Cache framework-path checks in `console.deprecate`'s call-stack walk, making repeat calls ~150x faster (deprecated attributes on hot paths, like `RouterData.page`, no longer cost multiple milliseconds per access). ([#6736](https://github.com/reflex-dev/reflex/issues/6736))
+- Event chaining (`yield OtherState.handler(rows)`) no longer deep-copies payload values that are not attached to any state: only state-bound `MutableProxy` subtrees are copied, making proxy-free payloads ~5x faster to chain. ([#6739](https://github.com/reflex-dev/reflex/issues/6739))
+- `Var.to()` and `Var.guess_type()` resolve their target Var subclass through cached registry lookups instead of scanning the full registry with `safe_issubclass` on every call (~70% of the cost of constructing a var operation). ([#6742](https://github.com/reflex-dev/reflex/issues/6742))
+
+
 ## v0.9.6.post1 (2026-06-26)
 
 ### Features

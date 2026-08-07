@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -493,7 +494,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> builtins.set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -2136,8 +2137,9 @@ class Component(BaseComponent, ABC):
         Returns:
             The code that should appear just before user-defined hooks.
         """
-        # Store the code in a set to avoid duplicates.
-        code = self._get_hooks_internal()
+        # Copy the cached dict from _get_hooks_internal so updating it with
+        # the children's hooks below does not pollute this node's cache.
+        code = dict(self._get_hooks_internal())
 
         # Add the hook code for the children.
         for child in self.children:

@@ -13,7 +13,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex_base import constants
-from reflex_base.constants.base import LogLevel
+from reflex_base.constants.base import LiteralColorMode, LogLevel
 from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
 from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
@@ -157,14 +157,15 @@ class BaseConfig:
         frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
-        api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-        deploy_url: The url the frontend will be hosted on.
+        api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
+        deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
         backend_host: The url the backend will be hosted on.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
         redis_url: The redis url.
         telemetry_enabled: Telemetry opt-in.
         bun_path: The bun path.
+        frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
@@ -175,8 +176,9 @@ class BaseConfig:
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
-        env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
+        env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
@@ -216,6 +218,8 @@ class BaseConfig:
 
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
+    frozen_lockfile: bool = True
+
     static_page_generation_timeout: int = 60
 
     cors_allowed_origins: Annotated[
@@ -250,6 +254,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    default_color_mode: LiteralColorMode = "system"
 
     show_built_with_reflex: bool | None = None
 
@@ -313,16 +319,7 @@ class Config(BaseConfig):
     REFLEX_FRONTEND_PORT=3001 reflex run
     ```
 
-    ## Key Configuration Areas
-
-    - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
-    - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
-    - **Database**: `db_url`, `async_db_url`, `redis_url`
-    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
-    - **State Management**: `state_manager_mode`, `state_auto_setters`
-    - **Plugins**: `plugins`, `disable_plugins`
-
-    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.
+    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for a guided overview of the most commonly tweaked settings.
     """
 
     # Track whether the app name has already been validated for this Config instance.
@@ -407,6 +404,14 @@ class Config(BaseConfig):
             and not self.redis_url
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
+
+        allowed_color_modes = constants.LiteralColorMode.__args__
+        if self.default_color_mode not in allowed_color_modes:
+            msg = (
+                f"default_color_mode must be one of "
+                f"{allowed_color_modes}, but got {self.default_color_mode!r}."
+            )
             raise ConfigError(msg)
 
     def _normalize_plugins(self):

@@ -1,3 +1,17 @@
+## v0.9.8 (2026-08-04)
+
+### Miscellaneous
+
+- Bumped `react-error-boundary` 6.1.1 → 6.1.2. ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+
+
+## v0.9.7 (2026-07-15)
+
+### Miscellaneous
+
+- `rx.upload` internals use `ArrayVar.map` instead of the deprecated `foreach`. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+
+
 ## v0.9.6 (2026-06-25)
 
 ### Bug Fixes

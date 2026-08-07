@@ -4,28 +4,16 @@ import reflex as rx
 
 # Billing
 
-## Overview 
+## Overview
 
-Billing for Reflex Cloud is monthly per project. Project owners and admins are able to view and manage the billing page. 
-
-The billing for a project is comprised of two parts - number of `seats` and `compute`. 
+Reflex Cloud billing combines organization seats and app compute. Organization admins manage billing from **Billing** in the organization sidebar.
 
 ## Seats
 
-Projects on a paid plan can invite collaborators to join their project. 
+Each organization member uses a seat. A pending invitation also holds a seat until the person joins or an admin revokes it.
 
-Each additional collaborator is considered a `seat` and is charged on a flat monthly rate. Project owners and admins can manage permissions and roles for each seat in the settings tab on the project page. 
+Manage members and invitations from **Members** in the organization sidebar. See [Members & seats](/docs/ai/organization/members/).
 
 ## Compute
 
-Reflex Cloud is billed on a per second basis so you only pay for when your app is being used by your end users. When your app is idle, you are not charged. 
-
-For more information on compute pricing, please see the [compute](/docs/hosting/compute/) page.
-
-## Manage Billing
-
-To manage your billing, you can go to the `Billing` tab in the Cloud UI on the project page.
-
-## Setting Billing Limits
-
-If you want to set a billing limit for your project, you can do so by going to the `Billing` tab in the Cloud UI on the project page.
+Compute charges depend on the resources your apps use and how long they run. See [Compute](/docs/hosting/compute/) for billing behavior and usage monitoring.

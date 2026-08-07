@@ -176,6 +176,12 @@ class ReactRouter(Javascript):
 
 
 # Color mode variables
+SYSTEM_COLOR_MODE: str = "system"
+LIGHT_COLOR_MODE: str = "light"
+DARK_COLOR_MODE: str = "dark"
+LiteralColorMode = Literal["system", "light", "dark"]
+
+
 class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 
@@ -186,7 +192,7 @@ class ColorMode(SimpleNamespace):
     SET = "setColorMode"
 
 
-LITERAL_ENV = Literal["dev", "prod"]
+LITERAL_ENV = Literal["dev", "preview", "prod"]
 
 
 # Env modes
@@ -194,6 +200,7 @@ class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
+    PREVIEW = "preview"
     PROD = "prod"
 
 

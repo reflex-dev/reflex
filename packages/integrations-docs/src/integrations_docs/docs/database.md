@@ -1,95 +1,85 @@
 ---
 tags: Data Infrastructure
-description: Connect to SQL or NoSQL databases to query, store, and manage structured data.
+description: Connect Reflex Build apps to PostgreSQL, MySQL, MSSQL, or SQLite databases.
 ---
 # Database Integration
 
-The Database Integration allows you to connect your AI-generated applications to real databases, automatically generating schemas and enabling data-driven functionality.
+The Database Integration connects Reflex Build apps to an existing SQL database. When you enable the connection for an app, Reflex Build can inspect its schema and use that structure while generating the app.
 
 ## Supported Databases
 
-- **PostgreSQL** - Recommended for production applications
-- **MySQL** - Popular open-source database
-- **SQLite** - Lightweight database, perfect for development and small applications
-- **MSSQL** - Microsoft SQL Server support
+- **PostgreSQL**
+- **MySQL**
+- **MSSQL** (Microsoft SQL Server)
+- **SQLite**
 
-## Getting Started
+## Add a Database Integration
 
-### Opening the Database Integration
+1. Open **Integrations** from the project sidebar.
+2. Select **Add Integration**.
+3. Search for and select **Database**.
+4. Configure the connection using **Connection Details** or **Database URI**.
+5. Optionally enter an integration name to distinguish this connection from others in the project.
+6. Select **Save Changes**.
 
-1. Navigate to your app in the AI Builder
-2. Open the **Settings drawer** (gear icon)
-3. Click on the **Integrations** tab
-4. Find and enable the **Database** integration
+The integration is saved at the project level. Open an app's **Integrations** panel to enable it for that app when needed.
 
-### Connection Methods
+## Connection Details
 
-The Database Integration offers two convenient ways to connect:
+Use **Connection Details** to enter each part of the connection separately.
 
-#### 1. Connection Details (Recommended)
+For PostgreSQL, MySQL, and MSSQL, choose the database type and enter:
 
-This user-friendly form breaks down your database connection into individual fields:
+- `hostname`: the database server address.
+- `port`: defaults to `5432` for PostgreSQL, `3306` for MySQL, or `1433` for MSSQL.
+- `username` and `password`: the database credentials.
+- `database_name`: the database to connect to.
 
-**For PostgreSQL, MySQL and MSSQL:**
-- **Database Type**: Select from dropdown (PostgreSQL/MySQL/MSSQL)
-- **Hostname**: Your database server address (e.g., `localhost`, `db.company.com`)
-- **Port**: Automatically filled (PostgreSQL: 5432, MySQL: 3306, MSSQL: 1433) or specify custom port
-- **Username**: Your database username
-- **Password**: Your database password (securely handled)
-- **Database Name**: The specific database to connect to
+For MSSQL, **Trust Server Certificate** skips certificate identity validation. Use it only as a temporary workaround for an untrusted or self-signed server certificate, and prefer configuring a certificate that the client trusts.
 
-**For SQLite:**
-- **Database Type**: Select "SQLite" from dropdown
-- **SQLite Download URL**: Either a local file path or HTTP URL to download the database file
+For SQLite, select **SQLite** and enter an HTTP or HTTPS **SQLite Download URL**. Reflex Build downloads the database file before using it.
 
-#### 2. Database URI
+## Database URI
 
-For advanced users who prefer the traditional connection string format:
+Use **Database URI** when you have a complete connection URI for one of the supported database types. For example:
 
-**PostgreSQL:**
-```
-postgresql://username:password@hostname:port/database_name
+```text
+postgresql://username:password@hostname:5432/database_name
 ```
 
-**MySQL:**
+Enter the URI in `db_url`, then select **Save Changes**. Reflex Build selects the database driver automatically. Include provider-required connection options as query parameters when needed.
+
+## Connect through an SSH Tunnel
+
+Use an SSH tunnel when the database is on a private network but can be reached through a bastion host. This option is available for PostgreSQL, MySQL, and MSSQL in both connection modes. It is not available for SQLite.
+
+1. Enter the database connection details or URI. Keep the database hostname and port set to the address the bastion host uses to reach the database.
+2. Turn on **Connect via SSH tunnel**.
+3. Enter the `ssh_hostname`, `ssh_port` (usually `22`), and `ssh_username` for the bastion host.
+4. Paste the corresponding PEM-formatted **SSH private key**.
+5. Select **Save Changes**.
+
+The SSH account must allow port forwarding to the database host and port. Use a dedicated, restricted SSH key and database user for Reflex Build.
+
+```md alert warning
+# Keep credentials private
+
+Enter database passwords, connection URIs, and SSH private keys only in the integration form. Do not put them in prompts, knowledge, source code, or screenshots.
 ```
-mysql://username:password@hostname:port/database_name
-```
 
-**MSSQL:**
-```
-mssql://username:password@hostname:port/database_name
-```
+## Enable the Integration for an App
 
-**SQLite:**
-```
-sqlite:///path/to/database.sqlite
-sqlite+https://example.com/database.sqlite
-```
+Open the app's **Integrations** panel and enable the saved database connection. Reflex Build then connects to the database and, when the app does not already have a model file, creates the app's data models from the schema.
 
-## Database URI Components
+If the connection fails, check that:
 
-Protocol (postgresql://) - Database type identifier
-Username (admin) - Database user credentials
-Password (secret123) - User password (kept secure)
-Hostname (db.company.com) - Server address
-Port (5432) - Connection port
-Database (mydatabase) - Target database name
-
-## Connection Process
-
-1. **Choose your method**: Use either Connection Details form or Database URI
-2. **Fill in credentials**: Provide your database connection information
-3. **Click Connect**: The system will validate and test your connection
-4. **Schema Generation**: Upon successful connection, the system automatically:
-   - Connects to your database
-   - Analyzes the database structure
-   - Generates SQLAlchemy models
-   - Makes schema available to the AI for queries
-
+- The database or bastion host is reachable.
+- The ports are open and the credentials are valid.
+- The database user can read the schema and has only the data permissions the app needs.
+- The SSH user can forward traffic to the database when tunneling is enabled.
 
 ```md alert
 # NoSQL Databases
 
-NoSQL databases (e.g., MongoDB, DynamoDB) can be accessed via Python SDKs which the AI Builder can install if you prompt for it. The first class Database integration currently supports only SQL databases.
+Use the dedicated MongoDB integration when applicable. For another NoSQL database, add its Python SDK or configure a custom integration; the Database Integration supports SQL databases.
 ```

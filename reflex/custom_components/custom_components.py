@@ -615,13 +615,15 @@ def _make_pyi_files():
     """Create pyi files for the custom component."""
     from reflex_base.utils.pyi_generator import PyiGenerator
 
-    for top_level_dir in Path.cwd().iterdir():
-        if not top_level_dir.is_dir() or top_level_dir.name.startswith("."):
-            continue
-        for dir, _, _ in top_level_dir.walk():
-            if "__pycache__" in dir.name:
-                continue
-            PyiGenerator().scan_all([dir])
+    targets = [
+        path
+        for path in Path.cwd().iterdir()
+        if path.is_dir()
+        and not path.name.startswith(".")
+        and path.name != "__pycache__"
+    ]
+    if targets:
+        PyiGenerator().scan_all(targets)
 
 
 def _run_build():

@@ -50,7 +50,6 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.state import (
     BaseState,
-    ImmutableMutableProxy,
     ImmutableStateError,
     MutableProxy,
     OnLoadInternalState,
@@ -4243,6 +4242,73 @@ def test_bare_mixin_state() -> None:
     assert ChildBareMixinState.get_root_state() == State
 
 
+class MarkerMixin(State, mixin=True):
+    """A mixin state with a getter and handler carrying custom function attributes."""
+
+    @rx.var
+    def marked_computed(self) -> str:
+        """A computed var whose getter is tagged with a custom attribute.
+
+        Returns:
+            A static string.
+        """
+        return "marked"
+
+    marked_computed.fget._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+
+    def marked_handler(self):
+        """An event handler tagged with a custom attribute."""
+
+    marked_handler._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+
+    def kwonly_default_handler(self, *, count: int = 1) -> int:
+        """An event handler with a keyword-only default argument.
+
+        Args:
+            count: A keyword-only argument with a default.
+
+        Returns:
+            The count.
+        """
+        return count
+
+
+class UsesMarkerMixin(MarkerMixin, State):
+    """A state that pulls in the marked mixin getter/handler."""
+
+
+def test_copy_fn_preserves_custom_function_attributes() -> None:
+    """Test that _copy_fn preserves arbitrary attributes set on mixin functions."""
+    orig_computed_fget = MarkerMixin.__dict__["marked_computed"].fget
+    copied_computed_fget = UsesMarkerMixin.computed_vars["marked_computed"].fget
+    assert copied_computed_fget is not orig_computed_fget
+    assert (
+        copied_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        is orig_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+    )
+
+    orig_handler_fn = MarkerMixin.__dict__["marked_handler"]
+    copied_handler_fn = UsesMarkerMixin.event_handlers["marked_handler"].fn
+    assert copied_handler_fn is not orig_handler_fn
+    assert (
+        copied_handler_fn._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        is orig_handler_fn._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+    )
+
+    # The copy's __dict__ is independent of the source function's __dict__.
+    assert copied_handler_fn.__dict__ is not orig_handler_fn.__dict__
+    copied_handler_fn.__dict__["_leaked"] = True
+    assert "_leaked" not in orig_handler_fn.__dict__
+
+
+def test_copy_fn_preserves_kwonly_defaults() -> None:
+    """Test that _copy_fn preserves keyword-only default arguments."""
+    handler_fn = UsesMarkerMixin.event_handlers["kwonly_default_handler"].fn
+    assert handler_fn.__kwdefaults__ == {"count": 1}
+    instance = UsesMarkerMixin()
+    assert handler_fn(instance) == 1
+
+
 def test_mixin_event_handler_preserves_event_actions() -> None:
     """Test that event_actions from @rx.event decorator are preserved when inherited from mixins."""
 
@@ -4256,6 +4322,21 @@ def test_mixin_event_handler_preserves_event_actions() -> None:
 
     handler = UsesEventActionsMixin.handle_with_actions
     assert handler.event_actions == {"preventDefault": True, "stopPropagation": True}
+
+
+def test_mixin_event_handler_preserves_background_task_marker() -> None:
+    """Test that the background task marker is preserved when inherited from mixins."""
+
+    class BackgroundTaskMixin(BaseState, mixin=True):
+        @rx.event(background=True)
+        async def handle_in_background(self):
+            pass
+
+    class UsesBackgroundTaskMixin(BackgroundTaskMixin, State):
+        pass
+
+    handler = UsesBackgroundTaskMixin.handle_in_background
+    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_assignment_to_undeclared_vars():
@@ -4959,64 +5040,6 @@ async def test_add_dependency_get_state_regression(
     )
     other_state = await state.get_state(OtherState)
     await other_state.fetch_data_state()  # Should not raise exception.
-
-
-class MutableProxyState(BaseState):
-    """A test state with a MutableProxy var."""
-
-    data: dict[str, list[int]] = {"a": [1], "b": [2]}
-
-
-@pytest.mark.asyncio
-async def test_rebind_mutable_proxy(
-    token: str, attached_mock_event_context: EventContext
-) -> None:
-    """Test that previously bound MutableProxy instances can be rebound correctly."""
-    state_manager = attached_mock_event_context.state_manager
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        state.router = RouterData.from_router_data({
-            "query": {},
-            "token": token,
-            "sid": "test_sid",
-        })
-        assert isinstance(state, MutableProxyState)
-        assert isinstance(state.data, MutableProxy)
-        assert not isinstance(state.data, ImmutableMutableProxy)
-        state_proxy = StateProxy(state)
-        assert isinstance(state_proxy.data, ImmutableMutableProxy)
-    async with state_proxy:
-        # This assigns an ImmutableMutableProxy to data["a"].
-        state_proxy.data["a"] = state_proxy.data["b"]
-    assert isinstance(state_proxy.data["a"], ImmutableMutableProxy)
-    assert state_proxy.data["a"] is not state_proxy.data["b"]
-    assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
-
-    # Rebinding with a non-proxy should return a MutableProxy object (not ImmutableMutableProxy).
-    assert isinstance(state_proxy.__wrapped__.data["a"], MutableProxy)
-    assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
-
-    # Flush any oplock.
-    await state_manager.close()
-
-    new_state_proxy = StateProxy(state)
-    assert state_proxy is not new_state_proxy
-    assert new_state_proxy.data["a"]._self_state is new_state_proxy
-    assert state_proxy.data["a"]._self_state is state_proxy
-    assert state_proxy.__wrapped__.data["a"]._self_state is state_proxy.__wrapped__
-
-    async with state_proxy:
-        state_proxy.data["a"].append(3)
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        assert isinstance(state, MutableProxyState)
-        assert state.data["a"] == [2, 3]
-        # Object identity persists across serialization, so data["b"] is also mutated.
-        assert state.data["b"] == [2, 3]
 
 
 def test_override_base_method_skips_event_handler_wrapping():
