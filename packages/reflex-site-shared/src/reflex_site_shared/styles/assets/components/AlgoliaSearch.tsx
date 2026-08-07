@@ -14,6 +14,13 @@ const MAX_CACHED_QUERIES = 50;
 const ROOT_THEME_SELECTOR = '.radix-themes[data-is-root-theme="true"]';
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
+type ResultSection =
+  | "XY"
+  | "Components"
+  | "API Reference"
+  | "Docs"
+  | "Blog"
+  | "Reflex";
 
 interface AlgoliaHit {
   objectID: string;
@@ -72,7 +79,7 @@ function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
   });
 }
 
-function resultSection(url: string): string {
+function resultSection(url: string): ResultSection {
   const path = new URL(url).pathname;
   if (path.startsWith("/docs/xy/")) {
     return "XY";
@@ -147,6 +154,104 @@ function SearchIcon({ size = 16 }: { size?: number }) {
         strokeLinecap="round"
         strokeWidth="1.5"
       />
+    </svg>
+  );
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled result section: ${value}`);
+}
+
+function ResultIcon({ section }: { section: ResultSection }) {
+  let glyph: React.ReactNode;
+
+  switch (section) {
+    case "XY":
+      glyph = (
+        <>
+          <path d="M5 4v15h15" />
+          <path d="m8 15 3-4 3 2 4-6" />
+          <circle cx="8" cy="15" fill="currentColor" r="1" stroke="none" />
+          <circle cx="11" cy="11" fill="currentColor" r="1" stroke="none" />
+          <circle cx="14" cy="13" fill="currentColor" r="1" stroke="none" />
+          <circle cx="18" cy="7" fill="currentColor" r="1" stroke="none" />
+        </>
+      );
+      break;
+    case "Components":
+      glyph = (
+        <>
+          <rect height="6" rx="1.25" width="6" x="4" y="4" />
+          <rect height="6" rx="1.25" width="6" x="14" y="4" />
+          <rect height="6" rx="1.25" width="6" x="4" y="14" />
+          <rect height="6" rx="1.25" width="6" x="14" y="14" />
+        </>
+      );
+      break;
+    case "API Reference":
+      glyph = (
+        <>
+          <path d="m9 7-5 5 5 5" />
+          <path d="m15 7 5 5-5 5" />
+          <path d="m13.5 5-3 14" />
+        </>
+      );
+      break;
+    case "Docs":
+      glyph = (
+        <>
+          <path d="M4 5.5c2.75-.5 5.4.1 8 1.8v12c-2.6-1.7-5.25-2.3-8-1.8z" />
+          <path d="M20 5.5c-2.75-.5-5.4.1-8 1.8v12c2.6-1.7 5.25-2.3 8-1.8z" />
+        </>
+      );
+      break;
+    case "Blog":
+      glyph = (
+        <>
+          <path d="M6 3.5h8l4 4V20H6z" />
+          <path d="M14 3.5V8h4" />
+          <path d="M9 12h6M9 15h6" />
+        </>
+      );
+      break;
+    case "Reflex":
+      glyph = (
+        <g transform="translate(3 3) scale(1.285714)">
+          <rect
+            fill="currentColor"
+            height="14"
+            rx="3.5"
+            stroke="none"
+            width="14"
+          />
+          <path
+            d="M8.75 8.167v2.77c0 .081.065.147.146.147h1.458c.08 0 .146-.066.146-.146V8.313a.146.146 0 0 0-.146-.146zm-5.104-5.25a.146.146 0 0 0-.146.146v7.875c0 .08.065.146.146.146h1.458c.08 0 .146-.066.146-.146V8.313c0-.08.065-.146.146-.146H8.75v-1.75H5.396a.146.146 0 0 1-.146-.146V4.813c0-.08.065-.146.146-.146h3.208c.08 0 .146.065.146.146v1.604h1.604c.08 0 .146-.065.146-.146V3.063a.146.146 0 0 0-.146-.146z"
+            fill="var(--secondary-1, #fff)"
+            stroke="none"
+          />
+        </g>
+      );
+      break;
+    default:
+      return assertNever(section);
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="ReflexSearch-resultIcon"
+      data-section={section}
+      fill="none"
+      focusable="false"
+      height="18"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      viewBox="0 0 24 24"
+      width="18"
+    >
+      {glyph}
     </svg>
   );
 }
@@ -510,7 +615,7 @@ export function AlgoliaSearch() {
                             onClick={closeSearch}
                           >
                             <span className="ReflexSearch-hitIcon">
-                              <SearchIcon />
+                              <ResultIcon section={resultSection(hit.url)} />
                             </span>
                             <span className="ReflexSearch-hitContent">
                               <span className="ReflexSearch-hitMeta">
