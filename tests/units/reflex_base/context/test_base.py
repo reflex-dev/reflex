@@ -6,7 +6,7 @@ import pytest
 from reflex_base.context.base import BaseContext
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class _TestContext(BaseContext):
     """Minimal BaseContext subclass for unit testing."""
 
@@ -83,7 +83,7 @@ def test_ensure_context_attached():
 def test_subclasses_have_independent_context_vars():
     """Two BaseContext subclasses do not share their ContextVar."""
 
-    @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+    @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
     class _OtherContext(BaseContext):
         value: int = 0
 
@@ -92,3 +92,33 @@ def test_subclasses_have_independent_context_vars():
     with ctx_a, ctx_b:
         assert _TestContext.get().label == "a"
         assert _OtherContext.get().value == 42
+
+
+def test_identity_equality_for_subclasses_with_eq_false():
+    """Two BaseContext subclass instances with the same fields are not equal."""
+    ctx_a = _TestContext(label="same")
+    ctx_b = _TestContext(label="same")
+    assert ctx_a is not ctx_b
+    assert ctx_a != ctx_b
+    assert hash(ctx_a) != hash(ctx_b)
+
+
+def test_identity_equality_isolates_entered_state():
+    """Two equal-by-field instances can be entered independently."""
+    ctx_a = _TestContext(label="same")
+    ctx_b = _TestContext(label="same")
+    with ctx_a:
+        # Entering ctx_b must not see ctx_a's attachment as its own.
+        with ctx_b:
+            assert _TestContext.get() is ctx_b
+        assert _TestContext.get() is ctx_a
+
+
+async def test_async_context_manager():
+    """Async __aenter__/__aexit__ attaches and detaches the context."""
+    ctx = _TestContext(label="async")
+    async with ctx as entered:
+        assert entered is ctx
+        assert _TestContext.get() is ctx
+    with pytest.raises(LookupError):
+        _TestContext.get()
