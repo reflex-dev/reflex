@@ -1,7 +1,6 @@
 import reflex as rx
 from reflex.istate.manager import StateManager
 from reflex.utils.imports import ImportVar
-from reflex_docgen import generate_class_documentation
 
 from reflex_docs.templates.docpage import docpage
 
@@ -11,7 +10,7 @@ modules = [
     rx.App,
     rx.Component,
     rx.ComponentState,
-    (rx.Config, rx.config.BaseConfig),
+    rx.Config,
     rx.event.Event,
     rx.event.EventHandler,
     rx.event.EventSpec,
@@ -24,20 +23,16 @@ modules = [
     rx.Var,
 ]
 
+# Classes whose fields can be overridden via prefixed environment variables;
+# the fields table gets an extra column listing each generated env var name.
+env_var_prefixes = {rx.Config: "REFLEX_"}
+
 from .env_vars import env_vars_doc
 
 pages = []
 for module in modules:
-    if isinstance(module, tuple):
-        module, *extra_modules = module
-        extra_fields = ()
-        for extra_module in extra_modules:
-            extra_doc = generate_class_documentation(extra_module)
-            extra_fields = extra_fields + extra_doc.fields
-    else:
-        extra_fields = None
     name = module.__name__.lower()
-    docs = generate_docs(name, module, extra_fields=extra_fields)
+    docs = generate_docs(name, module, env_var_prefix=env_var_prefixes.get(module))
     title = name.replace("_", " ").title()
     page_data = docpage(f"/api-reference/{name}/", title)(docs)
     # Keep the short sidebar/nav label (e.g. "App"), but emit a descriptive HTML
