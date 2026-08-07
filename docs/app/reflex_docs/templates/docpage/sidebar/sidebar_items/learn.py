@@ -121,13 +121,14 @@ def get_sidebar_items_backend():
         api_routes,
         client_storage,
         database,
+        enterprise,
         events,
         state,
         state_structure,
         utility_methods,
         vars,
     )
-    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem, SideBarSection
 
     items = [
         SideBarSection(
@@ -185,6 +186,18 @@ def get_sidebar_items_backend():
                 database.tables,
                 database.queries,
                 database.relationships,
+            ],
+        ),
+        SideBarItem(
+            names="Authentication",
+            children=[
+                # Cross-reference to the enterprise docs, excluded from the
+                # prev/next chain so that page keeps its enterprise-flow footer.
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.auth.overview.path,
+                    exclude_from_prev_next=True,
+                ),
             ],
         ),
         create_item(
