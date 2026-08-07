@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
-import json
 from collections import deque
 from collections.abc import (
     AsyncGenerator,
@@ -19,7 +18,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.utils import exceptions
-from reflex_base.utils.format import json_dumps
+from reflex_base.utils.format import orjson_dumps_socket, orjson_loads
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -507,8 +506,8 @@ def _decode_event_args(encoded: str | None) -> dict[str, Any]:
     if not encoded:
         return {}
     try:
-        decoded = json.loads(encoded)
-    except json.JSONDecodeError as exc:
+        decoded = orjson_loads(encoded)
+    except ValueError as exc:
         raise HTTPException(
             status_code=400, detail="Malformed upload event args."
         ) from exc
@@ -630,7 +629,7 @@ async def _upload_buffered_file(
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
-            yield json_dumps(StateUpdate(delta=delta)) + "\n"
+            yield orjson_dumps_socket(StateUpdate(delta=delta)) + "\n"
 
     return DisconnectAwareStreamingResponse(
         _ndjson_updates(),

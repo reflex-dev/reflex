@@ -13,6 +13,7 @@ from reflex_base.plugins.embed import get_embed_plugin
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
 from reflex.utils import console, net, path_ops
+from reflex.utils.format import orjson_dumps
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -363,13 +364,15 @@ def sync_root_package_json_to_web() -> bool:
         return sync_root_lockfile_to_web(constants.PackageJson.PATH, prune=False)
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
-    rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    rendered = _compile_package_json().encode("utf-8")
+    # Compare bytes so a damaged (non-UTF-8) .web copy is overwritten rather
+    # than raising a decode error out of the sync.
+    if output_path.exists() and output_path.read_bytes() == rendered:
         return False
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered)
+    output_path.write_bytes(rendered)
     return changed
 
 
@@ -420,8 +423,9 @@ def _read_package_json_object(package_json_path: Path) -> dict:
     if not package_json_path.exists():
         return {}
     try:
-        parsed = json.loads(package_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
+    # ValueError covers both json.JSONDecodeError and UnicodeDecodeError.
+    except (ValueError, OSError) as e:
         console.warn(f"Failed to read {package_json_path}: {e}; treating it as empty.")
         return {}
     if not isinstance(parsed, dict):
@@ -522,7 +526,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         react_router_config["prerender"] = True
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 
-    return f"export default {json.dumps(react_router_config)};"
+    return f"export default {orjson_dumps(react_router_config)};"
 
 
 def _compile_package_json():
@@ -593,14 +597,16 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     console.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(json.dumps(package_json))
+    package_json_path.write_text(orjson_dumps(package_json), encoding="utf-8")
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    # Bytes, matching sync_root_package_json_to_web() so the file it writes is
+    # byte-identical to the rendered content on every platform.
+    output_path.write_bytes(_compile_package_json().encode("utf-8"))
 
 
 def _compile_vite_config(config: Config):

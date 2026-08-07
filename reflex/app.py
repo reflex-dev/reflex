@@ -9,7 +9,6 @@ import dataclasses
 import functools
 import importlib
 import inspect
-import json
 import operator
 import sys
 import time
@@ -27,6 +26,7 @@ from contextvars import Token
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
+from engineio import json as engineio_json
 from reflex_base import constants
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config
@@ -116,6 +116,13 @@ else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+# Socket.IO codec: encodes non-finite floats as sentinel strings that the
+# frontend reviver restores, escaping user strings that would collide.
+_SOCKET_JSON_CODEC = SimpleNamespace(
+    dumps=staticmethod(format.orjson_dumps_socket),
+    loads=staticmethod(format.orjson_loads),
+)
 
 
 def default_frontend_exception_handler(exception: Exception) -> None:
@@ -575,16 +582,22 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
-                json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
-                ),
+                json=_SOCKET_JSON_CODEC,
                 allow_upgrades=False,
                 transports=[config.transport],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
             raise RuntimeError(msg)
+        else:
+            # A custom server that kept socket.io's default codec does not
+            # escape user strings colliding with the non-finite float sentinels
+            # the frontend revives, so install ours as passing `json=` would
+            # have; a codec the user chose deliberately is left alone.
+            # socket.io types this attribute as the json module it defaults to.
+            packet_class: Any = self.sio.packet_class
+            if packet_class.json is engineio_json:
+                packet_class.json = _SOCKET_JSON_CODEC
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")
@@ -1681,8 +1694,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
             )
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
-            with stateful_pages_marker.open("w") as f:
-                json.dump(list(self._stateful_pages), f)
+            # Routes may be non-ASCII and the reader decodes UTF-8 bytes.
+            stateful_pages_marker.write_text(
+                format.orjson_dumps(list(self._stateful_pages)), encoding="utf-8"
+            )
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
@@ -2080,8 +2095,8 @@ class EventNamespace(AsyncNamespace):
                 f" Event data: {fields}"
             )
             try:
-                fields = json.loads(fields)
-            except json.JSONDecodeError as ex:
+                fields = format.orjson_loads(fields)
+            except ValueError as ex:
                 msg = f"Failed to deserialize event data: {fields}."
                 raise exceptions.EventDeserializationError(msg) from ex
 
