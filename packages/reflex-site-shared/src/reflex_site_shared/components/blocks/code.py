@@ -147,7 +147,7 @@ def doccmdoutput(
                 }
             },
             style=fonts.code,
-            font_family="JetBrains Mono",
+            font_family="var(--font-jetbrains)",
             width="100%",
         ),
         shiki_code_block(
@@ -163,7 +163,7 @@ def doccmdoutput(
                 }
             },
             style=fonts.code,
-            font_family="JetBrains Mono",
+            font_family="var(--font-jetbrains)",
             width="100%",
         ),
         padding_y="1em",

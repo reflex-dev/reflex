@@ -345,6 +345,34 @@ def sync_root_lockfile_to_web(filename: str, prune: bool = True) -> bool:
     )
 
 
+def sync_root_package_json_to_web() -> bool:
+    """Render the persisted root package.json into ``.web``.
+
+    ``package.json`` is not a plain lockfile: Reflex owns required fields such
+    as the dev/build scripts, while the persisted root copy carries dependency
+    pins and user-added metadata. Re-render it instead of byte-copying so a
+    damaged root copy cannot remove required framework entries from ``.web``.
+
+    Returns:
+        True if an existing ``.web/package.json`` was meaningfully changed.
+        Initial creation does not count as a meaningful change since no install
+        cache could exist yet.
+    """
+    root_package_json_path = get_root_lockfile_path(constants.PackageJson.PATH)
+    if not root_package_json_path.exists():
+        return sync_root_lockfile_to_web(constants.PackageJson.PATH, prune=False)
+
+    output_path = get_web_lockfile_path(constants.PackageJson.PATH)
+    rendered = _compile_package_json()
+    if output_path.exists() and output_path.read_text() == rendered:
+        return False
+
+    changed = output_path.exists()
+    path_ops.mkdir(output_path.parent)
+    output_path.write_text(rendered)
+    return changed
+
+
 def sync_root_lockfiles_to_web() -> bool:
     """Mirror every persisted lockfile into ``.web``.
 
@@ -353,7 +381,7 @@ def sync_root_lockfiles_to_web() -> bool:
     """
     # Materialize results so every lockfile is synced
     changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES] + [
-        sync_root_lockfile_to_web(name, prune=False) for name in NO_PRUNE_LOCKFILE_NAMES
+        sync_root_package_json_to_web()
     ]
     return any(changed)
 
@@ -379,6 +407,32 @@ def sync_web_lockfiles_to_root():
         sync_web_lockfile_to_root(name)
 
 
+def _read_package_json_object(package_json_path: Path) -> dict:
+    """Read a package.json file as a JSON object.
+
+    Args:
+        package_json_path: The package.json file to read.
+
+    Returns:
+        The parsed JSON object, or an empty dict if the file is missing,
+        cannot be parsed, or is not a JSON object.
+    """
+    if not package_json_path.exists():
+        return {}
+    try:
+        parsed = json.loads(package_json_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        console.warn(f"Failed to read {package_json_path}: {e}; treating it as empty.")
+        return {}
+    if not isinstance(parsed, dict):
+        console.warn(
+            f"Expected {package_json_path} to contain a JSON object, "
+            f"got {type(parsed).__name__}; treating it as empty."
+        )
+        return {}
+    return parsed
+
+
 def _read_persisted_package_json() -> dict:
     """Read the persisted package.json from the app root.
 
@@ -386,23 +440,7 @@ def _read_persisted_package_json() -> dict:
         The parsed JSON object, or an empty dict if the file is missing,
         cannot be parsed, or is not a JSON object.
     """
-    root_package_json_path = get_root_lockfile_path(constants.PackageJson.PATH)
-    if not root_package_json_path.exists():
-        return {}
-    try:
-        parsed = json.loads(root_package_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
-        console.warn(
-            f"Failed to read {root_package_json_path}: {e}; starting with empty dependency lists."
-        )
-        return {}
-    if not isinstance(parsed, dict):
-        console.warn(
-            f"Expected {root_package_json_path} to contain a JSON object, "
-            f"got {type(parsed).__name__}; starting with empty dependency lists."
-        )
-        return {}
-    return parsed
+    return _read_package_json_object(get_root_lockfile_path(constants.PackageJson.PATH))
 
 
 def initialize_web_directory():
@@ -494,12 +532,16 @@ def _compile_package_json():
     ``reflex.lock/package.json`` (when present) so resolved version pins
     survive a fresh ``reflex init``. User-added ``scripts`` are preserved;
     only the framework-owned ``dev`` and ``export`` entries are refreshed
-    from constants. User-added ``overrides`` are kept, with the
-    framework-owned entries refreshed on top. Any other persisted fields
-    (e.g. ``packageManager``, ``engines``) are passed through unchanged.
-    The framework-managed entries in ``constants.PackageJson.DEPENDENCIES``
-    / ``DEV_DEPENDENCIES`` are added later at install time via ``bun add``
-    so they pick up strict pins.
+    from constants. Any other persisted fields (e.g. ``packageManager``,
+    ``engines``) are passed through unchanged.
+
+    Everything a lockfile resolves against is reproduced verbatim, so the
+    rendered file still pairs with the persisted lockfile: the framework
+    entries in ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES``
+    are added later at install time via ``bun add`` (picking up strict pins),
+    and ``overrides`` are carried over as persisted, with
+    ``constants.PackageJson.OVERRIDES`` merged in by
+    :func:`update_package_json_overrides` after the frozen install.
 
     Returns:
         Rendered package.json content as string.
@@ -514,12 +556,45 @@ def _compile_package_json():
         scripts=scripts,
         dependencies=persisted.pop("dependencies", None) or {},
         dev_dependencies=persisted.pop("devDependencies", None) or {},
-        overrides={
-            **(persisted.pop("overrides", None) or {}),
-            **constants.PackageJson.OVERRIDES,
-        },
+        overrides=persisted.pop("overrides", None) or {},
         **persisted,
     )
+
+
+def update_package_json_overrides() -> bool:
+    """Merge the framework-owned overrides into ``.web/package.json``.
+
+    ``overrides`` participate in dependency resolution, so injecting them
+    while restoring the persisted ``package.json`` would desync it from the
+    persisted lockfile and make ``--frozen-lockfile`` fail outright on any
+    Reflex upgrade that introduces a new override. Applying them here instead
+    keeps the restored pair intact for the frozen install; the caller
+    refreshes the lockfile afterwards.
+
+    User-added and previously resolved overrides are kept, with the
+    framework-owned entries taking precedence on conflict.
+
+    Returns:
+        Whether ``.web/package.json`` was changed.
+    """
+    package_json_path = get_web_lockfile_path(constants.PackageJson.PATH)
+    package_json = _read_package_json_object(package_json_path)
+    if not package_json:
+        # Nothing usable to merge into. initialize_package_json() renders a
+        # full file upstream, so this only happens for a hand-damaged .web.
+        return False
+
+    overrides = package_json.get("overrides") or {}
+    if all(
+        overrides.get(name) == version
+        for name, version in constants.PackageJson.OVERRIDES.items()
+    ):
+        return False
+
+    package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
+    console.debug(f"Applying framework overrides to {package_json_path}")
+    package_json_path.write_text(json.dumps(package_json))
+    return True
 
 
 def initialize_package_json():
@@ -541,6 +616,7 @@ def _compile_vite_config(config: Config):
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
+        minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,
     )
 

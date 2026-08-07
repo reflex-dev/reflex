@@ -1,5 +1,12 @@
 name: Auto-release internal packages
 
+# Internal packages (no changelog, patch-bump versioning) release on every
+# push to main that touches them. Publishing goes through publish.yml with no
+# explicit version: the next patch version is computed from the newest tag
+# inside the per-package publish concurrency group, and the tag is only
+# pushed after a successful upload. Like every publish, the upload itself
+# waits for approval by the pypi environment's required reviewers.
+
 on:
   push:
     branches: [main]
@@ -38,40 +45,22 @@ jobs:
           DISPATCH_PACKAGE: ${{ inputs.package }}
         run: bash .github/scripts/auto_release_internal/detect.sh
 
-  release:
+  publish:
     needs: detect
     if: needs.detect.outputs.packages != '[]'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
     strategy:
       matrix:
         package: ${{ fromJson(needs.detect.outputs.packages) }}
       fail-fast: false
+    # Holds the per-package publish lock for the whole called run, so
+    # back-to-back pushes compute and publish strictly one version at a time.
     concurrency:
-      group: release-${{ matrix.package }}
+      group: publish-${{ matrix.package }}
       cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-tags: true
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Compute next version
-        id: version
-        env:
-          PKG: ${{ matrix.package }}
-        run: bash .github/scripts/auto_release_internal/compute_version.sh
-      - name: Create GitHub release (not marked latest)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
-          PKG: ${{ matrix.package }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: bash .github/scripts/auto_release_internal/create_release.sh
-      - name: Trigger publish workflow
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
-        run: bash .github/scripts/auto_release_internal/trigger_publish.sh
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}

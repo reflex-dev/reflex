@@ -1,0 +1,143 @@
+name: Release from changelog
+
+# The CHANGELOG.md files are the source of truth for publishing. On every push
+# to main or a release branch, this workflow compares the newest version
+# heading in each package's CHANGELOG.md (repo root for reflex, packages/*/
+# for sub-packages) against the repo's git tags and runs the publish workflow
+# for any version that has no tag yet. Publishing itself is gated by the
+# `pypi` environment's required reviewers — detection and builds are
+# automatic, uploads are not.
+#
+# Tags are only pushed after a successful publish (see publish.yml), so a
+# failed build/publish is retried by pushing a fix on top of the changelog
+# bump — no tag or release cleanup required.
+#
+# Branch policy (enforced again at publish time): final versions only from
+# main or r/hotfix/**; prereleases only from r/pre-* or r/hotfix/** (the
+# Dispatch release workflow materializes alphas on r/pre-* branches).
+#
+# reflex publishes strictly after every other package in the batch: its
+# metadata pins reflex-base exactly, so the sibling must be uploaded first.
+# detect fails closed if the reflex/reflex-base lockstep invariant is broken.
+#
+# workflow_dispatch exists so the Dispatch release workflow can trigger a
+# check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire
+# on-push workflows) and for manual re-checks; it runs against the branch it
+# is dispatched on.
+
+on:
+  push:
+    branches: ["main", "r/pre-**", "r/hotfix/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-from-changelog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+      any: ${{ steps.detect.outputs.any }}
+      reflex_version: ${{ steps.detect.outputs.reflex_version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - id: detect
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: uv run --no-config --locked --script scripts/release.py detect
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    # Serializes the entire publish (build, approval, upload, tag) per
+    # package, so a second push while a publish is in flight waits and then
+    # no-ops on the already-created tag.
+    concurrency:
+      group: publish-${{ matrix.package }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}
+      version: ${{ matrix.version }}
+
+  # reflex pins reflex-base exactly, so it publishes only after every other
+  # package in the batch (reflex-base included) has fully published and
+  # tagged. If any sibling failed, reflex is held back — fail closed rather
+  # than ship an uninstallable pin.
+  publish-reflex:
+    needs: [detect, publish]
+    if: >-
+      always() && needs.detect.result == 'success' &&
+      needs.detect.outputs.reflex_version != '' &&
+      (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    concurrency:
+      group: publish-reflex
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: reflex
+      version: ${{ needs.detect.outputs.reflex_version }}
+
+  # One loud, canonical failure signal for partial releases: red whenever any
+  # leg of the batch failed or reflex was held back.
+  report:
+    needs: [detect, publish, publish-reflex]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Report release batch outcome
+        env:
+          DETECT: ${{ needs.detect.result }}
+          PUBLISH: ${{ needs.publish.result }}
+          PUBLISH_REFLEX: ${{ needs.publish-reflex.result }}
+          REFLEX_VERSION: ${{ needs.detect.outputs.reflex_version }}
+        run: |
+          set -euo pipefail
+          echo "detect: $DETECT, publish: $PUBLISH, publish-reflex: $PUBLISH_REFLEX"
+          failed=0
+          # Anything that is not success/skipped (failure, cancelled,
+          # timed_out, a rejected environment approval, ...) is a failed leg.
+          for leg in "detect:$DETECT" "publish:$PUBLISH" "publish-reflex:$PUBLISH_REFLEX"; do
+            case "${leg#*:}" in
+              success | skipped) ;;
+              *)
+                echo "::error::release leg '${leg%%:*}' ended '${leg#*:}'."
+                failed=1
+                ;;
+            esac
+          done
+          if [[ "$failed" -eq 1 ]]; then
+            if [[ "$DETECT" != "success" ]]; then
+              echo "::error::Changelog detection did not complete (check for a reflex/reflex-base lockstep violation) — no packages were published."
+            fi
+            if [[ -n "$REFLEX_VERSION" && "$PUBLISH_REFLEX" != "success" ]]; then
+              echo "::error::reflex v$REFLEX_VERSION did not publish (held back or failed)."
+            fi
+            echo "::error::Fix the problem on top of the changelog bump; the next push retries the unpublished versions."
+          fi
+          exit "$failed"

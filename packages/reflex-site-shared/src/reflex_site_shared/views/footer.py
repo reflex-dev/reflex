@@ -264,7 +264,7 @@ def footer_index(
                                 footer_link("AI Builder", REFLEX_BUILD_URL),
                                 footer_link(
                                     "Agent Toolkit",
-                                    "/docs/ai/integrations/overview/",
+                                    "/docs/ai/integrations/agent-toolkit/",
                                 ),
                                 footer_link(
                                     "Enterprise",
