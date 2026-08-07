@@ -864,6 +864,26 @@ def test_vite_config_template_minify(minify: bool) -> None:
     assert f"cssMinify: {expected}," in config
 
 
+def test_vite_config_template_pins_preview_host() -> None:
+    """The vite config pins the preview server to an IPv4 loopback address.
+
+    react-router prerenders by fetching pages from a `vite preview` server;
+    without a pinned host, the bound socket and the fetched `localhost` URL
+    can resolve to different address families and refuse the connection.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "preview: {" in config
+    assert 'host: "127.0.0.1",' in config
+
+
 @pytest.mark.parametrize("minify", [True, False])
 def test_compile_vite_config_reads_minify_env(
     minify: bool, monkeypatch: pytest.MonkeyPatch
