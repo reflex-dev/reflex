@@ -40,6 +40,19 @@ repos:
     language: system
     types: [python]
     require_serial: true
+- repo: local
+  hooks:
+  # The second opinion the assert_type examples exist for. Always runs: what
+  # these examples catch is a source change altering an inferred type, so
+  # scoping the hook to the examples themselves would never fire on the edit
+  # that broke them.
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
+    language: system
+    always_run: true
+    pass_filenames: false
+    require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
   hooks:
