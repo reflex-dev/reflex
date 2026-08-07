@@ -11,7 +11,7 @@ import platform
 import re
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import MutableMapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -281,6 +281,27 @@ def run_process_and_launch_url(
             break  # while True
 
 
+_DEV_CONDITION_FLAG = "--conditions=development"
+
+
+def _enable_development_condition(environ: MutableMapping[str, str]) -> None:
+    """Enable the `development` export condition for node and bun.
+
+    react-router's dev CLI requires the condition and re-executes itself with
+    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
+    the CLI on node-less installs, so the restarted process trips the CLI's
+    restart guard and exits. Pre-enabling the condition for both runtimes
+    lets the dev server start under either.
+
+    Args:
+        environ: The environment mapping to update in place.
+    """
+    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
+        existing = environ.get(options_var, "")
+        if _DEV_CONDITION_FLAG not in existing.split():
+            environ[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+
+
 def run_frontend(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
@@ -297,6 +318,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
+    _enable_development_condition(os.environ)
     run_process_and_launch_url(
         [
             *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
