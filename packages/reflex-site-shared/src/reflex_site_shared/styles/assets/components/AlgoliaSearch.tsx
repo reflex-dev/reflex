@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const ALGOLIA_APP_ID = "WLK9YABRW4";
 const ALGOLIA_SEARCH_API_KEY = "aa0ebd175fcfb78706a053e5e71f6b58";
@@ -10,6 +11,7 @@ const ALGOLIA_SEARCH_ENDPOINT = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/ind
 const SEARCH_DEBOUNCE_MS = 350;
 const MIN_QUERY_LENGTH = 2;
 const MAX_CACHED_QUERIES = 50;
+const ROOT_THEME_SELECTOR = '.radix-themes[data-is-root-theme="true"]';
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 
@@ -376,6 +378,13 @@ export function AlgoliaSearch() {
     };
   }, [isOpen, query]);
 
+  const portalRoot =
+    typeof document === "undefined"
+      ? null
+      : (buttonRef.current?.closest(ROOT_THEME_SELECTOR) ??
+        document.querySelector(ROOT_THEME_SELECTOR) ??
+        document.body);
+
   return (
     <div className="ReflexSearch-root">
       <style>{SEARCH_STYLES}</style>
@@ -395,158 +404,165 @@ export function AlgoliaSearch() {
         </kbd>
       </button>
 
-      {isOpen ? (
-        <div
-          className="ReflexSearch-overlay"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) {
-              closeSearch();
-            }
-          }}
-        >
-          <section
-            aria-labelledby={titleId}
-            aria-modal="true"
-            className="ReflexSearch-dialog"
-            onKeyDown={keepFocusInDialog}
-            ref={dialogRef}
-            role="dialog"
-          >
-            <h2 className="ReflexSearch-visuallyHidden" id={titleId}>
-              Search Reflex
-            </h2>
-
-            <div className="ReflexSearch-inputRow">
-              <span className="ReflexSearch-inputIcon">
-                <SearchIcon size={20} />
-              </span>
-              <input
-                aria-controls={resultsId}
-                aria-label="Search docs, components, blog, and Reflex pages"
-                autoComplete="off"
-                className="ReflexSearch-input"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search Reflex"
-                ref={inputRef}
-                spellCheck={false}
-                type="search"
-                value={query}
-              />
-              {status === "loading" ? (
-                <LoadingIcon />
-              ) : query ? (
-                <button
-                  aria-label="Clear search"
-                  className="ReflexSearch-iconButton"
-                  onClick={() => setQuery("")}
-                  type="button"
-                >
-                  <CloseIcon />
-                </button>
-              ) : null}
-              <button
-                aria-label="Close search"
-                className="ReflexSearch-escape"
-                onClick={closeSearch}
-                type="button"
-              >
-                Esc
-              </button>
-            </div>
-
+      {isOpen && portalRoot
+        ? createPortal(
             <div
-              aria-live="polite"
-              className="ReflexSearch-results"
-              id={resultsId}
+              className="ReflexSearch-overlay"
+              onMouseDown={(event) => {
+                if (event.currentTarget === event.target) {
+                  closeSearch();
+                }
+              }}
             >
-              {status === "idle" ? (
-                <div className="ReflexSearch-emptyState">
-                  <span className="ReflexSearch-emptyIcon">
-                    <SearchIcon size={22} />
-                  </span>
-                  <strong>Search all of Reflex</strong>
-                  <p>Docs, XY, components, blog posts, and product pages.</p>
-                  <span>
-                    Type at least {MIN_QUERY_LENGTH} characters to search.
-                  </span>
-                </div>
-              ) : status === "loading" ? (
-                <div className="ReflexSearch-emptyState">
-                  <LoadingIcon />
-                  <strong>Searching…</strong>
-                  <p>Looking across docs, XY, the blog, and Reflex pages.</p>
-                </div>
-              ) : status === "error" ? (
-                <div className="ReflexSearch-emptyState" role="alert">
-                  <strong>Search is temporarily unavailable</strong>
-                  <p>Please check your connection and try again.</p>
-                </div>
-              ) : status === "ready" && hits.length === 0 ? (
-                <div className="ReflexSearch-emptyState">
-                  <strong>No results for “{query.trim()}”</strong>
-                  <p>Try another term or a shorter phrase.</p>
-                </div>
-              ) : (
-                <ul className="ReflexSearch-hitList">
-                  {hits.map((hit) => (
-                    <li key={hit.objectID}>
-                      <a
-                        className="ReflexSearch-hit"
-                        href={hit.url}
-                        onClick={closeSearch}
-                      >
-                        <span className="ReflexSearch-hitIcon">
-                          <SearchIcon />
-                        </span>
-                        <span className="ReflexSearch-hitContent">
-                          <span className="ReflexSearch-hitMeta">
-                            {resultSection(hit.url)}
-                          </span>
-                          <strong>
-                            <HighlightedText
-                              text={resultTitle(hit)}
-                              query={query}
-                            />
-                          </strong>
-                          {hit.description ? (
-                            <span className="ReflexSearch-hitDescription">
-                              <HighlightedText
-                                text={hit.description}
-                                query={query}
-                              />
-                            </span>
-                          ) : null}
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          className="ReflexSearch-hitArrow"
-                        >
-                          ↗
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <footer className="ReflexSearch-footer">
-              <span>
-                {status === "ready"
-                  ? `${nbHits.toLocaleString()} result${nbHits === 1 ? "" : "s"}`
-                  : "Keyword search only"}
-              </span>
-              <a
-                href="https://www.algolia.com/"
-                rel="noreferrer"
-                target="_blank"
+              <section
+                aria-labelledby={titleId}
+                aria-modal="true"
+                className="ReflexSearch-dialog"
+                onKeyDown={keepFocusInDialog}
+                ref={dialogRef}
+                role="dialog"
               >
-                Search by <strong>Algolia</strong>
-              </a>
-            </footer>
-          </section>
-        </div>
-      ) : null}
+                <h2 className="ReflexSearch-visuallyHidden" id={titleId}>
+                  Search Reflex
+                </h2>
+
+                <div className="ReflexSearch-inputRow">
+                  <span className="ReflexSearch-inputIcon">
+                    <SearchIcon size={20} />
+                  </span>
+                  <input
+                    aria-controls={resultsId}
+                    aria-label="Search docs, components, blog, and Reflex pages"
+                    autoComplete="off"
+                    className="ReflexSearch-input"
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search Reflex"
+                    ref={inputRef}
+                    spellCheck={false}
+                    type="search"
+                    value={query}
+                  />
+                  {status === "loading" ? (
+                    <LoadingIcon />
+                  ) : query ? (
+                    <button
+                      aria-label="Clear search"
+                      className="ReflexSearch-iconButton"
+                      onClick={() => setQuery("")}
+                      type="button"
+                    >
+                      <CloseIcon />
+                    </button>
+                  ) : null}
+                  <button
+                    aria-label="Close search"
+                    className="ReflexSearch-escape"
+                    onClick={closeSearch}
+                    type="button"
+                  >
+                    Esc
+                  </button>
+                </div>
+
+                <div
+                  aria-live="polite"
+                  className="ReflexSearch-results"
+                  id={resultsId}
+                >
+                  {status === "idle" ? (
+                    <div className="ReflexSearch-emptyState">
+                      <span className="ReflexSearch-emptyIcon">
+                        <SearchIcon size={22} />
+                      </span>
+                      <strong>Search all of Reflex</strong>
+                      <p>
+                        Docs, XY, components, blog posts, and product pages.
+                      </p>
+                      <span>
+                        Type at least {MIN_QUERY_LENGTH} characters to search.
+                      </span>
+                    </div>
+                  ) : status === "loading" ? (
+                    <div className="ReflexSearch-emptyState">
+                      <LoadingIcon />
+                      <strong>Searching…</strong>
+                      <p>
+                        Looking across docs, XY, the blog, and Reflex pages.
+                      </p>
+                    </div>
+                  ) : status === "error" ? (
+                    <div className="ReflexSearch-emptyState" role="alert">
+                      <strong>Search is temporarily unavailable</strong>
+                      <p>Please check your connection and try again.</p>
+                    </div>
+                  ) : status === "ready" && hits.length === 0 ? (
+                    <div className="ReflexSearch-emptyState">
+                      <strong>No results for “{query.trim()}”</strong>
+                      <p>Try another term or a shorter phrase.</p>
+                    </div>
+                  ) : (
+                    <ul className="ReflexSearch-hitList">
+                      {hits.map((hit) => (
+                        <li key={hit.objectID}>
+                          <a
+                            className="ReflexSearch-hit"
+                            href={hit.url}
+                            onClick={closeSearch}
+                          >
+                            <span className="ReflexSearch-hitIcon">
+                              <SearchIcon />
+                            </span>
+                            <span className="ReflexSearch-hitContent">
+                              <span className="ReflexSearch-hitMeta">
+                                {resultSection(hit.url)}
+                              </span>
+                              <strong>
+                                <HighlightedText
+                                  text={resultTitle(hit)}
+                                  query={query}
+                                />
+                              </strong>
+                              {hit.description ? (
+                                <span className="ReflexSearch-hitDescription">
+                                  <HighlightedText
+                                    text={hit.description}
+                                    query={query}
+                                  />
+                                </span>
+                              ) : null}
+                            </span>
+                            <span
+                              aria-hidden="true"
+                              className="ReflexSearch-hitArrow"
+                            >
+                              ↗
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <footer className="ReflexSearch-footer">
+                  <span>
+                    {status === "ready"
+                      ? `${nbHits.toLocaleString()} result${nbHits === 1 ? "" : "s"}`
+                      : "Keyword search only"}
+                  </span>
+                  <a
+                    href="https://www.algolia.com/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Search by <strong>Algolia</strong>
+                  </a>
+                </footer>
+              </section>
+            </div>,
+            portalRoot,
+          )
+        : null}
     </div>
   );
 }

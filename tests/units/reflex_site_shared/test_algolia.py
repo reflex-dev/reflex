@@ -52,3 +52,19 @@ def test_algolia_search_asset_is_published_and_non_ai() -> None:
     assert "askai" not in normalized_source
     assert "openai" not in normalized_source
     assert "chatcompletion" not in normalized_source
+
+
+def test_algolia_dialog_escapes_the_filtered_navbar_stacking_context() -> None:
+    """Portal the overlay outside the navbar without escaping the active theme."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+
+    assert 'import { createPortal } from "react-dom"' in source
+    assert "createPortal(" in source
+    assert 'ROOT_THEME_SELECTOR = \'.radix-themes[data-is-root-theme="true"]\'' in source
+    assert (
+        "buttonRef.current?.closest(ROOT_THEME_SELECTOR) ??\n"
+        "        document.querySelector(ROOT_THEME_SELECTOR) ??\n"
+        "        document.body"
+    ) in source
+    assert "portalRoot," in source
