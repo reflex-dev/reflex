@@ -19,7 +19,7 @@
     "@radix-ui/react-dialog": "1.1.21",
     "@radix-ui/react-form": "0.1.14",
     "@radix-ui/themes": "3.3.0",
-    "@react-router/node": "7.18.2",
+    "@react-router/node": "8.3.0",
     "@splinetool/react-spline": "4.1.0",
     "@splinetool/runtime": "1.5.5",
     "@xyflow/react": "12.8.4",
@@ -57,8 +57,7 @@
     "react-player": "3.4.0",
     "react-plotly.js": "4.0.0",
     "react-responsive-carousel": "3.2.23",
-    "react-router": "7.18.2",
-    "react-router-dom": "7.18.2",
+    "react-router": "8.3.0",
     "react-syntax-highlighter": "16.1.1",
     "reactflow": "^11.11.4",
     "recharts": "3.8.1",
@@ -82,8 +81,8 @@
   },
   "devDependencies": {
     "@emotion/react": "11.14.0",
-    "@react-router/dev": "7.18.2",
-    "@react-router/fs-routes": "7.18.2",
+    "@react-router/dev": "8.3.0",
+    "@react-router/fs-routes": "8.3.0",
     "@tailwindcss/postcss": "4.3.0",
     "@tailwindcss/typography": "0.5.20",
     "autoprefixer": "10.5.4",
@@ -92,7 +91,5 @@
     "tailwindcss": "4.3.0",
     "vite": "8.0.16"
   },
-  "overrides": {
-    "postcss": "8.5.23"
-  }
+  "overrides": {}
 }

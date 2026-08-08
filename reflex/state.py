@@ -2417,8 +2417,13 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
+        # Escape rich markup so a JS error message containing square brackets
+        # (e.g. "x[/bold]y is not a function") cannot style backend logs or
+        # raise MarkupError when printed through the console helpers. The text
+        # is not otherwise sanitized: stack traces are multi-line by nature and
+        # truncating them would lose the information this handler exists for.
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
+            Exception(escape(info))
         )
 
 
@@ -2605,7 +2610,13 @@ class ComponentState(State, mixin=True):
     frozen=True,
 )
 class StateUpdate:
-    """A state update sent to the frontend."""
+    """A state update sent to the frontend.
+
+    Each substate key in the delta must have a dispatch function registered in
+    the frontend; otherwise the frontend reports a fatal ``client_error`` back
+    to the backend (see ``EventNamespace.on_client_error``), since this
+    indicates mismatched frontend and backend state definitions.
+    """
 
     # The state delta.
     delta: DeltaMapping = dataclasses.field(default_factory=dict)

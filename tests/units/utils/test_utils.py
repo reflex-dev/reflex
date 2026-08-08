@@ -14,6 +14,7 @@ from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_base.vars.base import Var
 
 from reflex.environment import environment
+from reflex.plugins import RadixThemesPlugin
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
@@ -361,6 +362,11 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
+    # The default template must declare RadixThemesPlugin explicitly. The blank
+    # app renders Radix Themes components, so without an explicit plugin the
+    # compiler falls back to implicit enablement and emits a deprecation warning
+    # on the first `reflex run` of a freshly scaffolded app (issue #6483).
+    assert any(isinstance(plugin, RadixThemesPlugin) for plugin in config.plugins)
 
 
 class DataFrame:
