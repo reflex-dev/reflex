@@ -922,6 +922,112 @@ def test_setting_inherited_backend_var_does_not_mark_child_touched(
     assert not child_touched
 
 
+class _LinkedStatePatchRoot(BaseState):
+    """Root state for testing linked-state dirty propagation."""
+
+    value: int = 0
+
+
+class _LinkedStatePatchShared(_LinkedStatePatchRoot):
+    """Substate used to exercise _patch_state without full SharedState setup."""
+
+    counter: int = 0
+
+
+@pytest.mark.asyncio
+async def test_linked_state_event_does_not_dirty_root_state():
+    """Linked-state events should not leak temporary router dirtiness."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert isinstance(private_state, _LinkedStatePatchShared)
+    assert isinstance(linked_state, _LinkedStatePatchShared)
+
+    private_tree._clean()
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        linked_state.counter = 1
+
+    assert "router" not in private_tree.dirty_vars
+    assert constants.ROUTER_DATA not in private_tree.dirty_vars
+    assert private_tree.get_full_name() not in private_tree.get_delta()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_root_dirty_state_on_resolve_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Temporary root dirtiness should be cleaned if delta resolution fails."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert isinstance(private_state, _LinkedStatePatchShared)
+    assert isinstance(linked_state, _LinkedStatePatchShared)
+
+    private_tree.value = 1
+    private_tree.dirty_substates.add("existing")
+    original_dirty_vars = set(private_tree.dirty_vars)
+    original_dirty_substates = set(private_tree.dirty_substates)
+
+    async def raise_resolve_error():
+        await asyncio.sleep(0)
+        msg = "delta resolution failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
+
+    with pytest.raises(RuntimeError, match="delta resolution failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            pass
+
+    assert private_tree.dirty_vars == original_dirty_vars
+    assert private_tree.dirty_substates == original_dirty_substates
+    assert private_tree.substates[shared_state_name] is private_state
+    assert linked_state.parent_state is linked_tree
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_descendant_dirty_state_on_resolve_error():
+    """Temporary descendant dirtiness should be cleaned on resolution failure."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    async def raise_resolve_error():
+        await asyncio.sleep(0)
+        linked_state.dirty_vars.add("temporary")
+        linked_state._mark_dirty()
+        msg = "descendant delta resolution failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
+
+    with pytest.raises(RuntimeError, match="descendant delta resolution failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            pass
+
+    assert linked_state.dirty_vars == set()
+    assert linked_state.dirty_substates == set()
+    assert private_tree.dirty_substates == set()
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
