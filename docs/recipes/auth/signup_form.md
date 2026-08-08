@@ -8,7 +8,7 @@ The sign up form is a common component in web applications. It allows users to c
 
 ## Default
 
-```python demo exec toggle
+```python demo exec
 def signup_default() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -89,7 +89,7 @@ def signup_default() -> rx.Component:
 
 ## Icons
 
-```python demo exec toggle
+```python demo exec
 def signup_default_icons() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -176,7 +176,7 @@ def signup_default_icons() -> rx.Component:
 
 ## Third-party auth
 
-```python demo exec toggle
+```python demo exec
 def signup_single_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -277,7 +277,7 @@ def signup_single_thirdparty() -> rx.Component:
 
 ## Multiple third-party auth
 
-```python demo exec toggle
+```python demo exec
 def signup_multiple_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(
