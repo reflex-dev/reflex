@@ -291,18 +291,16 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        mock_redis.exists.return_value = False
+        mock_redis.set.return_value = True
 
         result = await manager.link_token_to_sid(token, sid)
 
         assert result is None
-        mock_redis.exists.assert_called_once_with(
-            f"token_manager_socket_record_{token}"
-        )
         mock_redis.set.assert_called_once_with(
             f"token_manager_socket_record_{token}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=True,
         )
         assert manager.token_to_socket[token].sid == sid
         assert manager.sid_to_token[sid] == token
@@ -324,7 +322,6 @@ class TestRedisTokenManager:
         result = await manager.link_token_to_sid(token, sid)
 
         assert result is None
-        mock_redis.exists.assert_not_called()
         mock_redis.set.assert_not_called()
 
     async def test_link_token_to_sid_duplicate_detected(self, manager, mock_redis):
@@ -335,7 +332,7 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        mock_redis.exists.return_value = True
+        mock_redis.set.side_effect = [False, True]
 
         result = await manager.link_token_to_sid(token, sid)
 
@@ -343,13 +340,12 @@ class TestRedisTokenManager:
         assert result != token
         assert len(result) == 36  # UUID4 length
 
-        mock_redis.exists.assert_called_once_with(
-            f"token_manager_socket_record_{token}"
-        )
-        mock_redis.set.assert_called_once_with(
+        assert mock_redis.set.await_count == 2
+        mock_redis.set.assert_awaited_with(
             f"token_manager_socket_record_{result}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=True,
         )
         assert manager.token_to_sid[result] == sid
         assert manager.sid_to_token[sid] == result
@@ -362,7 +358,7 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        mock_redis.exists.side_effect = Exception("Redis connection error")
+        mock_redis.set.side_effect = Exception("Redis connection error")
 
         with patch.object(
             LocalTokenManager, "link_token_to_sid", new_callable=AsyncMock
@@ -384,7 +380,6 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        mock_redis.exists.return_value = False
         mock_redis.set.side_effect = Exception("Redis set error")
 
         result = await manager.link_token_to_sid(token, sid)
@@ -392,6 +387,53 @@ class TestRedisTokenManager:
         assert result is None
         assert manager.token_to_sid[token] == sid
         assert manager.sid_to_token[sid] == token
+
+    async def test_link_token_to_sid_claims_token_atomically(self, mock_redis):
+        """Test concurrent managers cannot both claim the same token.
+
+        Args:
+            mock_redis: Mock Redis client fixture.
+        """
+        redis_values = {}
+
+        def set_value(key, value, *, ex, nx=False):
+            if nx and key in redis_values:
+                return False
+            redis_values[key] = value
+            return True
+
+        mock_redis.set.side_effect = set_value
+        with patch("reflex_base.config.get_config") as mock_get_config:
+            mock_get_config.return_value.redis_token_expiration = 3600
+            managers = [RedisTokenManager(mock_redis), RedisTokenManager(mock_redis)]
+
+        with patch.object(RedisTokenManager, "_ensure_socket_record_task"):
+            results = await asyncio.gather(
+                managers[0].link_token_to_sid("token1", "sid1"),
+                managers[1].link_token_to_sid("token1", "sid2"),
+            )
+
+        assert sum(result is None for result in results) == 1
+        claimed_tokens = {
+            manager.sid_to_token[sid]
+            for manager, sid in zip(managers, ("sid1", "sid2"), strict=True)
+        }
+        assert len(claimed_tokens) == 2
+
+    async def test_link_token_to_sid_limits_claim_attempts(self, manager, mock_redis):
+        """Test persistent failed claims fall back to local token storage.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        mock_redis.set.return_value = False
+
+        result = await manager.link_token_to_sid("token1", "sid1")
+
+        assert mock_redis.set.await_count == 3
+        assert result is not None
+        assert manager.sid_to_token["sid1"] == result
 
     async def test_disconnect_token_owned_locally(self, manager, mock_redis):
         """Test disconnect cleans up both Redis and local mappings when owned locally.
@@ -465,7 +507,7 @@ class TestRedisTokenManager:
             redis_error: Exception to test error handling.
         """
         token, sid = "token1", "sid1"
-        mock_redis.exists.side_effect = redis_error
+        mock_redis.set.side_effect = redis_error
 
         with patch.object(
             LocalTokenManager, "link_token_to_sid", new_callable=AsyncMock
