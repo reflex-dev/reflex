@@ -159,6 +159,13 @@ exclude = [
 [tool.ty.rules]
 invalid-method-override = "ignore"
 unsupported-base = "ignore"
+# `EventHandler[some_arg_spec]` is the public spelling for declaring an event
+# trigger; `EventHandler.__class_getitem__` turns it into `Annotated[EventHandler,
+# some_arg_spec]`. The subscript argument is a function, not a type, so ty rejects
+# it in a type expression (intentionally, see astral-sh/ty#3388). Component authors
+# outside this repo hit the same thing, so ignore the rule rather than rewriting
+# every annotation to the `Annotated[...]` form.
+not-subscriptable = "ignore"
 
 [tool.ruff]
 target-version = "py310"
@@ -388,6 +395,7 @@ reflex-hosting-cli = false
 # Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
 # pinned floor resolves before it ages out of the exclude-newer window.
 starlette = false
+ty = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

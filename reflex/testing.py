@@ -246,7 +246,7 @@ class AppHarness:
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
             if isinstance(self.app_source, functools.partial):
-                self.app_source = self.app_source.func  # ty:ignore[invalid-assignment]
+                self.app_source = self.app_source.func
             # get the source from a function or module object
             source_code = "\n".join([
                 "\n".join([

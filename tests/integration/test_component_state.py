@@ -70,7 +70,7 @@ def ComponentStateApp():
                         "Assert _be",
                         id=f"{eid}-assert-be",
                     ),
-                    on_submit=lambda fd: cls.assert_be(fd.to(dict)["be_value"]),
+                    on_submit=lambda fd: cls.assert_be(fd.to(dict)["be_value"]),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     reset_on_submit=True,
                 ),
                 rx.button(

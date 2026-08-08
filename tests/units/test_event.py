@@ -580,7 +580,7 @@ def test_event_var_data():
     assert handler_var._get_all_var_data() is None
 
     # Ensure spec carries _var_data
-    spec_var = Var.create(S.s(S.x))
+    spec_var = Var.create(S.s(S.x))  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
     assert spec_var._get_all_var_data() == S.x._get_all_var_data()
 
     # Needed to instantiate the EventChain
@@ -590,7 +590,7 @@ def test_event_var_data():
     # Ensure chain carries _var_data
     chain_var = Var.create(
         EventChain(
-            events=[S.s(S.x)],
+            events=[S.s(S.x)],  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
             args_spec=_args_spec,
             invocation=rx.vars.FunctionStringVar.create(""),
         )
@@ -632,7 +632,7 @@ def test_event_chain_statement_block_preserves_nested_var_data():
 
     chain_var_data = Var.create(
         EventChain(
-            events=[S.s(S.x), make_timeout_logger()],
+            events=[S.s(S.x), make_timeout_logger()],  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
             args_spec=lambda: (),
         )
     )._get_all_var_data()
@@ -660,10 +660,10 @@ def test_event_bound_method() -> None:
 
     class Wrapper:
         def get_handler(self, arg: Var[str]):
-            return S.e(arg)
+            return S.e(arg)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
 
     w = Wrapper()
-    _ = rx.input(on_change=w.get_handler)
+    _ = rx.input(on_change=w.get_handler)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
 
 
 def test_event_decorator_with_event_actions():
@@ -734,7 +734,7 @@ def test_event_decorator_with_event_actions():
     # Test background + event actions work together
     bg_temporal_handler = MyTestState.handle_background_temporal
     assert bg_temporal_handler.event_actions == {"temporal": True}
-    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)
+    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)  # ty:ignore[unresolved-attribute]
 
     # Test no event actions (existing behavior preserved)
     no_actions_handler = MyTestState.handle_no_actions
@@ -814,7 +814,7 @@ def test_event_decorator_backward_compatibility():
     # Old background parameter should work unchanged
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
-    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
+    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # ty:ignore[unresolved-attribute]
 
 
 def test_event_var_in_rx_cond():
@@ -958,7 +958,7 @@ def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event()
         return rx.cond(
             v == "foo",
             log_after_timeout.partial("Input was foo!"),
-            MixedState.do_a_thing(v.to(str)),
+            MixedState.do_a_thing(v.to(str)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
         )
 
     chain = EventChain.create(
@@ -994,7 +994,7 @@ def test_event_chain_mixed_dispatch_reaches_addevents_via_module_import():
         return rx.cond(
             v == "foo",
             log_after_timeout.partial("Input was foo!"),
-            MixedState.do_a_thing(v.to(str)),
+            MixedState.do_a_thing(v.to(str)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
         )
 
     chain = EventChain.create(

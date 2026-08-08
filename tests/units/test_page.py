@@ -34,7 +34,7 @@ def test_page_decorator_with_kwargs():
         description="Foo description",
         meta=[{"name": "keywords", "content": "foo, test"}],
         script_tags=["foo-script"],
-        on_load=load_foo,
+        on_load=load_foo,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
     )(foo_)
     assert decorated_foo_ == foo_
     assert len(DECORATED_PAGES) == 1

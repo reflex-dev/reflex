@@ -45,7 +45,7 @@ from .number import (
 if TYPE_CHECKING:
     from typing_extensions import deprecated
 
-    from .base import DATACLASS_TYPE, SQLA_TYPE
+    from .base import BASE_MODEL_TYPE, DATACLASS_TYPE, SQLA_TYPE
     from .function import FunctionVar
     from .object import ObjectVar
 
@@ -204,6 +204,12 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         self: ArrayVar[Sequence[DATACLASS_TYPE]],
         i: int | NumberVar,
     ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Sequence[BASE_MODEL_TYPE]],
+        i: int | NumberVar,
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
 
     @overload
     def __getitem__(self, i: int | NumberVar) -> Var: ...

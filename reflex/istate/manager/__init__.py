@@ -189,7 +189,7 @@ class StateManager(ABC):
         """
 
     @abstractmethod
-    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
+    @contextlib.asynccontextmanager
     async def modify_state(
         self,
         token: StateToken[TOKEN_TYPE] | str,
@@ -206,7 +206,7 @@ class StateManager(ABC):
         """
         yield  # ty:ignore[invalid-yield]
 
-    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
+    @contextlib.asynccontextmanager
     async def modify_state_with_links(
         self,
         token: StateToken[TOKEN_TYPE] | str,

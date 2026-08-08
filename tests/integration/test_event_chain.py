@@ -216,12 +216,12 @@ def EventChain():
             rx.button(
                 "Click Int Type",
                 id="click_int_type",
-                on_click=lambda: State.event_arg_repr_type(1),
+                on_click=lambda: State.event_arg_repr_type(1),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             ),
             rx.button(
                 "Click Dict Type",
                 id="click_dict_type",
-                on_click=lambda: State.event_arg_repr_type({"a": 1}),
+                on_click=lambda: State.event_arg_repr_type({"a": 1}),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             ),
             rx.button(
                 "Return Chain Int Type",
@@ -256,7 +256,7 @@ def EventChain():
             rx.button(
                 "Mixed Cond",
                 id="mixed_cond_btn",
-                on_click=lambda: rx.cond(
+                on_click=lambda: rx.cond(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     State.cond_input == "fn",
                     mark_dom_fn.partial("fn_branch"),
                     State.event_arg("ev_branch"),
@@ -281,7 +281,7 @@ def EventChain():
             rx.text(
                 "return",
                 on_mount=State.on_load_return_chain,
-                on_unmount=lambda: State.event_arg("unmount"),
+                on_unmount=lambda: State.event_arg("unmount"),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             ),
             common_elements,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
@@ -291,7 +291,7 @@ def EventChain():
         return rx.fragment(
             rx.text(
                 "yield",
-                on_mount=[
+                on_mount=[  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     State.on_load_yield_chain,
                     lambda: State.event_arg("mount"),
                 ],

@@ -65,7 +65,7 @@ def ColorToggleApp():
                     rx.icon(tag="moon", size=20),
                     value="dark",
                 ),
-                on_change=set_color_mode,
+                on_change=set_color_mode,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 variant="classic",
                 radius="large",
                 value=color_mode,

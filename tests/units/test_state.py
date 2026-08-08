@@ -4339,7 +4339,7 @@ def test_mixin_event_handler_preserves_background_task_marker() -> None:
         pass
 
     handler = UsesBackgroundTaskMixin.handle_in_background
-    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue]
+    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue] # ty:ignore[unresolved-attribute]
 
 
 def test_assignment_to_undeclared_vars():

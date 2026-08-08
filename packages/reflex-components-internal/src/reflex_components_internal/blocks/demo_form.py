@@ -310,7 +310,7 @@ def demo_form(
             True,
             PERSONAL_EMAIL_PROVIDERS,
             id=email_id,
-            on_blur=DemoFormStateUI.validate_email(rx.Var(get_element_value(email_id))),
+            on_blur=DemoFormStateUI.validate_email(rx.Var(get_element_value(email_id))),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
         ),
         rx.el.div(
             input_field("Job title", "CTO", "job_title", "text", True),
@@ -439,7 +439,7 @@ def demo_form_dialog(
             ),
         ),
         open=demo_form_open_cs.value,
-        on_open_change=demo_form_open_cs.set_value,
+        on_open_change=demo_form_open_cs.set_value,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
         on_open_change_complete=[
             rx.call_function(demo_form_error_message.set_value(""))
         ],

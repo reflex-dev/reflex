@@ -318,7 +318,7 @@ class VarData:
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
-            merged_var_data = VarData.merge(*hooks.values(), self)  # ty:ignore[invalid-argument-type]
+            merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
                 object.__setattr__(self, "state", merged_var_data.state)
                 object.__setattr__(self, "field_name", merged_var_data.field_name)
@@ -917,7 +917,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
-            return value  # ty:ignore[invalid-return-type]
+            return value
 
         return LiteralVar.create(value, _var_data=_var_data)
 
@@ -2552,6 +2552,13 @@ class ComputedVar(Var[RETURN_TYPE]):
         owner: type,
     ) -> ObjectVar[SQLA_TYPE]: ...
 
+    @overload
+    def __get__(
+        self: ComputedVar[BASE_MODEL_TYPE],
+        instance: None,
+        owner: type,
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
+
     if TYPE_CHECKING:
 
         @overload
@@ -2819,6 +2826,13 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[BASE_MODEL_TYPE],
+        instance: None,
+        owner: type,
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
 
     if TYPE_CHECKING:
 
@@ -3475,10 +3489,14 @@ def dispatch(
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+    from pydantic import BaseModel
     from sqlalchemy.orm import DeclarativeBase
 
     SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
     DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
+    # Pydantic models are not dataclasses (no `__dataclass_fields__` at runtime), so
+    # they need their own overloads to resolve to ObjectVar.
+    BASE_MODEL_TYPE = TypeVar("BASE_MODEL_TYPE", bound=BaseModel | None)
     MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
     V = TypeVar("V")
 
@@ -3662,6 +3680,13 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(
         self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[BASE_MODEL_TYPE] | Field[BASE_MODEL_TYPE | None],
+        instance: None,
+        owner: Any,
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
 
     if TYPE_CHECKING:
 

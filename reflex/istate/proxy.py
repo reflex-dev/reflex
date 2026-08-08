@@ -12,7 +12,7 @@ import sys
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, SupportsIndex, TypeVar
 
 import wrapt
 from reflex_base.event import Event
@@ -414,7 +414,7 @@ class MutableProxy(wrapt.ObjectProxy):
     }
 
     # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: dict[str, type] = {}
+    __dataclass_proxies__: ClassVar[dict[str, type[MutableProxy]]] = {}
 
     def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
         """Create a proxy instance for a mutable object that tracks changes.

@@ -123,13 +123,13 @@ class ScaleParams:
 
         """
         if isinstance(regions, list):
-            regions = dict.fromkeys(regions, 1)  # ty:ignore[invalid-assignment]
+            regions = dict.fromkeys(regions, 1)
         return cls(
             scale_type,
             vm_type,
             tuple(
                 Region(name=name, number_of_machines=number)
-                for name, number in regions.items()  # ty:ignore[unresolved-attribute]
+                for name, number in regions.items()
             )
             if regions
             else (),

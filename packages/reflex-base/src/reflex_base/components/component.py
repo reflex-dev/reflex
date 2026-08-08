@@ -1659,12 +1659,14 @@ class Component(BaseComponent, ABC):
             if isinstance(event, Var):
                 yield event_trigger, [event]
             elif isinstance(event, EventChain):
-                event_args = []
+                event_args: list[Var] = []
                 for spec in event.events:
                     if isinstance(spec, EventSpec):
                         for args in spec.args:
                             event_args.extend(args)
-                    else:
+                    elif isinstance(spec, Var):
+                        # EventCallback is only in the declared type of
+                        # EventChain.events; calling one yields an EventSpec.
                         event_args.append(spec)
                 yield event_trigger, event_args
 

@@ -6,7 +6,7 @@ import dataclasses
 import inspect
 import sys
 import types
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
 from importlib.util import find_spec
@@ -83,23 +83,23 @@ VAR6 = TypeVar("VAR6", bound="Var")
 VAR7 = TypeVar("VAR7", bound="Var")
 
 
-class _ArgsSpec0(Protocol):
+class _ArgsSpec0(Hashable, Protocol):
     def __call__(self) -> Sequence[Var]: ...
 
 
-class _ArgsSpec1(Protocol):
+class _ArgsSpec1(Hashable, Protocol):
     def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec2(Protocol):
+class _ArgsSpec2(Hashable, Protocol):
     def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec3(Protocol):
+class _ArgsSpec3(Hashable, Protocol):
     def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec4(Protocol):
+class _ArgsSpec4(Hashable, Protocol):
     def __call__(
         self,
         var1: VAR1,
@@ -110,7 +110,7 @@ class _ArgsSpec4(Protocol):
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec5(Protocol):
+class _ArgsSpec5(Hashable, Protocol):
     def __call__(
         self,
         var1: VAR1,
@@ -122,7 +122,7 @@ class _ArgsSpec5(Protocol):
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec6(Protocol):
+class _ArgsSpec6(Hashable, Protocol):
     def __call__(
         self,
         var1: VAR1,
@@ -135,7 +135,7 @@ class _ArgsSpec6(Protocol):
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec7(Protocol):
+class _ArgsSpec7(Hashable, Protocol):
     def __call__(
         self,
         var1: VAR1,
@@ -508,7 +508,7 @@ def get_attribute_access_type(
                 except NotImplementedError:
                     type_ = None
                 if type_ is not None:
-                    if hasattr(column_type, "item_type"):
+                    if isinstance(column_type, sqlalchemy.ARRAY):
                         try:
                             item_type = column_type.item_type.python_type
                         except NotImplementedError:

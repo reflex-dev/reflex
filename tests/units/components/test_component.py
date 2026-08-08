@@ -1331,7 +1331,7 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
@@ -1341,7 +1341,7 @@ class EventState(rx.State):
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870 https://github.com/astral-sh/ty/issues/4098
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -2154,7 +2154,7 @@ class TriggerState(rx.State):
             rx.box(
                 rx.text(
                     "random text",
-                    on_blur=lambda: TriggerState.do_something,
+                    on_blur=lambda: TriggerState.do_something,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 ),
             ),
             True,

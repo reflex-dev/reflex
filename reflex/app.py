@@ -749,7 +749,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 [self.api_transformer]
                 if not isinstance(self.api_transformer, Sequence)
                 else self.api_transformer
-            )  # ty:ignore[invalid-assignment]
+            )
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
@@ -1385,7 +1385,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @overload
     @deprecated("pass token as rx.BaseStateToken instead of str")
-    def modify_state(
+    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
         self,
         token: str,
         background: bool = False,
@@ -1393,14 +1393,14 @@ class App(MiddlewareMixin, LifespanMixin):
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
-    def modify_state(
+    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
         self,
         token: BaseStateToken,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
-    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
+    @contextlib.asynccontextmanager
     async def modify_state(
         self,
         token: BaseStateToken | str,

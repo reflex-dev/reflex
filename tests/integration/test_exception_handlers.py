@@ -54,7 +54,7 @@ def TestApp():
             ),
             rx.button(
                 "induce_backend_error",
-                on_click=lambda: TestAppState.divide_by_number(0),
+                on_click=lambda: TestAppState.divide_by_number(0),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 id="induce-backend-error-btn",
             ),
             rx.button(

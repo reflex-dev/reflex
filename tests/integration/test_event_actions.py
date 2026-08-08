@@ -148,7 +148,7 @@ def TestEventAction():
             rx.button(
                 "Throttle",
                 id="btn-throttle",
-                on_click=lambda: (
+                on_click=lambda: (  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     EventActionState.on_click_throttle.throttle(200).stop_propagation
                 ),
             ),

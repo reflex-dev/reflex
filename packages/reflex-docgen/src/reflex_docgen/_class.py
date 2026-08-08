@@ -1,16 +1,21 @@
 """Generate documentation for arbitrary Python classes."""
 
+from __future__ import annotations
+
 import collections.abc
 import dataclasses
 import inspect
 import re
 from dataclasses import dataclass
-from typing import Any, Literal, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, Literal, get_args, get_origin, get_type_hints
 
 from reflex_base.utils.types import is_union
 from reflex_base.vars.base import BaseStateMeta
 from typing_extensions import TypeAliasType
 from typing_inspection.introspection import AnnotationSource, inspect_annotation
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -273,7 +278,7 @@ def _build_field_documentation(
 
 
 def _get_dataclass_fields(
-    cls: type, docstring_attrs: dict[str, str]
+    cls: type[DataclassInstance], docstring_attrs: dict[str, str]
 ) -> tuple[FieldDocumentation, ...]:
     """Extract fields from a dataclass.
 

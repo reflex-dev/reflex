@@ -883,7 +883,7 @@ class EventChain(EventActionsMixin):
                     events.append(v)
                 elif isinstance(v, FunctionVar):
                     # Apply the args_spec transformations as partial arguments to the function.
-                    events.append(v.partial(*parse_args_spec(args_spec)[0]))  # ty:ignore[no-matching-overload]
+                    events.append(v.partial(*parse_args_spec(args_spec)[0]))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec, key=key))
@@ -2156,7 +2156,7 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     # if there's multiple, the first is the default
     if isinstance(arg_spec, Sequence):
         annotations = [get_type_hints(one_arg_spec) for one_arg_spec in arg_spec]
-        arg_spec = arg_spec[0]  # ty:ignore[invalid-assignment]
+        arg_spec = arg_spec[0]
     else:
         annotations = [get_type_hints(arg_spec)]
 
@@ -2166,11 +2166,11 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         arg_spec(*[
             Var(f"_{l_arg}").to(
                 unwrap_var_annotation(
-                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)  # ty:ignore[invalid-argument-type]
+                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
             )
             for l_arg in spec.args
-        ])  # ty:ignore[call-non-callable]
+        ])
     ), annotations
 
 
@@ -2652,7 +2652,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         call_args = arg_vars if sig.parameters else (Var(_js_expr="...args"),)
         statements = [
             (
-                event.call(*call_args)  # ty:ignore[no-matching-overload] https://github.com/astral-sh/ty/issues/1824
+                event.call(*call_args)
                 if isinstance(event, FunctionVar)
                 else invocation.call(
                     LiteralVar.create([LiteralVar.create(event)]),
@@ -3064,7 +3064,9 @@ class EventNamespace:
             event_actions = _build_event_actions()
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
-            return func
+            # Handlers defined in a state class body stay plain functions here;
+            # BaseStateMeta turns them into EventCallback descriptors.
+            return func  # ty:ignore[invalid-return-type]
 
         if func is not None:
             return wrapper(func)

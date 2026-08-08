@@ -491,7 +491,7 @@ class CompilerHooks:
                     updated_children = list(children[:index])
                 updated_children.append(compiled_child)
             if updated_children is None:
-                return children if isinstance(children, tuple) else tuple(children)  # ty:ignore[invalid-return-type]
+                return children if isinstance(children, tuple) else tuple(children)
             return tuple(updated_children)
 
         def visit(
@@ -578,7 +578,7 @@ class CompilerHooks:
         if replacement is None:
             return comp, children
         if isinstance(replacement, tuple):
-            return replacement  # ty:ignore[invalid-return-type]
+            return replacement
         return replacement, children
 
 

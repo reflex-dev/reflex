@@ -121,6 +121,24 @@ class ObjectState(rx.State):
 
     base_list: rx.Field[list[Base]] = rx.field([Base()])
 
+    @rx.var
+    def base_computed(self) -> Base:
+        """A computed var returning a pydantic model.
+
+        Returns:
+            The pydantic model.
+        """
+        return self.base
+
+    @rx.var
+    async def base_computed_async(self) -> Base:
+        """An async computed var returning a pydantic model.
+
+        Returns:
+            The pydantic model.
+        """
+        return self.base
+
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
 def test_var_create(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
@@ -273,6 +291,10 @@ def test_typing() -> None:
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
+    computed_var = ObjectState.base_computed
+    _ = assert_type(computed_var, ObjectVar[Base])
+    computed_var = ObjectState.base_computed_async
+    _ = assert_type(computed_var, ObjectVar[Base])
 
     # Sqla
     var = ObjectState.sqlamodel
