@@ -19,6 +19,8 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
+    REFLEX_ASSETS_CDN,
+    REFLEX_BUILD_URL,
     ROADMAP_URL,
     TWITTER_URL,
 )
@@ -466,6 +468,49 @@ def docs_feedback_button_toc() -> rx.Component:
     )
 
 
+def _docs_builder_card() -> rx.Component:
+    """Render the Builder call to action in the right sidebar.
+
+    Returns:
+        Builder call-to-action card.
+    """
+    return rx.el.a(
+        rx.el.div(
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_rectangle_small.svg",
+                alt="",
+                custom_attrs={"width": "120", "height": "24"},
+                class_name="pointer-events-none h-auto w-full",
+            ),
+            class_name="absolute inset-x-1.5 top-0.5 opacity-50",
+        ),
+        rx.el.p(
+            "The Platform to Build and Scale Enterprise Apps",
+            class_name="relative z-10 text-balance text-base font-[600] leading-5 tracking-normal text-secondary-12",
+        ),
+        rx.el.p(
+            "Turn your idea into a production-ready Python web app with AI.",
+            class_name="relative z-10 text-pretty text-sm font-[475] leading-5 tracking-normal text-secondary-11",
+        ),
+        rx.el.span(
+            "Try the Builder",
+            ui.icon(
+                "ArrowRight01Icon",
+                class_name="size-3.5 shrink-0",
+            ),
+            class_name=ui.cn(
+                ui.button.class_names.for_button("primary-bordered", "sm"),
+                "relative z-10 mt-2 w-fit text-[0.8rem] font-[500] leading-5 tracking-normal",
+            ),
+        ),
+        href=REFLEX_BUILD_URL,
+        target="_blank",
+        rel="noopener noreferrer",
+        aria_label="Open Reflex AI Builder",
+        class_name="relative isolate -ml-2 flex w-[calc(100%+1rem)] shrink-0 touch-manipulation cursor-pointer flex-col items-start justify-start gap-2 rounded-xl border border-secondary-a4 bg-white-1 p-6 shadow-small transition-colors hover:border-secondary-a6 hover:bg-secondary-2 focus-visible:border-secondary-a6 focus-visible:bg-secondary-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-8",
+    )
+
+
 def docs_right_sidebar(
     toc: Sequence[tuple[int, str]],
     *,
@@ -492,33 +537,48 @@ def docs_right_sidebar(
     return rx.box(
         rx.el.nav(
             rx.box(
-                rx.el.p(
-                    rx.icon("align-left", size=14, class_name="text-secondary-12"),
-                    "On This Page",
-                    class_name="flex h-8 items-center justify-start gap-1.5 text-sm font-[525] text-secondary-12",
-                ),
-                rx.el.ul(
-                    *(
-                        rx.el.li(
-                            rx.el.a(
-                                text,
-                                class_name=ui.cn(
-                                    "line-clamp-2 py-1 text-sm font-[525] text-secondary-11 transition-colors hover:text-secondary-12",
-                                    "pl-4" if level <= 2 else "pl-8",
-                                ),
-                                href=f"{path}#{make_slug(text)}",
-                            )
-                        )
-                        for level, text in toc
-                    ),
-                    id="toc-navigation",
-                    class_name="flex max-h-[60vh] list-none flex-col gap-y-1 overflow-y-auto scroll-mask-y-10 shadow-[1.5px_0_0_0_var(--secondary-4)_inset] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-                ),
                 rx.el.div(
-                    feedback or docs_feedback_button_toc(),
-                    class_name="mt-1.5 flex flex-col justify-start",
+                    rx.el.p(
+                        rx.icon("align-left", size=14, class_name="text-secondary-12"),
+                        "On This Page",
+                        class_name="flex h-8 items-center justify-start gap-1.5 text-sm font-[525] text-secondary-12",
+                    ),
+                    rx.el.ul(
+                        *(
+                            rx.el.li(
+                                rx.el.a(
+                                    text,
+                                    class_name=ui.cn(
+                                        "line-clamp-2 py-1 text-sm font-[525] text-secondary-11 transition-colors hover:text-secondary-12",
+                                        "pl-4" if level <= 2 else "pl-8",
+                                    ),
+                                    href=f"{path}#{make_slug(text)}",
+                                )
+                            )
+                            for level, text in toc
+                        ),
+                        id="toc-navigation",
+                        class_name="flex min-h-0 flex-1 list-none flex-col gap-y-1 overflow-y-auto scroll-mask-y-10 shadow-[1.5px_0_0_0_var(--secondary-4)_inset] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                    ),
+                    rx.el.div(
+                        feedback or docs_feedback_button_toc(),
+                        class_name="mt-1.5 flex flex-col justify-start",
+                    ),
+                    class_name="flex min-h-0 flex-1 flex-col justify-start gap-y-4",
                 ),
-                class_name="sticky top-4 flex flex-col justify-start gap-y-4 overflow-y-auto",
+                _docs_builder_card(),
+                class_name=ui.cn(
+                    "sticky top-4 flex min-h-0 flex-col justify-start gap-y-4 pb-4",
+                    (
+                        rx.cond(
+                            HostingBannerState.is_banner_visible,
+                            "max-h-[calc(100dvh-146px)]",
+                            "max-h-[calc(100dvh-90px)]",
+                        )
+                        if show_banner
+                        else "max-h-[calc(100dvh-90px)]"
+                    ),
+                ),
             ),
             class_name=ui.cn(
                 "h-full w-full",
