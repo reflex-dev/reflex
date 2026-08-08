@@ -121,6 +121,17 @@ async def _patch_state(
         root_state = original_state._get_root_state()
         root_dirty_vars = set(root_state.dirty_vars)
         root_dirty_substates = set(root_state.dirty_substates)
+        dirty_state_snapshots: list[tuple[BaseState, set[str], set[str]]] = []
+        if not full_delta:
+            states_to_snapshot = [root_state]
+            while states_to_snapshot:
+                state = states_to_snapshot.pop()
+                dirty_state_snapshots.append((
+                    state,
+                    set(state.dirty_vars),
+                    set(state.dirty_substates),
+                ))
+                states_to_snapshot.extend(state.substates.values())
         root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
@@ -129,6 +140,12 @@ async def _patch_state(
             # so its values must not count as sent to the client.
             with _suppress_delta_recording():
                 await root_state._get_resolved_delta()
+        except BaseException:
+            if not full_delta:
+                for state, dirty_vars, dirty_substates in dirty_state_snapshots:
+                    state.dirty_vars = dirty_vars
+                    state.dirty_substates = dirty_substates
+            raise
         finally:
             if not full_delta:
                 root_state.dirty_vars = root_dirty_vars
