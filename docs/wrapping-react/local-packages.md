@@ -127,7 +127,7 @@ code.
 
 These package specifiers can be used for `library` or `lib_dependencies`.
 
-```python demo exec toggle
+```python demo exec
 class GithubComponent(rx.Component):
     library = "@masenf/hello-react@github:masenf/hello-react"
     tag = "Counter"

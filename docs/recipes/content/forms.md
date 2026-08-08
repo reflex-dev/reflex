@@ -10,7 +10,7 @@ For more details, see the [form docs page](/docs/library/forms/form).
 
 ## Event creation
 
-```python demo exec toggle
+```python demo exec
 def form_field(label: str, placeholder: str, type: str, name: str) -> rx.Component:
     return rx.form.field(
         rx.flex(
@@ -80,7 +80,7 @@ def event_form() -> rx.Component:
 
 ## Contact
 
-```python demo exec toggle
+```python demo exec
 def form_field(label: str, placeholder: str, type: str, name: str) -> rx.Component:
     return rx.form.field(
         rx.flex(
