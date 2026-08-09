@@ -4,6 +4,7 @@ import dataclasses
 import hashlib
 import itertools
 import json
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import SimpleNamespace
@@ -143,6 +144,7 @@ def _manifest(pages: dict[str, dict], **overrides) -> dict:
         "epoch_inputs": {},
         "all_imports": {},
         "pages": pages,
+        "memo_files": {},
     }
     base.update(overrides)
     return base
@@ -751,11 +753,15 @@ def test_incremental_rebuild_rewrites_changed_user_memo(
     _stub_externals(app, monkeypatch)
 
     # Simulate an edit to this module (which defines the user memo): record a
-    # stale hash for its file so the page importing the memo misses.
+    # stale hash for its file in the page's dep set (so the importing page
+    # misses) and in the stored memo record (so the memo file is dirty).
     module_file = str(Path(__file__).resolve())
     manifest_path = web / disk_cache._MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text())
     manifest["pages"][memo_route]["dep_hashes"] = {module_file: "stale-hash"}
+    memo_path = disk_cache._memo_output_path(__name__)
+    assert memo_path is not None
+    manifest["memo_files"][memo_path]["dep_hashes"][module_file] = "stale-hash"
     manifest_path.write_text(json.dumps(manifest))
 
     assert (
@@ -776,6 +782,175 @@ def test_incremental_rebuild_rewrites_changed_user_memo(
         out_path = compiler_utils.resolve_path_of_web_dir(mpath)
         assert out_path.exists()
         assert badge_def.export_name in out_path.read_text(encoding="utf-8")
+
+
+def test_new_memo_module_is_emitted_on_first_use(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A user memo module the previous compile never saw must be emitted.
+
+    Mirrors the review repro: a page starts importing a ``@rx.memo`` from a
+    brand-new module. The page misses (its importer changed), but the memo's
+    module file is absent from every recorded dependency set — no
+    changed-file reasoning can select it — while the recompiled page imports
+    the memo's mirrored file, which must therefore be written.
+    """
+    from reflex_base.components.memo import MEMOS, MemoComponentDefinition
+
+    from reflex.compiler import compiler
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+
+    app = rx.App()
+    app.add_page(_page_with_user_memo, route="/memo")
+    pages = list(app._unevaluated_pages.values())
+    memo_route = pages[0].route
+    ctx = _compile(pages)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+
+    # Rewrite the manifest as if the previous compile never saw the memo's
+    # module: the page's recorded deps name only an unrelated changed file
+    # (so it misses), and no recorded memo state mentions the module.
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pages"][memo_route]["dep_hashes"] = {
+        str(tmp_path / "app.py"): "stale-hash"
+    }
+    manifest["memo_files"] = {}
+    manifest_path.write_text(json.dumps(manifest))
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+
+    badge_def = next(m for m in MEMOS.values() if m.source_module == __name__)
+    assert isinstance(badge_def, MemoComponentDefinition)
+    memo_files, _ = compiler.compile_memo_components([badge_def])
+    assert memo_files
+    for mpath, _mcode in memo_files:
+        out_path = compiler_utils.resolve_path_of_web_dir(mpath)
+        assert out_path.exists(), "new memo module file was never written"
+        assert badge_def.export_name in out_path.read_text(encoding="utf-8")
+
+
+def test_route_owned_memo_entry_carried_while_owner_hits(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A route-owned memo entry survives rebuilds while its owner page hits.
+
+    The pre-evaluation registry can't see memos from modules imported inside
+    a page function; the entry's owner attribution keeps its on-disk file and
+    manifest record intact without re-evaluating anything.
+    """
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    owner_route = pages[0].route
+    ctx = _compile(pages)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+
+    lazy_file = web / "app_components" / "lazy_module.jsx"
+    lazy_file.parent.mkdir(parents=True, exist_ok=True)
+    lazy_file.write_text("export const Lazy = () => null;")
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    manifest["memo_files"][str(lazy_file)] = {
+        "def_keys": [["Lazy", "lazy_module"]],
+        "dep_hashes": {},
+        "owner_route": owner_route,
+    }
+    manifest_path.write_text(json.dumps(manifest))
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+
+    assert lazy_file.read_text() == "export const Lazy = () => null;"
+    # The all-hit rebuild left the manifest record (including the entry) intact.
+    written = json.loads(manifest_path.read_text())
+    assert written["memo_files"][str(lazy_file)]["owner_route"] == owner_route
+
+
+def test_new_lazy_memo_module_is_emitted_on_first_use(
+    tmp_path, monkeypatch, preserve_memo_registries
+):
+    """A new memo module imported inside a page function must be emitted.
+
+    The pre-evaluation registry cannot see this module, and the changed-file
+    net cannot see a new file. The post-evaluation pass over the recompiled
+    routes' owned memos must demand its output file.
+    """
+    import importlib
+
+    module_name = "lazy_memo_mod_t1"
+    (tmp_path / f"{module_name}.py").write_text(
+        "import reflex as rx\n"
+        "\n"
+        "@rx.memo\n"
+        "def lazy_badge(text: str) -> rx.Component:\n"
+        "    return rx.el.span(text)\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    def _page_lazy() -> Component:
+        mod = importlib.import_module(module_name)
+        return rx.el.div(mod.lazy_badge(text="hi"))
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_lazy, route="/lazy")
+    pages = list(app._unevaluated_pages.values())
+    lazy_route = pages[0].route
+    try:
+        ctx = _compile(pages)
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+        _stub_externals(app, monkeypatch)
+
+        manifest_path = web / disk_cache._MANIFEST_FILE
+        manifest = json.loads(manifest_path.read_text())
+        lazy_path = disk_cache._memo_output_path(module_name)
+        assert lazy_path is not None
+        # Sanity: the full compile recorded the entry as owned by the page.
+        assert manifest["memo_files"][lazy_path]["owner_route"] == lazy_route
+
+        # Surgery: the previous compile never saw the lazy module, and the
+        # page misses via an unrelated changed file.
+        del manifest["memo_files"][lazy_path]
+        manifest["pages"][lazy_route]["dep_hashes"] = {
+            str(tmp_path / "app.py"): "stale-hash"
+        }
+        manifest_path.write_text(json.dumps(manifest))
+
+        assert (
+            disk_cache.try_incremental_rebuild(
+                app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+            )
+            is True
+        )
+
+        from reflex_base.components.memo import MEMOS, MemoComponentDefinition
+
+        lazy_def = next(m for m in MEMOS.values() if m.source_module == module_name)
+        assert isinstance(lazy_def, MemoComponentDefinition)
+        out_path = Path(lazy_path)
+        assert out_path.exists(), "lazy memo module file was never written"
+        assert lazy_def.export_name in out_path.read_text(encoding="utf-8")
+        # The refreshed manifest re-records the entry with its owner.
+        written = json.loads(manifest_path.read_text())
+        assert written["memo_files"][lazy_path]["owner_route"] == lazy_route
+    finally:
+        sys.modules.pop(module_name, None)
 
 
 class _MemoCacheState(rx.State):
@@ -874,7 +1049,12 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
     })
 
     disk_cache._update_manifest_for_misses(
-        manifest, cast(Any, miss_ctx), [page], complete_imports, root=tmp_path
+        manifest,
+        cast(Any, miss_ctx),
+        [page],
+        complete_imports,
+        root=tmp_path,
+        memo_state={},
     )
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())

@@ -766,6 +766,21 @@ def page_py_dependencies(
     return _walk_import_closure(graph, _component_source_files(component, root))
 
 
+def module_py_dependencies(module_file: str, root: Path | None = None) -> set[str]:
+    """Return the transitive first-party ``.py`` files a module depends on.
+
+    Args:
+        module_file: The module's resolved source file path.
+        root: Project root. Defaults to cwd.
+
+    Returns:
+        The reachable first-party dependency file paths, including
+        ``module_file`` itself.
+    """
+    root = (root or Path.cwd()).resolve()
+    return _walk_import_closure(build_import_graph(root), {module_file})
+
+
 def app_dependency_files(
     pages: Sequence[object] | None = None, root: Path | None = None
 ) -> set[str]:

@@ -5,7 +5,9 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -283,6 +285,12 @@ class MemoDefinition:
     # used for memos that can't be mirrored. ``kw_only`` so subclasses can keep
     # their own required fields.
     source_module: str | None = dataclasses.field(default=None, kw_only=True)
+    # The page route whose evaluation triggered this memo's registration (see
+    # ``registration_owner``), or None for memos registered at module import
+    # outside any page evaluation. The compile cache attributes the memo's
+    # output file to this route: the file is reusable while the route's page
+    # is, and is recompiled by re-evaluating that page.
+    owner_route: str | None = dataclasses.field(default=None, kw_only=True)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -444,6 +452,36 @@ def reset_memo_component_classes() -> None:
 
 MEMOS: dict[tuple[str, str | None], MemoDefinition] = {}
 
+# The route of the page currently being evaluated, if any. Modules imported
+# during a page's evaluation register their memos inside this scope, so the
+# registered definition records that page as its owner.
+_registration_owner: ContextVar[str | None] = ContextVar(
+    "_registration_owner", default=None
+)
+
+
+@contextmanager
+def registration_owner(route: str) -> Iterator[None]:
+    """Attribute memo registrations to the page route that triggers them.
+
+    Salsa-style entity ownership: a memo registered while a page evaluates
+    (e.g. from a module imported inside the page function) is an artifact of
+    that page's compilation, not of app import. Recording the owning route
+    lets the compile cache validate the memo's output file by the page's
+    hit/miss status and recompile it by re-evaluating that page.
+
+    Args:
+        route: The route of the page being evaluated.
+
+    Yields:
+        None.
+    """
+    token = _registration_owner.set(route)
+    try:
+        yield
+    finally:
+        _registration_owner.reset(token)
+
 
 def _memo_registry_key(definition: MemoDefinition) -> tuple[str, str | None]:
     """Get the registry key for a memo.
@@ -505,7 +543,7 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
         )
         raise ValueError(msg)
 
-    MEMOS[key] = definition
+    MEMOS[key] = dataclasses.replace(definition, owner_route=_registration_owner.get())
 
 
 def _annotation_inner_type(annotation: Any) -> Any:

@@ -23,6 +23,7 @@ from reflex_base.components.memo import (
     _LazyBody,
     _MemoCallBinding,
     _strip_optional,
+    registration_owner,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
@@ -1874,3 +1875,32 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+def test_registration_owner_tags_definitions():
+    """Registrations inside ``registration_owner`` record the owning route.
+
+    A memo registered while a page evaluates belongs to that page; a
+    re-registration outside any owner scope re-tags it as import-owned.
+    """
+
+    def _definition():
+        return next(
+            d
+            for (_, module), d in MEMOS.items()
+            if module == __name__ and d.python_name == "owned_badge"
+        )
+
+    with registration_owner("/owner-route"):
+
+        @rx.memo
+        def owned_badge(text: str) -> Component:
+            return rx.el.span(text)
+
+    assert _definition().owner_route == "/owner-route"
+
+    @rx.memo
+    def owned_badge(text: str) -> Component:
+        return rx.el.span(text)
+
+    assert _definition().owner_route is None

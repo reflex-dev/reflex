@@ -807,6 +807,7 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.components.memo import registration_owner
         from reflex_base.vars.base import reset_unique_variable_names
 
         self.ensure_context_attached()
@@ -824,23 +825,26 @@ class CompileContext(BaseContext):
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            if recorder is not None:
-                with recorder() as read_set:
+            # Memos registered while this page evaluates (e.g. from modules
+            # imported inside the page function) are owned by this route.
+            with registration_owner(page.route):
+                if recorder is not None:
+                    with recorder() as read_set:
+                        page_ctx = self.hooks.eval_page(
+                            page_fn,
+                            page=page,
+                            compile_context=self,
+                            **kwargs,
+                        )
+                    if page_ctx is not None:
+                        page_ctx.source_files = read_set
+                else:
                     page_ctx = self.hooks.eval_page(
                         page_fn,
                         page=page,
                         compile_context=self,
                         **kwargs,
                     )
-                if page_ctx is not None:
-                    page_ctx.source_files = read_set
-            else:
-                page_ctx = self.hooks.eval_page(
-                    page_fn,
-                    page=page,
-                    compile_context=self,
-                    **kwargs,
-                )
             if page_ctx is None:
                 page_name = getattr(page_fn, "__name__", repr(page_fn))
                 msg = (
