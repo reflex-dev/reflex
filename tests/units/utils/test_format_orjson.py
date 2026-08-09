@@ -426,6 +426,55 @@ def test_fallback_collision_walk_sentinelizes_non_finite_floats(no_orjson):
     }
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "hello",
+        "null",
+        'with "quotes" and \\ backslash',
+        "control\nchars\t",
+        "ünïcödé ✨",
+        NAN_SENTINEL,
+        SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
+    ],
+)
+def test_orjson_dumps_bare_string_matches_stdlib(value):
+    """The bare-string fast path must produce exactly what ``json_dumps`` does.
+
+    Sentinels are not escaped here: escaping only applies to socket payloads.
+
+    Args:
+        value: The string to serialize.
+    """
+    assert orjson_dumps(value) == json_dumps(value)
+
+
+def test_orjson_dumps_bare_string_fallback_matches_stdlib(no_orjson):
+    """Without orjson the fast path must still emit the same string.
+
+    Args:
+        no_orjson: Fixture removing orjson from the format module.
+    """
+    assert orjson_dumps("ünïcödé ✨") == json_dumps("ünïcödé ✨")
+
+
+def test_orjson_dumps_lone_surrogate_falls_back_to_stdlib():
+    """Strings that are not valid UTF-8 are rejected by orjson, not the stdlib."""
+    assert orjson_dumps("\ud800") == json_dumps("\ud800")
+
+
+def test_orjson_dumps_str_subclass_uses_general_path():
+    """A str subclass may have a registered serializer, so it must not take the
+    ``type(obj) is str`` fast path.
+    """
+
+    class _StrSubclass(str):
+        pass
+
+    assert orjson_dumps(_StrSubclass("x")) == json_dumps("x")
+
+
 def test_orjson_dumps_indent_4_falls_back_to_stdlib():
     """Orjson only supports 2-space indent; other widths must not be
     silently coerced to 2.

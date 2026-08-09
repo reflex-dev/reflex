@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -701,6 +702,27 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the serialization
+    hot paths, so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -711,10 +733,8 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_base.utils import serializers
-
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", serializers.serialize)
+    kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
 
@@ -769,19 +789,31 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A JSON string.
     """
-    indent = kwargs.get("indent")
-    if (
-        # orjson only supports two-space indentation and always emits UTF-8.
-        indent not in (None, 2)
-        or kwargs.get("ensure_ascii")
-        or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
-    ):
-        return json_dumps(obj, **kwargs)
+    if type(obj) is str and not kwargs:
+        # Hot path: every string literal Var serializes one bare string, and
+        # neither the indent/sort options nor the non-finite float scan below
+        # can apply to it.
+        if orjson is not None:
+            try:
+                return orjson.dumps(obj).decode()
+            except TypeError:
+                # orjson rejects strings that are not valid UTF-8.
+                pass
+        return json.dumps(obj, ensure_ascii=False)
+
+    indent = None
+    if kwargs:
+        indent = kwargs.get("indent")
+        if (
+            # orjson only supports two-space indentation and always emits UTF-8.
+            indent not in (None, 2)
+            or kwargs.get("ensure_ascii")
+            or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
+        ):
+            return json_dumps(obj, **kwargs)
 
     if orjson is None:
         return _json_dumps_like_orjson(obj, **kwargs)
-
-    from reflex_base.utils import serializers
 
     option = _ORJSON_PASSTHROUGH_OPTS
     if indent:
@@ -790,7 +822,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         option |= orjson.OPT_SORT_KEYS
 
     try:
-        out = orjson.dumps(obj, default=serializers.serialize, option=option)
+        out = orjson.dumps(obj, default=_get_serialize(), option=option)
     except TypeError:
         # The stdlib handles values orjson rejects, such as large integers.
         return _json_dumps_like_orjson(obj, **kwargs)
@@ -910,6 +942,21 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
     )
 
 
+def _orjson_socket_default(o: Any) -> Any:
+    """Serialize a value orjson does not handle natively, for socket payloads.
+
+    Args:
+        o: The value orjson could not serialize.
+
+    Returns:
+        A value orjson can serialize.
+    """
+    # orjson passes float subclasses (not int/str) to default.
+    if isinstance(o, float):
+        return float(o)
+    return _get_serialize()(o)
+
+
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats.
 
@@ -939,16 +986,10 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     if orjson is None:
         return _json_dumps_socket_fallback(obj)
 
-    from reflex_base.utils import serializers
-
-    def _default(o: Any) -> Any:
-        # orjson passes float subclasses (not int/str) to default.
-        if isinstance(o, float):
-            return float(o)
-        return serializers.serialize(o)
-
     try:
-        out = orjson.dumps(obj, default=_default, option=_ORJSON_SOCKET_OPTS)
+        out = orjson.dumps(
+            obj, default=_orjson_socket_default, option=_ORJSON_SOCKET_OPTS
+        )
     except TypeError:
         # Payloads orjson can't represent even via default (e.g. int > 64-bit).
         return _json_dumps_socket_fallback(obj)
