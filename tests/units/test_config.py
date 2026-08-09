@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import os
 from pathlib import Path
@@ -838,3 +839,21 @@ def test_disable_plugins_bad_env_spec_warns(
     assert any(
         "REFLEX_DISABLE_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
     )
+
+
+def test_config_json_does_not_attempt_orjson(monkeypatch: pytest.MonkeyPatch):
+    """A config always has unset optional fields, so orjson's pass is wasted.
+
+    ``orjson_dumps`` cannot tell those nulls from dropped non-finite floats and
+    would redo the whole payload with the stdlib.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.utils import format as format_module
+
+    def _fail(*args: Any, **kwargs: Any):
+        pytest.fail("Config.json() attempted an orjson pass that would be discarded")
+
+    monkeypatch.setattr(format_module, "orjson_dumps", _fail)
+    assert json.loads(rx.Config(app_name="a").json())["app_name"] == "a"
