@@ -16,7 +16,7 @@ Having a clear and consistent navigation structure can greatly improve the user 
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -86,7 +86,7 @@ def navbar() -> rx.Component:
 
 ## Dropdown
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -179,7 +179,7 @@ def navbar_dropdown() -> rx.Component:
 
 ## Search bar
 
-```python demo exec toggle
+```python demo exec
 def navbar_searchbar() -> rx.Component:
     return rx.box(
         rx.desktop_only(
@@ -241,7 +241,7 @@ def navbar_searchbar() -> rx.Component:
 
 ## Icons
 
-```python demo exec toggle
+```python demo exec
 def navbar_icons_item(text: str, icon: str, url: str) -> rx.Component:
     return rx.link(
         rx.hstack(rx.icon(icon), rx.text(text, size="4", weight="medium")), href=url
@@ -319,7 +319,7 @@ def navbar_icons() -> rx.Component:
 
 ## Buttons
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -397,7 +397,7 @@ def navbar_buttons() -> rx.Component:
 
 ## User profile
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 

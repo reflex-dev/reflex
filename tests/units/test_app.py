@@ -2546,11 +2546,11 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
 
-def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+def test_legacy_app_theme_wins_over_explicit_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
 ):
-    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    """Deprecated App.theme keeps working (and winning) until its removal."""
     conf = rx.Config(
         app_name="testing",
         plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
@@ -2569,8 +2569,37 @@ def test_explicit_radix_plugin_wins_over_legacy_app_theme(
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
 
-    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
-    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"green"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_default_explicit_radix_plugin_adopts_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A bare RadixThemesPlugin() (default theme) should adopt deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin()],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"blue"' not in app_root
     mock_deprecate.assert_called_once()
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
