@@ -34,6 +34,23 @@ from reflex_base.utils.format import (
     orjson_dumps_socket,
     orjson_loads,
 )
+from reflex_base.utils.serializers import serializer
+
+
+@pytest.fixture(autouse=True)
+def _orjson_enabled(monkeypatch: pytest.MonkeyPatch):
+    """Run every test here with the orjson paths enabled.
+
+    An Enum/UUID serializer registered at import time by any other test module
+    would otherwise disable them process-wide.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.utils import format as format_module
+
+    monkeypatch.setattr(format_module, "_orjson_registry_shadowed", False)
+
 
 # orjson_dumps + orjson_loads round-trip
 
@@ -326,6 +343,134 @@ def test_native_subclass_matches_json_dumps(value):
     assert json.loads(orjson_dumps_socket({"v": value})) == json.loads(
         json_dumps({"v": value})
     )
+
+
+# user-registered serializers must win over orjson's native handling.
+# These live at module scope because ``get_type_hints`` resolves the
+# serializer annotations against module globals.
+
+
+class _EnumForSerializer(Enum):
+    ACTIVE = "raw"
+
+
+class _FloatForSerializer(float):
+    pass
+
+
+class _DictForSerializer(dict):
+    pass
+
+
+@pytest.fixture
+def isolated_serializer_registry(monkeypatch: pytest.MonkeyPatch):
+    """Undo serializer registrations made by the test.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Yields:
+        The ``format`` module, for asserting on the shadow flag.
+    """
+    from reflex_base.utils import format as format_module
+    from reflex_base.utils import serializers
+
+    monkeypatch.setattr(serializers, "SERIALIZERS", dict(serializers.SERIALIZERS))
+    monkeypatch.setattr(
+        serializers, "SERIALIZER_TYPES", dict(serializers.SERIALIZER_TYPES)
+    )
+    serializers.get_serializer.cache_clear()
+    serializers.get_serializer_type.cache_clear()
+    yield format_module
+    serializers.get_serializer.cache_clear()
+    serializers.get_serializer_type.cache_clear()
+
+
+@pytest.mark.parametrize("value", [_EnumForSerializer.ACTIVE, UUID(int=1)])
+def test_stock_enum_and_uuid_serializers_agree_with_orjson(value):
+    """Check the premise behind the bundled Enum/UUID serializers opting out.
+
+    Args:
+        value: A value covered by a bundled, opted-out serializer.
+    """
+    payload = {"v": value}
+    assert orjson_dumps(payload) == json_dumps(payload, separators=(",", ":"))
+    assert orjson_dumps_socket(payload) == json_dumps(payload, separators=(",", ":"))
+
+
+def test_custom_enum_serializer_wins_over_orjson(isolated_serializer_registry):
+    """An Enum is emitted natively by orjson, which would bypass the registry.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer
+    def serialize_status(status: _EnumForSerializer) -> str:
+        return "CUSTOM"
+
+    value = {"v": _EnumForSerializer.ACTIVE}
+    assert isolated_serializer_registry._orjson_registry_shadowed is True
+    assert orjson_dumps(value) == json_dumps(value, separators=(",", ":"))
+    assert orjson_dumps_socket(value) == '{"v":"CUSTOM"}'
+
+
+def test_uuid_serializer_override_wins_over_orjson(isolated_serializer_registry):
+    """A UUID is emitted natively by orjson, which would bypass an override.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer(overwrite=True)
+    def serialize_uuid_override(value: UUID) -> str:
+        return "CUSTOM"
+
+    assert isolated_serializer_registry._orjson_registry_shadowed is True
+    assert orjson_dumps_socket({"v": UUID(int=1)}) == '{"v":"CUSTOM"}'
+
+
+def test_float_subclass_serializer_does_not_shadow_orjson(
+    isolated_serializer_registry,
+):
+    """The stdlib serializes float subclasses natively, so orjson must too.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer
+    def serialize_money(value: _FloatForSerializer) -> str:
+        return "CUSTOM"
+
+    payload = {"v": _FloatForSerializer(1.5)}
+    assert isolated_serializer_registry._orjson_registry_shadowed is False
+    assert orjson_dumps(payload) == json_dumps(payload, separators=(",", ":"))
+    assert orjson_dumps_socket(payload) == '{"v":1.5}'
+
+
+def test_builtin_subclass_serializer_bypassed_by_both_backends(
+    isolated_serializer_registry,
+):
+    """Neither backend consults the registry for str/dict subclasses.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer
+    def serialize_str_subclass(value: _StrSubclass) -> str:
+        return "CUSTOM"
+
+    @serializer
+    def serialize_dict_subclass(value: _DictForSerializer) -> str:
+        return "CUSTOM"
+
+    assert isolated_serializer_registry._orjson_registry_shadowed is False
+    for payload in ({"v": _StrSubclass("x")}, {"v": _DictForSerializer(a=1)}):
+        assert orjson_dumps_socket(payload) == json_dumps(
+            payload, separators=(",", ":")
+        )
 
 
 def test_int_subclass_inside_dataclass_field():

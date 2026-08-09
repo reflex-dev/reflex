@@ -44,11 +44,17 @@ deserializers = {
 }
 
 
+# orjson serializes these without consulting ``default``. Datetimes and
+# dataclasses are absent because ``format`` passes those through explicitly.
+_ORJSON_NATIVE_TYPES = (Enum, UUID)
+
+
 @overload
 def serializer(
     fn: None = None,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -57,6 +63,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION: ...
 
 
@@ -64,6 +71,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
@@ -71,6 +79,8 @@ def serializer(
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
         overwrite: Whether to overwrite the existing serializer.
+        _orjson_native_equivalent: Internal. orjson's native output already matches
+            this serializer, so keep the orjson fast paths enabled.
 
     Returns:
         The decorated function.
@@ -121,6 +131,16 @@ def serializer(
         # Register the serializer.
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
+
+        # ``type_`` comes from an annotation, so it is not necessarily a class.
+        if (
+            not _orjson_native_equivalent
+            and isinstance(type_, type)
+            and issubclass(type_, _ORJSON_NATIVE_TYPES)
+        ):
+            from reflex_base.utils.format import _mark_orjson_registry_shadowed
+
+            _mark_orjson_registry_shadowed()
 
         # Return the function.
         return fn
@@ -352,7 +372,8 @@ def serialize_path(path: Path) -> str:
     return str(path.as_posix())
 
 
-@serializer
+# orjson emits ``en.value`` for an Enum, exactly what this returns.
+@serializer(_orjson_native_equivalent=True)
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
 
@@ -365,7 +386,8 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer(to=str)
+# orjson emits ``str(uuid)`` for a UUID, exactly what this returns.
+@serializer(to=str, _orjson_native_equivalent=True)
 def serialize_uuid(uuid: UUID) -> str:
     """Serialize a UUID to a JSON string.
 

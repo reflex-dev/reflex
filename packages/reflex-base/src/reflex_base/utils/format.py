@@ -6,7 +6,6 @@ import inspect
 import json
 import os
 import re
-from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -702,25 +701,15 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
-_serialize: Callable[[Any], Any] | None = None
+# orjson has no passthrough option for Enum/uuid.UUID, so a serializer
+# registered for one would be silently bypassed. Fall back to the stdlib.
+_orjson_registry_shadowed = False
 
 
-def _get_serialize() -> Callable[[Any], Any]:
-    """Get ``serializers.serialize``, importing it on first use.
-
-    The import cannot live at module scope (``serializers`` imports this
-    module), and repeating it per call is measurable on the serialization
-    hot paths, so the resolved function is cached.
-
-    Returns:
-        The ``serializers.serialize`` callable.
-    """
-    global _serialize
-    if _serialize is None:
-        from reflex_base.utils import serializers
-
-        _serialize = serializers.serialize
-    return _serialize
+def _mark_orjson_registry_shadowed() -> None:
+    """Stop using orjson because the serializer registry now shadows it."""
+    global _orjson_registry_shadowed
+    _orjson_registry_shadowed = True
 
 
 def json_dumps(obj: Any, **kwargs) -> str:
@@ -733,8 +722,10 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
+    from reflex_base.utils import serializers
+
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", _get_serialize())
+    kwargs.setdefault("default", serializers.serialize)
 
     return json.dumps(obj, **kwargs)
 
@@ -749,6 +740,24 @@ _ORJSON_PASSTHROUGH_OPTS = (
     if orjson is not None
     else 0
 )
+
+
+def _orjson_default(o: Any) -> Any:
+    """Serialize a value orjson does not handle natively.
+
+    Args:
+        o: The value orjson could not serialize.
+
+    Returns:
+        A value orjson can serialize.
+    """
+    from reflex_base.utils import serializers
+
+    # orjson hands float subclasses to default (unlike str/int/list/dict ones);
+    # the stdlib serializes them as plain numbers, so coerce to match.
+    if isinstance(o, float):
+        return float(o)
+    return serializers.serialize(o)
 
 
 def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
@@ -812,7 +821,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         ):
             return json_dumps(obj, **kwargs)
 
-    if orjson is None:
+    if orjson is None or _orjson_registry_shadowed:
         return _json_dumps_like_orjson(obj, **kwargs)
 
     option = _ORJSON_PASSTHROUGH_OPTS
@@ -822,7 +831,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         option |= orjson.OPT_SORT_KEYS
 
     try:
-        out = orjson.dumps(obj, default=_get_serialize(), option=option)
+        out = orjson.dumps(obj, default=_orjson_default, option=option)
     except TypeError:
         # The stdlib handles values orjson rejects, such as large integers.
         return _json_dumps_like_orjson(obj, **kwargs)
@@ -942,21 +951,6 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
     )
 
 
-def _orjson_socket_default(o: Any) -> Any:
-    """Serialize a value orjson does not handle natively, for socket payloads.
-
-    Args:
-        o: The value orjson could not serialize.
-
-    Returns:
-        A value orjson can serialize.
-    """
-    # orjson passes float subclasses (not int/str) to default.
-    if isinstance(o, float):
-        return float(o)
-    return _get_serialize()(o)
-
-
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats.
 
@@ -983,13 +977,11 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
         A JSON string ready for socket emit.
     """
     del kwargs  # Output is always compact; socket.io's separators arg is moot.
-    if orjson is None:
+    if orjson is None or _orjson_registry_shadowed:
         return _json_dumps_socket_fallback(obj)
 
     try:
-        out = orjson.dumps(
-            obj, default=_orjson_socket_default, option=_ORJSON_SOCKET_OPTS
-        )
+        out = orjson.dumps(obj, default=_orjson_default, option=_ORJSON_SOCKET_OPTS)
     except TypeError:
         # Payloads orjson can't represent even via default (e.g. int > 64-bit).
         return _json_dumps_socket_fallback(obj)
