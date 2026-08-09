@@ -8,7 +8,7 @@ The login form is a common component in web applications. It allows users to aut
 
 ## Default
 
-```python demo exec toggle
+```python demo exec
 def login_default() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -81,7 +81,7 @@ def login_default() -> rx.Component:
 
 ## Icons
 
-```python demo exec toggle
+```python demo exec
 def login_default_icons() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -159,7 +159,7 @@ def login_default_icons() -> rx.Component:
 
 ## Third-party auth
 
-```python demo exec toggle
+```python demo exec
 def login_single_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -252,7 +252,7 @@ def login_single_thirdparty() -> rx.Component:
 
 ## Multiple third-party auth
 
-```python demo exec toggle
+```python demo exec
 def login_multiple_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(

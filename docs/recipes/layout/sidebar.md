@@ -43,7 +43,7 @@ Similar to a navigation bar, a sidebar is a common UI element found on the side 
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(
@@ -145,7 +145,7 @@ def sidebar() -> rx.Component:
 
 ## Bottom user profile
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(
@@ -314,7 +314,7 @@ def sidebar_bottom_profile() -> rx.Component:
 
 ## Top user profile
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(

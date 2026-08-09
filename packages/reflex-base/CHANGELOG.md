@@ -24,11 +24,10 @@
   - `universal-cookie`: 7.2.2 → 8.1.2
   - `postcss`: 8.5.14 → 8.5.23
   - `autoprefixer`: 10.5.0 → 10.5.4
-  - `vite`: 8.0.16 → 8.2.0
   - `@tailwindcss/typography`: 0.5.19 → 0.5.20
   - Bun: 1.3.13 → 1.3.14
 
-  Also raised the `rich` upper bound to `<16` (adopting rich 15). Replaced the now-redundant `cookie` `package.json` override (`universal-cookie` 8 and `react-router` resolve `cookie` to 1.x on their own) with a `postcss` override pinning it to 8.5.23 (also satisfying `vite` 8.2.0's `^8.5.23`) so transitive resolutions stay on a patched release (>= 8.5.18) for a security advisory.
+  Also raised the `rich` upper bound to `<16` (adopting rich 15). Replaced the now-redundant `cookie` `package.json` override (`universal-cookie` 8 and `react-router` resolve `cookie` to 1.x on their own) with a `postcss` override pinning it to 8.5.23 so transitive resolutions stay on a patched release (>= 8.5.18) for a security advisory.
 
   ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
 - Remove the unused `REFLEX_USE_TURBOPACK` environment variable. Turbopack is a Next.js bundler; the flag has had no effect since Reflex moved to React Router and Vite in 0.8. ([#6803](https://github.com/reflex-dev/reflex/issues/6803))

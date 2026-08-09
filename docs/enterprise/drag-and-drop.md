@@ -471,7 +471,7 @@ Provides information about the drop target state:
 
 The `item` parameter allows you to pass data from draggable components to drop handlers:
 
-```python demo exec toggle
+```python demo exec
 import reflex as rx
 import reflex_enterprise as rxe
 
@@ -513,7 +513,7 @@ def item_data_example():
 
 The `collect` parameter allows you to access drag and drop state information in real-time:
 
-```python demo exec toggle
+```python demo exec
 import reflex as rx
 import reflex_enterprise as rxe
 
