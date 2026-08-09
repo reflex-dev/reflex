@@ -745,10 +745,25 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
+        trigger = get_backend_compile_trigger()
         self._compile(
             prerender_routes=should_prerender_routes(),
-            trigger=get_backend_compile_trigger(),
+            trigger=trigger,
         )
+
+        # In preview mode the frontend is served as a mounted static bundle rather
+        # than by the Vite dev server, so each hot reload must re-run the frontend
+        # build against the freshly compiled output.
+        if (
+            trigger == "hot_reload"
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.PREVIEW
+            and environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get()
+        ):
+            from reflex.utils import build
+
+            # The previous output is deleted before building, so a failed build
+            # must fail hard rather than pretend to serve a frontend.
+            build.build()
 
         config = get_config()
 
@@ -1912,6 +1927,16 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Maximum error-level log entries a single session may produce via the
+    # client_error event before further reports from it are dropped.
+    _MAX_CLIENT_ERRORS_PER_SID = 5
+
+    # Process-wide bound on error-level client_error log entries per time
+    # window; per-SID budgets alone reset on reconnect, so scripted
+    # reconnects could otherwise flood the logs.
+    _CLIENT_ERROR_WINDOW_SECONDS = 60.0
+    _MAX_CLIENT_ERRORS_PER_WINDOW = 20
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1924,6 +1949,13 @@ class EventNamespace(AsyncNamespace):
 
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
+
+        # Number of client_error reports logged per SID, for rate limiting.
+        self._client_error_counts: dict[str, int] = {}
+
+        # Start time and count of the current process-wide client_error window.
+        self._client_error_window_start = 0.0
+        self._client_error_window_count = 0
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
@@ -1979,6 +2011,7 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2122,6 +2155,83 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def on_client_error(self, sid: str, data: Any):
+        """Handle errors reported by the frontend.
+
+        This is a dedicated socket event rather than a state event
+        (``FrontendEventExceptionState.handle_frontend_exception``) because a
+        state event is addressed by a handler name the frontend derives from
+        its own state definitions. When those definitions are what disagree
+        with the backend -- the case this handler exists to report -- the name
+        may not resolve and the report is lost. A fixed socket event name
+        cannot drift, and it still gets through after the frontend has stopped
+        sending events on detecting the mismatch.
+
+        Reports are routed through the app's ``frontend_exception_handler``,
+        so frontend errors (especially state update processing errors) are
+        visible in backend logs and reach custom exception handlers.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client.
+        """
+        if not isinstance(data, dict):
+            console.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            return
+
+        # Check the sender and the rate limits before sanitizing: sanitizing is
+        # linear in the size of the client-supplied values, and reports that are
+        # dropped here must not cost more than the check itself.
+        if sid not in self.sid_to_token:
+            # Sockets without a linked token are not known clients; don't let
+            # them write error-level entries into the backend logs.
+            console.debug(f"Ignoring client_error report from unknown SID {sid}.")
+            return
+
+        # Rate limit per session so a client cannot flood the backend logs.
+        error_count = self._client_error_counts.get(sid, 0)
+        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+            return
+
+        # Also bound total entries per time window: per-SID budgets reset on
+        # reconnect, so they alone do not stop scripted reconnect loops.
+        now = time.monotonic()
+        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
+            self._client_error_window_start = now
+            self._client_error_window_count = 0
+        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self._client_error_window_count += 1
+                console.warn(
+                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
+                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
+                    "suppressing further reports for this window."
+                )
+            return
+        self._client_error_window_count += 1
+        self._client_error_counts[sid] = error_count + 1
+
+        error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
+        if error_type == constants.ClientErrorType.DISPATCH_MISSING:
+            substate = format.sanitize_client_log_value(data.get("substate", ""))
+            report = (
+                f"[SID: {sid}] State update failed: "
+                f"no dispatch function for substate(s) '{substate}'. "
+                "This indicates a frontend/backend state mismatch. "
+                "Rebuild the frontend or check that api_url points to the matching backend."
+            )
+        else:
+            message = format.sanitize_client_log_value(
+                data.get("message", "No error message provided")
+            )
+            report = f"[SID: {sid}] {error_type}: {message}"
+        # Route through the app's frontend exception handler so custom
+        # handlers (e.g. error trackers) receive client errors too.
+        self.app.frontend_exception_handler(Exception(report))
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.

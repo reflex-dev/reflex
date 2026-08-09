@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -611,7 +612,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return self._js_expr
 
     @property
-    def _var_is_local(self) -> bool:
+    def _var_is_local(self) -> builtins.bool:
         """Whether this is a local javascript variable.
 
         Returns:
@@ -620,7 +621,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return False
 
     @property
-    def _var_is_string(self) -> bool:
+    def _var_is_string(self) -> builtins.bool:
         """Whether the var is a string literal.
 
         Returns:
@@ -728,7 +729,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self
 
-    def equals(self, other: Var) -> bool:
+    def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
 
         Args:
@@ -815,7 +816,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
-        value: bool,
+        value: builtins.bool,
         _var_data: VarData | None = None,
     ) -> LiteralBooleanVar: ...
 
@@ -940,7 +941,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def to(self, output: type[str]) -> StringVar: ...  # pyright: ignore[reportOverlappingOverload]
 
     @overload
-    def to(self, output: type[bool]) -> BooleanVar: ...
+    def to(self, output: type[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def to(self, output: type[int]) -> NumberVar[int]: ...
@@ -1048,7 +1049,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def guess_type(self: Var[str]) -> StringVar: ...
 
     @overload
-    def guess_type(self: Var[bool]) -> BooleanVar: ...
+    def guess_type(self: Var[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
@@ -1307,7 +1308,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return ~self.bool()
 
-    def to_string(self, use_json: bool = True) -> StringVar:
+    def to_string(self, use_json: builtins.bool = True) -> StringVar:
         """Convert the var to a string.
 
         Args:

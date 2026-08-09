@@ -174,7 +174,7 @@ class TailwindPlugin(PluginBase):
     config: TailwindConfig = dataclasses.field(
         default_factory=lambda: TailwindConfig(
             plugins=[
-                "@tailwindcss/typography@0.5.19",
+                "@tailwindcss/typography@0.5.20",
             ],
         )
     )

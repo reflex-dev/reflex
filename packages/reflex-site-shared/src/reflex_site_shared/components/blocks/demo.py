@@ -8,6 +8,11 @@ import ruff_format
 import reflex as rx
 
 from .code import code_block, code_block_dark
+from .tabs import doc_tab_card, doc_tab_list, doc_tab_trigger
+
+_VIEW_TAB_VALUE = "view"
+_CODE_TAB_VALUE = "code"
+_DATA_TAB_VALUE = "data"
 
 
 def docdemobox(*children, **props) -> rx.Component:
@@ -62,6 +67,60 @@ def doccode(
     )
 
 
+def _doc_view_panel(
+    comp: rx.Component,
+    demobox_props: dict[str, Any] | None = None,
+) -> rx.Component:
+    """Create a preview panel on the tab card's shared surface.
+
+    Args:
+        comp: Rendered demo component.
+        demobox_props: Props to apply to the demo content wrapper.
+
+    Returns:
+        The styled preview panel.
+    """
+    return rx.tabs.content(
+        rx.box(
+            docdemobox(comp, **(demobox_props or {})),
+            class_name=(
+                "[&>div]:!rounded-none [&>div]:!border-0 [&>div]:!bg-transparent"
+            ),
+        ),
+        value=_VIEW_TAB_VALUE,
+        class_name="w-full outline-none",
+    )
+
+
+def _doc_code_panel(
+    source: str,
+    value: str,
+    theme: str = "light",
+) -> rx.Component:
+    """Create a code panel that uses the tab card's shared surface.
+
+    Args:
+        source: Source code to display.
+        value: Value of the corresponding tab trigger.
+        theme: Theme for the code snippet.
+
+    Returns:
+        The styled tab panel.
+    """
+    return rx.tabs.content(
+        doccode(source, theme=theme),
+        value=value,
+        class_name=(
+            "w-full p-4 outline-none sm:p-6 [&>div]:!m-0 "
+            "[&>div]:!rounded-none [&>div]:!border-0 [&>div]:!bg-transparent "
+            "[&_div]:!bg-transparent [&_pre]:!bg-transparent "
+            "[&_.code-block]:!rounded-none [&_.code-block]:!border-0 "
+            "[&_.code-block]:!bg-transparent [&_.code-block]:!shadow-none "
+            "[&_summary]:!from-[var(--secondary-2)]"
+        ),
+    )
+
+
 def docdemo(
     code: str,
     state: str | None = None,
@@ -100,40 +159,20 @@ def docdemo(
     if state is not None:
         code = state + code
 
-    if demobox_props.pop("toggle", False):
-        return rx.tabs.root(
-            rx.tabs.list(
-                rx.tabs.trigger(
-                    rx.box(
-                        "UI",
-                    ),
-                    value="tab1",
-                    class_name="tab-style",
-                ),
-                rx.tabs.trigger(
-                    rx.box(
-                        "Code",
-                    ),
-                    value="tab2",
-                    class_name="tab-style",
-                ),
-                class_name="justify-end",
-            ),
-            rx.tabs.content(
-                rx.box(docdemobox(comp, **(demobox_props or {})), class_name="my-4"),
-                value="tab1",
-            ),
-            rx.tabs.content(
-                rx.box(doccode(code, theme=theme or "light"), class_name="my-4"),
-                value="tab2",
-            ),
-            default_value="tab1",
-        )
-    # Create the demo.
     return rx.box(
-        docdemobox(comp, **(demobox_props or {})),
-        doccode(code, theme=theme or "light"),
-        class_name="py-4 gap-4 flex flex-col w-full",
+        rx.tabs.root(
+            doc_tab_list(
+                doc_tab_trigger("View", value=_VIEW_TAB_VALUE, icon="eye"),
+                doc_tab_trigger("Code", value=_CODE_TAB_VALUE, icon="code-xml"),
+            ),
+            doc_tab_card(
+                _doc_view_panel(comp, demobox_props),
+                _doc_code_panel(code, _CODE_TAB_VALUE, theme or "light"),
+            ),
+            default_value=_VIEW_TAB_VALUE,
+            class_name="w-full",
+        ),
+        class_name="w-full py-4",
         **props,
     )
 
@@ -142,32 +181,39 @@ def docgraphing(
     code: str,
     comp: rx.Component | None = None,
     data: str | None = None,
-):
-    """Docgraphing.
+) -> rx.Component:
+    """Create a graph demo with connected code and data tabs.
+
+    Args:
+        code: Chart source code to display.
+        comp: Rendered chart preview.
+        data: Optional extracted chart data source.
 
     Returns:
-        The component.
+        The styled graph demo.
     """
-    return rx.box(
-        rx.flex(
-            comp,
-            class_name="w-full flex flex-col p-6 rounded-xl overflow-x-auto border border-secondary-4 bg-secondary-2 items-center justify-center",
+    tabs = [
+        (
+            doc_tab_trigger("View", value=_VIEW_TAB_VALUE, icon="eye"),
+            _doc_view_panel(comp),
         ),
+        (
+            doc_tab_trigger("Code", value=_CODE_TAB_VALUE, icon="code-xml"),
+            _doc_code_panel(code, _CODE_TAB_VALUE),
+        ),
+    ]
+    if data:
+        tabs.append((
+            doc_tab_trigger("Data", value=_DATA_TAB_VALUE, icon="database"),
+            _doc_code_panel(data, _DATA_TAB_VALUE),
+        ))
+
+    return rx.box(
         rx.tabs.root(
-            rx.tabs.list(
-                rx.tabs.trigger("Code", value="code", class_name="tab-style"),
-                rx.tabs.trigger("Data", value="data", class_name="tab-style"),
-                justify_content="end",
-            ),
-            rx.box(
-                rx.tabs.content(doccode(code), value="code", class_name="w-full px-0"),
-                rx.tabs.content(
-                    doccode(data or ""), value="data", class_name="w-full px-0"
-                ),
-                class_name="w-full my-4",
-            ),
-            default_value="code",
-            class_name="w-full mt-6 justify-end",
+            doc_tab_list(*(trigger for trigger, _ in tabs)),
+            doc_tab_card(*(panel for _, panel in tabs)),
+            default_value=_VIEW_TAB_VALUE,
+            class_name="w-full",
         ),
         class_name="w-full py-4 flex flex-col",
     )

@@ -139,6 +139,7 @@ config = rx.Config(
     plugins=[
         rx.plugins.SitemapPlugin(),
         rx.plugins.TailwindV4Plugin(),
+        rx.plugins.RadixThemesPlugin(),
     ]
 )"""
 
@@ -550,6 +551,7 @@ def vite_config_template(
     force_full_reload: bool,
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
+    minify: bool = True,
     allowed_hosts: bool | list[str] = False,
 ):
     """Template for vite.config.js.
@@ -560,6 +562,7 @@ def vite_config_template(
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
+        minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
 
     Returns:
@@ -610,16 +613,15 @@ function fullReload() {{
   }};
 }}
 
-// react-router's HMR client (refresh-utils.mjs enqueueUpdate) throws when an
-// update batch includes a route the browser hasn't loaded, and the throw skips
-// the queue cleanup below it — one edit to any not-currently-open page then
-// poisons HMR until a full page reload. Rewrite the served runtime so unloaded
-// routes keep their manifest metadata update but stay lazy.
+// React Router queues manifest updates for lazy routes even when their modules
+// are not loaded. Its HMR runtime throws on those entries before clearing the
+// queue, which blocks every later update until the browser is reloaded.
 function patchReactRouterHmrRuntime() {{
-  const unloadedRouteThrow = /if\s*\(!imported\)\s*\{{\s*throw\s+Error\([\s\S]*?\);\s*\}}/;
+  const unloadedRouteThrow = /if\s*\(!imported\)\s*\{{\s*throw\s+Error\(\s*`\[react-router:hmr\] No module update found for route [^`]+`,\s*\);\s*\}}/;
   return {{
     name: "reflex-patch-react-router-hmr-runtime",
     apply: "serve",
+    enforce: "post",
     transform(code, id) {{
       if (id !== "\0virtual:react-router/hmr-runtime") return;
       if (!unloadedRouteThrow.test(code)) {{
@@ -641,10 +643,12 @@ export default defineConfig((config) => ({{
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
-    safariCacheBustPlugin(),
     patchReactRouterHmrRuntime(),
+    safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
+    minify: {"true" if minify else "false"},
+    cssMinify: {"true" if minify else "false"},
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{

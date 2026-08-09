@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
@@ -42,7 +43,7 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, default_overlay_component
+from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -2499,11 +2500,11 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
 
-def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+def test_legacy_app_theme_wins_over_explicit_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
 ):
-    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    """Deprecated App.theme keeps working (and winning) until its removal."""
     conf = rx.Config(
         app_name="testing",
         plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
@@ -2522,8 +2523,37 @@ def test_explicit_radix_plugin_wins_over_legacy_app_theme(
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
 
-    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
-    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"green"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_default_explicit_radix_plugin_adopts_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A bare RadixThemesPlugin() (default theme) should adopt deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin()],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"blue"' not in app_root
     mock_deprecate.assert_called_once()
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
@@ -3910,3 +3940,256 @@ def test_compile_registers_plugin_routes(
     assert "from-plugin" in app._unevaluated_pages
     assert "from-plugin" in app._pages
     assert app._plugin_routes_registered
+
+
+@pytest.fixture
+def event_namespace() -> EventNamespace:
+    """An EventNamespace with a mock app and one linked client session.
+
+    Returns:
+        The event namespace.
+    """
+    namespace = EventNamespace(namespace="/_event", app=Mock())
+    namespace.sid_to_token["known_sid"] = "some_token"
+    return namespace
+
+
+@pytest.fixture
+def frontend_errors(event_namespace: EventNamespace) -> list[str]:
+    """Capture exceptions routed to the app's frontend exception handler.
+
+    Args:
+        event_namespace: The event namespace.
+
+    Returns:
+        The captured exception messages.
+    """
+    errors: list[str] = []
+    event_namespace.app.frontend_exception_handler = lambda exc: errors.append(str(exc))
+    return errors
+
+
+@pytest.fixture
+def client_error_console(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
+    """Capture messages logged through the console helpers.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        Captured messages keyed by log level.
+    """
+    captured: dict[str, list[str]] = {"error": [], "warn": [], "debug": []}
+    for level in captured:
+        monkeypatch.setattr(
+            console,
+            level,
+            lambda msg, _level=level, **kwargs: captured[_level].append(msg),
+        )
+    return captured
+
+
+@pytest.mark.asyncio
+async def test_client_error_dispatch_missing_reports_actionable_error(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A dispatch_function_missing error reports the substate and remediation steps.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    await event_namespace.on_client_error(
+        "known_sid",
+        {
+            "error_type": constants.ClientErrorType.DISPATCH_MISSING,
+            "message": "Cannot process state update",
+            "substate": "reflex___state____state.my___state____my_state",
+        },
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert "reflex___state____state.my___state____my_state" in message
+    assert "rebuild" in message.lower()
+
+
+@pytest.mark.asyncio
+async def test_client_error_generic_reports_type_and_message(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A generic client error reports the error type and message.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    await event_namespace.on_client_error(
+        "known_sid",
+        {
+            "error_type": constants.ClientErrorType.STATE_UPDATE,
+            "message": "boom",
+        },
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert constants.ClientErrorType.STATE_UPDATE in message
+    assert "boom" in message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("payload", ["not a dict", None, ["list"], 42])
+async def test_client_error_malformed_payload_is_ignored(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    payload: Any,
+):
+    """Non-dict payloads are dropped without raising or reporting errors.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        payload: The malformed payload to send.
+    """
+    await event_namespace.on_client_error("known_sid", payload)
+    assert not frontend_errors
+
+
+@pytest.mark.asyncio
+async def test_client_error_unknown_sid_does_not_report_error(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+):
+    """Errors from sockets without a linked token are not reported.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+    """
+    await event_namespace.on_client_error(
+        "unknown_sid",
+        {
+            "error_type": constants.ClientErrorType.STATE_UPDATE,
+            "message": "spam from unauthenticated socket",
+        },
+    )
+    assert not frontend_errors
+    assert not client_error_console["error"]
+
+
+@pytest.mark.asyncio
+async def test_client_error_values_are_sanitized_and_truncated(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """Control characters are stripped and long messages truncated before reporting.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    evil = "\x1b[31mINJECT\x1b[0m\nFAKE LOG LINE\t" + "A" * 5000
+    await event_namespace.on_client_error(
+        "known_sid",
+        {"error_type": "custom_type", "message": evil},
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert "\x1b" not in message
+    assert "\n" not in message
+    assert "\t" not in message
+    assert len(message) < 700
+
+
+@pytest.mark.asyncio
+async def test_client_error_reporting_is_rate_limited_per_sid(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A single session cannot flood the backend logs with error reports.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    for _ in range(20):
+        await event_namespace.on_client_error(
+            "known_sid",
+            {"error_type": "custom_type", "message": "spam"},
+        )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
+    # Disconnecting removes the counter so the mapping cannot grow unboundedly.
+    task = event_namespace.on_disconnect("known_sid")
+    if task is not None:
+        await task
+    assert "known_sid" not in event_namespace._client_error_counts
+
+
+@pytest.mark.asyncio
+async def test_client_error_reporting_bounded_across_reconnects(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+):
+    """Reconnecting with fresh SIDs does not grant an unlimited report budget.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+    """
+    for reconnect in range(50):
+        sid = f"sid_{reconnect}"
+        event_namespace.sid_to_token[sid] = f"token_{reconnect}"
+        for _ in range(5):
+            await event_namespace.on_client_error(
+                sid, {"error_type": "custom_type", "message": "spam"}
+            )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
+    # Suppression is not silent: one warning is logged when the cap trips, so
+    # a flooding client cannot invisibly starve reports from other sessions.
+    assert (
+        len([
+            msg for msg in client_error_console["warn"] if "suppressing" in msg.lower()
+        ])
+        == 1
+    )
+    # Once the window elapses, errors are reported again (not silenced forever).
+    event_namespace._client_error_window_start -= (
+        EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
+    )
+    event_namespace.sid_to_token["sid_fresh"] = "token_fresh"
+    await event_namespace.on_client_error(
+        "sid_fresh", {"error_type": "custom_type", "message": "after window"}
+    )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
+
+
+def test_client_error_event_name_matches_handler():
+    """python-socketio dispatches events to on_<event> methods by naming
+    convention; this pins the handler to SocketEvent.CLIENT_ERROR.
+    """
+    assert (
+        f"on_{constants.SocketEvent.CLIENT_ERROR}"
+        == EventNamespace.on_client_error.__name__
+    )
+
+
+def test_client_error_constants_match_frontend():
+    """The socket event and error types are duplicated as literals in state.js.
+
+    Nothing at runtime keeps the two definitions in sync, so pin them here.
+    """
+    state_js = (
+        Path(reflex_base.__file__).parent / ".templates/web/utils/state.js"
+    ).read_text()
+    assert (
+        f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_DISPATCH_MISSING = "{constants.ClientErrorType.DISPATCH_MISSING}"'
+        in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
+        in state_js
+    )

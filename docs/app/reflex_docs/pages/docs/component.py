@@ -885,9 +885,7 @@ def component_docs(
 
     return rx.box(
         h2_comp(text=comp_display_name),
-        rx.box(
-            render_markdown(textwrap.dedent(doc.description or "")), class_name="pb-2"
-        ),
+        rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
         children,
         triggers,
@@ -902,8 +900,9 @@ def multi_docs(
     previews: dict[str, str],
     component_list: list,
     title: str,
-    ll_component_list: list | None = None,
     description: str | None = None,
+    image: str | None = None,
+    ll_component_list: list | None = None,
     source: str | None = None,
 ):
     ll_actual_path = actual_path.replace(".md", "-ll.md")
@@ -958,7 +957,7 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title, description=description)
+    @docpage(set_path=path, t=title, description=description, image=image)
     def out():
         # Build prop docs during page eval so imports stay cheap.
         components = [
@@ -1007,7 +1006,10 @@ def multi_docs(
     )
 
     @docpage(
-        set_path=path + "low", t=title + " (Low Level)", description=ll_description
+        set_path=path + "low",
+        t=title + " (Low Level)",
+        description=ll_description,
+        image=image,
     )
     def ll():
         ll_components = [
