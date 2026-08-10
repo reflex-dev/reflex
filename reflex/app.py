@@ -10,6 +10,7 @@ import functools
 import importlib
 import inspect
 import json
+import logging
 import operator
 import sys
 import time
@@ -44,7 +45,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -99,6 +100,8 @@ from reflex.utils.exec import (
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
+logger = logging.getLogger(__name__)
+
 if sys.version_info < (3, 13):
     from typing_extensions import deprecated
 else:
@@ -124,7 +127,7 @@ def default_frontend_exception_handler(exception: Exception) -> None:
         exception: The exception.
 
     """
-    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+    logger.error(f"[Reflex Frontend Exception]\n {exception}\n")
 
 
 def default_backend_exception_handler(exception: Exception) -> EventSpec:
@@ -143,7 +146,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         type(exception), exception, exception.__traceback__
     )
 
-    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
+    logger.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
@@ -210,7 +213,7 @@ def _component_from_import_path(
 
         log_path = save_error(e)
 
-        console.error(
+        logger.error(
             f"Error loading {feature_name} {import_path}. Error saved to {log_path}"
         )
         return None
@@ -1069,7 +1072,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     prepared,
                     page=page.merged_with(existing_page),
                 )
-                console.warn(
+                logger.warning(
                     f"Page {page.route} is being redefined with the same component."
                 )
             else:
@@ -1462,7 +1465,7 @@ class App(MiddlewareMixin, LifespanMixin):
         filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:
-                console.warn(
+                logger.warning(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
@@ -1990,11 +1993,11 @@ class EventNamespace(AsyncNamespace):
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
         else:
-            console.warn(f"No token provided in connection for session {sid}")
+            logger.warning(f"No token provided in connection for session {sid}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
-            console.warn(
+            logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
@@ -2020,7 +2023,7 @@ class EventNamespace(AsyncNamespace):
             task.add_done_callback(
                 lambda t: (
                     t.exception()
-                    and console.error(f"Token cleanup error: {t.exception()}")
+                    and logger.error(f"Token cleanup error: {t.exception()}")
                 )
             )
             return task
@@ -2044,7 +2047,7 @@ class EventNamespace(AsyncNamespace):
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
-                console.warn(
+                logger.warning(
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
@@ -2067,7 +2070,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
-            console.warn(
+            logger.warning(
                 f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
             )
             return
@@ -2075,7 +2078,7 @@ class EventNamespace(AsyncNamespace):
         fields = data
 
         if isinstance(fields, str):
-            console.warn(
+            logger.warning(
                 "Received event data as a string. This generally should not happen and may indicate a bug."
                 f" Event data: {fields}"
             )
@@ -2173,7 +2176,7 @@ class EventNamespace(AsyncNamespace):
             data: The error data from the client.
         """
         if not isinstance(data, dict):
-            console.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
             return
 
         # Check the sender and the rate limits before sanitizing: sanitizing is
@@ -2182,7 +2185,7 @@ class EventNamespace(AsyncNamespace):
         if sid not in self.sid_to_token:
             # Sockets without a linked token are not known clients; don't let
             # them write error-level entries into the backend logs.
-            console.debug(f"Ignoring client_error report from unknown SID {sid}.")
+            logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
             return
 
         # Rate limit per session so a client cannot flood the backend logs.
@@ -2202,7 +2205,7 @@ class EventNamespace(AsyncNamespace):
                 # and a flooding client cannot silently starve reports from
                 # other sessions.
                 self._client_error_window_count += 1
-                console.warn(
+                logger.warning(
                     f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
                     f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
                     "suppressing further reports for this window."

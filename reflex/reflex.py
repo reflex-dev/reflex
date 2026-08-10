@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -10,10 +11,13 @@ import click
 from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.utils.cli_options import log_options
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -22,38 +26,13 @@ if TYPE_CHECKING:
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
 
-def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
-    """Set the log level.
-
-    Args:
-        ctx: The click context.
-        self: The click command.
-        value: The log level to set.
-    """
-    if value is not None:
-        loglevel = constants.LogLevel.from_string(value)
-        console.set_log_level(loglevel)
-
-
 @click.group
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
-
-
-loglevel_option = click.option(
-    "--loglevel",
-    "--log-level",
-    "loglevel",
-    type=click.Choice(
-        [loglevel.value for loglevel in constants.LogLevel],
-        case_sensitive=False,
-    ),
-    is_eager=True,
-    callback=set_loglevel,
-    expose_value=False,
-    help="The log level to use.",
-)
+    # The CLI owns log rendering: attach the reflex sinks here and in every
+    # worker subprocess (they inherit the marker through the environment).
+    log.enable_managed_logging()
 
 
 def _init(
@@ -110,11 +89,14 @@ def _init(
     )
 
     # Finish initializing the app.
-    console.success(f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}")
+    logger.log(
+        log.SUCCESS,
+        f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}",
+    )
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--name",
     metavar="APP_NAME",
@@ -320,10 +302,10 @@ def _run(
     from reflex.utils import exec, prerequisites, processes
 
     if frontend_port and not running_mode.has_frontend():
-        console.error("Cannot specify --frontend-port when not running frontend.")
+        logger.error("Cannot specify --frontend-port when not running frontend.")
         raise SystemExit(1)
     if backend_port and not running_mode.has_backend():
-        console.error("Cannot specify --backend-port when not running backend.")
+        logger.error("Cannot specify --backend-port when not running backend.")
         raise SystemExit(1)
     if (
         env in (constants.Env.PROD, constants.Env.PREVIEW)
@@ -331,7 +313,7 @@ def _run(
         and backend_port
         and frontend_port != backend_port
     ):
-        console.error(
+        logger.error(
             f"In {env.value} mode, frontend and backend must run on the same port."
         )
         raise SystemExit(1)
@@ -441,7 +423,7 @@ def _run(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--env",
     type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
@@ -500,20 +482,20 @@ def run(
     from reflex.utils import prerequisites
 
     if frontend_only and backend_only:
-        console.error("Cannot use both --frontend-only and --backend-only options.")
+        logger.error("Cannot use both --frontend-only and --backend-only options.")
         raise SystemExit(1)
 
     if single_port:
         if env != constants.Env.PROD:
-            console.error("--single-port can only be used with --env=PROD.")
+            logger.error("--single-port can only be used with --env=PROD.")
             raise SystemExit(1)
         if frontend_only or backend_only:
-            console.error(
+            logger.error(
                 "Cannot use --single-port with --frontend-only or --backend-only."
             )
             raise SystemExit(1)
         if frontend_port and backend_port and frontend_port != backend_port:
-            console.error(
+            logger.error(
                 "Cannot specify different ports for frontend and backend when using --single-port."
             )
             raise SystemExit(1)
@@ -540,7 +522,7 @@ def run(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--dry",
     is_flag=True,
@@ -566,11 +548,11 @@ def compile(dry: bool, rich: bool):
     starting_time = time.monotonic()
     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
-    console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
+    logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--zip/--no-zip",
     default=True,
@@ -670,7 +652,7 @@ def export(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 def login():
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
@@ -699,7 +681,7 @@ def login():
 
 
 @cli.command()
-@loglevel_option
+@log_options
 def logout():
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.cli import logout
@@ -735,16 +717,17 @@ def db_init():
 
     # Check the database url.
     if config.db_url is None:
-        console.error("db_url is not configured, cannot initialize.")
+        logger.error("db_url is not configured, cannot initialize.")
         return
 
     # Check the alembic config.
     if environment.ALEMBIC_CONFIG.get().exists():
-        console.error(
+        logger.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
             "scripts and [bold]reflex db migrate[/bold] to apply migrations "
             "to a new or existing database.",
+            extra={"rich": True},
         )
         return
 
@@ -776,8 +759,9 @@ def status():
 
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
-        console.info(
-            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize."
+        logger.info(
+            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize.",
+            extra={"rich": True},
         )
         return
 
@@ -824,13 +808,13 @@ def makemigrations(message: str | None):
         except CommandError as command_error:
             if "Target database is not up to date." not in str(command_error):
                 raise
-            console.error(
+            logger.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--app-name",
     help="The name of the app to deploy.",
@@ -1044,7 +1028,7 @@ def deploy(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.argument("new_name")
 def rename(new_name: str):
     """Rename the app in the current directory."""

@@ -8,6 +8,7 @@ import contextvars
 import dataclasses
 import functools
 import inspect
+import logging
 import os
 import platform
 import re
@@ -41,9 +42,11 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import console, js_runtimes
+from reflex.utils import js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
+
+logger = logging.getLogger(__name__)
 
 try:
     from selenium import webdriver
@@ -412,7 +415,7 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    console.error(str(e))
+                    logger.error(str(e))
                     break
                 if not line:
                     break

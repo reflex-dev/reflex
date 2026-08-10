@@ -1,5 +1,6 @@
 """Export utilities."""
 
+import logging
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -11,6 +12,8 @@ from reflex_base.environment import environment
 from reflex_base.utils import console
 
 from reflex.utils import build, exec, prerequisites, telemetry
+
+logger = logging.getLogger(__name__)
 
 
 def export(
@@ -52,10 +55,10 @@ def export(
     # Override the config url values if provided.
     if api_url is not None:
         config._set_persistent(api_url=str(api_url))
-        console.debug(f"overriding API URL: {config.api_url}")
+        logger.debug(f"overriding API URL: {config.api_url}")
     if deploy_url is not None:
         config._set_persistent(deploy_url=str(deploy_url))
-        console.debug(f"overriding deploy URL: {config.deploy_url}")
+        logger.debug(f"overriding deploy URL: {config.deploy_url}")
 
     # Show system info
     exec.output_system_info()
