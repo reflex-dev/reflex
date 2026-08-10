@@ -294,6 +294,64 @@ def test_timing_logs_at_debug(capsys):
     assert out.startswith("Debug: [timing] block: ")
 
 
+def test_console_shims_delegate(capsys):
+    """Legacy console helpers route through the pipeline and warn once."""
+    console.info("legacy info")
+    console.warn("legacy warn")
+    console.error("legacy error")
+    out, err = capsys.readouterr()
+    out_lines = out.splitlines()
+    assert "Info: legacy info" in out_lines
+    assert "Warning: legacy warn" in out_lines
+    assert "legacy error" in err.splitlines()
+    assert "console.info has been deprecated" in out.replace("\n", " ")
+
+
+def test_console_info_preserves_rich_print_kwargs(monkeypatch):
+    """The deprecated info helper retains its Rich print contract."""
+    rich_console = mock.Mock()
+    monkeypatch.setattr(console, "_console", rich_console)
+    monkeypatch.setattr(console, "_shim_deprecation", mock.Mock())
+
+    console.info("[bold]message[/bold]", markup=False, soft_wrap=True)
+
+    rich_console.print.assert_called_once_with(
+        "[cyan]Info: [bold]message[/bold][/cyan]",
+        markup=False,
+        soft_wrap=True,
+    )
+
+
+def test_console_log_preserves_rich_log_rendering(monkeypatch):
+    """The deprecated log helper still delegates to Rich Console.log."""
+    rich_console = mock.Mock()
+    monkeypatch.setattr(console, "_console", rich_console)
+    monkeypatch.setattr(console, "_shim_deprecation", mock.Mock())
+
+    console.log("message", justify="left")
+
+    rich_console.log.assert_called_once_with("message", justify="left")
+
+
+def test_console_debug_progress_preserves_file_log(monkeypatch):
+    """Progress-bound debug output retains its legacy file-log behavior."""
+    progress = mock.Mock()
+    print_to_log_file = mock.Mock()
+    monkeypatch.setattr(console, "_shim_deprecation", mock.Mock())
+    monkeypatch.setattr(console, "is_debug", lambda: True)
+    monkeypatch.setattr(console, "should_use_log_file_console", lambda: True)
+    monkeypatch.setattr(console, "print_to_log_file", print_to_log_file)
+
+    console.debug("message", progress=progress, markup=False)
+
+    progress.console.print.assert_called_once_with(
+        "[purple]Debug: message[/purple]", markup=False
+    )
+    print_to_log_file.assert_called_once_with(
+        "[purple]Debug: message[/purple]", markup=False
+    )
+
+
 def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
     """The legacy deprecation helper retains its Rich print contract."""
     rich_print = mock.Mock()
