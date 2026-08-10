@@ -87,14 +87,21 @@ from __future__ import annotations
 import sys
 
 from reflex_base.utils import lazy_loader
+from reflex_base.utils import log as _log
+
+# Claim the reflex loggers so records render styled even before any config is
+# loaded (only reflex-owned loggers are touched). The sinks themselves attach
+# on the first record, keeping this import cheap.
+_log.bootstrap()
+del _log
 
 if sys.version_info < (3, 11):
-    from reflex_base.utils import console
+    import logging
 
-    console.warn(
+    logging.getLogger(__name__).warning(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
     )
-    del console
+    del logging
 del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402

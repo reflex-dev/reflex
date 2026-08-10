@@ -6,19 +6,21 @@ import contextlib
 import datetime
 import functools
 import inspect
-import os
 import shutil
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType, ModuleType
 
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
+from rich.table import Table
 
 from reflex_base.constants import LogLevel
 from reflex_base.constants.base import Reflex
+from reflex_base.utils import log as _log
 from reflex_base.utils.decorator import once
 
 # Console for pretty printing.
@@ -58,19 +60,11 @@ def set_log_level(log_level: LogLevel | None):
 
     Args:
         log_level: The log level to set.
-
-    Raises:
-        TypeError: If the log level is a string.
     """
     if log_level is None:
         return
-    if not isinstance(log_level, LogLevel):
-        msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
-        raise TypeError(msg)
+    _log.set_log_level(log_level)
     global _LOG_LEVEL
-    if log_level != _LOG_LEVEL:
-        # Set the loglevel persistenly for subprocesses.
-        os.environ["REFLEX_LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 
@@ -91,6 +85,9 @@ def print(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of print message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if _log.is_json_mode():
+        _log.emit_json_print(msg, dedupe=dedupe)
+        return
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
@@ -106,6 +103,9 @@ def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of print message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if _log.is_json_mode():
+        _log.emit_json_print(msg, dedupe=dedupe, stderr=True)
+        return
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
@@ -241,6 +241,8 @@ def rule(title: str, **kwargs):
         title: The title of the rule.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if _log.is_json_mode():
+        return
     _console.rule(title, **kwargs)
 
 
@@ -417,6 +419,27 @@ def ask(
     )
 
 
+def print_table(
+    tabular_data: list[list[str]],
+    headers: Sequence[str] = (),
+) -> None:
+    """Print a table to the console.
+
+    Args:
+        tabular_data: The data to print in tabular format.
+        headers: The headers for the table.
+    """
+    table = Table()
+
+    for column in headers:
+        table.add_column(column)
+
+    for row in tabular_data:
+        table.add_row(*row)
+
+    _console.print(table)
+
+
 def progress():
     """Create a new progress bar.
 
@@ -427,6 +450,7 @@ def progress():
         *Progress.get_default_columns()[:-1],
         MofNCompleteColumn(),
         TimeElapsedColumn(),
+        disable=_log.is_json_mode(),
     )
 
 
@@ -440,6 +464,8 @@ def status(*args, **kwargs):
     Returns:
         A new status.
     """
+    if _log.is_json_mode():
+        return _log._quiet_console.status(*args, **kwargs)
     return _console.status(*args, **kwargs)
 
 

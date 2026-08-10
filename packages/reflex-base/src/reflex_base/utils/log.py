@@ -1,0 +1,679 @@
+"""Standard-library logging pipeline with rich rendering and JSON output.
+
+Reflex modules log through plain ``logging.getLogger(__name__)`` loggers.
+This module owns the sinks: a rich-rendering console handler (colored, same
+look as the legacy ``console`` helpers), a JSON-lines handler for machine
+consumption (``REFLEX_LOG_JSON`` / ``--json``), and an optional file handler
+(``REFLEX_ENABLE_FULL_LOGGING`` / ``REFLEX_LOG_FILE``).
+"""
+
+from __future__ import annotations
+
+import contextlib
+import datetime
+import functools
+import json
+import logging
+import os
+import shutil
+import sys
+import time
+from pathlib import Path
+from types import FrameType, ModuleType
+from typing import TYPE_CHECKING
+
+from rich.console import Console
+from rich.errors import MarkupError
+from rich.text import Text
+
+from reflex_base.constants import LogLevel
+from reflex_base.constants.base import Reflex
+from reflex_base.utils.decorator import once
+
+if TYPE_CHECKING:
+    from collections.abc import Hashable, Iterator
+
+# Level between INFO and WARNING for user-facing success messages.
+SUCCESS = 25
+logging.addLevelName(SUCCESS, "SUCCESS")
+
+# Package-root loggers that receive the reflex handlers. Every distribution
+# that logs needs its root here: loggers do not propagate across the
+# ``reflex_*`` top-level names, so an omitted root escapes the pipeline
+# entirely (no styling, no level gating, no JSON records, no file capture).
+ROOT_LOGGER_NAMES = (
+    "reflex",
+    "reflex_base",
+    "reflex_cli",
+    "reflex_components_core",
+    "reflex_components_dataeditor",
+    "reflex_components_lucide",
+    "reflex_components_plotly",
+    "reflex_components_react_player",
+)
+
+# Consoles for pretty printing (shared with reflex_base.utils.console).
+_console = Console(highlight=False)
+_console_stderr = Console(stderr=True, highlight=False)
+
+# Console that renders nowhere, backing interactive rich features in JSON mode.
+_quiet_console = Console(quiet=True)
+
+# The current log level.
+_log_level = LogLevel.INFO
+
+# Formatter kept only for its exception rendering, which is stateless.
+_EXC_FORMATTER = logging.Formatter()
+
+# (style, prefix) per level for the rich console sink.
+_LEVEL_STYLES: dict[int, tuple[str, str]] = {
+    logging.DEBUG: ("purple", "Debug: "),
+    logging.INFO: ("cyan", "Info: "),
+    SUCCESS: ("green", "Success: "),
+    logging.WARNING: ("orange1", "Warning: "),
+    logging.ERROR: ("red", ""),
+    logging.CRITICAL: ("red", ""),
+}
+
+# Style and prefix for records carrying ``kind="deprecation"``.
+DEPRECATION_STYLE = ("yellow", "DeprecationWarning: ")
+
+
+def style_for_level(levelno: int) -> tuple[str, str]:
+    """Resolve the rich style and message prefix for a log level.
+
+    Args:
+        levelno: The stdlib logging level number.
+
+    Returns:
+        A (style, prefix) tuple.
+    """
+    levelno = min(logging.CRITICAL, max(logging.DEBUG, levelno))
+    # Round down to the nearest known level.
+    while levelno not in _LEVEL_STYLES:
+        levelno -= 1
+    return _LEVEL_STYLES[levelno]
+
+
+def _style_for(record: logging.LogRecord) -> tuple[str, str]:
+    """Resolve the rich style and message prefix for a record.
+
+    Args:
+        record: The log record being rendered.
+
+    Returns:
+        A (style, prefix) tuple.
+    """
+    if getattr(record, "kind", None) == "deprecation":
+        return DEPRECATION_STYLE
+    return style_for_level(record.levelno)
+
+
+def strip_markup(msg: str) -> str:
+    """Remove rich markup tags from a message.
+
+    Args:
+        msg: The message, possibly containing rich markup.
+
+    Returns:
+        The plain-text message.
+    """
+    if "[" not in msg:
+        return msg
+    try:
+        return Text.from_markup(msg).plain
+    except MarkupError:
+        return msg
+
+
+class DedupeFilter(logging.Filter):
+    """Drop repeat records that opted into deduplication."""
+
+    def __init__(self):
+        """Initialize the filter with an empty seen-set."""
+        super().__init__()
+        self.seen: set = set()
+
+    def register(self, key: Hashable) -> bool:
+        """Record a dedupe key, reporting whether it is new.
+
+        Args:
+            key: A hashable dedupe key.
+
+        Returns:
+            True the first time the key is seen, False afterwards.
+        """
+        if key in self.seen:
+            return False
+        self.seen.add(key)
+        return True
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Decide whether a record should be emitted.
+
+        Args:
+            record: The log record.
+
+        Returns:
+            False if an identical record was already emitted with dedupe set.
+        """
+        key = getattr(record, "dedupe_key", None)
+        if key is None:
+            if not getattr(record, "dedupe", False):
+                return True
+            key = (record.levelno, record.getMessage())
+        return self.register(key)
+
+
+class RichConsoleHandler(logging.Handler):
+    """Render log records with rich, matching the legacy console look."""
+
+    def emit(self, record: logging.LogRecord):
+        """Print a record to the terminal.
+
+        Args:
+            record: The log record.
+        """
+        try:
+            style, prefix = _style_for(record)
+            console = _console_stderr if record.levelno >= logging.ERROR else _console
+            # Records may carry a rich Progress to print through, so the
+            # message lands above an active progress bar.
+            progress = getattr(record, "progress", None)
+            if progress is not None:
+                console = progress.console
+            end = getattr(record, "end", "\n")
+            console.print(f"{prefix}{record.getMessage()}", style=style, end=end)
+            if record.exc_info and record.exc_info[0] is not None:
+                # Tracebacks may contain user data; never parse them as markup.
+                console.print(self.format_exception(record), style=style, markup=False)
+        except Exception:
+            self.handleError(record)
+
+    def format_exception(self, record: logging.LogRecord) -> str:
+        """Format a record's exception info as text.
+
+        Args:
+            record: The log record with exc_info set.
+
+        Returns:
+            The formatted traceback.
+        """
+        return _EXC_FORMATTER.formatException(record.exc_info)  # pyright: ignore[reportArgumentType]
+
+
+def _write_json(payload: dict, *, stderr: bool):
+    """Write one JSON record to the output stream.
+
+    Args:
+        payload: The record fields.
+        stderr: Whether the record targets stderr.
+    """
+    stream = sys.stderr if stderr else sys.stdout
+    stream.write(json.dumps(payload, default=str) + "\n")
+    stream.flush()
+
+
+class JsonHandler(logging.Handler):
+    """Emit one JSON object per record for machine consumption."""
+
+    extra_fields = (
+        "feature_name",
+        "deprecation_version",
+        "removal_version",
+        "kind",
+    )
+
+    def emit(self, record: logging.LogRecord):
+        """Write a record as a JSON line to stdout or stderr.
+
+        Args:
+            record: The log record.
+        """
+        try:
+            payload = {
+                "timestamp": datetime.datetime.fromtimestamp(
+                    record.created, tz=datetime.timezone.utc
+                ).isoformat(),
+                "level": logging.getLevelName(record.levelno).lower(),
+                "logger": record.name,
+                "message": strip_markup(record.getMessage()),
+                "location": f"{record.pathname}:{record.lineno}",
+                "pid": record.process,
+            }
+            for field in self.extra_fields:
+                value = getattr(record, field, None)
+                if value is not None:
+                    payload[field] = value
+            if record.exc_info and record.exc_info[0] is not None:
+                payload["exception"] = _EXC_FORMATTER.formatException(
+                    record.exc_info  # pyright: ignore[reportArgumentType]
+                )
+            _write_json(payload, stderr=record.levelno >= logging.ERROR)
+        except Exception:
+            self.handleError(record)
+
+
+class _StripMarkupFormatter(logging.Formatter):
+    """Formatter that removes rich markup from messages."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format a record with markup stripped.
+
+        Args:
+            record: The log record.
+
+        Returns:
+            The formatted line.
+        """
+        msg, args = record.msg, record.args
+        try:
+            record.msg = strip_markup(record.getMessage())
+            record.args = ()
+            return super().format(record)
+        finally:
+            record.msg, record.args = msg, args
+
+
+def _log_file_path() -> Path:
+    """Resolve the path of the full-logging file.
+
+    Returns:
+        The log file path (parent directory created).
+    """
+    from reflex_base.environment import environment
+
+    if env_log_file := environment.REFLEX_LOG_FILE.get():
+        return env_log_file
+    subseconds = int((time.time() % 1) * 1000)
+    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
+    log_file = Reflex.DIR / "logs" / (timestamp + ".log")
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    return log_file
+
+
+@once
+def _file_handler() -> logging.FileHandler:
+    """Create the full-logging file handler.
+
+    Returns:
+        A file handler writing every record with markup stripped.
+    """
+    handler = logging.FileHandler(_log_file_path(), mode="w", encoding="utf-8")
+    handler.setFormatter(
+        _StripMarkupFormatter("[{asctime}] {levelname}: {message}", style="{")
+    )
+    return handler
+
+
+@once
+def _console_handler() -> RichConsoleHandler:
+    """Create the rich console handler.
+
+    Returns:
+        The handler, with the dedupe filter attached.
+    """
+    handler = RichConsoleHandler()
+    handler.addFilter(_dedupe_filter())
+    return handler
+
+
+@once
+def _json_handler() -> JsonHandler:
+    """Create the JSON-lines handler.
+
+    Returns:
+        The handler, with the dedupe filter attached.
+    """
+    handler = JsonHandler()
+    handler.addFilter(_dedupe_filter())
+    return handler
+
+
+@once
+def _dedupe_filter() -> DedupeFilter:
+    """Create the shared dedupe filter.
+
+    Returns:
+        The dedupe filter used by the console and JSON handlers.
+    """
+    return DedupeFilter()
+
+
+def is_json_mode() -> bool:
+    """Check whether logs should be emitted as JSON records.
+
+    Returns:
+        True if REFLEX_LOG_JSON is enabled.
+    """
+    from reflex_base.environment import environment
+
+    return environment.REFLEX_LOG_JSON.get()
+
+
+def set_json_mode(enabled: bool):
+    """Enable or disable machine-readable JSON log output.
+
+    Sets the environment variable so subprocesses inherit the mode, then
+    re-attaches the sinks.
+
+    Args:
+        enabled: Whether to emit JSON records.
+    """
+    from reflex_base.environment import environment
+
+    environment.REFLEX_LOG_JSON.set(enabled)
+    configure()
+
+
+def dedupe_once(key: Hashable) -> bool:
+    """Register a dedupe key, reporting whether it is new.
+
+    Args:
+        key: A hashable dedupe key.
+
+    Returns:
+        True the first time the key is seen, False afterwards.
+    """
+    return _dedupe_filter().register(key)
+
+
+def emit_json_print(msg: str, *, dedupe: bool = False, stderr: bool = False):
+    """Emit a plain console message as a JSON record.
+
+    Used by ``console.print`` in JSON mode so the output stream stays
+    machine-readable. Not routed through a logger: plain prints are not
+    level-gated.
+
+    Args:
+        msg: The message.
+        dedupe: If True, suppress repeats of the same message.
+        stderr: Whether the message targets stderr.
+    """
+    if dedupe and not dedupe_once(("print", msg)):
+        return
+    _write_json(
+        {
+            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "level": "info",
+            "logger": "reflex.console",
+            "message": strip_markup(msg),
+            "pid": os.getpid(),
+        },
+        stderr=stderr,
+    )
+
+
+_configured = False
+_active_file_handler: logging.FileHandler | None = None
+
+
+class _BootstrapHandler(logging.Handler):
+    """Attach the real sinks on the first record, then replay it through them."""
+
+    def handle(self, record: logging.LogRecord) -> bool:
+        """Configure the pipeline and hand the record to the real sinks.
+
+        Args:
+            record: The log record.
+
+        Returns:
+            True, matching the Handler.handle contract.
+        """
+        if _configured:
+            # configure() detaches this handler, so reaching here means it
+            # failed to do so. Drop the record rather than recurse.
+            return True
+        configure()
+        logging.getLogger(record.name).handle(record)
+        return True
+
+
+_bootstrap_handler = _BootstrapHandler()
+
+
+def bootstrap():
+    """Claim the reflex loggers without importing the environment machinery.
+
+    ``configure`` needs :mod:`reflex_base.environment`, which drags in the
+    config and plugin stack (and with it pandas and plotly). Importing that at
+    ``import reflex`` time would defeat the package's lazy loading, so the
+    sinks are attached on the first record instead. The permissive logger level
+    keeps records that a later ``configure`` may want; the sink's own level
+    does the real gating.
+    """
+    for name in ROOT_LOGGER_NAMES:
+        logger = logging.getLogger(name)
+        logger.propagate = False
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(_bootstrap_handler)
+
+
+def configure():
+    """Attach the reflex handlers to the reflex package-root loggers.
+
+    Idempotent: handler instances are cached and re-attached, never stacked.
+    Only reflex-owned loggers are touched (propagation to the root logger is
+    disabled), so a user application's own logging setup is unaffected.
+    """
+    global _active_file_handler, _configured
+    from reflex_base.environment import environment
+
+    json_mode = environment.REFLEX_LOG_JSON.get()
+    sink, other = (
+        (_json_handler(), _console_handler())
+        if json_mode
+        else (_console_handler(), _json_handler())
+    )
+    sink.setLevel(_log_level.to_logging_level())
+    full_logging = environment.REFLEX_ENABLE_FULL_LOGGING.get()
+    file_handler = _active_file_handler
+    if full_logging:
+        file_handler = _active_file_handler = _file_handler()
+    logger_level = logging.DEBUG if full_logging else _log_level.to_logging_level()
+    # addHandler/removeHandler are no-ops when the handler is already in the
+    # desired state, so no membership checks are needed here.
+    for name in ROOT_LOGGER_NAMES:
+        logger = logging.getLogger(name)
+        logger.propagate = False
+        logger.setLevel(logger_level)
+        logger.removeHandler(_bootstrap_handler)
+        logger.removeHandler(other)
+        logger.addHandler(sink)
+        if file_handler is not None:
+            if full_logging:
+                logger.addHandler(file_handler)
+            else:
+                logger.removeHandler(file_handler)
+    _configured = True
+
+
+def ensure_configured():
+    """Configure the logging pipeline if it has not been configured yet."""
+    if not _configured:
+        configure()
+
+
+def set_log_level(log_level: LogLevel | None):
+    """Set the log level.
+
+    Args:
+        log_level: The log level to set.
+
+    Raises:
+        TypeError: If the log level is not a LogLevel enum value.
+    """
+    if log_level is None:
+        return
+    if not isinstance(log_level, LogLevel):
+        msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
+        raise TypeError(msg)
+    global _log_level
+    if log_level != _log_level:
+        # Set the loglevel persistently for subprocesses.
+        os.environ["REFLEX_LOGLEVEL"] = log_level.value
+    _log_level = log_level
+    configure()
+
+
+def get_log_level() -> LogLevel:
+    """Get the current log level.
+
+    Returns:
+        The current log level.
+    """
+    return _log_level
+
+
+def is_debug() -> bool:
+    """Check if the log level is debug.
+
+    Returns:
+        True if the log level is debug.
+    """
+    return _log_level <= LogLevel.DEBUG
+
+
+@contextlib.contextmanager
+def timing(logger: logging.Logger, msg: str) -> Iterator[None]:
+    """Time a block of code and log the duration at debug level.
+
+    Args:
+        logger: The logger to emit the timing record on.
+        msg: The message to display.
+
+    Yields:
+        None.
+    """
+    start = time.time()
+    try:
+        yield
+    finally:
+        logger.debug("[white]\\[timing] %s: %.2fs[/white]", msg, time.time() - start)
+
+
+@once
+def _exclude_paths_from_frame_info() -> list[Path]:
+    import importlib.util
+
+    import click
+    import granian
+    import socketio
+    import typing_extensions
+
+    import reflex_base
+
+    try:
+        import reflex as rx
+    except ImportError:
+        rx = None
+
+    # Exclude utility modules that should never be the source of deprecated reflex usage.
+    exclude_modules: list[ModuleType | None] = [
+        click,
+        rx,
+        typing_extensions,
+        socketio,
+        granian,
+        reflex_base,
+    ]
+
+    modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
+        spec.origin
+        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
+        if (spec := importlib.util.find_spec(m)) and spec.origin
+    ]
+    exclude_roots = [
+        p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
+        for file in modules_paths
+    ]
+    # Specifically exclude the reflex cli module.
+    if reflex_bin := shutil.which(b"reflex"):
+        exclude_roots.append(Path(reflex_bin.decode()))
+
+    return exclude_roots
+
+
+@functools.cache
+def _is_framework_filename(filename: str) -> bool:
+    """Check if a code filename belongs to an excluded framework/stdlib root.
+
+    Cached per filename: module file locations do not move within a process,
+    but resolving a path and comparing it against every exclude root is far
+    too expensive to repeat for each frame on every deprecation check.
+
+    Args:
+        filename: The ``co_filename`` of a frame's code object.
+
+    Returns:
+        Whether the file lives under one of the excluded framework roots.
+    """
+    frame_path = Path(filename).resolve()
+    return any(
+        frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()
+    )
+
+
+def _get_first_non_framework_frame() -> FrameType | None:
+    frame = sys._getframe()
+    while frame := frame and frame.f_back:
+        if not _is_framework_filename(frame.f_code.co_filename):
+            break
+    return frame
+
+
+_deprecation_logger = logging.getLogger("reflex.deprecation")
+
+
+def deprecate(
+    *,
+    feature_name: str,
+    reason: str,
+    deprecation_version: str,
+    removal_version: str,
+    dedupe: bool = True,
+    **kwargs,
+):
+    """Log a deprecation warning.
+
+    Args:
+        feature_name: The feature to deprecate.
+        reason: The reason for deprecation.
+        deprecation_version: The version the feature was deprecated
+        removal_version: The version the deprecated feature will be removed
+        dedupe: If True, suppress multiple warnings of the same deprecation.
+        kwargs: Ignored legacy print kwargs.
+    """
+    del kwargs
+    dedupe_key = feature_name
+    loc = ""
+
+    # See if we can find where the deprecation exists in "user code"
+    origin_frame = _get_first_non_framework_frame()
+    if origin_frame is not None:
+        filename = Path(origin_frame.f_code.co_filename)
+        cwd = Path.cwd()
+        if filename.is_relative_to(cwd):
+            filename = filename.relative_to(cwd)
+        loc = f" ({filename}:{origin_frame.f_lineno})"
+        dedupe_key = f"{dedupe_key} {loc}"
+
+    # Claim the key up front so repeat warnings skip formatting and emission
+    # entirely, rather than building a record for the filter to drop.
+    if dedupe and not dedupe_once(f"deprecation:{dedupe_key}"):
+        return
+
+    ensure_configured()
+    msg = (
+        f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
+        f"removed in {removal_version}.{loc}"
+    )
+    _deprecation_logger.warning(
+        msg,
+        extra={
+            "kind": "deprecation",
+            "feature_name": feature_name,
+            "deprecation_version": deprecation_version,
+            "removal_version": removal_version,
+        },
+    )

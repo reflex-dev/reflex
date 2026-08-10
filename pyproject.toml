@@ -219,6 +219,7 @@ lint.ignore = [
   "TC",
   "TD",
   "TRY0",
+  "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [

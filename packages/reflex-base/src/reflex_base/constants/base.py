@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import platform
 from enum import Enum
 from importlib import metadata
@@ -248,6 +249,19 @@ class LogLevel(str, Enum):
         except KeyError:
             return None
 
+    # The str mixin supplies alphabetical comparisons, so all four operators
+    # must be overridden to compare by verbosity rank instead.
+    def __lt__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is less verbose than the other log level.
+        """
+        return _LOG_LEVEL_RANK[self] < _LOG_LEVEL_RANK[other]
+
     def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.
 
@@ -257,8 +271,39 @@ class LogLevel(str, Enum):
         Returns:
             True if the log level is less than or equal to the other log level.
         """
-        levels = list(LogLevel)
-        return levels.index(self) <= levels.index(other)
+        return _LOG_LEVEL_RANK[self] <= _LOG_LEVEL_RANK[other]
+
+    def __gt__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is more verbose-restrictive than the other.
+        """
+        return _LOG_LEVEL_RANK[self] > _LOG_LEVEL_RANK[other]
+
+    def __ge__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is greater than or equal to the other.
+        """
+        return _LOG_LEVEL_RANK[self] >= _LOG_LEVEL_RANK[other]
+
+    def to_logging_level(self) -> int:
+        """Map this level to a stdlib logging level number.
+
+        DEFAULT acts as a threshold equivalent to INFO.
+
+        Returns:
+            The stdlib logging level.
+        """
+        return _LOGGING_LEVELS[self]
 
     def subprocess_level(self):
         """Return the log level for the subprocess.
@@ -267,6 +312,17 @@ class LogLevel(str, Enum):
             The log level for the subprocess
         """
         return self if self != LogLevel.DEFAULT else LogLevel.WARNING
+
+
+_LOG_LEVEL_RANK = {level: rank for rank, level in enumerate(LogLevel)}
+_LOGGING_LEVELS = {
+    LogLevel.DEBUG: logging.DEBUG,
+    LogLevel.DEFAULT: logging.INFO,
+    LogLevel.INFO: logging.INFO,
+    LogLevel.WARNING: logging.WARNING,
+    LogLevel.ERROR: logging.ERROR,
+    LogLevel.CRITICAL: logging.CRITICAL,
+}
 
 
 # Server socket configuration variables
