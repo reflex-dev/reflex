@@ -7,6 +7,10 @@ class AlgoliaSearch(rx.NoSSRComponent):
     """Client-only search component backed by Algolia's Search API."""
 
     library = "$/public/components/AlgoliaSearch"
+    lib_dependencies = [
+        "@hugeicons/react",
+        "@hugeicons/core-free-icons",
+    ]
     tag = "AlgoliaSearch"
     is_default = True
 

@@ -1,10 +1,29 @@
 "use client";
 
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import Alert02Icon from "@hugeicons/core-free-icons/Alert02Icon";
+import ApiIcon from "@hugeicons/core-free-icons/ApiIcon";
+import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon";
+import BookOpen01Icon from "@hugeicons/core-free-icons/BookOpen01Icon";
+import CancelCircleIcon from "@hugeicons/core-free-icons/CancelCircleIcon";
+import ChartLineData01Icon from "@hugeicons/core-free-icons/ChartLineData01Icon";
+import ComponentIcon from "@hugeicons/core-free-icons/ComponentIcon";
+import CornerDownLeftIcon from "@hugeicons/core-free-icons/CornerDownLeftIcon";
+import Notebook01Icon from "@hugeicons/core-free-icons/Notebook01Icon";
+import ReflexIcon from "@hugeicons/core-free-icons/ReflexIcon";
+import Search01Icon from "@hugeicons/core-free-icons/Search01Icon";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 
 const ALGOLIA_APP_ID = "WLK9YABRW4";
-const ALGOLIA_SEARCH_API_KEY = "aa0ebd175fcfb78706a053e5e71f6b58";
+const ALGOLIA_SEARCH_API_KEY = "7abb638647d3aa25e7a6d29dfdca2212";
 const ALGOLIA_INDEX_NAME = "reflex_dev_wlk9yabrw4_pages";
 const ALGOLIA_SEARCH_ENDPOINT = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${encodeURIComponent(ALGOLIA_INDEX_NAME)}/query`;
 
@@ -12,15 +31,24 @@ const SEARCH_DEBOUNCE_MS = 350;
 const MIN_QUERY_LENGTH = 2;
 const MAX_CACHED_QUERIES = 50;
 const ROOT_THEME_SELECTOR = '.radix-themes[data-is-root-theme="true"]';
+const ORBIT_ORDER = [0, 1, 2, 5, 8, 7, 6, 3];
+const ORBIT_DELAYS = Array.from({ length: 9 }, (_, index) => {
+  const order = ORBIT_ORDER.indexOf(index);
+  return order === -1 ? null : order * 110;
+});
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 type ResultSection =
-  | "XY"
-  | "Components"
-  | "API Reference"
-  | "Docs"
-  | "Blog"
-  | "Reflex";
+  "XY" | "Components" | "API Reference" | "Docs" | "Blog" | "Reflex";
+
+const RESULT_ICONS: Record<ResultSection, IconSvgElement> = {
+  XY: ChartLineData01Icon,
+  Components: ComponentIcon,
+  "API Reference": ApiIcon,
+  Docs: BookOpen01Icon,
+  Blog: Notebook01Icon,
+  Reflex: ReflexIcon,
+};
 
 interface AlgoliaHit {
   objectID: string;
@@ -33,6 +61,9 @@ interface AlgoliaHit {
 
 interface SearchHit extends AlgoliaHit {
   url: string;
+  section: ResultSection;
+  displayTitle: string;
+  breadcrumbs: string[];
 }
 
 interface AlgoliaResponse {
@@ -72,13 +103,6 @@ function normalizeResultUrl(hit: AlgoliaHit): string | null {
   }
 }
 
-function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
-  return hits.flatMap((hit) => {
-    const url = normalizeResultUrl(hit);
-    return url ? [{ ...hit, url }] : [];
-  });
-}
-
 function resultSection(url: string): ResultSection {
   const path = new URL(url).pathname;
   if (path.startsWith("/docs/xy/")) {
@@ -99,207 +123,95 @@ function resultSection(url: string): ResultSection {
   return "Reflex";
 }
 
-function resultTitle(hit: SearchHit): string {
-  const fallbackHeader = hit.headers?.at(-1);
-  return (hit.title || fallbackHeader || "Reflex").replace(
-    /\s+·\s+Reflex(?: Docs)?$/i,
-    "",
-  );
+function cleanResultLabel(value: string): string {
+  return value.replace(/\s+·\s+Reflex(?: Docs)?$/i, "").trim();
 }
 
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  const terms = query.trim().split(/\s+/).filter(Boolean);
-  if (terms.length === 0) {
-    return text;
+function resultTitle(hit: AlgoliaHit): string {
+  return cleanResultLabel(hit.title || hit.headers?.at(-1) || "Reflex");
+}
+
+function resultBreadcrumbs(
+  hit: AlgoliaHit,
+  section: ResultSection,
+  displayTitle: string,
+): string[] {
+  const root = section === "Blog" ? "Blogs" : section;
+  if (
+    section === "API Reference" ||
+    section === "Blog" ||
+    section === "Reflex"
+  ) {
+    return [root];
   }
 
-  const escapedTerms = terms.map((term) =>
-    term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  );
-  const pattern = new RegExp(`(${escapedTerms.join("|")})`, "gi");
-  const normalizedTerms = new Set(
-    terms.map((term) => term.toLocaleLowerCase()),
-  );
-
-  return text
-    .split(pattern)
-    .map((part, index) =>
-      normalizedTerms.has(part.toLocaleLowerCase()) ? (
-        <mark key={`${part}-${index}`}>{part}</mark>
-      ) : (
-        part
-      ),
-    );
+  const breadcrumbs = [root];
+  const seen = new Set([
+    root.toLocaleLowerCase(),
+    displayTitle.toLocaleLowerCase(),
+  ]);
+  for (const header of (hit.headers ?? []).slice(0, 2)) {
+    const label = cleanResultLabel(header);
+    const normalizedLabel = label.toLocaleLowerCase();
+    if (label && !seen.has(normalizedLabel)) {
+      breadcrumbs.push(label);
+      seen.add(normalizedLabel);
+    }
+  }
+  return breadcrumbs;
 }
 
-function SearchIcon({ size = 16 }: { size?: number }) {
+function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
+  return hits.flatMap((hit) => {
+    const url = normalizeResultUrl(hit);
+    if (!url) {
+      return [];
+    }
+
+    const section = resultSection(url);
+    const displayTitle = resultTitle(hit);
+    return [
+      {
+        ...hit,
+        url,
+        section,
+        displayTitle,
+        breadcrumbs: resultBreadcrumbs(hit, section, displayTitle),
+      },
+    ];
+  });
+}
+
+function LoadingState() {
   return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      height={size}
-      viewBox="0 0 24 24"
-      width={size}
-    >
-      <circle
-        cx="11"
-        cy="11"
-        r="6.75"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="m16 16 4 4"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-    </svg>
+    <span aria-hidden="true" className="ReflexSearch-loadingState">
+      {ORBIT_DELAYS.map((delay, index) => (
+        <span
+          className="ReflexSearch-loadingCell"
+          key={index}
+          style={{
+            opacity: delay === null ? 0.07 : 0.15,
+            animation:
+              delay === null
+                ? "none"
+                : `loading-state-pixel-on 950ms ease-in-out ${delay}ms infinite`,
+          }}
+        />
+      ))}
+    </span>
   );
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unhandled result section: ${value}`);
 }
 
 function ResultIcon({ section }: { section: ResultSection }) {
-  let glyph: React.ReactNode;
-
-  switch (section) {
-    case "XY":
-      glyph = (
-        <>
-          <path d="M5 4v15h15" />
-          <path d="m8 15 3-4 3 2 4-6" />
-          <circle cx="8" cy="15" fill="currentColor" r="1" stroke="none" />
-          <circle cx="11" cy="11" fill="currentColor" r="1" stroke="none" />
-          <circle cx="14" cy="13" fill="currentColor" r="1" stroke="none" />
-          <circle cx="18" cy="7" fill="currentColor" r="1" stroke="none" />
-        </>
-      );
-      break;
-    case "Components":
-      glyph = (
-        <>
-          <rect height="6" rx="1.25" width="6" x="4" y="4" />
-          <rect height="6" rx="1.25" width="6" x="14" y="4" />
-          <rect height="6" rx="1.25" width="6" x="4" y="14" />
-          <rect height="6" rx="1.25" width="6" x="14" y="14" />
-        </>
-      );
-      break;
-    case "API Reference":
-      glyph = (
-        <>
-          <path d="m9 7-5 5 5 5" />
-          <path d="m15 7 5 5-5 5" />
-          <path d="m13.5 5-3 14" />
-        </>
-      );
-      break;
-    case "Docs":
-      glyph = (
-        <>
-          <path d="M4 5.5c2.75-.5 5.4.1 8 1.8v12c-2.6-1.7-5.25-2.3-8-1.8z" />
-          <path d="M20 5.5c-2.75-.5-5.4.1-8 1.8v12c2.6-1.7 5.25-2.3 8-1.8z" />
-        </>
-      );
-      break;
-    case "Blog":
-      glyph = (
-        <>
-          <path d="M6 3.5h8l4 4V20H6z" />
-          <path d="M14 3.5V8h4" />
-          <path d="M9 12h6M9 15h6" />
-        </>
-      );
-      break;
-    case "Reflex":
-      glyph = (
-        <g transform="translate(3 3) scale(1.285714)">
-          <rect
-            fill="currentColor"
-            height="14"
-            rx="3.5"
-            stroke="none"
-            width="14"
-          />
-          <path
-            d="M8.75 8.167v2.77c0 .081.065.147.146.147h1.458c.08 0 .146-.066.146-.146V8.313a.146.146 0 0 0-.146-.146zm-5.104-5.25a.146.146 0 0 0-.146.146v7.875c0 .08.065.146.146.146h1.458c.08 0 .146-.066.146-.146V8.313c0-.08.065-.146.146-.146H8.75v-1.75H5.396a.146.146 0 0 1-.146-.146V4.813c0-.08.065-.146.146-.146h3.208c.08 0 .146.065.146.146v1.604h1.604c.08 0 .146-.065.146-.146V3.063a.146.146 0 0 0-.146-.146z"
-            fill="var(--secondary-1, #fff)"
-            stroke="none"
-          />
-        </g>
-      );
-      break;
-    default:
-      return assertNever(section);
-  }
-
   return (
-    <svg
+    <HugeiconsIcon
       aria-hidden="true"
       className="ReflexSearch-resultIcon"
       data-section={section}
-      fill="none"
-      focusable="false"
-      height="18"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-      viewBox="0 0 24 24"
-      width="18"
-    >
-      {glyph}
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      height="16"
-      viewBox="0 0 24 24"
-      width="16"
-    >
-      <path
-        d="m7 7 10 10M17 7 7 17"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-
-function LoadingIcon() {
-  return (
-    <svg
-      aria-label="Searching"
-      className="ReflexSearch-spinner"
-      fill="none"
-      height="16"
-      viewBox="0 0 24 24"
-      width="16"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        opacity="0.25"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2"
-      />
-    </svg>
+      icon={RESULT_ICONS[section]}
+      size={20}
+      strokeWidth={1.5}
+    />
   );
 }
 
@@ -309,19 +221,84 @@ export function AlgoliaSearch() {
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [nbHits, setNbHits] = useState(0);
   const [status, setStatus] = useState<SearchStatus>("idle");
-  const [modifierKey, setModifierKey] = useState("⌘");
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [modifierKey] = useState(() =>
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+      ? "⌘"
+      : "Ctrl",
+  );
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hitRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const cacheRef = useRef(new Map<string, CachedSearch>());
+  const requestRef = useRef<AbortController | null>(null);
   const titleId = useId();
   const resultsId = useId();
 
+  const resetSearch = useCallback(() => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setQuery("");
+    setHits([]);
+    setNbHits(0);
+    setStatus("idle");
+    setActiveIndex(-1);
+  }, []);
   const openSearch = useCallback(() => setIsOpen(true), []);
   const closeSearch = useCallback(() => {
     setIsOpen(false);
+    resetSearch();
     window.requestAnimationFrame(() => buttonRef.current?.focus());
-  }, []);
+  }, [resetSearch]);
+
+  const moveSelection = useCallback(
+    (offset: number) => {
+      if (hits.length === 0) {
+        return;
+      }
+
+      setActiveIndex((current) => {
+        const nextIndex =
+          current < 0
+            ? offset > 0
+              ? 0
+              : hits.length - 1
+            : (current + offset + hits.length) % hits.length;
+        window.requestAnimationFrame(() =>
+          hitRefs.current[nextIndex]?.scrollIntoView({ block: "nearest" }),
+        );
+        return nextIndex;
+      });
+    },
+    [hits.length],
+  );
+
+  const handleInputKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      switch (event.key) {
+        case "ArrowDown":
+          event.preventDefault();
+          moveSelection(1);
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          moveSelection(-1);
+          break;
+        case "Enter": {
+          const activeHit = hits[activeIndex];
+          if (!activeHit) {
+            return;
+          }
+          event.preventDefault();
+          window.location.assign(activeHit.url);
+          break;
+        }
+      }
+    },
+    [activeIndex, hits, moveSelection],
+  );
 
   const keepFocusInDialog = useCallback(
     (event: React.KeyboardEvent<HTMLElement>) => {
@@ -348,12 +325,6 @@ export function AlgoliaSearch() {
     },
     [],
   );
-
-  useEffect(() => {
-    setModifierKey(
-      /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? "⌘" : "Ctrl",
-    );
-  }, []);
 
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
@@ -399,6 +370,7 @@ export function AlgoliaSearch() {
       setHits([]);
       setNbHits(0);
       setStatus("idle");
+      setActiveIndex(-1);
       return;
     }
 
@@ -408,14 +380,15 @@ export function AlgoliaSearch() {
       setHits(cachedSearch.hits);
       setNbHits(cachedSearch.nbHits);
       setStatus("ready");
+      setActiveIndex(cachedSearch.hits.length > 0 ? 0 : -1);
       return;
     }
 
-    setHits([]);
-    setNbHits(0);
     setStatus("loading");
+    setActiveIndex(-1);
 
     const controller = new AbortController();
+    requestRef.current = controller;
     const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(ALGOLIA_SEARCH_ENDPOINT, {
@@ -451,6 +424,9 @@ export function AlgoliaSearch() {
         }
 
         const payload = (await response.json()) as AlgoliaResponse;
+        if (controller.signal.aborted) {
+          return;
+        }
         const search = {
           hits: normalizeHits(payload.hits),
           nbHits: payload.nbHits,
@@ -467,28 +443,45 @@ export function AlgoliaSearch() {
         setHits(search.hits);
         setNbHits(search.nbHits);
         setStatus("ready");
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
+        setActiveIndex(search.hits.length > 0 ? 0 : -1);
+      } catch {
+        if (controller.signal.aborted) {
           return;
         }
         setHits([]);
         setNbHits(0);
         setStatus("error");
+        setActiveIndex(-1);
+      } finally {
+        if (requestRef.current === controller) {
+          requestRef.current = null;
+        }
       }
     }, SEARCH_DEBOUNCE_MS);
 
     return () => {
       window.clearTimeout(timer);
       controller.abort();
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+      }
     };
   }, [isOpen, query]);
 
-  const portalRoot =
-    typeof document === "undefined"
-      ? null
-      : (buttonRef.current?.closest(ROOT_THEME_SELECTOR) ??
-        document.querySelector(ROOT_THEME_SELECTOR) ??
-        document.body);
+  const portalRoot = useMemo(() => {
+    if (!isOpen || typeof document === "undefined") {
+      return null;
+    }
+    return (
+      buttonRef.current?.closest(ROOT_THEME_SELECTOR) ??
+      document.querySelector(ROOT_THEME_SELECTOR) ??
+      document.body
+    );
+  }, [isOpen]);
+  const activeResultId =
+    activeIndex >= 0 ? `${resultsId}-result-${activeIndex}` : undefined;
+  const showResults =
+    status !== "idle" && (status !== "loading" || hits.length > 0);
 
   return (
     <div className="ReflexSearch-root">
@@ -502,7 +495,12 @@ export function AlgoliaSearch() {
         ref={buttonRef}
         type="button"
       >
-        <SearchIcon />
+        <HugeiconsIcon
+          aria-hidden="true"
+          icon={Search01Icon}
+          size={16}
+          strokeWidth={1.5}
+        />
         <span className="ReflexSearch-buttonText">Search</span>
         <kbd className="ReflexSearch-shortcut">
           <span>{modifierKey}</span>K
@@ -513,6 +511,7 @@ export function AlgoliaSearch() {
         ? createPortal(
             <div
               className="ReflexSearch-overlay"
+              data-status={status}
               onMouseDown={(event) => {
                 if (event.currentTarget === event.target) {
                   closeSearch();
@@ -523,6 +522,8 @@ export function AlgoliaSearch() {
                 aria-labelledby={titleId}
                 aria-modal="true"
                 className="ReflexSearch-dialog"
+                data-results-visible={showResults}
+                data-status={status}
                 onKeyDown={keepFocusInDialog}
                 ref={dialogRef}
                 role="dialog"
@@ -530,139 +531,187 @@ export function AlgoliaSearch() {
                 <h2 className="ReflexSearch-visuallyHidden" id={titleId}>
                   Search Reflex
                 </h2>
+                <p
+                  aria-atomic="true"
+                  aria-live="polite"
+                  className="ReflexSearch-visuallyHidden ReflexSearch-liveStatus"
+                >
+                  {status === "loading"
+                    ? "Searching Reflex"
+                    : status === "error"
+                      ? "Search couldn’t load"
+                      : status === "ready"
+                        ? `${nbHits.toLocaleString()} result${nbHits === 1 ? "" : "s"}`
+                        : ""}
+                </p>
 
                 <div className="ReflexSearch-inputRow">
                   <span className="ReflexSearch-inputIcon">
-                    <SearchIcon size={20} />
+                    <HugeiconsIcon
+                      aria-hidden="true"
+                      icon={Search01Icon}
+                      size={16}
+                      strokeWidth={1.5}
+                    />
                   </span>
                   <input
-                    aria-controls={resultsId}
+                    aria-activedescendant={activeResultId}
+                    aria-controls={hits.length > 0 ? resultsId : undefined}
+                    aria-expanded={hits.length > 0}
                     aria-label="Search docs, components, blog, and Reflex pages"
+                    aria-autocomplete="list"
                     autoComplete="off"
                     className="ReflexSearch-input"
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search Reflex"
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setActiveIndex(-1);
+                    }}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="What are you searching for?"
                     ref={inputRef}
+                    role="combobox"
                     spellCheck={false}
                     type="search"
                     value={query}
                   />
-                  {status === "loading" ? (
-                    <LoadingIcon />
-                  ) : query ? (
+                  <span className="ReflexSearch-actions">
+                    <span className="ReflexSearch-actionSlot">
+                      {status === "loading" ? <LoadingState /> : null}
+                    </span>
                     <button
-                      aria-label="Clear search"
-                      className="ReflexSearch-iconButton"
-                      onClick={() => setQuery("")}
+                      aria-label="Close search"
+                      className="ReflexSearch-escape"
+                      onClick={closeSearch}
                       type="button"
                     >
-                      <CloseIcon />
+                      <span className="ReflexSearch-escapeText">ESC</span>
+                      <HugeiconsIcon
+                        aria-hidden="true"
+                        className="ReflexSearch-escapeIcon"
+                        icon={CancelCircleIcon}
+                        size={18}
+                        strokeWidth={1.5}
+                      />
                     </button>
-                  ) : null}
-                  <button
-                    aria-label="Close search"
-                    className="ReflexSearch-escape"
-                    onClick={closeSearch}
-                    type="button"
-                  >
-                    Esc
-                  </button>
-                </div>
-
-                <div
-                  aria-live="polite"
-                  className="ReflexSearch-results"
-                  id={resultsId}
-                >
-                  {status === "idle" ? (
-                    <div className="ReflexSearch-emptyState">
-                      <span className="ReflexSearch-emptyIcon">
-                        <SearchIcon size={22} />
-                      </span>
-                      <strong>Search all of Reflex</strong>
-                      <p>
-                        Docs, XY, components, blog posts, and product pages.
-                      </p>
-                      <span>
-                        Type at least {MIN_QUERY_LENGTH} characters to search.
-                      </span>
-                    </div>
-                  ) : status === "loading" ? (
-                    <div className="ReflexSearch-emptyState">
-                      <LoadingIcon />
-                      <strong>Searching…</strong>
-                      <p>
-                        Looking across docs, XY, the blog, and Reflex pages.
-                      </p>
-                    </div>
-                  ) : status === "error" ? (
-                    <div className="ReflexSearch-emptyState" role="alert">
-                      <strong>Search is temporarily unavailable</strong>
-                      <p>Please check your connection and try again.</p>
-                    </div>
-                  ) : status === "ready" && hits.length === 0 ? (
-                    <div className="ReflexSearch-emptyState">
-                      <strong>No results for “{query.trim()}”</strong>
-                      <p>Try another term or a shorter phrase.</p>
-                    </div>
-                  ) : (
-                    <ul className="ReflexSearch-hitList">
-                      {hits.map((hit) => (
-                        <li key={hit.objectID}>
-                          <a
-                            className="ReflexSearch-hit"
-                            href={hit.url}
-                            onClick={closeSearch}
-                          >
-                            <span className="ReflexSearch-hitIcon">
-                              <ResultIcon section={resultSection(hit.url)} />
-                            </span>
-                            <span className="ReflexSearch-hitContent">
-                              <span className="ReflexSearch-hitMeta">
-                                {resultSection(hit.url)}
-                              </span>
-                              <strong>
-                                <HighlightedText
-                                  text={resultTitle(hit)}
-                                  query={query}
-                                />
-                              </strong>
-                              {hit.description ? (
-                                <span className="ReflexSearch-hitDescription">
-                                  <HighlightedText
-                                    text={hit.description}
-                                    query={query}
-                                  />
-                                </span>
-                              ) : null}
-                            </span>
-                            <span
-                              aria-hidden="true"
-                              className="ReflexSearch-hitArrow"
-                            >
-                              ↗
-                            </span>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <footer className="ReflexSearch-footer">
-                  <span>
-                    {status === "ready"
-                      ? `${nbHits.toLocaleString()} result${nbHits === 1 ? "" : "s"}`
-                      : "Keyword search only"}
                   </span>
-                  <a
-                    href="https://www.algolia.com/"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Search by <strong>Algolia</strong>
-                  </a>
-                </footer>
+                </div>
+
+                {showResults ? (
+                  <>
+                    <div
+                      className="ReflexSearch-results scroll-mask-y-10 overscroll-none"
+                      data-populated={hits.length > 0}
+                    >
+                      {status === "error" ? (
+                        <div
+                          className="ReflexSearch-emptyState"
+                          data-tone="error"
+                          role="alert"
+                        >
+                          <span className="ReflexSearch-emptyIcon">
+                            <HugeiconsIcon
+                              aria-hidden="true"
+                              icon={Alert02Icon}
+                              size={20}
+                              strokeWidth={1.5}
+                            />
+                          </span>
+                          <strong>Search couldn’t load</strong>
+                          <p>Check your connection, then try again.</p>
+                        </div>
+                      ) : status === "ready" && hits.length === 0 ? (
+                        <div
+                          className="ReflexSearch-emptyState"
+                          data-tone="neutral"
+                        >
+                          <strong>No results for “{query.trim()}”</strong>
+                        </div>
+                      ) : (
+                        <ul
+                          aria-label="Search results"
+                          className="ReflexSearch-hitList"
+                          id={resultsId}
+                          role="listbox"
+                        >
+                          {hits.map((hit, index) => (
+                            <li key={hit.objectID} role="presentation">
+                              <a
+                                aria-selected={index === activeIndex}
+                                className="ReflexSearch-hit"
+                                data-selected={index === activeIndex}
+                                href={hit.url}
+                                id={`${resultsId}-result-${index}`}
+                                onClick={closeSearch}
+                                onFocus={() => setActiveIndex(index)}
+                                onMouseEnter={() => setActiveIndex(index)}
+                                ref={(element) => {
+                                  hitRefs.current[index] = element;
+                                }}
+                                role="option"
+                                tabIndex={-1}
+                              >
+                                <span className="ReflexSearch-hitBreadcrumbs">
+                                  {hit.breadcrumbs.map((breadcrumb, index) => (
+                                    <React.Fragment
+                                      key={`${breadcrumb}-${index}`}
+                                    >
+                                      {index > 0 ? (
+                                        <HugeiconsIcon
+                                          aria-hidden="true"
+                                          icon={ArrowRight01Icon}
+                                          size={14}
+                                          strokeWidth={1.5}
+                                        />
+                                      ) : null}
+                                      <span>{breadcrumb}</span>
+                                    </React.Fragment>
+                                  ))}
+                                </span>
+                                <span className="ReflexSearch-hitTitleRow">
+                                  <span className="ReflexSearch-hitIcon">
+                                    <ResultIcon section={hit.section} />
+                                  </span>
+                                  <strong>{hit.displayTitle}</strong>
+                                  <span
+                                    aria-hidden="true"
+                                    className="ReflexSearch-hitArrow"
+                                  >
+                                    <HugeiconsIcon
+                                      icon={CornerDownLeftIcon}
+                                      size={18}
+                                      strokeWidth={1.5}
+                                    />
+                                  </span>
+                                </span>
+                                {hit.description ? (
+                                  <span className="ReflexSearch-hitDescription">
+                                    {hit.description}
+                                  </span>
+                                ) : null}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <footer className="ReflexSearch-footer">
+                      {status === "ready" ? (
+                        <span>
+                          {nbHits.toLocaleString()} result
+                          {nbHits === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                      <a
+                        href="https://www.algolia.com/"
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Search by <strong>Algolia</strong>
+                      </a>
+                    </footer>
+                  </>
+                ) : null}
               </section>
             </div>,
             portalRoot,
@@ -674,8 +723,14 @@ export function AlgoliaSearch() {
 
 const SEARCH_STYLES = `
   .ReflexSearch-root {
+    align-items: center;
     display: flex;
+    justify-content: center;
+    max-height: 2rem;
+    max-width: 10rem;
+    min-height: 2rem;
     min-width: 0;
+    width: 10rem;
   }
 
   .ReflexSearch-button {
@@ -685,7 +740,8 @@ const SEARCH_STYLES = `
     border-radius: 0.5rem;
     box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.08) inset,
       0 0 0 1px rgba(0, 0, 0, 0.08) inset,
-      0 1px 4px rgba(0, 0, 0, 0.04);
+      0 1px 2px 0 rgba(0, 0, 0, 0.02),
+      0 1px 4px 0 rgba(0, 0, 0, 0.02);
     color: var(--secondary-11, #646464);
     cursor: pointer;
     display: flex;
@@ -695,9 +751,9 @@ const SEARCH_STYLES = `
     justify-content: flex-start;
     max-width: 10rem;
     min-width: 0;
-    padding: 0.25rem 0.5rem;
-    transition: background-color 120ms ease, box-shadow 120ms ease;
-    width: 10rem;
+    padding: 0.375rem 0.5rem;
+    transition: none;
+    width: 100%;
   }
 
   .ReflexSearch-button:hover {
@@ -705,7 +761,6 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-button:focus-visible,
-  .ReflexSearch-iconButton:focus-visible,
   .ReflexSearch-escape:focus-visible,
   .ReflexSearch-hit:focus-visible {
     outline: 2px solid var(--primary-9, #6e56cf);
@@ -720,14 +775,22 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-shortcut {
     align-items: center;
-    background: transparent;
+    background: var(--secondary-3, #f0f0f3);
     border: 0;
     color: var(--secondary-9, #8a8a8a);
+    box-shadow: none;
     display: inline-flex;
-    font: 500 0.6875rem/1 var(--font-instrument-sans, system-ui, sans-serif);
+    border-radius: 0.25rem;
+    font-family: var(--font-instrument-sans, system-ui, sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 475;
     gap: 0.125rem;
+    height: 1.25rem;
+    justify-content: center;
+    line-height: 1.25rem;
     margin-left: auto;
-    padding: 0;
+    padding: 0 0.25rem;
+    width: fit-content;
   }
 
   .ReflexSearch-overlay {
@@ -743,32 +806,43 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-dialog {
+    animation: ReflexSearch-dialog-enter 180ms
+      cubic-bezier(0.32, 0.72, 0, 1) both;
     background: var(--secondary-1, #fff);
-    border: 1px solid var(--secondary-5, #e8e8e8);
-    border-radius: 0.875rem;
-    box-shadow: 0 24px 80px rgba(18, 17, 19, 0.22),
-      0 2px 8px rgba(18, 17, 19, 0.12);
+    border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+    border-radius: 0.75rem;
+    box-shadow: 0 24px 64px rgba(18, 17, 19, 0.18),
+      0 8px 24px rgba(18, 17, 19, 0.1),
+      0 2px 8px rgba(18, 17, 19, 0.08);
     color: var(--secondary-12, #202020);
     display: flex;
     flex-direction: column;
     font-family: var(--font-instrument-sans, system-ui, sans-serif);
     max-height: min(42rem, calc(100vh - 2rem));
     overflow: hidden;
-    width: min(44rem, 100%);
+    transform-origin: top center;
+    width: min(90vw, 720px);
   }
 
   .ReflexSearch-inputRow {
     align-items: center;
-    border-bottom: 1px solid var(--secondary-5, #e8e8e8);
+    border-bottom: 1px solid var(--secondary-4, #e8e8e8);
+    box-sizing: border-box;
     display: flex;
     gap: 0.75rem;
-    min-height: 4rem;
-    padding: 0 1rem;
+    height: 3rem;
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .ReflexSearch-dialog[data-results-visible="false"] .ReflexSearch-inputRow {
+    border-bottom-color: transparent;
   }
 
   .ReflexSearch-inputIcon {
-    color: var(--primary-9, #6e56cf);
+    color: var(--secondary-11, #646464);
     display: flex;
+    flex: 0 0 auto;
   }
 
   .ReflexSearch-input {
@@ -780,45 +854,67 @@ const SEARCH_STYLES = `
     font: 500 1rem/1.5rem var(--font-instrument-sans, system-ui, sans-serif);
     min-width: 0;
     outline: 0;
-    padding: 1.125rem 0;
+    padding: 0;
   }
 
   .ReflexSearch-input::placeholder {
     color: var(--secondary-9, #8a8a8a);
+    font-weight: 500;
   }
 
   .ReflexSearch-input::-webkit-search-cancel-button {
     display: none;
   }
 
-  .ReflexSearch-iconButton,
-  .ReflexSearch-escape {
+  .ReflexSearch-actions {
     align-items: center;
-    background: var(--secondary-3, #f0f0f0);
-    border: 1px solid var(--secondary-5, #e8e8e8);
-    border-radius: 0.375rem;
-    color: var(--secondary-11, #646464);
-    cursor: pointer;
-    display: inline-flex;
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  .ReflexSearch-actionSlot {
+    align-items: center;
+    display: flex;
+    flex: 0 0 1.75rem;
+    height: 1.75rem;
     justify-content: center;
   }
 
-  .ReflexSearch-iconButton {
-    height: 1.75rem;
-    width: 1.75rem;
+  .ReflexSearch-escape {
+    align-items: center;
+    background: var(--c-white-1, #fff);
+    border: 1px solid var(--secondary-4, #e8e8e8);
+    border-radius: 0.375rem;
+    color: var(--secondary-11, #646464);
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    font: 475 0.75rem/1rem var(--font-instrument-sans, system-ui, sans-serif);
+    gap: 0.25rem;
+    height: 1.5rem;
+    justify-content: center;
+    padding: 0 0.375rem;
   }
 
-  .ReflexSearch-escape {
-    font: 500 0.6875rem/1 var(--font-instrument-sans, system-ui, sans-serif);
-    height: 1.75rem;
-    padding: 0 0.5rem;
+  .ReflexSearch-escapeIcon {
+    display: none;
   }
 
   .ReflexSearch-results {
-    min-height: 15rem;
+    height: 34rem;
     overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 0.75rem;
+    padding: 1rem;
+    position: relative;
+    scrollbar-width: thin;
+  }
+
+  .ReflexSearch-results[data-populated="false"] {
+    height: 20rem;
+  }
+
+  .ReflexSearch-results[data-populated="false"] .ReflexSearch-emptyState {
+    height: 100%;
+    min-height: 0;
   }
 
   .ReflexSearch-emptyState {
@@ -826,93 +922,126 @@ const SEARCH_STYLES = `
     color: var(--secondary-10, #7b7b7b);
     display: flex;
     flex-direction: column;
+    gap: 0.375rem;
     justify-content: center;
-    min-height: 13.5rem;
+    min-height: 31rem;
     padding: 2rem;
     text-align: center;
   }
 
   .ReflexSearch-emptyState strong {
     color: var(--secondary-12, #202020);
-    font-size: 1rem;
-    margin-top: 0.875rem;
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    margin: 0;
+    max-width: 32rem;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
   }
 
   .ReflexSearch-emptyState p {
-    font-size: 0.875rem;
-    margin: 0.375rem 0;
-  }
-
-  .ReflexSearch-emptyState > span:last-child {
-    font-size: 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+    margin: 0;
+    max-width: 32rem;
+    text-wrap: pretty;
   }
 
   .ReflexSearch-emptyIcon {
     align-items: center;
     background: var(--primary-3, #f3f0ff);
+    border: 1px solid var(--primary-a5, rgba(110, 86, 207, 0.16));
     border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(18, 17, 19, 0.04);
     color: var(--primary-9, #6e56cf);
     display: flex;
-    height: 2.75rem;
+    height: 2.5rem;
     justify-content: center;
-    width: 2.75rem;
+    margin-bottom: 0.5rem;
+    width: 2.5rem;
+  }
+
+  .ReflexSearch-emptyState[data-tone="error"] .ReflexSearch-emptyIcon {
+    background: var(--red-3, #ffefef);
+    border-color: var(--red-a5, rgba(205, 43, 49, 0.2));
+    color: var(--red-9, #e5484d);
   }
 
   .ReflexSearch-hitList {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.625rem;
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
   .ReflexSearch-hit {
-    align-items: center;
-    border-radius: 0.625rem;
-    color: inherit;
+    align-items: stretch;
+    background: var(--secondary-1, #fff);
+    border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+    border-radius: 0.75rem;
+    color: var(--secondary-12, #202020);
+    cursor: pointer;
     display: flex;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    flex-direction: column;
+    font-weight: 415;
+    gap: 0.375rem;
+    min-height: 5.5rem;
+    padding: 0.75rem 1rem;
+    user-select: none;
     text-decoration: none;
   }
 
-  .ReflexSearch-hit:hover {
+  .ReflexSearch-hit[data-selected="true"] {
+    background: var(--primary-2, #fbfaff);
+    border-color: var(--primary-7, #c9bfff);
+  }
+
+  .ReflexSearch-hit:active {
     background: var(--primary-3, #f3f0ff);
+  }
+
+  .ReflexSearch-hitBreadcrumbs {
+    align-items: center;
+    color: var(--secondary-10, #7b7b7b);
+    display: flex;
+    font-size: 0.75rem;
+    gap: 0.375rem;
+    line-height: 1.125rem;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .ReflexSearch-hitBreadcrumbs > span {
+    flex: 0 0 auto;
+  }
+
+  .ReflexSearch-hitTitleRow {
+    align-items: center;
+    display: flex;
+    gap: 0.625rem;
+    min-width: 0;
   }
 
   .ReflexSearch-hitIcon {
     align-items: center;
-    background: var(--secondary-3, #f0f0f0);
-    border: 1px solid var(--secondary-5, #e8e8e8);
-    border-radius: 0.5rem;
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--secondary-11, #646464);
     display: flex;
     flex: 0 0 auto;
-    height: 2.25rem;
+    height: 1.25rem;
     justify-content: center;
-    width: 2.25rem;
+    width: 1.25rem;
   }
 
-  .ReflexSearch-hitContent {
-    display: flex;
+  .ReflexSearch-hitTitleRow strong {
     flex: 1;
-    flex-direction: column;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5rem;
     min-width: 0;
-  }
-
-  .ReflexSearch-hitMeta {
-    color: var(--primary-10, #644fc1);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    line-height: 1rem;
-    text-transform: uppercase;
-  }
-
-  .ReflexSearch-hitContent strong {
-    font-size: 0.9375rem;
-    line-height: 1.25rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -920,45 +1049,65 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-hitDescription {
     color: var(--secondary-10, #7b7b7b);
-    display: -webkit-box;
-    font-size: 0.8125rem;
-    line-height: 1.125rem;
-    margin-top: 0.125rem;
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-  }
-
-  .ReflexSearch-hit mark {
-    background: transparent;
-    color: var(--primary-10, #644fc1);
-    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ReflexSearch-hitArrow {
-    color: var(--secondary-8, #aaa);
-    font-size: 0.875rem;
+    color: var(--secondary-10, #7b7b7b);
+    display: flex;
+    flex: 0 0 auto;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .ReflexSearch-hit[data-selected="true"] .ReflexSearch-hitArrow {
+    color: var(--primary-9, #6e56cf);
+    opacity: 1;
   }
 
   .ReflexSearch-footer {
     align-items: center;
-    border-top: 1px solid var(--secondary-5, #e8e8e8);
+    border-top: 1px solid var(--secondary-4, #e8e8e8);
     color: var(--secondary-9, #8a8a8a);
     display: flex;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 415;
     justify-content: space-between;
+    line-height: 1rem;
     min-height: 2.75rem;
     padding: 0 1rem;
   }
 
   .ReflexSearch-footer a {
     color: var(--secondary-10, #7b7b7b);
+    margin-left: auto;
     text-decoration: none;
   }
 
-  .ReflexSearch-spinner {
-    animation: ReflexSearch-spin 700ms linear infinite;
-    color: var(--primary-9, #6e56cf);
+  .ReflexSearch-loadingState {
+    color: var(--secondary-11, #646464);
+    display: grid;
+    flex: 0 0 auto;
+    gap: 2px;
+    grid-template-columns: repeat(3, 4px);
+    height: 16px;
+    pointer-events: none;
+    user-select: none;
+    width: 16px;
+  }
+
+  .ReflexSearch-loadingCell {
+    background: currentColor;
+    border-radius: 1px;
+    height: 4px;
+    width: 4px;
   }
 
   .ReflexSearch-visuallyHidden {
@@ -970,6 +1119,22 @@ const SEARCH_STYLES = `
     width: 1px;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+
+  .dark .ReflexSearch-dialog,
+  [data-theme="dark"] .ReflexSearch-dialog {
+    background: var(--secondary-4, #1e2025);
+    border-color: var(--secondary-7, #363c44);
+  }
+
+  .dark .ReflexSearch-dialog[data-results-visible="true"] .ReflexSearch-inputRow,
+  [data-theme="dark"] .ReflexSearch-dialog[data-results-visible="true"] .ReflexSearch-inputRow {
+    border-bottom-color: var(--secondary-7, #363c44);
+  }
+
+  .dark .ReflexSearch-footer,
+  [data-theme="dark"] .ReflexSearch-footer {
+    border-top-color: var(--secondary-7, #363c44);
   }
 
   .dark .ReflexSearch-button,
@@ -984,18 +1149,43 @@ const SEARCH_STYLES = `
     background: var(--secondary-3, #2c2c2c);
   }
 
-  @keyframes ReflexSearch-spin {
+  @keyframes loading-state-pixel-on {
+    0%, 45%, 100% {
+      opacity: 0.15;
+    }
+
+    18% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes ReflexSearch-dialog-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+
     to {
-      transform: rotate(360deg);
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
   @media (max-width: 80em) {
+    .ReflexSearch-root {
+      width: auto;
+    }
+
     .ReflexSearch-button {
       height: 2rem;
       justify-content: center;
-      padding: 0;
+      max-width: 6em;
+      padding: 2px 12px;
       width: 2rem;
+    }
+
+    .ReflexSearch-button > svg {
+      margin-right: 2px;
     }
 
     .ReflexSearch-buttonText,
@@ -1018,29 +1208,63 @@ const SEARCH_STYLES = `
       width: 100%;
     }
 
+    .ReflexSearch-overlay[data-status="idle"] {
+      align-items: flex-start;
+      padding: 1rem;
+    }
+
+    .ReflexSearch-dialog[data-status="idle"] {
+      border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+      border-radius: 0.75rem;
+      height: auto;
+    }
+
     .ReflexSearch-results {
       flex: 1;
+      height: auto;
+      padding: 1rem;
+    }
+
+    .ReflexSearch-hit {
+      min-height: 5.5rem;
+      padding: 0.75rem;
+    }
+
+    .ReflexSearch-hitTitleRow {
+      gap: 0.5rem;
     }
 
     .ReflexSearch-escape {
-      font-size: 0;
+      height: 2.75rem;
       padding: 0;
-      width: 1.75rem;
+      width: 2.75rem;
     }
 
-    .ReflexSearch-escape::after {
-      content: "×";
-      font-size: 1.125rem;
+    .ReflexSearch-actionSlot {
+      flex-basis: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .ReflexSearch-escapeText {
+      display: none;
+    }
+
+    .ReflexSearch-escapeIcon {
+      display: block;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .ReflexSearch-dialog {
+      animation: none;
+    }
+
     .ReflexSearch-button {
       transition: none;
     }
 
-    .ReflexSearch-spinner {
-      animation-duration: 1400ms;
+    .ReflexSearch-loadingCell {
+      animation: none !important;
     }
   }
 `;
