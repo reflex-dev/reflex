@@ -3,6 +3,7 @@
 import copy
 import dataclasses
 import inspect
+import logging
 import sys
 import types
 import warnings
@@ -65,6 +66,8 @@ from reflex_base.vars.function import (
 )
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1986,7 +1989,7 @@ def _check_event_args_subclass_of_callback(
                     f" as annotated in {callback_name}" if callback_name else ""
                 )
 
-                console.warn(
+                logger.warning(
                     f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> (){as_annotated_in} instead. "
                     f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                 )
