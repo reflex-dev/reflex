@@ -39,7 +39,12 @@ const ORBIT_DELAYS = Array.from({ length: 9 }, (_, index) => {
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 type ResultSection =
-  "XY" | "Components" | "API Reference" | "Docs" | "Blog" | "Reflex";
+  | "XY"
+  | "Components"
+  | "API Reference"
+  | "Docs"
+  | "Blog"
+  | "Reflex";
 
 const RESULT_ICONS: Record<ResultSection, IconSvgElement> = {
   XY: ChartLineData01Icon,

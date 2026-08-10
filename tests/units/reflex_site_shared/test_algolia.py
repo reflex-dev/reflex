@@ -300,7 +300,7 @@ def test_algolia_search_uses_polished_status_states() -> None:
     assert 'from "@hugeicons/core-free-icons/Alert02Icon"' in source
     assert "SearchMinusIcon" not in source
     assert "Searching Reflex" in source
-    assert "Search couldn\u2019t load" in source
+    assert "Search couldn\u2019t load" in source  # codespell:ignore
     assert "Try a broader term, check the spelling" not in source
     assert "or use fewer" not in source
     assert 'data-tone="error"' in source
