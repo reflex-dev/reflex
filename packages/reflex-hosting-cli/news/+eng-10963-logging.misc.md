@@ -1,0 +1,1 @@
+The hosting CLI's forked console module and `LogLevel` enum are now shims over `reflex-base` (new dependency), and its logging goes through standard python `logging`. Debug output renders purple (was blue), errors go to stderr (was stdout), and success messages are hidden at `--loglevel warning`.
