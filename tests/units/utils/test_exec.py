@@ -78,3 +78,26 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_with_development_condition_sets_node_and_bun_options():
+    """Both runtime option vars gain the development condition flag."""
+    env = exec_utils._with_development_condition({})
+    assert env["NODE_OPTIONS"] == "--conditions=development"
+    assert env["BUN_OPTIONS"] == "--conditions=development"
+
+
+def test_with_development_condition_preserves_existing_options():
+    """Existing runtime options are kept, the flag is appended once, and the
+    base environment is not mutated.
+    """
+    environ = {
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "BUN_OPTIONS": "--conditions=development",
+    }
+    env = exec_utils._with_development_condition(environ)
+    assert env["NODE_OPTIONS"] == "--max-old-space-size=4096 --conditions=development"
+    # Already-present flag is not duplicated.
+    assert env["BUN_OPTIONS"] == "--conditions=development"
+    # The dev condition must not leak into the parent environment.
+    assert environ["NODE_OPTIONS"] == "--max-old-space-size=4096"

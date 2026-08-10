@@ -1,0 +1,1 @@
+Bump bundled `vite` from 8.0.16 to 8.2.0. The full-integration-suite memo regression that previously held the pin back was root-caused to a `REFLEX_ENV_MODE=prod` leak between `AppHarness` instances (fixed in `reflex.testing`), not to a vite defect.
