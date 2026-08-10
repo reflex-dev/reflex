@@ -806,9 +806,7 @@ def upload(app: App):
         from reflex_base.registry import RegistrationContext
 
         token, handler_name = _require_upload_headers(request)
-        registered_event_handler = RegistrationContext.get().event_handlers.get([
-            handler_name
-        ])
+        registered_event_handler = RegistrationContext.get().event_handlers.get(handler_name)
         if registered_event_handler is None:
             raise HTTPException(
                 status_code=400,
