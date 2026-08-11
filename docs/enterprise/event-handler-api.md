@@ -133,12 +133,11 @@ so an expired token simply means a new session.
 
 The endpoint is rate limited per client IP (`token_rate_limit`, default 10 per
 minute), because every grant seeds a server-side session that consumes memory.
-Set `anonymous_sessions=False` to refuse anonymous sessions on the REST
-surface.
+Set `anonymous_sessions=False` so this plugin does not wire it.
 
 ```md alert info
 # The token endpoint is shared with `MCPPlugin`.
-Whichever plugin wires it first decides its settings, and it is served if *either* plugin enables it — so disable `anonymous_sessions` on both to fully turn anonymous access off. With no other token source configured, the REST API is then unreachable.
+Whichever plugin wires it first decides its settings (TTL, rate limit), and the route is served if *either* plugin enables it. `anonymous_sessions=False` here only stops *this* plugin from wiring it: any token the endpoint mints is still accepted on these REST endpoints, so set it on both plugins to stop issuing them at all. With no token source configured at all, the REST API is only reachable with an OAuth token — and unreachable if MCP OAuth is off too.
 ```
 
 ### Authenticated tokens

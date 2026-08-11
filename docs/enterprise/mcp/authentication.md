@@ -42,24 +42,37 @@ REST API). Reuse the token across calls to address the same session; when it
 expires, request a new one — which is a new, blank session, since anonymous
 tokens have no refresh.
 
-Anonymous sessions carry **no user identity**. With an
-[`AuthPlugin`](/docs/enterprise/auth/overview/) configured, only `auth=False`
-handlers and vars are reachable through one, and `queue_event` fails an
-auth-required handler with an actionable error rather than a silent redirect
-delta. Without an `AuthPlugin` this is the only token source.
+Anonymous access and OAuth coexist — in fact that is the default with an
+[`AuthPlugin`](/docs/enterprise/auth/overview/) configured. Both token
+authorities are wired, and the endpoint accepts a bearer from either, so an
+agent that does not need to act as a user can skip the login flow entirely.
+
+Anonymous sessions carry **no user identity**, though. With an `AuthPlugin`
+configured, that means:
+
+- `queue_event` refuses any handler that is not `auth=False`, with an
+  actionable error rather than a silent redirect delta.
+- Protected vars are withheld from the `reflex://state/vars/...` reads, and
+  only `auth=False` [`rxe.mcp.resource`](/docs/enterprise/mcp/custom-resources/)
+  methods resolve.
+- `AuthUserState.current()` has no user.
+
+Handler metadata (`search_events`, `reflex://event`) stays readable either way.
+Without an `AuthPlugin` this is the only token source.
 
 The endpoint is rate limited per client IP (`token_rate_limit`, default 10 per
 minute) because every grant seeds a server-side session that consumes memory.
-Turn anonymous sessions off entirely when agents must always act as a signed-in
-user:
+
+Two ways to require a signed-in agent instead:
 
 ```python
-rxe.MCPPlugin(anonymous_sessions=False)
+rxe.MCPPlugin(anonymous_sessions=False)  # MCP rejects anonymous bearers
+rxe.MCPPlugin(required_scopes=["orders:read"])  # anonymous tokens carry no scopes
 ```
 
 ```md alert info
 # The token endpoint is shared with `EventHandlerAPIPlugin`.
-Whichever plugin wires it first decides its settings, and it is served if *either* plugin enables it — so disable `anonymous_sessions` on both to fully turn anonymous access off.
+Whichever plugin wires it first decides its settings (TTL, rate limit), and the route is served if *either* plugin enables it. `anonymous_sessions=False` on `MCPPlugin` always makes the MCP endpoint reject anonymous bearers — but the REST surface keeps accepting any token the shared endpoint mints, so set it on both plugins to stop issuing them at all.
 ```
 
 ## OAuth 2.1 with an `AuthPlugin`

@@ -300,7 +300,7 @@ All arguments are keyword-only and optional.
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `auth` | `None` | `None` = OAuth on exactly when an `AuthPlugin` is configured; `True` forces it (and fails fast without one); `False` keeps the endpoint anonymous-only. |
-| `anonymous_sessions` | `True` | Serve the anonymous token endpoint. Always effectively on when OAuth is off. |
+| `anonymous_sessions` | `True` | Serve the anonymous token endpoint and accept its tokens at the MCP endpoint — alongside OAuth, not instead of it. Always effectively on when OAuth is off. |
 | `anonymous_session_ttl` | `3600` | Anonymous token lifetime in seconds (no refresh — a new token is a new session). |
 | `app_scopes` | `None` | `{name: description}` scopes offered as individually grantable checkboxes on the consent screen. |
 | `required_scopes` | `None` | Scopes a token must carry to reach the endpoint at all. |
