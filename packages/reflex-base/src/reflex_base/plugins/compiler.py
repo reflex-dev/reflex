@@ -6,13 +6,10 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
-from contextvars import ContextVar, Token
-from types import TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
+from reflex_base.context.base import BaseContext
 from reflex_base.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 
@@ -581,97 +578,7 @@ class CompilerHooks:
         return replacement, children
 
 
-@dataclasses.dataclass(kw_only=True)
-class BaseContext:
-    """Context manager that exposes itself through a class-local context var."""
-
-    __context_var__: ClassVar[ContextVar[Self | None]]
-
-    _attached_context_token: Token[Self | None] | None = dataclasses.field(
-        default=None,
-        init=False,
-        repr=False,
-    )
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        """Initialize a dedicated context variable for each subclass."""
-        super().__init_subclass__(**kwargs)
-        cls.__context_var__ = ContextVar(cls.__name__, default=None)
-
-    @classmethod
-    def get(cls) -> Self:
-        """Return the active context instance for the current task.
-
-        Returns:
-            The active context instance for the current task.
-        """
-        context = cls.__context_var__.get()
-        if context is None:
-            msg = f"No active {cls.__name__} is attached to the current context."
-            raise RuntimeError(msg)
-        return context
-
-    def __enter__(self) -> Self:
-        """Attach this context to the current task.
-
-        Returns:
-            The attached context instance.
-        """
-        if self._attached_context_token is not None:
-            msg = "Context is already attached and cannot be entered twice."
-            raise RuntimeError(msg)
-        self._attached_context_token = type(self).__context_var__.set(self)
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Detach this context from the current task."""
-        del exc_type, exc_val, exc_tb
-        if self._attached_context_token is None:
-            return
-        try:
-            type(self).__context_var__.reset(self._attached_context_token)
-        finally:
-            self._attached_context_token = None
-
-    async def __aenter__(self) -> Self:
-        """Attach this context to the current task asynchronously.
-
-        Returns:
-            The attached context instance.
-        """
-        return self.__enter__()
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Detach this context from the current task asynchronously."""
-        self.__exit__(exc_type, exc_val, exc_tb)
-
-    def ensure_context_attached(self) -> None:
-        """Ensure this instance is the active context for the current task."""
-        try:
-            current = type(self).get()
-        except RuntimeError as err:
-            msg = (
-                f"{type(self).__name__} must be entered with 'with' or 'async with' "
-                "before calling this method."
-            )
-            raise RuntimeError(msg) from err
-        if current is not self:
-            msg = f"{type(self).__name__} is not attached to the current task context."
-            raise RuntimeError(msg)
-
-
-@dataclasses.dataclass(slots=True, kw_only=True)
+@dataclasses.dataclass(slots=True, kw_only=True, eq=False)
 class PageContext(BaseContext):
     """Mutable compilation state for a single page."""
 
@@ -750,7 +657,7 @@ class PageContext(BaseContext):
         return dict(self.module_code)
 
 
-@dataclasses.dataclass(slots=True, kw_only=True)
+@dataclasses.dataclass(slots=True, kw_only=True, eq=False)
 class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
 
