@@ -106,6 +106,7 @@ dev = [
   "pytest",
   "python-dotenv",
   "reflex-docgen",
+  "reflex-release",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -151,6 +152,7 @@ extraPaths = [
   "packages/reflex-moment/src",
   "packages/reflex-plotly/src",
   "packages/reflex-radix/src",
+  "packages/reflex-release/src",
   "packages/reflex-react-player/src",
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
@@ -421,6 +423,7 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
