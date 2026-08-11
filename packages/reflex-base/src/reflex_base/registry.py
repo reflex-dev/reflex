@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import Self
 
@@ -13,6 +13,8 @@ from reflex_base.utils.exceptions import StateValueError
 if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.event import EventHandler
+
+STATE_TYPE = TypeVar("STATE_TYPE", bound="BaseState")
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -38,6 +40,20 @@ class RegistrationContext(BaseContext):
     base_state_substates: dict[str, set[type[BaseState]]] = dataclasses.field(
         default_factory=dict,
         repr=False,
+    )
+    # Memoized results of get_states_implementing / resolve_implementation,
+    # invalidated whenever a new base state is registered.
+    _implementations: dict[type[BaseState], tuple[type[BaseState], ...]] = (
+        dataclasses.field(
+            default_factory=dict,
+            repr=False,
+        )
+    )
+    _resolved_implementations: dict[type[BaseState], type[BaseState]] = (
+        dataclasses.field(
+            default_factory=dict,
+            repr=False,
+        )
     )
 
     @classmethod
@@ -81,6 +97,8 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        self._implementations.clear()
+        self._resolved_implementations.clear()
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -153,3 +171,74 @@ class RegistrationContext(BaseContext):
         return self.base_state_substates.setdefault(
             base_state_cls.get_full_name(), set()
         )
+
+    def get_states_implementing(
+        self, interface: type[STATE_TYPE]
+    ) -> tuple[type[STATE_TYPE], ...]:
+        """Get every registered state class that is a subclass of the given interface.
+
+        The interface is typically a state mixin, which has no place in the state
+        tree of its own and therefore cannot be passed to `get_state` directly.
+
+        Args:
+            interface: The state mixin (or state class) to look up implementations of.
+
+        Returns:
+            The registered states implementing the interface, in registration order.
+        """
+        if (cached := self._implementations.get(interface)) is not None:
+            return cached  # pyright: ignore [reportReturnType]
+        implementations = tuple(
+            state_cls
+            for state_cls in self.base_states.values()
+            if issubclass(state_cls, interface)
+        )
+        self._implementations[interface] = implementations
+        return implementations
+
+    def resolve_implementation(self, interface: type[STATE_TYPE]) -> type[STATE_TYPE]:
+        """Get the single registered state class implementing the given interface.
+
+        Subclasses of another implementation are ignored, so an app is free to
+        further subclass the state a mixin was applied to. What must be
+        unambiguous is where the mixin entered the state tree, since each such
+        state holds its own independent copy of the mixin's vars.
+
+        Args:
+            interface: The state mixin (or state class) to resolve.
+
+        Returns:
+            The state class the interface was mixed into.
+
+        Raises:
+            StateValueError: If no or more than one state implements the interface.
+        """
+        if (cached := self._resolved_implementations.get(interface)) is not None:
+            return cached  # pyright: ignore [reportReturnType]
+        implementations = self.get_states_implementing(interface)
+        # Keep only the states where the interface entered the tree, dropping
+        # any implementation that inherits from another implementation.
+        roots = [
+            state_cls
+            for state_cls in implementations
+            if not any(
+                other is not state_cls and issubclass(state_cls, other)
+                for other in implementations
+            )
+        ]
+        if not roots:
+            msg = (
+                f"No registered state implements {interface.__name__}. "
+                "Define a state which inherits from it before resolving it."
+            )
+            raise StateValueError(msg)
+        if len(roots) > 1:
+            names = ", ".join(sorted(state.get_full_name() for state in roots))
+            msg = (
+                f"{interface.__name__} is implemented by more than one state: {names}. "
+                "Resolving it is ambiguous, pass the wanted state class explicitly."
+            )
+            raise StateValueError(msg)
+        resolved = roots[0]
+        self._resolved_implementations[interface] = resolved
+        return resolved

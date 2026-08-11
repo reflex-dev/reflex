@@ -131,3 +131,127 @@ def test_forked_context_is_independent(
     handler = EventHandler(fn=_tmp)
     RegistrationContext.register_event_handler(handler)
     assert len(forked_registration_context.event_handlers) > 0
+
+
+def test_resolve_implementation(clean_registration_context: RegistrationContext):
+    """resolve_implementation finds the state a mixin was mixed into.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class ResolveMixin(BaseState, mixin=True):
+        pass
+
+    class ResolveImpl(ResolveMixin, BaseState):
+        pass
+
+    assert clean_registration_context.resolve_implementation(ResolveMixin) is (
+        ResolveImpl
+    )
+    assert clean_registration_context.get_states_implementing(ResolveMixin) == (
+        ResolveImpl,
+    )
+
+
+def test_resolve_implementation_ignores_subclasses(
+    clean_registration_context: RegistrationContext,
+):
+    """Subclasses of an implementation do not make the resolution ambiguous.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class SubclassMixin(BaseState, mixin=True):
+        pass
+
+    class SubclassImpl(SubclassMixin, BaseState):
+        pass
+
+    class SubclassChild(SubclassImpl):
+        pass
+
+    assert set(clean_registration_context.get_states_implementing(SubclassMixin)) == {
+        SubclassImpl,
+        SubclassChild,
+    }
+    assert clean_registration_context.resolve_implementation(SubclassMixin) is (
+        SubclassImpl
+    )
+
+
+def test_resolve_implementation_without_implementation(
+    clean_registration_context: RegistrationContext,
+):
+    """Resolving a mixin no state implements raises StateValueError.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class UnusedMixin(BaseState, mixin=True):
+        pass
+
+    assert clean_registration_context.get_states_implementing(UnusedMixin) == ()
+    with pytest.raises(StateValueError, match="No registered state implements"):
+        clean_registration_context.resolve_implementation(UnusedMixin)
+
+
+def test_resolve_implementation_ambiguous(
+    clean_registration_context: RegistrationContext,
+):
+    """Resolving a mixin used by two unrelated states raises StateValueError.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class AmbiguousMixin(BaseState, mixin=True):
+        pass
+
+    class AmbiguousImpl1(AmbiguousMixin, BaseState):
+        pass
+
+    class AmbiguousImpl2(AmbiguousMixin, BaseState):
+        pass
+
+    with pytest.raises(StateValueError, match="implemented by more than one state"):
+        clean_registration_context.resolve_implementation(AmbiguousMixin)
+
+
+def test_resolve_implementation_cache_is_invalidated(
+    clean_registration_context: RegistrationContext,
+):
+    """Registering a state invalidates previously cached lookups.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+
+    class CacheMixin(BaseState, mixin=True):
+        pass
+
+    class CacheImpl(CacheMixin, BaseState):
+        pass
+
+    assert clean_registration_context.resolve_implementation(CacheMixin) is CacheImpl
+    # Repeated lookups are served from the cache.
+    assert clean_registration_context.get_states_implementing(
+        CacheMixin
+    ) is clean_registration_context.get_states_implementing(CacheMixin)
+
+    class CacheImpl2(CacheMixin, BaseState):
+        pass
+
+    assert set(clean_registration_context.get_states_implementing(CacheMixin)) == {
+        CacheImpl,
+        CacheImpl2,
+    }
+    with pytest.raises(StateValueError, match="implemented by more than one state"):
+        clean_registration_context.resolve_implementation(CacheMixin)
