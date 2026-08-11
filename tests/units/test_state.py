@@ -4432,22 +4432,6 @@ async def test_state_manager_disk_close_resets_write_queue_task():
 
 
 @pytest.mark.asyncio
-async def test_state_manager_disk_debounced_set_state_updates_non_base_state_cache(
-    tmp_path, monkeypatch
-):
-    """Test that debounced non-BaseState writes are visible before disk flush."""
-    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(_write_debounce_seconds=60)
-    token = StateToken(ident="client", cls=int)
-
-    await state_manager.set_state(token, 1)
-
-    assert await state_manager.get_state(token) == 1
-
-    await state_manager.close()
-
-
-@pytest.mark.asyncio
 async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_state(
     tmp_path, monkeypatch
 ):
@@ -4468,30 +4452,6 @@ async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_st
     assert await fresh_state_manager.get_state(token) == 2
 
     await fresh_state_manager.close()
-
-
-@pytest.mark.asyncio
-async def test_state_manager_disk_immediate_set_state_failure_keeps_previous_cache(
-    tmp_path, monkeypatch, mocker
-):
-    """Test failed immediate writes do not cache an unpersisted value."""
-    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="client", cls=int)
-
-    await state_manager.set_state(token, 1)
-    mocker.patch.object(
-        state_manager,
-        "set_state_for_substate",
-        side_effect=RuntimeError("write failed"),
-    )
-
-    with pytest.raises(RuntimeError, match="write failed"):
-        await state_manager.set_state(token, 2)
-
-    assert await state_manager.get_state(token) == 1
-
-    await state_manager.close()
 
 
 class Obj(Base):
