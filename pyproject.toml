@@ -285,6 +285,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",

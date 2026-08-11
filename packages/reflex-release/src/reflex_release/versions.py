@@ -92,9 +92,10 @@ def next_version(current: Version | None, action: str, package: str) -> str:
     if sub == "post":
         if current is None:
             fail(f"release-post requires an existing release; none for {package}")
-        if is_alpha:
+        if current.is_prerelease or current.is_devrelease:
             fail(
-                f"release-post cannot follow an alpha; newest for {package} is {display!r}"
+                "release-post can only follow a final release; newest for "
+                f"{package} is {display!r}"
             )
         return f"{major}.{minor}.{patch}.post{post_n + 1}"
     if sub == "patch":

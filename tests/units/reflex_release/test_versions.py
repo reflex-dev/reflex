@@ -46,7 +46,10 @@ def test_next_version(current: str | None, action: str, expected: str) -> None:
             "release-from-prerelease",
             "requires the newest version to be an alpha",
         ),
-        ("1.2.4a1", "release-post", "cannot follow an alpha"),
+        ("1.2.4a1", "release-post", "can only follow a final release"),
+        ("1.2.4b1", "release-post", "can only follow a final release"),
+        ("1.2.4rc1", "release-post", "can only follow a final release"),
+        ("1.2.4.dev1", "release-post", "can only follow a final release"),
     ],
 )
 def test_next_version_rejects_impossible_transitions(

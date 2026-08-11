@@ -180,6 +180,27 @@ def tag_exists(root: Path, tag: str) -> bool:
     )
 
 
+def commit_exists(root: Path, ref: str) -> bool:
+    """Return whether a commit-ish resolves in the local repository.
+
+    Args:
+        root: The repository root.
+        ref: The commit-ish to resolve.
+
+    Returns:
+        True when the ref names a commit that is present locally.
+    """
+    return bool(ref) and (
+        subprocess.run(
+            ["git", "rev-parse", "-q", "--verify", f"{ref}^{{commit}}"],
+            cwd=root,
+            capture_output=True,
+            check=False,
+        ).returncode
+        == 0
+    )
+
+
 def remote_branch_exists(root: Path, branch: str) -> bool:
     """Return whether a branch exists on ``origin``.
 
@@ -188,11 +209,21 @@ def remote_branch_exists(root: Path, branch: str) -> bool:
         branch: The branch name.
 
     Returns:
-        True when origin already has the branch.
+        True when origin already has the branch. A private repository needs the
+        same credentials as the push that follows, since the checkout the
+        workflows run on deliberately keeps none.
     """
     return (
         subprocess.run(
-            ["git", "ls-remote", "--exit-code", "--heads", "origin", branch],
+            [
+                "git",
+                *_CREDENTIAL_HELPER,
+                "ls-remote",
+                "--exit-code",
+                "--heads",
+                "origin",
+                branch,
+            ],
             cwd=root,
             capture_output=True,
             check=False,

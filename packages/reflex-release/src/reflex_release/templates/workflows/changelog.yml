@@ -43,8 +43,19 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       # The heading guard runs even for skip-changelog PRs: that label only
       # waives the news-fragment requirement, not the publish-trigger guard.
+      #
+      # The exemption for release branches also requires the pull request to be
+      # authored by github-actions[bot], which is how the Dispatch release
+      # workflow opens it. A branch name is attacker-selectable; the author is
+      # not, so a contributor cannot skip the guard by naming their branch
+      # @@RELEASE_PREFIX@@something and hand-writing a version heading. The
+      # 'changelog-version-edit' label needs triage rights to apply, so it is a
+      # sound escape hatch on its own.
       - name: Reject manual changelog version headings
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit') && !startsWith(github.head_ref, '@@RELEASE_PREFIX@@') }}
+        if: >-
+          ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit')
+          && !(startsWith(github.head_ref, '@@RELEASE_PREFIX@@')
+          && github.event.pull_request.user.login == 'github-actions[bot]') }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: @@CLI@@ check-headings

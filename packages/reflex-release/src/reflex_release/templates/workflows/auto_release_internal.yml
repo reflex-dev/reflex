@@ -31,14 +31,19 @@ jobs:
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
+      # The whole pushed range has to be reachable: the paths filter above
+      # matches every commit in the push, so detection must diff the same range
+      # rather than only the last commit.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - id: detect
         env:
           DISPATCH_PACKAGE: ${{ inputs.package }}
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.event.after }}
         run: @@CLI@@ detect-internal
 
   publish:

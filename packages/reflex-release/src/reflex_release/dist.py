@@ -106,9 +106,11 @@ def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
     """
     text = pyproject.read_text()
     # Requirement strings are quoted TOML values, so the rewrite is anchored on
-    # the quotes and on the distribution name (compared the PEP 503 way, with
-    # ``-`` and ``_`` interchangeable). Extras are carried over to the new pin.
-    name_pattern = re.sub(r"\\?[-_]", "[-_]", re.escape(dependency))
+    # the quotes and on the distribution name, matched the PEP 503 way: any run
+    # of ``-``, ``_`` or ``.`` is one separator. Extras carry over to the pin.
+    name_pattern = r"[-_.]+".join(
+        re.escape(part) for part in re.split(r"[-_.]+", dependency)
+    )
     pattern = re.compile(
         rf'"\s*{name_pattern}\s*(?P<extras>\[[^"\]]*\])?\s*[<>=~!][^"]*"', re.IGNORECASE
     )

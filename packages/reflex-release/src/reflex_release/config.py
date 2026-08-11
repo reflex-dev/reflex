@@ -138,6 +138,20 @@ class Config:
             return "."
         return f"{self.packages_dir}/{package}"
 
+    def path_prefix(self, package: str) -> str:
+        """Return the repo-relative path prefix of everything inside a package.
+
+        Args:
+            package: The package name.
+
+        Returns:
+            ``""`` for the root package — whose files are not nested under a
+            directory of their own — and ``<packages-dir>/<package>/``
+            otherwise.
+        """
+        directory = self.package_dir(package)
+        return "" if directory == "." else f"{directory}/"
+
     def package_path(self, package: str) -> Path:
         """Return the absolute directory of a package.
 
@@ -458,6 +472,23 @@ def _string_list(table: dict, key: str) -> tuple[str, ...]:
     return tuple(value)
 
 
+def _string(table: dict, key: str, default: str) -> str:
+    """Read a string setting.
+
+    Args:
+        table: The table to read from.
+        key: The setting name.
+        default: The value to use when the key is absent.
+
+    Returns:
+        The configured string.
+    """
+    value = table.get(key, default)
+    if not isinstance(value, str):
+        fail(f"[tool.{TOOL_TABLE}] {key} must be a string")
+    return value
+
+
 def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...]:
     """Parse and validate the ``[[tool.reflex-release.lockstep]]`` entries.
 
@@ -498,7 +529,7 @@ def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...
             fail(
                 f"publish-last entries are not members of the group: {', '.join(extra)}"
             )
-        if publish_last and len(publish_last) == len(members):
+        if publish_last and set(publish_last) == set(members):
             fail(
                 "publish-last cannot list every member of a lockstep group; at "
                 "least one member must publish first"
@@ -569,23 +600,32 @@ def load_config(root: Path) -> Config:
 
     config = Config(
         root=root,
-        cli_command=table.get("cli-command", "uvx reflex-release"),
-        dispatch_package_inputs=table.get("dispatch-package-inputs", "auto"),
+        cli_command=_string(table, "cli-command", "uvx reflex-release"),
+        dispatch_package_inputs=_string(table, "dispatch-package-inputs", "auto"),
         news_directory=towncrier.get("directory") or "news",
         changelog_filename=towncrier.get("filename") or "CHANGELOG.md",
         root_package=root_package,
-        root_source_dirs=_string_list(table, "root-source-dirs")
-        or _default_root_source_dirs(root, root_package),
+        # An explicitly empty list means "nothing here", which is not the same
+        # as leaving the key out and taking the layout guess.
+        root_source_dirs=(
+            _string_list(table, "root-source-dirs")
+            if "root-source-dirs" in table
+            else _default_root_source_dirs(root, root_package)
+        ),
         packages_dir=packages_dir,
-        package_source_subdirs=_string_list(table, "package-source-subdirs")
-        or ("src",),
-        release_timezone=table.get("release-timezone", "UTC"),
-        main_branch=table.get("main-branch", "main"),
-        prerelease_branch_prefix=table.get("prerelease-branch-prefix", "r/pre-"),
-        hotfix_branch_prefix=table.get("hotfix-branch-prefix", "r/hotfix/"),
-        release_branch_prefix=table.get("release-branch-prefix", "release/"),
-        tag_prefix=table.get("tag-prefix", "v"),
-        latest_release_package=table.get("latest-release-package", root_package),
+        package_source_subdirs=(
+            _string_list(table, "package-source-subdirs")
+            if "package-source-subdirs" in table
+            else ("src",)
+        ),
+        release_timezone=_string(table, "release-timezone", "UTC"),
+        main_branch=_string(table, "main-branch", "main"),
+        prerelease_branch_prefix=_string(table, "prerelease-branch-prefix", "r/pre-"),
+        hotfix_branch_prefix=_string(table, "hotfix-branch-prefix", "r/hotfix/"),
+        release_branch_prefix=_string(table, "release-branch-prefix", "release/"),
+        tag_prefix=_string(table, "tag-prefix", "v"),
+        latest_release_package=table.get("latest-release-package", root_package)
+        or None,
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
     )

@@ -83,6 +83,26 @@ def test_internal_workflow_is_only_generated_when_configured(
     assert '- "packages/widget-core/**"' in render(INTERNAL_WORKFLOW, reloaded)
 
 
+def add_internal(repo: Path, package: str) -> Config:
+    """Mark a package as internal and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``internal-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\ninternal-packages = ["{package}"]',
+        )
+    )
+    return load_config(repo)
+
+
 def add_packages(repo: Path, *names: str) -> Config:
     """Add sub-packages to the temporary repository and reload its config.
 
@@ -193,6 +213,100 @@ def test_colliding_package_names_are_rejected(config: Config, repo: Path) -> Non
 
 def test_changelog_workflow_checks_for_workflow_drift(config: Config) -> None:
     assert "sync --check" in render("changelog.yml", config)
+
+
+def test_sync_rejects_an_unparsable_title_format(config: Config, repo: Path) -> None:
+    """A heading this tool writes but cannot read back would strand releases."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'title_format = "## {version} ({project_date})"',
+            'title_format = "## Release {version} on {project_date}"',
+        )
+    )
+    with pytest.raises(ReleaseError, match="cannot parse back"):
+        sync(load_config(repo))
+
+
+def test_sync_accepts_a_custom_title_format_led_by_the_version(
+    config: Config, repo: Path
+) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'title_format = "## {version} ({project_date})"',
+            'title_format = "## {version} (released {project_date})"',
+        )
+    )
+    sync(load_config(repo))
+
+
+def test_sync_removes_an_obsolete_internal_workflow(config: Config, repo: Path) -> None:
+    reloaded = add_internal(repo, "widget-core")
+    sync(reloaded)
+    target = repo / WORKFLOW_DIR / INTERNAL_WORKFLOW
+    assert target.is_file()
+
+    # The last internal package is gone, so its auto-release trigger must go too.
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace('\ninternal-packages = ["widget-core"]', "")
+    )
+    without = load_config(repo)
+    with pytest.raises(ReleaseError, match="out of date"):
+        sync(without, check=True)
+    sync(without)
+    assert not target.exists()
+
+
+def test_sync_keeps_a_foreign_workflow_of_the_same_name(
+    config: Config, repo: Path
+) -> None:
+    target = repo / WORKFLOW_DIR / INTERNAL_WORKFLOW
+    target.parent.mkdir(parents=True)
+    target.write_text("name: hand written\n")
+    sync(config)
+    assert target.read_text() == "name: hand written\n"
+
+
+def test_internal_root_package_triggers_on_its_source_paths(
+    config: Config, repo: Path
+) -> None:
+    reloaded = add_internal(repo, "mypkg")
+    assert '- "src/**"' in render(INTERNAL_WORKFLOW, reloaded)
+
+
+def test_internal_root_package_without_source_dirs_is_rejected(
+    config: Config, repo: Path
+) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\ninternal-packages = ["mypkg"]\n'
+            "root-source-dirs = []",
+        )
+    )
+    with pytest.raises(ReleaseError, match="set root-source-dirs"):
+        render(INTERNAL_WORKFLOW, load_config(repo))
+
+
+def test_release_branch_exemption_requires_the_bot_author(config: Config) -> None:
+    """A contributor picks their branch name; they cannot pick the PR author."""
+    rendered = render("changelog.yml", config)
+    step = yaml.safe_load(rendered)["jobs"]["changelog"]["steps"][2]
+    assert step["name"] == "Reject manual changelog version headings"
+    assert "startsWith(github.head_ref, 'release/')" in step["if"]
+    assert "github.event.pull_request.user.login == 'github-actions[bot]'" in step["if"]
+
+
+def test_dev_pin_gate_runs_after_the_lockstep_pin(config: Config) -> None:
+    """The gate has to judge the metadata the build actually emits."""
+    steps = yaml.safe_load(render("publish.yml", config))["jobs"]["build"]["steps"]
+    names = [step.get("name", "") for step in steps]
+    assert names.index("Pin lockstep siblings to exact versions") < names.index(
+        "Reject development-release dependency pins"
+    )
 
 
 def test_sync_writes_then_verifies(config: Config, repo: Path) -> None:

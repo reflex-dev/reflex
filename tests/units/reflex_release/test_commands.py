@@ -28,6 +28,26 @@ def set_changelog(config: Config, package: str, text: str) -> None:
     config.changelog_path(package).write_text(text)
 
 
+def make_internal(repo: Path, package: str) -> Config:
+    """Mark a package as internal and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``internal-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\ninternal-packages = ["{package}"]',
+        )
+    )
+    return load_config(repo)
+
+
 def fragment(config: Config, package: str, name: str, text: str = "Something.") -> None:
     """Write a news fragment for a package.
 
@@ -201,14 +221,7 @@ def test_plan_rejects_unknown_action(config: Config, outputs: Outputs) -> None:
 def test_plan_rejects_internal_packages(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text().replace(
-            'packages-dir = "packages"',
-            'packages-dir = "packages"\ninternal-packages = ["widget-core"]',
-        )
-    )
-    reloaded = load_config(repo)
+    reloaded = make_internal(repo, "widget-core")
     with pytest.raises(ReleaseError, match="internal package"):
         commands.cmd_plan(reloaded, "release-minor", "widget-core")
 
@@ -280,6 +293,23 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     # Both sides land on one version, so detection does not fail closed.
     commands.cmd_detect(reloaded, "main")
     assert outputs()["any"] == "true"
+
+
+def test_commit_changelogs_leaves_unrelated_edits_alone(
+    config: Config, repo: Path
+) -> None:
+    """A release commit carries changelogs and consumed fragments, nothing else."""
+    (repo / "unrelated.md").write_text("tracked\n")
+    commit_all(repo)
+    (repo / "unrelated.md").write_text("edited by someone else\n")
+    set_changelog(config, "mypkg", "## v1.0.0 (2026-01-01)\n\nNo changes.\n")
+    fragment(config, "widget-core", "3.bugfix.md")
+
+    commands._commit_changelogs(config, "Materialize changelogs")
+
+    committed = git(repo, "show", "--name-only", "--format=", "HEAD").split()
+    assert committed == ["CHANGELOG.md", "packages/widget-core/news/3.bugfix.md"]
+    assert "unrelated.md" in git(repo, "diff", "--name-only")
 
 
 def test_materialize_rejects_an_empty_plan(config: Config) -> None:
@@ -376,16 +406,27 @@ def test_prepare_publish_requires_a_version_for_changelog_packages(
 def test_prepare_publish_patch_bumps_internal_packages(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
+    reloaded = make_internal(repo, "widget-core")
     git(repo, "tag", "widget-core-v0.4.0")
-    commands.cmd_prepare_publish(config, "widget-core", "", "main")
+    commands.cmd_prepare_publish(reloaded, "widget-core", "", "main")
     assert outputs()["version"] == "0.4.1"
 
 
-def test_prepare_publish_starts_an_unreleased_package_at_0_0_1(
+def test_prepare_publish_starts_an_unreleased_internal_package_at_0_0_1(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = make_internal(repo, "widget-core")
+    commands.cmd_prepare_publish(reloaded, "widget-core", "", "main")
+    assert outputs()["version"] == "0.0.1"
+
+
+def test_prepare_publish_will_not_auto_bump_a_non_internal_package(
     config: Config, outputs: Outputs
 ) -> None:
-    commands.cmd_prepare_publish(config, "widget-core", "", "main")
-    assert outputs()["version"] == "0.0.1"
+    """A missing changelog must not become a way around the source-of-truth rule."""
+    assert not config.changelog_path("widget-core").exists()
+    with pytest.raises(ReleaseError, match="a target version is required"):
+        commands.cmd_prepare_publish(config, "widget-core", "", "main")
 
 
 def test_prepare_publish_requires_a_materialized_lockstep_partner(
@@ -500,14 +541,7 @@ def test_changelog_check_passes_with_a_fragment(config: Config, repo: Path) -> N
 def test_detect_internal_uses_the_dispatched_package(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text().replace(
-            'packages-dir = "packages"',
-            'packages-dir = "packages"\ninternal-packages = ["widget-core"]',
-        )
-    )
-    reloaded = load_config(repo)
+    reloaded = make_internal(repo, "widget-core")
     commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "widget-core")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
 
@@ -515,19 +549,59 @@ def test_detect_internal_uses_the_dispatched_package(
 def test_detect_internal_diffs_the_push(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text().replace(
-            'packages-dir = "packages"',
-            'packages-dir = "packages"\ninternal-packages = ["widget-core"]',
-        )
-    )
+    reloaded = make_internal(repo, "widget-core")
     commit_all(repo)
-    reloaded = load_config(repo)
     (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
+
+
+def test_detect_internal_covers_the_whole_pushed_range(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A paths-filtered push can touch the package in any of its commits."""
+    reloaded = make_internal(repo, "widget-core")
+    commit_all(repo)
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    commit_all(repo)
+    # A later, unrelated commit must not hide the earlier package change.
+    (repo / "docs.md").write_text("unrelated\n")
+    commit_all(repo)
+    commands.cmd_detect_internal(reloaded, base, "HEAD", "")
+    assert json.loads(outputs()["packages"]) == ["widget-core"]
+
+
+def test_detect_internal_falls_back_when_the_push_base_is_unavailable(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A branch's first push reports an all-zero base sha."""
+    reloaded = make_internal(repo, "widget-core")
+    commit_all(repo)
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    commit_all(repo)
+    commands.cmd_detect_internal(reloaded, "0" * 40, "HEAD", "")
+    assert json.loads(outputs()["packages"]) == ["widget-core"]
+
+
+def test_detect_internal_matches_a_root_package(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """The root package owns paths that are not nested under a directory."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\ninternal-packages = ["mypkg"]',
+        )
+    )
+    reloaded = load_config(repo)
+    commit_all(repo)
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n")
+    commit_all(repo)
+    commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
+    assert json.loads(outputs()["packages"]) == ["mypkg"]
 
 
 def test_detect_internal_rejects_a_non_internal_package(

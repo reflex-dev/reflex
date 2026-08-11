@@ -95,6 +95,9 @@ def test_verify_dist_requires_artifacts(tmp_path: Path) -> None:
         ('"widget-core>=0.1.0,<2"', '"widget-core == 1.2.3"'),
         ('"widget_core >= 0.1.0"', '"widget-core == 1.2.3"'),
         ('"widget-core[extra] >= 0.1.0"', '"widget-core[extra] == 1.2.3"'),
+        # PEP 503 collapses any run of -, _ and . to one separator.
+        ('"widget.core >= 0.1.0"', '"widget-core == 1.2.3"'),
+        ('"Widget__Core >= 0.1.0"', '"widget-core == 1.2.3"'),
     ],
 )
 def test_pin_exact(tmp_path: Path, requirement: str, expected: str) -> None:

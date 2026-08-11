@@ -33,6 +33,12 @@ def test_paths_and_tags(config: Config) -> None:
     assert config.all_packages() == ["mypkg", "widget-core"]
 
 
+def test_path_prefix_of_the_root_package_is_empty(config: Config) -> None:
+    """Root-package files are not nested under a directory of their own."""
+    assert config.path_prefix("mypkg") == ""
+    assert config.path_prefix("widget-core") == "packages/widget-core/"
+
+
 def test_tag_prefix_applies_to_sub_packages_too(config: Config, repo: Path) -> None:
     write_config(
         repo, 'root-package = "mypkg"\npackages-dir = "packages"\ntag-prefix = ""\n'
@@ -146,6 +152,13 @@ def test_lockstep_helpers(config: Config, repo: Path) -> None:
     assert reloaded.exact_pin_targets("widget-core") == ()
 
 
+def test_empty_latest_release_package_disables_the_badge(
+    config: Config, repo: Path
+) -> None:
+    write_config(repo, 'root-package = "mypkg"\nlatest-release-package = ""\n')
+    assert load_config(repo).latest_release_package is None
+
+
 def test_no_lockstep_by_default(config: Config) -> None:
     assert config.lockstep_partners("mypkg") == ()
     assert not config.publishes_last("mypkg")
@@ -193,6 +206,25 @@ def test_no_lockstep_by_default(config: Config) -> None:
                 'publish-last = ["mypkg", "widget-core"]\n'
             ),
             "cannot list every member",
+        ),
+        # A duplicate must not slip past the "every member publishes last" check.
+        (
+            (
+                'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+                "[[tool.reflex-release.lockstep]]\n"
+                'members = ["mypkg", "widget-core"]\n'
+                'publish-last = ["mypkg", "widget-core", "widget-core"]\n'
+            ),
+            "cannot list every member",
+        ),
+        ('root-package = "mypkg"\nmain-branch = 5\n', "main-branch must be a string"),
+        (
+            'root-package = "mypkg"\nrelease-timezone = 5\n',
+            "release-timezone must be a string",
+        ),
+        (
+            'root-package = "mypkg"\ndispatch-package-inputs = "maybe"\n',
+            "must be one of",
         ),
     ],
 )

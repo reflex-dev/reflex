@@ -189,8 +189,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=_env("DISPATCH_PACKAGE"),
         help="Explicitly selected package.",
     )
-    internal.add_argument("--base", default="HEAD~1", help="Commit to diff from.")
-    internal.add_argument("--head", default="HEAD", help="Commit to diff to.")
+    internal.add_argument(
+        "--base",
+        default=_env("BASE_SHA") or "HEAD~1",
+        help="Commit to diff from (default: the push event's base).",
+    )
+    internal.add_argument(
+        "--head", default=_env("HEAD_SHA") or "HEAD", help="Commit to diff to."
+    )
 
     pr = sub.add_parser(
         "open-release-pr",

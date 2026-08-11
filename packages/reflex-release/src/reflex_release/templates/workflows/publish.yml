@@ -98,6 +98,13 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: @@CLI@@ prepare-publish
 
+      - name: Pin lockstep siblings to exact versions
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: @@CLI@@ pin-lockstep
+
       # A *.dev dependency pin references an unpublished version, so it must
       # never reach released package metadata. Scoped to the package being
       # published so a dependency can still be released while dependents
@@ -107,13 +114,6 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
         run: @@CLI@@ check-dev-pins "$PACKAGE"
-
-      - name: Pin lockstep siblings to exact versions
-        if: steps.prepare.outputs.skipped != 'true'
-        env:
-          PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ steps.prepare.outputs.version }}
-        run: @@CLI@@ pin-lockstep
 
       # The dynamic versioning backend derives each package's version from the
       # newest reachable tag with the package's prefix, so tagging HEAD locally

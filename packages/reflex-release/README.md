@@ -194,7 +194,10 @@ showcontent = true
 ```
 
 Version headings are written as `## v1.2.3 (2026-01-01)`. A custom
-`title_format` is honored, including when prerelease sections are collapsed.
+`title_format` is honored, including when prerelease sections are collapsed —
+but the version must lead the heading, because the same parser reads headings
+back to decide what to publish. `reflex-release sync` fails on a format it
+could not parse back rather than letting releases go undetected.
 
 Then create one `news/` directory per package:
 
@@ -392,12 +395,14 @@ a flag for running the same command by hand.
   cannot be re-released.
 - **Existing tags**: they are the fallback baseline for packages without a
   changelog, and they are what makes an already-published version a no-op. Make
-  sure the prefixes match `root-tag-prefix` / `<package>-v`.
+  sure they match `tag-prefix` — `<tag-prefix>1.2.3` for the root package and
+  `<package>-<tag-prefix>1.2.3` for a sub-package.
 - **Publishing with an API token today**: switch to trusted publishing before
   the first run. `publish.yml` requests no secret other than `GITHUB_TOKEN`.
 - **First release of a brand-new package**: it needs no `CHANGELOG.md` up
   front — the first *Dispatch release* creates one. With no tags and no
-  changelog, `release-minor` produces `0.1.0`.
+  changelog, `release-minor` produces `0.1.0`. Publishing it still needs an
+  explicit version: only `internal-packages` may publish without a changelog.
 
 ## Why the pipeline is shaped this way
 

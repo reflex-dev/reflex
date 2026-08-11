@@ -38,6 +38,7 @@ from .discovery import (
 from .dist import pin_exact, verify_dist
 from .gitutil import (
     changed_files,
+    commit_exists,
     configure_bot_identity,
     gh_output,
     gh_run,
@@ -333,10 +334,11 @@ def cmd_prepare_publish(
             fail(f"invalid version {raw_version!r}")
         if version.epoch or version.local or version.is_devrelease:
             fail(f"refusing to publish epoch/local/dev version {version}")
-    elif path.is_file():
+    elif not config.is_internal(package):
         fail(
-            f"a target version is required for {package}: its CHANGELOG.md is the "
-            "source of truth (materialize it via the Dispatch release workflow)."
+            f"a target version is required for {package}: its changelog is the "
+            "source of truth (materialize it via the Dispatch release workflow). "
+            "Only packages listed in internal-packages auto patch-bump."
         )
     else:
         newest_tag = latest_tag_version(config, package)
@@ -586,7 +588,10 @@ def cmd_detect_internal(config: Config, base: str, head: str, package: str) -> N
 
     Args:
         config: The repository configuration.
-        base: The commit to diff from (empty when a package was dispatched).
+        base: The commit to diff from. The push event's ``before`` sha covers
+            the whole push; it is unusable for a branch's first push (all
+            zeros) or when the commit is not reachable, and falls back to the
+            previous commit.
         head: The commit to diff to.
         package: An explicitly dispatched package, or empty to diff.
     """
@@ -597,11 +602,15 @@ def cmd_detect_internal(config: Config, base: str, head: str, package: str) -> N
         write_outputs(packages=json.dumps([package]))
         return
 
+    if not commit_exists(config.root, base):
+        notice(f"push base {base!r} is unavailable; diffing the last commit instead")
+        base = f"{head}~1"
+
     changed = git(["diff", "--name-only", base, head], config.root).splitlines()
     selected = [
         name
         for name in config.internal_packages
-        if any(path.startswith(f"{config.package_dir(name)}/") for path in changed)
+        if any(path.startswith(config.path_prefix(name)) for path in changed)
     ]
     write_outputs(packages=json.dumps(selected))
 
@@ -656,12 +665,18 @@ def _commit_changelogs(config: Config, message: str) -> None:
     changelogs = config.existing_changelogs()
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    git_run(["add", "--", *changelogs], config.root)
-    staged = git(["diff", "--cached", "--name-only"], config.root).strip()
-    unstaged = git(["diff", "--name-only"], config.root).strip()
-    if not staged and not unstaged:
+    # Stage the changelogs and the news directories towncrier consumed —
+    # `git add` on a path stages deletions too — and nothing else, so a release
+    # commit can never sweep up unrelated edits in the worktree.
+    news_dirs = [
+        config.news_dir(package).relative_to(config.root).as_posix()
+        for package in config.all_packages()
+        if config.news_dir(package).is_dir()
+    ]
+    git_run(["add", "--", *changelogs, *news_dirs], config.root)
+    if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
-    git_run(["commit", "-a", "-m", message], config.root)
+    git_run(["commit", "-m", message], config.root)
 
 
 def cmd_open_release_pr(
