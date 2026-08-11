@@ -24,7 +24,7 @@ from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.misc import run_in_thread
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class QueueItem(Generic[TOKEN_TYPE]):
     """An item in the write queue."""
 
@@ -335,11 +335,14 @@ class StateManagerDisk(StateManager):
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
             queued_item = self._write_queue.get(token)
-            self._write_queue[token] = QueueItem[TOKEN_TYPE](
-                token=token,
-                state=state,
-                timestamp=queued_item.timestamp if queued_item else time.time(),
-            )
+            if queued_item is None:
+                self._write_queue[token] = QueueItem(
+                    token=token,
+                    state=state,
+                    timestamp=time.time(),
+                )
+            else:
+                queued_item.state = state
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)

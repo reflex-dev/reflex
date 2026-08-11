@@ -4441,10 +4441,11 @@ async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_st
     token = StateToken(ident="client", cls=int)
 
     await state_manager.set_state(token, 1)
-    first_timestamp = state_manager._write_queue[token].timestamp
+    first_item = state_manager._write_queue[token]
     await state_manager.set_state(token, 2)
 
-    assert state_manager._write_queue[token].timestamp == first_timestamp
+    assert state_manager._write_queue[token] is first_item
+    assert first_item.state == 2
 
     await state_manager.close()
 
