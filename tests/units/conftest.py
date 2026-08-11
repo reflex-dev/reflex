@@ -1,6 +1,5 @@
 """Test fixtures."""
 
-import logging
 import platform
 import traceback
 import uuid
@@ -15,7 +14,6 @@ from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import log
 
 from reflex.app import App
 from reflex.istate.manager import StateManager
@@ -45,24 +43,6 @@ def _isolate_app_in_context() -> Generator[None, None, None]:
     object.__setattr__(ctx, "_app", None)
     yield
     object.__setattr__(ctx, "_app", None)
-
-
-@pytest.fixture(autouse=True)
-def _capture_reflex_logs(caplog):
-    """Attach pytest's capture handler to Reflex package loggers.
-
-    The logging pipeline deliberately disables propagation at package roots,
-    while pytest normally captures records from the process root logger.
-
-    Yields:
-        None.
-    """
-    loggers = [logging.getLogger(name) for name in log.ROOT_LOGGER_NAMES]
-    for logger in loggers:
-        logger.addHandler(caplog.handler)
-    yield
-    for logger in loggers:
-        logger.removeHandler(caplog.handler)
 
 
 @pytest.fixture

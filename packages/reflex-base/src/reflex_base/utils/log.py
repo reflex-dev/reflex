@@ -1,10 +1,19 @@
 """Standard-library logging pipeline with rich rendering and JSON output.
 
 Reflex modules log through plain ``logging.getLogger(__name__)`` loggers.
-This module owns the sinks: a rich-rendering console handler (colored, same
+At import time :func:`bootstrap` parents every workspace package logger
+(``reflex_base``, ``reflex_cli``, ``reflex_components_*``) under the single
+``reflex`` logger, so downstream code tunes all reflex logging in one place
+(``logging.getLogger("reflex")``) or per package, with standard stdlib APIs.
+
+Handlers attach only in *managed* mode, i.e. when running under the reflex
+CLI (or one of its worker subprocesses, which inherit the marker through the
+environment). The sinks are: a rich-rendering console handler (colored, same
 look as the legacy ``console`` helpers), a JSON-lines handler for machine
 consumption (``REFLEX_LOG_JSON`` / ``--json``), and an optional file handler
-(``REFLEX_ENABLE_FULL_LOGGING`` / ``REFLEX_LOG_FILE``).
+(``REFLEX_ENABLE_FULL_LOGGING`` / ``REFLEX_LOG_FILE``). Outside the CLI no
+handler is attached at all: records propagate to the root logger and the
+application's own logging configuration (or ``logging.lastResort``) applies.
 """
 
 from __future__ import annotations
@@ -37,12 +46,11 @@ if TYPE_CHECKING:
 SUCCESS = 25
 logging.addLevelName(SUCCESS, "SUCCESS")
 
-# Package-root loggers that receive the reflex handlers. Every distribution
-# that logs needs its root here: loggers do not propagate across the
-# ``reflex_*`` top-level names, so an omitted root escapes the pipeline
-# entirely (no styling, no level gating, no JSON records, no file capture).
-ROOT_LOGGER_NAMES = (
-    "reflex",
+# Package-root loggers reparented under the top-level ``reflex`` logger.
+# Every distribution that logs needs its root here: loggers do not propagate
+# across the ``reflex_*`` top-level names, so an omitted root escapes the
+# hierarchy entirely (no level gating, no reflex sinks, no file capture).
+PACKAGE_LOGGER_NAMES = (
     "reflex_base",
     "reflex_cli",
     "reflex_components_core",
@@ -51,6 +59,13 @@ ROOT_LOGGER_NAMES = (
     "reflex_components_plotly",
     "reflex_components_react_player",
 )
+
+# The single logger the reflex sinks attach to; parent of every package logger.
+_REFLEX_LOGGER = logging.getLogger("reflex")
+
+# Marker inherited by worker subprocesses: handlers attach only when running
+# under the reflex CLI. Read with os.environ so bootstrap stays import-light.
+_MANAGED_ENV_VAR = "REFLEX_MANAGED_LOGGING"
 
 # Consoles for pretty printing (shared with reflex_base.utils.console).
 _console = Console(highlight=False)
@@ -132,7 +147,9 @@ class DedupeFilter(logging.Filter):
     def __init__(self):
         """Initialize the filter with an empty seen-set."""
         super().__init__()
-        self.seen: set = set()
+        # Hashes only, so deduped messages are not retained for the process
+        # lifetime.
+        self.seen: set[int] = set()
 
     def register(self, key: Hashable) -> bool:
         """Record a dedupe key, reporting whether it is new.
@@ -143,9 +160,10 @@ class DedupeFilter(logging.Filter):
         Returns:
             True the first time the key is seen, False afterwards.
         """
-        if key in self.seen:
+        hashed = hash(key)
+        if hashed in self.seen:
             return False
-        self.seen.add(key)
+        self.seen.add(hashed)
         return True
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -183,7 +201,12 @@ class RichConsoleHandler(logging.Handler):
             if progress is not None:
                 console = progress.console
             end = getattr(record, "end", "\n")
-            console.print(f"{prefix}{record.getMessage()}", style=style, end=end)
+            # Markup is opt-in per record (``extra={"rich": True}``); plain
+            # messages keep their literal brackets.
+            markup = bool(getattr(record, "rich", False))
+            console.print(
+                f"{prefix}{record.getMessage()}", style=style, end=end, markup=markup
+            )
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
                 console.print(self.format_exception(record), style=style, markup=False)
@@ -231,13 +254,16 @@ class JsonHandler(logging.Handler):
             record: The log record.
         """
         try:
+            message = record.getMessage()
+            if getattr(record, "rich", False):
+                message = strip_markup(message)
             payload = {
                 "timestamp": datetime.datetime.fromtimestamp(
                     record.created, tz=datetime.timezone.utc
                 ).isoformat(),
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
-                "message": strip_markup(record.getMessage()),
+                "message": message,
                 "location": f"{record.pathname}:{record.lineno}",
                 "pid": record.process,
             }
@@ -254,11 +280,11 @@ class JsonHandler(logging.Handler):
             self.handleError(record)
 
 
-class _StripMarkupFormatter(logging.Formatter):
-    """Formatter that removes rich markup from messages."""
+class _FileFormatter(logging.Formatter):
+    """Formatter that removes rich markup from markup-enabled messages."""
 
     def format(self, record: logging.LogRecord) -> str:
-        """Format a record with markup stripped.
+        """Format a record, stripping markup from records that opted into it.
 
         Args:
             record: The log record.
@@ -266,6 +292,8 @@ class _StripMarkupFormatter(logging.Formatter):
         Returns:
             The formatted line.
         """
+        if not getattr(record, "rich", False):
+            return super().format(record)
         msg, args = record.msg, record.args
         try:
             record.msg = strip_markup(record.getMessage())
@@ -301,7 +329,7 @@ def _file_handler() -> logging.FileHandler:
     """
     handler = logging.FileHandler(_log_file_path(), mode="w", encoding="utf-8")
     handler.setFormatter(
-        _StripMarkupFormatter("[{asctime}] {levelname}: {message}", style="{")
+        _FileFormatter("[{asctime}] {levelname}: {message}", style="{")
     )
     return handler
 
@@ -355,7 +383,7 @@ def set_json_mode(enabled: bool):
     """Enable or disable machine-readable JSON log output.
 
     Sets the environment variable so subprocesses inherit the mode, then
-    re-attaches the sinks.
+    re-attaches the sinks (in managed mode; outside the CLI no sink exists).
 
     Args:
         enabled: Whether to emit JSON records.
@@ -363,7 +391,8 @@ def set_json_mode(enabled: bool):
     from reflex_base.environment import environment
 
     environment.REFLEX_LOG_JSON.set(enabled)
-    configure()
+    if is_managed_mode():
+        configure()
 
 
 def dedupe_once(key: Hashable) -> bool:
@@ -408,53 +437,53 @@ _configured = False
 _active_file_handler: logging.FileHandler | None = None
 
 
-class _BootstrapHandler(logging.Handler):
-    """Attach the real sinks on the first record, then replay it through them."""
+def is_managed_mode() -> bool:
+    """Check whether this process runs under the reflex CLI.
 
-    def handle(self, record: logging.LogRecord) -> bool:
-        """Configure the pipeline and hand the record to the real sinks.
-
-        Args:
-            record: The log record.
-
-        Returns:
-            True, matching the Handler.handle contract.
-        """
-        if _configured:
-            # configure() detaches this handler, so reaching here means it
-            # failed to do so. Drop the record rather than recurse.
-            return True
-        configure()
-        logging.getLogger(record.name).handle(record)
-        return True
+    Returns:
+        True if the reflex CLI (or a worker it spawned) owns log rendering.
+    """
+    return os.environ.get(_MANAGED_ENV_VAR) == "true"
 
 
-_bootstrap_handler = _BootstrapHandler()
+def enable_managed_logging():
+    """Mark this process (and its subprocesses) as CLI-managed and attach sinks.
+
+    Called from the reflex CLI entry point. Worker subprocesses inherit the
+    marker through the environment and configure themselves in bootstrap().
+    """
+    os.environ[_MANAGED_ENV_VAR] = "true"
+    configure()
 
 
 def bootstrap():
-    """Claim the reflex loggers without importing the environment machinery.
+    """Parent the package loggers under the top-level ``reflex`` logger.
 
-    ``configure`` needs :mod:`reflex_base.environment`, which drags in the
-    config and plugin stack (and with it pandas and plotly). Importing that at
-    ``import reflex`` time would defeat the package's lazy loading, so the
-    sinks are attached on the first record instead. The permissive logger level
-    keeps records that a later ``configure`` may want; the sink's own level
-    does the real gating.
+    Called at ``import reflex`` time, so it must stay import-light (no
+    :mod:`reflex_base.environment`). The manual parent assignment is permanent:
+    the logging manager only fixes up parents when it creates a logger, and
+    loggers created later under a package root chain to the existing root.
+    In managed mode (marker inherited from the CLI) the sinks attach
+    immediately so worker records render from the first line.
     """
-    for name in ROOT_LOGGER_NAMES:
-        logger = logging.getLogger(name)
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
-        logger.addHandler(_bootstrap_handler)
+    for name in PACKAGE_LOGGER_NAMES:
+        child = logging.getLogger(name)
+        child.parent = _REFLEX_LOGGER
+        child.propagate = True
+        # Inherit the effective level from "reflex"; setLevel also clears the
+        # isEnabledFor caches, which reparenting alone does not.
+        child.setLevel(logging.NOTSET)
+    if is_managed_mode():
+        configure()
 
 
 def configure():
-    """Attach the reflex handlers to the reflex package-root loggers.
+    """Attach the reflex sinks to the top-level ``reflex`` logger.
 
     Idempotent: handler instances are cached and re-attached, never stacked.
-    Only reflex-owned loggers are touched (propagation to the root logger is
-    disabled), so a user application's own logging setup is unaffected.
+    Propagation to the root logger is cut while the sinks are attached, so an
+    application-side ``basicConfig`` cannot double-emit reflex records or
+    break the ``--json`` only-JSON output contract.
     """
     global _active_file_handler, _configured
     from reflex_base.environment import environment
@@ -470,28 +499,41 @@ def configure():
     file_handler = _active_file_handler
     if full_logging:
         file_handler = _active_file_handler = _file_handler()
-    logger_level = logging.DEBUG if full_logging else _log_level.to_logging_level()
     # addHandler/removeHandler are no-ops when the handler is already in the
     # desired state, so no membership checks are needed here.
-    for name in ROOT_LOGGER_NAMES:
-        logger = logging.getLogger(name)
-        logger.propagate = False
-        logger.setLevel(logger_level)
-        logger.removeHandler(_bootstrap_handler)
-        logger.removeHandler(other)
-        logger.addHandler(sink)
-        if file_handler is not None:
-            if full_logging:
-                logger.addHandler(file_handler)
-            else:
-                logger.removeHandler(file_handler)
+    _REFLEX_LOGGER.propagate = False
+    _REFLEX_LOGGER.setLevel(
+        logging.DEBUG if full_logging else _log_level.to_logging_level()
+    )
+    _REFLEX_LOGGER.removeHandler(other)
+    _REFLEX_LOGGER.addHandler(sink)
+    if file_handler is not None:
+        if full_logging:
+            _REFLEX_LOGGER.addHandler(file_handler)
+        else:
+            _REFLEX_LOGGER.removeHandler(file_handler)
     _configured = True
 
 
 def ensure_configured():
-    """Configure the logging pipeline if it has not been configured yet."""
-    if not _configured:
+    """Attach the sinks in managed mode if that has not happened yet.
+
+    Outside the CLI this is a no-op: no handler is attached and records
+    propagate to the root logger for the application to handle.
+    """
+    if not _configured and is_managed_mode():
         configure()
+
+
+def _reset():
+    """Detach the sinks and restore propagation (test teardown helper)."""
+    global _configured
+    for handler in (_console_handler(), _json_handler(), _active_file_handler):
+        if handler is not None:
+            _REFLEX_LOGGER.removeHandler(handler)
+    _REFLEX_LOGGER.propagate = True
+    _REFLEX_LOGGER.setLevel(logging.NOTSET)
+    _configured = False
 
 
 def set_log_level(log_level: LogLevel | None):
@@ -513,7 +555,12 @@ def set_log_level(log_level: LogLevel | None):
         # Set the loglevel persistently for subprocesses.
         os.environ["REFLEX_LOGLEVEL"] = log_level.value
     _log_level = log_level
-    configure()
+    if is_managed_mode():
+        configure()
+    else:
+        # Library mode: adjust the level like any stdlib API would, but never
+        # attach handlers behind the application's back.
+        _REFLEX_LOGGER.setLevel(log_level.to_logging_level())
 
 
 def get_log_level() -> LogLevel:
@@ -549,7 +596,7 @@ def timing(logger: logging.Logger, msg: str) -> Iterator[None]:
     try:
         yield
     finally:
-        logger.debug("[white]\\[timing] %s: %.2fs[/white]", msg, time.time() - start)
+        logger.debug("[timing] %s: %.2fs", msg, time.time() - start)
 
 
 @once
@@ -663,7 +710,6 @@ def deprecate(
     if dedupe and not dedupe_once(f"deprecation:{dedupe_key}"):
         return
 
-    ensure_configured()
     msg = (
         f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
         f"removed in {removal_version}.{loc}"

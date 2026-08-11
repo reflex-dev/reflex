@@ -13,20 +13,30 @@ logger = logging.getLogger("reflex_base.tests.logs")
 
 @pytest.fixture(autouse=True)
 def clean_pipeline(monkeypatch):
-    """Configure the pipeline at INFO with empty dedupe state for each test.
+    """Configure the managed pipeline at INFO with empty dedupe state.
+
+    Restores library mode (no sinks, propagation on) after each test so the
+    rest of the unit suite keeps standard root-logger capture.
 
     Yields:
         None.
     """
     monkeypatch.delenv("REFLEX_LOG_JSON", raising=False)
     monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
     log._dedupe_filter().seen.clear()
     log.configure()
     yield
-    monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
     log._dedupe_filter().seen.clear()
-    log.configure()
+    log._reset()
+
+
+@pytest.fixture
+def library_mode(monkeypatch):
+    """Drop into library mode: no managed marker, no sinks attached."""
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+    log._reset()
 
 
 def test_rich_output_parity(capsys):
@@ -42,11 +52,18 @@ def test_rich_output_parity(capsys):
     assert err == "e\n"
 
 
-def test_markup_rendered_in_rich_mode(capsys):
-    """Rich markup in messages is rendered, not shown literally."""
-    logger.info("hello [bold]world[/bold]")
+def test_markup_rendered_when_opted_in(capsys):
+    """Records carrying ``rich=True`` render their markup."""
+    logger.info("hello [bold]world[/bold]", extra={"rich": True})
     out, _ = capsys.readouterr()
     assert out == "Info: hello world\n"
+
+
+def test_markup_literal_by_default(capsys):
+    """Without the opt-in, bracketed text renders literally."""
+    logger.info("AssertionErr: foo[bar] != 'baz'")
+    out, _ = capsys.readouterr()
+    assert out == "Info: AssertionErr: foo[bar] != 'baz'\n"
 
 
 def test_level_gating(capsys):
@@ -77,11 +94,19 @@ def test_dedupe(capsys):
     assert out == "Info: once\nInfo: twice\nInfo: twice\n"
 
 
+def test_dedupe_filter_stores_hashes_not_messages():
+    """The seen-set retains hashes only, never the deduped messages."""
+    logger.info("sensitive message contents", extra={"dedupe": True})
+    seen = log._dedupe_filter().seen
+    assert seen
+    assert all(isinstance(entry, int) for entry in seen)
+
+
 def test_json_mode(monkeypatch, capsys):
-    """JSON mode emits one parseable record per line with markup stripped."""
+    """JSON mode emits one parseable record per line."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")
     log.configure()
-    logger.info("hello [bold]world[/bold]")
+    logger.info("hello [bold]world[/bold]", extra={"rich": True})
     logger.error("boom")
     out, err = capsys.readouterr()
     record = json.loads(out)
@@ -94,6 +119,15 @@ def test_json_mode(monkeypatch, capsys):
     error_record = json.loads(err)
     assert error_record["level"] == "error"
     assert error_record["message"] == "boom"
+
+
+def test_json_mode_preserves_brackets_in_plain_records(monkeypatch, capsys):
+    """Only ``rich=True`` records are markup-stripped in JSON output."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    logger.info("foo[bar]")
+    out, _ = capsys.readouterr()
+    assert json.loads(out)["message"] == "foo[bar]"
 
 
 def test_json_mode_success_level(monkeypatch, capsys):
@@ -109,23 +143,38 @@ def test_configure_idempotent():
     """Repeated configure calls never stack handlers."""
     log.configure()
     log.configure()
-    for name in log.ROOT_LOGGER_NAMES:
-        root = logging.getLogger(name)
-        assert root.handlers.count(log._console_handler()) == 1
-        assert log._json_handler() not in root.handlers
+    reflex_logger = logging.getLogger("reflex")
+    assert reflex_logger.handlers.count(log._console_handler()) == 1
+    assert log._json_handler() not in reflex_logger.handlers
+    assert all(
+        not logging.getLogger(name).handlers for name in log.PACKAGE_LOGGER_NAMES
+    )
 
 
 def test_configure_swaps_handler_in_json_mode(monkeypatch):
     """Switching JSON mode swaps the sink instead of stacking it."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")
     log.configure()
-    root = logging.getLogger("reflex")
-    assert log._json_handler() in root.handlers
-    assert log._console_handler() not in root.handlers
+    reflex_logger = logging.getLogger("reflex")
+    assert log._json_handler() in reflex_logger.handlers
+    assert log._console_handler() not in reflex_logger.handlers
+
+
+def test_configure_cuts_propagation_to_root():
+    """Managed mode owns the terminal: records never reach root handlers."""
+    root_sink = mock.Mock(spec=logging.Handler)
+    root_sink.level = logging.DEBUG
+    logging.getLogger().addHandler(root_sink)
+    try:
+        assert logging.getLogger("reflex").propagate is False
+        logger.warning("managed")
+        root_sink.handle.assert_not_called()
+    finally:
+        logging.getLogger().removeHandler(root_sink)
 
 
 def test_configure_removes_file_handler_when_full_logging_is_disabled(monkeypatch):
-    """Disabling full logging detaches its handler from every package logger."""
+    """Disabling full logging detaches its handler again."""
     handler = logging.NullHandler()
     monkeypatch.setattr(log, "_file_handler", lambda: handler)
     monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "true")
@@ -135,22 +184,17 @@ def test_configure_removes_file_handler_when_full_logging_is_disabled(monkeypatc
 
         monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "false")
         log.configure()
-        assert all(
-            handler not in logging.getLogger(name).handlers
-            for name in log.ROOT_LOGGER_NAMES
-        )
+        assert handler not in logging.getLogger("reflex").handlers
     finally:
-        for name in log.ROOT_LOGGER_NAMES:
-            logger = logging.getLogger(name)
-            if handler in logger.handlers:
-                logger.removeHandler(handler)
+        logging.getLogger("reflex").removeHandler(handler)
 
 
 def test_set_log_level_env_propagation(monkeypatch):
     """Changing the level exports REFLEX_LOGLEVEL for subprocesses."""
-    log.set_log_level(LogLevel.DEBUG)
     import os
 
+    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    log.set_log_level(LogLevel.DEBUG)
     assert os.environ.get("REFLEX_LOGLEVEL") == "debug"
     assert log.get_log_level() is LogLevel.DEBUG
     assert log.is_debug()
@@ -166,6 +210,15 @@ def test_set_log_level_none_is_noop():
     """Passing None keeps the current level."""
     log.set_log_level(None)
     assert log.get_log_level() is LogLevel.INFO
+
+
+def test_set_log_level_in_library_mode_attaches_nothing(library_mode):
+    """Library-mode level tuning adjusts the logger but never adds sinks."""
+    log.set_log_level(LogLevel.DEBUG)
+    reflex_logger = logging.getLogger("reflex")
+    assert reflex_logger.level == logging.DEBUG
+    assert reflex_logger.handlers == []
+    assert reflex_logger.propagate is True
 
 
 def test_loglevel_total_ordering():
@@ -279,23 +332,28 @@ def test_console_rule_json_mode(monkeypatch, capsys):
     assert out == ""
 
 
-def test_file_formatter_strips_markup_and_formats_timestamp():
-    """The file formatter strips markup and supports the configured timestamp."""
-    formatter = log._StripMarkupFormatter(
-        "[{asctime}] {levelname}: {message}", style="{"
-    )
+def _file_record(msg: str, *, rich: bool = False) -> logging.LogRecord:
     record = logging.LogRecord(
         name="reflex.test",
         level=logging.WARNING,
         pathname=__file__,
         lineno=1,
-        msg="[orange1]careful[/orange1]",
+        msg=msg,
         args=(),
         exc_info=None,
     )
-    formatted = formatter.format(record)
+    if rich:
+        record.rich = True
+    return record
+
+
+def test_file_formatter_strips_markup_only_when_opted_in():
+    """The file formatter strips markup from rich records and no others."""
+    formatter = log._FileFormatter("[{asctime}] {levelname}: {message}", style="{")
+    formatted = formatter.format(_file_record("[orange1]careful[/orange1]", rich=True))
     assert formatted.endswith(" WARNING: careful")
     assert formatted.startswith("[")
+    assert formatter.format(_file_record("foo[bar]")).endswith(" WARNING: foo[bar]")
 
 
 def test_log_file_path_honors_env(monkeypatch, tmp_path):
@@ -306,10 +364,10 @@ def test_log_file_path_honors_env(monkeypatch, tmp_path):
 
 
 def test_every_logging_package_root_is_registered():
-    """Workspace packages that log must appear in ROOT_LOGGER_NAMES.
+    """Workspace packages that log must appear in PACKAGE_LOGGER_NAMES.
 
     Loggers do not propagate across top-level package names, so a package
-    missing from the tuple silently escapes the pipeline.
+    missing from the tuple silently escapes the reflex logger hierarchy.
     """
     from pathlib import Path
 
@@ -318,30 +376,51 @@ def test_every_logging_package_root_is_registered():
         src.name
         for src in (repo_root / "packages").glob("*/src/*")
         if src.is_dir()
-        and src.name not in log.ROOT_LOGGER_NAMES
+        and src.name not in log.PACKAGE_LOGGER_NAMES
         and any(
             "logging.getLogger(__name__)" in path.read_text(encoding="utf-8")
             for path in src.rglob("*.py")
         )
     }
     assert not missing, (
-        f"add {sorted(missing)} to reflex_base.utils.log.ROOT_LOGGER_NAMES so "
-        "their records go through the reflex logging pipeline"
+        f"add {sorted(missing)} to reflex_base.utils.log.PACKAGE_LOGGER_NAMES so "
+        "their records join the reflex logger hierarchy"
     )
 
 
-def test_bootstrap_defers_configure_until_first_record(monkeypatch, capsys):
-    """bootstrap() attaches sinks lazily and replays the triggering record."""
-    monkeypatch.setattr(log, "_configured", False)
-    for name in log.ROOT_LOGGER_NAMES:
-        logging.getLogger(name).handlers.clear()
-
+def test_bootstrap_parents_package_loggers_under_reflex(library_mode):
+    """Every package logger chains to root through the ``reflex`` logger."""
     log.bootstrap()
-    assert not log._configured
+    reflex_logger = logging.getLogger("reflex")
+    assert reflex_logger.handlers == []
+    assert reflex_logger.propagate is True
+    for name in log.PACKAGE_LOGGER_NAMES:
+        package_logger = logging.getLogger(name)
+        assert package_logger.parent is reflex_logger
+        assert package_logger.propagate is True
+        assert package_logger.level == logging.NOTSET
+    # Loggers created after bootstrap join the chain through their package root.
+    deep = logging.getLogger("reflex_base.brand.new_child")
+    parents = []
+    node = deep
+    while node := node.parent:
+        parents.append(node)
+    assert reflex_logger in parents
+    assert parents[-1] is logging.getLogger()
 
-    logger.info("first record")
-    out, _ = capsys.readouterr()
-    assert out == "Info: first record\n"
+
+def test_bootstrap_configures_when_managed(monkeypatch):
+    """Workers inherit the CLI marker and attach sinks at import time."""
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    log._reset()
+    log.bootstrap()
     assert log._configured
-    for name in log.ROOT_LOGGER_NAMES:
-        assert log._bootstrap_handler not in logging.getLogger(name).handlers
+    assert log._console_handler() in logging.getLogger("reflex").handlers
+
+
+def test_library_mode_records_propagate_to_root(library_mode, caplog):
+    """Without the CLI, records reach root for the app (and pytest) to capture."""
+    log.bootstrap()
+    with caplog.at_level(logging.INFO, logger="reflex"):
+        logger.info("through the root")
+    assert "through the root" in caplog.text

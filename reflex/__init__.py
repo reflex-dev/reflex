@@ -89,9 +89,10 @@ import sys
 from reflex_base.utils import lazy_loader
 from reflex_base.utils import log as _log
 
-# Claim the reflex loggers so records render styled even before any config is
-# loaded (only reflex-owned loggers are touched). The sinks themselves attach
-# on the first record, keeping this import cheap.
+# Parent the workspace package loggers under the single "reflex" logger so
+# all reflex logging is tunable in one place. Sinks attach only when the
+# reflex CLI manages this process, keeping this import cheap and leaving
+# library users' logging configuration untouched.
 _log.bootstrap()
 del _log
 
