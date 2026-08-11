@@ -188,6 +188,11 @@ withheld, along with generated set-var handlers. API clients authenticate
 through the token endpoint or the OAuth flow instead of by posting to the login
 handlers.
 
+The same goes for the `Pages` section of the generated spec: it lists your
+app's pages, not the auth machinery's (`/login`, `/callback`, `/logout`,
+`/forbidden`, the OIDC popup pages, and the MCP consent page are all omitted,
+along with their dynamic route variables).
+
 ## Discovering the API
 
 The plugin publishes the OpenAPI spec at a well-known location per RFC 9727.
@@ -233,14 +238,13 @@ Event handler endpoints return the state deltas produced by the handler as
 delta; the stream ends when the handler finishes:
 
 ```
-{"reflex___state____state.tickets___tickets____ticket_state": {"tickets_rx_state_": [], "total_count_rx_state_": 3}}
-{"reflex___state____state.tickets___tickets____ticket_state": {"open_count_rx_state_": 2}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"tickets": [], "total_count": 3}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"open_count": 2}}
 ```
 
-```md alert info
-# Streamed deltas carry the framework's internal `_rx_state_` field-marker suffix on var names.
-`POST /_reflex/retrieve_state` strips it — as do the [Auto MCP](/docs/enterprise/mcp/) surfaces — so a state read returns the clean `total_count`. Strip the suffix client-side if you consume the ndjson stream directly.
-```
+Var names come back clean: the framework's internal `_rx_state_` field-marker
+suffix is stripped from the streamed deltas, from `/_reflex/retrieve_state`, and
+from the [Auto MCP](/docs/enterprise/mcp/) surfaces alike.
 
 For one-shot clients that just want the final state, consume the stream to
 completion and then fetch the full state:

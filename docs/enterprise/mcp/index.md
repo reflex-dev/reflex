@@ -173,6 +173,12 @@ exposed state names, the app's pages (with the handlers their `on_load`
 triggers), and the dynamic route variables. Most agents need nothing beyond
 this to start driving the app.
 
+The page listing covers your app's pages only. The auth machinery's own routes
+— `/login`, `/callback`, `/logout`, `/forbidden`, each OIDC provider's popup
+pages, and the MCP consent page — are omitted, along with their dynamic route
+variables: they are human-interactive sign-in plumbing an agent cannot drive,
+so advertising them would only invite it to "visit" a page it can't use.
+
 Override the generated text with `MCPPlugin(instructions="...")`, and add
 `contact` / `license_info` / `api_version` to have them rendered into it:
 
