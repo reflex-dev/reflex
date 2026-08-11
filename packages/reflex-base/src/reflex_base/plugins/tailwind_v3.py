@@ -63,7 +63,7 @@ def compile_root_style(include_radix_themes: bool = True):
     Returns:
         The compiled Tailwind root style.
     """
-    from reflex.compiler.compiler import RADIX_THEMES_STYLESHEET
+    from reflex_components_radix.plugin import RADIX_THEMES_STYLESHEET
 
     return str(
         Path(Dirs.STYLES) / Constants.ROOT_STYLE_PATH
@@ -129,7 +129,7 @@ def add_tailwind_to_css_file(
     Returns:
         The modified css file content.
     """
-    from reflex.compiler.compiler import RADIX_THEMES_STYLESHEET
+    from reflex_components_radix.plugin import RADIX_THEMES_STYLESHEET
 
     if Constants.TAILWIND_CSS.splitlines()[0] in css_file_content:
         return css_file_content
