@@ -4,7 +4,7 @@ import Alert02Icon from "@hugeicons/core-free-icons/Alert02Icon";
 import ApiIcon from "@hugeicons/core-free-icons/ApiIcon";
 import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon";
 import BookOpen01Icon from "@hugeicons/core-free-icons/BookOpen01Icon";
-import CancelCircleIcon from "@hugeicons/core-free-icons/CancelCircleIcon";
+import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import ChartLineData01Icon from "@hugeicons/core-free-icons/ChartLineData01Icon";
 import ComponentIcon from "@hugeicons/core-free-icons/ComponentIcon";
 import CornerDownLeftIcon from "@hugeicons/core-free-icons/CornerDownLeftIcon";
@@ -226,6 +226,7 @@ export function AlgoliaSearch() {
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [nbHits, setNbHits] = useState(0);
   const [status, setStatus] = useState<SearchStatus>("idle");
+  const [resultsQuery, setResultsQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const [modifierKey] = useState(() =>
     typeof navigator !== "undefined" &&
@@ -249,6 +250,7 @@ export function AlgoliaSearch() {
     setHits([]);
     setNbHits(0);
     setStatus("idle");
+    setResultsQuery("");
     setActiveIndex(-1);
   }, []);
   const openSearch = useCallback(() => setIsOpen(true), []);
@@ -257,10 +259,12 @@ export function AlgoliaSearch() {
     resetSearch();
     window.requestAnimationFrame(() => buttonRef.current?.focus());
   }, [resetSearch]);
+  const resultsAreInteractive =
+    status === "ready" && resultsQuery === query.trim().toLocaleLowerCase();
 
   const moveSelection = useCallback(
     (offset: number) => {
-      if (hits.length === 0) {
+      if (!resultsAreInteractive || hits.length === 0) {
         return;
       }
 
@@ -277,7 +281,7 @@ export function AlgoliaSearch() {
         return nextIndex;
       });
     },
-    [hits.length],
+    [hits.length, resultsAreInteractive],
   );
 
   const handleInputKeyDown = useCallback(
@@ -375,6 +379,7 @@ export function AlgoliaSearch() {
       setHits([]);
       setNbHits(0);
       setStatus("idle");
+      setResultsQuery("");
       setActiveIndex(-1);
       return;
     }
@@ -385,6 +390,7 @@ export function AlgoliaSearch() {
       setHits(cachedSearch.hits);
       setNbHits(cachedSearch.nbHits);
       setStatus("ready");
+      setResultsQuery(cacheKey);
       setActiveIndex(cachedSearch.hits.length > 0 ? 0 : -1);
       return;
     }
@@ -448,6 +454,7 @@ export function AlgoliaSearch() {
         setHits(search.hits);
         setNbHits(search.nbHits);
         setStatus("ready");
+        setResultsQuery(cacheKey);
         setActiveIndex(search.hits.length > 0 ? 0 : -1);
       } catch {
         if (controller.signal.aborted) {
@@ -456,6 +463,7 @@ export function AlgoliaSearch() {
         setHits([]);
         setNbHits(0);
         setStatus("error");
+        setResultsQuery("");
         setActiveIndex(-1);
       } finally {
         if (requestRef.current === controller) {
@@ -593,7 +601,7 @@ export function AlgoliaSearch() {
                       <HugeiconsIcon
                         aria-hidden="true"
                         className="ReflexSearch-escapeIcon"
-                        icon={CancelCircleIcon}
+                        icon={Cancel01Icon}
                         size={18}
                         strokeWidth={1.5}
                       />
@@ -633,22 +641,39 @@ export function AlgoliaSearch() {
                         </div>
                       ) : (
                         <ul
+                          aria-busy={!resultsAreInteractive}
                           aria-label="Search results"
                           className="ReflexSearch-hitList"
+                          data-interactive={resultsAreInteractive}
                           id={resultsId}
                           role="listbox"
                         >
                           {hits.map((hit, index) => (
                             <li key={hit.objectID} role="presentation">
                               <a
+                                aria-disabled={!resultsAreInteractive}
                                 aria-selected={index === activeIndex}
                                 className="ReflexSearch-hit"
                                 data-selected={index === activeIndex}
                                 href={hit.url}
                                 id={`${resultsId}-result-${index}`}
-                                onClick={closeSearch}
-                                onFocus={() => setActiveIndex(index)}
-                                onMouseEnter={() => setActiveIndex(index)}
+                                onClick={(event) => {
+                                  if (!resultsAreInteractive) {
+                                    event.preventDefault();
+                                    return;
+                                  }
+                                  closeSearch();
+                                }}
+                                onFocus={() => {
+                                  if (resultsAreInteractive) {
+                                    setActiveIndex(index);
+                                  }
+                                }}
+                                onMouseEnter={() => {
+                                  if (resultsAreInteractive) {
+                                    setActiveIndex(index);
+                                  }
+                                }}
                                 ref={(element) => {
                                   hitRefs.current[index] = element;
                                 }}
@@ -982,6 +1007,10 @@ const SEARCH_STYLES = `
     padding: 0;
   }
 
+  .ReflexSearch-hitList[data-interactive="false"] {
+    pointer-events: none;
+  }
+
   .ReflexSearch-hit {
     align-items: stretch;
     background: var(--secondary-1, #fff);
@@ -1190,7 +1219,10 @@ const SEARCH_STYLES = `
     }
 
     .ReflexSearch-button > svg {
-      margin-right: 2px;
+      flex-shrink: 0;
+      height: 1.25rem;
+      margin-right: 0;
+      width: 1.25rem;
     }
 
     .ReflexSearch-buttonText,
@@ -1201,27 +1233,25 @@ const SEARCH_STYLES = `
 
   @media (max-width: 40rem) {
     .ReflexSearch-overlay {
-      align-items: stretch;
-      padding: 0;
+      align-items: flex-start;
+      padding: calc(env(safe-area-inset-top, 0px) + 1.5rem) 1rem 1rem;
     }
 
     .ReflexSearch-dialog {
-      border: 0;
-      border-radius: 0;
-      height: 100dvh;
+      border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+      border-radius: 0.75rem;
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - 2.5rem);
       max-height: none;
       width: 100%;
     }
 
-    .ReflexSearch-overlay[data-status="idle"] {
-      align-items: flex-start;
-      padding: 1rem;
+    .ReflexSearch-dialog[data-status="idle"] {
+      height: auto;
     }
 
-    .ReflexSearch-dialog[data-status="idle"] {
-      border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
-      border-radius: 0.75rem;
-      height: auto;
+    .ReflexSearch-inputIcon > svg {
+      height: 1.375rem;
+      width: 1.375rem;
     }
 
     .ReflexSearch-results {
@@ -1239,15 +1269,17 @@ const SEARCH_STYLES = `
       gap: 0.5rem;
     }
 
-    .ReflexSearch-escape {
-      height: 2.75rem;
-      padding: 0;
-      width: 2.75rem;
+    .ReflexSearch-actionSlot {
+      flex-basis: 2.25rem;
+      height: 2.25rem;
     }
 
-    .ReflexSearch-actionSlot {
-      flex-basis: 2.75rem;
-      height: 2.75rem;
+    .ReflexSearch-escape {
+      border-radius: 0.625rem;
+      height: 2.25rem;
+      padding: 0;
+      position: static;
+      width: 2.25rem;
     }
 
     .ReflexSearch-escapeText {

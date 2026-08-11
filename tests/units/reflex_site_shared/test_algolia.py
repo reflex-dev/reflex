@@ -95,7 +95,7 @@ def test_algolia_results_use_category_specific_icons() -> None:
         "ApiIcon",
         "ArrowRight01Icon",
         "BookOpen01Icon",
-        "CancelCircleIcon",
+        "Cancel01Icon",
         "ChartLineData01Icon",
         "ComponentIcon",
         "CornerDownLeftIcon",
@@ -107,7 +107,7 @@ def test_algolia_results_use_category_specific_icons() -> None:
     assert 'from "@hugeicons/react"' in source
     assert "HugeiconsIcon" in source
     assert "<svg" not in source
-    assert "Cancel01Icon" not in source
+    assert "CancelCircleIcon" not in source
 
     hit_icon = source.split('<span className="ReflexSearch-hitIcon">', 1)[1].split(
         "</span>", 1
@@ -242,7 +242,7 @@ def test_algolia_search_uses_input_only_orbit_loading_state() -> None:
 
 
 def test_algolia_search_preserves_populated_results_while_loading() -> None:
-    """Keep existing cards visible while a subsequent query is loading."""
+    """Keep existing cards visible but inert during a replacement request."""
     assets = dict(SharedSiteStylesPlugin().get_static_assets())
     source = assets[Path("public/components/AlgoliaSearch.tsx")]
 
@@ -262,6 +262,23 @@ def test_algolia_search_preserves_populated_results_while_loading() -> None:
     )[1].split("<footer", 1)[0]
     assert 'data-tone="loading"' not in results
     assert 'className="ReflexSearch-hitList"' in results
+    assert 'const [resultsQuery, setResultsQuery] = useState("");' in source
+    assert 'status === "ready" &&' in source
+    assert "resultsQuery === query.trim().toLocaleLowerCase()" in source
+    assert "data-interactive={resultsAreInteractive}" in results
+    assert "aria-disabled={!resultsAreInteractive}" in results
+    assert "if (!resultsAreInteractive)" in results
+    assert "event.preventDefault();" in results
+
+    move_selection = source.split("const moveSelection =", 1)[1].split(
+        "const handleInputKeyDown =", 1
+    )[0]
+    assert "!resultsAreInteractive || hits.length === 0" in move_selection
+
+    inert_styles = source.split('.ReflexSearch-hitList[data-interactive="false"] {', 1)[
+        1
+    ].split("}", 1)[0]
+    assert "pointer-events: none;" in inert_styles
 
     input_row = source.split('<div className="ReflexSearch-inputRow">', 1)[1].split(
         "</div>", 1
@@ -411,6 +428,17 @@ def test_algolia_navbar_button_matches_origin_main() -> None:
     assert "font-weight: 475;" in source
     assert "height: 1.25rem;" in source
 
+    collapsed_navbar = source.split("@media (max-width: 80em)", 1)[1].split(
+        "@media (max-width: 40rem)", 1
+    )[0]
+    collapsed_icon = collapsed_navbar.split(".ReflexSearch-button > svg {", 1)[1].split(
+        "}", 1
+    )[0]
+    assert "flex-shrink: 0;" in collapsed_icon
+    assert "height: 1.25rem;" in collapsed_icon
+    assert "margin-right: 0;" in collapsed_icon
+    assert "width: 1.25rem;" in collapsed_icon
+
 
 def test_algolia_search_escape_matches_navbar_keycap_style() -> None:
     """Render the escape control with the navbar keycap styling."""
@@ -430,6 +458,53 @@ def test_algolia_search_escape_matches_navbar_keycap_style() -> None:
     assert "gap: 0.25rem;" in escape_styles
     assert "height: 1.5rem;" in escape_styles
     assert "padding: 0 0.375rem;" in escape_styles
+    assert 'className="ReflexSearch-escapeIcon"' in source
+    assert "icon={Cancel01Icon}" in source
+
+    mobile_styles = source.split("@media (max-width: 40rem)", 1)[1].split(
+        "@media (prefers-reduced-motion: reduce)", 1
+    )[0]
+    mobile_escape = mobile_styles.split(".ReflexSearch-escape {", 1)[1].split("}", 1)[0]
+    assert "border-radius: 0.625rem;" in mobile_escape
+    assert "height: 2.25rem;" in mobile_escape
+    assert "width: 2.25rem;" in mobile_escape
+    assert "position: static;" in mobile_escape
+    assert "clip: rect(0 0 0 0);" not in mobile_escape
+    assert (
+        "display: none;"
+        in mobile_styles.split(".ReflexSearch-escapeText {", 1)[1].split("}", 1)[0]
+    )
+    assert (
+        "display: block;"
+        in mobile_styles.split(".ReflexSearch-escapeIcon {", 1)[1].split("}", 1)[0]
+    )
+
+
+def test_algolia_mobile_dialog_respects_safe_area_offset() -> None:
+    """Offset the mobile dialog without extending it past the viewport."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+
+    mobile_styles = source.split("@media (max-width: 40rem)", 1)[1].split(
+        "@media (prefers-reduced-motion: reduce)", 1
+    )[0]
+    overlay_styles = mobile_styles.split(".ReflexSearch-overlay {", 1)[1].split("}", 1)[
+        0
+    ]
+    dialog_styles = mobile_styles.split(".ReflexSearch-dialog {", 1)[1].split("}", 1)[0]
+    input_icon_styles = mobile_styles.split(".ReflexSearch-inputIcon > svg {", 1)[
+        1
+    ].split("}", 1)[0]
+    assert "padding: calc(env(safe-area-inset-top, 0px) + 1.5rem) 1rem 1rem;" in (
+        overlay_styles
+    )
+    assert (
+        "height: calc(100dvh - env(safe-area-inset-top, 0px) - 2.5rem);"
+        in dialog_styles
+    )
+    assert "border-radius: 0.75rem;" in dialog_styles
+    assert "height: 1.375rem;" in input_icon_styles
+    assert "width: 1.375rem;" in input_icon_styles
 
 
 def test_algolia_search_resets_transient_ui_state() -> None:
