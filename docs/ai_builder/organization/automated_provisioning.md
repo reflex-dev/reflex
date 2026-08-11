@@ -158,7 +158,11 @@ Both writes are idempotent. Re-granting a role a team already holds succeeds, an
 If the project requires approval for member changes, a grant parks as an approval request instead of applying. The response is `{"status": "pending_approval", ...}` with HTTP 200, and nobody has the access yet. Branch on `status`, or you will record access that does not exist.
 ```
 
-The gate is the project's [approval policy](/docs/ai/organization/deployment-approvals/) for member additions and role changes, and an organization can enable it by default for every new project, so a project you never configured can behave this way. Parked requests appear in the `pending` array of the listing. Check that array before writing. An identical pending request is recognized and left alone, but a pass that ignores `pending` keeps replacing the request an approver is already reviewing and re-notifying them.
+The gate is the project's [approval policy](/docs/ai/organization/deployment-approvals/) for member additions and role changes, and an organization can enable it by default for every new project, so a project you never configured can behave this way.
+
+A parked grant is absent from `grants` and present in `pending`. Read both before deciding what access exists.
+
+Re-asserting is safe. While the gate is on, asking again for the role a pending request already describes answers `pending_approval` without disturbing that request or notifying the approver a second time. Asking for a different role replaces the pending request and notifies again, which is correct, because the desired state changed. If the gate has since been turned off, the next call applies the grant and clears the stale request, so a loop recovers on its own.
 
 Revocations park the same way, and the team keeps its access until an approver accepts.
 
@@ -268,8 +272,8 @@ Adding a person to `reflex-platform-engineers` in the directory now gives them e
 A reconciliation loop, if you run one, should:
 
 - `GET /api/v1/project/{id}/teams` and compare both `grants` and `pending` against desired state.
-- Treat `pending_approval` as "not yet", and leave it alone rather than re-asserting.
-- Re-assert grants freely otherwise. They are idempotent and write no audit row when nothing moves.
+- Treat `pending_approval` as access that does not exist yet, and do not record it as granted.
+- Re-assert grants freely. They are idempotent, a pending request for the same role is left undisturbed, and nothing reaches the audit trail when nothing moves.
 
 ## Troubleshooting
 
