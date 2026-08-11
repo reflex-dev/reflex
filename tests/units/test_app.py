@@ -307,6 +307,32 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+def test_apply_decorated_pages_uses_app_context(
+    forked_registration_context: RegistrationContext,
+    app: App,
+    index_page: ComponentCallable,
+):
+    """_apply_decorated_pages reads the App's captured registration context.
+
+    The compiler calls it outside a request, where the ambient context may
+    differ from the one the App was created in; pages registered on the App's
+    own context must still be applied.
+
+    Args:
+        forked_registration_context: The forked registration context.
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app._registration_context is forked_registration_context
+    forked_registration_context.decorated_pages.append((
+        index_page,
+        {"route": "decorated"},
+    ))
+    with RegistrationContext():
+        app._apply_decorated_pages()
+    assert "decorated" in app._unevaluated_pages
+
+
 def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 
@@ -1847,7 +1873,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         emitted_deltas: List to store emitted deltas.
         emitted_events: List to store emitted events.
     """
-    OnLoadInternalState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
     app = app_module_mock.app = App()
@@ -2158,6 +2183,7 @@ def test_app_wrap_compile_theme(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -2165,6 +2191,8 @@ def test_app_wrap_compile_theme(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -2303,8 +2331,16 @@ def _example_hydrate_fallback() -> rx.Component:
 def test_compile_hydrate_fallback_from_config(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
@@ -2503,8 +2539,16 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
 def test_legacy_app_theme_wins_over_explicit_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Deprecated App.theme keeps working (and winning) until its removal."""
+    """Deprecated App.theme keeps working (and winning) until its removal.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
@@ -2923,6 +2967,7 @@ def test_app_wrap_priority(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 
@@ -2930,6 +2975,8 @@ def test_app_wrap_priority(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -3074,7 +3121,8 @@ def test_app_state_determination():
     a1 = App()
     assert a1._state is not None
 
-    a2 = App(enable_state=False)
+    with RegistrationContext.get().fork():
+        a2 = App(enable_state=False)
     assert a2._state is None
 
 
@@ -3677,8 +3725,16 @@ def test_compile_sends_telemetry_when_enabled(
 def test_compile_skips_telemetry_when_disabled(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(app_name="testing", telemetry_enabled=False)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -3913,8 +3969,16 @@ def test_add_page_invalidates_router_cache():
 def test_compile_registers_plugin_routes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Compilation includes pages contributed by configured plugins."""
+    """Compilation includes pages contributed by configured plugins.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
 
     class RoutePlugin(Plugin):
         """Plugin contributing one page for the compile test."""
