@@ -63,6 +63,23 @@ def test_is_package_source(config: Config) -> None:
     )
 
 
+def test_towncrier_layout_settings_are_honored(config: Config, repo: Path) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject
+        .read_text()
+        .replace('directory = "news"', 'directory = "changes"')
+        .replace('filename = "CHANGELOG.md"', 'filename = "NEWS.md"')
+    )
+    reloaded = load_config(repo)
+    assert reloaded.news_dir("widget-core").name == "changes"
+    assert reloaded.changelog_path("widget-core").name == "NEWS.md"
+    assert not reloaded.is_package_source("widget-core", "packages/widget-core/NEWS.md")
+    assert not reloaded.is_package_source(
+        "widget-core", "packages/widget-core/changes/1.bugfix.md"
+    )
+
+
 def test_package_without_src_layout_counts_whole_directory(
     config: Config, repo: Path
 ) -> None:

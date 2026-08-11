@@ -23,10 +23,6 @@ else:
 
 TOOL_TABLE = "reflex-release"
 
-#: Filenames inside a sub-package directory that never make it "affected" for
-#: the news-fragment check (see :meth:`Config.package_source_prefixes`).
-_NON_SOURCE_NAMES = frozenset({"news", "CHANGELOG.md"})
-
 _KNOWN_KEYS = frozenset({
     "cli-command",
     "root-package",
@@ -74,6 +70,10 @@ class Config:
         root: The repository root (the directory holding ``pyproject.toml``).
         cli_command: How the scaffolded workflows invoke this tool. ``init``
             writes it pinned to the version that generated them.
+        news_directory: The fragment directory inside each package, taken from
+            towncrier's ``directory`` setting.
+        changelog_filename: The changelog file inside each package, taken from
+            towncrier's ``filename`` setting.
         root_package: Name of the package built from the repo root, or None when
             the root is not itself a package.
         root_source_dirs: Repo-relative directories whose changes require a news
@@ -102,6 +102,8 @@ class Config:
 
     root: Path
     cli_command: str = "uvx reflex-release"
+    news_directory: str = "news"
+    changelog_filename: str = "CHANGELOG.md"
     root_package: str | None = None
     root_source_dirs: tuple[str, ...] = ()
     packages_dir: str | None = "packages"
@@ -147,7 +149,7 @@ class Config:
         )
 
     def changelog_path(self, package: str) -> Path:
-        """Return a package's ``CHANGELOG.md`` path (which may not exist).
+        """Return a package's changelog path (which may not exist).
 
         Args:
             package: The package name.
@@ -155,7 +157,7 @@ class Config:
         Returns:
             The changelog path.
         """
-        return self.package_path(package) / "CHANGELOG.md"
+        return self.package_path(package) / self.changelog_filename
 
     def news_dir(self, package: str) -> Path:
         """Return a package's news fragment directory (which may not exist).
@@ -164,9 +166,9 @@ class Config:
             package: The package name.
 
         Returns:
-            The ``news`` directory of the package.
+            The fragment directory of the package.
         """
-        return self.package_path(package) / "news"
+        return self.package_path(package) / self.news_directory
 
     def tag_prefix(self, package: str) -> str:
         """Return the git tag prefix for a package.
@@ -265,7 +267,7 @@ class Config:
             Path prefixes ending in ``/``. For the root package these are the
             configured ``root-source-dirs``; for a sub-package, its configured
             source subdirectories, falling back to the whole package directory
-            (minus ``news/`` and ``CHANGELOG.md``) when it has none of them.
+            (minus its fragment directory and changelog) when it has none.
         """
         if package == self.root_package:
             return [f"{directory.rstrip('/')}/" for directory in self.root_source_dirs]
@@ -286,16 +288,15 @@ class Config:
 
         Returns:
             True when the path falls under one of the package's source
-            prefixes. Paths that are only a package's ``news/`` fragments or its
-            ``CHANGELOG.md`` never count, so release commits do not look like
-            source changes.
+            prefixes. A package's own news fragments and changelog never count,
+            so release commits do not look like source changes.
         """
         directory = self.package_dir(package)
         own_prefix = "" if directory == "." else f"{directory}/"
-        if (
-            path.startswith(own_prefix)
-            and path[len(own_prefix) :].split("/", 1)[0] in _NON_SOURCE_NAMES
-        ):
+        if path.startswith(own_prefix) and path[len(own_prefix) :].split("/", 1)[0] in {
+            self.news_directory,
+            self.changelog_filename,
+        }:
             return False
         return any(
             path.startswith(prefix) for prefix in self.package_source_prefixes(package)
@@ -539,7 +540,9 @@ def load_config(root: Path) -> Config:
     pyproject = root / "pyproject.toml"
     if not pyproject.is_file():
         fail(f"no pyproject.toml in {root}; run this from the repository root")
-    table = load_pyproject(pyproject).get("tool", {}).get(TOOL_TABLE)
+    tools = load_pyproject(pyproject).get("tool", {})
+    towncrier = tools.get("towncrier", {})
+    table = tools.get(TOOL_TABLE)
     if table is None:
         fail(
             f"no [tool.{TOOL_TABLE}] table in {pyproject}; run "
@@ -560,6 +563,8 @@ def load_config(root: Path) -> Config:
     config = Config(
         root=root,
         cli_command=table.get("cli-command", "uvx reflex-release"),
+        news_directory=towncrier.get("directory") or "news",
+        changelog_filename=towncrier.get("filename") or "CHANGELOG.md",
         root_package=root_package,
         root_source_dirs=_string_list(table, "root-source-dirs")
         or _default_root_source_dirs(root, root_package),
