@@ -7,7 +7,7 @@ class ImageZoom(rx.NoSSRComponent):
     """ImageZoom component."""
 
     # The React library to wrap.
-    library = "react-medium-image-zoom@5.4.2"
+    library = "react-medium-image-zoom@5.4.8"
 
     # The React component tag.
     tag = "Zoom"

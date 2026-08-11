@@ -7,7 +7,7 @@ from reflex.style import set_color_mode, color_mode
 
 The Dark Mode Toggle component lets users switch between light and dark themes.
 
-```python demo exec toggle
+```python demo exec
 import reflex as rx
 from reflex.style import set_color_mode, color_mode
 

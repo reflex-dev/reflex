@@ -108,8 +108,5 @@ class RadixThemesPlugin(Plugin):
         )
         self._app_theme_warning_emitted = True
 
-        if self._explicit:
-            return
-
         self.enabled = True
         self.theme = theme

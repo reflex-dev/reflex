@@ -237,6 +237,12 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
+        # Pin dev mode like `reflex run` does. A previous AppHarnessProd in
+        # this process ran export(), which sets REFLEX_ENV_MODE=prod for the
+        # whole process; compiling a dev app in leaked prod mode enables route
+        # prerendering, so the dev server serves prerendered page HTML whose
+        # hydration failures break event delivery (notably under vite >= 8.2).
+        environment.REFLEX_ENV_MODE.set(reflex.constants.Env.DEV)
         # Reset the global memo registry so previous AppHarness apps do not
         # leak compiled component definitions into the next test app.
         MEMOS.clear()
