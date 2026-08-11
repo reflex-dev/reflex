@@ -11,7 +11,7 @@ The shape of the flow is one idea: **a directory group is a team, and a team hol
 
 ```md alert info
 # Plan availability
-Everything on this page is Enterprise. SCIM, service accounts, and granting a team a project role are all refused on lower plans. If a step returns a plan error, [contact sales](https://reflex.dev/pricing/).
+Steps 1 to 3 are Enterprise: service accounts, SCIM, and granting a team a project role are all refused on lower plans. If one of them returns a plan error, [contact sales](https://reflex.dev/pricing/). Step 4 carries no plan gate at all, only the instance-admin requirement described there. On a self-hosted deployment that does not enforce plans, SCIM is governed by a deployment switch rather than by a tier.
 ```
 
 ## The four steps
@@ -48,7 +48,7 @@ A token bound to a service account authenticates as that account. Nothing about 
 
 The same applies in reverse: revoking the service account's project role stops the provisioner, whatever the operator who created it can still do by hand.
 
-A service account's project access is managed only from organization settings. The project members API refuses to change it, and returns `a service account's project access is managed from organization settings.` if you try.
+A service account's project access is managed only from organization settings. The project members API will not do it either: a service account deliberately holds no organization membership row, so that call is refused with `user is not a member of this project's organization.` before it ever looks at the role you asked for. The message is about membership, but the fix is to grant the role in organization settings.
 
 ### Mint a token bound to it
 
@@ -112,7 +112,7 @@ A Group is a [team](/docs/ai/organization/teams/), and **the group's SCIM resour
 
 ## Step 3: permissions, granted to the team
 
-This is the step that turns a synced group into access. Three endpoints, all authenticated with the service account's token.
+This is the step that turns a synced group into access. Three team endpoints, plus the project's role listing to find the role names they take, all authenticated with the service account's token.
 
 Role names are per-project. List them first:
 
@@ -181,8 +181,10 @@ A project's Kubernetes namespace decides which cluster tenant its sandboxes run 
 
 ```md alert warning
 # A service account can never be an instance admin
-The provisioning token from step 1 will not work here, whoever created it. Instance admin is a property of a user account, and a service account can never hold it. Drive these two endpoints with an unrestricted token belonging to an operator who is an instance admin. On-premise, that is your own platform team, so this costs nothing beyond using a different credential for this step. A token restricted with `access` is also refused, even when its owner is an instance admin.
+The provisioning token from step 1 will not work here, whoever created it. Instance admin is a property of a user account, and a service account can never hold it. Drive these two endpoints with an unrestricted token belonging to an operator who is an instance admin. On-premise, that is your own platform team, so this costs nothing beyond using a different credential for this step.
 ```
+
+Scoping that operator token does not buy much. A token carrying an `access` map reaches these endpoints only if it grants account-level write, which is already most of what an instance admin can do, so anything genuinely narrow is refused here even though its owner is an instance admin. Treat this credential as a privileged one and keep it out of the provisioning system.
 
 ### The organization default, for projects that do not exist yet
 
@@ -282,6 +284,7 @@ A reconciliation loop, if you run one, should:
 | Symptom | Cause |
 | --- | --- |
 | Every call 403s after switching to the service account token | The service account does not hold a role on the project. Grant it Admin from organization settings. |
+| 400 `user is not a member of this project's organization.` when adding the service account to a project | Expected. A service account holds no organization membership row, and its project access is granted from organization settings instead. |
 | 403 on the team grant with a mention of the plan | Granting a team project access is Enterprise. |
 | A grant returns 200 but nobody has access | `status` is `pending_approval`. The project gates member changes, and an approver has to accept. |
 | 400: teams cannot hold an admin-tier role | Grant admin per person; a group grant cannot carry it. |
