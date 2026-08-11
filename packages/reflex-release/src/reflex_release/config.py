@@ -25,6 +25,7 @@ TOOL_TABLE = "reflex-release"
 
 _KNOWN_KEYS = frozenset({
     "cli-command",
+    "dispatch-package-inputs",
     "root-package",
     "root-source-dirs",
     "packages-dir",
@@ -70,6 +71,9 @@ class Config:
         root: The repository root (the directory holding ``pyproject.toml``).
         cli_command: How the scaffolded workflows invoke this tool. ``init``
             writes it pinned to the version that generated them.
+        dispatch_package_inputs: How the Dispatch release workflow asks which
+            packages to release — ``checkboxes``, a free-text ``text`` field, or
+            ``auto`` (checkboxes while they fit under the GitHub input limit).
         news_directory: The fragment directory inside each package, taken from
             towncrier's ``directory`` setting.
         changelog_filename: The changelog file inside each package, taken from
@@ -102,6 +106,7 @@ class Config:
 
     root: Path
     cli_command: str = "uvx reflex-release"
+    dispatch_package_inputs: str = "auto"
     news_directory: str = "news"
     changelog_filename: str = "CHANGELOG.md"
     root_package: str | None = None
@@ -565,6 +570,7 @@ def load_config(root: Path) -> Config:
     config = Config(
         root=root,
         cli_command=table.get("cli-command", "uvx reflex-release"),
+        dispatch_package_inputs=table.get("dispatch-package-inputs", "auto"),
         news_directory=towncrier.get("directory") or "news",
         changelog_filename=towncrier.get("filename") or "CHANGELOG.md",
         root_package=root_package,
@@ -583,6 +589,12 @@ def load_config(root: Path) -> Config:
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
     )
+
+    if config.dispatch_package_inputs not in {"auto", "checkboxes", "text"}:
+        fail(
+            f"[tool.{TOOL_TABLE}] dispatch-package-inputs must be one of "
+            f"auto, checkboxes, text (got {config.dispatch_package_inputs!r})"
+        )
 
     packages = config.all_packages()
     if not packages:

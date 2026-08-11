@@ -14,6 +14,11 @@ name: changelog
 # 2. Every package whose source the PR touches must add a news fragment under
 #    its news/ directory. Waive with the 'skip-changelog' label for changes
 #    that are genuinely not user-facing.
+#
+# 3. The generated release workflows must match what the pinned reflex-release
+#    version produces from [tool.reflex-release] — adding a package or editing
+#    the configuration without re-running `@@CLI@@ sync` fails here rather than
+#    at release time.
 
 permissions:
   contents: read
@@ -48,3 +53,5 @@ jobs:
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: @@CLI@@ changelog-check
+      - name: Check the release workflows are up to date
+        run: @@CLI@@ sync --check

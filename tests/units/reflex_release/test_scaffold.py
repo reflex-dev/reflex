@@ -6,20 +6,27 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 from reflex_release.actions import ReleaseError
+from reflex_release.commands import _split_selection
 from reflex_release.config import Config, load_config
 from reflex_release.scaffold import (
     CORE_WORKFLOWS,
     INTERNAL_WORKFLOW,
+    MAX_DISPATCH_CHECKBOXES,
     WORKFLOW_DIR,
     default_cli_command,
+    dispatch_inputs,
     init,
     managed_workflows,
     render,
     sync,
     towncrier_config_toml,
+    use_checkboxes,
 )
 from reflex_release.versions import ACTIONS
+
+from .conftest import write_lockstep
 
 
 def test_render_substitutes_every_placeholder(config: Config) -> None:
@@ -74,6 +81,118 @@ def test_internal_workflow_is_only_generated_when_configured(
     reloaded = load_config(repo)
     assert managed_workflows(reloaded) == (*CORE_WORKFLOWS, INTERNAL_WORKFLOW)
     assert '- "packages/widget-core/**"' in render(INTERNAL_WORKFLOW, reloaded)
+
+
+def add_packages(repo: Path, *names: str) -> Config:
+    """Add sub-packages to the temporary repository and reload its config.
+
+    Args:
+        repo: The repository root.
+        *names: The sub-package directory names to create.
+
+    Returns:
+        The reloaded configuration.
+    """
+    for name in names:
+        directory = repo / "packages" / name
+        (directory / "src").mkdir(parents=True)
+        (directory / "pyproject.toml").write_text(f'[project]\nname = "{name}"\n')
+    return load_config(repo)
+
+
+@pytest.mark.parametrize("mode", ["checkboxes", "text"])
+def test_rendered_workflows_are_valid_yaml(
+    config: Config, repo: Path, mode: str
+) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            "[tool.reflex-release]",
+            f'[tool.reflex-release]\ndispatch-package-inputs = "{mode}"',
+        )
+    )
+    reloaded = load_config(repo)
+    for name in managed_workflows(reloaded):
+        document = yaml.safe_load(render(name, reloaded))
+        assert document["jobs"], name
+
+
+def test_dispatch_inputs_give_a_lockstep_group_one_checkbox(
+    config: Config, repo: Path
+) -> None:
+    write_lockstep(repo)
+    reloaded = load_config(repo)
+    entries = dispatch_inputs(reloaded)
+    assert [entry.input_id for entry in entries] == ["mypkg"]
+    assert entries[0].packages == ("mypkg", "widget-core")
+    assert entries[0].description == "mypkg (with widget-core)"
+
+
+def test_checkboxes_select_every_member_of_a_lockstep_group(
+    config: Config, repo: Path
+) -> None:
+    write_lockstep(repo)
+    reloaded = load_config(repo)
+    rendered = render("dispatch_release.yml", reloaded)
+    assert "      mypkg:\n" in rendered
+    assert "      widget_core:\n" not in rendered
+    # The folded scalar must be indented past its key, or the YAML is invalid.
+    packages = yaml.safe_load(rendered)["jobs"]["materialize"]["steps"][2]["env"][
+        "PACKAGES"
+    ]
+    assert packages == "${{ inputs.mypkg && 'mypkg,widget-core' || '' }}"
+
+
+def test_selection_parser_accepts_the_folded_scalar_shape() -> None:
+    """The contract between the rendered PACKAGES scalar and the planner.
+
+    GitHub folds the multi-line scalar into one space-separated line, and every
+    unchecked box evaluates to an empty string.
+    """
+    assert _split_selection(" mypkg,widget-core  gadget ") == [
+        "mypkg",
+        "widget-core",
+        "gadget",
+    ]
+    assert _split_selection("   ") == []
+
+
+def test_auto_falls_back_to_free_text_past_the_input_limit(
+    config: Config, repo: Path
+) -> None:
+    assert use_checkboxes(config)
+    reloaded = add_packages(
+        repo, *(f"pkg-{index}" for index in range(MAX_DISPATCH_CHECKBOXES))
+    )
+    assert len(dispatch_inputs(reloaded)) > MAX_DISPATCH_CHECKBOXES
+    assert not use_checkboxes(reloaded)
+    rendered = render("dispatch_release.yml", reloaded)
+    assert "      packages:\n" in rendered
+    assert (
+        yaml.safe_load(rendered)["jobs"]["materialize"]["steps"][2]["env"]["PACKAGES"]
+        == "${{ inputs.packages }}"
+    )
+
+
+def test_dispatch_package_inputs_can_be_forced(config: Config, repo: Path) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            "[tool.reflex-release]",
+            '[tool.reflex-release]\ndispatch-package-inputs = "text"',
+        )
+    )
+    assert not use_checkboxes(load_config(repo))
+
+
+def test_colliding_package_names_are_rejected(config: Config, repo: Path) -> None:
+    reloaded = add_packages(repo, "widget_core")
+    with pytest.raises(ReleaseError, match="collide as workflow inputs"):
+        dispatch_inputs(reloaded)
+
+
+def test_changelog_workflow_checks_for_workflow_drift(config: Config) -> None:
+    assert "sync --check" in render("changelog.yml", config)
 
 
 def test_sync_writes_then_verifies(config: Config, repo: Path) -> None:

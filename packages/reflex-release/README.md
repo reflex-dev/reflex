@@ -43,15 +43,32 @@ give every package a [tag-derived version](#tag-derived-versions), and commit.
 | `.github/workflows/dispatch_release.yml` | manual | Materializes news fragments into `CHANGELOG.md` at the next version. Final releases land through a pull request; prereleases go straight to an `r/pre-*` branch. |
 | `.github/workflows/release_from_changelog.yml` | push to `main`, `r/pre-**`, `r/hotfix/**` | Publishes any changelog version that has no git tag. |
 | `.github/workflows/publish.yml` | called by the two above, or manual | Builds one package, waits for `pypi` environment approval, uploads, then tags and creates the GitHub release. |
-| `.github/workflows/changelog.yml` | pull request | Requires a news fragment for every package the PR touches, and rejects hand-written version headings. |
+| `.github/workflows/changelog.yml` | pull request | Requires a news fragment for every package the PR touches, rejects hand-written version headings, and fails if the generated workflows have drifted. |
 | `.github/workflows/auto_release_internal.yml` | push to `main` | Only for repos with `internal-packages`: patch-releases them whenever they change. |
 
-The workflows are copied into your repository rather than referenced across
-repositories. That is deliberate: PyPI trusted publishing validates the OIDC
-`job_workflow_ref` claim, which names the repository owning the workflow file,
-so a publish workflow living elsewhere cannot be trusted by your project's
-publisher. `reflex-release sync` regenerates them and `sync --check` fails CI
-when they drift, so upgrading is still a one-line version bump.
+### Why the workflows are copied, not referenced
+
+Three constraints rule out `uses: reflex-dev/reflex-release/.github/workflows/...`:
+
+- **Trusted publishing.** PyPI validates the OIDC `job_workflow_ref` claim,
+  which names the repository owning the workflow file. A publish workflow
+  hosted elsewhere cannot be trusted by your project's publisher.
+- **`release_from_changelog` calls `publish.yml`** through a `./` path, and
+  `./` resolves against the repository holding the calling file. Hosted here,
+  it would call *this* project's publish workflow instead of yours.
+- **Triggers belong to the file that declares them.** `on: pull_request`,
+  `on: push` and the `workflow_dispatch` inputs must be files in your
+  repository regardless of where the job bodies live — so every workflow needs
+  a local file anyway.
+
+That leaves the job bodies of two workflows as the only shareable part, which
+is not worth a floating cross-repository dependency on the most privileged path
+in your release.
+
+Drift is handled instead of avoided: the files are generated, `reflex-release
+sync` regenerates them, and the pull-request workflow runs `sync --check`, so a
+stale workflow is a red PR rather than a surprise at release time. Upgrading is
+a one-line `cli-command` bump plus `sync`.
 
 ## Configuration
 
@@ -107,6 +124,12 @@ internal-packages = []
 
 # Packages excluded from the pull-request news-fragment requirement.
 changelog-exempt-packages = []
+
+# How the Dispatch release form asks which packages to release: one checkbox
+# per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
+# checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
+# free text beyond it. Default: "auto".
+dispatch-package-inputs = "auto"
 ```
 
 Package names are **directory names**: `mypkg` for the root package (whatever
@@ -269,9 +292,17 @@ Once per repository:
 
 ## Cutting a release
 
-Run **Dispatch release** from the Actions tab. Leave *packages* empty to
-auto-select: packages with pending news fragments, or — for
+Run **Dispatch release** from the Actions tab. Each package gets its own
+checkbox, generated from your configuration; a lockstep group gets a single
+checkbox covering all its members, since they only ever release together.
+Selecting nothing auto-selects: packages with pending news fragments, or — for
 `release-from-prerelease` — packages whose changelog is topped by an alpha.
+
+Because the checkboxes are generated, **adding or removing a package changes
+`dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
+package. The pull-request drift check catches it if you forget. Past ten
+packages (GitHub's `workflow_dispatch` input limit) the form falls back to a
+comma-separated text field; see `dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |
@@ -319,12 +350,10 @@ unzip -l "$BUILD_DIR"/dist/*.whl | grep -q '\.pyi$' || {
 
 ## Keeping the workflows current
 
-Bump `cli-command`, run `reflex-release sync`, commit. To catch drift, add this
-to an existing CI job:
-
-```yaml
-- run: uvx reflex-release@0.1.0 sync --check
-```
+Bump `cli-command` in `pyproject.toml`, run `reflex-release sync`, commit the
+result. The generated `changelog.yml` already runs `sync --check` on every pull
+request, so a workflow that no longer matches your configuration — or a package
+added without re-syncing — fails CI there rather than at release time.
 
 `sync` refuses to overwrite a workflow file it did not generate unless you pass
 `--force`, so a hand-written `publish.yml` is never clobbered silently.

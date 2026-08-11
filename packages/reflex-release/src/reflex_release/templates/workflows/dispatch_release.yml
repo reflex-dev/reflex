@@ -7,10 +7,13 @@ name: Dispatch release
 # any changelog version that has no git tag yet and uploads it once the pypi
 # environment deployment is approved).
 #
-# Leaving "packages" empty auto-selects the packages to release: those with
-# pending news fragments — or, for release-from-prerelease, those whose
-# changelog is topped by an alpha (the train's fragments are already
-# consumed). Selecting one member of a lockstep group selects them all.
+# Selecting no package auto-selects the ones to release: those with pending
+# news fragments — or, for release-from-prerelease, those whose changelog is
+# topped by an alpha (the train's fragments are already consumed). Lockstep
+# groups share one checkbox: their members only ever release together.
+#
+# The package list is generated from [tool.reflex-release] — after adding or
+# removing a package, re-run `@@CLI@@ sync`.
 #
 # Prerelease actions (new-prerelease-*, continued-prerelease) write alpha
 # versions and push them straight to an @@PRERELEASE_PREFIX@@<date> branch
@@ -55,11 +58,7 @@ on:
         default: continued-prerelease
         options:
 @@ACTION_OPTIONS@@
-      packages:
-        description: "Packages to release (comma-separated; empty auto-selects)"
-        required: false
-        type: string
-        default: ""
+@@PACKAGE_INPUTS@@
 
 permissions:
   contents: read
@@ -86,7 +85,10 @@ jobs:
         id: plan
         env:
           ACTION: ${{ inputs.action }}
-          PACKAGES: ${{ inputs.packages }}
+          # Each unselected package contributes an empty string, so selecting
+          # nothing leaves PACKAGES blank and the planner auto-selects.
+          PACKAGES: >-
+@@PACKAGE_SELECTION@@
         run: @@CLI@@ plan
       - name: Materialize changelogs
         env:

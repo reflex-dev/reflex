@@ -1,18 +1,29 @@
 """Scaffolding and drift-checking of the GitHub Actions workflows.
 
 The workflows are copied into the consumer repository rather than referenced as
-cross-repository reusable workflows: PyPI trusted publishing validates the OIDC
-``job_workflow_ref`` claim, which points at the repository that owns the
-workflow file, so a publish workflow living somewhere else cannot be trusted by
-the project's own PyPI publisher.
+cross-repository reusable workflows. Three constraints add up to that:
 
-``sync`` re-renders the templates from the repository's configuration, so an
-upgrade is a version bump plus one command, and ``sync --check`` fails CI when a
-scaffolded file drifts from what the installed version would generate.
+- PyPI trusted publishing validates the OIDC ``job_workflow_ref`` claim, which
+  names the repository owning the workflow file, so a publish workflow living
+  somewhere else cannot be trusted by the project's own publisher.
+- ``release_from_changelog`` calls ``publish.yml`` through a ``./`` path, which
+  resolves against the repository holding the *calling* file. Hosted elsewhere,
+  it would call this project's publish workflow instead of the consumer's.
+- Triggers live in the workflow that declares them: ``on: pull_request``,
+  ``on: push`` and the ``workflow_dispatch`` inputs all have to be files in the
+  consumer repository no matter where the job bodies live.
+
+What is left to share is the job bodies of two workflows, which is not worth a
+floating cross-repository dependency on the most privileged path in the
+release. ``sync`` re-renders every template from the repository's
+configuration, so an upgrade is a version bump plus one command, and the
+generated pull-request workflow runs ``sync --check`` so drift fails CI instead
+of surfacing at release time.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import difflib
 import re
 import subprocess
@@ -21,6 +32,7 @@ from pathlib import Path
 
 from .actions import echo, fail
 from .config import Config, load_config, load_pyproject
+from .discovery import releasable_packages
 from .versions import ACTIONS
 
 WORKFLOW_DIR = ".github/workflows"
@@ -32,6 +44,9 @@ CORE_WORKFLOWS = (
     "release_from_changelog.yml",
     "publish.yml",
 )
+
+#: ``workflow_dispatch`` accepts at most ten inputs, one of which is the action.
+MAX_DISPATCH_CHECKBOXES = 9
 
 #: Workflow scaffolded only for repositories that declare internal packages.
 INTERNAL_WORKFLOW = "auto_release_internal.yml"
@@ -96,6 +111,137 @@ def managed_workflows(config: Config) -> tuple[str, ...]:
     return CORE_WORKFLOWS
 
 
+@dataclasses.dataclass(frozen=True)
+class DispatchInput:
+    """One checkbox on the Dispatch release form.
+
+    Attributes:
+        input_id: The ``workflow_dispatch`` input name.
+        description: The label GitHub shows next to the checkbox.
+        packages: The packages the checkbox selects — more than one for a
+            lockstep group, whose members can only be released together.
+    """
+
+    input_id: str
+    description: str
+    packages: tuple[str, ...]
+
+
+def _input_id(package: str) -> str:
+    """Return the ``workflow_dispatch`` input name for a package.
+
+    Args:
+        package: The package name.
+
+    Returns:
+        The package name reduced to lowercase word characters.
+    """
+    return re.sub(r"[^a-z0-9_]", "_", package.lower())
+
+
+def dispatch_inputs(config: Config) -> list[DispatchInput]:
+    """List the package checkboxes the Dispatch release workflow offers.
+
+    Lockstep members share one checkbox: they can only be released together, so
+    offering them separately would invite a selection the planner has to
+    silently widen anyway.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        One entry per releasable package or lockstep group, in repository order.
+    """
+    inputs: list[DispatchInput] = []
+    covered: set[str] = set()
+    for package in releasable_packages(config):
+        if package in covered:
+            continue
+        partners = config.lockstep_partners(package)
+        covered.add(package)
+        covered.update(partners)
+        inputs.append(
+            DispatchInput(
+                input_id=_input_id(package),
+                description=(
+                    f"{package} (with {', '.join(partners)})" if partners else package
+                ),
+                packages=(package, *partners),
+            )
+        )
+    ids = [entry.input_id for entry in inputs]
+    if len(set(ids)) != len(ids):
+        fail(
+            "package names collide as workflow inputs after normalization: "
+            f"{sorted(name for name in ids if ids.count(name) > 1)}"
+        )
+    return inputs
+
+
+def use_checkboxes(config: Config) -> bool:
+    """Return whether the Dispatch release form should render checkboxes.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        True for checkboxes, False for the free-text package field. ``auto``
+        falls back to free text once the checkboxes would exceed the
+        ``workflow_dispatch`` input limit.
+    """
+    if config.dispatch_package_inputs != "auto":
+        return config.dispatch_package_inputs == "checkboxes"
+    return len(dispatch_inputs(config)) <= MAX_DISPATCH_CHECKBOXES
+
+
+def _package_input_block(config: Config) -> str:
+    """Render the package selection inputs of the Dispatch release workflow.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The YAML block, indented under ``inputs:``.
+    """
+    if not use_checkboxes(config):
+        return (
+            "      packages:\n"
+            '        description: "Packages to release (comma-separated; '
+            'empty auto-selects)"\n'
+            "        required: false\n"
+            "        type: string\n"
+            '        default: ""'
+        )
+    return "\n".join(
+        f"      {entry.input_id}:\n"
+        f'        description: "{entry.description}"\n'
+        "        type: boolean\n"
+        "        default: false"
+        for entry in dispatch_inputs(config)
+    )
+
+
+def _package_selection_block(config: Config) -> str:
+    """Render the expression that turns the inputs into a package selection.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The folded-scalar body of the ``PACKAGES`` environment variable,
+        indented under its key. Every unchecked box contributes an empty
+        string, so leaving them all unchecked keeps the auto-selection
+        behavior.
+    """
+    if not use_checkboxes(config):
+        return "            ${{ inputs.packages }}"
+    return "\n".join(
+        f"            ${{{{ inputs.{entry.input_id} && "
+        f"'{','.join(entry.packages)}' || '' }}}}"
+        for entry in dispatch_inputs(config)
+    )
+
+
 def _indented_list(items: list[str], indent: int) -> str:
     """Render a YAML sequence of scalars at a fixed indentation.
 
@@ -136,6 +282,8 @@ def render(name: str, config: Config) -> str:
         "@@HOTFIX_PREFIX@@": config.hotfix_branch_prefix,
         "@@RELEASE_PREFIX@@": config.release_branch_prefix,
         "@@ACTION_OPTIONS@@": _indented_list(list(ACTIONS), 10),
+        "@@PACKAGE_INPUTS@@": _package_input_block(config),
+        "@@PACKAGE_SELECTION@@": _package_selection_block(config),
         "@@INTERNAL_PATHS@@": _indented_list(internal_paths, 6),
     }
     text = (TEMPLATE_DIR / name).read_text()

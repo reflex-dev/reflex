@@ -105,6 +105,7 @@ dev = [
   "pytest-split",
   "pytest",
   "python-dotenv",
+  "pyyaml",
   "reflex-docgen",
   "reflex-release",
   "reflex-site-shared",
