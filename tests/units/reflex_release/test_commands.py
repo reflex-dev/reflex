@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 
@@ -256,6 +257,29 @@ def test_materialize_collapses_a_prerelease_train(
     assert "a1" not in text
     assert "First. (#1)" in text
     assert "A fix." in text
+
+
+def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A member dragged along by its lockstep sibling needs no hand-written entry."""
+    write_lockstep(repo)
+    reloaded = load_config(repo)
+    fragment(reloaded, "widget-core", "3.feature.md", "A real change.")
+    # The partner has nothing to say — not even a news directory.
+    shutil.rmtree(reloaded.news_dir("mypkg"))
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "widget-core")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+
+    partner = reloaded.changelog_path("mypkg").read_text()
+    assert partner.startswith("## v0.1.0 (")
+    assert "No significant changes." in partner
+    assert "A real change." in reloaded.changelog_path("widget-core").read_text()
+    # Both sides land on one version, so detection does not fail closed.
+    commands.cmd_detect(reloaded, "main")
+    assert outputs()["any"] == "true"
 
 
 def test_materialize_rejects_an_empty_plan(config: Config) -> None:

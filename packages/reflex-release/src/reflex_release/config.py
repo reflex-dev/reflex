@@ -34,7 +34,7 @@ _KNOWN_KEYS = frozenset({
     "prerelease-branch-prefix",
     "hotfix-branch-prefix",
     "release-branch-prefix",
-    "root-tag-prefix",
+    "tag-prefix",
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
@@ -89,8 +89,8 @@ class Config:
             versions and prereleases.
         release_branch_prefix: Prefix of the branches release pull requests are
             opened from.
-        root_tag_prefix: Tag prefix for the root package (sub-packages always
-            use ``<package>-v``).
+        tag_prefix: Version prefix of the git tags. The root package is tagged
+            ``<tag-prefix><version>``, a sub-package ``<package>-<tag-prefix><version>``.
         latest_release_package: The package whose final releases are marked
             "Latest" on GitHub, or None to never mark one.
         internal_packages: Packages released by patch-bumping their newest tag
@@ -113,7 +113,7 @@ class Config:
     prerelease_branch_prefix: str = "r/pre-"
     hotfix_branch_prefix: str = "r/hotfix/"
     release_branch_prefix: str = "release/"
-    root_tag_prefix: str = "v"
+    tag_prefix: str = "v"
     latest_release_package: str | None = None
     internal_packages: tuple[str, ...] = ()
     changelog_exempt_packages: tuple[str, ...] = ()
@@ -170,17 +170,19 @@ class Config:
         """
         return self.package_path(package) / self.news_directory
 
-    def tag_prefix(self, package: str) -> str:
+    def package_tag_prefix(self, package: str) -> str:
         """Return the git tag prefix for a package.
 
         Args:
             package: The package name.
 
         Returns:
-            ``root-tag-prefix`` for the root package (tags like ``v1.2.3``),
-            ``<package>-v`` otherwise (tags like ``mypkg-v1.2.3``).
+            The configured prefix for the root package (tags like ``v1.2.3``),
+            that prefix behind the package name otherwise (``mypkg-v1.2.3``).
         """
-        return self.root_tag_prefix if package == self.root_package else f"{package}-v"
+        if package == self.root_package:
+            return self.tag_prefix
+        return f"{package}-{self.tag_prefix}"
 
     def tag_for(self, package: str, version: str) -> str:
         """Return the git tag name for a package version.
@@ -192,7 +194,7 @@ class Config:
         Returns:
             The tag name.
         """
-        return f"{self.tag_prefix(package)}{version}"
+        return f"{self.package_tag_prefix(package)}{version}"
 
     def sub_packages(self) -> list[str]:
         """List the sub-packages of the repository, alphabetically.
@@ -576,7 +578,7 @@ def load_config(root: Path) -> Config:
         prerelease_branch_prefix=table.get("prerelease-branch-prefix", "r/pre-"),
         hotfix_branch_prefix=table.get("hotfix-branch-prefix", "r/hotfix/"),
         release_branch_prefix=table.get("release-branch-prefix", "release/"),
-        root_tag_prefix=table.get("root-tag-prefix", "v"),
+        tag_prefix=table.get("tag-prefix", "v"),
         latest_release_package=table.get("latest-release-package", root_package),
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),

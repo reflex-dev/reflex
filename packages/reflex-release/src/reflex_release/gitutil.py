@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from packaging.version import InvalidVersion, Version
 
-from .actions import fail
+from .actions import echo, fail
 from .config import Config, is_final
 
 BOT_NAME = "github-actions[bot]"
@@ -117,7 +118,7 @@ def tag_versions(config: Config, package: str) -> list[Version]:
     Returns:
         The parsed versions, unordered.
     """
-    prefix = config.tag_prefix(package)
+    prefix = config.package_tag_prefix(package)
     versions: list[Version] = []
     for line in git(["tag", "-l", f"{prefix}*"], cwd=config.root).splitlines():
         raw = line.removeprefix(prefix).strip()
@@ -200,10 +201,8 @@ def remote_branch_exists(root: Path, branch: str) -> bool:
     )
 
 
-def gh(
-    args: list[str], cwd: Path, check: bool = True
-) -> subprocess.CompletedProcess[str]:
-    """Run a GitHub CLI command.
+def gh_run(args: list[str], cwd: Path, check: bool = True) -> int:
+    """Run a GitHub CLI command, letting it write straight to the job log.
 
     Args:
         args: The ``gh`` arguments.
@@ -211,11 +210,33 @@ def gh(
         check: Whether a non-zero exit should fail the release command.
 
     Returns:
-        The completed process, with stdout and stderr captured.
+        The exit status of ``gh``.
+    """
+    echo(f"$ gh {' '.join(args)}")
+    sys.stdout.flush()
+    returncode = subprocess.run(["gh", *args], cwd=cwd, check=False).returncode
+    if check and returncode != 0:
+        fail(f"gh {' '.join(args)} failed (exit {returncode}); see the output above")
+    return returncode
+
+
+def gh_output(args: list[str], cwd: Path, check: bool = True) -> str:
+    """Run a GitHub CLI command whose stdout is consumed by the caller.
+
+    Args:
+        args: The ``gh`` arguments.
+        cwd: The repository directory.
+        check: Whether a non-zero exit should fail the release command.
+
+    Returns:
+        The command's stdout, stripped. Empty when it failed and ``check`` is
+        False.
     """
     result = subprocess.run(
         ["gh", *args], cwd=cwd, capture_output=True, text=True, check=False
     )
-    if check and result.returncode != 0:
-        fail(f"gh {' '.join(args)} failed: {result.stderr.strip()}")
-    return result
+    if result.returncode != 0:
+        if check:
+            fail(f"gh {' '.join(args)} failed: {result.stderr.strip()}")
+        return ""
+    return result.stdout.strip()

@@ -33,6 +33,15 @@ def test_paths_and_tags(config: Config) -> None:
     assert config.all_packages() == ["mypkg", "widget-core"]
 
 
+def test_tag_prefix_applies_to_sub_packages_too(config: Config, repo: Path) -> None:
+    write_config(
+        repo, 'root-package = "mypkg"\npackages-dir = "packages"\ntag-prefix = ""\n'
+    )
+    reloaded = load_config(repo)
+    assert reloaded.tag_for("mypkg", "1.2.3") == "1.2.3"
+    assert reloaded.tag_for("widget-core", "1.2.3") == "widget-core-1.2.3"
+
+
 def test_root_source_dirs_default_to_src_layout(config: Config) -> None:
     assert config.root_source_dirs == ("src",)
 

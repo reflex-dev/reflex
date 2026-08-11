@@ -92,8 +92,10 @@ prerelease-branch-prefix = "r/pre-"
 hotfix-branch-prefix = "r/hotfix/"
 release-branch-prefix = "release/"
 
-# Tag prefix for the root package. Sub-packages always use "<package>-v".
-root-tag-prefix = "v"
+# Version prefix of the git tags: the root package is tagged
+# "<tag-prefix><version>" (v1.2.3), a sub-package
+# "<package>-<tag-prefix><version>" (widget-core-v1.2.3).
+tag-prefix = "v"
 
 # The package whose final releases are marked "Latest" on GitHub.
 # Default: the root package. Set to nothing to never mark one.
@@ -132,8 +134,12 @@ This gives you, for free:
 - `release_from_changelog` publishes `publish-last` members only after the rest
   of the batch succeeded — never shipping a wheel whose exact pin does not
   exist on PyPI yet;
+- a member with nothing to report still gets its section, holding towncrier's
+  "No significant changes." placeholder — nobody hand-writes a changelog entry
+  just to satisfy the invariant, and a member does not even need a `news/`
+  directory;
 - detection **fails closed** if one member's changelog is bumped without the
-  other's.
+  other's (re-dispatching a release fixes it, materializing the whole group).
 
 `pin-exact` rewrites the requirement in the publishing package's
 `pyproject.toml` at build time only; it is never committed.
@@ -237,8 +243,10 @@ same prefixes. The `verify-dist` step fails the build when the produced
 artifacts do not carry the expected version, so a misconfigured prefix is caught
 before anything is uploaded rather than shipping `0.0.0dev0` to PyPI.
 
-If your repository already tags releases some other way, set `root-tag-prefix`
-to match. Sub-package prefixes (`<name>-v`) are fixed.
+If your repository already tags releases some other way, set `tag-prefix` to
+match — it applies to both the root package (`<tag-prefix>1.2.3`) and
+sub-packages (`<name>-<tag-prefix>1.2.3`), so `tag-prefix = ""` gives you bare
+`1.2.3` and `widget-core-1.2.3` tags.
 
 ## GitHub setup
 

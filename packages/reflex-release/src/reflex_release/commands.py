@@ -39,7 +39,8 @@ from .dist import pin_exact, verify_dist
 from .gitutil import (
     changed_files,
     configure_bot_identity,
-    gh,
+    gh_output,
+    gh_run,
     git,
     git_push,
     git_run,
@@ -112,8 +113,10 @@ def _lockstep_errors(config: Config, due: dict[str, str]) -> list[str]:
                 errors.append(
                     f"{package} v{version} is due but its lockstep partner {partner} "
                     f"is neither due at v{version} nor already tagged {partner_tag}; "
-                    "publishing would break their exact pin. Materialize both "
-                    "changelogs together (Dispatch release workflow)."
+                    "publishing would break their exact pin. Re-run the Dispatch "
+                    "release workflow: selecting either member materializes the "
+                    "whole group, writing an empty changelog entry for members "
+                    "that have no news fragments."
                 )
     return errors
 
@@ -717,7 +720,7 @@ def cmd_open_release_pr(
     _commit_changelogs(config, f"Materialize changelogs for {summary} ({action})")
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
-    url = gh(
+    url = gh_output(
         [
             "pr",
             "create",
@@ -731,15 +734,16 @@ def cmd_open_release_pr(
             str(body_file),
         ],
         config.root,
-    ).stdout.strip()
+    )
+    echo(f"opened {url}")
 
     # The PR only rewrites changelogs and deletes consumed news fragments, so
     # the fragment check does not apply. Label failure is not fatal.
-    if gh(
+    if gh_run(
         ["pr", "edit", url, "--add-label", SKIP_CHANGELOG_LABEL],
         config.root,
         check=False,
-    ).returncode:
+    ):
         notice(f"could not add the {SKIP_CHANGELOG_LABEL} label to {url}")
 
     write_summary(["## Release PR opened", "", url, "", f"Releases: {summary}"])
@@ -782,7 +786,7 @@ def cmd_push_prerelease(
     # Pushes made with GITHUB_TOKEN do not fire on-push workflows, so dispatch
     # the changelog check explicitly. Building is automatic; the upload itself
     # still waits for pypi environment approval.
-    gh(["workflow", "run", RELEASE_WORKFLOW, "--ref", branch], config.root)
+    gh_run(["workflow", "run", RELEASE_WORKFLOW, "--ref", branch], config.root)
 
     write_summary([
         "## Prerelease pushed",
@@ -833,12 +837,9 @@ def cmd_create_release(
         mark_latest: Whether to mark the release as "Latest".
         notes_path: File holding the release notes.
     """
-    if (
-        gh(
-            ["release", "view", tag, "--json", "name"], config.root, check=False
-        ).returncode
-        == 0
-    ):
+    # A probe, not an action: keep its output (and its "not found" stderr on the
+    # normal path) out of the job log.
+    if gh_output(["release", "view", tag, "--json", "name"], config.root, check=False):
         echo(f"Release {tag} already exists; skipping (safe re-run).")
         return
     args = [
@@ -856,7 +857,7 @@ def cmd_create_release(
         args += ["--prerelease", "--latest=false"]
     else:
         args.append("--latest" if mark_latest else "--latest=false")
-    gh(args, config.root)
+    gh_run(args, config.root)
 
 
 def cmd_packages(config: Config) -> None:

@@ -204,7 +204,12 @@ def run_towncrier(config: Config, args: list[str], check: bool = True) -> int:
 
 
 def build_changelog(config: Config, package: str, version: str, date_str: str) -> None:
-    """Materialize a package's news fragments into its ``CHANGELOG.md``.
+    """Materialize a package's news fragments into its changelog.
+
+    A package with no pending fragments — a lockstep member dragged along by a
+    sibling's release, typically — still gets a section, holding towncrier's
+    "No significant changes." placeholder. Nobody has to hand-write an entry
+    just to satisfy the lockstep invariant.
 
     Args:
         config: The repository configuration.
