@@ -91,6 +91,10 @@ def collapse_imports(
 ) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
+    Deduplication preserves first-occurrence order: compiled import statements
+    follow this order, and a hash-seed-dependent order would rewrite every
+    page/memo module on each dev reload, defeating granular HMR.
+
     Args:
         imports: The import dict to collapse.
 
@@ -98,11 +102,7 @@ def collapse_imports(
         The collapsed import dict.
     """
     return {
-        lib: (
-            list(set(import_vars))
-            if isinstance(import_vars, list)
-            else list(import_vars)
-        )
+        lib: list(dict.fromkeys(import_vars))
         for lib, import_vars in (
             imports if isinstance(imports, tuple) else imports.items()
         )

@@ -292,13 +292,20 @@ if find_spec("pydantic"):
 def serialize_set(value: set) -> list:
     """Serialize a set to a JSON serializable list.
 
+    Sets have no meaningful order and their iteration order varies with the
+    per-process hash seed, so sort when possible to keep serialized output
+    (compiled JSX, config fingerprints) stable across processes.
+
     Args:
         value: The set to serialize.
 
     Returns:
         The serialized list.
     """
-    return list(value)
+    try:
+        return sorted(value)
+    except TypeError:
+        return list(value)
 
 
 @serializer
