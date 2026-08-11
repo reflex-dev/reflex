@@ -233,8 +233,13 @@ Event handler endpoints return the state deltas produced by the handler as
 delta; the stream ends when the handler finishes:
 
 ```
-{"reflex___state____state.tickets___tickets____ticket_state": {"tickets": [], "total_count": 3}}
-{"reflex___state____state.tickets___tickets____ticket_state": {"open_count": 2}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"tickets_rx_state_": [], "total_count_rx_state_": 3}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"open_count_rx_state_": 2}}
+```
+
+```md alert info
+# Streamed deltas carry the framework's internal `_rx_state_` field-marker suffix on var names.
+`POST /_reflex/retrieve_state` strips it — as do the [Auto MCP](/docs/enterprise/mcp/) surfaces — so a state read returns the clean `total_count`. Strip the suffix client-side if you consume the ndjson stream directly.
 ```
 
 For one-shot clients that just want the final state, consume the stream to
@@ -250,7 +255,8 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 ```
 
 State reads redact the session's server-side `client_token` / `session_id` from
-the returned `router` var, so the session token never reaches the client.
+the returned `router` var, so the session token never reaches the client, and
+framework/auth states are dropped from the returned dict.
 
 ## The tickets demo app
 

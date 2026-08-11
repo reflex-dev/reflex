@@ -101,7 +101,7 @@ round-trip to manage.
 | `POST /_reflex/auth/token` | Anonymous session token grant, rate limited per client IP. Shared with `EventHandlerAPIPlugin`. |
 | `POST /_reflex/mcp/upload` | Ticket-authenticated file-upload endpoint used by the upload directions `queue_event` returns. |
 | `/agent-consent` | The consent page shown during the OAuth flow (only with an `AuthPlugin`; route configurable). |
-| `/.well-known/oauth-protected-resource/_reflex/mcp`, `/.well-known/oauth-authorization-server`, `/authorize`, `/token`, `/register`, `/revoke` | The OAuth 2.1 authorization server, when it is enabled. See [Authentication](/docs/enterprise/mcp/authentication/). |
+| `/.well-known/oauth-protected-resource/_reflex/mcp`, `/.well-known/oauth-authorization-server`, `/authorize`, `/token`, `/register-oidc-client`, `/revoke` | The OAuth 2.1 authorization server, when it is enabled. The four endpoint paths are configurable. See [Authentication](/docs/enterprise/mcp/authentication/). |
 
 Change the mount with `MCPPlugin(path="/mcp")`; the upload endpoint and the
 protected-resource metadata follow it.
@@ -134,6 +134,10 @@ resolve), invokes the handler with `payload` as keyword arguments, and returns:
   }
 }
 ```
+
+Var names come back clean: the framework's internal `_rx_state_` field-marker
+suffix is stripped from every agent-facing delta and state read, so an agent
+sees `total_count`, not `total_count_rx_state_`.
 
 The optional `query` object becomes the request's query parameters, which is
 how an agent supplies [dynamic route variables](#dynamic-route-variables) —
@@ -226,12 +230,19 @@ them, returns directions for making the upload out of band:
 }
 ```
 
-The URL is pre-signed with a short-lived ticket bound to the caller's session
+The URL is pre-signed with a **single-use** ticket bound to the caller's session
 **and to that exact handler**, so the agent POSTs the files with no credential
 of its own — the endpoint resolves the ticket and injects the session token
 server-side. Non-file handler arguments ride in a `__reflex_event_args` JSON
 form field that must precede the file parts. Tickets expire after
 `upload_ticket_ttl` (default 5 minutes).
+
+The upload endpoint re-checks the allowlist rather than trusting the request: a
+POST with no valid ticket is a `401`, and one whose `Reflex-Event-Handler`
+doesn't match the handler the ticket was minted for — or names a handler that
+isn't public and upload-shaped — is a `403`. A raw bearer token is not accepted
+there at all, since only the ticket path carries the scope gate and rate limit
+applied when the ticket was minted.
 
 ## Sessions and followup deltas
 
@@ -312,8 +323,10 @@ All arguments are keyword-only and optional.
 | `client_registration_ttl` | 90 days | Lifetime of a dynamic client registration; `None` keeps them forever. |
 | `pending_authorization_ttl` / `authorization_code_ttl` | `600` / `60` | How long a started authorization may wait for login + consent, and the code lifetime (codes are single-use regardless). |
 | `upload_ticket_ttl` | `300` | Lifetime of a pre-signed upload ticket. |
-| `enable_dynamic_client_registration` | `True` | Serve RFC 7591 `/register`. |
-| `enable_token_revocation` | `True` | Serve RFC 7009 `/revoke`. |
+| `enable_dynamic_client_registration` | `True` | Serve RFC 7591 dynamic client registration. |
+| `enable_token_revocation` | `True` | Serve RFC 7009 token revocation. |
+| `registration_path` | `/register-oidc-client` | Origin-root path of the registration endpoint — deliberately not the SDK's bare `/register`, which would shadow an app's own sign-up page. |
+| `authorization_path` / `token_path` / `revocation_path` | `/authorize` / `/token` / `/revoke` | Origin-root paths of the other OAuth endpoints. Override any that collide with your own routes; each must be distinct and outside the MCP mount. |
 | `auth_store` | auto | Token/consent storage. Defaults to Redis when the app's state manager is Redis, otherwise in-process. |
 
 ### Rate limiting

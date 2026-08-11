@@ -115,10 +115,28 @@ no `AuthPlugin` is configured).
 | --- | --- |
 | `/.well-known/oauth-protected-resource/_reflex/mcp` | RFC 9728 protected-resource metadata for the MCP endpoint. |
 | `/.well-known/oauth-authorization-server` | RFC 8414 authorization-server metadata. |
-| `/register` | RFC 7591 dynamic client registration (rate limited per IP; disable with `enable_dynamic_client_registration=False`). |
+| `/register-oidc-client` | RFC 7591 dynamic client registration (rate limited per IP; disable with `enable_dynamic_client_registration=False`). |
 | `/authorize` | Authorization endpoint — redirects to the consent page. |
 | `/token` | Token endpoint (authorization code + refresh grant, refresh rotates on use). |
 | `/revoke` | RFC 7009 revocation (disable with `enable_token_revocation=False`). |
+
+Those four endpoints are served at the **origin root**, ahead of the app's own
+routes, and clients only ever reach them through the metadata document — so
+their paths are configurable when one would collide with a page you serve:
+
+```python
+rxe.MCPPlugin(
+    registration_path="/register-oidc-client",  # the default
+    authorization_path="/authorize",
+    token_path="/token",
+    revocation_path="/revoke",
+)
+```
+
+Registration defaults to `/register-oidc-client` rather than the MCP SDK's bare
+`/register` precisely because that path is a common sign-up route the OAuth
+endpoint would otherwise shadow. Each path must be distinct and must not live
+under the MCP mount, which is checked at wiring time.
 
 The MCP client only ever holds tokens the app issued for its own MCP endpoint;
 upstream identity-provider tokens never leave the server. Upstream refresh

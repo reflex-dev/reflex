@@ -53,6 +53,25 @@ rxe.MCPPlugin(
 `EventHandlerAPIPlugin` has the same setting under the name
 `trusted_proxy_hops`.
 
+## Route collisions
+
+The OAuth endpoints are inserted at the **origin root**, ahead of the SPA
+catch-all, so they win over an app page at the same path. That is why dynamic
+client registration defaults to `/register-oidc-client` instead of the MCP
+SDK's bare `/register` — the latter would shadow a sign-up page. If your app
+serves `/authorize`, `/token`, or `/revoke`, move the OAuth endpoint rather
+than the page:
+
+```python
+rxe.MCPPlugin(token_path="/oauth/token", revocation_path="/oauth/revoke")
+```
+
+Clients discover every endpoint from the authorization-server metadata, so the
+values only need to avoid your routes. They must be distinct from each other
+and must not live under the MCP mount (a route there would be shadowed by the
+mounted sub-app and 404) — both are checked at wiring time, as is the same
+constraint on `consent_path`.
+
 ## Storage
 
 Tokens, pending authorizations, consent records, and upload tickets are stored
