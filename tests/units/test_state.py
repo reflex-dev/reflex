@@ -4480,6 +4480,30 @@ async def test_state_manager_disk_set_state_updates_cache_for_arbitrary_instance
     await state_manager.close()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_state_manager_disk_set_state_persists_untouched_base_state(
+    tmp_path, monkeypatch, write_debounce_seconds
+):
+    """Test that explicitly supplied untouched BaseState values are persisted."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(
+        _write_debounce_seconds=write_debounce_seconds
+    )
+    token = BaseStateToken(ident="client", cls=TestState)
+    state = TestState(_reflex_internal_init=True)
+    state.num2 = 9.5
+    state._was_touched = False
+
+    await state_manager.set_state(token, state)
+    await state_manager.close()
+
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert persisted_state.num2 == 9.5
+    await fresh_state_manager.close()
+
+
 class Obj(Base):
     """A object containing a callable for testing fallback pickle."""
 
