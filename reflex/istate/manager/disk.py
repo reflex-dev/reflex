@@ -334,6 +334,7 @@ class StateManagerDisk(StateManager):
         token = self._coerce_token(token)
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
+            self.states[token.cache_key] = state
             queued_item = self._write_queue.get(token)
             if queued_item is None:
                 self._write_queue[token] = QueueItem(
@@ -346,6 +347,7 @@ class StateManagerDisk(StateManager):
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
+            self.states[token.cache_key] = state
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 

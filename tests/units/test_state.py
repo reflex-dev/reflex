@@ -4455,6 +4455,31 @@ async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_st
     await fresh_state_manager.close()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_state_manager_disk_set_state_updates_cache_for_arbitrary_instance(
+    tmp_path, monkeypatch, write_debounce_seconds
+):
+    """Test that set_state replaces a cached state with the supplied instance."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(
+        _write_debounce_seconds=write_debounce_seconds
+    )
+    token = StateToken(ident="client", cls=dict)
+    cached_state = await state_manager.get_state(token)
+    state = {"value": 2}
+
+    assert state is not cached_state
+
+    await state_manager.set_state(token, state)
+
+    assert state_manager.states[token.cache_key] is state
+    if write_debounce_seconds > 0:
+        assert state_manager._write_queue[token].state is state
+
+    await state_manager.close()
+
+
 class Obj(Base):
     """A object containing a callable for testing fallback pickle."""
 
