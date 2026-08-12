@@ -169,7 +169,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        token = cast(StateToken[TOKEN_TYPE], self._coerce_token(token))
+        token = self._coerce_token(token)
         root_state = self.states.get(token.cache_key)
         self._token_last_touched[token.cache_key] = time.time()
         if root_state is not None:
@@ -342,7 +342,7 @@ class StateManagerDisk(StateManager):
             state: The state to set.
             context: The state modification context.
         """
-        token = self._coerce_token(token)
+        token = cast(StateToken[TOKEN_TYPE], self._coerce_token(token))
         force_write = isinstance(token, BaseStateToken) and (
             self.states.get(token.cache_key) is not state
         )
