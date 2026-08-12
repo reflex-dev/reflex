@@ -880,11 +880,12 @@ const SEARCH_STYLES = `
     background: transparent;
     border: 0;
     color: var(--secondary-12, #202020);
-    flex: 1;
+    flex: 1 1 0%;
     font: 500 1rem/1.5rem var(--font-instrument-sans, system-ui, sans-serif);
     min-width: 0;
     outline: 0;
     padding: 0;
+    width: 0;
   }
 
   .ReflexSearch-input::placeholder {
@@ -898,8 +899,15 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-actions {
     align-items: center;
-    display: flex;
+    align-self: center;
+    display: grid;
+    flex: 0 0 auto;
     gap: 0.375rem;
+    grid-template-columns: 1.75rem 2.5rem;
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
   }
 
   .ReflexSearch-actionSlot {
@@ -924,6 +932,7 @@ const SEARCH_STYLES = `
     height: 1.5rem;
     justify-content: center;
     padding: 0 0.375rem;
+    width: 2.5rem;
   }
 
   .ReflexSearch-escapeIcon {
@@ -1272,6 +1281,10 @@ const SEARCH_STYLES = `
     .ReflexSearch-actionSlot {
       flex-basis: 2.25rem;
       height: 2.25rem;
+    }
+
+    .ReflexSearch-actions {
+      grid-template-columns: 2.25rem 2.25rem;
     }
 
     .ReflexSearch-escape {
