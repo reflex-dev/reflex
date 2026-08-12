@@ -4492,7 +4492,8 @@ async def test_state_manager_disk_set_state_persists_untouched_base_state(
     )
     token = BaseStateToken(ident="client", cls=TestState)
     state = TestState(_reflex_internal_init=True)
-    state.num2 = 9.5
+    object.__setattr__(state, "num2", 9.5)
+    state.dirty_vars.clear()
     state._was_touched = False
 
     await state_manager.set_state(token, state)
