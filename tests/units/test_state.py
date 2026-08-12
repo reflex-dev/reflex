@@ -4462,9 +4462,7 @@ async def test_state_manager_disk_set_state_updates_cache_for_arbitrary_instance
 ):
     """Test that set_state replaces a cached state with the supplied instance."""
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(
-        _write_debounce_seconds=write_debounce_seconds
-    )
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
     token = StateToken(ident="client", cls=dict)
     cached_state = await state_manager.get_state(token)
     state = {"value": 2}
@@ -4487,9 +4485,7 @@ async def test_state_manager_disk_set_state_persists_untouched_base_state(
 ):
     """Test that explicitly supplied untouched BaseState values are persisted."""
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(
-        _write_debounce_seconds=write_debounce_seconds
-    )
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
     token = BaseStateToken(ident="client", cls=TestState)
     state = TestState(_reflex_internal_init=True)
     object.__setattr__(state, "num2", 9.5)
