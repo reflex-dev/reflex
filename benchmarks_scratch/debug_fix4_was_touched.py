@@ -4,6 +4,18 @@ import subprocess
 import sys
 
 TARGET = "tests/units/test_app.py::test_app_modify_state_clean"
+PRE_DIRS = [
+    "tests/units/app_mixins",
+    "tests/units/compiler",
+    "tests/units/components",
+    "tests/units/docgen",
+    "tests/units/istate",
+    "tests/units/middleware",
+    "tests/units/plugins",
+    "tests/units/reflex_base",
+    "tests/units/reflex_cli",
+    "tests/units/states",
+]
 
 
 def run(label: str, args: list[str]) -> int:
@@ -20,10 +32,9 @@ def run(label: str, args: list[str]) -> int:
 
 def main():
     results = {
-        "app_mixins+compiler": run("app_mixins+compiler", ["tests/units/app_mixins", "tests/units/compiler"]),
-        "components": run("components", ["tests/units/components"]),
-        "docgen+middleware+plugins": run("docgen+middleware+plugins", ["tests/units/docgen", "tests/units/middleware", "tests/units/plugins"]),
-        "reflex_cli+states": run("reflex_cli+states", ["tests/units/reflex_cli", "tests/units/states"]),
+        "all-pre": run("all-pre", PRE_DIRS),
+        "first-half": run("first-half", PRE_DIRS[:5]),
+        "second-half": run("second-half", PRE_DIRS[5:]),
     }
     print("RESULTS:", results)
 
