@@ -9,6 +9,7 @@ import reflex_components_internal as ui
 
 import reflex as rx
 from reflex.event import EventType
+from reflex_site_shared.components.algolia import algolia_search
 from reflex_site_shared.components.docs_shell import (
     docs_feedback_button,
     docs_feedback_button_toc,
@@ -20,7 +21,6 @@ from reflex_site_shared.components.docs_shell import (
     docs_sidebar_section,
 )
 from reflex_site_shared.components.icons import get_icon
-from reflex_site_shared.components.inkeep import inkeep
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.docs.markdown import get_markdown_toc, render_markdown
 from reflex_site_shared.docs.models import (
@@ -206,7 +206,7 @@ def _default_navbar(
                 else ui.navigation_menu.item(rx.fragment(), unstyled=True)
             ),
             ui.navigation_menu.item(
-                config.search() if config.search is not None else inkeep(),
+                config.search() if config.search is not None else algolia_search(),
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),

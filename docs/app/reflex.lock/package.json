@@ -12,7 +12,6 @@
     "@glideapps/glide-data-grid": "6.0.3",
     "@hugeicons/core-free-icons": "4.2.3",
     "@hugeicons/react": "1.1.9",
-    "@inkeep/cxkit-react": "0.5.119",
     "@mantine/core": "8.3.9",
     "@masenf/hello-react": "github:masenf/hello-react",
     "@radix-ui/react-accordion": "1.2.18",
