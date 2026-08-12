@@ -49,7 +49,7 @@
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/base.pyi": "c6500b29e90ca0c04e6bac65ad19936e",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/dialog.pyi": "e67999e6a7433d0eb8c18f4dd185761b",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/drawer.pyi": "172048f74ea5cb7b0e68829d5de3a1fa",
-  "packages/reflex-components-radix/src/reflex_components_radix/primitives/form.pyi": "2a0611c1ffa91b4c2061ef3697b7ec75",
+  "packages/reflex-components-radix/src/reflex_components_radix/primitives/form.pyi": "f0f821922b6f04c7e5f4b5baacca606d",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/progress.pyi": "849b07e27c3916bd24bb576b57e9e2c4",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/slider.pyi": "2846f40bff377ee688d46055c4f7390a",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/__init__.pyi": "6c7e1b9a0a7ca00f029bf6ba0c514fdb",
