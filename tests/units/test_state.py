@@ -4495,7 +4495,7 @@ async def test_state_manager_disk_set_state_persists_untouched_base_state(
 
     fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
     persisted_state = await fresh_state_manager.get_state(token)
-    assert persisted_state.num2 == 9.5
+    assert math.isclose(persisted_state.num2, 9.5)
     await fresh_state_manager.close()
 
 

@@ -212,6 +212,7 @@ class StateManagerDisk(StateManager):
         Args:
             token: The token used to identify the state object.
             substate: The substate to set.
+            force_write: Whether to persist the state regardless of its touched status.
         """
         substate_token = token.with_cls(type(substate))
 
