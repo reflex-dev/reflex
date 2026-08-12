@@ -41,8 +41,7 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
-    # Memoized results of get_states_implementing / resolve_implementation,
-    # invalidated whenever a new base state is registered.
+    # Memoized lookups, invalidated whenever a base state is registered.
     _implementations: dict[type[BaseState], tuple[type[BaseState], ...]] = (
         dataclasses.field(
             default_factory=dict,
@@ -177,9 +176,6 @@ class RegistrationContext(BaseContext):
     ) -> tuple[type[STATE_TYPE], ...]:
         """Get every registered state class that is a subclass of the given interface.
 
-        The interface is typically a state mixin, which has no place in the state
-        tree of its own and therefore cannot be passed to `get_state` directly.
-
         Args:
             interface: The state mixin (or state class) to look up implementations of.
 
@@ -197,12 +193,7 @@ class RegistrationContext(BaseContext):
         return implementations
 
     def resolve_implementation(self, interface: type[STATE_TYPE]) -> type[STATE_TYPE]:
-        """Get the single registered state class implementing the given interface.
-
-        Subclasses of another implementation are ignored, so an app is free to
-        further subclass the state a mixin was applied to. What must be
-        unambiguous is where the mixin entered the state tree, since each such
-        state holds its own independent copy of the mixin's vars.
+        """Get the single registered state class the given interface was mixed into.
 
         Args:
             interface: The state mixin (or state class) to resolve.
@@ -216,8 +207,8 @@ class RegistrationContext(BaseContext):
         if (cached := self._resolved_implementations.get(interface)) is not None:
             return cached  # pyright: ignore [reportReturnType]
         implementations = self.get_states_implementing(interface)
-        # Keep only the states where the interface entered the tree, dropping
-        # any implementation that inherits from another implementation.
+        # Keep only where the interface entered the tree: an implementation
+        # inheriting from another implementation is not a candidate.
         roots = [
             state_cls
             for state_cls in implementations

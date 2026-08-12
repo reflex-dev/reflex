@@ -1734,11 +1734,17 @@ class BaseState(EvenMoreBasicBaseState):
         Allows for arbitrary access to sibling states from within an event handler.
 
         Args:
-            state_cls: The class of the state.
+            state_cls: The class of the state, or a state mixin to resolve.
 
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
+        # A mixin has no place in the state tree of its own: resolve it.
+        if state_cls._mixin:
+            from reflex_base.registry import RegistrationContext
+
+            state_cls = RegistrationContext.get().resolve_implementation(state_cls)
+
         # Fast case - if this state instance is already cached, get_substate from root state.
         try:
             return self._get_state_from_cache(state_cls)

@@ -33,6 +33,7 @@ from reflex_base.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    StateValueError,
     UnretrievableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
@@ -5195,3 +5196,115 @@ async def test_resolve_delta_pops_subdict_when_all_keys_drop():
     }
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+async def test_get_state_mixin(clean_registration_context):
+    """get_state resolves a mixin to the state it was applied to.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class MixinRootState(BaseState):
+        pass
+
+    class GreetMixin(BaseState, mixin=True):
+        greeting: str = "hi"
+
+    class GreetState(GreetMixin, MixinRootState):
+        pass
+
+    class UnrelatedState(MixinRootState):
+        pass
+
+    root = MixinRootState(_reflex_internal_init=True)
+    unrelated = await root.get_state(UnrelatedState)
+
+    greet_state = await unrelated.get_state(GreetMixin)
+    assert isinstance(greet_state, GreetState)
+    # Resolving the mixin and naming the state directly yield the same instance.
+    assert greet_state is await unrelated.get_state(GreetState)
+    assert greet_state.greeting == "hi"
+
+
+async def test_get_state_mixin_ambiguous(clean_registration_context):
+    """get_state raises if more than one state implements the mixin.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class AmbiguousRootState(BaseState):
+        pass
+
+    class AmbiguousMixin(BaseState, mixin=True):
+        pass
+
+    class AmbiguousState1(AmbiguousMixin, AmbiguousRootState):
+        pass
+
+    class AmbiguousState2(AmbiguousMixin, AmbiguousRootState):
+        pass
+
+    root = AmbiguousRootState(_reflex_internal_init=True)
+    with pytest.raises(StateValueError, match="implemented by more than one state"):
+        await root.get_state(AmbiguousMixin)
+
+
+async def test_state_manager_mixin_token(clean_registration_context):
+    """A token carrying a mixin resolves to the state implementing it.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class TokenRootState(BaseState):
+        pass
+
+    class NoteMixin(BaseState, mixin=True):
+        note: str = ""
+
+    class NoteState(NoteMixin, TokenRootState):
+        pass
+
+    state_manager = StateManagerMemory()
+    mixin_token = BaseStateToken(ident="mixin-token", cls=NoteMixin)
+
+    root = await state_manager.get_state(mixin_token)
+    assert isinstance(root, TokenRootState)
+    (await root.get_state(NoteMixin)).note = "written"
+    await state_manager.set_state(mixin_token, root)
+
+    async with state_manager.modify_state(mixin_token) as modified:
+        assert isinstance(modified, TokenRootState)
+        assert (await modified.get_state(NoteMixin)).note == "written"
+
+    # The concrete token addresses the very same state.
+    concrete_token = BaseStateToken(ident="mixin-token", cls=NoteState)
+    assert await state_manager.get_state(concrete_token) is root
+
+
+async def test_state_manager_mixin_token_ambiguous(clean_registration_context):
+    """A token carrying an ambiguous mixin raises instead of guessing.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class AmbiguousTokenRootState(BaseState):
+        pass
+
+    class TwiceUsedMixin(BaseState, mixin=True):
+        pass
+
+    class FirstUserState(TwiceUsedMixin, AmbiguousTokenRootState):
+        pass
+
+    class SecondUserState(TwiceUsedMixin, AmbiguousTokenRootState):
+        pass
+
+    state_manager = StateManagerMemory()
+    with pytest.raises(StateValueError, match="implemented by more than one state"):
+        await state_manager.get_state(
+            BaseStateToken(ident="ambiguous-token", cls=TwiceUsedMixin)
+        )
