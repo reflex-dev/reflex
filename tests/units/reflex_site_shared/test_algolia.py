@@ -285,7 +285,8 @@ def test_algolia_search_preserves_populated_results_while_loading() -> None:
     )[0]
     action_group_styles = source.split(".ReflexSearch-actions {", 1)[1].split("}", 1)[0]
     assert '<span className="ReflexSearch-actions">' in input_row
-    assert "display: flex;" in action_group_styles
+    assert "display: grid;" in action_group_styles
+    assert "grid-template-columns: 1.75rem 2.5rem;" in action_group_styles
     assert "gap: 0.375rem;" in action_group_styles
     assert 'status === "loading" ? <LoadingState /> : null' in input_row
     assert input_row.index('className="ReflexSearch-actionSlot"') < input_row.index(
@@ -389,6 +390,38 @@ def test_algolia_search_row_stays_stable_while_typing() -> None:
     assert "<LoadingState />" in input_row
     assert 'aria-label="Clear search"' not in source
     assert "ReflexSearch-iconButton" not in source
+
+
+def test_algolia_search_input_row_contains_safari_search_input() -> None:
+    """Keep Safari's native search input from moving or clipping the actions."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    source = assets[Path("public/components/AlgoliaSearch.tsx")]
+
+    input_row_styles = source.split(".ReflexSearch-inputRow {", 1)[1].split("}", 1)[0]
+    input_styles = source.split(".ReflexSearch-input {", 1)[1].split("}", 1)[0]
+    action_styles = source.split(".ReflexSearch-actions {", 1)[1].split("}", 1)[0]
+    escape_styles = source.split(".ReflexSearch-escape {", 1)[1].split("}", 1)[0]
+
+    assert "display: flex;" in input_row_styles
+    assert "flex: 1 1 0%;" in input_styles
+    assert "width: 0;" in input_styles
+    assert "display: grid;" in action_styles
+    assert "flex: 0 0 auto;" in action_styles
+    assert "grid-template-columns: 1.75rem 2.5rem;" in action_styles
+    assert "align-self: center;" in action_styles
+    assert "position: static;" in action_styles
+    assert "right: auto;" in action_styles
+    assert "top: auto;" in action_styles
+    assert "transform: none;" in action_styles
+    assert "width: 2.5rem;" in escape_styles
+
+    mobile_styles = source.split("@media (max-width: 40rem)", 1)[1].split(
+        "@media (prefers-reduced-motion: reduce)", 1
+    )[0]
+    mobile_actions = mobile_styles.split(".ReflexSearch-actions {", 1)[1].split("}", 1)[
+        0
+    ]
+    assert "grid-template-columns: 2.25rem 2.25rem;" in mobile_actions
 
 
 def test_algolia_search_builds_result_breadcrumbs() -> None:
