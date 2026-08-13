@@ -504,16 +504,15 @@ def deploy(
         else None
     )
     if effective_provider == hosting.PROVIDER_GCP:
-        # GCP Cloud Run ignores Reflex Cloud regions/VM types — the region and
-        # sizing come from the org's connected GCP account. Drop them so
-        # validation and the deploy don't send incompatible values.
-        if regions or vmtype:
+        # GCP Cloud Run takes its region from the org's connected GCP account,
+        # so a requested region is dropped. VM types are honored: the server
+        # maps them onto Cloud Run CPU/memory limits.
+        if regions:
             console.info(
-                "Ignoring --region/--vmtype for the Google Cloud target "
-                "(region and sizing come from the connected GCP account)."
+                "Ignoring --region for the Google Cloud target "
+                "(the region comes from the connected GCP account)."
             )
         regions = None
-        vmtype = None
 
     with _restore_provider_on_failure(app, switched_from, authenticated_client):
         urls = hosting.get_hostname(
