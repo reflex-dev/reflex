@@ -736,6 +736,33 @@ def test_mutable_proxy_cached_per_field():
     assert "items" not in state.__dict__["_mutable_proxy_cache"]
 
 
+@pytest.mark.asyncio
+async def test_state_proxy_reassignment_evicts_cached_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Reassignment through a background-task StateProxy evicts the cached proxy.
+
+    StateProxy.__setattr__ delegates to setattr on the wrapped state, so the
+    eviction in BaseState.__setattr__ must also cover writes made inside an
+    `async with self` block.
+    """
+    state = ProxyTestState()
+    first = state.items
+    assert isinstance(first, MutableProxy)
+    assert state.__dict__["_mutable_proxy_cache"]["items"] is first
+
+    state_proxy = StateProxy(state)
+    # Simulate holding the lock inside `async with self`.
+    state_proxy._self_mutable = True
+    state_proxy.items = [Item(9)]
+    # The write reaches BaseState.__setattr__ on the wrapped state, evicting
+    # the proxy that wrapped the replaced list.
+    assert "items" not in state.__dict__["_mutable_proxy_cache"]
+    second = state.items
+    assert second is not first
+    assert second[0].id == 9
+
+
 def test_mutable_proxy_cache_not_serialized():
     """The per-instance proxy cache never leaks into pickles or copies."""
     state = ProxyTestState()
