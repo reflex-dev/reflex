@@ -390,9 +390,44 @@ def test_init_does_not_warn_when_pinned(
     assert "unpinned" not in capsys.readouterr().out
 
 
+def _approval_step(config: Config) -> dict:
+    """Return the pypi environment assertion step of the publish workflow.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The parsed step.
+    """
+    return yaml.safe_load(render("publish.yml", config))["jobs"]["publish"]["steps"][0]
+
+
+def test_publish_workflow_always_requires_reviewers(config: Config) -> None:
+    """Reviewers are the floor, whatever the self-review policy is."""
+    assert "required_reviewers" in _approval_step(config)["run"]
+
+
+def test_self_review_is_permitted_by_default(config: Config) -> None:
+    step = _approval_step(config)
+    assert step["env"]["ALLOW_SELF_REVIEW"] == "true"
+
+
+def test_self_review_can_be_asserted_against(config: Config, repo: Path) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            "[tool.reflex-release]",
+            "[tool.reflex-release]\nallow-self-review = false",
+        )
+    )
+    reloaded = load_config(repo)
+    assert not reloaded.allow_self_review
+    assert _approval_step(reloaded)["env"]["ALLOW_SELF_REVIEW"] == "false"
+
+
 def test_publish_workflow_gates_on_reviewers_and_self_review(config: Config) -> None:
     """The approval is only a two-person rule if self-review is prevented."""
-    step = yaml.safe_load(render("publish.yml", config))["jobs"]["publish"]["steps"][0]
+    step = _approval_step(config)
     assert "required_reviewers" in step["run"]
     assignment = next(
         line

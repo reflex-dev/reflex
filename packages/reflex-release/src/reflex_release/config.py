@@ -24,6 +24,7 @@ else:
 TOOL_TABLE = "reflex-release"
 
 _KNOWN_KEYS = frozenset({
+    "allow-self-review",
     "cli-command",
     "dispatch-package-inputs",
     "root-package",
@@ -69,6 +70,10 @@ class Config:
 
     Attributes:
         root: The repository root (the directory holding ``pyproject.toml``).
+        allow_self_review: Whether the release may be approved by the person who
+            triggered it. True keeps GitHub's own behavior; False makes the
+            publish job assert that the ``pypi`` environment prevents
+            self-review, so every upload needs a second person.
         cli_command: How the scaffolded workflows invoke this tool. ``init``
             writes it pinned to the version that generated them.
         dispatch_package_inputs: How the Dispatch release workflow asks which
@@ -105,6 +110,7 @@ class Config:
     """
 
     root: Path
+    allow_self_review: bool = True
     cli_command: str = "uvx reflex-release"
     dispatch_package_inputs: str = "auto"
     news_directory: str = "news"
@@ -489,6 +495,23 @@ def _string(table: dict, key: str, default: str) -> str:
     return value
 
 
+def _boolean(table: dict, key: str, default: bool) -> bool:
+    """Read a boolean setting.
+
+    Args:
+        table: The table to read from.
+        key: The setting name.
+        default: The value to use when the key is absent.
+
+    Returns:
+        The configured boolean.
+    """
+    value = table.get(key, default)
+    if not isinstance(value, bool):
+        fail(f"[tool.{TOOL_TABLE}] {key} must be true or false")
+    return value
+
+
 def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...]:
     """Parse and validate the ``[[tool.reflex-release.lockstep]]`` entries.
 
@@ -600,6 +623,7 @@ def load_config(root: Path) -> Config:
 
     config = Config(
         root=root,
+        allow_self_review=_boolean(table, "allow-self-review", True),
         cli_command=_string(table, "cli-command", "uvx reflex-release"),
         dispatch_package_inputs=_string(table, "dispatch-package-inputs", "auto"),
         news_directory=towncrier.get("directory") or "news",

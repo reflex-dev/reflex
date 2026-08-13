@@ -159,6 +159,10 @@ def test_empty_latest_release_package_disables_the_badge(
     assert load_config(repo).latest_release_package is None
 
 
+def test_self_review_is_allowed_by_default(config: Config) -> None:
+    assert config.allow_self_review is True
+
+
 def test_no_lockstep_by_default(config: Config) -> None:
     assert config.lockstep_partners("mypkg") == ()
     assert not config.publishes_last("mypkg")
@@ -218,6 +222,10 @@ def test_no_lockstep_by_default(config: Config) -> None:
             "cannot list every member",
         ),
         ('root-package = "mypkg"\nmain-branch = 5\n', "main-branch must be a string"),
+        (
+            'root-package = "mypkg"\nallow-self-review = "yes"\n',
+            "allow-self-review must be true or false",
+        ),
         # An empty prefix matches every branch, collapsing the branch policy.
         (
             'root-package = "mypkg"\nhotfix-branch-prefix = ""\n',

@@ -196,6 +196,7 @@ jobs:
       - name: Require a human-approval gate on the pypi environment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALLOW_SELF_REVIEW: "@@ALLOW_SELF_REVIEW@@"
         run: |
           set -euo pipefail
           # Fail closed: uploads must never run unattended. If this job started
@@ -214,17 +215,23 @@ jobs:
           fi
           # Reviewers alone are not a two-person rule: unless self-review is
           # prevented, whoever triggered the release can approve their own
-          # upload, and the gate degrades to a confirmation dialog.
+          # upload. Whether that is acceptable is a policy choice, so it is
+          # configured (allow-self-review) rather than assumed.
+          if [[ "$ALLOW_SELF_REVIEW" == "true" ]]; then
+            echo "pypi environment protection rules: $rules"
+            echo "Self-review is permitted (allow-self-review); the environment's reviewer list is the control over who can approve this upload."
+            exit 0
+          fi
           # tostring, not `// "unknown"`: jq's alternative operator treats a
           # literal false as absent, which would turn the case this check exists
           # for into a warning.
           self_review=$(jq -r '[.protection_rules[]? | select(.type == "required_reviewers") | .prevent_self_review] | first | tostring' <<<"$environment")
           if [[ "$self_review" == "false" ]]; then
-            echo "::error::The pypi environment allows self-review, so the person who triggered this release can approve their own upload. Enable 'Prevent self-review' on the pypi environment (Settings -> Environments -> pypi) and re-run."
+            echo "::error::This repository sets allow-self-review = false, but the pypi environment allows self-review, so the person who triggered this release could approve their own upload. Enable 'Prevent self-review' on the pypi environment (Settings -> Environments -> pypi) and re-run."
             exit 1
           fi
           if [[ "$self_review" != "true" ]]; then
-            echo "::warning::Could not determine whether the pypi environment prevents self-review; confirm 'Prevent self-review' is enabled so a release cannot be approved by the person who triggered it."
+            echo "::warning::Could not determine whether the pypi environment prevents self-review; confirm 'Prevent self-review' is enabled, or set allow-self-review = true if approval by the release's author is acceptable here."
           fi
           echo "pypi environment protection rules: $rules (prevent_self_review: $self_review)"
 

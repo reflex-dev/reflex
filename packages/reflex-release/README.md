@@ -81,6 +81,13 @@ single-package repository usually needs no more than the first two keys.
 # from; bump it and re-run `sync` to upgrade.
 cli-command = "uvx reflex-release@0.1.0"
 
+# Whether the release may be approved by the person who triggered it. True (the
+# default) keeps GitHub's own behavior: the environment's reviewer list decides
+# who can release, and one of them can carry a release through end to end. Set
+# it to false to require a second person, in which case the publish job also
+# asserts that the pypi environment has 'Prevent self-review' enabled.
+allow-self-review = true
+
 # The package built from the repository root. Omit it when the root is not a
 # package (a pure monorepo of sub-packages).
 root-package = "mypkg"
@@ -279,13 +286,14 @@ sub-packages (`<name>-<tag-prefix>1.2.3`), so `tag-prefix = ""` gives you bare
 Once per repository. **Items 1, 2 and 5 are what make the pipeline safe** — the
 rest is ergonomics. See [Security model](#security-model) for why.
 
-1. **`pypi` environment** (Settings → Environments): create it, add **required
-   reviewers**, and turn on **Prevent self-review**. Every upload — alphas and
-   internal packages included — waits for that approval; `publish.yml` fails
-   closed without reviewers, and also fails when it can prove self-review is
-   allowed. Without *Prevent self-review*, whoever triggers a release can
-   approve their own upload and the gate is a confirmation dialog. Optionally
-   restrict deployment branches to `main`, `r/pre-*` and `r/hotfix/*`.
+1. **`pypi` environment** (Settings → Environments): create it and add
+   **required reviewers**. Every upload — alphas and internal packages included
+   — waits for one of them to approve it, and `publish.yml` fails closed if it
+   starts without reviewers configured. **That list is who can release**, so
+   keep it to people you would trust to publish unilaterally; by default one of
+   them can trigger and approve the same release (see
+   [`allow-self-review`](#configuration)). Optionally restrict deployment
+   branches to `main`, `r/pre-*` and `r/hotfix/*`.
 2. **PyPI trusted publishing** for each distribution: owner + repository,
    workflow `publish.yml`, **environment `pypi`**. No API token is stored
    anywhere. Naming the environment is not optional bookkeeping — it is what
@@ -329,6 +337,30 @@ Every checkout uses `persist-credentials: false`, no `${{ }}` expression is
 interpolated into a shell script (inputs travel through `env:`), and no workflow
 uses `pull_request_target`, so nothing runs privileged against fork code.
 
+### Who can approve, and self-review
+
+The `pypi` environment's reviewer list is the set of people who can release.
+By default (`allow-self-review = true`) GitHub lets one of them approve a
+release they triggered themselves, so a single reviewer can carry a release end
+to end. That is the right posture when the reviewer list is already a small,
+trusted group — it is the same trust you place in anyone who can merge to the
+main branch — and it keeps a routine release from needing a second person on
+call.
+
+What you keep either way: the upload cannot happen without an explicit,
+attributed, logged approval by someone on that list; the artifact is built and
+inspectable before the approval; the changelog, branch rules and tag ordering
+are unchanged.
+
+What you give up: a compromised or malicious account *in the reviewer list* can
+publish without anyone else involved. If that is not acceptable — a
+widely-scoped reviewer list, or a package where a single bad release is
+expensive — set `allow-self-review = false` and enable **Prevent self-review**
+on the environment. The publish job then asserts it on every run and fails if
+the setting is missing, so the policy cannot silently regress.
+
+Either way, the reviewer list is the control worth auditing.
+
 ### What the approval actually covers
 
 The reviewer approves the `publish` job of a specific run. At that point the
@@ -352,7 +384,6 @@ is triggered by a branch your ruleset controls.
   release. This is the single most common way to deploy this pipeline unsafely.
 - **Trusted publisher without the environment.** Covered above; it turns the
   approval into an advisory step.
-- **Self-review left enabled.** One person can then trigger and approve.
 - **`internal-packages`.** Those release on every push to the main branch with
   no changelog and no fragment — merge access is release access (still behind
   the `pypi` approval). Use it only for packages where that is acceptable.

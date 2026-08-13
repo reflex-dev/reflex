@@ -299,6 +299,7 @@ def render(name: str, config: Config) -> str:
         "@@PRERELEASE_PREFIX@@": config.prerelease_branch_prefix,
         "@@HOTFIX_PREFIX@@": config.hotfix_branch_prefix,
         "@@RELEASE_PREFIX@@": config.release_branch_prefix,
+        "@@ALLOW_SELF_REVIEW@@": "true" if config.allow_self_review else "false",
         "@@ACTION_OPTIONS@@": _indented_list(list(ACTIONS), 10),
         "@@PACKAGE_INPUTS@@": _package_input_block(config),
         "@@PACKAGE_SELECTION@@": _package_selection_block(config),
@@ -569,9 +570,15 @@ def print_checklist(config: Config) -> None:
         "\n".join([
             "",
             "Remaining setup (GitHub settings, once per repository):",
-            "  1. Create the `pypi` environment, add required reviewers, and turn",
-            "     on 'Prevent self-review' — otherwise whoever triggers a release",
-            "     can approve their own upload. Every upload waits for approval.",
+            "  1. Create the `pypi` environment and add required reviewers. Every",
+            "     upload waits for one of them to approve it, so that list is who",
+            "     can release."
+            + (
+                ""
+                if config.allow_self_review
+                else "\n     This repository sets allow-self-review = false, so also turn"
+                "\n     on 'Prevent self-review'; the publish job asserts it."
+            ),
             "  2. Configure PyPI trusted publishing for each distribution:",
             "     workflow `publish.yml`, environment `pypi`. Naming the",
             "     environment is what makes the approval gate load-bearing: without",
