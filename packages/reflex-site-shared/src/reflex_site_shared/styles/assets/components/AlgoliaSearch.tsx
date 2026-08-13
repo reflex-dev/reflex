@@ -120,7 +120,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-function normalizeResultUrl(hit: AlgoliaHit): string | null {
+function normalizeResultUrl(hit: AlgoliaHit): URL | null {
   const candidate = hit.url ?? hit.objectID;
   try {
     const url = new URL(candidate, "https://reflex.dev");
@@ -129,27 +129,26 @@ function normalizeResultUrl(hit: AlgoliaHit): string | null {
     if (!isReflexHost || !["http:", "https:"].includes(url.protocol)) {
       return null;
     }
-    return url.toString();
+    return url;
   } catch {
     return null;
   }
 }
 
-function resultSection(url: string): ResultSection {
-  const path = new URL(url).pathname;
-  if (path.startsWith("/docs/xy/")) {
+function resultSection(pathname: string): ResultSection {
+  if (pathname.startsWith("/docs/xy/")) {
     return "XY";
   }
-  if (path.startsWith("/docs/library/")) {
+  if (pathname.startsWith("/docs/library/")) {
     return "Components";
   }
-  if (path.startsWith("/docs/api-reference/")) {
+  if (pathname.startsWith("/docs/api-reference/")) {
     return "API Reference";
   }
-  if (path.startsWith("/docs/")) {
+  if (pathname.startsWith("/docs/")) {
     return "Docs";
   }
-  if (path.startsWith("/blog/")) {
+  if (pathname.startsWith("/blog/")) {
     return "Blog";
   }
   return "Reflex";
@@ -174,13 +173,16 @@ function resultPathLabel(pathSegment: string): string {
     .join(" ");
 }
 
-function resultPathBreadcrumbs(url: string, section: ResultSection): string[] {
+function resultPathBreadcrumbs(
+  pathname: string,
+  section: ResultSection,
+): string[] {
   const prefix = RESULT_PATH_PREFIXES[section];
   if (!prefix) {
     return [];
   }
 
-  const pathSegments = new URL(url).pathname.split("/").filter(Boolean);
+  const pathSegments = pathname.split("/").filter(Boolean);
   if (!prefix.every((segment, index) => pathSegments[index] === segment)) {
     return [];
   }
@@ -188,19 +190,27 @@ function resultPathBreadcrumbs(url: string, section: ResultSection): string[] {
   return pathSegments.slice(prefix.length, -1).slice(0, 2).map(resultPathLabel);
 }
 
-function resultBreadcrumbs(url: string, section: ResultSection): string[] {
+function resultBreadcrumbs(pathname: string, section: ResultSection): string[] {
   const root = section === "Blog" ? "Blogs" : section;
-  return [root, ...resultPathBreadcrumbs(url, section)];
+  const normalizedRoot = root.toLowerCase();
+  return [
+    root,
+    ...resultPathBreadcrumbs(pathname, section).filter(
+      (breadcrumb) => breadcrumb.toLowerCase() !== normalizedRoot,
+    ),
+  ];
 }
 
 function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
   return hits.flatMap((hit) => {
-    const url = normalizeResultUrl(hit);
-    if (!url) {
+    const normalizedUrl = normalizeResultUrl(hit);
+    if (!normalizedUrl) {
       return [];
     }
 
-    const section = resultSection(url);
+    const url = normalizedUrl.toString();
+    const pathname = normalizedUrl.pathname;
+    const section = resultSection(pathname);
     const displayTitle = resultTitle(hit);
     return [
       {
@@ -208,7 +218,7 @@ function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
         url,
         section,
         displayTitle,
-        breadcrumbs: resultBreadcrumbs(url, section),
+        breadcrumbs: resultBreadcrumbs(pathname, section),
       },
     ];
   });
