@@ -16,6 +16,7 @@ import uuid
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from contextvars import ContextVar
 from dataclasses import _MISSING_TYPE, MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
@@ -931,6 +932,13 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The formatted var.
         """
+        # Operands of a running ``var_operation`` body interpolate as their
+        # raw JS expression: their VarData flows through the operation's
+        # ``_args``, so the tag round-trip (and its permanent ``_global_vars``
+        # entry) is pure overhead there. See ``var_operation``.
+        if id(self) in _format_without_tagging.get():
+            return str(self)
+
         hashed_var = hash(self)
 
         _global_vars[hashed_var] = self
@@ -1942,10 +1950,31 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
             for key, value in kwargs.items()
         }
 
+        operands = [*args_vars.values(), *kwargs_vars.values()]
+        # Suppress f-string tagging for the operands while the body runs:
+        # their VarData reaches the operation through ``_args`` below, so the
+        # tag round-trip (hash + permanent ``_global_vars`` entry + regex
+        # decode of the return expression) is pure overhead. Suppression is
+        # context-local rather than stored on the (shared, otherwise
+        # immutable) operands, so a concurrent thread or task formatting the
+        # same var still gets its tag. Restoring the previous set on exit
+        # keeps nesting correct: an inner operation cannot clear an outer
+        # one's suppression. Vars created inside the body still tag normally
+        # and keep contributing VarData via the return expression.
+        token = _format_without_tagging.set(
+            _format_without_tagging.get().union(map(id, operands))
+        )
+        # ``operands`` stays referenced for the whole body, so no unrelated
+        # var can reuse a suppressed id() while the suppression is active.
+        try:
+            return_var = func(*args_vars.values(), **kwargs_vars)  # pyright: ignore [reportCallIssue]
+        finally:
+            _format_without_tagging.reset(token)
+
         return CustomVarOperation.create(
             name=func.__name__,
             args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
+            return_var=return_var,  # pyright: ignore [reportArgumentType]
         ).guess_type()
 
     return wrapper
@@ -3348,6 +3377,14 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
 # Defined global immutable vars.
 _global_vars: dict[int, Var] = {}
+
+# ``id()`` of the vars whose ``__format__`` should skip the tag round-trip,
+# for the duration of the ``var_operation`` body that owns them. Context-local
+# so suppression never leaks to another thread or task formatting the same
+# shared var. See ``Var.__format__`` and ``var_operation``.
+_format_without_tagging: ContextVar[frozenset[int]] = ContextVar(
+    "_format_without_tagging", default=frozenset()
+)
 
 
 dispatchers: dict[GenericType, Callable[[Var], Var]] = {}
