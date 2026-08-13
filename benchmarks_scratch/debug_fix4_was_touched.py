@@ -1,4 +1,4 @@
-"""Validate the StateProxy eviction regression test on the PR branch."""
+"""Validate review-fix commits on eng-10095: proxy + validation depth tests."""
 
 import subprocess
 import sys
@@ -9,6 +9,8 @@ def main():
         [
             sys.executable, "-m", "pytest",
             "tests/units/istate/test_proxy.py",
+            "tests/units/reflex_base/utils/test_types.py",
+            "tests/units/test_state.py",
             "-q", "--no-header", "-p", "no:cacheprovider",
         ],
         check=False,
