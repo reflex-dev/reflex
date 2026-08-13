@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -161,7 +162,15 @@ PrimitiveToAnnotation = {
     dict: Dict,  # noqa: UP006
 }
 
-RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
+RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
+    "_backend_vars",
+    "_was_touched",
+    "_mixin",
+    "_mutable_proxy_cache",
+    "_propagated_dirty_vars",
+    "_propagated_generation",
+}
 
 
 class Unset:
@@ -631,6 +640,37 @@ def does_obj_satisfy_typed_dict(
 
     # required keys are all present
     return required_keys.issubset(frozenset(obj))
+
+
+@lru_cache
+def _validation_depth_for_mode(raw_mode: str) -> int:
+    """Get the validation depth for a raw REFLEX_ENV_MODE value.
+
+    Args:
+        raw_mode: The stripped environment variable value ("" if unset).
+
+    Returns:
+        The `nested` depth to pass to `_isinstance`.
+    """
+    return 0 if raw_mode == constants.Env.PROD.value else 1
+
+
+def _validation_depth() -> int:
+    """Get the container depth for hot-path state var type validation.
+
+    The result of these checks only gates a diagnostic log, so production
+    mode skips the per-element walk of large containers and only validates
+    the outer type. The environment is re-read on every call so in-process
+    mode changes take effect immediately.
+
+    Returns:
+        The `nested` depth to pass to `_isinstance`.
+    """
+    # Read the raw env var directly: interpreting it through
+    # environment.REFLEX_ENV_MODE.get() on this hot path would re-parse the
+    # enum on every state var assignment (and the import would be circular).
+    # Strip to match the canonical parser's whitespace tolerance.
+    return _validation_depth_for_mode(os.environ.get("REFLEX_ENV_MODE", "").strip())
 
 
 def _isinstance(

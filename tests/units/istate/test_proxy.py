@@ -713,3 +713,78 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
     ) as state:
         assert isinstance(state, CustomGetState)
         assert state.registry.entries == {"a": [1, 2]}
+
+
+def test_mutable_proxy_cached_per_field():
+    """Repeated reads of a mutable var reuse the proxy until reassignment."""
+    state = ProxyTestState()
+    first = state.items
+    assert isinstance(first, MutableProxy)
+    assert state.items is first
+    # Reassignment invalidates the cached proxy.
+    state.items = [Item(2)]
+    second = state.items
+    assert isinstance(second, MutableProxy)
+    assert second is not first
+    assert second[0].id == 2
+    # In-place mutation keeps the same wrapped object, so the proxy is reused.
+    second.append(Item(3))
+    assert state.items is second
+    # Reassignment immediately evicts the cache entry, so no strong reference
+    # to the replaced value lingers until the next read.
+    state.items = [Item(4)]
+    assert "items" not in state.__dict__["_mutable_proxy_cache"]
+
+
+@pytest.mark.asyncio
+async def test_state_proxy_reassignment_evicts_cached_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Reassignment through a background-task StateProxy evicts the cached proxy.
+
+    StateProxy.__setattr__ delegates to setattr on the wrapped state, so the
+    eviction in BaseState.__setattr__ must also cover writes made inside an
+    `async with self` block.
+    """
+    state = ProxyTestState()
+    first = state.items
+    assert isinstance(first, MutableProxy)
+    assert state.__dict__["_mutable_proxy_cache"]["items"] is first
+
+    state_proxy = StateProxy(state)
+    # Simulate holding the lock inside `async with self`.
+    state_proxy._self_mutable = True
+    state_proxy.items = [Item(9)]
+    # The write reaches BaseState.__setattr__ on the wrapped state, evicting
+    # the proxy that wrapped the replaced list.
+    assert "items" not in state.__dict__["_mutable_proxy_cache"]
+    second = state.items
+    assert second is not first
+    assert second[0].id == 9
+
+
+def test_mutable_proxy_cache_not_serialized():
+    """The per-instance proxy cache never leaks into pickles or copies."""
+    state = ProxyTestState()
+    state.items.append(Item(1))  # populate the proxy cache
+    assert state.__dict__["_mutable_proxy_cache"]
+    assert "_mutable_proxy_cache" not in state.__getstate__()
+
+    restored = pickle.loads(pickle.dumps(state))
+    # The cache is recreated empty on the restored instance.
+    assert restored.__dict__["_mutable_proxy_cache"] == {}
+    restored_items = restored.items
+    assert isinstance(restored_items, MutableProxy)
+    # The restored proxy tracks the restored state, not the original.
+    assert restored_items._self_state is restored
+
+
+def test_mutable_proxy_iteration_yields_plain_immutables():
+    """Iterating a proxied container returns immutable elements unwrapped."""
+    state = ProxyTestState()
+    state.items = [Item(1), Item(2)]
+    numbers = [item.id for item in state.items]
+    assert numbers == [1, 2]
+    assert all(type(n) is int for n in numbers)
+    # Mutable elements remain wrapped so nested mutations mark the state dirty.
+    assert all(isinstance(item, MutableProxy) for item in state.items)
