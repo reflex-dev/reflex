@@ -100,10 +100,6 @@ LOCK_SUBSCRIBE_TASK_TIMEOUT = 2  # seconds
 SMR = f"[SMR:{os.getpid()}]"
 start = time.monotonic()
 
-# Serialize states off the event loop when their previous pickle for the same
-# state name exceeded this size (bytes).
-_OFFLOAD_SERIALIZE_THRESHOLD = 64 * 1024
-
 
 @functools.lru_cache(maxsize=1024)
 def _required_state_classes(
@@ -240,12 +236,6 @@ class StateManagerRedis(StateManager):
     # Whether to opportunistically hold locks for fast in-memory access.
     _oplock_enabled: bool = dataclasses.field(
         default_factory=environment.REFLEX_OPLOCK_ENABLED.get, init=False
-    )
-
-    # Size of the last serialized payload per state full name, used to decide
-    # when to offload pickling to a thread.
-    _last_serialized_size: dict[str, int] = dataclasses.field(
-        default_factory=dict, init=False
     )
 
     # Cached states
@@ -494,32 +484,23 @@ class StateManagerRedis(StateManager):
 
         # Persist only each touched state (parents and substates are excluded
         # by BaseState.__getstate__) in a single pipelined round trip.
+        # Serialization stays synchronous: awaiting between reading the live
+        # state objects and queuing their payloads would let a background task
+        # holding the same tree mutate a state mid-pickle, so redis could
+        # receive a torn or already-stale snapshot.
         pipeline = self.redis.pipeline()
-        written_states: list[BaseState] = []
+        queued = False
         for substate in touched_states:
-            full_name = substate.get_full_name()
-            if (
-                self._last_serialized_size.get(full_name, 0)
-                > _OFFLOAD_SERIALIZE_THRESHOLD
-            ):
-                # Pickling large states would stall the event loop.
-                pickle_state = await asyncio.to_thread(substate._serialize)
-            else:
-                pickle_state = substate._serialize()
+            pickle_state = substate._serialize()
             if pickle_state:
-                self._last_serialized_size[full_name] = len(pickle_state)
                 pipeline.set(
                     str(token.with_cls(type(substate))),
                     pickle_state,
                     ex=self.token_expiration,
                 )
-                written_states.append(substate)
-        if written_states:
+                queued = True
+        if queued:
             await pipeline.execute()
-            # Reset the touched flag so an unchanged state is not re-pickled
-            # and re-written by subsequent flushes of the same instance.
-            for substate in written_states:
-                substate._was_touched = False
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(

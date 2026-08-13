@@ -798,11 +798,11 @@ async def test_set_state_verifies_lock_once_and_pipelines_writes(
     assert (await final_state.get_state(SubState2)).sub2_foo == "sub2"
 
 
-async def test_set_state_resets_touched_flag(
+async def test_set_state_skips_untouched_states(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
 ):
-    """A state written to redis is not re-written by a subsequent flush.
+    """Only states reporting as touched are written to redis.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -817,10 +817,12 @@ async def test_set_state_resets_touched_flag(
     state._clean()
     assert state._get_was_touched()
     await state_manager_redis.set_state(state_token, state)
-    assert not state._was_touched
 
-    # Flushing the same instance again should not re-write unchanged states,
-    # so no write pipeline is even created.
+    # A freshly loaded instance is untouched (__getstate__ excludes the flag),
+    # so flushing it writes nothing and no pipeline is created.
+    reloaded = await state_manager_redis.get_state(state_token)
+    assert not reloaded._get_was_touched()
+
     pipelines_created = 0
     orig_pipeline = state_manager_redis.redis.pipeline
 
@@ -831,7 +833,7 @@ async def test_set_state_resets_touched_flag(
 
     state_manager_redis.redis.pipeline = counting_pipeline
     try:
-        await state_manager_redis.set_state(state_token, state)
+        await state_manager_redis.set_state(state_token, reloaded)
     finally:
         state_manager_redis.redis.pipeline = orig_pipeline
     assert pipelines_created == 0
@@ -841,12 +843,16 @@ async def test_set_state_resets_touched_flag(
     assert final_state.count == 5
 
 
-async def test_set_state_offloads_large_pickles(
+async def test_set_state_does_not_yield_while_serializing(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
     mocker,
 ):
-    """States whose previous pickle was large are serialized off the loop.
+    """The event loop gets no control between serializing the touched states.
+
+    Yielding mid-flush would let a concurrent task holding the same tree mutate
+    a state after it was read but before its payload was queued, so redis could
+    receive a torn or already-stale snapshot.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -859,17 +865,45 @@ async def test_set_state_offloads_large_pickles(
 
     state = await state_manager_redis.get_state(state_token)
     state.count = 7
-    state_manager_redis._last_serialized_size[root_state.get_full_name()] = 10**9
+    # Touch several states so the flush has a multi-state window to protect.
+    (await state.get_state(SubState1)).sub1_foo = "sub1"
+    (await state.get_state(SubState2)).sub2_foo = "sub2"
 
-    to_thread = mocker.patch(
-        "reflex.istate.manager.redis.asyncio.to_thread", wraps=asyncio.to_thread
+    timeline: list[str] = []
+    original_serialize = BaseState._serialize
+
+    def traced_serialize(self):
+        timeline.append("serialize")
+        return original_serialize(self)
+
+    mocker.patch.object(BaseState, "_serialize", traced_serialize)
+
+    ticking = True
+
+    async def ticker():
+        # Appends a marker on every event loop iteration.
+        while ticking:
+            timeline.append("tick")
+            await asyncio.sleep(0)
+
+    ticker_task = asyncio.ensure_future(ticker())
+    await asyncio.sleep(0)
+    try:
+        await state_manager_redis.set_state(state_token, state)
+    finally:
+        ticking = False
+        await ticker_task
+
+    first = timeline.index("serialize")
+    last = len(timeline) - 1 - timeline[::-1].index("serialize")
+    assert "tick" not in timeline[first:last], (
+        "set_state yielded to the event loop while serializing live state"
     )
-    await state_manager_redis.set_state(state_token, state)
-    assert to_thread.called
 
     final_state = await state_manager_redis.get_state(state_token)
     assert isinstance(final_state, root_state)
     assert final_state.count == 7
+    assert (await final_state.get_state(SubState1)).sub1_foo == "sub1"
 
 
 def test_required_state_classes_cache_invalidation(
