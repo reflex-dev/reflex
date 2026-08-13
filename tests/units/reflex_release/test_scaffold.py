@@ -336,6 +336,18 @@ def test_internal_root_package_without_source_dirs_is_rejected(
         render(INTERNAL_WORKFLOW, load_config(repo))
 
 
+def test_the_heading_guard_covers_every_publishing_branch(config: Config) -> None:
+    """A merged version heading is a publish trigger wherever it lands."""
+    document = yaml.safe_load(render("changelog.yml", config))
+    guarded = set(document[True]["pull_request"]["branches"])
+    publishing = set(
+        yaml.safe_load(render("release_from_changelog.yml", config))[True]["push"][
+            "branches"
+        ]
+    )
+    assert publishing <= guarded
+
+
 def test_release_branch_exemption_requires_the_bot_author(config: Config) -> None:
     """A contributor picks their branch name; they cannot pick the PR author."""
     rendered = render("changelog.yml", config)
@@ -454,6 +466,38 @@ def _approval_step(config: Config) -> dict:
         The parsed step.
     """
     return yaml.safe_load(render("publish.yml", config))["jobs"]["publish"]["steps"][0]
+
+
+def _build_steps(config: Config) -> list[dict]:
+    """Return the steps of the publish workflow's unprivileged build job.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The parsed steps.
+    """
+    return yaml.safe_load(render("publish.yml", config))["jobs"]["build"]["steps"]
+
+
+def test_the_approver_sees_the_artifact_digests(config: Config) -> None:
+    """The approval is only meaningful if what is being uploaded is visible."""
+    step = next(
+        step
+        for step in _build_steps(config)
+        if "sha256sum dist/*" in step.get("run", "")
+    )
+    assert "GITHUB_STEP_SUMMARY" in step["run"]
+
+
+def test_verify_dist_is_told_which_package_it_is_checking(config: Config) -> None:
+    """Lockstep siblings share a version, so the name is what tells them apart."""
+    step = next(
+        step
+        for step in _build_steps(config)
+        if step.get("run", "").endswith("verify-dist")
+    )
+    assert "PACKAGE" in step["env"]
 
 
 def test_publish_workflow_always_requires_reviewers(config: Config) -> None:

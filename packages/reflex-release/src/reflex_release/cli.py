@@ -131,7 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     verify = sub.add_parser(
-        "verify-dist", help="Check every built artifact declares the target version."
+        "verify-dist",
+        help="Check every built artifact is this package at the target version.",
+    )
+    verify.add_argument(
+        "--package", default=_env("PACKAGE"), help="Package being released."
     )
     verify.add_argument("--version", default=_env("VERSION"), help="Expected version.")
     verify.add_argument(
@@ -246,6 +250,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path(_env("NOTES_PATH", "release_notes.md")),
         help="File holding the release notes.",
     )
+    release.add_argument(
+        "--checksums",
+        type=Path,
+        default=Path(_env("CHECKSUMS_PATH", "SHA256SUMS")),
+        help="Checksum manifest to attach to the release.",
+    )
 
     create = sub.add_parser("create", help="Create a news fragment.")
     create.add_argument("name", help="Fragment filename, e.g. 1234.feature.md.")
@@ -301,7 +311,7 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
         case "pin-lockstep":
             commands.cmd_pin_lockstep(config, args.package, args.version)
         case "verify-dist":
-            commands.cmd_verify_dist(config, args.version, args.dist_dir)
+            commands.cmd_verify_dist(config, args.package, args.version, args.dist_dir)
         case "extract-notes":
             commands.cmd_extract_notes(config, args.package, args.version, args.output)
         case "check-headings":
@@ -331,6 +341,7 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
                 _bool(args.prerelease),
                 _bool(args.mark_latest),
                 args.notes,
+                args.checksums,
             )
         case "create":
             commands.cmd_create(

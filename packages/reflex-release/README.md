@@ -273,8 +273,9 @@ fallback-version = "0.0.0dev0"
 Any backend works as long as the tag prefixes match; `hatch-vcs` and
 `setuptools-scm` need their `tag_regex`/`git_describe_command` pointed at the
 same prefixes. The `verify-dist` step fails the build when the produced
-artifacts do not carry the expected version, so a misconfigured prefix is caught
-before anything is uploaded rather than shipping `0.0.0dev0` to PyPI.
+artifacts do not carry the expected distribution name and version, so a
+misconfigured prefix is caught before anything is uploaded rather than shipping
+`0.0.0dev0` to PyPI.
 
 If your repository already tags releases some other way, set `tag-prefix` to
 match — it applies to both the root package (`<tag-prefix>1.2.3`) and
@@ -371,7 +372,15 @@ Either way, the reviewer list is the control worth auditing.
 The reviewer approves the `publish` job of a specific run. At that point the
 version, the changelog section and the built artifact already exist and are
 visible in the run. **Check the version and the package in the run name**, and
-that the run was triggered by a merge you recognize.
+that the run was triggered by a merge you recognize. The build job's summary
+lists the SHA-256 of every file that will be uploaded, so what you are approving
+is named down to the byte before you approve it.
+
+Before that artifact is built, `verify-dist` checks each file's core metadata
+against the release: not just the version — which lockstep siblings share — but
+the **distribution name**, since every package in a repository publishes through
+the same trusted-publishing identity and nothing else would stop a
+misconfigured build from uploading one package under another's approval.
 
 The `SHA256SUMS` manifest travels *inside* the same artifact, so it proves the
 upload matches the build — it is an integrity check against truncation and
@@ -379,6 +388,17 @@ partial downloads, **not** a defense against a compromised build job, which
 could write both the files and the manifest. The defense there is that the
 artifact can only be written by the build job of the same run, and that the run
 is triggered by a branch your ruleset controls.
+
+The manifest is attached to the GitHub release as well, so the record of what a
+version contains survives the workflow artifact's retention window: anyone can
+`sha256sum -c SHA256SUMS` a downloaded wheel against it years later.
+
+For cryptographic provenance rather than a self-attested manifest — a PyPI
+[attestation](https://docs.pypi.org/attestations/) tying the artifact to the
+workflow that built it — publish with `pypa/gh-action-pypi-publish` in place of
+`uv publish`. That is a deliberate omission here, not an oversight: it puts a
+third-party action inside the one job holding the OIDC credential, which is the
+job this design keeps free of everything but the upload.
 
 ### Ways to weaken it
 
@@ -521,7 +541,7 @@ a flag for running the same command by hand.
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
 | `pin-lockstep` | Pin lockstep siblings exactly before building. |
-| `verify-dist` | Check the built artifacts carry the target version. |
+| `verify-dist` | Check the built artifacts are this package at the target version. |
 | `check-dev-pins` | Reject `*.dev` dependency pins in published metadata. |
 | `extract-notes` | Write a version's changelog section for the release body. |
 | `push-tag` / `create-release` | Tag and publish the GitHub release. |

@@ -173,6 +173,22 @@ class Config:
             else self.root / self.package_dir(package)
         )
 
+    def distribution_name(self, package: str) -> str:
+        """Return the name a package is published under.
+
+        Args:
+            package: The package name (its directory).
+
+        Returns:
+            The ``[project] name`` from the package's ``pyproject.toml``, which
+            is what appears on PyPI and in built artifact metadata.
+        """
+        pyproject = self.package_path(package) / "pyproject.toml"
+        name = load_pyproject(pyproject).get("project", {}).get("name")
+        if not isinstance(name, str) or not name:
+            fail(f"{pyproject} declares no [project] name")
+        return name
+
     def changelog_path(self, package: str) -> Path:
         """Return a package's changelog path (which may not exist).
 

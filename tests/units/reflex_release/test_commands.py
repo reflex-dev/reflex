@@ -812,12 +812,29 @@ def release_args(
     return lambda: captured[-1]
 
 
+def release_inputs(tmp_path: Path) -> tuple[Path, Path]:
+    """Write the release notes and checksum manifest a publish would have built.
+
+    Args:
+        tmp_path: The pytest temporary directory.
+
+    Returns:
+        The notes and checksum manifest paths.
+    """
+    notes = tmp_path / "notes.md"
+    notes.write_text("Notes.\n", encoding="utf-8")
+    checksums = tmp_path / "SHA256SUMS"
+    checksums.write_text("abc123  dist/widget_core-0.2.1.whl\n", encoding="utf-8")
+    return notes, checksums
+
+
 def test_create_release_titles_the_root_package_with_its_tag(
     config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
 ) -> None:
-    notes = tmp_path / "notes.md"
-    notes.write_text("Notes.\n", encoding="utf-8")
-    commands.cmd_create_release(config, "v0.2.1", "mypkg", "0.2.1", False, True, notes)
+    notes, checksums = release_inputs(tmp_path)
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
     args = release_args()
     assert args[args.index("--title") + 1] == "v0.2.1"
 
@@ -825,10 +842,39 @@ def test_create_release_titles_the_root_package_with_its_tag(
 def test_create_release_names_the_package_for_a_sub_package(
     config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
 ) -> None:
-    notes = tmp_path / "notes.md"
-    notes.write_text("Notes.\n", encoding="utf-8")
+    notes, checksums = release_inputs(tmp_path)
     commands.cmd_create_release(
-        config, "widget-core-v0.2.1", "widget-core", "0.2.1", False, False, notes
+        config,
+        "widget-core-v0.2.1",
+        "widget-core",
+        "0.2.1",
+        False,
+        False,
+        notes,
+        checksums,
     )
     args = release_args()
     assert args[args.index("--title") + 1] == "widget-core@0.2.1"
+
+
+def test_create_release_attaches_the_checksum_manifest(
+    config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
+) -> None:
+    """The record of what a version contains has to outlive the workflow artifact."""
+    notes, checksums = release_inputs(tmp_path)
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert release_args()[-1] == str(checksums)
+
+
+def test_create_release_without_a_manifest_still_releases(
+    config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
+) -> None:
+    """A published version must not be left untagged over a missing manifest."""
+    notes, checksums = release_inputs(tmp_path)
+    checksums.unlink()
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert str(checksums) not in release_args()

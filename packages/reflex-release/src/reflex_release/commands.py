@@ -32,7 +32,7 @@ from .changelog import (
     latest_version,
     parse_sections,
 )
-from .config import Config, is_final, load_pyproject
+from .config import Config, is_final
 from .discovery import (
     alpha_train_packages,
     build_changelog,
@@ -498,22 +498,22 @@ def cmd_pin_lockstep(config: Config, package: str, version: str) -> None:
         return
     pyproject = config.package_path(package) / "pyproject.toml"
     for target in targets:
-        name = load_pyproject(config.package_path(target) / "pyproject.toml")[
-            "project"
-        ]["name"]
-        pin_exact(pyproject, name, Version(version))
+        pin_exact(pyproject, config.distribution_name(target), Version(version))
 
 
-def cmd_verify_dist(config: Config, version: str, dist_dir: str) -> None:
-    """Verify every built artifact carries exactly the target version.
+def cmd_verify_dist(config: Config, package: str, version: str, dist_dir: str) -> None:
+    """Verify every built artifact is this package at exactly the target version.
 
     Args:
         config: The repository configuration.
+        package: The package being released.
         version: The version being released.
         dist_dir: The artifact directory, relative to the repository root.
     """
-    count = verify_dist(config.root / dist_dir, Version(version))
-    echo(f"{count} artifact(s) at version {version}")
+    config.require_known(package)
+    distribution = config.distribution_name(package)
+    count = verify_dist(config.root / dist_dir, distribution, Version(version))
+    echo(f"{count} artifact(s) of {distribution} at version {version}")
 
 
 def cmd_extract_notes(
@@ -936,6 +936,7 @@ def cmd_create_release(
     prerelease: bool,
     mark_latest: bool,
     notes_path: Path,
+    checksums_path: Path,
 ) -> None:
     """Create the GitHub release for a published version.
 
@@ -947,6 +948,9 @@ def cmd_create_release(
         prerelease: Whether to mark the release as a prerelease.
         mark_latest: Whether to mark the release as "Latest".
         notes_path: File holding the release notes.
+        checksums_path: The ``sha256sum`` manifest of everything that was
+            uploaded, attached to the release so the record of what a version
+            contains outlives the workflow artifact it was built as.
     """
     # A probe, not an action: keep its output (and its "not found" stderr on the
     # normal path) out of the job log.
@@ -971,6 +975,10 @@ def cmd_create_release(
         args += ["--prerelease", "--latest=false"]
     else:
         args.append("--latest" if mark_latest else "--latest=false")
+    if checksums_path.is_file():
+        args.append(str(checksums_path))
+    else:
+        notice(f"no checksum manifest at {checksums_path}; releasing without one")
     gh_run(args, config.root)
 
 

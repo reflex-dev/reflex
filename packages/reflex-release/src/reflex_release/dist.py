@@ -13,17 +13,31 @@ from packaging.version import InvalidVersion, Version
 from .actions import ReleaseError, fail
 
 
-def dist_metadata_version(path: Path) -> str:
-    """Read the ``Version`` metadata field of a built distribution.
+def normalize_name(name: str) -> str:
+    """Normalize a distribution name the PEP 503 way.
+
+    Args:
+        name: The distribution name as written.
+
+    Returns:
+        The lowercase name with every run of ``-``, ``_`` or ``.`` collapsed to
+        a single ``-``.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def dist_metadata(path: Path) -> tuple[str, str]:
+    """Read the ``Name`` and ``Version`` metadata fields of a built distribution.
 
     Args:
         path: A wheel (``*.whl``) or sdist (``*.tar.gz``).
 
     Returns:
-        The Version header value from the wheel's METADATA / sdist's PKG-INFO.
+        The Name and Version header values from the wheel's METADATA / sdist's
+        PKG-INFO.
 
     Raises:
-        ReleaseError: When the artifact declares no version.
+        ReleaseError: When the artifact declares no name or no version.
     """
     if path.name.endswith(".whl"):
         with zipfile.ZipFile(path) as wheel:
@@ -50,28 +64,38 @@ def dist_metadata_version(path: Path) -> str:
             content = member_file.read().decode()
     else:
         fail(f"unexpected artifact type: {path.name}")
+    fields: dict[str, str] = {}
     for line in content.splitlines():
         if not line.strip():
             break
-        if line.startswith("Version:"):
-            return line.split(":", 1)[1].strip()
-    message = f"no Version field in the metadata of {path.name}"
-    raise ReleaseError(message)
+        key, _, value = line.partition(":")
+        if key in {"Name", "Version"}:
+            fields[key] = value.strip()
+    if not fields.get("Name") or not fields.get("Version"):
+        message = f"no Name/Version field in the metadata of {path.name}"
+        raise ReleaseError(message)
+    return fields["Name"], fields["Version"]
 
 
-def verify_dist(dist_dir: Path, target: Version) -> int:
-    """Verify every built artifact carries exactly the target version.
+def verify_dist(dist_dir: Path, distribution: str, target: Version) -> int:
+    """Verify every built artifact is the expected distribution at the target version.
 
     Catches a misconfigured dynamic-versioning tag prefix building e.g.
-    ``0.0.0dev0`` instead of the version being released.
+    ``0.0.0dev0`` instead of the version being released, and — since every
+    package in a repository publishes through the same trusted-publishing
+    identity — a build that produced some *other* distribution than the one the
+    approval names. Lockstep siblings share a version, so the version alone does
+    not distinguish them.
 
     Args:
         dist_dir: The directory holding the built artifacts.
+        distribution: The distribution name every artifact must declare.
         target: The version every artifact must declare.
 
     Returns:
         The number of artifacts verified.
     """
+    expected_name = normalize_name(distribution)
     # Verify exactly what `uv publish dist/*` will upload: the shell glob skips
     # hidden files (uv build drops a .gitignore into dist/).
     files = sorted(
@@ -82,7 +106,13 @@ def verify_dist(dist_dir: Path, target: Version) -> int:
     if not files:
         fail(f"no artifacts in {dist_dir}")
     for path in files:
-        raw = dist_metadata_version(path)
+        name, raw = dist_metadata(path)
+        if normalize_name(name) != expected_name:
+            fail(
+                f"artifact {path.name} is {name}, expected {distribution}; the "
+                "build produced a different distribution than the one being "
+                "published"
+            )
         try:
             found = Version(raw)
         except InvalidVersion:

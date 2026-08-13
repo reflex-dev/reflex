@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from packaging.version import Version
 from reflex_release.actions import ReleaseError
-from reflex_release.dist import dist_metadata_version, pin_exact, verify_dist
+from reflex_release.dist import dist_metadata, normalize_name, pin_exact, verify_dist
 
-METADATA = "Metadata-Version: 2.4\nName: widget-core\nVersion: {version}\n\nBody text\n"
+METADATA = "Metadata-Version: 2.4\nName: {name}\nVersion: {version}\n\nBody text\n"
 
 
 def make_wheel(directory: Path, version: str, name: str = "widget_core") -> Path:
@@ -28,7 +28,8 @@ def make_wheel(directory: Path, version: str, name: str = "widget_core") -> Path
     path = directory / f"{name}-{version}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as wheel:
         wheel.writestr(
-            f"{name}-{version}.dist-info/METADATA", METADATA.format(version=version)
+            f"{name}-{version}.dist-info/METADATA",
+            METADATA.format(name=name, version=version),
         )
     return path
 
@@ -46,46 +47,60 @@ def make_sdist(directory: Path, version: str, name: str = "widget_core") -> Path
     """
     path = directory / f"{name}-{version}.tar.gz"
     pkg_info = directory / "PKG-INFO"
-    pkg_info.write_text(METADATA.format(version=version), encoding="utf-8")
+    pkg_info.write_text(METADATA.format(name=name, version=version), encoding="utf-8")
     with tarfile.open(path, "w:gz") as sdist:
         sdist.add(pkg_info, arcname=f"{name}-{version}/PKG-INFO")
     pkg_info.unlink()
     return path
 
 
-def test_dist_metadata_version(tmp_path: Path) -> None:
-    assert dist_metadata_version(make_wheel(tmp_path, "1.2.3")) == "1.2.3"
-    assert dist_metadata_version(make_sdist(tmp_path, "1.2.3")) == "1.2.3"
+def test_dist_metadata(tmp_path: Path) -> None:
+    assert dist_metadata(make_wheel(tmp_path, "1.2.3")) == ("widget_core", "1.2.3")
+    assert dist_metadata(make_sdist(tmp_path, "1.2.3")) == ("widget_core", "1.2.3")
 
 
-def test_dist_metadata_version_rejects_other_files(tmp_path: Path) -> None:
+def test_dist_metadata_rejects_other_files(tmp_path: Path) -> None:
     stray = tmp_path / "notes.txt"
     stray.write_text("x", encoding="utf-8")
     with pytest.raises(ReleaseError, match="unexpected artifact type"):
-        dist_metadata_version(stray)
+        dist_metadata(stray)
+
+
+def test_normalize_name() -> None:
+    assert (
+        normalize_name("Widget__Core") == normalize_name("widget.core") == "widget-core"
+    )
 
 
 def test_verify_dist_accepts_matching_artifacts(tmp_path: Path) -> None:
     make_wheel(tmp_path, "1.2.3")
     make_sdist(tmp_path, "1.2.3")
-    assert verify_dist(tmp_path, Version("1.2.3")) == 2
+    # The metadata name and the expected name differ only by PEP 503 spelling.
+    assert verify_dist(tmp_path, "widget-core", Version("1.2.3")) == 2
 
 
 def test_verify_dist_rejects_a_mismatch(tmp_path: Path) -> None:
     make_wheel(tmp_path, "0.0.0")
     with pytest.raises(ReleaseError, match=r"has version 0\.0\.0, expected 1\.2\.3"):
-        verify_dist(tmp_path, Version("1.2.3"))
+        verify_dist(tmp_path, "widget-core", Version("1.2.3"))
+
+
+def test_verify_dist_rejects_another_distribution(tmp_path: Path) -> None:
+    """A lockstep sibling shares the version, so the name is what tells them apart."""
+    make_wheel(tmp_path, "1.2.3", name="gadget_core")
+    with pytest.raises(ReleaseError, match="is gadget_core, expected widget-core"):
+        verify_dist(tmp_path, "widget-core", Version("1.2.3"))
 
 
 def test_verify_dist_ignores_hidden_files(tmp_path: Path) -> None:
     make_wheel(tmp_path, "1.2.3")
     (tmp_path / ".gitignore").write_text("*\n", encoding="utf-8")
-    assert verify_dist(tmp_path, Version("1.2.3")) == 1
+    assert verify_dist(tmp_path, "widget-core", Version("1.2.3")) == 1
 
 
 def test_verify_dist_requires_artifacts(tmp_path: Path) -> None:
     with pytest.raises(ReleaseError, match="no artifacts"):
-        verify_dist(tmp_path, Version("1.2.3"))
+        verify_dist(tmp_path, "widget-core", Version("1.2.3"))
 
 
 @pytest.mark.parametrize(

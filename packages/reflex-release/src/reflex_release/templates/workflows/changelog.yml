@@ -27,9 +27,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
   cancel-in-progress: true
 
+# The branches are the ones release_from_changelog publishes from: a merged
+# version heading is a publish trigger wherever it lands, and @@HOTFIX_PREFIX@@**
+# publishes final versions without going through @@MAIN_BRANCH@@ at all.
 on:
   pull_request:
-    branches: ["@@MAIN_BRANCH@@"]
+    branches:
+      ["@@MAIN_BRANCH@@", "@@PRERELEASE_PREFIX@@**", "@@HOTFIX_PREFIX@@**"]
 
 jobs:
   changelog:

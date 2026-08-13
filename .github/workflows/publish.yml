@@ -152,9 +152,10 @@ jobs:
         if: steps.prepare.outputs.skipped != 'true'
         run: uv build --directory "${{ steps.prepare.outputs.build_dir }}"
 
-      - name: Verify built artifact versions
+      - name: Verify built artifact names and versions
         if: steps.prepare.outputs.skipped != 'true'
         env:
+          PACKAGE: ${{ inputs.package }}
           VERSION: ${{ steps.prepare.outputs.version }}
         run: uv run --no-config --locked --script scripts/release.py verify-dist
 
@@ -174,10 +175,22 @@ jobs:
 
       # The manifest lets the gated publish job re-verify (with coreutils
       # only) that what it uploads is byte-identical to what was built and
-      # verified here — everything the human approves is covered by it.
+      # verified here — everything the human approves is covered by it. It is
+      # also put in front of the approver (job summary) and attached to the
+      # GitHub release, so the record of what a version contains outlives this
+      # run's artifact retention.
       - name: Write checksum manifest
         if: steps.prepare.outputs.skipped != 'true'
-        run: sha256sum dist/* release_notes.md > SHA256SUMS
+        run: |
+          set -euo pipefail
+          sha256sum dist/* release_notes.md > SHA256SUMS
+          {
+            echo "### Artifacts awaiting approval"
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifacts for the gated publish
         if: steps.prepare.outputs.skipped != 'true'
@@ -261,7 +274,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download release notes
+      # The same artifact the approval covered: the release notes and the
+      # checksum manifest of exactly what was uploaded.
+      - name: Download release notes and checksums
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: publish-${{ inputs.package }}
@@ -280,5 +295,6 @@ jobs:
           PRERELEASE: ${{ needs.build.outputs.prerelease }}
           MARK_LATEST: ${{ needs.build.outputs.mark_latest }}
           NOTES_PATH: release_notes.md
+          CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/publish/create_release.sh
