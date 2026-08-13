@@ -1695,10 +1695,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls.base_vars.update({name: var})
         cls.vars.update({name: var})
 
-        # let substates know about the new variable
-        for substate_class in cls.get_substates():
+        # Let all descendants know about the new variable: grandchildren see
+        # it through their aliased inherited_vars dicts, so their cached
+        # skip-var frozensets must be invalidated too, not just the direct
+        # children's.
+        descendants = [*cls.get_substates()]
+        while descendants:
+            substate_class = descendants.pop()
+            descendants.extend(substate_class.get_substates())
             substate_class.vars.setdefault(name, var)
-            # inherited_vars may alias this class's vars dict.
             substate_class._skip_var_names = None
 
         # Reinitialize dependency tracking dicts.
@@ -1984,6 +1989,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
+        # is_mutable_type first: it is an lru_cache hit and False for the
+        # scalar reads that dominate this path, so it short-circuits before
+        # the base_vars fetch + membership tests.
         if is_mutable_type(type(value)) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
