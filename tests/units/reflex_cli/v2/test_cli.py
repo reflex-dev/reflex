@@ -1046,6 +1046,131 @@ def test_deploy_empty_project_in_config_is_not_forwarded_to_create_app(
     assert create_app.call_args.kwargs.get("project_id") is None
 
 
+def _deploy_call_recorder(mocker: MockerFixture) -> MagicMock:
+    """Set up a succeeding non-interactive deploy on an existing app.
+
+    Returns:
+        A parent mock recording ``set_instance_bounds`` and ``create_deployment``
+        in call order.
+
+    """
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    recorder = MagicMock()
+    recorder.attach_mock(
+        mocker.patch("reflex_cli.utils.hosting.set_instance_bounds", return_value=None),
+        "set_instance_bounds",
+    )
+    recorder.attach_mock(
+        mocker.patch(
+            "reflex_cli.utils.hosting.create_deployment",
+            return_value={"deployment_id": "fake-deployment-id"},
+        ),
+        "create_deployment",
+    )
+    return recorder
+
+
+def test_deploy_forwards_vmtype_to_create_deployment(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """--vmtype reaches the deployment submit unchanged, with no CLI validation."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        vmtype="c2m2",
+    )
+
+    assert recorder.create_deployment.call_args.kwargs["vmtype"] == "c2m2"
+
+
+@pytest.mark.parametrize(
+    ("min_instances", "max_instances"),
+    [(1, 4), (2, None), (None, 8)],
+)
+def test_deploy_sets_instance_bounds_before_submitting(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    min_instances: int | None,
+    max_instances: int | None,
+):
+    """Bounds are applied to the app before the deployment that reads them."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        min_instances=min_instances,
+        max_instances=max_instances,
+    )
+
+    assert [call[0] for call in recorder.mock_calls] == [
+        "set_instance_bounds",
+        "create_deployment",
+    ]
+    bounds_kwargs = recorder.set_instance_bounds.call_args.kwargs
+    assert bounds_kwargs["app_id"] == "fake-id"
+    assert bounds_kwargs["min_instances"] == min_instances
+    assert bounds_kwargs["max_instances"] == max_instances
+
+
+def test_deploy_without_instance_bounds_flags_skips_the_call(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """An app keeps its platform defaults when neither bound is passed."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    recorder.set_instance_bounds.assert_not_called()
+    recorder.create_deployment.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "set instance bounds failed: min_instances must be <= max_instances",
+        "set instance bounds failed: platform does not support instance bounds",
+        "set instance bounds failed: a scale operation is already running",
+    ],
+)
+def test_deploy_rejected_instance_bounds_aborts_before_submitting(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    detail: str,
+):
+    """A rejected bound surfaces the server message and stops the deploy."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.set_instance_bounds.return_value = detail
+    console_error = mocker.patch("reflex_cli.utils.console.error")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=5,
+            max_instances=1,
+        )
+
+    console_error.assert_called_once_with(detail)
+    recorder.create_deployment.assert_not_called()
+
+
 def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
     """--provider gcp on a fly app switches it and returns the new provider."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})

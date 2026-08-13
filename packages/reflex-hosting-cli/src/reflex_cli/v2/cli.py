@@ -212,6 +212,8 @@ def deploy(
     project: str | None = None,
     envs: list[str] | None = None,
     vmtype: str | None = None,
+    min_instances: int | None = None,
+    max_instances: int | None = None,
     hostname: str | None = None,
     interactive: bool = True,
     envfile: str | None = None,
@@ -235,6 +237,10 @@ def deploy(
         project: The project to deploy to.
         envs: The environment variables to set.
         vmtype: The VM type to allocate.
+        min_instances: The minimum number of instances to keep running. Left at
+            the app's current value when omitted.
+        max_instances: The maximum number of instances to scale out to. Left at
+            the app's current value when omitted.
         hostname: The hostname to use for the frontend.
         interactive: Whether to use interactive mode.
         envfile: The path to an env file to use. Will override any envs set manually.
@@ -548,6 +554,20 @@ def deploy(
         if validation_message != "success":
             console.error(validation_message)
             raise click.exceptions.Exit(1)
+
+        # Instance bounds live on the app, and the deployment reads them when it
+        # is created — so they must be applied before the submit below. Do it
+        # before the export too, so a rejected bound fails fast.
+        if min_instances is not None or max_instances is not None:
+            bounds_error = hosting.set_instance_bounds(
+                app_id=app["id"],
+                min_instances=min_instances,
+                max_instances=max_instances,
+                client=authenticated_client,
+            )
+            if bounds_error:
+                console.error(bounds_error)
+                raise click.exceptions.Exit(1)
 
         if envfile:
             try:

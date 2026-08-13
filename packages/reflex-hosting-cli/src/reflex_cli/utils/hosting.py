@@ -1063,6 +1063,62 @@ def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) ->
     return response.json().get("provider", provider)
 
 
+def set_instance_bounds(
+    app_id: str,
+    client: AuthenticatedClient,
+    min_instances: int | None = None,
+    max_instances: int | None = None,
+) -> str | None:
+    """Set the autoscaling instance bounds on an app.
+
+    Only the bounds explicitly passed are sent; an omitted bound is left at
+    whatever the app already has (the platform default, unless previously
+    overridden). The bounds are picked up by the next deployment, so this must
+    be called before submitting one for it to take effect.
+
+    Args:
+        app_id: The id of the application.
+        client: The authenticated client.
+        min_instances: The minimum number of instances to keep running.
+        max_instances: The maximum number of instances to scale out to.
+
+    Returns:
+        None on success, or a ``"set instance bounds failed: ..."`` string on
+        error (validation, unsupported platform, or a scale already running).
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    bounds: dict[str, int] = {}
+    if min_instances is not None:
+        bounds["min_instances"] = min_instances
+    if max_instances is not None:
+        bounds["max_instances"] = max_instances
+    response = httpx.post(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"/api/v1/apps/{app_id}/instance_bounds",
+        ),
+        json=bounds,
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        try:
+            ex_details = ex.response.json().get("detail")
+        except (ValueError, AttributeError):
+            ex_details = ex.response.text
+        return f"set instance bounds failed: {ex_details}"
+    return None
+
+
 def rollback_deployment(
     app_id: str, deployment_id: str, client: AuthenticatedClient
 ) -> str | None:
