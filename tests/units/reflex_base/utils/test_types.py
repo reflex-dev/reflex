@@ -1,5 +1,7 @@
 """Tests for reflex_base.utils.types."""
 
+import os
+
 from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.utils.types import (
@@ -37,5 +39,9 @@ def test_validation_depth_by_env_mode():
         assert _validation_depth() == 0
         environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
         assert _validation_depth() == 1
+        # The canonical parser tolerates surrounding whitespace; the hot-path
+        # reader must agree with it.
+        os.environ["REFLEX_ENV_MODE"] = f" {constants.Env.PROD.value} "
+        assert _validation_depth() == 0
     finally:
         environment.REFLEX_ENV_MODE.set(initial)

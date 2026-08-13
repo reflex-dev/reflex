@@ -643,11 +643,11 @@ def does_obj_satisfy_typed_dict(
 
 
 @lru_cache
-def _validation_depth_for_mode(raw_mode: str | None) -> int:
+def _validation_depth_for_mode(raw_mode: str) -> int:
     """Get the validation depth for a raw REFLEX_ENV_MODE value.
 
     Args:
-        raw_mode: The raw environment variable value (or None if unset).
+        raw_mode: The stripped environment variable value ("" if unset).
 
     Returns:
         The `nested` depth to pass to `_isinstance`.
@@ -669,7 +669,8 @@ def _validation_depth() -> int:
     # Read the raw env var directly: interpreting it through
     # environment.REFLEX_ENV_MODE.get() on this hot path would re-parse the
     # enum on every state var assignment (and the import would be circular).
-    return _validation_depth_for_mode(os.environ.get("REFLEX_ENV_MODE"))
+    # Strip to match the canonical parser's whitespace tolerance.
+    return _validation_depth_for_mode(os.environ.get("REFLEX_ENV_MODE", "").strip())
 
 
 def _isinstance(
