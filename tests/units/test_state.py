@@ -1528,6 +1528,39 @@ def test_get_skip_vars_cached_per_class():
     assert "p" not in parent_skip
 
 
+def test_get_skip_vars_invalidated_on_add_var_recursively():
+    """add_var refreshes the skip-vars cache for every descendant.
+
+    Grandchildren observe the new var through their aliased inherited_vars
+    dicts, so a stale per-class frozenset would make get_skip_vars() disagree
+    with inherited_vars and route the var down the wrong __setattr__ path.
+    """
+
+    class SkipInvalidationRootState(BaseState):
+        r: int = 0
+
+    class SkipInvalidationChildState(SkipInvalidationRootState):
+        c: int = 0
+
+    class SkipInvalidationGrandchildState(SkipInvalidationChildState):
+        g: int = 0
+
+    # Populate every cache before the dynamic var exists.
+    for klass in (
+        SkipInvalidationRootState,
+        SkipInvalidationChildState,
+        SkipInvalidationGrandchildState,
+    ):
+        assert "dyn_added" not in klass.get_skip_vars()
+
+    SkipInvalidationRootState.add_var("dyn_added", str, "")
+
+    assert "dyn_added" in SkipInvalidationChildState.inherited_vars
+    assert "dyn_added" in SkipInvalidationChildState.get_skip_vars()
+    assert "dyn_added" in SkipInvalidationGrandchildState.inherited_vars
+    assert "dyn_added" in SkipInvalidationGrandchildState.get_skip_vars()
+
+
 def test_frontend_computed_var_names_cached_per_class():
     """Frontend computed var names exclude backend vars and cache per class."""
 
