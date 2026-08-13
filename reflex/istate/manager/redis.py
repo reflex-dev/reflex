@@ -3,6 +3,7 @@
 import asyncio
 import contextlib
 import dataclasses
+import functools
 import inspect
 import os
 import sys
@@ -15,6 +16,7 @@ from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -29,7 +31,7 @@ from reflex.istate.manager import (
     _default_token_expiration,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
-from reflex.state import BaseState
+from reflex.state import BaseState, _get_state_hierarchy_generation
 from reflex.utils.tasks import ensure_task
 
 NOTIFY_KEYSPACE_EVENTS = (
@@ -97,6 +99,80 @@ LOCK_SUBSCRIBE_TASK_TIMEOUT = 2  # seconds
 
 SMR = f"[SMR:{os.getpid()}]"
 start = time.monotonic()
+
+
+@functools.lru_cache(maxsize=1024)
+def _required_state_classes(
+    target_state_cls: type[BaseState],
+    registration_ctx: RegistrationContext,
+    generation: int,
+) -> frozenset[type[BaseState]]:
+    """Get the state classes required to fetch the target state, cached.
+
+    The result is derived purely from class-level data, so entries are keyed
+    on the active registration context and the state hierarchy generation:
+    dynamic state class creation or a module hot reload starts a new
+    generation, orphaning stale entries.
+
+    Args:
+        target_state_cls: The target state class being fetched.
+        registration_ctx: The registration context the hierarchy lives in.
+        generation: The state hierarchy generation the result is valid for.
+
+    Returns:
+        The set of state classes required to fetch the target state.
+    """
+    return frozenset(_collect_required_state_classes(target_state_cls, subclasses=True))
+
+
+def _collect_required_state_classes(
+    target_state_cls: type[BaseState],
+    subclasses: bool = False,
+    required_state_classes: set[type[BaseState]] | None = None,
+) -> set[type[BaseState]]:
+    """Recursively determine which states are required to fetch the target state.
+
+    This will always include potentially dirty substates that depend on vars
+    in the target_state_cls.
+
+    Args:
+        target_state_cls: The target state class being fetched.
+        subclasses: Whether to include subclasses of the target state.
+        required_state_classes: Recursive argument tracking state classes that have already been seen.
+
+    Returns:
+        The set of state classes required to fetch the target state.
+    """
+    if required_state_classes is None:
+        required_state_classes = set()
+    # Get the substates if requested.
+    if subclasses:
+        for substate in target_state_cls.get_substates():
+            _collect_required_state_classes(
+                substate,
+                subclasses=True,
+                required_state_classes=required_state_classes,
+            )
+    if target_state_cls in required_state_classes:
+        return required_state_classes
+    required_state_classes.add(target_state_cls)
+
+    # Get dependent substates.
+    for pd_substates in target_state_cls._get_potentially_dirty_states():
+        _collect_required_state_classes(
+            pd_substates,
+            subclasses=False,
+            required_state_classes=required_state_classes,
+        )
+
+    # Get the parent state if it exists.
+    if parent_state := target_state_cls.get_parent_state():
+        _collect_required_state_classes(
+            parent_state,
+            subclasses=False,
+            required_state_classes=required_state_classes,
+        )
+    return required_state_classes
 
 
 class RedisPubSubMessage(TypedDict):
@@ -208,56 +284,6 @@ class StateManagerRedis(StateManager):
             asyncio.get_running_loop()  # Check if we're in an event loop.
             self._ensure_lock_task()
 
-    def _get_required_state_classes(
-        self,
-        target_state_cls: type[BaseState],
-        subclasses: bool = False,
-        required_state_classes: set[type[BaseState]] | None = None,
-    ) -> set[type[BaseState]]:
-        """Recursively determine which states are required to fetch the target state.
-
-        This will always include potentially dirty substates that depend on vars
-        in the target_state_cls.
-
-        Args:
-            target_state_cls: The target state class being fetched.
-            subclasses: Whether to include subclasses of the target state.
-            required_state_classes: Recursive argument tracking state classes that have already been seen.
-
-        Returns:
-            The set of state classes required to fetch the target state.
-        """
-        if required_state_classes is None:
-            required_state_classes = set()
-        # Get the substates if requested.
-        if subclasses:
-            for substate in target_state_cls.get_substates():
-                self._get_required_state_classes(
-                    substate,
-                    subclasses=True,
-                    required_state_classes=required_state_classes,
-                )
-        if target_state_cls in required_state_classes:
-            return required_state_classes
-        required_state_classes.add(target_state_cls)
-
-        # Get dependent substates.
-        for pd_substates in target_state_cls._get_potentially_dirty_states():
-            self._get_required_state_classes(
-                pd_substates,
-                subclasses=False,
-                required_state_classes=required_state_classes,
-            )
-
-        # Get the parent state if it exists.
-        if parent_state := target_state_cls.get_parent_state():
-            self._get_required_state_classes(
-                parent_state,
-                subclasses=False,
-                required_state_classes=required_state_classes,
-            )
-        return required_state_classes
-
     def _get_populated_states(
         self,
         target_state: BaseState,
@@ -322,7 +348,11 @@ class StateManagerRedis(StateManager):
 
         # Determine which states from the tree need to be fetched.
         required_state_classes = sorted(
-            self._get_required_state_classes(requested_state_cls, subclasses=True)
+            _required_state_classes(
+                requested_state_cls,
+                RegistrationContext.get(),
+                _get_state_hierarchy_generation(),
+            )
             - {type(s) for s in flat_state_tree.values()},
             key=lambda x: x.get_full_name(),
         )
@@ -441,32 +471,36 @@ class StateManagerRedis(StateManager):
                     dedupe=True,
                 )
 
-        # Recursively set_state on all known substates.
-        tasks = [
-            asyncio.create_task(
-                self.set_state(
-                    token,
-                    substate,
-                    lock_id=lock_id,
-                    **context,
-                ),
-                name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",
-            )
-            for substate in base_state.substates.values()
-        ]
-        # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if base_state._get_was_touched():
-            pickle_state = base_state._serialize()
+        # Walk the substate tree and collect the states that need writing.
+        touched_states: list[BaseState] = []
+        stack = [base_state]
+        while stack:
+            substate = stack.pop()
+            stack.extend(substate.substates.values())
+            if substate._get_was_touched():
+                touched_states.append(substate)
+        if not touched_states:
+            return
+
+        # Persist only each touched state (parents and substates are excluded
+        # by BaseState.__getstate__) in a single pipelined round trip.
+        # Serialization stays synchronous: awaiting between reading the live
+        # state objects and queuing their payloads would let a background task
+        # holding the same tree mutate a state mid-pickle, so redis could
+        # receive a torn or already-stale snapshot.
+        pipeline = self.redis.pipeline()
+        queued = False
+        for substate in touched_states:
+            pickle_state = substate._serialize()
             if pickle_state:
-                await self.redis.set(
-                    str(token.with_cls(type(base_state))),
+                pipeline.set(
+                    str(token.with_cls(type(substate))),
                     pickle_state,
                     ex=self.token_expiration,
                 )
-
-        # Wait for substates to be persisted.
-        for t in tasks:
-            await t
+                queued = True
+        if queued:
+            await pipeline.execute()
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(

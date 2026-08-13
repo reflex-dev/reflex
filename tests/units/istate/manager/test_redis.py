@@ -26,9 +26,13 @@ class RedisTestState(BaseState):
 class SubState1(RedisTestState):
     """A test substate for redis state manager tests."""
 
+    sub1_foo: str = ""
+
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+    sub2_foo: str = ""
 
 
 @pytest.fixture
@@ -736,3 +740,192 @@ async def test_oplock_hold_oplock_after_cancel(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 2
+
+
+async def test_set_state_verifies_lock_once_and_pipelines_writes(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """set_state checks the lock once and writes all states in one pipeline.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    redis = state_manager_redis.redis
+    token = str(uuid.uuid4())
+
+    get_calls: list[Any] = []
+    pttl_calls: list[Any] = []
+    orig_get = redis.get
+    orig_pttl = redis.pttl
+
+    async def counting_get(key, *args, **kwargs):
+        get_calls.append(key)
+        return await orig_get(key, *args, **kwargs)
+
+    async def counting_pttl(key, *args, **kwargs):
+        pttl_calls.append(key)
+        return await orig_pttl(key, *args, **kwargs)
+
+    redis.get = counting_get  # pyright: ignore[reportAttributeAccessIssue]
+    redis.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
+    try:
+        async with state_manager_redis.modify_state(
+            BaseStateToken(ident=token, cls=root_state)
+        ) as state:
+            state.count = 1
+            (await state.get_state(SubState1)).sub1_foo = "sub1"
+            (await state.get_state(SubState2)).sub2_foo = "sub2"
+            get_calls.clear()
+            pttl_calls.clear()
+    finally:
+        redis.get = orig_get  # pyright: ignore[reportAttributeAccessIssue]
+        redis.pttl = orig_pttl  # pyright: ignore[reportAttributeAccessIssue]
+
+    # With three touched states, the old implementation issued one lock GET
+    # and one PTTL per state in the tree; now the lock is verified once.
+    assert len(get_calls) == 1
+    assert len(pttl_calls) == 1
+
+    final_state = await state_manager_redis.get_state(
+        BaseStateToken(ident=token, cls=root_state)
+    )
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 1
+    assert (await final_state.get_state(SubState1)).sub1_foo == "sub1"
+    assert (await final_state.get_state(SubState2)).sub2_foo == "sub2"
+
+
+async def test_set_state_skips_untouched_states(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Only states reporting as touched are written to redis.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = str(uuid.uuid4())
+    state_token = BaseStateToken(ident=token, cls=root_state)
+
+    state = await state_manager_redis.get_state(state_token)
+    state.count = 5
+    state._clean()
+    assert state._get_was_touched()
+    await state_manager_redis.set_state(state_token, state)
+
+    # A freshly loaded instance is untouched (__getstate__ excludes the flag),
+    # so flushing it writes nothing and no pipeline is created.
+    reloaded = await state_manager_redis.get_state(state_token)
+    assert not reloaded._get_was_touched()
+
+    pipelines_created = 0
+    orig_pipeline = state_manager_redis.redis.pipeline
+
+    def counting_pipeline(*args, **kwargs):
+        nonlocal pipelines_created
+        pipelines_created += 1
+        return orig_pipeline(*args, **kwargs)
+
+    state_manager_redis.redis.pipeline = counting_pipeline
+    try:
+        await state_manager_redis.set_state(state_token, reloaded)
+    finally:
+        state_manager_redis.redis.pipeline = orig_pipeline
+    assert pipelines_created == 0
+
+    final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 5
+
+
+async def test_set_state_does_not_yield_while_serializing(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    mocker,
+):
+    """The event loop gets no control between serializing the touched states.
+
+    Yielding mid-flush would let a concurrent task holding the same tree mutate
+    a state after it was read but before its payload was queued, so redis could
+    receive a torn or already-stale snapshot.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        mocker: The pytest-mock fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = str(uuid.uuid4())
+    state_token = BaseStateToken(ident=token, cls=root_state)
+
+    state = await state_manager_redis.get_state(state_token)
+    state.count = 7
+    # Touch several states so the flush has a multi-state window to protect.
+    (await state.get_state(SubState1)).sub1_foo = "sub1"
+    (await state.get_state(SubState2)).sub2_foo = "sub2"
+
+    timeline: list[str] = []
+    original_serialize = BaseState._serialize
+
+    def traced_serialize(self):
+        timeline.append("serialize")
+        return original_serialize(self)
+
+    mocker.patch.object(BaseState, "_serialize", traced_serialize)
+
+    ticking = True
+
+    async def ticker():
+        # Appends a marker on every event loop iteration.
+        while ticking:
+            timeline.append("tick")
+            await asyncio.sleep(0)
+
+    ticker_task = asyncio.ensure_future(ticker())
+    await asyncio.sleep(0)
+    try:
+        await state_manager_redis.set_state(state_token, state)
+    finally:
+        ticking = False
+        await ticker_task
+
+    first = timeline.index("serialize")
+    last = len(timeline) - 1 - timeline[::-1].index("serialize")
+    assert "tick" not in timeline[first:last], (
+        "set_state yielded to the event loop while serializing live state"
+    )
+
+    final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 7
+    assert (await final_state.get_state(SubState1)).sub1_foo == "sub1"
+
+
+def test_required_state_classes_cache_invalidation(
+    root_state: type[RedisTestState],
+):
+    """The cached required-state-classes set follows hierarchy changes.
+
+    Args:
+        root_state: The root state class.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    from reflex.istate.manager.redis import _required_state_classes
+    from reflex.state import _get_state_hierarchy_generation
+
+    ctx = RegistrationContext.get()
+    before = _required_state_classes(root_state, ctx, _get_state_hierarchy_generation())
+    assert SubState1 in before
+
+    class LateSubState(root_state):  # pyright: ignore[reportGeneralTypeIssues]
+        """A substate defined after the cache was warmed."""
+
+    after = _required_state_classes(root_state, ctx, _get_state_hierarchy_generation())
+    assert LateSubState not in before
+    assert LateSubState in after
