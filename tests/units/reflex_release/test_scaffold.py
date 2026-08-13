@@ -80,7 +80,8 @@ def test_internal_workflow_is_only_generated_when_configured(
     )
     reloaded = load_config(repo)
     assert managed_workflows(reloaded) == (*CORE_WORKFLOWS, INTERNAL_WORKFLOW)
-    assert '- "packages/widget-core/**"' in render(INTERNAL_WORKFLOW, reloaded)
+    # The trigger matches what detect-internal counts as the package's source.
+    assert '- "packages/widget-core/src/**"' in render(INTERNAL_WORKFLOW, reloaded)
 
 
 def add_internal(repo: Path, package: str) -> Config:
@@ -228,6 +229,24 @@ def test_sync_rejects_an_unparsable_title_format(config: Config, repo: Path) -> 
         sync(load_config(repo))
 
 
+@pytest.mark.parametrize(
+    "title_format", ["## {version} {bogus}", "## {0}", "## {version!x}"]
+)
+def test_sync_rejects_a_malformed_title_format(
+    config: Config, repo: Path, title_format: str
+) -> None:
+    """The pull-request guard runs this, so it must give guidance, not a traceback."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'title_format = "## {version} ({project_date})"',
+            f'title_format = "{title_format}"',
+        )
+    )
+    with pytest.raises(ReleaseError, match="not a usable format string"):
+        sync(load_config(repo))
+
+
 def test_sync_accepts_a_custom_title_format_led_by_the_version(
     config: Config, repo: Path
 ) -> None:
@@ -267,6 +286,17 @@ def test_sync_keeps_a_foreign_workflow_of_the_same_name(
     target.write_text("name: hand written\n")
     sync(config)
     assert target.read_text() == "name: hand written\n"
+
+
+def test_internal_workflow_triggers_on_the_whole_directory_without_src(
+    config: Config, repo: Path
+) -> None:
+    """A flat-layout package owns its whole directory, and the trigger says so."""
+    flat = repo / "packages" / "flat"
+    flat.mkdir()
+    (flat / "pyproject.toml").write_text('[project]\nname = "flat"\n')
+    reloaded = add_internal(repo, "flat")
+    assert '- "packages/flat/**"' in render(INTERNAL_WORKFLOW, reloaded)
 
 
 def test_internal_root_package_triggers_on_its_source_paths(

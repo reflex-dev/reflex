@@ -62,6 +62,19 @@ SKIP_CHANGELOG_LABEL = "skip-changelog"
 _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
 
 
+def _is_null_sha(sha: str) -> bool:
+    """Return whether a git sha is the all-zero "no such commit" placeholder.
+
+    Args:
+        sha: The sha to inspect.
+
+    Returns:
+        True for the value a push event reports as ``before`` when it created
+        the branch.
+    """
+    return bool(sha) and set(sha) == {"0"}
+
+
 def _split_selection(raw: str) -> list[str]:
     """Split a free-form package selection into package names.
 
@@ -602,15 +615,26 @@ def cmd_detect_internal(config: Config, base: str, head: str, package: str) -> N
         write_outputs(packages=json.dumps([package]))
         return
 
-    if not commit_exists(config.root, base):
-        notice(f"push base {base!r} is unavailable; diffing the last commit instead")
-        base = f"{head}~1"
+    if _is_null_sha(base):
+        # A branch's first push reports an all-zero base: every file in it is
+        # new, and the paths filter matched against exactly that.
+        notice("push created the branch; treating every tracked file as changed")
+        changed = git(["ls-tree", "-r", "--name-only", head], config.root).splitlines()
+    else:
+        if not commit_exists(config.root, base):
+            notice(
+                f"push base {base!r} is unavailable; diffing the last commit instead"
+            )
+            base = f"{head}~1"
+        changed = git(["diff", "--name-only", base, head], config.root).splitlines()
 
-    changed = git(["diff", "--name-only", base, head], config.root).splitlines()
+    # Source paths, not the package directory: the root package's prefix is
+    # empty, so a bare startswith would match a push that only touched a
+    # sibling. This is the same rule the generated paths filter triggers on.
     selected = [
         name
         for name in config.internal_packages
-        if any(path.startswith(config.path_prefix(name)) for path in changed)
+        if any(config.is_package_source(name, path) for path in changed)
     ]
     write_outputs(packages=json.dumps(selected))
 
@@ -665,15 +689,10 @@ def _commit_changelogs(config: Config, message: str) -> None:
     changelogs = config.existing_changelogs()
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    # Stage the changelogs and the news directories towncrier consumed —
-    # `git add` on a path stages deletions too — and nothing else, so a release
-    # commit can never sweep up unrelated edits in the worktree.
-    news_dirs = [
-        config.news_dir(package).relative_to(config.root).as_posix()
-        for package in config.all_packages()
-        if config.news_dir(package).is_dir()
-    ]
-    git_run(["add", "--", *changelogs, *news_dirs], config.root)
+    # Only the changelogs: towncrier has already staged the deletion of every
+    # fragment it consumed, so staging the news directories would add nothing
+    # except any unrelated fragment sitting in the worktree.
+    git_run(["add", "--", *changelogs], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
     git_run(["commit", "-m", message], config.root)

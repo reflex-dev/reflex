@@ -226,6 +226,15 @@ def test_no_lockstep_by_default(config: Config) -> None:
             'root-package = "mypkg"\nallow-self-review = "yes"\n',
             "allow-self-review must be true or false",
         ),
+        ('root-package = "mypkg"\nmain-branch = ""\n', "main-branch must not be empty"),
+        (
+            'root-package = "mypkg"\nrelease-branch-prefix = "main/"\n',
+            "nests under the main branch",
+        ),
+        (
+            'root-package = "mypkg"\nlatest-release-package = false\n',
+            "latest-release-package must be a string",
+        ),
         # An empty prefix matches every branch, collapsing the branch policy.
         (
             'root-package = "mypkg"\nhotfix-branch-prefix = ""\n',

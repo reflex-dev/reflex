@@ -277,21 +277,18 @@ def render(name: str, config: Config) -> str:
         f"# Re-run `{cli} sync` after changing [tool.reflex-release] in",
         f"# pyproject.toml. `{cli} sync --check` fails when this file drifts.",
     ])
+    # The trigger fires on exactly the paths detect-internal counts as a
+    # package's source, so the workflow cannot run and then find nothing.
     internal_paths: list[str] = []
     for package in config.internal_packages:
-        prefix = config.path_prefix(package)
-        if prefix:
-            internal_paths.append(f'"{prefix}**"')
-        elif not config.root_source_dirs:
+        prefixes = config.package_source_prefixes(package)
+        if not prefixes:
             fail(
                 f"{package} is the repository-root package and is listed in "
                 "internal-packages, so its auto-release trigger needs to know "
                 "which paths are its source: set root-source-dirs"
             )
-        else:
-            internal_paths.extend(
-                f'"{directory.rstrip("/")}/**"' for directory in config.root_source_dirs
-            )
+        internal_paths.extend(f'"{prefix}**"' for prefix in prefixes)
     substitutions = {
         "@@HEADER@@": header,
         "@@CLI@@": cli,
@@ -327,7 +324,14 @@ def check_title_format(config: Config) -> None:
         config: The repository configuration.
     """
     configured = title_format(config)
-    heading = render_heading(configured, "v9.9.9", "2026-01-01")
+    try:
+        heading = render_heading(configured, "v9.9.9", "2026-01-01")
+    except (KeyError, IndexError, ValueError) as exc:
+        fail(
+            f"[tool.towncrier] title_format {configured!r} is not a usable format "
+            f"string ({exc!r}); it may reference only {{name}}, {{version}} and "
+            "{project_date}."
+        )
     _, sections = parse_sections(f"{heading}\n\nprobe\n")
     if len(sections) != 1 or sections[0].version != Version("9.9.9"):
         fail(

@@ -615,6 +615,11 @@ def load_config(root: Path) -> Config:
     root_package = table.get("root-package")
     if root_package is not None and not isinstance(root_package, str):
         fail(f"[tool.{TOOL_TABLE}] root-package must be a string")
+    latest_release_package = table.get("latest-release-package", root_package)
+    if latest_release_package is not None and not isinstance(
+        latest_release_package, str
+    ):
+        fail(f"[tool.{TOOL_TABLE}] latest-release-package must be a string")
     packages_dir = table.get("packages-dir", "packages")
     if packages_dir is not None and not isinstance(packages_dir, str):
         fail(f"[tool.{TOOL_TABLE}] packages-dir must be a string or omitted")
@@ -648,11 +653,18 @@ def load_config(root: Path) -> Config:
         hotfix_branch_prefix=_string(table, "hotfix-branch-prefix", "r/hotfix/"),
         release_branch_prefix=_string(table, "release-branch-prefix", "release/"),
         tag_prefix=_string(table, "tag-prefix", "v"),
-        latest_release_package=table.get("latest-release-package", root_package)
-        or None,
+        # The documented opt-out is the empty string; anything else falsy was
+        # rejected above rather than silently disabling the Latest marking.
+        latest_release_package=latest_release_package or None,
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
     )
+
+    if not config.main_branch:
+        fail(
+            f"[tool.{TOOL_TABLE}] main-branch must not be empty: it is the branch "
+            "final versions publish from and release pull requests target"
+        )
 
     # An empty branch prefix makes str.startswith() match everything, which
     # would silently turn "only these branches may publish" into "any branch
@@ -671,6 +683,14 @@ def load_config(root: Path) -> Config:
             fail(
                 f"[tool.{TOOL_TABLE}] {key} ({prefix!r}) matches the main branch "
                 f"({config.main_branch!r}), which collapses the branch policy"
+            )
+        # git stores refs as paths, so refs/heads/main and refs/heads/main/x
+        # cannot both exist: branches under such a prefix could never be created.
+        if prefix.startswith(f"{config.main_branch}/"):
+            fail(
+                f"[tool.{TOOL_TABLE}] {key} ({prefix!r}) nests under the main "
+                f"branch ({config.main_branch!r}); git cannot create a branch "
+                "under an existing ref"
             )
 
     if config.dispatch_package_inputs not in {"auto", "checkboxes", "text"}:

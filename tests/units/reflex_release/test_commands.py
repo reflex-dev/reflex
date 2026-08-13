@@ -295,21 +295,44 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     assert outputs()["any"] == "true"
 
 
-def test_commit_changelogs_leaves_unrelated_edits_alone(
+def test_commit_changelogs_leaves_unrelated_work_alone(
     config: Config, repo: Path
 ) -> None:
-    """A release commit carries changelogs and consumed fragments, nothing else."""
+    """A release commit carries the changelogs and nothing a human was mid-way through."""
     (repo / "unrelated.md").write_text("tracked\n")
     commit_all(repo)
     (repo / "unrelated.md").write_text("edited by someone else\n")
     set_changelog(config, "mypkg", "## v1.0.0 (2026-01-01)\n\nNo changes.\n")
+    # An unrelated fragment being drafted for a future release.
     fragment(config, "widget-core", "3.bugfix.md")
 
     commands._commit_changelogs(config, "Materialize changelogs")
 
-    committed = git(repo, "show", "--name-only", "--format=", "HEAD").split()
-    assert committed == ["CHANGELOG.md", "packages/widget-core/news/3.bugfix.md"]
+    assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
+        "CHANGELOG.md"
+    ]
     assert "unrelated.md" in git(repo, "diff", "--name-only")
+    assert (config.news_dir("widget-core") / "3.bugfix.md").is_file()
+
+
+def test_release_commit_removes_the_fragments_it_consumed(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Towncrier stages the deletions; the commit has to carry them."""
+    fragment(config, "widget-core", "9.feature.md", "A widget.")
+    commit_all(repo)
+    commands.cmd_plan(config, "release-minor", "widget-core")
+    commands.cmd_materialize(config, "release-minor", outputs()["releases"])
+
+    commands._commit_changelogs(config, "Materialize changelogs")
+
+    assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
+        "packages/widget-core/CHANGELOG.md",
+        "packages/widget-core/news/9.feature.md",
+    ]
+    # The deletion is committed, not left staged for the next release to carry.
+    assert not (config.news_dir("widget-core") / "9.feature.md").exists()
+    assert "news/9.feature.md" not in git(repo, "diff", "--cached", "--name-only")
 
 
 def test_materialize_rejects_an_empty_plan(config: Config) -> None:
@@ -573,16 +596,50 @@ def test_detect_internal_covers_the_whole_pushed_range(
     assert json.loads(outputs()["packages"]) == ["widget-core"]
 
 
-def test_detect_internal_falls_back_when_the_push_base_is_unavailable(
+def test_detect_internal_covers_a_branch_creating_push(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    """A branch's first push reports an all-zero base sha."""
+    """An all-zero base means every file in the branch is new."""
+    reloaded = make_internal(repo, "widget-core")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    commit_all(repo)
+    # A later commit that touches nothing of the package must not hide it, the
+    # way diffing only the final commit would.
+    (repo / "docs.md").write_text("unrelated\n")
+    commit_all(repo)
+    commands.cmd_detect_internal(reloaded, "0" * 40, "HEAD", "")
+    assert json.loads(outputs()["packages"]) == ["widget-core"]
+
+
+def test_detect_internal_falls_back_when_the_push_base_is_unreachable(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A non-zero base that is not present locally still has to produce a diff."""
     reloaded = make_internal(repo, "widget-core")
     commit_all(repo)
     (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
     commit_all(repo)
-    commands.cmd_detect_internal(reloaded, "0" * 40, "HEAD", "")
+    commands.cmd_detect_internal(reloaded, "f" * 40, "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
+
+
+def test_detect_internal_ignores_a_sibling_only_push(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """The root package's prefix is empty; a bare startswith would match anything."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text().replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\ninternal-packages = ["mypkg"]',
+        )
+    )
+    reloaded = load_config(repo)
+    commit_all(repo)
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    commit_all(repo)
+    commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
+    assert json.loads(outputs()["packages"]) == []
 
 
 def test_detect_internal_matches_a_root_package(

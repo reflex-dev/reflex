@@ -306,8 +306,9 @@ rest is ergonomics. See [Security model](#security-model) for why.
    create or push `r/pre-**`, `r/hotfix/**` and `release/**`** to maintainers
    plus the `github-actions[bot]` app. Those branches publish; a repository that
    skips this lets anyone with write access publish from a branch they create,
-   without review. Also protect the tags (`v*` and `<package>-v*`) from deletion
-   and force-pushes: a tag is the record that a version was published.
+   without review. Also protect the tags — `<tag-prefix>*` and
+   `<package>-<tag-prefix>*`, so `v*` and `<package>-v*` by default — from
+   deletion and force-pushes: a tag is the record that a version was published.
 6. **CODEOWNERS on `.github/workflows/` and `pyproject.toml`**, so changes to the
    release path and to `cli-command` need a specific reviewer.
 
@@ -356,8 +357,11 @@ What you give up: a compromised or malicious account *in the reviewer list* can
 publish without anyone else involved. If that is not acceptable — a
 widely-scoped reviewer list, or a package where a single bad release is
 expensive — set `allow-self-review = false` and enable **Prevent self-review**
-on the environment. The publish job then asserts it on every run and fails if
-the setting is missing, so the policy cannot silently regress.
+on the environment. The publish job then checks the environment on every run and
+fails when it can see that self-review is permitted. If GitHub does not report
+the setting (older GitHub Enterprise Server, or an API change), it warns and
+continues rather than blocking every release on something it cannot observe — so
+treat the warning as "verify this by hand", not as a passed check.
 
 Either way, the reviewer list is the control worth auditing.
 
