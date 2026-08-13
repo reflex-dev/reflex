@@ -673,3 +673,139 @@ def test_packages_lists_releasable_packages(
 ) -> None:
     commands.cmd_packages(config)
     assert capsys.readouterr().out.split() == ["mypkg", "widget-core"]
+
+
+PLAN = [{"package": "mypkg", "current": "1.0.0", "next": "1.1.0a1", "tag": "v1.1.0a1"}]
+
+
+@pytest.fixture
+def dispatched(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> pytest.MonkeyPatch:
+    """Stand in for the remote so the dispatch commands run against a bare repo.
+
+    Args:
+        config: The repository configuration.
+        tmp_path: The pytest temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The monkeypatch fixture, so a test can stub ``gh_output`` on top.
+    """
+    set_changelog(config, "mypkg", "# Changelog\n\n## v1.1.0a1 (2026-01-01)\n\nNew.\n")
+    # The pull request body file lands here instead of the working directory.
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    monkeypatch.setenv("GITHUB_REPOSITORY", "acme/widgets")
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.example.com")
+    monkeypatch.setattr(commands, "git_push", lambda *args, **kwargs: None)
+    monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(commands, "remote_branch_exists", lambda *args: False)
+    return monkeypatch
+
+
+def test_push_prerelease_summary_links_the_branch(
+    config: Config, dispatched: pytest.MonkeyPatch, summary: Callable[[], str]
+) -> None:
+    commands.cmd_push_prerelease(
+        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+    )
+    text = summary()
+    branch = next(
+        line.split("`")[1] for line in text.splitlines() if line.startswith("Branch:")
+    )
+    assert (
+        f"Branch: [`{branch}`](https://github.example.com/acme/widgets/tree/{branch})"
+        in text
+    )
+    assert (
+        "https://github.example.com/acme/widgets/actions/workflows/"
+        "release_from_changelog.yml?query=branch%3A" in text
+    )
+
+
+def test_push_prerelease_annotates_the_branch_url(
+    config: Config,
+    dispatched: pytest.MonkeyPatch,
+    summary: Callable[[], str],
+    capsys: pytest.CaptureFixture,
+) -> None:
+    commands.cmd_push_prerelease(
+        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+    )
+    notices = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::notice::prerelease branch pushed: ")
+    ]
+    assert len(notices) == 1
+    assert "https://github.example.com/acme/widgets/tree/r/pre-" in notices[0]
+
+
+def test_dispatch_summaries_degrade_outside_actions(
+    config: Config, dispatched: pytest.MonkeyPatch, summary: Callable[[], str]
+) -> None:
+    dispatched.delenv("GITHUB_REPOSITORY")
+    commands.cmd_push_prerelease(
+        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+    )
+    text = summary()
+    assert "](" not in text
+    assert "Branch: `r/pre-" in text
+
+
+def test_open_release_pr_summary_links_the_pull_request(
+    config: Config,
+    dispatched: pytest.MonkeyPatch,
+    summary: Callable[[], str],
+    capsys: pytest.CaptureFixture,
+) -> None:
+    url = "https://github.example.com/acme/widgets/pull/42"
+    dispatched.setattr(commands, "gh_output", lambda *args, **kwargs: url)
+    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN))
+    text = summary()
+    assert f"Pull request: [#42]({url})" in text
+    assert "/tree/release/release-minor-" in text
+    assert "→ `main`" in text
+    assert f"::notice::release pull request opened: {url}" in capsys.readouterr().out
+
+
+@pytest.fixture
+def release_args(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[], list[str]]:
+    """Capture the ``gh release create`` arguments instead of running gh.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        A callable returning the arguments of the last ``gh`` invocation.
+    """
+    captured: list[list[str]] = []
+    monkeypatch.setattr(commands, "gh_output", lambda *args, **kwargs: "")
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
+    )
+    return lambda: captured[-1]
+
+
+def test_create_release_titles_the_root_package_with_its_tag(
+    config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
+) -> None:
+    notes = tmp_path / "notes.md"
+    notes.write_text("Notes.\n")
+    commands.cmd_create_release(config, "v0.2.1", "mypkg", "0.2.1", False, True, notes)
+    args = release_args()
+    assert args[args.index("--title") + 1] == "v0.2.1"
+
+
+def test_create_release_names_the_package_for_a_sub_package(
+    config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
+) -> None:
+    notes = tmp_path / "notes.md"
+    notes.write_text("Notes.\n")
+    commands.cmd_create_release(
+        config, "widget-core-v0.2.1", "widget-core", "0.2.1", False, False, notes
+    )
+    args = release_args()
+    assert args[args.index("--title") + 1] == "widget-core@0.2.1"

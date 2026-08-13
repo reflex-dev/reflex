@@ -56,6 +56,33 @@ def error(message: str) -> None:
     sys.stdout.write(f"::error::{message}\n")
 
 
+def repo_url() -> str:
+    """Return the web URL of the repository the workflow is running against.
+
+    Returns:
+        ``https://<server>/<owner>/<repo>``, or an empty string outside GitHub
+        Actions — callers fall back to plain text when there is no URL to link.
+    """
+    repository = os.environ.get("GITHUB_REPOSITORY")
+    if not repository:
+        return ""
+    server = os.environ.get("GITHUB_SERVER_URL") or "https://github.com"
+    return f"{server.rstrip('/')}/{repository}"
+
+
+def link(label: str, url: str) -> str:
+    """Render a markdown link, degrading to the label alone without a URL.
+
+    Args:
+        label: The link text (already escaped/quoted as it should appear).
+        url: The target, or an empty string.
+
+    Returns:
+        ``[label](url)``, or just ``label``.
+    """
+    return f"[{label}]({url})" if url else label
+
+
 def _append_lines(env_var: str, lines: list[str]) -> None:
     """Append lines to the file named by an environment variable, if it is set.
 

@@ -12,10 +12,20 @@ import json
 import os
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 from packaging.version import InvalidVersion, Version
 
-from .actions import echo, error, fail, notice, write_outputs, write_summary
+from .actions import (
+    echo,
+    error,
+    fail,
+    link,
+    notice,
+    repo_url,
+    write_outputs,
+    write_summary,
+)
 from .changelog import (
     collapse_prereleases,
     extract_notes,
@@ -103,6 +113,36 @@ def _summary_table(header: list[str], rows: list[list[str]]) -> list[str]:
         "|" + "|".join("---" for _ in header) + "|",
         *("| " + " | ".join(row) + " |" for row in rows),
     ]
+
+
+def _branch_url(branch: str) -> str:
+    """Return the web URL of a branch in the current repository.
+
+    Args:
+        branch: The branch name.
+
+    Returns:
+        The URL, or an empty string outside GitHub Actions.
+    """
+    base = repo_url()
+    return f"{base}/tree/{quote(branch)}" if base else ""
+
+
+def _workflow_runs_url(workflow: str, branch: str) -> str:
+    """Return the URL listing a workflow's runs on one branch.
+
+    Args:
+        workflow: The workflow filename.
+        branch: The branch to filter the runs by.
+
+    Returns:
+        The URL, or an empty string outside GitHub Actions.
+    """
+    base = repo_url()
+    if not base:
+        return ""
+    query = quote(f"branch:{branch}", safe="")
+    return f"{base}/actions/workflows/{workflow}?query={query}"
 
 
 def _lockstep_errors(config: Config, due: dict[str, str]) -> list[str]:
@@ -769,7 +809,10 @@ def cmd_open_release_pr(
         ],
         config.root,
     )
-    echo(f"opened {url}")
+    # An annotation as well as the summary: annotations surface on the run page
+    # itself, so the pull request is one click away from wherever the dispatch
+    # was watched from.
+    notice(f"release pull request opened: {url}")
 
     # The PR only rewrites changelogs and deletes consumed news fragments, so
     # the fragment check does not apply. Label failure is not fatal.
@@ -780,7 +823,19 @@ def cmd_open_release_pr(
     ):
         notice(f"could not add the {SKIP_CHANGELOG_LABEL} label to {url}")
 
-    write_summary(["## Release PR opened", "", url, "", f"Releases: {summary}"])
+    number = url.rsplit("/", 1)[-1]
+    write_summary([
+        "## Release PR opened",
+        "",
+        f"Pull request: {link(f'#{number}' if number.isdigit() else url, url)}",
+        "",
+        f"Branch: {link(f'`{branch}`', _branch_url(branch))} → `{base}`",
+        "",
+        f"Releases: {summary}",
+        "",
+        "Merging it publishes them: review and merge the pull request, then",
+        "approve the `pypi` environment deployments.",
+    ])
 
 
 def cmd_push_prerelease(
@@ -822,14 +877,22 @@ def cmd_push_prerelease(
     # still waits for pypi environment approval.
     gh_run(["workflow", "run", RELEASE_WORKFLOW, "--ref", branch], config.root)
 
+    branch_url = _branch_url(branch)
+    workflow_link = link(
+        f"`{RELEASE_WORKFLOW}`", _workflow_runs_url(RELEASE_WORKFLOW, branch)
+    )
+    # An annotation as well as the summary: annotations surface on the run page
+    # itself, so the branch is one click away from wherever the dispatch was
+    # watched from.
+    notice(f"prerelease branch pushed: {branch_url or branch}")
     write_summary([
         "## Prerelease pushed",
         "",
-        f"Branch: `{branch}`",
+        f"Branch: {link(f'`{branch}`', branch_url)}",
         "",
         f"Releases: {summary}",
         "",
-        f"Dispatched the `{RELEASE_WORKFLOW}` workflow on the branch; approve the",
+        f"Dispatched the {workflow_link} workflow on the branch; approve the",
         "`pypi` environment deployments to upload the alphas.",
     ])
 
@@ -876,12 +939,15 @@ def cmd_create_release(
     if gh_output(["release", "view", tag, "--json", "name"], config.root, check=False):
         echo(f"Release {tag} already exists; skipping (safe re-run).")
         return
+    # The root package is the repository, so its tag already names the release
+    # unambiguously; only a sub-package needs to say which package it is.
+    title = tag if package == config.root_package else f"{package}@{version}"
     args = [
         "release",
         "create",
         tag,
         "--title",
-        f"{package}@{version}",
+        title,
         "--notes-file",
         str(notes_path),
     ]

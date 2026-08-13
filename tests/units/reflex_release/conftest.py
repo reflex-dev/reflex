@@ -139,3 +139,20 @@ def outputs(
         )
 
     return read
+
+
+@pytest.fixture
+def summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[], str]:
+    """Capture what the commands append to ``$GITHUB_STEP_SUMMARY``.
+
+    Args:
+        tmp_path: The pytest temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        A callable returning the job summary markdown written so far.
+    """
+    path = tmp_path / "summary.md"
+    path.touch()
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(path))
+    return path.read_text

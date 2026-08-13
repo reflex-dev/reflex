@@ -454,7 +454,12 @@ comma-separated text field; see `dispatch-package-inputs`.
 Release actions open a pull request; **merging it is what publishes.** The push
 to `main` triggers `release_from_changelog`, which builds every untagged
 changelog version and waits for the `pypi` approval before uploading. Only then
-are the tag and GitHub release created.
+are the tag and GitHub release created — titled with the tag (`v1.2.3`) for the
+root package, and `<package>@<version>` for a sub-package.
+
+Every *Dispatch release* run links what it produced in its job summary and as a
+run annotation: the pull request it opened, or the prerelease branch it pushed
+and that branch's `release_from_changelog` runs.
 
 To pull new work into a running prerelease train, merge `main` into the
 `r/pre-*` branch and dispatch `continued-prerelease` on it.
