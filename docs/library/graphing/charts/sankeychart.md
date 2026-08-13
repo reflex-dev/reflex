@@ -150,7 +150,7 @@ def sankey_custom_render():
         return rx.fragment(
             rx.el.svg.text(
                 node.payload.name,
-                x=rx.cond(is_out, node.x - 6, node.x + node.width + 6),
+                x=rx.cond(is_out, node.x - 6, node.x + node.width + 6).to(int),
                 y=node.y + node.height / 2,
                 text_anchor=rx.cond(is_out, "end", "start"),
                 fill=rx.color("gray", 12),
