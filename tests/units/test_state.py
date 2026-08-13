@@ -1029,6 +1029,36 @@ async def test_linked_state_patch_restores_descendant_dirty_state_on_resolve_err
 
 
 @pytest.mark.asyncio
+async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve():
+    """Temporary descendant dirtiness should be cleaned after resolution."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    async def resolve_with_temporary_dirty_state():
+        await asyncio.sleep(0)
+        linked_state.dirty_vars.add("temporary")
+        linked_state._mark_dirty()
+        return {}
+
+    object.__setattr__(
+        private_tree, "_get_resolved_delta", resolve_with_temporary_dirty_state
+    )
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        pass
+
+    assert linked_state.dirty_vars == set()
+    assert linked_state.dirty_substates == set()
+    assert private_tree.dirty_substates == set()
+
+
+@pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
     mock_base_state_event_processor: BaseStateEventProcessor,
