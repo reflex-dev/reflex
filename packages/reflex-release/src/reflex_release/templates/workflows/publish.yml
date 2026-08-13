@@ -203,15 +203,30 @@ jobs:
           # it — refuse to publish and tell the admins how to fix it. The two
           # failure modes get distinct messages so a token scope problem is not
           # mistaken for missing reviewers.
-          if ! rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/pypi" --jq '[.protection_rules[]?.type]' 2>"$RUNNER_TEMP/gh_api_error.txt"); then
+          if ! environment=$(gh api "repos/${GITHUB_REPOSITORY}/environments/pypi" 2>"$RUNNER_TEMP/gh_api_error.txt"); then
             echo "::error::Could not read the pypi environment's protection rules ($(tail -n1 "$RUNNER_TEMP/gh_api_error.txt")); refusing to publish unattended. This is a token or configuration problem, not a missing-reviewers problem: the job needs contents: read and actions: read on GITHUB_TOKEN, and the pypi environment must exist."
             exit 1
           fi
+          rules=$(jq -c '[.protection_rules[]?.type]' <<<"$environment")
           if [[ "$rules" != *'"required_reviewers"'* ]]; then
             echo "::error::The pypi environment has no required reviewers. Every PyPI upload must be approved by a human: add required reviewers to the pypi environment (Settings -> Environments) and re-run."
             exit 1
           fi
-          echo "pypi environment protection rules: $rules"
+          # Reviewers alone are not a two-person rule: unless self-review is
+          # prevented, whoever triggered the release can approve their own
+          # upload, and the gate degrades to a confirmation dialog.
+          # tostring, not `// "unknown"`: jq's alternative operator treats a
+          # literal false as absent, which would turn the case this check exists
+          # for into a warning.
+          self_review=$(jq -r '[.protection_rules[]? | select(.type == "required_reviewers") | .prevent_self_review] | first | tostring' <<<"$environment")
+          if [[ "$self_review" == "false" ]]; then
+            echo "::error::The pypi environment allows self-review, so the person who triggered this release can approve their own upload. Enable 'Prevent self-review' on the pypi environment (Settings -> Environments -> pypi) and re-run."
+            exit 1
+          fi
+          if [[ "$self_review" != "true" ]]; then
+            echo "::warning::Could not determine whether the pypi environment prevents self-review; confirm 'Prevent self-review' is enabled so a release cannot be approved by the person who triggered it."
+          fi
+          echo "pypi environment protection rules: $rules (prevent_self_review: $self_review)"
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0

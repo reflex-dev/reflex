@@ -371,6 +371,40 @@ def test_init_sets_up_a_bare_repository(tmp_path: Path) -> None:
     sync(config, check=True)
 
 
+def test_init_warns_when_the_release_path_is_unpinned(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """An unpinned tool resolves whatever is newest inside privileged jobs."""
+    (tmp_path / "src" / "solo").mkdir(parents=True)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    init(tmp_path, pin="", force=False)
+    assert "unpinned" in capsys.readouterr().out
+
+
+def test_init_does_not_warn_when_pinned(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    (tmp_path / "src" / "solo").mkdir(parents=True)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    init(tmp_path, pin="9.9.9", force=False)
+    assert "unpinned" not in capsys.readouterr().out
+
+
+def test_publish_workflow_gates_on_reviewers_and_self_review(config: Config) -> None:
+    """The approval is only a two-person rule if self-review is prevented."""
+    step = yaml.safe_load(render("publish.yml", config))["jobs"]["publish"]["steps"][0]
+    assert "required_reviewers" in step["run"]
+    assignment = next(
+        line
+        for line in step["run"].splitlines()
+        if line.strip().startswith("self_review=")
+    )
+    # jq's // operator treats a literal false as absent, which would downgrade
+    # the very case this check exists for into a warning.
+    assert "prevent_self_review" in assignment
+    assert "//" not in assignment
+
+
 def test_init_is_idempotent(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')

@@ -630,6 +630,25 @@ def load_config(root: Path) -> Config:
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
     )
 
+    # An empty branch prefix makes str.startswith() match everything, which
+    # would silently turn "only these branches may publish" into "any branch
+    # may publish" — and widen the release workflow's push trigger to "**".
+    for key, prefix in (
+        ("prerelease-branch-prefix", config.prerelease_branch_prefix),
+        ("hotfix-branch-prefix", config.hotfix_branch_prefix),
+        ("release-branch-prefix", config.release_branch_prefix),
+    ):
+        if not prefix:
+            fail(
+                f"[tool.{TOOL_TABLE}] {key} must not be empty: an empty prefix "
+                "matches every branch, so any branch could publish"
+            )
+        if config.main_branch.startswith(prefix):
+            fail(
+                f"[tool.{TOOL_TABLE}] {key} ({prefix!r}) matches the main branch "
+                f"({config.main_branch!r}), which collapses the branch policy"
+            )
+
     if config.dispatch_package_inputs not in {"auto", "checkboxes", "text"}:
         fail(
             f"[tool.{TOOL_TABLE}] dispatch-package-inputs must be one of "

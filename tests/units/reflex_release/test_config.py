@@ -218,6 +218,24 @@ def test_no_lockstep_by_default(config: Config) -> None:
             "cannot list every member",
         ),
         ('root-package = "mypkg"\nmain-branch = 5\n', "main-branch must be a string"),
+        # An empty prefix matches every branch, collapsing the branch policy.
+        (
+            'root-package = "mypkg"\nhotfix-branch-prefix = ""\n',
+            "hotfix-branch-prefix must not be empty",
+        ),
+        (
+            'root-package = "mypkg"\nprerelease-branch-prefix = ""\n',
+            "prerelease-branch-prefix must not be empty",
+        ),
+        (
+            'root-package = "mypkg"\nrelease-branch-prefix = ""\n',
+            "release-branch-prefix must not be empty",
+        ),
+        # A prefix the main branch matches has the same effect.
+        (
+            'root-package = "mypkg"\nhotfix-branch-prefix = "m"\n',
+            "matches the main branch",
+        ),
         (
             'root-package = "mypkg"\nrelease-timezone = 5\n',
             "release-timezone must be a string",

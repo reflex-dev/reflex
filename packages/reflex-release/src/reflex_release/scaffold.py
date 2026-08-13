@@ -558,14 +558,24 @@ def print_checklist(config: Config) -> None:
     Args:
         config: The repository configuration.
     """
+    if "@" not in config.cli_command:
+        echo(
+            "\nWarning: the workflows invoke this tool unpinned "
+            f"(`{config.cli_command}`), so the release path resolves whatever "
+            "version is newest at run time. Pin it: set cli-command to "
+            "`uvx reflex-release@<version>` and re-run sync."
+        )
     echo(
         "\n".join([
             "",
             "Remaining setup (GitHub settings, once per repository):",
-            "  1. Create the `pypi` environment and add required reviewers to it.",
-            "     Every upload — alphas included — waits for that approval.",
+            "  1. Create the `pypi` environment, add required reviewers, and turn",
+            "     on 'Prevent self-review' — otherwise whoever triggers a release",
+            "     can approve their own upload. Every upload waits for approval.",
             "  2. Configure PyPI trusted publishing for each distribution:",
-            "     workflow `publish.yml`, environment `pypi`.",
+            "     workflow `publish.yml`, environment `pypi`. Naming the",
+            "     environment is what makes the approval gate load-bearing: without",
+            "     it, any job in publish.yml can mint an upload token.",
             "  3. Enable 'Allow GitHub Actions to create and approve pull requests'",
             "     in Settings -> Actions -> General.",
             "  4. Create the `skip-changelog` and `changelog-version-edit` labels.",
@@ -578,6 +588,10 @@ def print_checklist(config: Config) -> None:
             "     to maintainers plus the github-actions[bot] app.",
             "  6. Give every package a version derived from git tags (see the README",
             "     section 'Tag-derived versions').",
+            "",
+            "Read the README's 'Security model' section before the first release:",
+            "branch rules are only enforced if a ruleset restricts who may create",
+            "the publishing branches.",
             "",
             "Then cut a release from the Actions tab: Dispatch release.",
         ])

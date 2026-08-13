@@ -276,22 +276,123 @@ sub-packages (`<name>-<tag-prefix>1.2.3`), so `tag-prefix = ""` gives you bare
 
 ## GitHub setup
 
-Once per repository:
+Once per repository. **Items 1, 2 and 5 are what make the pipeline safe** — the
+rest is ergonomics. See [Security model](#security-model) for why.
 
-1. **`pypi` environment** (Settings → Environments): create it and add
-   **required reviewers**. Every upload — alphas and internal packages included
-   — waits for that approval, and `publish.yml` fails closed if it starts
-   without reviewers configured. If you restrict deployment branches, allow
-   `main`, `r/pre-*` and `r/hotfix/*`.
+1. **`pypi` environment** (Settings → Environments): create it, add **required
+   reviewers**, and turn on **Prevent self-review**. Every upload — alphas and
+   internal packages included — waits for that approval; `publish.yml` fails
+   closed without reviewers, and also fails when it can prove self-review is
+   allowed. Without *Prevent self-review*, whoever triggers a release can
+   approve their own upload and the gate is a confirmation dialog. Optionally
+   restrict deployment branches to `main`, `r/pre-*` and `r/hotfix/*`.
 2. **PyPI trusted publishing** for each distribution: owner + repository,
-   workflow `publish.yml`, environment `pypi`. No API token is stored anywhere.
+   workflow `publish.yml`, **environment `pypi`**. No API token is stored
+   anywhere. Naming the environment is not optional bookkeeping — it is what
+   binds the upload credential to the reviewer-gated job. Leave it blank and any
+   job in `publish.yml` can mint an upload token, approval or not.
 3. **Actions settings** → General → enable *Allow GitHub Actions to create and
    approve pull requests*, so release actions can open their PR.
 4. **Labels**: create `skip-changelog` and `changelog-version-edit`.
-5. **Branch protection / rulesets**: require review on `main`; restrict who can
-   create or push `r/pre-**`, `r/hotfix/**` and `release/**` to maintainers plus
-   the `github-actions[bot]` app (the workflow pushes as that app via
-   `GITHUB_TOKEN`).
+5. **Branch and tag rulesets**: require review on `main`, and **restrict who may
+   create or push `r/pre-**`, `r/hotfix/**` and `release/**`** to maintainers
+   plus the `github-actions[bot]` app. Those branches publish; a repository that
+   skips this lets anyone with write access publish from a branch they create,
+   without review. Also protect the tags (`v*` and `<package>-v*`) from deletion
+   and force-pushes: a tag is the record that a version was published.
+6. **CODEOWNERS on `.github/workflows/` and `pyproject.toml`**, so changes to the
+   release path and to `cli-command` need a specific reviewer.
+
+## Security model
+
+The pipeline's guarantee is: **nothing reaches PyPI without a human approving a
+specific, already-built artifact.** Everything else exists to make that approval
+meaningful. What follows is the reasoning, and the ways an adopting repository
+can undermine it.
+
+### Trust boundaries
+
+| Stage | Privileges | Runs |
+| --- | --- | --- |
+| `build` | `contents: read`. No OIDC, no secrets. | Your repository's code: the build backend, its hooks, `post_build.sh`. |
+| `publish` | `id-token: write` — the only job that can mint a PyPI token. | Nothing from your repository. Downloads the artifact, checks it, runs `uv publish`. |
+| `tag-and-release` | `contents: write`. | `git` and `gh`, after a successful upload. |
+| `materialize` (dispatch) | `contents`/`pull-requests`/`actions: write`. | towncrier and `git`/`gh`; writes changelogs, opens the PR. |
+
+The important split is the first two rows: **arbitrary repository code executes
+only where there is nothing to steal**, and the job holding the credential runs
+no repository code at all. A malicious build backend or `post_build.sh` can
+corrupt the artifact — a reviewer approving it is the control — but it cannot
+reach the token.
+
+Every checkout uses `persist-credentials: false`, no `${{ }}` expression is
+interpolated into a shell script (inputs travel through `env:`), and no workflow
+uses `pull_request_target`, so nothing runs privileged against fork code.
+
+### What the approval actually covers
+
+The reviewer approves the `publish` job of a specific run. At that point the
+version, the changelog section and the built artifact already exist and are
+visible in the run. **Check the version and the package in the run name**, and
+that the run was triggered by a merge you recognize.
+
+The `SHA256SUMS` manifest travels *inside* the same artifact, so it proves the
+upload matches the build — it is an integrity check against truncation and
+partial downloads, **not** a defense against a compromised build job, which
+could write both the files and the manifest. The defense there is that the
+artifact can only be written by the build job of the same run, and that the run
+is triggered by a branch your ruleset controls.
+
+### Ways to weaken it
+
+- **No ruleset on the publishing branches.** `r/pre-**` and `r/hotfix/**`
+  publish by design, and `r/hotfix/**` publishes *final* versions without a pull
+  request. Without a ruleset, "publishing requires review on `main`" is not
+  true: anyone with write access can create a hotfix branch and request a
+  release. This is the single most common way to deploy this pipeline unsafely.
+- **Trusted publisher without the environment.** Covered above; it turns the
+  approval into an advisory step.
+- **Self-review left enabled.** One person can then trigger and approve.
+- **`internal-packages`.** Those release on every push to the main branch with
+  no changelog and no fragment — merge access is release access (still behind
+  the `pypi` approval). Use it only for packages where that is acceptable.
+- **An unpinned `cli-command`.** `init` pins the version it ran from; `--pin
+  none` leaves the release path resolving whatever is newest at run time.
+- **Weakening `publish.yml` in a pull request.** The generated workflows are
+  ordinary files: a merged change can remove the environment or the assertions.
+  `sync --check` catches *drift*, but a change that edits the workflow and
+  `cli-command` together is self-consistent and passes. CODEOWNERS is the
+  control; review those diffs as release-critical.
+
+### Supply chain
+
+The workflows run `uvx reflex-release@<pinned version>`. A published PyPI
+version is immutable, so the pinned tool cannot change under you — but its
+dependencies (`packaging`, `towncrier`) resolve fresh on every run, and the tool
+runs in jobs holding `contents: write`. If you want the release path fully
+locked, vendor the tool instead of resolving it:
+
+```toml
+# pyproject.toml — a dev dependency, resolved by your lockfile
+[tool.reflex-release]
+cli-command = "uv run --frozen reflex-release"
+```
+
+Note that the pull-request checks (`check-headings`, `changelog-check`,
+`sync --check`) execute the tool named by the *pull request's own*
+configuration, in a read-only job with no secrets. That is the same exposure as
+running a test suite on a contributed branch, but it is why `cli-command` is a
+review-sensitive field.
+
+### Assumptions
+
+- **GitHub-hosted runners.** The isolation of the unprivileged build job is the
+  runner's. On self-hosted runners, "no secrets in the build job" only holds if
+  the runner itself holds none.
+- **`gh` and `jq` are on the runner** (they are on GitHub-hosted images).
+- **Never store a PyPI API token.** If you must have one, put it in the `pypi`
+  environment's secrets, never in repository secrets, where the build job could
+  read it.
 
 ## Cutting a release
 
@@ -331,16 +432,17 @@ not marked "Latest" on GitHub.
 
 Packages listed in `internal-packages` skip the changelog entirely: every push
 to `main` that touches them patch-bumps the newest tag and publishes (still
-behind the `pypi` approval). They need no `news/` directory and are excluded
+behind the `pypi` approval) — merge access to those paths is release access, so
+weigh it against [Ways to weaken it](#ways-to-weaken-it). They need no `news/` directory and are excluded
 from the fragment check. Adding or removing one changes
 `auto_release_internal.yml`, so re-run `reflex-release sync`.
 
 ## Post-build hook
 
 Create `.github/scripts/publish/post_build.sh` for repository-specific artifact
-checks. It runs after a successful build with `PACKAGE`, `VERSION` and
-`BUILD_DIR` in the environment, and a non-zero exit fails the release before
-anything is uploaded:
+checks. It runs in the unprivileged build job — after a successful build, with
+`PACKAGE`, `VERSION` and `BUILD_DIR` in the environment, no secrets and no OIDC
+— and a non-zero exit fails the release before anything is uploaded:
 
 ```bash
 #!/usr/bin/env bash
