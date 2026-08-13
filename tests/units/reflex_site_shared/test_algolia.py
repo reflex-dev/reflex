@@ -425,21 +425,29 @@ def test_algolia_search_input_row_contains_safari_search_input() -> None:
 
 
 def test_algolia_search_builds_result_breadcrumbs() -> None:
-    """Render result hierarchy from its section and indexed headers."""
+    """Render docs hierarchy from canonical URLs instead of indexed headings."""
     assets = dict(SharedSiteStylesPlugin().get_static_assets())
     source = assets[Path("public/components/AlgoliaSearch.tsx")]
 
     assert "breadcrumbs: string[];" in source
     assert "function resultBreadcrumbs(" in source
     assert 'section === "Blog" ? "Blogs" : section' in source
-    assert 'section === "API Reference" ||' in source
-    assert 'section === "Blog" ||' in source
-    assert 'section === "Reflex"' in source
-    assert "breadcrumbs: resultBreadcrumbs(hit, section, displayTitle)" in source
+    assert "RESULT_PATH_PREFIXES" in source
+    assert 'Docs: ["docs"]' in source
+    assert 'Components: ["docs", "library"]' in source
+    assert 'XY: ["docs", "xy"]' in source
+    assert '"API Reference": ["docs", "api-reference"]' in source
+    assert "RESULT_PATH_LABELS" in source
+    assert 'ai: "AI"' in source
+    assert "function resultPathBreadcrumbs(" in source
+    assert ".slice(prefix.length, -1)" in source
+    assert ".map(resultPathLabel)" in source
+    assert "return [root, ...resultPathBreadcrumbs(url, section)];" in source
+    assert "breadcrumbs: resultBreadcrumbs(url, section)" in source
     assert 'className="ReflexSearch-hitBreadcrumbs"' in source
     assert "hit.breadcrumbs.map((breadcrumb, index)" in source
     assert "icon={ArrowRight01Icon}" in source
-    assert "(hit.headers ?? []).slice(0, 2)" in source
+    assert "(hit.headers ?? []).slice(0, 2)" not in source
     assert "<mark" not in source
     assert "font-size: 1.125rem;" in source
 
