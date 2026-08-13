@@ -376,11 +376,11 @@ that the run was triggered by a merge you recognize. The build job's summary
 lists the SHA-256 of every file that will be uploaded, so what you are approving
 is named down to the byte before you approve it.
 
-Before that artifact is built, `verify-dist` checks each file's core metadata
-against the release: not just the version — which lockstep siblings share — but
-the **distribution name**, since every package in a repository publishes through
-the same trusted-publishing identity and nothing else would stop a
-misconfigured build from uploading one package under another's approval.
+After the build and before the approval, `verify-dist` checks each file's core
+metadata against the release: not just the version — which lockstep siblings
+share — but the **distribution name**, since every package in a repository
+publishes through the same trusted-publishing identity and nothing else would
+stop a misconfigured build from uploading one package under another's approval.
 
 The `SHA256SUMS` manifest travels *inside* the same artifact, so it proves the
 upload matches the build — it is an integrity check against truncation and
@@ -390,8 +390,10 @@ artifact can only be written by the build job of the same run, and that the run
 is triggered by a branch your ruleset controls.
 
 The manifest is attached to the GitHub release as well, so the record of what a
-version contains survives the workflow artifact's retention window: anyone can
-`sha256sum -c SHA256SUMS` a downloaded wheel against it years later.
+version contains survives the workflow artifact's retention window. It lists the
+distribution files by bare filename — exactly the files that went to PyPI — so
+`sha256sum -c SHA256SUMS` works in a directory holding the downloaded wheel and
+sdist, years later.
 
 For cryptographic provenance rather than a self-attested manifest — a PyPI
 [attestation](https://docs.pypi.org/attestations/) tying the artifact to the

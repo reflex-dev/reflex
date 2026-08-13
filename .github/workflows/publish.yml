@@ -173,17 +173,19 @@ jobs:
           NOTES_PATH: release_notes.md
         run: uv run --no-config --locked --script scripts/release.py extract-notes
 
-      # The manifest lets the gated publish job re-verify (with coreutils
-      # only) that what it uploads is byte-identical to what was built and
-      # verified here — everything the human approves is covered by it. It is
-      # also put in front of the approver (job summary) and attached to the
-      # GitHub release, so the record of what a version contains outlives this
-      # run's artifact retention.
+      # The manifest covers exactly the files that go to PyPI. It lets the
+      # gated publish job re-verify (with coreutils only) that what it uploads
+      # is byte-identical to what was built and verified here, it is put in
+      # front of the approver (job summary), and it is attached to the GitHub
+      # release so the record of what a version contains outlives this run.
       - name: Write checksum manifest
         if: steps.prepare.outputs.skipped != 'true'
         run: |
           set -euo pipefail
-          sha256sum dist/* release_notes.md > SHA256SUMS
+          # Bare filenames, covering exactly the files that go to PyPI: the
+          # manifest is attached to the GitHub release, so `sha256sum -c` has
+          # to work in a directory holding the downloaded artifacts.
+          (cd dist && sha256sum -- *) > SHA256SUMS
           {
             echo "### Artifacts awaiting approval"
             echo
@@ -255,7 +257,7 @@ jobs:
           name: publish-${{ inputs.package }}
 
       - name: Verify artifact integrity
-        run: sha256sum -c SHA256SUMS
+        run: cd dist && sha256sum -c ../SHA256SUMS
 
       # --check-url makes a retried run skip files that already made it to
       # PyPI (e.g. when the upload succeeded but tagging failed), instead of

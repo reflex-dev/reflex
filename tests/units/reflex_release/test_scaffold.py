@@ -480,14 +480,38 @@ def _build_steps(config: Config) -> list[dict]:
     return yaml.safe_load(render("publish.yml", config))["jobs"]["build"]["steps"]
 
 
+def _manifest_step(config: Config) -> dict:
+    """Return the build step that writes the checksum manifest.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The parsed step.
+    """
+    return next(
+        step for step in _build_steps(config) if "> SHA256SUMS" in step.get("run", "")
+    )
+
+
 def test_the_approver_sees_the_artifact_digests(config: Config) -> None:
     """The approval is only meaningful if what is being uploaded is visible."""
-    step = next(
+    assert "GITHUB_STEP_SUMMARY" in _manifest_step(config)["run"]
+
+
+def test_the_manifest_verifies_downloaded_release_assets(config: Config) -> None:
+    """It is attached to the release, so it has to name the files as downloaded."""
+    # Written from inside dist/, so the entries are bare filenames rather than
+    # dist/-prefixed paths that only resolve inside the build's workspace.
+    assert "(cd dist && sha256sum -- *) > SHA256SUMS" in _manifest_step(config)["run"]
+    verify = next(
         step
-        for step in _build_steps(config)
-        if "sha256sum dist/*" in step.get("run", "")
+        for step in yaml.safe_load(render("publish.yml", config))["jobs"]["publish"][
+            "steps"
+        ]
+        if "sha256sum -c" in step.get("run", "")
     )
-    assert "GITHUB_STEP_SUMMARY" in step["run"]
+    assert verify["run"] == "cd dist && sha256sum -c ../SHA256SUMS"
 
 
 def test_verify_dist_is_told_which_package_it_is_checking(config: Config) -> None:
