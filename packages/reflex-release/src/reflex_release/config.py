@@ -420,20 +420,6 @@ class Config:
             return f"{self.main_branch} or {self.hotfix_branch_prefix}** branches"
         return f"{self.prerelease_branch_prefix}* or {self.hotfix_branch_prefix}** branches"
 
-    def existing_changelogs(self) -> list[str]:
-        """Return the repo-relative path of every changelog that exists.
-
-        Returns:
-            Paths suitable as ``git add`` pathspecs. Naming the files instead of
-            globbing keeps ``git add`` from failing on a repository whose
-            sub-packages have not materialized a changelog yet.
-        """
-        return [
-            self.changelog_path(package).relative_to(self.root).as_posix()
-            for package in self.all_packages()
-            if self.changelog_path(package).is_file()
-        ]
-
 
 def is_final(version: Version) -> bool:
     """Return whether a version is a final release (not a pre/dev release).

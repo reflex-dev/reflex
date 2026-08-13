@@ -493,6 +493,10 @@ def test_publish_workflow_gates_on_reviewers_and_self_review(config: Config) -> 
     # the very case this check exists for into a warning.
     assert "prevent_self_review" in assignment
     assert "//" not in assignment
+    # Strict mode is opt-in, so an unreadable setting is a failure, not a
+    # warning: "the API did not say" cannot be distinguished from "allowed".
+    assert '"$self_review" != "true"' in step["run"]
+    assert "::warning::" not in step["run"]
 
 
 def test_init_is_idempotent(tmp_path: Path) -> None:

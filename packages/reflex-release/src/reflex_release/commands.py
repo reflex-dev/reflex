@@ -721,24 +721,27 @@ def _release_summary(releases: list[dict[str, str]]) -> str:
     return ", ".join(f"{r['package']}@{r['next']}" for r in releases)
 
 
-def _commit_changelogs(config: Config, message: str) -> None:
-    """Stage and commit the materialized changelogs.
-
-    The consumed news fragments are already staged by towncrier's ``git rm``,
-    and ``commit -a`` picks up any tracked change it left unstaged — while never
-    committing untracked stray files.
+def _commit_changelogs(
+    config: Config, releases: list[dict[str, str]], message: str
+) -> None:
+    """Stage and commit the changelogs materialized for a release.
 
     Args:
         config: The repository configuration.
+        releases: The releases that were materialized.
         message: The commit message.
     """
     configure_bot_identity(config.root)
-    changelogs = config.existing_changelogs()
+    # Only the changelogs of the packages being released, so nothing else in the
+    # worktree can ride along in the release commit. towncrier has already
+    # staged the deletion of every fragment it consumed.
+    changelogs = [
+        path.relative_to(config.root).as_posix()
+        for path in (config.changelog_path(r["package"]) for r in releases)
+        if path.is_file()
+    ]
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    # Only the changelogs: towncrier has already staged the deletion of every
-    # fragment it consumed, so staging the news directories would add nothing
-    # except any unrelated fragment sitting in the worktree.
     git_run(["add", "--", *changelogs], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
@@ -798,7 +801,9 @@ def cmd_open_release_pr(
     body_file = Path(os.environ.get("RUNNER_TEMP", ".")) / "release_pr_body.md"
     body_file.write_text(body, encoding="utf-8")
 
-    _commit_changelogs(config, f"Materialize changelogs for {summary} ({action})")
+    _commit_changelogs(
+        config, releases, f"Materialize changelogs for {summary} ({action})"
+    )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
     url = gh_output(
@@ -876,7 +881,9 @@ def cmd_push_prerelease(
         if remote_branch_exists(config.root, branch):
             branch = f"{branch}-{run_id}"
 
-    _commit_changelogs(config, f"Materialize changelogs for {summary} ({action})")
+    _commit_changelogs(
+        config, releases, f"Materialize changelogs for {summary} ({action})"
+    )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
     # Pushes made with GITHUB_TOKEN do not fire on-push workflows, so dispatch

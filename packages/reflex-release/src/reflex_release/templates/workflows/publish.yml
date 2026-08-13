@@ -226,12 +226,12 @@ jobs:
           # literal false as absent, which would turn the case this check exists
           # for into a warning.
           self_review=$(jq -r '[.protection_rules[]? | select(.type == "required_reviewers") | .prevent_self_review] | first | tostring' <<<"$environment")
-          if [[ "$self_review" == "false" ]]; then
-            echo "::error::This repository sets allow-self-review = false, but the pypi environment allows self-review, so the person who triggered this release could approve their own upload. Enable 'Prevent self-review' on the pypi environment (Settings -> Environments -> pypi) and re-run."
-            exit 1
-          fi
+          # Strict mode is opt-in, so anything short of a proven "true" fails:
+          # a warning nobody reads is not a two-person rule, and "the API did
+          # not say" is indistinguishable from "self-review is allowed".
           if [[ "$self_review" != "true" ]]; then
-            echo "::warning::Could not determine whether the pypi environment prevents self-review; confirm 'Prevent self-review' is enabled, or set allow-self-review = true if approval by the release's author is acceptable here."
+            echo "::error::This repository sets allow-self-review = false, but the pypi environment does not report that self-review is prevented (prevent_self_review: $self_review), so the person who triggered this release could approve their own upload. Enable 'Prevent self-review' on the pypi environment (Settings -> Environments -> pypi) and re-run. If your GitHub deployment cannot report that setting, set allow-self-review = true to make the reviewer list the control."
+            exit 1
           fi
           echo "pypi environment protection rules: $rules (prevent_self_review: $self_review)"
 

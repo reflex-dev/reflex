@@ -305,19 +305,6 @@ def test_repo_describing_no_packages(tmp_path: Path) -> None:
         load_config(tmp_path)
 
 
-def test_existing_changelogs(config: Config, repo: Path) -> None:
-    assert config.existing_changelogs() == []
-    (repo / "CHANGELOG.md").write_text("## v1.0.0 (2026-01-01)\n", encoding="utf-8")
-    (repo / "packages" / "widget-core" / "CHANGELOG.md").write_text(
-        "## v1.0.0 (2026-01-01)\n",
-        encoding="utf-8",
-    )
-    assert config.existing_changelogs() == [
-        "CHANGELOG.md",
-        "packages/widget-core/CHANGELOG.md",
-    ]
-
-
 def test_requires_fragments(config: Config, repo: Path) -> None:
     write_config(
         repo,

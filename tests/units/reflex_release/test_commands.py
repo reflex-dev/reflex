@@ -306,16 +306,20 @@ def test_commit_changelogs_leaves_unrelated_work_alone(
     commit_all(repo)
     (repo / "unrelated.md").write_text("edited by someone else\n", encoding="utf-8")
     set_changelog(config, "mypkg", "## v1.0.0 (2026-01-01)\n\nNo changes.\n")
-    # An unrelated fragment being drafted for a future release.
+    # A changelog edit and a fragment for a package that is not being released.
+    set_changelog(config, "widget-core", "## v0.9.0 (2026-01-01)\n\nNot mine.\n")
     fragment(config, "widget-core", "3.bugfix.md")
 
-    commands._commit_changelogs(config, "Materialize changelogs")
+    commands._commit_changelogs(
+        config, [{"package": "mypkg", "next": "1.0.0"}], "Materialize changelogs"
+    )
 
     assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
         "CHANGELOG.md"
     ]
     assert "unrelated.md" in git(repo, "diff", "--name-only")
     assert (config.news_dir("widget-core") / "3.bugfix.md").is_file()
+    assert not git(repo, "diff", "--cached", "--name-only").strip()
 
 
 def test_release_commit_removes_the_fragments_it_consumed(
@@ -327,7 +331,11 @@ def test_release_commit_removes_the_fragments_it_consumed(
     commands.cmd_plan(config, "release-minor", "widget-core")
     commands.cmd_materialize(config, "release-minor", outputs()["releases"])
 
-    commands._commit_changelogs(config, "Materialize changelogs")
+    commands._commit_changelogs(
+        config,
+        [{"package": "widget-core", "next": "0.1.0"}],
+        "Materialize changelogs",
+    )
 
     assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
         "packages/widget-core/CHANGELOG.md",

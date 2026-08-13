@@ -326,7 +326,7 @@ def check_title_format(config: Config) -> None:
     configured = title_format(config)
     try:
         heading = render_heading(configured, "v9.9.9", "2026-01-01")
-    except (KeyError, IndexError, ValueError) as exc:
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
         fail(
             f"[tool.towncrier] title_format {configured!r} is not a usable format "
             f"string ({exc!r}); it may reference only {{name}}, {{version}} and "

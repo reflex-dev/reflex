@@ -358,10 +358,11 @@ publish without anyone else involved. If that is not acceptable — a
 widely-scoped reviewer list, or a package where a single bad release is
 expensive — set `allow-self-review = false` and enable **Prevent self-review**
 on the environment. The publish job then checks the environment on every run and
-fails when it can see that self-review is permitted. If GitHub does not report
-the setting (older GitHub Enterprise Server, or an API change), it warns and
-continues rather than blocking every release on something it cannot observe — so
-treat the warning as "verify this by hand", not as a passed check.
+fails unless it can prove the setting is on. "The API did not report it" (older
+GitHub Enterprise Server, or an API change) is indistinguishable from
+"self-review is allowed", so it fails there too: strict mode is opt-in, and a
+warning nobody reads is not a two-person rule. A deployment that cannot report
+the setting has to set `allow-self-review = true` and rely on the reviewer list.
 
 Either way, the reviewer list is the control worth auditing.
 

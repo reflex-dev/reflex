@@ -41,9 +41,23 @@ def title_format(config: Config) -> str:
         config: The repository configuration.
 
     Returns:
-        The configured ``title_format``, or towncrier's markdown default.
+        The configured ``title_format``, or towncrier's markdown default when
+        it is unset or empty (which is how towncrier reads it too).
     """
-    return towncrier_table(config).get("title_format") or DEFAULT_TITLE_FORMAT
+    configured = towncrier_table(config).get("title_format")
+    # towncrier accepts `title_format = false` to write no heading at all. The
+    # changelog is what tells this pipeline a version is due, so a changelog
+    # without version headings would silently never publish.
+    if configured is False:
+        fail(
+            "[tool.towncrier] title_format is false, which writes changelog "
+            "sections with no version heading. The release pipeline finds "
+            "versions by reading those headings, so releases would never be "
+            'detected. Set a format such as "## {version} ({project_date})".'
+        )
+    if configured is not None and not isinstance(configured, str):
+        fail(f"[tool.towncrier] title_format must be a string: {configured!r}")
+    return configured or DEFAULT_TITLE_FORMAT
 
 
 def category_order(config: Config) -> list[str]:
