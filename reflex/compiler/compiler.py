@@ -31,6 +31,7 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
@@ -142,10 +143,9 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
-
     window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
+        (_normalize_library_name(name), name)
+        for name in RegistrationContext.ensure_context().bundled_libraries
     ]
 
     window_libraries_deduped = list(dict.fromkeys(window_libraries))

@@ -30,6 +30,11 @@ In **Manage service account**, choose a project and assign Viewer, Editor, or Ad
 
 You can review and revoke the account's project roles from the same dialog.
 
+```md alert warning
+# A credential carries the account's access, not yours
+A token bound to a service account acts as that account, and nothing about the person who issued it is carried along. Automation that worked while you tested it with your own credential will return 403 once it switches to the service account's, unless the account itself holds a role on the projects involved.
+```
+
 ## Issue a credential
 
 Under **Credentials**:
@@ -65,3 +70,4 @@ Deleting a service account permanently revokes its credentials and project roles
 
 - [Roles & permissions](/docs/ai/organization/roles-and-permissions/) — choose organization and project roles.
 - [Provisioning](/docs/ai/organization/provisioning/) — manage human membership through SCIM.
+- [Automated provisioning](/docs/ai/organization/automated-provisioning/) — use a service account to drive directory-based onboarding.
