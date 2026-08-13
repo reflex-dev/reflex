@@ -51,7 +51,10 @@ def test_check_dev_pins_accepts_published_pins(
 
 def test_check_dev_pins_rejects_a_dev_pin(config: Config, repo: Path) -> None:
     pyproject = repo / "pyproject.toml"
-    pyproject.write_text(pyproject.read_text().replace(">= 0.1.0", ">= 0.2.0.dev1"))
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(">= 0.1.0", ">= 0.2.0.dev1"),
+        encoding="utf-8",
+    )
     with pytest.raises(ReleaseError, match="must not be published"):
         check_dev_pins(config, [])
 
@@ -60,7 +63,10 @@ def test_check_dev_pins_is_scoped_to_the_selected_package(
     config: Config, repo: Path
 ) -> None:
     pyproject = repo / "pyproject.toml"
-    pyproject.write_text(pyproject.read_text().replace(">= 0.1.0", ">= 0.2.0.dev1"))
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(">= 0.1.0", ">= 0.2.0.dev1"),
+        encoding="utf-8",
+    )
     # The sibling can still be released while its dependent dev-pins it.
     check_dev_pins(config, ["widget-core"])
     with pytest.raises(ReleaseError, match="must not be published"):

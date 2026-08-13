@@ -63,14 +63,15 @@ def write_lockstep(repo: Path) -> None:
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             "\n[tool.towncrier]",
             "\n[[tool.reflex-release.lockstep]]\n"
             'members = ["mypkg", "widget-core"]\n'
             'publish-last = ["mypkg"]\n'
             "pin-exact = true\n"
             "\n[tool.towncrier]",
-        )
+        ),
+        encoding="utf-8",
     )
 
 
@@ -87,12 +88,14 @@ def repo(tmp_path: Path) -> Path:
     (tmp_path / "src" / "mypkg").mkdir(parents=True)
     (tmp_path / "packages" / "widget-core" / "src").mkdir(parents=True)
     (tmp_path / "packages" / "widget-core" / "pyproject.toml").write_text(
-        SUB_PYPROJECT.format(name="widget-core")
+        SUB_PYPROJECT.format(name="widget-core"),
+        encoding="utf-8",
     )
     (tmp_path / "pyproject.toml").write_text(
         ROOT_PYPROJECT + "\n[tool.reflex-release]\n"
         'root-package = "mypkg"\n'
-        'packages-dir = "packages"\n\n' + towncrier_config_toml(tmp_path)
+        'packages-dir = "packages"\n\n' + towncrier_config_toml(tmp_path),
+        encoding="utf-8",
     )
     for news in (tmp_path / "news", tmp_path / "packages" / "widget-core" / "news"):
         news.mkdir()
@@ -135,7 +138,9 @@ def outputs(
 
     def read() -> dict[str, str]:
         return dict(
-            line.split("=", 1) for line in path.read_text().splitlines() if "=" in line
+            line.split("=", 1)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if "=" in line
         )
 
     return read
@@ -155,4 +160,4 @@ def summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[], str
     path = tmp_path / "summary.md"
     path.touch()
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(path))
-    return path.read_text
+    return lambda: path.read_text(encoding="utf-8")

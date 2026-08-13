@@ -94,7 +94,7 @@ def _append_lines(env_var: str, lines: list[str]) -> None:
     if not path:
         sys.stdout.write("\n".join(lines) + "\n")
         return
-    with Path(path).open("a") as f:
+    with Path(path).open("a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
 

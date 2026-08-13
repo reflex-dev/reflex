@@ -157,7 +157,9 @@ def alpha_train_packages(config: Config) -> list[str]:
     """
     selected: list[str] = []
     for package in changelog_packages(config):
-        version = latest_version(config.changelog_path(package).read_text())
+        version = latest_version(
+            config.changelog_path(package).read_text(encoding="utf-8")
+        )
         if version is not None and version.is_prerelease:
             selected.append(package)
     return selected
@@ -178,7 +180,7 @@ def current_version(config: Config, package: str) -> Version | None:
     """
     path = config.changelog_path(package)
     if path.is_file():
-        version = latest_version(path.read_text())
+        version = latest_version(path.read_text(encoding="utf-8"))
         if version is not None:
             return version
     return latest_tag_version(config, package)

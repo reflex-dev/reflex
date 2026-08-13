@@ -46,7 +46,7 @@ def make_sdist(directory: Path, version: str, name: str = "widget_core") -> Path
     """
     path = directory / f"{name}-{version}.tar.gz"
     pkg_info = directory / "PKG-INFO"
-    pkg_info.write_text(METADATA.format(version=version))
+    pkg_info.write_text(METADATA.format(version=version), encoding="utf-8")
     with tarfile.open(path, "w:gz") as sdist:
         sdist.add(pkg_info, arcname=f"{name}-{version}/PKG-INFO")
     pkg_info.unlink()
@@ -60,7 +60,7 @@ def test_dist_metadata_version(tmp_path: Path) -> None:
 
 def test_dist_metadata_version_rejects_other_files(tmp_path: Path) -> None:
     stray = tmp_path / "notes.txt"
-    stray.write_text("x")
+    stray.write_text("x", encoding="utf-8")
     with pytest.raises(ReleaseError, match="unexpected artifact type"):
         dist_metadata_version(stray)
 
@@ -79,7 +79,7 @@ def test_verify_dist_rejects_a_mismatch(tmp_path: Path) -> None:
 
 def test_verify_dist_ignores_hidden_files(tmp_path: Path) -> None:
     make_wheel(tmp_path, "1.2.3")
-    (tmp_path / ".gitignore").write_text("*\n")
+    (tmp_path / ".gitignore").write_text("*\n", encoding="utf-8")
     assert verify_dist(tmp_path, Version("1.2.3")) == 1
 
 
@@ -103,10 +103,11 @@ def test_verify_dist_requires_artifacts(tmp_path: Path) -> None:
 def test_pin_exact(tmp_path: Path, requirement: str, expected: str) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
-        f'[project]\ndependencies = [{requirement}, "requests >= 2"]\n'
+        f'[project]\ndependencies = [{requirement}, "requests >= 2"]\n',
+        encoding="utf-8",
     )
     pin_exact(pyproject, "widget-core", Version("1.2.3"))
-    assert pyproject.read_text() == (
+    assert pyproject.read_text(encoding="utf-8") == (
         f'[project]\ndependencies = [{expected}, "requests >= 2"]\n'
     )
 
@@ -114,11 +115,12 @@ def test_pin_exact(tmp_path: Path, requirement: str, expected: str) -> None:
 def test_pin_exact_ignores_similar_names(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
-        '[project]\ndependencies = ["widget-core-extras >= 1", "widget-core >= 0.1.0"]\n'
+        '[project]\ndependencies = ["widget-core-extras >= 1", "widget-core >= 0.1.0"]\n',
+        encoding="utf-8",
     )
     pin_exact(pyproject, "widget-core", Version("1.2.3"))
-    assert '"widget-core-extras >= 1"' in pyproject.read_text()
-    assert '"widget-core == 1.2.3"' in pyproject.read_text()
+    assert '"widget-core-extras >= 1"' in pyproject.read_text(encoding="utf-8")
+    assert '"widget-core == 1.2.3"' in pyproject.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(
@@ -129,6 +131,8 @@ def test_pin_exact_requires_exactly_one_match(
     tmp_path: Path, dependencies: str
 ) -> None:
     pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text(f"[project]\ndependencies = {dependencies}\n")
+    pyproject.write_text(
+        f"[project]\ndependencies = {dependencies}\n", encoding="utf-8"
+    )
     with pytest.raises(ReleaseError, match="expected exactly one"):
         pin_exact(pyproject, "widget-core", Version("1.2.3"))

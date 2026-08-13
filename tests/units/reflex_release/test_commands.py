@@ -25,7 +25,7 @@ def set_changelog(config: Config, package: str, text: str) -> None:
         package: The package name.
         text: The changelog markdown.
     """
-    config.changelog_path(package).write_text(text)
+    config.changelog_path(package).write_text(text, encoding="utf-8")
 
 
 def make_internal(repo: Path, package: str) -> Config:
@@ -40,10 +40,11 @@ def make_internal(repo: Path, package: str) -> Config:
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             f'packages-dir = "packages"\ninternal-packages = ["{package}"]',
-        )
+        ),
+        encoding="utf-8",
     )
     return load_config(repo)
 
@@ -57,7 +58,7 @@ def fragment(config: Config, package: str, name: str, text: str = "Something.") 
         name: The fragment filename.
         text: The fragment body.
     """
-    (config.news_dir(package) / name).write_text(text + "\n")
+    (config.news_dir(package) / name).write_text(text + "\n", encoding="utf-8")
 
 
 def test_detect_lists_untagged_changelog_versions(
@@ -240,7 +241,7 @@ def test_materialize_writes_the_changelog(
         }
     ])
     commands.cmd_materialize(config, "release-minor", releases)
-    text = config.changelog_path("widget-core").read_text()
+    text = config.changelog_path("widget-core").read_text(encoding="utf-8")
     assert text.startswith("## v0.2.0 (")
     assert "A new widget." in text
     assert not (config.news_dir("widget-core") / "7.feature.md").exists()
@@ -265,7 +266,7 @@ def test_materialize_collapses_a_prerelease_train(
         }
     ])
     commands.cmd_materialize(config, "release-from-prerelease", releases)
-    text = config.changelog_path("widget-core").read_text()
+    text = config.changelog_path("widget-core").read_text(encoding="utf-8")
     assert text.startswith("## v0.2.0 (")
     assert "a1" not in text
     assert "First. (#1)" in text
@@ -286,10 +287,12 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     commands.cmd_plan(reloaded, "release-minor", "widget-core")
     commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
 
-    partner = reloaded.changelog_path("mypkg").read_text()
+    partner = reloaded.changelog_path("mypkg").read_text(encoding="utf-8")
     assert partner.startswith("## v0.1.0 (")
     assert "No significant changes." in partner
-    assert "A real change." in reloaded.changelog_path("widget-core").read_text()
+    assert "A real change." in reloaded.changelog_path("widget-core").read_text(
+        encoding="utf-8"
+    )
     # Both sides land on one version, so detection does not fail closed.
     commands.cmd_detect(reloaded, "main")
     assert outputs()["any"] == "true"
@@ -299,9 +302,9 @@ def test_commit_changelogs_leaves_unrelated_work_alone(
     config: Config, repo: Path
 ) -> None:
     """A release commit carries the changelogs and nothing a human was mid-way through."""
-    (repo / "unrelated.md").write_text("tracked\n")
+    (repo / "unrelated.md").write_text("tracked\n", encoding="utf-8")
     commit_all(repo)
-    (repo / "unrelated.md").write_text("edited by someone else\n")
+    (repo / "unrelated.md").write_text("edited by someone else\n", encoding="utf-8")
     set_changelog(config, "mypkg", "## v1.0.0 (2026-01-01)\n\nNo changes.\n")
     # An unrelated fragment being drafted for a future release.
     fragment(config, "widget-core", "3.bugfix.md")
@@ -476,7 +479,7 @@ def test_extract_notes_falls_back_when_the_version_is_missing(
 ) -> None:
     target = tmp_path / "notes.md"
     commands.cmd_extract_notes(config, "widget-core", "9.9.9", target)
-    assert target.read_text() == "Release of widget-core 9.9.9.\n"
+    assert target.read_text(encoding="utf-8") == "Release of widget-core 9.9.9.\n"
 
 
 def test_extract_notes_writes_the_changelog_section(
@@ -489,7 +492,7 @@ def test_extract_notes_writes_the_changelog_section(
     )
     target = tmp_path / "notes.md"
     commands.cmd_extract_notes(config, "widget-core", "v1.0.0", target)
-    assert target.read_text() == "### Features\n\n- Nice. (#1)\n"
+    assert target.read_text(encoding="utf-8") == "### Features\n\n- Nice. (#1)\n"
 
 
 def test_check_headings_accepts_an_unchanged_changelog(
@@ -540,14 +543,14 @@ def test_changelog_check_passes_without_source_changes(
     config: Config, repo: Path
 ) -> None:
     base = git(repo, "rev-parse", "HEAD").strip()
-    (repo / "docs.md").write_text("hello\n")
+    (repo / "docs.md").write_text("hello\n", encoding="utf-8")
     commit_all(repo)
     commands.cmd_changelog_check(config, base)
 
 
 def test_changelog_check_requires_a_fragment(config: Config, repo: Path) -> None:
     base = git(repo, "rev-parse", "HEAD").strip()
-    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n")
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
     commit_all(repo)
     with pytest.raises(ReleaseError, match="no news fragment for: mypkg"):
         commands.cmd_changelog_check(config, base)
@@ -555,7 +558,7 @@ def test_changelog_check_requires_a_fragment(config: Config, repo: Path) -> None
 
 def test_changelog_check_passes_with_a_fragment(config: Config, repo: Path) -> None:
     base = git(repo, "rev-parse", "HEAD").strip()
-    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n")
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
     fragment(config, "mypkg", "12.feature.md", "Adds app.")
     commit_all(repo)
     commands.cmd_changelog_check(config, base)
@@ -574,7 +577,9 @@ def test_detect_internal_diffs_the_push(
 ) -> None:
     reloaded = make_internal(repo, "widget-core")
     commit_all(repo)
-    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text(
+        "y = 2\n", encoding="utf-8"
+    )
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
@@ -587,10 +592,12 @@ def test_detect_internal_covers_the_whole_pushed_range(
     reloaded = make_internal(repo, "widget-core")
     commit_all(repo)
     base = git(repo, "rev-parse", "HEAD").strip()
-    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text(
+        "y = 2\n", encoding="utf-8"
+    )
     commit_all(repo)
     # A later, unrelated commit must not hide the earlier package change.
-    (repo / "docs.md").write_text("unrelated\n")
+    (repo / "docs.md").write_text("unrelated\n", encoding="utf-8")
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, base, "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
@@ -601,11 +608,13 @@ def test_detect_internal_covers_a_branch_creating_push(
 ) -> None:
     """An all-zero base means every file in the branch is new."""
     reloaded = make_internal(repo, "widget-core")
-    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text(
+        "y = 2\n", encoding="utf-8"
+    )
     commit_all(repo)
     # A later commit that touches nothing of the package must not hide it, the
     # way diffing only the final commit would.
-    (repo / "docs.md").write_text("unrelated\n")
+    (repo / "docs.md").write_text("unrelated\n", encoding="utf-8")
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "0" * 40, "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
@@ -617,7 +626,9 @@ def test_detect_internal_falls_back_when_the_push_base_is_unreachable(
     """A non-zero base that is not present locally still has to produce a diff."""
     reloaded = make_internal(repo, "widget-core")
     commit_all(repo)
-    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text(
+        "y = 2\n", encoding="utf-8"
+    )
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "f" * 40, "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["widget-core"]
@@ -629,14 +640,17 @@ def test_detect_internal_ignores_a_sibling_only_push(
     """The root package's prefix is empty; a bare startswith would match anything."""
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             'packages-dir = "packages"\ninternal-packages = ["mypkg"]',
-        )
+        ),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     commit_all(repo)
-    (repo / "packages" / "widget-core" / "src" / "w.py").write_text("y = 2\n")
+    (repo / "packages" / "widget-core" / "src" / "w.py").write_text(
+        "y = 2\n", encoding="utf-8"
+    )
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
     assert json.loads(outputs()["packages"]) == []
@@ -648,14 +662,15 @@ def test_detect_internal_matches_a_root_package(
     """The root package owns paths that are not nested under a directory."""
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             'packages-dir = "packages"\ninternal-packages = ["mypkg"]',
-        )
+        ),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     commit_all(repo)
-    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n")
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
     commit_all(repo)
     commands.cmd_detect_internal(reloaded, "HEAD~1", "HEAD", "")
     assert json.loads(outputs()["packages"]) == ["mypkg"]
@@ -793,7 +808,7 @@ def test_create_release_titles_the_root_package_with_its_tag(
     config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
 ) -> None:
     notes = tmp_path / "notes.md"
-    notes.write_text("Notes.\n")
+    notes.write_text("Notes.\n", encoding="utf-8")
     commands.cmd_create_release(config, "v0.2.1", "mypkg", "0.2.1", False, True, notes)
     args = release_args()
     assert args[args.index("--title") + 1] == "v0.2.1"
@@ -803,7 +818,7 @@ def test_create_release_names_the_package_for_a_sub_package(
     config: Config, tmp_path: Path, release_args: Callable[[], list[str]]
 ) -> None:
     notes = tmp_path / "notes.md"
-    notes.write_text("Notes.\n")
+    notes.write_text("Notes.\n", encoding="utf-8")
     commands.cmd_create_release(
         config, "widget-core-v0.2.1", "widget-core", "0.2.1", False, False, notes
     )

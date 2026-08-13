@@ -39,10 +39,11 @@ def test_render_substitutes_every_placeholder(config: Config) -> None:
 def test_render_uses_the_configured_branches(config: Config, repo: Path) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             'packages-dir = "packages"\nmain-branch = "trunk"\nprerelease-branch-prefix = "pre/"',
-        )
+        ),
+        encoding="utf-8",
     )
     rendered = render("release_from_changelog.yml", load_config(repo))
     assert 'branches: ["trunk", "pre/**", "r/hotfix/**"]' in rendered
@@ -57,10 +58,11 @@ def test_render_lists_every_release_action(config: Config) -> None:
 def test_render_uses_the_pinned_cli_command(config: Config, repo: Path) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             "[tool.reflex-release]",
             '[tool.reflex-release]\ncli-command = "uvx reflex-release@1.2.3"',
-        )
+        ),
+        encoding="utf-8",
     )
     assert "uvx reflex-release@1.2.3 detect" in render(
         "release_from_changelog.yml", load_config(repo)
@@ -73,10 +75,11 @@ def test_internal_workflow_is_only_generated_when_configured(
     assert managed_workflows(config) == CORE_WORKFLOWS
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             'packages-dir = "packages"\ninternal-packages = ["widget-core"]',
-        )
+        ),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     assert managed_workflows(reloaded) == (*CORE_WORKFLOWS, INTERNAL_WORKFLOW)
@@ -96,10 +99,11 @@ def add_internal(repo: Path, package: str) -> Config:
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             f'packages-dir = "packages"\ninternal-packages = ["{package}"]',
-        )
+        ),
+        encoding="utf-8",
     )
     return load_config(repo)
 
@@ -117,7 +121,9 @@ def add_packages(repo: Path, *names: str) -> Config:
     for name in names:
         directory = repo / "packages" / name
         (directory / "src").mkdir(parents=True)
-        (directory / "pyproject.toml").write_text(f'[project]\nname = "{name}"\n')
+        (directory / "pyproject.toml").write_text(
+            f'[project]\nname = "{name}"\n', encoding="utf-8"
+        )
     return load_config(repo)
 
 
@@ -127,10 +133,11 @@ def test_rendered_workflows_are_valid_yaml(
 ) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             "[tool.reflex-release]",
             f'[tool.reflex-release]\ndispatch-package-inputs = "{mode}"',
-        )
+        ),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     for name in managed_workflows(reloaded):
@@ -198,10 +205,11 @@ def test_auto_falls_back_to_free_text_past_the_input_limit(
 def test_dispatch_package_inputs_can_be_forced(config: Config, repo: Path) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             "[tool.reflex-release]",
             '[tool.reflex-release]\ndispatch-package-inputs = "text"',
-        )
+        ),
+        encoding="utf-8",
     )
     assert not use_checkboxes(load_config(repo))
 
@@ -220,10 +228,11 @@ def test_sync_rejects_an_unparsable_title_format(config: Config, repo: Path) -> 
     """A heading this tool writes but cannot read back would strand releases."""
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'title_format = "## {version} ({project_date})"',
             'title_format = "## Release {version} on {project_date}"',
-        )
+        ),
+        encoding="utf-8",
     )
     with pytest.raises(ReleaseError, match="cannot parse back"):
         sync(load_config(repo))
@@ -238,10 +247,11 @@ def test_sync_rejects_a_malformed_title_format(
     """The pull-request guard runs this, so it must give guidance, not a traceback."""
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'title_format = "## {version} ({project_date})"',
             f'title_format = "{title_format}"',
-        )
+        ),
+        encoding="utf-8",
     )
     with pytest.raises(ReleaseError, match="not a usable format string"):
         sync(load_config(repo))
@@ -252,10 +262,11 @@ def test_sync_accepts_a_custom_title_format_led_by_the_version(
 ) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'title_format = "## {version} ({project_date})"',
             'title_format = "## {version} (released {project_date})"',
-        )
+        ),
+        encoding="utf-8",
     )
     sync(load_config(repo))
 
@@ -269,7 +280,10 @@ def test_sync_removes_an_obsolete_internal_workflow(config: Config, repo: Path) 
     # The last internal package is gone, so its auto-release trigger must go too.
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace('\ninternal-packages = ["widget-core"]', "")
+        pyproject.read_text(encoding="utf-8").replace(
+            '\ninternal-packages = ["widget-core"]', ""
+        ),
+        encoding="utf-8",
     )
     without = load_config(repo)
     with pytest.raises(ReleaseError, match="out of date"):
@@ -283,9 +297,9 @@ def test_sync_keeps_a_foreign_workflow_of_the_same_name(
 ) -> None:
     target = repo / WORKFLOW_DIR / INTERNAL_WORKFLOW
     target.parent.mkdir(parents=True)
-    target.write_text("name: hand written\n")
+    target.write_text("name: hand written\n", encoding="utf-8")
     sync(config)
-    assert target.read_text() == "name: hand written\n"
+    assert target.read_text(encoding="utf-8") == "name: hand written\n"
 
 
 def test_internal_workflow_triggers_on_the_whole_directory_without_src(
@@ -294,7 +308,7 @@ def test_internal_workflow_triggers_on_the_whole_directory_without_src(
     """A flat-layout package owns its whole directory, and the trigger says so."""
     flat = repo / "packages" / "flat"
     flat.mkdir()
-    (flat / "pyproject.toml").write_text('[project]\nname = "flat"\n')
+    (flat / "pyproject.toml").write_text('[project]\nname = "flat"\n', encoding="utf-8")
     reloaded = add_internal(repo, "flat")
     assert '- "packages/flat/**"' in render(INTERNAL_WORKFLOW, reloaded)
 
@@ -311,11 +325,12 @@ def test_internal_root_package_without_source_dirs_is_rejected(
 ) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             'packages-dir = "packages"\ninternal-packages = ["mypkg"]\n'
             "root-source-dirs = []",
-        )
+        ),
+        encoding="utf-8",
     )
     with pytest.raises(ReleaseError, match="set root-source-dirs"):
         render(INTERNAL_WORKFLOW, load_config(repo))
@@ -350,7 +365,10 @@ def test_sync_check_detects_drift(config: Config, repo: Path) -> None:
     sync(config)
     target = repo / WORKFLOW_DIR / "publish.yml"
     target.write_text(
-        target.read_text().replace("Publish to PyPI", "Publish somewhere")
+        target.read_text(encoding="utf-8").replace(
+            "Publish to PyPI", "Publish somewhere"
+        ),
+        encoding="utf-8",
     )
     with pytest.raises(ReleaseError, match="out of date"):
         sync(config, check=True)
@@ -359,11 +377,11 @@ def test_sync_check_detects_drift(config: Config, repo: Path) -> None:
 def test_sync_refuses_to_clobber_a_foreign_workflow(config: Config, repo: Path) -> None:
     target = repo / WORKFLOW_DIR / "publish.yml"
     target.parent.mkdir(parents=True)
-    target.write_text("name: something else\n")
+    target.write_text("name: something else\n", encoding="utf-8")
     with pytest.raises(ReleaseError, match="not generated by reflex-release"):
         sync(config)
     sync(config, force=True)
-    assert "Generated by reflex-release" in target.read_text()
+    assert "Generated by reflex-release" in target.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(
@@ -389,7 +407,9 @@ def test_towncrier_config_falls_back_without_a_remote(repo: Path) -> None:
 
 def test_init_sets_up_a_bare_repository(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
+    )
     init(tmp_path, pin="9.9.9", force=False)
 
     config = load_config(tmp_path)
@@ -406,7 +426,9 @@ def test_init_warns_when_the_release_path_is_unpinned(
 ) -> None:
     """An unpinned tool resolves whatever is newest inside privileged jobs."""
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
+    )
     init(tmp_path, pin="", force=False)
     assert "unpinned" in capsys.readouterr().out
 
@@ -415,7 +437,9 @@ def test_init_does_not_warn_when_pinned(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
+    )
     init(tmp_path, pin="9.9.9", force=False)
     assert "unpinned" not in capsys.readouterr().out
 
@@ -445,10 +469,11 @@ def test_self_review_is_permitted_by_default(config: Config) -> None:
 def test_self_review_can_be_asserted_against(config: Config, repo: Path) -> None:
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        pyproject.read_text().replace(
+        pyproject.read_text(encoding="utf-8").replace(
             "[tool.reflex-release]",
             "[tool.reflex-release]\nallow-self-review = false",
-        )
+        ),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     assert not reloaded.allow_self_review
@@ -472,19 +497,22 @@ def test_publish_workflow_gates_on_reviewers_and_self_review(config: Config) -> 
 
 def test_init_is_idempotent(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
+    )
     init(tmp_path, pin="9.9.9", force=False)
-    before = (tmp_path / "pyproject.toml").read_text()
+    before = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
     init(tmp_path, pin="9.9.9", force=False)
-    assert (tmp_path / "pyproject.toml").read_text() == before
+    assert (tmp_path / "pyproject.toml").read_text(encoding="utf-8") == before
 
 
 def test_init_keeps_existing_towncrier_configuration(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "solo"\n\n[tool.towncrier]\ndirectory = "changes"\n'
+        '[project]\nname = "solo"\n\n[tool.towncrier]\ndirectory = "changes"\n',
+        encoding="utf-8",
     )
     init(tmp_path, pin="9.9.9", force=False)
-    text = (tmp_path / "pyproject.toml").read_text()
+    text = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
     assert text.count("[tool.towncrier]") == 1
     assert 'directory = "changes"' in text

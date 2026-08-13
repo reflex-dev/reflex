@@ -104,7 +104,7 @@ def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
         dependency: The distribution name to pin.
         version: The version to pin it to.
     """
-    text = pyproject.read_text()
+    text = pyproject.read_text(encoding="utf-8")
     # Requirement strings are quoted TOML values, so the rewrite is anchored on
     # the quotes and on the distribution name, matched the PEP 503 way: any run
     # of ``-``, ``_`` or ``.`` is one separator. Extras carry over to the pin.
@@ -121,5 +121,7 @@ def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
             f"{pyproject}, found {len(matches)}"
         )
     new_pin = f'"{dependency}{matches[0]["extras"] or ""} == {version}"'
-    pyproject.write_text(text.replace(matches[0].group(0), new_pin, 1))
+    pyproject.write_text(
+        text.replace(matches[0].group(0), new_pin, 1), encoding="utf-8"
+    )
     sys.stderr.write(f"Pinned {new_pin} in {pyproject}\n")

@@ -190,7 +190,9 @@ def cmd_detect(config: Config, ref_name: str) -> None:
     releases: list[dict[str, str]] = []
     rows: list[list[str]] = []
     for package in changelog_packages(config):
-        version = latest_version(config.changelog_path(package).read_text())
+        version = latest_version(
+            config.changelog_path(package).read_text(encoding="utf-8")
+        )
         if version is None:
             rows.append([f"`{package}`", "`<none>`", "no versioned section"])
             continue
@@ -349,12 +351,13 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
             path = config.changelog_path(package)
             path.write_text(
                 collapse_prereleases(
-                    path.read_text(),
+                    path.read_text(encoding="utf-8"),
                     Version(version),
                     today,
                     categories,
                     heading_format,
-                )
+                ),
+                encoding="utf-8",
             )
 
 
@@ -409,7 +412,7 @@ def cmd_prepare_publish(
         )
 
     if path.is_file():
-        newest = latest_version(path.read_text())
+        newest = latest_version(path.read_text(encoding="utf-8"))
         if newest != version:
             fail(
                 "changelog is the source of truth: newest version in "
@@ -425,7 +428,9 @@ def cmd_prepare_publish(
             continue
         partner_path = config.changelog_path(partner)
         partner_newest = (
-            latest_version(partner_path.read_text()) if partner_path.is_file() else None
+            latest_version(partner_path.read_text(encoding="utf-8"))
+            if partner_path.is_file()
+            else None
         )
         if partner_newest != version:
             fail(
@@ -530,8 +535,10 @@ def cmd_extract_notes(
     notes: str | None = None
     path = config.changelog_path(package)
     if path.is_file():
-        notes = extract_notes(path.read_text(), parsed)
-    notes_path.write_text((notes or f"Release of {package} {parsed}.") + "\n")
+        notes = extract_notes(path.read_text(encoding="utf-8"), parsed)
+    notes_path.write_text(
+        (notes or f"Release of {package} {parsed}.") + "\n", encoding="utf-8"
+    )
 
 
 def cmd_check_headings(config: Config, base_ref: str) -> None:
@@ -557,7 +564,7 @@ def cmd_check_headings(config: Config, base_ref: str) -> None:
         }
         errors.extend(
             f"{rel_path}: adds version heading '## {section.label}' (v{section.version})"
-            for section in parse_sections(path.read_text())[1]
+            for section in parse_sections(path.read_text(encoding="utf-8"))[1]
             if section.version is not None and section.version not in known
         )
     if errors:
@@ -789,7 +796,7 @@ def cmd_open_release_pr(
         "",
     ])
     body_file = Path(os.environ.get("RUNNER_TEMP", ".")) / "release_pr_body.md"
-    body_file.write_text(body)
+    body_file.write_text(body, encoding="utf-8")
 
     _commit_changelogs(config, f"Materialize changelogs for {summary} ({action})")
     git_push(f"HEAD:refs/heads/{branch}", config.root)

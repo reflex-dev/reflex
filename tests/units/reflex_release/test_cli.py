@@ -25,7 +25,8 @@ def test_detect_reads_options_from_the_environment(
     repo: Path, outputs: Outputs, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (repo / "CHANGELOG.md").write_text(
-        "## v1.0.0 (2026-01-01)\n\nNo significant changes.\n"
+        "## v1.0.0 (2026-01-01)\n\nNo significant changes.\n",
+        encoding="utf-8",
     )
     monkeypatch.setenv("REF_NAME", "main")
     # The parser reads its defaults at build time, so the environment must be
@@ -38,7 +39,8 @@ def test_flags_win_over_the_environment(
     repo: Path, outputs: Outputs, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (repo / "CHANGELOG.md").write_text(
-        "## v1.0.0 (2026-01-01)\n\nNo significant changes.\n"
+        "## v1.0.0 (2026-01-01)\n\nNo significant changes.\n",
+        encoding="utf-8",
     )
     monkeypatch.setenv("REF_NAME", "main")
     assert main(["--root", str(repo), "detect", "--ref-name", "feature/x"]) == 0
@@ -79,16 +81,19 @@ def test_sync_check_reports_missing_workflows(
 
 def test_init_then_sync_check_passes(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
+    )
     assert main(["--root", str(tmp_path), "init", "--pin", "1.0.0"]) == 0
     assert main(["--root", str(tmp_path), "sync", "--check"]) == 0
 
 
 def test_init_unpinned(tmp_path: Path) -> None:
     (tmp_path / "src" / "solo").mkdir(parents=True)
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "solo"\n')
-    assert main(["--root", str(tmp_path), "init", "--pin", "none"]) == 0
-    assert (
-        'cli-command = "uvx reflex-release"'
-        in (tmp_path / "pyproject.toml").read_text()
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "solo"\n', encoding="utf-8"
     )
+    assert main(["--root", str(tmp_path), "init", "--pin", "none"]) == 0
+    assert 'cli-command = "uvx reflex-release"' in (
+        tmp_path / "pyproject.toml"
+    ).read_text(encoding="utf-8")

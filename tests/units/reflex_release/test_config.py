@@ -18,10 +18,12 @@ def write_config(repo: Path, body: str) -> None:
         body: The table body (without the header line).
     """
     pyproject = repo / "pyproject.toml"
-    text = pyproject.read_text()
+    text = pyproject.read_text(encoding="utf-8")
     head, _, rest = text.partition("[tool.reflex-release]\n")
     _, _, tail = rest.partition("\n[tool.towncrier]")
-    pyproject.write_text(f"{head}[tool.reflex-release]\n{body}\n[tool.towncrier]{tail}")
+    pyproject.write_text(
+        f"{head}[tool.reflex-release]\n{body}\n[tool.towncrier]{tail}", encoding="utf-8"
+    )
 
 
 def test_paths_and_tags(config: Config) -> None:
@@ -55,7 +57,8 @@ def test_root_source_dirs_default_to_src_layout(config: Config) -> None:
 def test_root_source_dirs_default_to_flat_module(tmp_path: Path) -> None:
     (tmp_path / "my_pkg").mkdir()
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "my-pkg"\n\n[tool.reflex-release]\nroot-package = "my-pkg"\n'
+        '[project]\nname = "my-pkg"\n\n[tool.reflex-release]\nroot-package = "my-pkg"\n',
+        encoding="utf-8",
     )
     assert load_config(tmp_path).root_source_dirs == ("my_pkg",)
 
@@ -82,9 +85,10 @@ def test_towncrier_layout_settings_are_honored(config: Config, repo: Path) -> No
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
         pyproject
-        .read_text()
+        .read_text(encoding="utf-8")
         .replace('directory = "news"', 'directory = "changes"')
-        .replace('filename = "CHANGELOG.md"', 'filename = "NEWS.md"')
+        .replace('filename = "CHANGELOG.md"', 'filename = "NEWS.md"'),
+        encoding="utf-8",
     )
     reloaded = load_config(repo)
     assert reloaded.news_dir("widget-core").name == "changes"
@@ -100,7 +104,7 @@ def test_package_without_src_layout_counts_whole_directory(
 ) -> None:
     flat = repo / "packages" / "flat"
     flat.mkdir()
-    (flat / "pyproject.toml").write_text('[project]\nname = "flat"\n')
+    (flat / "pyproject.toml").write_text('[project]\nname = "flat"\n', encoding="utf-8")
     reloaded = load_config(repo)
     assert reloaded.is_package_source("flat", "packages/flat/flat/mod.py")
     assert not reloaded.is_package_source("flat", "packages/flat/news/1.misc.md")
@@ -270,7 +274,9 @@ def test_invalid_config(repo: Path, body: str, message: str) -> None:
 
 
 def test_missing_table(tmp_path: Path) -> None:
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\n', encoding="utf-8"
+    )
     with pytest.raises(ReleaseError, match=r"no \[tool\.reflex-release\] table"):
         load_config(tmp_path)
 
@@ -282,7 +288,8 @@ def test_missing_pyproject(tmp_path: Path) -> None:
 
 def test_repo_without_packages_dir(tmp_path: Path) -> None:
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "solo"\n\n[tool.reflex-release]\nroot-package = "solo"\n'
+        '[project]\nname = "solo"\n\n[tool.reflex-release]\nroot-package = "solo"\n',
+        encoding="utf-8",
     )
     config = load_config(tmp_path)
     assert config.packages_dir is None
@@ -291,16 +298,19 @@ def test_repo_without_packages_dir(tmp_path: Path) -> None:
 
 
 def test_repo_describing_no_packages(tmp_path: Path) -> None:
-    (tmp_path / "pyproject.toml").write_text("[tool.reflex-release]\n")
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.reflex-release]\n", encoding="utf-8"
+    )
     with pytest.raises(ReleaseError, match="describes no packages"):
         load_config(tmp_path)
 
 
 def test_existing_changelogs(config: Config, repo: Path) -> None:
     assert config.existing_changelogs() == []
-    (repo / "CHANGELOG.md").write_text("## v1.0.0 (2026-01-01)\n")
+    (repo / "CHANGELOG.md").write_text("## v1.0.0 (2026-01-01)\n", encoding="utf-8")
     (repo / "packages" / "widget-core" / "CHANGELOG.md").write_text(
-        "## v1.0.0 (2026-01-01)\n"
+        "## v1.0.0 (2026-01-01)\n",
+        encoding="utf-8",
     )
     assert config.existing_changelogs() == [
         "CHANGELOG.md",
