@@ -11,7 +11,7 @@ import platform
 import re
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -214,6 +214,34 @@ def notify_backend(host: str | None = None):
     )
 
 
+_DEV_CONDITION_FLAG = "--conditions=development"
+
+
+def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
+    """Copy an environment with the `development` export condition enabled.
+
+    react-router's dev CLI requires the condition and re-executes itself with
+    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
+    the CLI on node-less installs, so the restarted process trips the CLI's
+    restart guard and exits. Enabling the condition for both runtimes in the
+    dev server's environment lets it start under either, without leaking the
+    setting into the parent process.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment with the flag merged into NODE_OPTIONS and
+        BUN_OPTIONS.
+    """
+    env = dict(environ)
+    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
+        existing = env.get(options_var, "")
+        if _DEV_CONDITION_FLAG not in existing.split():
+            env[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+    return env
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -236,10 +264,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": {
-                    **os.environ,
-                    "NO_COLOR": "1",
-                }
+                "env": _with_development_condition({**os.environ, "NO_COLOR": "1"})
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]

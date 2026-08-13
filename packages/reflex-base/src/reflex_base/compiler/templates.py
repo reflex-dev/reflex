@@ -682,6 +682,13 @@ export default defineConfig((config) => ({{
       ],
     }},
   }},
+  // react-router prerenders by fetching pages from a `vite preview` server
+  // started with this config. Pin an IPv4 loopback address so the bound
+  // socket and the fetched URL cannot resolve `localhost` to different
+  // address families (which refuses the connection, e.g. in docker).
+  preview: {{
+    host: "127.0.0.1",
+  }},
   resolve: {{
     mainFields: ["browser", "module", "jsnext"],
     alias: [

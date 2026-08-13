@@ -1968,7 +1968,7 @@ async def test_state_manager_modify_state(
 
         # separate instances should NOT share locks
         sm2 = type(state_manager)()
-        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert sm2._state_manager_lock is not state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
@@ -3471,7 +3471,6 @@ async def test_preprocess(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3535,7 +3534,6 @@ async def test_preprocess_multiple_load_events(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3986,7 +3984,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -4022,7 +4020,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -4047,7 +4045,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -4071,7 +4069,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -4098,7 +4096,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -4138,7 +4136,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # Must not raise (previously raised AttributeError mid-import).
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         del sys.modules[constants.Config.MODULE]
 
 
@@ -4167,7 +4165,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
         assert "set_n" in state_cls.event_handlers
         del sys.modules[constants.Config.MODULE]
@@ -4193,7 +4191,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
         assert list(state_cls.event_handlers) == ["setvar"]
         del sys.modules[constants.Config.MODULE]
@@ -4215,7 +4213,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
 
     with chdir(proj_root):
         rxconfig_path.write_text(dedent(off_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class ReloadOffState(State):
@@ -4224,7 +4222,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
         assert list(ReloadOffState.event_handlers) == ["setvar"]
 
         rxconfig_path.write_text(dedent(on_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         class ReloadOnState(State):
             num: int = 0
