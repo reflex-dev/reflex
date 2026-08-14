@@ -361,7 +361,7 @@ def test_commit_materialized_leaves_unrelated_work_alone(
     fragment(config, "widget-core", "3.bugfix.md")
 
     commands._commit_materialized(
-        config, [{"package": "mypkg", "next": "1.0.0"}], "Materialize changelogs"
+        config, [{"package": "mypkg", "next": "1.0.0"}], [], "Materialize changelogs"
     )
 
     assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
@@ -384,6 +384,7 @@ def test_release_commit_removes_the_fragments_it_consumed(
     commands._commit_materialized(
         config,
         [{"package": "widget-core", "next": "0.1.0"}],
+        [],
         "Materialize changelogs",
     )
 
@@ -780,7 +781,7 @@ def test_push_prerelease_summary_links_the_branch(
     config: Config, dispatched: pytest.MonkeyPatch, summary: Callable[[], str]
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     branch = next(
@@ -803,7 +804,7 @@ def test_push_prerelease_annotates_the_branch_url(
     capsys: pytest.CaptureFixture,
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     notices = [
         line
@@ -819,7 +820,7 @@ def test_dispatch_summaries_degrade_outside_actions(
 ) -> None:
     dispatched.delenv("GITHUB_REPOSITORY")
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     assert "](" not in text
@@ -834,7 +835,7 @@ def test_open_release_pr_summary_links_the_pull_request(
 ) -> None:
     url = "https://github.example.com/acme/widgets/pull/42"
     dispatched.setattr(commands, "gh_output", lambda *args, **kwargs: url)
-    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN))
+    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN), "")
     text = summary()
     assert f"Pull request: [#42]({url})" in text
     assert "/tree/release/release-minor-" in text
@@ -1097,8 +1098,13 @@ def test_release_commit_carries_the_lifted_pins(
 
     commands.cmd_plan(reloaded, "release-minor", "mypkg")
     commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    # The commit runs as its own process, so materialize hands it the paths.
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
     commands._commit_materialized(
-        reloaded, [{"package": "mypkg", "next": "0.1.0"}], "Materialize"
+        reloaded,
+        [{"package": "mypkg", "next": "0.1.0"}],
+        json.loads(outputs()["repinned"]),
+        "Materialize",
     )
 
     assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
@@ -1106,3 +1112,33 @@ def test_release_commit_carries_the_lifted_pins(
         "news/5.feature.md",
         "pyproject.toml",
     ]
+
+
+def test_release_commit_leaves_an_unrepinned_pyproject_alone(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Only what the pin upgrade actually rewrote is staged beside the changelogs."""
+    fragment(config, "mypkg", "6.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(config, "release-minor", "mypkg")
+    commands.cmd_materialize(config, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == []
+
+    # A human mid-way through an unrelated edit to the same tracked file.
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8") + "\n# work in progress\n",
+        encoding="utf-8",
+    )
+    commands._commit_materialized(
+        config,
+        [{"package": "mypkg", "next": "0.1.0"}],
+        json.loads(outputs()["repinned"]),
+        "Materialize",
+    )
+
+    assert (
+        "pyproject.toml"
+        not in git(repo, "show", "--name-only", "--format=", "HEAD").split()
+    )
+    assert "# work in progress" in pyproject.read_text(encoding="utf-8")

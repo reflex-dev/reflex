@@ -215,9 +215,20 @@ satisfies the whole requirement**:
 | `>= 0.2.0` | left alone | left alone |
 
 "Published" means **tagged**: tags are created only after a successful upload,
-so the repository's own tags are its record of what is on PyPI. The rewritten
+so the repository's own tags are its record of what is on PyPI — which is why
+the release workflows check out with full history and tags. The rewritten
 `pyproject.toml` files and the re-resolved `uv.lock` are part of the release
-commit, so they land through the same review as the changelog bump.
+commit, so they land through the same review as the changelog bump; nothing else
+is staged, not even an unrelated edit to a file the upgrade happened not to
+touch.
+
+The lifted floor is always one the resolved version satisfies — a strict
+`> 0.2.0.dev1` becomes `>= 0.2.0`, since `> 0.2.0` would exclude the very
+release it resolved to — and the rewrite is verified against the resolved
+version before it is written. Pins and lock file move together: if `uv lock`
+cannot follow the new pins, the `pyproject.toml` rewrites are rolled back, so a
+re-run has the same work to do rather than finding the pins already lifted and
+skipping the lock.
 
 A floor nothing published satisfies has nowhere to go, and the package is
 **held back** rather than materialized into a version that could never be
