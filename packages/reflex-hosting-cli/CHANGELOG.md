@@ -1,3 +1,14 @@
+## v0.1.69 (2026-08-13)
+
+### Features
+
+- `deploy()` accepts `min_instances` and `max_instances`, which are applied to the app before the deployment is submitted so it picks the new autoscaling bounds up. Only the bounds explicitly passed are sent, so apps keep their platform defaults otherwise. ([#6884](https://github.com/reflex-dev/reflex/issues/6884))
+
+### Bug Fixes
+
+- `--vmtype` is no longer dropped when deploying to Google Cloud. The server maps VM types onto Cloud Run CPU/memory limits, so the flag is now passed through; only `--region` is still ignored for that target, since the region comes from the connected GCP account. ([#6884](https://github.com/reflex-dev/reflex/issues/6884))
+
+
 ## v0.1.68 (2026-08-03)
 
 ### Features
