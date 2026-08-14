@@ -528,10 +528,11 @@ def upgrade_dev_pins(
     if not upgrades:
         return []
 
-    # Pins and lock file move together or not at all. A half-applied upgrade
-    # would leave the working tree with lifted pins and a lock file describing
-    # the old ones — and a re-run, finding nothing left to lift, would not
-    # re-lock and could commit exactly that.
+    # Every pin in the batch and the lock file move together or not at all: the
+    # rewrites run package by package, so a requirement the second package
+    # cannot be given would otherwise strand the first one's — and a lock file
+    # left describing the old pins is worse still, because a re-run finds
+    # nothing left to lift, does not re-lock, and could commit that pairing.
     snapshot = {
         path: path.read_text(encoding="utf-8")
         for path in {
@@ -539,8 +540,8 @@ def upgrade_dev_pins(
             for upgrade in upgrades
         }
     }
-    changed = apply_pin_upgrades(config, upgrades)
     try:
+        changed = apply_pin_upgrades(config, upgrades)
         lock = refresh_lock_file(config)
     except ReleaseError:
         for path, text in snapshot.items():
