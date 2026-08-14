@@ -184,6 +184,7 @@ redirects.extend([
     ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
+    ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
 ])
 
 
