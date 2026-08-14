@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from reflex_release.config import Config, load_config
-from reflex_release.scaffold import towncrier_config_toml
+from reflex_release.scaffold import CUSTOM_BUILD_CONTRACT, towncrier_config_toml
 
 ROOT_PYPROJECT = """\
 [project]
@@ -97,7 +97,7 @@ def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> No
         workflows = repo / ".github" / "workflows"
         workflows.mkdir(parents=True, exist_ok=True)
         (workflows / "build_wheels.yml").write_text(
-            "name: Build wheels\non:\n  workflow_call:\n    inputs: {}\njobs: {}\n",
+            f"name: Build wheels\n{CUSTOM_BUILD_CONTRACT}\njobs: {{}}\n",
             encoding="utf-8",
         )
 

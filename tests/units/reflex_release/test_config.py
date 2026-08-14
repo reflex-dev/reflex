@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -470,4 +471,66 @@ def test_custom_build_rejects_workflows_that_share_a_job_id(
         'packages = ["widget-core"]\nworkflow = "build.yaml"\n',
     )
     with pytest.raises(ReleaseError, match="same publish job"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize(
+    "workflow", ["build.yml\njobs: bad", "build .yml: x", "~build.yml", "*.yml"]
+)
+def test_custom_build_rejects_a_yaml_unsafe_workflow_name(
+    config: Config, repo: Path, workflow: str
+) -> None:
+    """The name is written into `uses:` as a bare scalar."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]",
+            "\n[[tool.reflex-release.custom-build]]\n"
+            'packages = ["mypkg"]\n'
+            f"workflow = {workflow!r}\n\n[tool.towncrier]",
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="must be a bare filename"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        (
+            'packages = ["mypkg"]\nworkflow = "b.yml"\nexpect-artifacts = "*.whl"\n',
+            "[[tool.reflex-release.custom-build]] expect-artifacts",
+        ),
+        (
+            'packages = [1]\nworkflow = "b.yml"\n',
+            "[[tool.reflex-release.custom-build]] packages",
+        ),
+        (
+            'packages = ["mypkg"]\nworkflow = 1\n',
+            "[[tool.reflex-release.custom-build]] workflow",
+        ),
+    ],
+)
+def test_custom_build_type_errors_name_their_own_table(
+    config: Config, repo: Path, body: str, expected: str
+) -> None:
+    """A key in a sub-table must not send the reader to the top-level one."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n' + body,
+    )
+    with pytest.raises(ReleaseError, match=re.escape(expected)):
+        load_config(repo)
+
+
+def test_lockstep_type_errors_name_their_own_table(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\nmembers = 1\n",
+    )
+    with pytest.raises(
+        ReleaseError, match=re.escape("[[tool.reflex-release.lockstep]] members")
+    ):
         load_config(repo)

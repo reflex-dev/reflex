@@ -12,6 +12,8 @@ from reflex_release.commands import _split_selection
 from reflex_release.config import Config, load_config
 from reflex_release.scaffold import (
     CORE_WORKFLOWS,
+    CUSTOM_BUILD_CONTRACT,
+    CUSTOM_BUILD_INPUTS,
     INTERNAL_WORKFLOW,
     MAX_DISPATCH_CHECKBOXES,
     WORKFLOW_DIR,
@@ -23,6 +25,7 @@ from reflex_release.scaffold import (
     sync,
     towncrier_config_toml,
     use_checkboxes,
+    workflow_call_inputs,
 )
 from reflex_release.versions import ACTIONS
 
@@ -765,3 +768,78 @@ def test_custom_build_workflows_are_valid_yaml(
     reloaded = load_config(repo)
     for name in managed_workflows(reloaded):
         assert yaml.safe_load(render(name, reloaded))["jobs"], name
+
+
+WORKFLOW_WITH_DISPATCH = """\
+on:
+  # a manual trigger with inputs of its own
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+  workflow_call:
+    inputs:
+      package: { required: true, type: string }
+      version:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+      build-dir:
+        required: true
+        type: string
+      artifact-prefix:
+        required: true
+        type: string
+    secrets:
+      token:
+        required: false
+jobs: {}
+"""
+
+
+def test_workflow_call_inputs_reads_the_right_block() -> None:
+    """A workflow_dispatch trigger has an `inputs:` block too."""
+    assert workflow_call_inputs(WORKFLOW_WITH_DISPATCH) == set(CUSTOM_BUILD_INPUTS)
+    assert workflow_call_inputs("on:\n  push:\njobs: {}\n") == set()
+
+
+def test_the_documented_contract_declares_every_passed_input() -> None:
+    """The error message tells people what to write, so it has to be right."""
+    assert workflow_call_inputs(CUSTOM_BUILD_CONTRACT) == set(CUSTOM_BUILD_INPUTS)
+
+
+def test_every_passed_input_is_in_the_contract(config: Config, repo: Path) -> None:
+    """The generated call and the contract it is validated against must agree."""
+    write_custom_build(repo)
+    passed = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"][
+        "custom-build-build_wheels"
+    ]["with"]
+    assert set(passed) == set(CUSTOM_BUILD_INPUTS)
+
+
+def test_sync_rejects_a_custom_build_workflow_missing_an_input(
+    config: Config, repo: Path
+) -> None:
+    """GitHub would reject the generated call; catch it in the pull request."""
+    write_custom_build(repo)
+    target = repo / WORKFLOW_DIR / "build_wheels.yml"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace(
+            '      tag:\n        description: "Tag the checkout with this so the'
+            ' build derives that version"\n        required: true\n        type:'
+            " string\n",
+            "",
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="does not declare the input"):
+        sync(load_config(repo))
+
+
+def test_collect_keeps_the_git_context_the_hook_used_to_get(config: Config) -> None:
+    """post_build.sh moved here from build, whose checkout has history and tags."""
+    checkout = _job_steps(config, "collect")[0]
+    assert checkout["with"]["fetch-tags"] is True
+    assert checkout["with"]["fetch-depth"] == 0

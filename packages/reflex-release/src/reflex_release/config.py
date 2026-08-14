@@ -49,6 +49,13 @@ _KNOWN_LOCKSTEP_KEYS = frozenset({"members", "publish-last", "pin-exact"})
 
 _KNOWN_CUSTOM_BUILD_KEYS = frozenset({"packages", "workflow", "expect-artifacts"})
 
+_LOCKSTEP_LABEL = f"[[tool.{TOOL_TABLE}.lockstep]]"
+_CUSTOM_BUILD_LABEL = f"[[tool.{TOOL_TABLE}.custom-build]]"
+
+#: A custom build workflow's filename, restricted to what is safe to write as a
+#: bare YAML scalar in the generated ``uses:``.
+_WORKFLOW_FILENAME_RE = re.compile(r"[A-Za-z0-9_.-]+\.ya?ml")
+
 
 @dataclasses.dataclass(frozen=True)
 class CustomBuild:
@@ -540,36 +547,44 @@ def load_pyproject(path: Path) -> dict:
         return tomllib.load(f)
 
 
-def _string_list(table: dict, key: str) -> tuple[str, ...]:
+def _string_list(
+    table: dict, key: str, label: str = f"[tool.{TOOL_TABLE}]"
+) -> tuple[str, ...]:
     """Read a list-of-strings setting.
 
     Args:
         table: The table to read from.
         key: The setting name.
+        label: How to name the table in an error, so a key in a sub-table does
+            not send the reader looking for it in the top-level one.
 
     Returns:
         The values as a tuple (empty when the key is absent).
     """
     value = table.get(key, [])
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-        fail(f"[tool.{TOOL_TABLE}] {key} must be a list of strings")
+        fail(f"{label} {key} must be a list of strings")
     return tuple(value)
 
 
-def _string(table: dict, key: str, default: str) -> str:
+def _string(
+    table: dict, key: str, default: str, label: str = f"[tool.{TOOL_TABLE}]"
+) -> str:
     """Read a string setting.
 
     Args:
         table: The table to read from.
         key: The setting name.
         default: The value to use when the key is absent.
+        label: How to name the table in an error, so a key in a sub-table does
+            not send the reader looking for it in the top-level one.
 
     Returns:
         The configured string.
     """
     value = table.get(key, default)
     if not isinstance(value, str):
-        fail(f"[tool.{TOOL_TABLE}] {key} must be a string")
+        fail(f"{label} {key} must be a string")
     return value
 
 
@@ -614,8 +629,8 @@ def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...
                 f"unknown key(s) in [[tool.{TOOL_TABLE}.lockstep]]: "
                 f"{', '.join(unknown)}"
             )
-        members = _string_list(entry, "members")
-        publish_last = _string_list(entry, "publish-last")
+        members = _string_list(entry, "members", _LOCKSTEP_LABEL)
+        publish_last = _string_list(entry, "publish-last", _LOCKSTEP_LABEL)
         if len(members) < 2:
             fail(f"a [[tool.{TOOL_TABLE}.lockstep]] group needs at least two members")
         if len(set(members)) != len(members):
@@ -674,23 +689,28 @@ def _load_custom_build(table: dict, config: Config) -> tuple[CustomBuild, ...]:
                 f"unknown key(s) in [[tool.{TOOL_TABLE}.custom-build]]: "
                 f"{', '.join(unknown)}"
             )
-        members = _string_list(entry, "packages")
+        members = _string_list(entry, "packages", _CUSTOM_BUILD_LABEL)
         if not members:
             fail(
                 f"a [[tool.{TOOL_TABLE}.custom-build]] entry needs at least one "
                 "package in `packages`"
             )
-        workflow = _string(entry, "workflow", "")
-        if not workflow.endswith((".yml", ".yaml")) or "/" in workflow:
+        workflow = _string(entry, "workflow", "", _CUSTOM_BUILD_LABEL)
+        # The name is interpolated into the generated workflow's `uses:` as a
+        # bare scalar, so it has to be a plain filename and nothing that YAML
+        # would read as structure.
+        if not _WORKFLOW_FILENAME_RE.fullmatch(workflow):
             fail(
-                f"[[tool.{TOOL_TABLE}.custom-build]] workflow must be a bare "
-                'filename under .github/workflows, e.g. "build_wheels.yml" '
-                f"(got {workflow!r})"
+                f"{_CUSTOM_BUILD_LABEL} workflow must be a bare filename under "
+                '.github/workflows made of letters, digits, ".", "_" and "-", '
+                f'e.g. "build_wheels.yml" (got {workflow!r})'
             )
         build = CustomBuild(
             packages=members,
             workflow=workflow,
-            expect_artifacts=_string_list(entry, "expect-artifacts"),
+            expect_artifacts=_string_list(
+                entry, "expect-artifacts", _CUSTOM_BUILD_LABEL
+            ),
         )
         # One job per entry in the generated publish workflow, so two entries
         # whose workflows share a job id would silently collapse into one.

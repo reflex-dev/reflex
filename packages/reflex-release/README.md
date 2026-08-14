@@ -663,8 +663,10 @@ Two constraints follow from where the build sits:
   time.
 
 `reflex-release sync` (and so `sync --check` on every pull request) fails if a
-configured build workflow is missing or has no `workflow_call` trigger, so a
-renamed file is a red PR rather than a failed release.
+configured build workflow is missing, has no `workflow_call` trigger, or does
+not declare all five inputs — GitHub rejects a call naming an undeclared input,
+so without that check a renamed input would surface as a failed release instead
+of a red PR.
 
 ## Post-build hook
 
@@ -683,7 +685,10 @@ unzip -l "$DIST_DIR"/*.whl | grep -q '\.pyi$' || {
 }
 ```
 
-It runs for custom builds too, on exactly the files that were collected.
+It runs for custom builds too, on exactly the files that were collected. The
+checkout it runs in has full history and tags, but — unlike the build job — the
+release tag is not applied locally, since `collect` builds nothing. Use
+`$VERSION` rather than `git describe` to identify the release.
 
 ## Keeping the workflows current
 

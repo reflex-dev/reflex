@@ -60,6 +60,9 @@ OPTIONAL_WORKFLOWS = (INTERNAL_WORKFLOW,)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates" / "workflows"
 
+#: The inputs the generated publish workflow passes to a custom build workflow.
+CUSTOM_BUILD_INPUTS = ("package", "version", "tag", "build-dir", "artifact-prefix")
+
 #: The ``workflow_call`` interface a custom build workflow has to declare.
 CUSTOM_BUILD_CONTRACT = """\
 on:
@@ -502,6 +505,95 @@ def check_title_format(config: Config) -> None:
         )
 
 
+def _indent_of(line: str) -> int:
+    """Return a line's leading-whitespace width.
+
+    Args:
+        line: The line to measure.
+
+    Returns:
+        The number of leading whitespace characters.
+    """
+    return len(line) - len(line.lstrip())
+
+
+def _nested_lines(lines: list[str], index: int) -> list[str]:
+    """Return the lines nested under the mapping key at an index.
+
+    Args:
+        lines: Significant lines of a YAML document (no blanks or comments).
+        index: The index of the key whose block to return.
+
+    Returns:
+        The following lines indented deeper than that key.
+    """
+    outer = _indent_of(lines[index])
+    end = next(
+        (
+            offset
+            for offset, line in enumerate(lines[index + 1 :])
+            if _indent_of(line) <= outer
+        ),
+        len(lines) - index - 1,
+    )
+    return lines[index + 1 : index + 1 + end]
+
+
+def _key_index(lines: list[str], key: str) -> int | None:
+    """Return the index of the line declaring a block mapping key.
+
+    Args:
+        lines: Significant lines of a YAML document.
+        key: The key to find.
+
+    Returns:
+        The index, or None when no line declares that key with a nested block.
+    """
+    pattern = re.compile(rf"\s*{re.escape(key)}:$")
+    return next(
+        (index for index, line in enumerate(lines) if pattern.fullmatch(line.rstrip())),
+        None,
+    )
+
+
+def workflow_call_inputs(text: str) -> set[str]:
+    """List the input names a workflow declares under ``on: workflow_call``.
+
+    This reads the block by indentation rather than parsing YAML: the tool runs
+    in the jobs holding write access on the release path, so it deliberately
+    carries no YAML parser. It is lenient by design — an input it fails to see
+    is still caught by GitHub, which rejects a call naming an undeclared input
+    before any job in the run starts.
+
+    Args:
+        text: The workflow file's contents.
+
+    Returns:
+        The declared input names, empty when the block cannot be found.
+    """
+    lines = [
+        line
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    call = _key_index(lines, "workflow_call")
+    if call is None:
+        return set()
+    block = _nested_lines(lines, call)
+    inputs = _key_index(block, "inputs")
+    if inputs is None:
+        return set()
+    declared = _nested_lines(block, inputs)
+    if not declared:
+        return set()
+    # Only the keys at the shallowest depth are the input names; anything
+    # deeper describes one of them.
+    depth = min(_indent_of(line) for line in declared)
+    return {
+        line.strip().partition(":")[0] for line in declared if _indent_of(line) == depth
+    }
+
+
 def check_custom_build_workflows(config: Config) -> None:
     """Fail unless every configured custom build workflow exists and is callable.
 
@@ -527,12 +619,24 @@ def check_custom_build_workflows(config: Config) -> None:
                 f"{listing} builds through {WORKFLOW_DIR}/{entry.workflow}, which "
                 f"does not exist. Create it with:\n\n{CUSTOM_BUILD_CONTRACT}"
             )
-        if not re.search(
-            r"^\s*workflow_call:", target.read_text(encoding="utf-8"), re.MULTILINE
-        ):
+        text = target.read_text(encoding="utf-8")
+        if not re.search(r"\bworkflow_call\b", text):
             fail(
                 f"{WORKFLOW_DIR}/{entry.workflow} declares no `workflow_call` "
                 f"trigger, so publish.yml cannot call it to build {listing}. It "
+                f"needs:\n\n{CUSTOM_BUILD_CONTRACT}"
+            )
+        # GitHub rejects a call naming an undeclared input, which would fail the
+        # release itself; catching it here makes it a red pull request instead.
+        if missing := [
+            name
+            for name in CUSTOM_BUILD_INPUTS
+            if name not in workflow_call_inputs(text)
+        ]:
+            fail(
+                f"{WORKFLOW_DIR}/{entry.workflow} does not declare the input(s) "
+                f"publish.yml passes it: {', '.join(missing)}. Building {listing} "
+                f"would fail the release when GitHub validates the call. It "
                 f"needs:\n\n{CUSTOM_BUILD_CONTRACT}"
             )
 
