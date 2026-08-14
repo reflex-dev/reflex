@@ -1140,6 +1140,48 @@ def test_deploy_without_instance_bounds_flags_skips_the_call(
     recorder.create_deployment.assert_called_once()
 
 
+def test_deploy_failed_export_does_not_apply_instance_bounds(
+    mocker: MockerFixture,
+    mock_export_import_error_fn: Callable[[str, str, str, bool, bool, bool], None],
+):
+    """A build that never produces a deployment leaves the bounds untouched."""
+    recorder = _deploy_call_recorder(mocker)
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_import_error_fn,
+            interactive=False,
+            min_instances=3,
+            max_instances=9,
+        )
+
+    recorder.set_instance_bounds.assert_not_called()
+    recorder.create_deployment.assert_not_called()
+
+
+def test_deploy_warns_when_bounds_outlive_a_rejected_submit(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """Bounds that stuck without a deployment are called out, not left silent."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.create_deployment.return_value = "deployment failed: too large"
+    console_warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=3,
+        )
+
+    assert any(
+        "next deployment" in call.args[0] for call in console_warn.call_args_list
+    )
+
+
 @pytest.mark.parametrize(
     "detail",
     [
