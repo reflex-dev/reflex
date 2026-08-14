@@ -115,6 +115,17 @@ jobs:
           PACKAGE: ${{ inputs.package }}
         run: @@CLI@@ check-dev-pins "$PACKAGE"
 
+      # PyPI renders the README as a standalone page, where the relative links
+      # that work on GitHub resolve against pypi.org and 404. They are rewritten
+      # to URLs pinned at the commit being released — in the build tree only,
+      # never in a commit — so a reader of this version's description follows
+      # them to the files as they were in this version.
+      - name: Rewrite relative README links to permalinks
+        if: steps.prepare.outputs.skipped != 'true'
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: @@CLI@@ rewrite-readme-links
+
       # The dynamic versioning backend derives each package's version from the
       # newest reachable tag with the package's prefix, so tagging HEAD locally
       # is what selects the version being built. The tag is only pushed after a

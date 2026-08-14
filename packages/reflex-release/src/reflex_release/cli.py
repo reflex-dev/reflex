@@ -130,6 +130,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--version", default=_env("VERSION"), help="Version being released."
     )
 
+    readme = sub.add_parser(
+        "rewrite-readme-links",
+        help="Point the README's relative links at the commit being released.",
+    )
+    readme.add_argument(
+        "--package", default=_env("PACKAGE"), help="Package being built."
+    )
+    readme.add_argument(
+        "--sha",
+        default=_env("SHA"),
+        help="Commit to pin the links to (default: HEAD).",
+    )
+
     verify = sub.add_parser(
         "verify-dist",
         help="Check every built artifact is this package at the target version.",
@@ -310,6 +323,8 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
             )
         case "pin-lockstep":
             commands.cmd_pin_lockstep(config, args.package, args.version)
+        case "rewrite-readme-links":
+            commands.cmd_rewrite_readme_links(config, args.package, args.sha)
         case "verify-dist":
             commands.cmd_verify_dist(config, args.package, args.version, args.dist_dir)
         case "extract-notes":

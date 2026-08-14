@@ -26,7 +26,6 @@ from __future__ import annotations
 import dataclasses
 import difflib
 import re
-import subprocess
 from importlib import metadata
 from pathlib import Path
 
@@ -36,6 +35,7 @@ from .actions import echo, fail
 from .changelog import parse_sections, render_heading
 from .config import Config, load_config, load_pyproject
 from .discovery import releasable_packages, title_format
+from .gitutil import github_slug
 from .versions import ACTIONS
 
 WORKFLOW_DIR = ".github/workflows"
@@ -58,10 +58,6 @@ INTERNAL_WORKFLOW = "auto_release_internal.yml"
 OPTIONAL_WORKFLOWS = (INTERNAL_WORKFLOW,)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates" / "workflows"
-
-_GITHUB_REMOTE_RE = re.compile(
-    r"github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
-)
 
 TOWNCRIER_TYPES = (
     ("breaking", "Breaking Changes"),
@@ -414,28 +410,6 @@ def sync(config: Config, check: bool = False, force: bool = False) -> None:
         )
 
 
-def _github_slug(root: Path) -> str | None:
-    """Return the ``owner/repo`` slug of the origin remote, if it is on GitHub.
-
-    Args:
-        root: The repository root.
-
-    Returns:
-        The slug, or None when it cannot be determined.
-    """
-    result = subprocess.run(
-        ["git", "remote", "get-url", "origin"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    match = _GITHUB_REMOTE_RE.search(result.stdout.strip())
-    return f"{match['owner']}/{match['repo']}" if match else None
-
-
 def release_config_toml(root: Path, cli_command: str) -> str:
     """Render a starter ``[tool.reflex-release]`` table for a repository.
 
@@ -472,7 +446,7 @@ def towncrier_config_toml(root: Path) -> str:
     Returns:
         The TOML text to append to ``pyproject.toml``.
     """
-    slug = _github_slug(root) or "OWNER/REPO"
+    slug = github_slug(root) or "OWNER/REPO"
     lines = [
         "[tool.towncrier]",
         "# One shared configuration for every package: each invocation passes",

@@ -56,11 +56,14 @@ from .gitutil import (
     git_push,
     git_run,
     git_show,
+    github_repo_url,
+    head_sha,
     latest_final_tag_version,
     latest_tag_version,
     remote_branch_exists,
     tag_exists,
 )
+from .readme import MARKDOWN_SUFFIXES, readme_file, rewrite_links
 from .versions import ACTIONS, next_version, release_date_today
 
 #: Filename of the scaffolded workflow that publishes untagged changelog versions.
@@ -499,6 +502,53 @@ def cmd_pin_lockstep(config: Config, package: str, version: str) -> None:
     pyproject = config.package_path(package) / "pyproject.toml"
     for target in targets:
         pin_exact(pyproject, config.distribution_name(target), Version(version))
+
+
+def cmd_rewrite_readme_links(config: Config, package: str, sha: str) -> None:
+    """Point a package README's relative links at the commit being released.
+
+    PyPI renders the README as a standalone page, where a relative link resolves
+    against ``pypi.org`` and 404s. Rewriting them to URLs pinned at the released
+    commit makes them work — and keeps them working, since the reader of an old
+    version follows its links to the files as they were in that version. The
+    README is rewritten in the build tree only and never committed.
+
+    Args:
+        config: The repository configuration.
+        package: The package being built.
+        sha: The commit to pin the links to (empty resolves ``HEAD``).
+    """
+    config.require_known(package)
+    path = readme_file(config, package)
+    if path is None:
+        notice(f"{package} publishes no README file; nothing to rewrite.")
+        return
+    if path.suffix.lower() not in MARKDOWN_SUFFIXES:
+        notice(f"{path.name} is not markdown; leaving its links alone.")
+        return
+    if not path.is_relative_to(config.root):
+        notice(f"{path} is outside the repository; leaving its links alone.")
+        return
+
+    rel_path = path.relative_to(config.root).as_posix()
+    text, rewrites = rewrite_links(
+        path.read_text(encoding="utf-8"),
+        repo_url=github_repo_url(config.root),
+        sha=sha.strip() or head_sha(config.root),
+        readme_path=rel_path,
+        root=config.root,
+    )
+    for rewrite in rewrites:
+        if rewrite.url is None:
+            notice(f"{rel_path}: left {rewrite.target!r} alone — {rewrite.reason}")
+        else:
+            echo(f"{rewrite.target} -> {rewrite.url}")
+    rewritten = sum(rewrite.url is not None for rewrite in rewrites)
+    if not rewritten:
+        echo(f"No relative links to rewrite in {rel_path}.")
+        return
+    path.write_text(text, encoding="utf-8")
+    echo(f"Rewrote {rewritten} relative link(s) in {rel_path}.")
 
 
 def cmd_verify_dist(config: Config, package: str, version: str, dist_dir: str) -> None:

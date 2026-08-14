@@ -366,6 +366,15 @@ def test_dev_pin_gate_runs_after_the_lockstep_pin(config: Config) -> None:
     )
 
 
+def test_readme_links_are_rewritten_before_the_build(config: Config) -> None:
+    """The rewrite only reaches PyPI if it lands before the artifact is built."""
+    steps = _build_steps(config)
+    names = [step.get("name", "") for step in steps]
+    rewrite = names.index("Rewrite relative README links to permalinks")
+    assert rewrite < names.index("Build")
+    assert steps[rewrite]["if"] == "steps.prepare.outputs.skipped != 'true'"
+
+
 def test_sync_writes_then_verifies(config: Config, repo: Path) -> None:
     sync(config)
     for name in CORE_WORKFLOWS:

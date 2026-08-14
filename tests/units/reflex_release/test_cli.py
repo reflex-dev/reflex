@@ -72,6 +72,22 @@ def test_create_targets_a_sub_package(repo: Path) -> None:
     assert (repo / "packages" / "widget-core" / "news" / "7.bugfix.md").is_file()
 
 
+def test_rewrite_readme_links_reads_the_package_from_the_environment(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (repo / "docs").mkdir()
+    (repo / "docs" / "guide.md").write_text("guide", encoding="utf-8")
+    (repo / "README.md").write_text("[g](docs/guide.md)\n", encoding="utf-8")
+    monkeypatch.setenv("PACKAGE", "mypkg")
+    monkeypatch.setenv("SHA", "cafe1234")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "acme/widgets")
+    monkeypatch.delenv("GITHUB_SERVER_URL", raising=False)
+    assert main(["--root", str(repo), "rewrite-readme-links"]) == 0
+    assert (repo / "README.md").read_text(encoding="utf-8") == (
+        "[g](https://github.com/acme/widgets/blob/cafe1234/docs/guide.md)\n"
+    )
+
+
 def test_sync_check_reports_missing_workflows(
     repo: Path, capsys: pytest.CaptureFixture
 ) -> None:

@@ -878,3 +878,103 @@ def test_create_release_without_a_manifest_still_releases(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert str(checksums) not in release_args()
+
+
+@pytest.fixture
+def readme_repo(repo: Path, monkeypatch: pytest.MonkeyPatch) -> str:
+    """Give the repository a README with a relative link and a linkable file.
+
+    Args:
+        repo: The repository root.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The sha the links are expected to be pinned to.
+    """
+    monkeypatch.setenv("GITHUB_REPOSITORY", "acme/widgets")
+    monkeypatch.delenv("GITHUB_SERVER_URL", raising=False)
+    (repo / "docs").mkdir()
+    (repo / "docs" / "guide.md").write_text("guide", encoding="utf-8")
+    (repo / "README.md").write_text("[g](docs/guide.md)\n", encoding="utf-8")
+    commit_all(repo, "readme")
+    return git(repo, "rev-parse", "HEAD").strip()
+
+
+def test_rewrite_readme_links_pins_the_readme_to_head(
+    config: Config, repo: Path, readme_repo: str
+) -> None:
+    commands.cmd_rewrite_readme_links(config, "mypkg", "")
+    assert (repo / "README.md").read_text(encoding="utf-8") == (
+        f"[g](https://github.com/acme/widgets/blob/{readme_repo}/docs/guide.md)\n"
+    )
+
+
+def test_rewrite_readme_links_accepts_an_explicit_sha(
+    config: Config, repo: Path, readme_repo: str
+) -> None:
+    commands.cmd_rewrite_readme_links(config, "mypkg", "  deadbeef  ")
+    assert "/blob/deadbeef/docs/guide.md" in (repo / "README.md").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_rewrite_readme_links_resolves_a_sub_package_readme(
+    config: Config, repo: Path, readme_repo: str
+) -> None:
+    readme = repo / "packages" / "widget-core" / "README.md"
+    readme.write_text("[g](../../docs/guide.md)\n", encoding="utf-8")
+    commands.cmd_rewrite_readme_links(config, "widget-core", "")
+    assert readme.read_text(encoding="utf-8") == (
+        f"[g](https://github.com/acme/widgets/blob/{readme_repo}/docs/guide.md)\n"
+    )
+
+
+def test_rewrite_readme_links_leaves_an_untouched_readme_alone(
+    config: Config, repo: Path, readme_repo: str, capsys: pytest.CaptureFixture
+) -> None:
+    (repo / "README.md").write_text("[g](https://example.com)\n", encoding="utf-8")
+    commands.cmd_rewrite_readme_links(config, "mypkg", "")
+    assert (repo / "README.md").read_text(encoding="utf-8") == (
+        "[g](https://example.com)\n"
+    )
+    assert "No relative links to rewrite in README.md." in capsys.readouterr().out
+
+
+def test_rewrite_readme_links_reports_a_broken_link(
+    config: Config, repo: Path, readme_repo: str, capsys: pytest.CaptureFixture
+) -> None:
+    """A link that does not resolve is left as written rather than guessed at."""
+    (repo / "README.md").write_text("[g](docs/gone.md)\n", encoding="utf-8")
+    commands.cmd_rewrite_readme_links(config, "mypkg", "")
+    assert (repo / "README.md").read_text(encoding="utf-8") == "[g](docs/gone.md)\n"
+    assert "::notice::README.md: left 'docs/gone.md' alone" in capsys.readouterr().out
+
+
+def test_rewrite_readme_links_skips_a_non_markdown_readme(
+    config: Config, repo: Path, readme_repo: str, capsys: pytest.CaptureFixture
+) -> None:
+    (repo / "README.rst").write_text("`g <docs/guide.md>`_\n", encoding="utf-8")
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\ndependencies", '\nreadme = "README.rst"\ndependencies'
+        ),
+        encoding="utf-8",
+    )
+    commands.cmd_rewrite_readme_links(load_config(repo), "mypkg", "")
+    assert (repo / "README.rst").read_text(encoding="utf-8") == (
+        "`g <docs/guide.md>`_\n"
+    )
+    assert "not markdown" in capsys.readouterr().out
+
+
+def test_rewrite_readme_links_without_a_readme_is_a_no_op(
+    config: Config, capsys: pytest.CaptureFixture
+) -> None:
+    commands.cmd_rewrite_readme_links(config, "widget-core", "")
+    assert "publishes no README file" in capsys.readouterr().out
+
+
+def test_rewrite_readme_links_rejects_an_unknown_package(config: Config) -> None:
+    with pytest.raises(ReleaseError, match="unknown package"):
+        commands.cmd_rewrite_readme_links(config, "nope", "")

@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 from packaging.version import InvalidVersion, Version
 
-from .actions import echo, fail
+from .actions import echo, fail, repo_url
 from .config import Config, is_final
+
+_GITHUB_REMOTE_RE = re.compile(
+    r"github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
+)
 
 BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
@@ -87,6 +92,61 @@ def git_show(root: Path, ref: str, rel_path: str) -> str | None:
         check=False,
     )
     return result.stdout if result.returncode == 0 else None
+
+
+def github_slug(root: Path) -> str | None:
+    """Return the ``owner/repo`` slug of the origin remote, if it is on GitHub.
+
+    Args:
+        root: The repository root.
+
+    Returns:
+        The slug, or None when it cannot be determined.
+    """
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    match = _GITHUB_REMOTE_RE.search(result.stdout.strip())
+    return f"{match['owner']}/{match['repo']}" if match else None
+
+
+def github_repo_url(root: Path) -> str:
+    """Return the web URL of the repository being released.
+
+    Args:
+        root: The repository root.
+
+    Returns:
+        The URL the workflow is running against, falling back to the origin
+        remote when the command is run by hand outside GitHub Actions.
+    """
+    if url := repo_url():
+        return url
+    slug = github_slug(root)
+    if slug is None:
+        fail(
+            "cannot determine the GitHub repository: neither GITHUB_REPOSITORY "
+            "is set nor does the origin remote point at GitHub"
+        )
+    return f"https://github.com/{slug}"
+
+
+def head_sha(root: Path) -> str:
+    """Return the commit the working tree is checked out at.
+
+    Args:
+        root: The repository root.
+
+    Returns:
+        The full sha of ``HEAD``.
+    """
+    return git(["rev-parse", "HEAD"], root).strip()
 
 
 def changed_files(root: Path, base_ref: str) -> list[str]:

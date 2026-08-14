@@ -500,6 +500,41 @@ weigh it against [Ways to weaken it](#ways-to-weaken-it). They need no `news/` d
 from the fragment check. Adding or removing one changes
 `auto_release_internal.yml`, so re-run `reflex-release sync`.
 
+## README links on PyPI
+
+PyPI renders the README as a standalone page, so the relative links that work on
+GitHub — to a sibling document, an image, another package in the monorepo, or a
+heading of the README itself — resolve against `pypi.org` there and 404. The
+build job rewrites them just before building, into URLs pinned at the commit
+being released:
+
+```markdown
+[Security model](#security-model)      ->  https://github.com/OWNER/REPO/blob/<sha>/README.md#security-model
+[the guide](docs/guide.md)             ->  https://github.com/OWNER/REPO/blob/<sha>/docs/guide.md
+![logo](docs/images/logo.png)          ->  https://raw.githubusercontent.com/OWNER/REPO/<sha>/docs/images/logo.png
+```
+
+The commit, not a branch, is what makes them stable: someone reading the 1.2.3
+description a year from now follows its links to the files **as they were in
+1.2.3**, rather than to a default branch that has since moved or deleted them.
+So the README stays written for GitHub — relative links, no `raw.githubusercontent.com`
+URLs hardcoded to `main` — and the published description gets the absolute form.
+
+The rewrite happens in the build tree and is never committed. What it touches:
+
+- Markdown links, images and reference definitions, and the `href`, `src` and
+  `poster` attributes of HTML tags. Destinations inside fenced code blocks are
+  left alone, so documented examples still show what they document.
+- Only destinations that resolve to a path present in the checkout: a file
+  becomes a `blob` URL, a directory a `tree` URL, and an image — or any link to
+  a media file — a raw URL, since a `blob` URL is an HTML page and will not
+  render inside a description. Anything else (an absolute URL, a site-absolute
+  `/path`, a link to a file that is not there, one pointing outside the
+  repository) is left exactly as written and reported in the job log.
+
+Non-markdown READMEs are left alone: reStructuredText carries its links in a
+different syntax.
+
 ## Post-build hook
 
 Create `.github/scripts/publish/post_build.sh` for repository-specific artifact
@@ -543,6 +578,7 @@ a flag for running the same command by hand.
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
 | `pin-lockstep` | Pin lockstep siblings exactly before building. |
+| `rewrite-readme-links` | Point the README's relative links at the released commit. |
 | `verify-dist` | Check the built artifacts are this package at the target version. |
 | `check-dev-pins` | Reject `*.dev` dependency pins in published metadata. |
 | `extract-notes` | Write a version's changelog section for the release body. |
