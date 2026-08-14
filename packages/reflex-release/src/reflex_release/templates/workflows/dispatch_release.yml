@@ -97,6 +97,7 @@ jobs:
 @@PACKAGE_SELECTION@@
         run: @@CLI@@ plan
       - name: Materialize changelogs
+        id: materialize
         env:
           ACTION: ${{ inputs.action }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
@@ -108,6 +109,7 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+          REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}
         run: @@CLI@@ push-prerelease
       - name: Open release pull request
         if: ${{ startsWith(inputs.action, 'release-') }}
@@ -116,4 +118,5 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+          REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}
         run: @@CLI@@ open-release-pr

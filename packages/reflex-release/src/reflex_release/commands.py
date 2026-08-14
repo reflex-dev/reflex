@@ -33,7 +33,7 @@ from .changelog import (
     parse_sections,
 )
 from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
-from .devpins import LOCK_FILE, blocking_pins, describe_blockers, upgrade_dev_pins
+from .devpins import blocking_pins, describe_blockers, upgrade_dev_pins
 from .discovery import (
     alpha_train_packages,
     build_changelog,
@@ -409,6 +409,10 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     For ``release-from-prerelease``, collapses the alpha sections of each
     changelog into the single final-version section after building it.
 
+    Writes ``repinned`` (a JSON array of the paths the pin upgrade rewrote) to
+    ``$GITHUB_OUTPUT``, which is what the delivery step stages beside the
+    changelogs — it runs as a separate process and cannot otherwise know.
+
     Args:
         config: The repository configuration.
         action: The release action the plan was made for.
@@ -420,11 +424,13 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
 
     # Before towncrier: a pin that cannot be lifted stops the release while the
     # news fragments it would have consumed are still on disk.
-    if repinned := upgrade_dev_pins(
+    repinned = upgrade_dev_pins(
         config,
         [release["package"] for release in releases],
         allow_prereleases=action not in FINAL_ACTIONS,
-    ):
+    )
+    write_outputs(repinned=json.dumps(repinned))
+    if repinned:
         write_summary([
             "## Dependency pins lifted",
             "",
@@ -813,22 +819,39 @@ def _release_summary(releases: list[dict[str, str]]) -> str:
     return ", ".join(f"{r['package']}@{r['next']}" for r in releases)
 
 
+def _repinned_paths(repinned_json: str) -> list[str]:
+    """Parse the ``repinned`` output of :func:`cmd_materialize`.
+
+    Args:
+        repinned_json: The JSON array of rewritten paths, or an empty string
+            when the pin upgrade rewrote nothing.
+
+    Returns:
+        The repo-relative paths.
+    """
+    return json.loads(repinned_json) if repinned_json.strip() else []
+
+
 def _commit_materialized(
-    config: Config, releases: list[dict[str, str]], message: str
+    config: Config,
+    releases: list[dict[str, str]],
+    repinned: list[str],
+    message: str,
 ) -> None:
     """Stage and commit everything materialization wrote for a release.
 
     Args:
         config: The repository configuration.
         releases: The releases that were materialized.
+        repinned: The paths the pin upgrade rewrote, from :func:`cmd_materialize`.
         message: The commit message.
     """
     configure_bot_identity(config.root)
-    # Only what materialization writes for the packages being released — their
-    # changelogs and the dependency pins in their own pyproject.toml, plus the
-    # lock file those pins are resolved in — so nothing else in the worktree can
-    # ride along in the release commit. towncrier has already staged the
-    # deletion of every fragment it consumed.
+    # Exactly what materialization wrote: the changelogs of the packages being
+    # released, and the files the pin upgrade reported rewriting. Nothing else
+    # in the worktree can ride along in the release commit — a package's
+    # pyproject.toml is staged only when a pin in it actually moved. towncrier
+    # has already staged the deletion of every fragment it consumed.
     changelogs = [
         path.relative_to(config.root).as_posix()
         for path in (config.changelog_path(r["package"]) for r in releases)
@@ -836,24 +859,18 @@ def _commit_materialized(
     ]
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    pins = [
-        path.relative_to(config.root).as_posix()
-        for path in (
-            config.package_path(r["package"]) / "pyproject.toml" for r in releases
-        )
-        if path.is_file()
-    ]
-    lock = config.root / LOCK_FILE
-    if lock.is_file():
-        pins.append(LOCK_FILE)
-    git_run(["add", "--", *changelogs, *pins], config.root)
+    git_run(["add", "--", *changelogs, *repinned], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
     git_run(["commit", "-m", message], config.root)
 
 
 def cmd_open_release_pr(
-    config: Config, action: str, ref_name: str, releases_json: str
+    config: Config,
+    action: str,
+    ref_name: str,
+    releases_json: str,
+    repinned_json: str,
 ) -> None:
     """Commit the materialized changelogs and open the release pull request.
 
@@ -862,8 +879,10 @@ def cmd_open_release_pr(
         action: The release action that was materialized.
         ref_name: The branch the workflow was dispatched on.
         releases_json: The ``releases`` JSON emitted by :func:`cmd_plan`.
+        repinned_json: The ``repinned`` JSON emitted by :func:`cmd_materialize`.
     """
     releases: list[dict[str, str]] = json.loads(releases_json)
+    repinned = _repinned_paths(repinned_json)
     run_id = os.environ.get("GITHUB_RUN_ID", "manual")
     # Final versions publish from the main branch — except hotfix trains, which
     # publish directly from their own branch, so the PR targets it instead.
@@ -906,7 +925,7 @@ def cmd_open_release_pr(
     body_file.write_text(body, encoding="utf-8")
 
     _commit_materialized(
-        config, releases, f"Materialize changelogs for {summary} ({action})"
+        config, releases, repinned, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
@@ -955,7 +974,11 @@ def cmd_open_release_pr(
 
 
 def cmd_push_prerelease(
-    config: Config, action: str, ref_name: str, releases_json: str
+    config: Config,
+    action: str,
+    ref_name: str,
+    releases_json: str,
+    repinned_json: str,
 ) -> None:
     """Commit the materialized changelogs and push the prerelease branch.
 
@@ -964,8 +987,10 @@ def cmd_push_prerelease(
         action: The release action that was materialized.
         ref_name: The branch the workflow was dispatched on.
         releases_json: The ``releases`` JSON emitted by :func:`cmd_plan`.
+        repinned_json: The ``repinned`` JSON emitted by :func:`cmd_materialize`.
     """
     releases: list[dict[str, str]] = json.loads(releases_json)
+    repinned = _repinned_paths(repinned_json)
     run_id = os.environ.get("GITHUB_RUN_ID", "manual")
     summary = _release_summary(releases)
 
@@ -986,7 +1011,7 @@ def cmd_push_prerelease(
             branch = f"{branch}-{run_id}"
 
     _commit_materialized(
-        config, releases, f"Materialize changelogs for {summary} ({action})"
+        config, releases, repinned, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 

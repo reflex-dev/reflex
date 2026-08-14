@@ -317,3 +317,71 @@ def test_upgrade_dev_pins_refuses_an_ambiguous_requirement(repo: Path) -> None:
     git(repo, "tag", "widget-core-v0.2.0")
     with pytest.raises(ReleaseError, match="expected exactly one quoted"):
         upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+
+
+def test_pin_upgrade_relaxes_a_strict_floor(repo: Path) -> None:
+    """`> 0.2.0.dev1` admits 0.2.0, so `> 0.2.0` would exclude what it resolved to."""
+    reloaded = set_root_dependency(repo, "widget-core > 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert upgrade.resolved == Version("0.2.0")
+    assert upgrade.rewritten() == "widget-core >= 0.2.0"
+
+
+def test_pin_upgrade_rejects_a_rewrite_its_version_would_not_satisfy() -> None:
+    """The guard against a future operator gap shipping an unsatisfiable pin."""
+    upgrade = PinUpgrade(
+        "mypkg",
+        # A bound the rewrite cannot lift, since 0.2.0 is not below 0.3.
+        "widget-core >= 0.2.0.dev1, < 0.3",
+        "widget-core",
+        ("0.2.0.dev1",),
+        Version("0.4.0"),
+    )
+    with pytest.raises(ReleaseError, match="does not satisfy"):
+        upgrade.rewritten()
+
+
+def test_upgrade_dev_pins_rewrites_an_escaped_toml_marker(repo: Path) -> None:
+    """A basic string escapes its quotes; the parsed value does not carry them."""
+    requirement = 'widget-core >= 0.2.0.dev1; python_version > \\"3.10\\"'
+    reloaded = set_root_dependency(repo, requirement)
+    git(repo, "tag", "widget-core-v0.2.0")
+    upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+    assert 'widget-core >= 0.2.0; python_version > \\"3.10\\"' in (
+        repo / "pyproject.toml"
+    ).read_text(encoding="utf-8")
+
+
+def test_upgrade_dev_pins_rewrites_a_literal_toml_string(repo: Path) -> None:
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            '"widget-core >= 0.1.0"', "'widget-core >= 0.2.0.dev1'"
+        ),
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    git(repo, "tag", "widget-core-v0.2.0")
+    upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+    assert "'widget-core >= 0.2.0'" in pyproject.read_text(encoding="utf-8")
+
+
+def test_upgrade_dev_pins_rolls_back_when_the_lock_cannot_follow(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pins and lock file move together: a half-applied upgrade would be committed."""
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    (repo / LOCK_FILE).write_text("version = 1\n", encoding="utf-8")
+    pyproject = repo / "pyproject.toml"
+    before = pyproject.read_text(encoding="utf-8")
+    stub_uv_lock(monkeypatch, 1)
+
+    with pytest.raises(ReleaseError, match="uv lock` failed"):
+        upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+
+    assert pyproject.read_text(encoding="utf-8") == before
+    # A re-run therefore still has the pin to lift, rather than finding nothing
+    # to do and leaving the stale lock file to be committed.
+    assert pin_upgrades(reloaded, "mypkg", allow_prereleases=False)

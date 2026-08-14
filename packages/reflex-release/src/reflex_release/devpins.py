@@ -33,7 +33,7 @@ from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import InvalidVersion, Version
 
-from .actions import echo, fail
+from .actions import ReleaseError, echo, fail
 from .config import Config, is_final, load_pyproject
 from .gitutil import tag_versions
 
@@ -196,9 +196,23 @@ class PinUpgrade:
         def lift(match: re.Match[str]) -> str:
             if match["version"] not in self.bounds:
                 return match[0]
-            return f"{match['op']}{match['space']}{version}"
+            # ``> 0.2.0.dev1`` admits 0.2.0, so 0.2.0 can be what it resolves
+            # to — but ``> 0.2.0`` would then exclude the very release the
+            # requirement was lifted onto. A strict floor over an unreleased
+            # version becomes an inclusive floor over the release above it.
+            operator = ">=" if match["op"] == ">" else match["op"]
+            return f"{operator}{match['space']}{version}"
 
-        return _SPECIFIER_RE.sub(lift, head) + separator + marker
+        lifted = _SPECIFIER_RE.sub(lift, head) + separator + marker
+        # The point of the rewrite is a requirement the resolved version
+        # satisfies; anything else would publish metadata that resolves to
+        # something other than what was checked, or to nothing at all.
+        if not Requirement(lifted).specifier.contains(version, prereleases=True):
+            fail(
+                f"lifting {self.requirement!r} produced {lifted!r}, which "
+                f"{version} does not satisfy; re-pin it by hand"
+            )
+        return lifted
 
 
 def _distribution_index(config: Config) -> dict[str, str]:
@@ -390,11 +404,29 @@ def describe_blockers(blocked: dict[str, list[PinUpgrade]]) -> list[str]:
     ]
 
 
+def _toml_basic(value: str) -> str:
+    """Render a string as a TOML basic (double-quoted) value.
+
+    Args:
+        value: The string as parsed back out of the document.
+
+    Returns:
+        The quoted spelling, with the two characters a requirement can plausibly
+        carry escaped. A basic string cannot hold a bare ``"``, so this — not
+        the parsed value — is what a requirement with a double-quoted marker
+        looks like in the file.
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
 def _replace_requirement(text: str, original: str, replacement: str) -> str:
     """Replace one quoted requirement string in a ``pyproject.toml``.
 
     The requirement is matched as the whole quoted TOML value it was read from,
-    so nothing else that happens to contain the same substring is touched.
+    so nothing else that happens to contain the same substring is touched. Both
+    ways TOML can spell it are tried: a basic string, whose quotes and
+    backslashes are escaped, and a literal string, which cannot escape anything.
 
     Args:
         text: The file content.
@@ -404,16 +436,20 @@ def _replace_requirement(text: str, original: str, replacement: str) -> str:
     Returns:
         The updated file content.
     """
-    quoted = {quote: f"{quote}{original}{quote}" for quote in ('"', "'")}
-    occurrences = {quote: text.count(needle) for quote, needle in quoted.items()}
-    total = sum(occurrences.values())
-    if total != 1:
+    spellings = [
+        (_toml_basic(original), _toml_basic(replacement)),
+        (f"'{original}'", f"'{replacement}'"),
+    ]
+    counts = [text.count(needle) for needle, _ in spellings]
+    if sum(counts) != 1:
         fail(
             f"expected exactly one quoted {original!r} requirement to upgrade, "
-            f"found {total}; re-pin it by hand"
+            f"found {sum(counts)}; re-pin it by hand"
         )
-    quote = next(quote for quote, count in occurrences.items() if count)
-    return text.replace(quoted[quote], f"{quote}{replacement}{quote}", 1)
+    needle, substitute = next(
+        pair for pair, count in zip(spellings, counts, strict=True) if count == 1
+    )
+    return text.replace(needle, substitute, 1)
 
 
 def apply_pin_upgrades(config: Config, upgrades: list[PinUpgrade]) -> list[str]:
@@ -491,7 +527,26 @@ def upgrade_dev_pins(
         )
     if not upgrades:
         return []
+
+    # Pins and lock file move together or not at all. A half-applied upgrade
+    # would leave the working tree with lifted pins and a lock file describing
+    # the old ones — and a re-run, finding nothing left to lift, would not
+    # re-lock and could commit exactly that.
+    snapshot = {
+        path: path.read_text(encoding="utf-8")
+        for path in {
+            config.package_path(upgrade.package) / "pyproject.toml"
+            for upgrade in upgrades
+        }
+    }
     changed = apply_pin_upgrades(config, upgrades)
-    if (lock := refresh_lock_file(config)) is not None:
+    try:
+        lock = refresh_lock_file(config)
+    except ReleaseError:
+        for path, text in snapshot.items():
+            path.write_text(text, encoding="utf-8")
+        echo(f"restored {len(snapshot)} pyproject.toml file(s); no pin was lifted")
+        raise
+    if lock is not None:
         changed.append(lock)
     return changed
