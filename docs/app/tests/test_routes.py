@@ -56,6 +56,14 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     assert "/ai-builder/integrations/skills/" not in paths
 
 
+def test_authentication_overview_moved_to_enterprise(routes_fixture):
+    """The old authentication overview route is freed for its redirect to enterprise auth."""
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert "/authentication/authentication-overview/" not in paths
+    assert "/enterprise/auth/overview/" in paths
+
+
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
     """Generated docs meta descriptions should not exceed the SEO snippet cap."""
     overlong = {
