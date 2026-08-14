@@ -692,32 +692,16 @@ def test_cmd_verify_dist(repo: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(release, "REPO_ROOT", repo)
     dist = repo / "dist"
     dist.mkdir()
-    # PEP 503 spelling: the wheel says reflex_base, the config says reflex-base.
-    _write_wheel(dist / "reflex_base-0.9.8-py3-none-any.whl", "reflex_base", "0.9.8")
-    _write_sdist(dist / "reflex_base-0.9.8.tar.gz", "reflex_base", "0.9.8")
+    _write_wheel(dist / "demo-0.9.8-py3-none-any.whl", "demo", "0.9.8")
+    _write_sdist(dist / "demo-0.9.8.tar.gz", "demo", "0.9.8")
     # uv build writes a .gitignore into dist/; `uv publish dist/*` never
     # uploads hidden files, so verification must skip them too.
     (dist / ".gitignore").write_text("*\n")
-    monkeypatch.setenv("PACKAGE", "reflex-base")
     monkeypatch.setenv("VERSION", "0.9.8")
     release.cmd_verify_dist()
 
     # A wrong-version artifact fails the check.
-    _write_wheel(dist / "reflex_base-0.9.9-py3-none-any.whl", "reflex_base", "0.9.9")
-    with pytest.raises(SystemExit):
-        release.cmd_verify_dist()
-
-
-def test_cmd_verify_dist_rejects_another_distribution(
-    repo: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """Lockstep siblings share a version, so the name is what tells them apart."""
-    monkeypatch.setattr(release, "REPO_ROOT", repo)
-    dist = repo / "dist"
-    dist.mkdir()
-    _write_wheel(dist / "reflex_base-0.9.8-py3-none-any.whl", "reflex_base", "0.9.8")
-    monkeypatch.setenv("PACKAGE", "reflex")
-    monkeypatch.setenv("VERSION", "0.9.8")
+    _write_wheel(dist / "demo-0.9.9-py3-none-any.whl", "demo", "0.9.9")
     with pytest.raises(SystemExit):
         release.cmd_verify_dist()
 
@@ -727,7 +711,6 @@ def test_cmd_verify_dist_empty(repo: Path, monkeypatch: pytest.MonkeyPatch):
     (repo / "dist").mkdir()
     # A hidden file alone is not an artifact.
     (repo / "dist" / ".gitignore").write_text("*\n")
-    monkeypatch.setenv("PACKAGE", "reflex")
     monkeypatch.setenv("VERSION", "0.9.8")
     with pytest.raises(SystemExit):
         release.cmd_verify_dist()

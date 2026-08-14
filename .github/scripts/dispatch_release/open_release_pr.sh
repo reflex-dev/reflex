@@ -6,9 +6,6 @@ set -euo pipefail
 : "${REF_NAME:?}"
 : "${RELEASES:?}"
 : "${GITHUB_RUN_ID:?}"
-: "${GITHUB_REPOSITORY:?}"
-
-REPO_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY}"
 
 # Final versions publish from main — except hotfix trains, which publish
 # directly from their r/hotfix/** branch, so the PR targets it instead.
@@ -56,11 +53,6 @@ git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
 
 PR_URL=$(gh pr create --base "$BASE" --head "$BRANCH" --title "Release ${SUMMARY}" --body-file "$BODY_FILE")
 
-# An annotation as well as the summary: annotations surface on the run page
-# itself, so the pull request is one click away from wherever the dispatch was
-# watched from.
-echo "::notice::release pull request opened: ${PR_URL}"
-
 # The PR only rewrites changelogs and deletes consumed news fragments, so the
 # changelog fragment check does not apply. Label failure is non-fatal.
 gh pr edit "$PR_URL" --add-label skip-changelog || echo "::notice::could not add skip-changelog label to $PR_URL"
@@ -68,12 +60,7 @@ gh pr edit "$PR_URL" --add-label skip-changelog || echo "::notice::could not add
 {
   echo "## Release PR opened"
   echo ""
-  echo "Pull request: [#${PR_URL##*/}](${PR_URL})"
-  echo ""
-  echo "Branch: [\`${BRANCH}\`](${REPO_URL}/tree/${BRANCH}) → \`${BASE}\`"
+  echo "$PR_URL"
   echo ""
   echo "Releases: ${SUMMARY}"
-  echo ""
-  echo "Merging it publishes them: review and merge the pull request, then approve"
-  echo "the \`pypi\` environment deployments."
 } >> "$GITHUB_STEP_SUMMARY"

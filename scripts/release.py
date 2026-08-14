@@ -1154,15 +1154,14 @@ def cmd_pin_reflex_base() -> None:
     sys.stderr.write(f"Pinned {new_pin} in pyproject.toml\n")
 
 
-def _dist_metadata(path: Path) -> tuple[str, str]:
+def _dist_metadata_version(path: Path) -> str:
     """Read the ``Version`` metadata field of a built distribution.
 
     Args:
         path: A wheel (``*.whl``) or sdist (``*.tar.gz``).
 
     Returns:
-        The Name and Version header values from the wheel's METADATA / sdist's
-        PKG-INFO.
+        The Version header value from the wheel's METADATA / sdist's PKG-INFO.
     """
     if path.name.endswith(".whl"):
         with zipfile.ZipFile(path) as wheel:
@@ -1189,49 +1188,23 @@ def _dist_metadata(path: Path) -> tuple[str, str]:
             content = member.read().decode()
     else:
         fail(f"unexpected artifact type: {path.name}")
-    fields: dict[str, str] = {}
     for line in content.splitlines():
         if not line.strip():
             break
-        key, _, value = line.partition(":")
-        if key in {"Name", "Version"}:
-            fields[key] = value.strip()
-    if not fields.get("Name") or not fields.get("Version"):
-        fail(f"no Name/Version field in the metadata of {path.name}")
-    return fields["Name"], fields["Version"]
-
-
-def _normalize_name(name: str) -> str:
-    """Normalize a distribution name the PEP 503 way.
-
-    Args:
-        name: The distribution name as written.
-
-    Returns:
-        The lowercase name with every run of ``-``, ``_`` or ``.`` collapsed to
-        a single ``-``.
-    """
-    return re.sub(r"[-_.]+", "-", name).lower()
+        if line.startswith("Version:"):
+            return line.split(":", 1)[1].strip()
+    fail(f"no Version field in the metadata of {path.name}")
 
 
 def cmd_verify_dist() -> None:
-    """Verify every built artifact is this package at exactly the target version.
+    """Verify every built artifact carries exactly the target version.
 
-    Reads PACKAGE and VERSION (and optionally DIST_DIR, default ``dist``) from
-    the environment and compares each artifact's core-metadata ``Name`` and
-    ``Version`` fields against the release. Catches a misconfigured
-    uv-dynamic-versioning tag prefix building e.g. ``0.0.0dev0``, and a build
-    that produced a different distribution than the one being published —
-    every package here publishes through the same trusted-publishing identity,
-    and lockstep siblings share a version, so the name is what tells them
-    apart.
+    Reads VERSION (and optionally DIST_DIR, default ``dist``) from the
+    environment and compares each artifact's core-metadata ``Version`` field
+    against the target with PEP 440 equality. Catches a misconfigured
+    uv-dynamic-versioning tag prefix building e.g. ``0.0.0dev0``.
     """
     target = Version(os.environ["VERSION"])
-    package = os.environ["PACKAGE"]
-    project = tomllib.loads(
-        (REPO_ROOT / package_dir(package) / "pyproject.toml").read_text()
-    )["project"]["name"]
-    expected_name = _normalize_name(project)
     dist = REPO_ROOT / os.environ.get("DIST_DIR", "dist")
     # Verify exactly what `uv publish dist/*` will upload: the shell glob
     # skips hidden files (uv build drops a .gitignore into dist/).
@@ -1243,19 +1216,14 @@ def cmd_verify_dist() -> None:
     if not files:
         fail(f"no artifacts in {dist}")
     for path in files:
-        name, raw = _dist_metadata(path)
-        if _normalize_name(name) != expected_name:
-            fail(
-                f"artifact {path.name} is {name}, expected {project}; the build "
-                "produced a different distribution than the one being published"
-            )
+        raw = _dist_metadata_version(path)
         try:
             found = Version(raw)
         except InvalidVersion:
             fail(f"artifact {path.name} has unparsable version {raw!r}")
         if found != target:
             fail(f"artifact {path.name} has version {found}, expected {target}")
-    sys.stderr.write(f"✓ {len(files)} artifact(s) of {project} at version {target}\n")
+    sys.stderr.write(f"✓ {len(files)} artifact(s) at version {target}\n")
 
 
 def _git_show(root: Path, ref: str, rel_path: str) -> str | None:

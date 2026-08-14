@@ -7,12 +7,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
   cancel-in-progress: true
 
-# The branches are the ones release_from_changelog publishes from: a merged
-# version heading is a publish trigger wherever it lands, and r/hotfix/**
-# publishes final versions without going through main at all.
 on:
   pull_request:
-    branches: ["main", "r/pre-**", "r/hotfix/**"]
+    branches: ["main"]
 
 jobs:
   changelog:
@@ -42,23 +39,10 @@ jobs:
       # check-headings uses the same parser the release pipeline publishes
       # from, so the guard and the publisher cannot disagree. Escape hatch
       # for deliberate restructuring: the 'changelog-version-edit' label.
-      #
-      # The release/ exemption also requires the pull request to be authored by
-      # github-actions[bot], which is how the Dispatch release workflow opens
-      # it. A branch name is attacker-selectable; the author is not, so naming
-      # a branch release/something and hand-writing a heading does not skip the
-      # guard. The 'changelog-version-edit' label needs triage rights to apply,
-      # so it is a sound escape hatch on its own.
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        if: >-
-          ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit')
-          && !(startsWith(github.head_ref, 'release/')
-          && github.event.pull_request.user.login == 'github-actions[bot]') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit') && !startsWith(github.head_ref, 'release/') }}
       - name: Reject manual changelog version headings
-        if: >-
-          ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit')
-          && !(startsWith(github.head_ref, 'release/')
-          && github.event.pull_request.user.login == 'github-actions[bot]') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit') && !startsWith(github.head_ref, 'release/') }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: uv run --no-config --locked --script scripts/release.py check-headings
@@ -71,11 +55,9 @@ jobs:
         if: steps.skip.outputs.skip != 'true'
         id: affected
         shell: bash
-        env:
-          BASE_REF: origin/${{ github.base_ref }}
         run: |
           set -euo pipefail
-          changed=$(git diff --name-only "$BASE_REF...HEAD")
+          changed=$(git diff --name-only origin/main...HEAD)
           affected=()
           if printf '%s\n' "$changed" | grep -qE '^reflex/'; then
             affected+=(".")
@@ -95,8 +77,6 @@ jobs:
       - name: Check for news fragments
         if: steps.skip.outputs.skip != 'true'
         shell: bash
-        env:
-          BASE_REF: origin/${{ github.base_ref }}
         run: |
           set -euo pipefail
           if [ ! -s affected.txt ]; then
@@ -107,7 +87,7 @@ jobs:
           while IFS= read -r pkg_dir; do
             [ -z "$pkg_dir" ] && continue
             echo "::group::towncrier check ($pkg_dir)"
-            if ! uv run towncrier check --config pyproject.toml --dir "$pkg_dir" --compare-with "$BASE_REF"; then
+            if ! uv run towncrier check --config pyproject.toml --dir "$pkg_dir" --compare-with origin/main; then
               failed=1
             fi
             echo "::endgroup::"

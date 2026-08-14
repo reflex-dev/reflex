@@ -6,9 +6,6 @@ set -euo pipefail
 : "${REF_NAME:?}"
 : "${RELEASES:?}"
 : "${GITHUB_RUN_ID:?}"
-: "${GITHUB_REPOSITORY:?}"
-
-REPO_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY}"
 
 SUMMARY=$(echo "$RELEASES" | jq -r '[.[] | "\(.package)@\(.next)"] | join(", ")')
 
@@ -50,21 +47,13 @@ git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
 # waits for pypi environment approval.
 gh workflow run release_from_changelog.yml --ref "$BRANCH"
 
-BRANCH_URL="${REPO_URL}/tree/${BRANCH}"
-RUNS_URL="${REPO_URL}/actions/workflows/release_from_changelog.yml?query=$(jq -rn --arg q "branch:${BRANCH}" '$q | @uri')"
-
-# An annotation as well as the summary: annotations surface on the run page
-# itself, so the branch is one click away from wherever the dispatch was
-# watched from.
-echo "::notice::prerelease branch pushed: ${BRANCH_URL}"
-
 {
   echo "## Prerelease pushed"
   echo ""
-  echo "Branch: [\`${BRANCH}\`](${BRANCH_URL})"
+  echo "Branch: \`${BRANCH}\`"
   echo ""
   echo "Releases: ${SUMMARY}"
   echo ""
-  echo "Dispatched the [\`release_from_changelog\`](${RUNS_URL}) workflow on the branch;"
-  echo "approve the \`pypi\` environment deployments to upload the alphas."
+  echo "Dispatched the \`release_from_changelog\` workflow on the branch; approve the"
+  echo "\`pypi\` environment deployments to upload the alphas."
 } >> "$GITHUB_STEP_SUMMARY"
