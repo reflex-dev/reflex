@@ -26,7 +26,7 @@ from reflex_release.scaffold import (
 )
 from reflex_release.versions import ACTIONS
 
-from .conftest import write_lockstep
+from .conftest import write_custom_build, write_lockstep
 
 
 def test_render_substitutes_every_placeholder(config: Config) -> None:
@@ -359,8 +359,7 @@ def test_release_branch_exemption_requires_the_bot_author(config: Config) -> Non
 
 def test_dev_pin_gate_runs_after_the_lockstep_pin(config: Config) -> None:
     """The gate has to judge the metadata the build actually emits."""
-    steps = yaml.safe_load(render("publish.yml", config))["jobs"]["build"]["steps"]
-    names = [step.get("name", "") for step in steps]
+    names = [step.get("name", "") for step in _job_steps(config, "build")]
     assert names.index("Pin lockstep siblings to exact versions") < names.index(
         "Reject development-release dependency pins"
     )
@@ -468,20 +467,21 @@ def _approval_step(config: Config) -> dict:
     return yaml.safe_load(render("publish.yml", config))["jobs"]["publish"]["steps"][0]
 
 
-def _build_steps(config: Config) -> list[dict]:
-    """Return the steps of the publish workflow's unprivileged build job.
+def _job_steps(config: Config, job: str) -> list[dict]:
+    """Return the steps of one job of the publish workflow.
 
     Args:
         config: The repository configuration.
+        job: The job id.
 
     Returns:
         The parsed steps.
     """
-    return yaml.safe_load(render("publish.yml", config))["jobs"]["build"]["steps"]
+    return yaml.safe_load(render("publish.yml", config))["jobs"][job]["steps"]
 
 
 def _manifest_step(config: Config) -> dict:
-    """Return the build step that writes the checksum manifest.
+    """Return the step that writes the checksum manifest.
 
     Args:
         config: The repository configuration.
@@ -490,7 +490,9 @@ def _manifest_step(config: Config) -> dict:
         The parsed step.
     """
     return next(
-        step for step in _build_steps(config) if "> SHA256SUMS" in step.get("run", "")
+        step
+        for step in _job_steps(config, "collect")
+        if "> SHA256SUMS" in step.get("run", "")
     )
 
 
@@ -518,7 +520,7 @@ def test_verify_dist_is_told_which_package_it_is_checking(config: Config) -> Non
     """Lockstep siblings share a version, so the name is what tells them apart."""
     step = next(
         step
-        for step in _build_steps(config)
+        for step in _job_steps(config, "collect")
         if step.get("run", "").endswith("verify-dist")
     )
     assert "PACKAGE" in step["env"]
@@ -588,3 +590,178 @@ def test_init_keeps_existing_towncrier_configuration(tmp_path: Path) -> None:
     text = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
     assert text.count("[tool.towncrier]") == 1
     assert 'directory = "changes"' in text
+
+
+def test_publish_workflow_has_no_custom_build_job_by_default(config: Config) -> None:
+    document = yaml.safe_load(render("publish.yml", config))
+    assert list(document["jobs"]) == [
+        "prepare",
+        "build",
+        "collect",
+        "publish",
+        "tag-and-release",
+    ]
+    assert document["jobs"]["collect"]["needs"] == ["prepare", "build"]
+    assert document["jobs"]["build"]["if"].strip() == (
+        "needs.prepare.outputs.skipped != 'true'"
+    )
+
+
+def test_a_custom_build_replaces_the_build_job_for_its_packages(
+    config: Config, repo: Path
+) -> None:
+    write_custom_build(repo)
+    jobs = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"]
+    custom = jobs["custom-build-build_wheels"]
+    assert custom["uses"] == "./.github/workflows/build_wheels.yml"
+    # Selected for exactly the configured packages, and excluded from the
+    # built-in build job for the same ones.
+    assert "contains(fromJson('[\"mypkg\"]'), inputs.package)" in custom["if"]
+    assert "!contains(fromJson('[\"mypkg\"]'), inputs.package)" in jobs["build"]["if"]
+
+
+def test_a_custom_build_is_unprivileged_and_gets_no_secrets(
+    config: Config, repo: Path
+) -> None:
+    """It runs repository code, so it must stay on the build side of the gate."""
+    write_custom_build(repo)
+    custom = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"][
+        "custom-build-build_wheels"
+    ]
+    assert custom["permissions"] == {"contents": "read"}
+    assert "secrets" not in custom
+
+
+def test_a_custom_build_is_told_the_version_tag_and_artifact_prefix(
+    config: Config, repo: Path
+) -> None:
+    write_custom_build(repo)
+    inputs = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"][
+        "custom-build-build_wheels"
+    ]["with"]
+    assert inputs["version"] == "${{ needs.prepare.outputs.version }}"
+    assert inputs["tag"] == "${{ needs.prepare.outputs.tag }}"
+    assert inputs["build-dir"] == "${{ needs.prepare.outputs.build_dir }}"
+    # The prefix ends in the separator the collect pattern matches on, so a
+    # package cannot pick up the artifacts of a sibling it is a prefix of.
+    assert inputs["artifact-prefix"] == "dist-${{ inputs.package }}--"
+
+
+def test_collect_waits_for_every_build_path(config: Config, repo: Path) -> None:
+    """A failed matrix leg fails its workflow, which must stop the release."""
+    write_custom_build(repo)
+    jobs = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"]
+    assert jobs["collect"]["needs"] == [
+        "prepare",
+        "build",
+        "custom-build-build_wheels",
+    ]
+    # Tolerates the build path that was skipped, never one that failed.
+    condition = jobs["collect"]["if"]
+    assert "!cancelled()" in condition
+    assert "!failure()" in condition
+
+
+def test_collect_gathers_every_artifact_of_the_package(
+    config: Config, repo: Path
+) -> None:
+    write_custom_build(repo)
+    step = next(
+        step
+        for step in _job_steps(load_config(repo), "collect")
+        if str(step.get("uses", "")).startswith("actions/download-artifact")
+    )
+    assert step["with"]["pattern"] == "dist-${{ inputs.package }}--*"
+    assert step["with"]["merge-multiple"] is True
+
+
+def test_the_gate_covers_what_the_custom_build_produced(
+    config: Config, repo: Path
+) -> None:
+    """The approval is over verified artifacts however they were built."""
+    write_custom_build(repo)
+    jobs = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"]
+    assert jobs["publish"]["needs"] == ["prepare", "collect"]
+    assert jobs["publish"]["environment"]["name"] == "pypi"
+    names = [step.get("name", "") for step in jobs["collect"]["steps"]]
+    assert "Verify built artifact names and versions" in names
+
+
+def test_custom_built_packages_still_pass_the_dev_pin_gate(
+    config: Config, repo: Path
+) -> None:
+    """They skip the build job, where the gate normally runs."""
+    write_custom_build(repo)
+    reloaded = load_config(repo)
+    step = next(
+        step
+        for step in _job_steps(reloaded, "prepare")
+        if step.get("name") == "Reject development-release dependency pins"
+    )
+    assert "contains(fromJson('[\"mypkg\"]'), inputs.package)" in step["if"]
+    # Unconfigured repositories keep the gate in the build job alone.
+    assert not [
+        step
+        for step in _job_steps(config, "prepare")
+        if step.get("name") == "Reject development-release dependency pins"
+    ]
+
+
+def test_sync_rejects_a_missing_custom_build_workflow(
+    config: Config, repo: Path
+) -> None:
+    write_custom_build(repo, workflow=False)
+    with pytest.raises(ReleaseError, match="does not exist"):
+        sync(load_config(repo))
+
+
+def test_sync_rejects_a_custom_build_workflow_that_cannot_be_called(
+    config: Config, repo: Path
+) -> None:
+    write_custom_build(repo)
+    target = repo / WORKFLOW_DIR / "build_wheels.yml"
+    target.write_text("name: Build wheels\non:\n  push:\n", encoding="utf-8")
+    with pytest.raises(ReleaseError, match="no `workflow_call` trigger"):
+        sync(load_config(repo))
+
+
+def test_sync_rejects_a_custom_build_naming_a_generated_workflow(
+    config: Config, repo: Path
+) -> None:
+    """Pointing it at publish.yml would make the workflow call itself."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]",
+            "\n[[tool.reflex-release.custom-build]]\n"
+            'packages = ["mypkg"]\nworkflow = "publish.yml"\n\n[tool.towncrier]',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="reflex-release generates"):
+        sync(load_config(repo))
+
+
+def test_sync_round_trips_with_a_custom_build(config: Config, repo: Path) -> None:
+    write_custom_build(repo)
+    reloaded = load_config(repo)
+    sync(reloaded)
+    sync(reloaded, check=True)
+
+
+@pytest.mark.parametrize("mode", ["checkboxes", "text"])
+def test_custom_build_workflows_are_valid_yaml(
+    config: Config, repo: Path, mode: str
+) -> None:
+    write_custom_build(repo, extra='expect-artifacts = ["*.whl"]\n')
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "[tool.reflex-release]",
+            f'[tool.reflex-release]\ndispatch-package-inputs = "{mode}"',
+        ),
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    for name in managed_workflows(reloaded):
+        assert yaml.safe_load(render(name, reloaded))["jobs"], name

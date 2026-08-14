@@ -75,6 +75,33 @@ def write_lockstep(repo: Path) -> None:
     )
 
 
+def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> None:
+    """Configure a custom build workflow for the root package.
+
+    Args:
+        repo: The repository root.
+        extra: Additional keys for the ``custom-build`` entry.
+        workflow: Whether to also create the referenced workflow file.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]",
+            "\n[[tool.reflex-release.custom-build]]\n"
+            'packages = ["mypkg"]\n'
+            'workflow = "build_wheels.yml"\n' + extra + "\n[tool.towncrier]",
+        ),
+        encoding="utf-8",
+    )
+    if workflow:
+        workflows = repo / ".github" / "workflows"
+        workflows.mkdir(parents=True, exist_ok=True)
+        (workflows / "build_wheels.yml").write_text(
+            "name: Build wheels\non:\n  workflow_call:\n    inputs: {}\njobs: {}\n",
+            encoding="utf-8",
+        )
+
+
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """Create a git repository with a root package and one sub-package.

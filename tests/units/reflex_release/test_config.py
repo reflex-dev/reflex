@@ -322,3 +322,152 @@ def test_requires_fragments(config: Config, repo: Path) -> None:
 )
 def test_is_final(version: str, final: bool) -> None:
     assert is_final(Version(version)) is final
+
+
+CUSTOM_BUILD = """\
+root-package = "mypkg"
+packages-dir = "packages"
+
+[[tool.reflex-release.custom-build]]
+packages = ["mypkg"]
+workflow = "build_wheels.yml"
+expect-artifacts = ["*.tar.gz"]
+"""
+
+
+def test_custom_build_is_resolved_per_package(config: Config, repo: Path) -> None:
+    write_config(repo, CUSTOM_BUILD)
+    reloaded = load_config(repo)
+    entry = reloaded.custom_build_for("mypkg")
+    assert entry is not None
+    assert entry.workflow == "build_wheels.yml"
+    assert reloaded.custom_build_packages() == ("mypkg",)
+    assert reloaded.expect_artifacts("mypkg") == ("*.tar.gz",)
+    # A package with no entry builds in-repo and carries no expectations.
+    assert reloaded.custom_build_for("widget-core") is None
+    assert reloaded.expect_artifacts("widget-core") == ()
+
+
+def test_custom_build_rejects_an_unknown_package(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = ["nope"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="not a package in this repository"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_an_empty_package_list(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = []\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="at least one package"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize("workflow", ["", "build", "ci/build.yml"])
+def test_custom_build_rejects_a_workflow_that_is_not_a_bare_filename(
+    config: Config, repo: Path, workflow: str
+) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        f'packages = ["mypkg"]\nworkflow = "{workflow}"\n',
+    )
+    with pytest.raises(ReleaseError, match="must be a bare filename"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_a_package_listed_twice(
+    config: Config, repo: Path
+) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "one.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg", "widget-core"]\nworkflow = "two.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="more than one custom-build entry"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_two_entries_sharing_a_workflow(
+    config: Config, repo: Path
+) -> None:
+    """One job per entry, so a shared file would collide as a job id."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="same publish job"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_an_unknown_key(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = ["mypkg"]\nworkflow = "build.yml"\nartifacts = ["x"]\n',
+    )
+    with pytest.raises(ReleaseError, match="unknown key"):
+        load_config(repo)
+
+
+def test_custom_build_is_incompatible_with_an_exact_lockstep_pin(
+    config: Config, repo: Path
+) -> None:
+    """pin-exact rewrites a checkout the custom build workflow never sees."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core"]\n'
+        'publish-last = ["mypkg"]\n'
+        "pin-exact = true\n\n"
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="pin-exact"):
+        load_config(repo)
+
+
+def test_a_lockstep_member_that_does_not_pin_may_build_custom(
+    config: Config, repo: Path
+) -> None:
+    """Only the pinning member rewrites metadata; its siblings are unaffected."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core"]\n'
+        'publish-last = ["mypkg"]\n'
+        "pin-exact = true\n\n"
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yml"\n',
+    )
+    assert load_config(repo).custom_build_packages() == ("widget-core",)
+
+
+def test_custom_build_rejects_workflows_that_share_a_job_id(
+    config: Config, repo: Path
+) -> None:
+    """Distinct filenames can still collapse into one generated job."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yaml"\n',
+    )
+    with pytest.raises(ReleaseError, match="same publish job"):
+        load_config(repo)

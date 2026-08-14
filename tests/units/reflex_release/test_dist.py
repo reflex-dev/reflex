@@ -151,3 +151,25 @@ def test_pin_exact_requires_exactly_one_match(
     )
     with pytest.raises(ReleaseError, match="expected exactly one"):
         pin_exact(pyproject, "widget-core", Version("1.2.3"))
+
+
+def test_expected_artifact_patterns_must_all_match(tmp_path: Path) -> None:
+    """A platform matrix is only complete if every leg contributed a file."""
+    make_wheel(tmp_path, "1.2.3")
+    make_sdist(tmp_path, "1.2.3")
+    assert (
+        verify_dist(
+            tmp_path,
+            "widget-core",
+            Version("1.2.3"),
+            ["*.tar.gz", "*-py3-none-any.whl"],
+        )
+        == 2
+    )
+
+
+def test_a_missing_expected_artifact_stops_the_release(tmp_path: Path) -> None:
+    """A matrix leg that produced nothing must not publish a partial set."""
+    make_wheel(tmp_path, "1.2.3")
+    with pytest.raises(ReleaseError, match=r"\*macosx\*\.whl"):
+        verify_dist(tmp_path, "widget-core", Version("1.2.3"), ["*macosx*.whl"])
