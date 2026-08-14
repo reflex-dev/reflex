@@ -298,7 +298,7 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     assert outputs()["any"] == "true"
 
 
-def test_commit_changelogs_leaves_unrelated_work_alone(
+def test_commit_materialized_leaves_unrelated_work_alone(
     config: Config, repo: Path
 ) -> None:
     """A release commit carries the changelogs and nothing a human was mid-way through."""
@@ -310,7 +310,7 @@ def test_commit_changelogs_leaves_unrelated_work_alone(
     set_changelog(config, "widget-core", "## v0.9.0 (2026-01-01)\n\nNot mine.\n")
     fragment(config, "widget-core", "3.bugfix.md")
 
-    commands._commit_changelogs(
+    commands._commit_materialized(
         config, [{"package": "mypkg", "next": "1.0.0"}], "Materialize changelogs"
     )
 
@@ -331,7 +331,7 @@ def test_release_commit_removes_the_fragments_it_consumed(
     commands.cmd_plan(config, "release-minor", "widget-core")
     commands.cmd_materialize(config, "release-minor", outputs()["releases"])
 
-    commands._commit_changelogs(
+    commands._commit_materialized(
         config,
         [{"package": "widget-core", "next": "0.1.0"}],
         "Materialize changelogs",
@@ -878,3 +878,174 @@ def test_create_release_without_a_manifest_still_releases(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert str(checksums) not in release_args()
+
+
+def dev_pin(repo: Path, requirement: str) -> Config:
+    """Replace the root package's dependency and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        requirement: The requirement string to declare instead.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            '"widget-core >= 0.1.0"', f'"{requirement}"'
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_plan_holds_back_an_auto_selected_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs, summary: Callable[[], str]
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    commands.cmd_plan(reloaded, "release-minor", "")
+    # The dependency can still be released; only its dependent is held back.
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["widget-core"]
+    assert "### Held back" in summary()
+
+
+def test_plan_rejects_an_explicit_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+
+
+def test_plan_holds_back_a_whole_lockstep_group(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Members only ever release together, so one blocker holds back the group."""
+    write_lockstep(repo)
+    # Not the lockstep sibling, which pin-lockstep rewrites at build time.
+    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    with pytest.raises(ReleaseError, match="every auto-selected package"):
+        commands.cmd_plan(reloaded, "release-minor", "")
+
+
+def test_plan_accepts_a_pin_a_prerelease_can_satisfy(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0a1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    # A final version cannot take the alpha; the alpha train can.
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_plan(reloaded, "new-prerelease-minor", "mypkg")
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["mypkg"]
+
+
+def test_materialize_lifts_the_dev_pin_it_can_resolve(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "4.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+
+    assert '"widget-core >= 0.2.0"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_release_commit_carries_the_lifted_pins(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "5.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    commands._commit_materialized(
+        reloaded, [{"package": "mypkg", "next": "0.1.0"}], "Materialize"
+    )
+
+    assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
+        "CHANGELOG.md",
+        "news/5.feature.md",
+        "pyproject.toml",
+    ]
+
+
+def test_post_release_without_a_configured_workflow_does_nothing(
+    config: Config, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    captured: list[list[str]] = []
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
+    )
+    commands.cmd_post_release(config, "v1.2.3", "mypkg", "1.2.3")
+    assert captured == []
+    assert "no post-release-workflow is configured" in capsys.readouterr().out
+
+
+def with_post_release(repo: Path, workflow: str) -> Config:
+    """Configure a post-release workflow and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        workflow: The workflow to dispatch after each published tag.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_post_release_dispatches_the_workflow_on_the_tag(
+    config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reloaded = with_post_release(repo, "docs_publish.yml")
+    captured: list[list[str]] = []
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
+    )
+    commands.cmd_post_release(reloaded, "widget-core-v1.2.3", "widget-core", "1.2.3")
+    assert captured == [
+        [
+            "workflow",
+            "run",
+            "docs_publish.yml",
+            "--ref",
+            "widget-core-v1.2.3",
+            "--field",
+            "tag=widget-core-v1.2.3",
+            "--field",
+            "package=widget-core",
+            "--field",
+            "version=1.2.3",
+        ]
+    ]
+
+
+def test_post_release_reports_a_failed_dispatch_against_the_published_tag(
+    config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The version is already out; the failure has to name what needs redoing."""
+    reloaded = with_post_release(repo, "docs_publish.yml")
+    monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 1)
+    with pytest.raises(ReleaseError, match=r"was published and tagged v1\.2\.3"):
+        commands.cmd_post_release(reloaded, "v1.2.3", "mypkg", "1.2.3")

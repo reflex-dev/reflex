@@ -132,6 +132,10 @@ internal-packages = []
 # Packages excluded from the pull-request news-fragment requirement.
 changelog-exempt-packages = []
 
+# A workflow of your own to run after every published tag. Omit it (or leave it
+# empty) to dispatch nothing. See "Post-release workflow".
+post-release-workflow = "docs_publish.yml"
+
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
 # checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
@@ -173,6 +177,45 @@ This gives you, for free:
 
 `pin-exact` rewrites the requirement in the publishing package's
 `pyproject.toml` at build time only; it is never committed.
+
+### Dependency pins across a release
+
+A package that depends on a sibling it is waiting for pins the unreleased
+version — `widget-core >= 0.2.0.dev1` — so the workspace resolves while the
+sibling is still unpublished. That pin cannot be published: `*.dev` versions
+never reach PyPI, so the metadata would be uninstallable. `check-dev-pins`
+rejects it at build time, which means someone has to remember to lift it once
+the sibling is out.
+
+Materialization does it instead. When *Dispatch release* plans a release, each
+selected package's published dependencies are checked for a floor the release
+cannot ship, and the floor is lifted to the **earliest published version that
+satisfies the whole requirement**:
+
+| Floor | Materializing a prerelease | Materializing a final version |
+| --- | --- | --- |
+| `>= 0.2.0.dev1` | earliest published `0.2.0a1`, `0.2.0`, … | earliest published *final* `0.2.0`, … |
+| `>= 0.2.0a1` | left alone — an alpha may ship it | lifted to the earliest published final |
+| `>= 0.2.0` | left alone | left alone |
+
+"Published" means **tagged**: tags are created only after a successful upload,
+so the repository's own tags are its record of what is on PyPI. The rewritten
+`pyproject.toml` files and the re-resolved `uv.lock` are part of the release
+commit, so they land through the same review as the changelog bump.
+
+A floor nothing published satisfies has nowhere to go, and the package is
+**held back** rather than materialized into a version that could never be
+published — auto-selected packages are dropped from the batch (a lockstep group
+whole, since its members only release together) and listed in the run summary;
+an explicitly selected one fails the dispatch. Release the depended-on package
+first and the next release lifts the pin by itself.
+
+Two things are deliberately left alone: a floor on a lockstep sibling that
+`pin-exact` rewrites at build time anyway, and a *prerelease* floor on a
+dependency outside the repository, whose releases are not recorded here and
+whose pin is somebody's deliberate choice. A `*.dev` floor on an outside
+dependency still holds the package back — that pin is unpublishable whoever
+owns it.
 
 ## Adding towncrier
 
@@ -474,6 +517,10 @@ comma-separated text field; see `dispatch-package-inputs`.
 | `release-patch` / `-minor` / `-major` | Final version straight from `main`. Opens a PR. |
 | `release-post` | `1.2.3.post1`, for packaging-only fixes. Opens a PR. |
 
+A package whose dependency pins no published version satisfies is held back and
+listed in the run summary — see
+[Dependency pins across a release](#dependency-pins-across-a-release).
+
 Release actions open a pull request; **merging it is what publishes.** The push
 to `main` triggers `release_from_changelog`, which builds every untagged
 changelog version and waits for the `pypi` approval before uploading. Only then
@@ -516,6 +563,48 @@ unzip -l "$BUILD_DIR"/dist/*.whl | grep -q '\.pyi$' || {
 }
 ```
 
+## Post-release workflow
+
+Set `post-release-workflow` to a workflow of your own and `publish.yml`
+dispatches it once per published tag, after the upload, the tag and the GitHub
+release all exist — the hook for whatever has to follow a release: publishing
+docs, refreshing a container image, notifying a downstream repository.
+
+It runs **on the tag**, so it sees exactly the tree that was published, and it
+is handed the three facts about the release:
+
+```yaml
+# .github/workflows/docs_publish.yml
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The published tag"
+        required: true
+        type: string
+      package:
+        description: "The published package"
+        required: true
+        type: string
+      version:
+        description: "The published version"
+        required: true
+        type: string
+```
+
+All three inputs are required: GitHub rejects a dispatch that passes inputs the
+workflow does not declare. The workflow itself must exist on the default branch
+(GitHub's rule for `workflow_dispatch`) and be one of yours — naming a generated
+workflow is rejected by `sync`.
+
+Adding or removing the setting changes `publish.yml` (the dispatch step) and the
+`actions: write` grant it needs in `publish.yml`, `release_from_changelog.yml`
+and `auto_release_internal.yml`, so re-run `reflex-release sync`.
+
+The dispatch is the last thing a release does, so a failure there never leaves a
+half-published version — but it does fail the run, loudly, naming the tag whose
+follow-up did not start.
+
 ## Keeping the workflows current
 
 Bump `cli-command` in `pyproject.toml`, run `reflex-release sync`, commit the
@@ -538,7 +627,7 @@ a flag for running the same command by hand.
 | `create [--package P] NAME` | Create a news fragment. |
 | `packages` | List releasable packages. |
 | `plan` | Compute the next version of each selected package. |
-| `materialize` | Run towncrier and (for `release-from-prerelease`) collapse alphas. |
+| `materialize` | Run towncrier, lift unshippable dependency pins, collapse alphas. |
 | `open-release-pr` / `push-prerelease` | Commit the changelogs and deliver them. |
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
@@ -547,6 +636,7 @@ a flag for running the same command by hand.
 | `check-dev-pins` | Reject `*.dev` dependency pins in published metadata. |
 | `extract-notes` | Write a version's changelog section for the release body. |
 | `push-tag` / `create-release` | Tag and publish the GitHub release. |
+| `post-release` | Dispatch the configured post-release workflow for a tag. |
 | `check-headings` | Reject hand-written changelog version headings (PR CI). |
 | `changelog-check` | Require news fragments for changed packages (PR CI). |
 | `detect-internal` | List internal packages touched by a push. |
@@ -582,7 +672,8 @@ a flag for running the same command by hand.
   artifact that was built and validated before the approval.
 - **Detection fails closed.** A broken lockstep pair, a version the branch may
   not publish, or a `*.dev` pin stops the batch rather than shipping something
-  uninstallable.
+  uninstallable. A pin a published version *can* satisfy is lifted in the
+  release commit instead, so the same rule does not turn into busywork.
 
 ## License
 

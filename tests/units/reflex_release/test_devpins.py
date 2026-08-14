@@ -2,16 +2,45 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 from reflex_release.actions import ReleaseError
-from reflex_release.config import Config
+from reflex_release.config import Config, load_config
 from reflex_release.devpins import (
+    LOCK_FILE,
+    PinUpgrade,
+    blocking_pins,
     check_dev_pins,
     parse_requirement,
+    pin_upgrades,
     published_dependencies,
+    upgrade_dev_pins,
 )
+
+from .conftest import git, write_lockstep
+
+
+def set_root_dependency(repo: Path, requirement: str) -> Config:
+    """Replace the root package's single dependency and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        requirement: The requirement string to declare instead.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            '"widget-core >= 0.1.0"', f'"{requirement}"'
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
 
 
 @pytest.mark.parametrize(
@@ -76,3 +105,215 @@ def test_check_dev_pins_is_scoped_to_the_selected_package(
 def test_check_dev_pins_rejects_unknown_packages(config: Config) -> None:
     with pytest.raises(ReleaseError, match="unknown package"):
         check_dev_pins(config, ["ghost"])
+
+
+@pytest.mark.parametrize(
+    ("requirement", "bounds", "expected"),
+    [
+        ("widget-core >= 0.2.0.dev1", ("0.2.0.dev1",), "widget-core >= 0.2.0"),
+        ("widget-core>=0.2.0.dev1", ("0.2.0.dev1",), "widget-core>=0.2.0"),
+        # Extras, the other specifiers and the marker all survive the lift.
+        (
+            "widget-core[extra] >= 0.2.0.dev1, < 1.0 ; python_version > '3.10'",
+            ("0.2.0.dev1",),
+            "widget-core[extra] >= 0.2.0, < 1.0 ; python_version > '3.10'",
+        ),
+        # An upper bound naming a dev release is resolvable as it stands.
+        (
+            "widget-core >= 0.2.0a1, != 0.3.0.dev1",
+            ("0.2.0a1",),
+            "widget-core >= 0.2.0, != 0.3.0.dev1",
+        ),
+        # A second lower bound that is already publishable stays put.
+        (
+            "widget-core >= 0.2.0.dev1, > 0.1.0",
+            ("0.2.0.dev1",),
+            "widget-core >= 0.2.0, > 0.1.0",
+        ),
+    ],
+)
+def test_pin_upgrade_rewrites_only_the_offending_bound(
+    requirement: str, bounds: tuple[str, ...], expected: str
+) -> None:
+    upgrade = PinUpgrade("mypkg", requirement, "widget-core", bounds, Version("0.2.0"))
+    assert upgrade.rewritten() == expected
+
+
+def test_pin_upgrades_resolves_to_the_earliest_published_version(
+    repo: Path,
+) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    for tag in ("widget-core-v0.1.9", "widget-core-v0.2.0", "widget-core-v0.3.0"):
+        git(repo, "tag", tag)
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert upgrade.resolved == Version("0.2.0")
+    assert upgrade.rewritten() == "widget-core >= 0.2.0"
+
+
+def test_pin_upgrades_ignores_a_published_lower_bound(repo: Path) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.1.0")
+    assert pin_upgrades(reloaded, "mypkg", allow_prereleases=False) == []
+
+
+def test_pin_upgrades_holds_back_an_unreleased_dev_pin(repo: Path) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.1.9")
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert upgrade.resolved is None
+    assert "newest tagged: 0.1.9" in upgrade.reason
+
+
+def test_pin_upgrades_only_takes_a_prerelease_for_a_prerelease(repo: Path) -> None:
+    """An alpha may depend on a sibling's alpha; a final version may not."""
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0a1")
+
+    (final,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert final.resolved is None
+    assert "no final release of widget-core" in final.reason
+
+    (alpha,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=True)
+    assert alpha.resolved == Version("0.2.0a1")
+
+
+def test_pin_upgrades_lifts_a_prerelease_floor_for_a_final_release(repo: Path) -> None:
+    """A final version must not floor its users on a sibling's alpha."""
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0a1")
+    git(repo, "tag", "widget-core-v0.2.0a1")
+    git(repo, "tag", "widget-core-v0.2.0")
+
+    (final,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert final.resolved == Version("0.2.0")
+    # The same floor is fine in a prerelease, which may ship it as it stands.
+    assert pin_upgrades(reloaded, "mypkg", allow_prereleases=True) == []
+
+
+def test_pin_upgrades_leaves_an_outside_prerelease_pin_alone(repo: Path) -> None:
+    """Only siblings' releases are recorded here; an outside pin is deliberate."""
+    reloaded = set_root_dependency(repo, "third-party >= 2.0b1")
+    assert pin_upgrades(reloaded, "mypkg", allow_prereleases=False) == []
+
+
+def test_pin_upgrades_holds_back_an_outside_dev_pin(repo: Path) -> None:
+    """A dev pin is unpublishable whoever owns the dependency."""
+    reloaded = set_root_dependency(repo, "third-party >= 2.0.dev1")
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=True)
+    assert upgrade.resolved is None
+    assert "not a package in this repository" in upgrade.reason
+
+
+def test_pin_upgrades_skips_exactly_pinned_lockstep_siblings(repo: Path) -> None:
+    """pin-lockstep rewrites those at build time, so nothing here is shipped."""
+    write_lockstep(repo)
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    assert reloaded.exact_pin_targets("mypkg") == ("widget-core",)
+    assert pin_upgrades(reloaded, "mypkg", allow_prereleases=False) == []
+
+
+def test_pin_upgrades_respects_the_whole_specifier_set(repo: Path) -> None:
+    """The lifted version has to satisfy the upper bound too."""
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1, < 0.3")
+    git(repo, "tag", "widget-core-v0.3.0")
+    (blocked,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert blocked.resolved is None
+
+    git(repo, "tag", "widget-core-v0.2.5")
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert upgrade.resolved == Version("0.2.5")
+
+
+def test_blocking_pins_groups_by_package(repo: Path) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    blocked = blocking_pins(reloaded, ["mypkg", "widget-core"], allow_prereleases=False)
+    assert list(blocked) == ["mypkg"]
+
+
+def test_upgrade_dev_pins_rewrites_the_pyproject(repo: Path) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    assert upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False) == [
+        "pyproject.toml"
+    ]
+    assert '"widget-core >= 0.2.0"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+    # The gate the publish job runs is satisfied by the rewrite.
+    check_dev_pins(reloaded, ["mypkg"])
+
+
+def stub_uv_lock(monkeypatch: pytest.MonkeyPatch, returncode: int) -> list[list[str]]:
+    """Answer ``uv lock`` with a fixed status, letting git run for real.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        returncode: The status ``uv lock`` should report.
+
+    Returns:
+        The list the intercepted commands are recorded in.
+    """
+    real_run = subprocess.run
+    recorded: list[list[str]] = []
+
+    def run(cmd, **kwargs):
+        if cmd[:2] != ["uv", "lock"]:
+            return real_run(cmd, **kwargs)
+        recorded.append(cmd)
+        return subprocess.CompletedProcess(cmd, returncode)
+
+    monkeypatch.setattr(subprocess, "run", run)
+    return recorded
+
+
+def test_upgrade_dev_pins_refreshes_the_lock_file(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    (repo / LOCK_FILE).write_text("version = 1\n", encoding="utf-8")
+    recorded = stub_uv_lock(monkeypatch, 0)
+    assert upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False) == [
+        "pyproject.toml",
+        LOCK_FILE,
+    ]
+    assert recorded == [["uv", "lock"]]
+
+
+def test_upgrade_dev_pins_fails_when_the_lock_cannot_be_refreshed(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    (repo / LOCK_FILE).write_text("version = 1\n", encoding="utf-8")
+    stub_uv_lock(monkeypatch, 1)
+    with pytest.raises(ReleaseError, match="uv lock` failed"):
+        upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+
+
+def test_upgrade_dev_pins_refuses_an_unsatisfiable_pin(repo: Path) -> None:
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+
+
+def test_upgrade_dev_pins_is_a_no_op_without_pins(repo: Path) -> None:
+    reloaded = load_config(repo)
+    before = (repo / "pyproject.toml").read_text(encoding="utf-8")
+    assert upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False) == []
+    assert (repo / "pyproject.toml").read_text(encoding="utf-8") == before
+
+
+def test_upgrade_dev_pins_refuses_an_ambiguous_requirement(repo: Path) -> None:
+    """The same string twice gives the rewrite nowhere unambiguous to land."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'dependencies = ["widget-core >= 0.1.0"]',
+            'dependencies = ["widget-core >= 0.2.0.dev1"]\n'
+            '[project.optional-dependencies]\nextra = ["widget-core >= 0.2.0.dev1"]',
+        ),
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    git(repo, "tag", "widget-core-v0.2.0")
+    with pytest.raises(ReleaseError, match="expected exactly one quoted"):
+        upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)

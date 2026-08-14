@@ -33,6 +33,7 @@ from .changelog import (
     parse_sections,
 )
 from .config import Config, is_final
+from .devpins import LOCK_FILE, blocking_pins, describe_blockers, upgrade_dev_pins
 from .discovery import (
     alpha_train_packages,
     build_changelog,
@@ -61,7 +62,7 @@ from .gitutil import (
     remote_branch_exists,
     tag_exists,
 )
-from .versions import ACTIONS, next_version, release_date_today
+from .versions import ACTIONS, FINAL_ACTIONS, next_version, release_date_today
 
 #: Filename of the scaffolded workflow that publishes untagged changelog versions.
 RELEASE_WORKFLOW = "release_from_changelog.yml"
@@ -237,6 +238,63 @@ def cmd_detect(config: Config, ref_name: str) -> None:
         fail("lockstep invariant violated; no package was published")
 
 
+def _drop_unpublishable_pins(
+    config: Config, packages: list[str], action: str, explicit: bool
+) -> tuple[list[str], list[str]]:
+    """Hold back packages whose dependency pins no published version satisfies.
+
+    Materialization lifts a ``*.dev`` (and, for a final version, a prerelease)
+    dependency floor to the earliest published version that satisfies it. A
+    floor nothing published satisfies has nowhere to go, so the package is not
+    releasable yet — releasing it would either publish an uninstallable pin or
+    stop at the publish-time gate with the changelog already bumped.
+
+    A lockstep group is held back whole: its members only ever release together.
+
+    Args:
+        config: The repository configuration.
+        packages: The selected packages, lockstep groups already expanded.
+        action: The release action being planned.
+        explicit: Whether the selection was made by hand. An explicit selection
+            that cannot be released is an error; an auto-selected package is
+            simply left out of the batch.
+
+    Returns:
+        The releasable packages and the human-readable reasons the others were
+        held back.
+    """
+    blocked = blocking_pins(
+        config, packages, allow_prereleases=action not in FINAL_ACTIONS
+    )
+    if not blocked:
+        return packages, []
+
+    reasons = describe_blockers(blocked)
+    if explicit:
+        listing = "\n".join(f"  {line}" for line in reasons)
+        fail(
+            "the selected package(s) declare dependency pins that no published "
+            f"version satisfies:\n{listing}\n\nRelease the depended-on package(s) "
+            "first; the next release lifts these pins automatically."
+        )
+
+    held = {
+        member
+        for package in blocked
+        for member in (package, *config.lockstep_partners(package))
+    }
+    for line in reasons:
+        notice(f"held back from this release — {line}")
+    remaining = [package for package in packages if package not in held]
+    if not remaining:
+        fail(
+            "every auto-selected package declares a dependency pin that no "
+            "published version satisfies:\n"
+            + "\n".join(f"  {line}" for line in reasons)
+        )
+    return remaining, reasons
+
+
 def cmd_plan(config: Config, action: str, selection: str) -> None:
     """Plan the next version for each selected package.
 
@@ -244,7 +302,8 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
     ``$GITHUB_OUTPUT``. An empty selection auto-detects the packages to release:
     those with pending news fragments — or, for ``release-from-prerelease``,
     those whose changelog is topped by an alpha (their fragments are already
-    consumed).
+    consumed). A package whose dependency pins no published version satisfies is
+    not eligible either way (see :func:`_drop_unpublishable_pins`).
 
     Args:
         config: The repository configuration.
@@ -284,6 +343,10 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
             if partner not in packages
         )
 
+    packages, disqualified = _drop_unpublishable_pins(
+        config, packages, action, explicit=how == "explicit"
+    )
+
     releases: list[dict[str, str]] = []
     for package in packages:
         group = config.lockstep_group(package)
@@ -321,12 +384,27 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
                 for r in releases
             ],
         ),
+        *(
+            [
+                "",
+                "### Held back",
+                "",
+                *(f"- {line}" for line in disqualified),
+            ]
+            if disqualified
+            else []
+        ),
     ])
     write_outputs(releases=json.dumps(releases))
 
 
 def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     """Write the planned versions into the changelogs via towncrier.
+
+    Also lifts every dependency pin the release cannot ship — a ``*.dev`` floor,
+    or a prerelease floor when the release is final — to the earliest published
+    version that satisfies it, and re-locks the repository, so the release
+    carries pins that resolve instead of failing the publish-time gate.
 
     For ``release-from-prerelease``, collapses the alpha sections of each
     changelog into the single final-version section after building it.
@@ -339,6 +417,20 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     releases: list[dict[str, str]] = json.loads(releases_json)
     if not releases:
         fail("nothing to materialize: the release plan is empty")
+
+    # Before towncrier: a pin that cannot be lifted stops the release while the
+    # news fragments it would have consumed are still on disk.
+    if repinned := upgrade_dev_pins(
+        config,
+        [release["package"] for release in releases],
+        allow_prereleases=action not in FINAL_ACTIONS,
+    ):
+        write_summary([
+            "## Dependency pins lifted",
+            "",
+            *(f"- `{path}`" for path in repinned),
+        ])
+
     collapse = action == "release-from-prerelease"
     categories = category_order(config) if collapse else []
     heading_format = title_format(config)
@@ -721,10 +813,10 @@ def _release_summary(releases: list[dict[str, str]]) -> str:
     return ", ".join(f"{r['package']}@{r['next']}" for r in releases)
 
 
-def _commit_changelogs(
+def _commit_materialized(
     config: Config, releases: list[dict[str, str]], message: str
 ) -> None:
-    """Stage and commit the changelogs materialized for a release.
+    """Stage and commit everything materialization wrote for a release.
 
     Args:
         config: The repository configuration.
@@ -732,9 +824,11 @@ def _commit_changelogs(
         message: The commit message.
     """
     configure_bot_identity(config.root)
-    # Only the changelogs of the packages being released, so nothing else in the
-    # worktree can ride along in the release commit. towncrier has already
-    # staged the deletion of every fragment it consumed.
+    # Only what materialization writes for the packages being released — their
+    # changelogs and the dependency pins in their own pyproject.toml, plus the
+    # lock file those pins are resolved in — so nothing else in the worktree can
+    # ride along in the release commit. towncrier has already staged the
+    # deletion of every fragment it consumed.
     changelogs = [
         path.relative_to(config.root).as_posix()
         for path in (config.changelog_path(r["package"]) for r in releases)
@@ -742,7 +836,17 @@ def _commit_changelogs(
     ]
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    git_run(["add", "--", *changelogs], config.root)
+    pins = [
+        path.relative_to(config.root).as_posix()
+        for path in (
+            config.package_path(r["package"]) / "pyproject.toml" for r in releases
+        )
+        if path.is_file()
+    ]
+    lock = config.root / LOCK_FILE
+    if lock.is_file():
+        pins.append(LOCK_FILE)
+    git_run(["add", "--", *changelogs, *pins], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
     git_run(["commit", "-m", message], config.root)
@@ -801,7 +905,7 @@ def cmd_open_release_pr(
     body_file = Path(os.environ.get("RUNNER_TEMP", ".")) / "release_pr_body.md"
     body_file.write_text(body, encoding="utf-8")
 
-    _commit_changelogs(
+    _commit_materialized(
         config, releases, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
@@ -881,7 +985,7 @@ def cmd_push_prerelease(
         if remote_branch_exists(config.root, branch):
             branch = f"{branch}-{run_id}"
 
-    _commit_changelogs(
+    _commit_materialized(
         config, releases, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
@@ -980,6 +1084,52 @@ def cmd_create_release(
     else:
         notice(f"no checksum manifest at {checksums_path}; releasing without one")
     gh_run(args, config.root)
+
+
+def cmd_post_release(config: Config, tag: str, package: str, version: str) -> None:
+    """Dispatch the configured post-release workflow for a published tag.
+
+    Runs once per published tag, after the upload, the tag and the GitHub
+    release: the workflow is dispatched on the tag itself, so it sees exactly
+    the tree that was published. A failure here is loud but harmless — the
+    version is already released — so it names the tag it could not hand on.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag that was published.
+        package: The published package.
+        version: The published version.
+    """
+    workflow = config.post_release_workflow
+    if workflow is None:
+        notice("no post-release-workflow is configured; nothing to dispatch.")
+        return
+    failed = gh_run(
+        [
+            "workflow",
+            "run",
+            workflow,
+            "--ref",
+            tag,
+            "--field",
+            f"tag={tag}",
+            "--field",
+            f"package={package}",
+            "--field",
+            f"version={version}",
+        ],
+        config.root,
+        check=False,
+    )
+    if failed:
+        fail(
+            f"{package} {version} was published and tagged {tag}, but the "
+            f"post-release workflow {workflow!r} could not be dispatched on it. "
+            "Check that the workflow exists on the default branch and declares "
+            "workflow_dispatch inputs named tag, package and version, then "
+            "dispatch it by hand."
+        )
+    notice(f"dispatched {workflow} for {tag}")
 
 
 def cmd_packages(config: Config) -> None:

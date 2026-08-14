@@ -588,3 +588,59 @@ def test_init_keeps_existing_towncrier_configuration(tmp_path: Path) -> None:
     text = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
     assert text.count("[tool.towncrier]") == 1
     assert 'directory = "changes"' in text
+
+
+def with_post_release(repo: Path, workflow: str) -> Config:
+    """Configure a post-release workflow and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        workflow: The workflow to dispatch after each published tag.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_publish_workflow_omits_the_post_release_step_by_default(
+    config: Config,
+) -> None:
+    """A repository that dispatches nothing gets no dispatch step, or its grant."""
+    job = yaml.safe_load(render("publish.yml", config))["jobs"]["tag-and-release"]
+    assert [step["name"] for step in job["steps"]][-1] == "Create GitHub release"
+    assert job["permissions"] == {"contents": "write", "actions": "read"}
+
+
+def test_publish_workflow_dispatches_the_post_release_workflow(repo: Path) -> None:
+    reloaded = with_post_release(repo, "docs_publish.yml")
+    job = yaml.safe_load(render("publish.yml", reloaded))["jobs"]["tag-and-release"]
+    step = job["steps"][-1]
+    assert step["name"] == "Trigger the post-release workflow"
+    assert step["run"].endswith("post-release")
+    assert step["env"]["TAG"] == "${{ needs.build.outputs.tag }}"
+    # Dispatching a workflow needs a write on the actions scope, in the called
+    # workflow and in every caller that bounds its permissions.
+    assert job["permissions"]["actions"] == "write"
+    for name in ("release_from_changelog.yml", "auto_release_internal.yml"):
+        rendered = yaml.safe_load(render(name, reloaded))
+        assert all(
+            job["permissions"]["actions"] == "write"
+            for job in rendered["jobs"].values()
+            if "actions" in job.get("permissions", {})
+        )
+
+
+def test_sync_rejects_a_generated_post_release_workflow(repo: Path) -> None:
+    """Handing a published tag back to the release pipeline is not a hook."""
+    reloaded = with_post_release(repo, "release_from_changelog.yml")
+    with pytest.raises(ReleaseError, match="a workflow this tool generates"):
+        sync(reloaded)
