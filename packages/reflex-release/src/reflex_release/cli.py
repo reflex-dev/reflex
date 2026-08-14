@@ -257,6 +257,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Checksum manifest to attach to the release.",
     )
 
+    post_release = sub.add_parser(
+        "post-release", help="Dispatch the configured post-release workflow."
+    )
+    post_release.add_argument("--tag", default=_env("TAG"), help="The published tag.")
+    post_release.add_argument(
+        "--package", default=_env("PACKAGE"), help="Published package."
+    )
+    post_release.add_argument(
+        "--version", default=_env("VERSION"), help="Published version."
+    )
+
     create = sub.add_parser("create", help="Create a news fragment.")
     create.add_argument("name", help="Fragment filename, e.g. 1234.feature.md.")
     create.add_argument(
@@ -343,6 +354,8 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
                 args.notes,
                 args.checksums,
             )
+        case "post-release":
+            commands.cmd_post_release(config, args.tag, args.package, args.version)
         case "create":
             commands.cmd_create(
                 config, args.package or (config.root_package or ""), args.name

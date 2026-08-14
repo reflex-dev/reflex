@@ -982,6 +982,52 @@ def cmd_create_release(
     gh_run(args, config.root)
 
 
+def cmd_post_release(config: Config, tag: str, package: str, version: str) -> None:
+    """Dispatch the configured post-release workflow for a published tag.
+
+    Runs once per published tag, after the upload, the tag and the GitHub
+    release: the workflow is dispatched on the tag itself, so it sees exactly
+    the tree that was published. A failure here is loud but harmless — the
+    version is already released — so it names the tag it could not hand on.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag that was published.
+        package: The published package.
+        version: The published version.
+    """
+    workflow = config.post_release_workflow
+    if workflow is None:
+        notice("no post-release-workflow is configured; nothing to dispatch.")
+        return
+    failed = gh_run(
+        [
+            "workflow",
+            "run",
+            workflow,
+            "--ref",
+            tag,
+            "--field",
+            f"tag={tag}",
+            "--field",
+            f"package={package}",
+            "--field",
+            f"version={version}",
+        ],
+        config.root,
+        check=False,
+    )
+    if failed:
+        fail(
+            f"{package} {version} was published and tagged {tag}, but the "
+            f"post-release workflow {workflow!r} could not be dispatched on it. "
+            "Check that the workflow exists on the default branch and declares "
+            "workflow_dispatch inputs named tag, package and version, then "
+            "dispatch it by hand."
+        )
+    notice(f"dispatched {workflow} for {tag}")
+
+
 def cmd_packages(config: Config) -> None:
     """Print the repository's releasable packages, one per line.
 

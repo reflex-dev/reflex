@@ -132,6 +132,10 @@ internal-packages = []
 # Packages excluded from the pull-request news-fragment requirement.
 changelog-exempt-packages = []
 
+# A workflow of your own to run after every published tag. Omit it (or leave it
+# empty) to dispatch nothing. See "Post-release workflow".
+post-release-workflow = "docs_publish.yml"
+
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
 # checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
@@ -516,6 +520,48 @@ unzip -l "$BUILD_DIR"/dist/*.whl | grep -q '\.pyi$' || {
 }
 ```
 
+## Post-release workflow
+
+Set `post-release-workflow` to a workflow of your own and `publish.yml`
+dispatches it once per published tag, after the upload, the tag and the GitHub
+release all exist — the hook for whatever has to follow a release: publishing
+docs, refreshing a container image, notifying a downstream repository.
+
+It runs **on the tag**, so it sees exactly the tree that was published, and it
+is handed the three facts about the release:
+
+```yaml
+# .github/workflows/docs_publish.yml
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The published tag"
+        required: true
+        type: string
+      package:
+        description: "The published package"
+        required: true
+        type: string
+      version:
+        description: "The published version"
+        required: true
+        type: string
+```
+
+All three inputs are required: GitHub rejects a dispatch that passes inputs the
+workflow does not declare. The workflow itself must exist on the default branch
+(GitHub's rule for `workflow_dispatch`) and be one of yours — naming a generated
+workflow is rejected by `sync`.
+
+Adding or removing the setting changes `publish.yml` (the dispatch step) and the
+`actions: write` grant it needs in `publish.yml`, `release_from_changelog.yml`
+and `auto_release_internal.yml`, so re-run `reflex-release sync`.
+
+The dispatch is the last thing a release does, so a failure there never leaves a
+half-published version — but it does fail the run, loudly, naming the tag whose
+follow-up did not start.
+
 ## Keeping the workflows current
 
 Bump `cli-command` in `pyproject.toml`, run `reflex-release sync`, commit the
@@ -547,6 +593,7 @@ a flag for running the same command by hand.
 | `check-dev-pins` | Reject `*.dev` dependency pins in published metadata. |
 | `extract-notes` | Write a version's changelog section for the release body. |
 | `push-tag` / `create-release` | Tag and publish the GitHub release. |
+| `post-release` | Dispatch the configured post-release workflow for a tag. |
 | `check-headings` | Reject hand-written changelog version headings (PR CI). |
 | `changelog-check` | Require news fragments for changed packages (PR CI). |
 | `detect-internal` | List internal packages touched by a push. |

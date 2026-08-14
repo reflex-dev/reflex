@@ -878,3 +878,72 @@ def test_create_release_without_a_manifest_still_releases(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert str(checksums) not in release_args()
+
+
+def test_post_release_without_a_configured_workflow_does_nothing(
+    config: Config, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    captured: list[list[str]] = []
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
+    )
+    commands.cmd_post_release(config, "v1.2.3", "mypkg", "1.2.3")
+    assert captured == []
+    assert "no post-release-workflow is configured" in capsys.readouterr().out
+
+
+def with_post_release(repo: Path, workflow: str) -> Config:
+    """Configure a post-release workflow and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        workflow: The workflow to dispatch after each published tag.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_post_release_dispatches_the_workflow_on_the_tag(
+    config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reloaded = with_post_release(repo, "docs_publish.yml")
+    captured: list[list[str]] = []
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
+    )
+    commands.cmd_post_release(reloaded, "widget-core-v1.2.3", "widget-core", "1.2.3")
+    assert captured == [
+        [
+            "workflow",
+            "run",
+            "docs_publish.yml",
+            "--ref",
+            "widget-core-v1.2.3",
+            "--field",
+            "tag=widget-core-v1.2.3",
+            "--field",
+            "package=widget-core",
+            "--field",
+            "version=1.2.3",
+        ]
+    ]
+
+
+def test_post_release_reports_a_failed_dispatch_against_the_published_tag(
+    config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The version is already out; the failure has to name what needs redoing."""
+    reloaded = with_post_release(repo, "docs_publish.yml")
+    monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 1)
+    with pytest.raises(ReleaseError, match=r"was published and tagged v1\.2\.3"):
+        commands.cmd_post_release(reloaded, "v1.2.3", "mypkg", "1.2.3")
