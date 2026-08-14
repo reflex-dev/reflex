@@ -333,7 +333,7 @@ class MenuLinkItem(MenuBaseComponent):
 class MenuSubMenuRoot(MenuBaseComponent):
     """Groups all parts of a submenu. Doesn't render its own HTML element."""
 
-    tag = "Menu.SubMenuRoot"
+    tag = "Menu.SubmenuRoot"
 
     # Whether the menu is initially open. To render a controlled menu, use the open prop instead. Defaults to False.
     default_open: Var[bool]
@@ -377,7 +377,7 @@ class MenuSubMenuRoot(MenuBaseComponent):
 class MenuSubMenuTrigger(MenuBaseComponent):
     """A menu item that opens a submenu."""
 
-    tag = "Menu.SubMenuTrigger"
+    tag = "Menu.SubmenuTrigger"
 
     # Overrides the text label to use when the item is matched during keyboard text navigation.
     label: Var[str]
