@@ -46,22 +46,38 @@ built-in tools use to resolve the caller's session from their bearer token.
 
 ## At runtime — `get_mcp_server()`
 
-To register from application code instead — for example a Reflex lifespan task
-— grab the active server:
+To register from application code instead, grab the active server with
+`rxe.get_mcp_server()`. The server is built when the app is **compiled**, so
+this has to run after that — a
+[lifespan task](/docs/utility_methods/lifespan_tasks/) is the natural home,
+since it starts once the backend comes up:
 
 ```python
+from contextlib import asynccontextmanager
+
 import reflex_enterprise as rxe
 
 
-@rxe.get_mcp_server().tool()
-def ping() -> str:
-    """Health check."""
-    return "pong"
+@asynccontextmanager
+async def register_mcp_tools(app):
+    """Add app-defined tools to the MCP server at startup."""
+    server = rxe.get_mcp_server()
+
+    @server.tool()
+    def ping() -> str:
+        """Health check."""
+        return "pong"
+
+    yield
+
+
+app = rxe.App()
+app.register_lifespan_task(register_mcp_tools)
 ```
 
 ```md alert warning
-# The server is built when the app is **compiled**.
-`rxe.get_mcp_server()` (and the equivalent `plugin.get_mcp_server()` instance method) raise a `RuntimeError` until then. Call them after compile, or use `configure=` for setup-time customization.
+# `get_mcp_server()` raises a `RuntimeError` until the app has compiled.
+That rules out calling it at module scope, including as a bare `@rxe.get_mcp_server().tool()` decorator — at import time there is no server yet. Register from a lifespan task as above, or use `configure=` for setup-time customization. The same applies to the equivalent `plugin.get_mcp_server()` instance method.
 ```
 
 If you register tools after the transport is already serving, connected clients
