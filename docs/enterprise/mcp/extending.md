@@ -49,7 +49,7 @@ built-in tools use to resolve the caller's session from their bearer token.
 To register from application code instead, grab the active server with
 `rxe.get_mcp_server()`. The server is built when the app is **compiled**, so
 this has to run after that — a
-[lifespan task](/docs/utility_methods/lifespan_tasks/) is the natural home,
+[lifespan task](/docs/utility-methods/lifespan-tasks/) is the natural home,
 since it starts once the backend comes up:
 
 ```python
