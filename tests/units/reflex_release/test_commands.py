@@ -12,7 +12,7 @@ from reflex_release import commands
 from reflex_release.actions import ReleaseError
 from reflex_release.config import Config, load_config
 
-from .conftest import commit_all, git, write_lockstep
+from .conftest import commit_all, git, set_post_release_workflow, write_lockstep
 
 Outputs = Callable[[], dict[str, str]]
 
@@ -892,31 +892,10 @@ def test_post_release_without_a_configured_workflow_does_nothing(
     assert "no post-release-workflow is configured" in capsys.readouterr().out
 
 
-def with_post_release(repo: Path, workflow: str) -> Config:
-    """Configure a post-release workflow and reload the configuration.
-
-    Args:
-        repo: The repository root.
-        workflow: The workflow to dispatch after each published tag.
-
-    Returns:
-        The reloaded configuration.
-    """
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text(encoding="utf-8").replace(
-            'packages-dir = "packages"',
-            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
-        ),
-        encoding="utf-8",
-    )
-    return load_config(repo)
-
-
 def test_post_release_dispatches_the_workflow_on_the_tag(
     config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    reloaded = with_post_release(repo, "docs_publish.yml")
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
     captured: list[list[str]] = []
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
@@ -943,7 +922,35 @@ def test_post_release_reports_a_failed_dispatch_against_the_published_tag(
     config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The version is already out; the failure has to name what needs redoing."""
-    reloaded = with_post_release(repo, "docs_publish.yml")
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
     monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 1)
     with pytest.raises(ReleaseError, match=r"was published and tagged v1\.2\.3"):
         commands.cmd_post_release(reloaded, "v1.2.3", "mypkg", "1.2.3")
+
+
+@pytest.mark.parametrize(
+    ("tag", "package", "version"),
+    [("", "mypkg", "1.2.3"), ("v1.2.3", "", "1.2.3"), ("v1.2.3", "mypkg", "")],
+)
+def test_post_release_refuses_to_dispatch_empty_facts(
+    config: Config,
+    repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tag: str,
+    package: str,
+    version: str,
+) -> None:
+    """An unset env var would otherwise dispatch, green, telling it nothing."""
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 0)
+    with pytest.raises(ReleaseError, match="post-release dispatch has no"):
+        commands.cmd_post_release(reloaded, tag, package, version)
+
+
+def test_post_release_rejects_an_unknown_package(
+    config: Config, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 0)
+    with pytest.raises(ReleaseError, match="unknown package"):
+        commands.cmd_post_release(reloaded, "v1.2.3", "ghost", "1.2.3")

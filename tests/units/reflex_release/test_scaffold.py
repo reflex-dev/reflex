@@ -9,14 +9,16 @@ import pytest
 import yaml
 from reflex_release.actions import ReleaseError
 from reflex_release.commands import _split_selection
-from reflex_release.config import Config, load_config
+from reflex_release.config import POST_RELEASE_INPUTS, Config, load_config
 from reflex_release.scaffold import (
     CORE_WORKFLOWS,
+    GENERATED_WORKFLOWS,
     INTERNAL_WORKFLOW,
     MAX_DISPATCH_CHECKBOXES,
     WORKFLOW_DIR,
     default_cli_command,
     dispatch_inputs,
+    generated_workflow_names,
     init,
     managed_workflows,
     render,
@@ -26,7 +28,7 @@ from reflex_release.scaffold import (
 )
 from reflex_release.versions import ACTIONS
 
-from .conftest import write_lockstep
+from .conftest import set_post_release_workflow, write_lockstep
 
 
 def test_render_substitutes_every_placeholder(config: Config) -> None:
@@ -590,27 +592,6 @@ def test_init_keeps_existing_towncrier_configuration(tmp_path: Path) -> None:
     assert 'directory = "changes"' in text
 
 
-def with_post_release(repo: Path, workflow: str) -> Config:
-    """Configure a post-release workflow and reload the configuration.
-
-    Args:
-        repo: The repository root.
-        workflow: The workflow to dispatch after each published tag.
-
-    Returns:
-        The reloaded configuration.
-    """
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text(encoding="utf-8").replace(
-            'packages-dir = "packages"',
-            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
-        ),
-        encoding="utf-8",
-    )
-    return load_config(repo)
-
-
 def test_publish_workflow_omits_the_post_release_step_by_default(
     config: Config,
 ) -> None:
@@ -621,7 +602,7 @@ def test_publish_workflow_omits_the_post_release_step_by_default(
 
 
 def test_publish_workflow_dispatches_the_post_release_workflow(repo: Path) -> None:
-    reloaded = with_post_release(repo, "docs_publish.yml")
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
     job = yaml.safe_load(render("publish.yml", reloaded))["jobs"]["tag-and-release"]
     step = job["steps"][-1]
     assert step["name"] == "Trigger the post-release workflow"
@@ -639,8 +620,36 @@ def test_publish_workflow_dispatches_the_post_release_workflow(repo: Path) -> No
         )
 
 
-def test_sync_rejects_a_generated_post_release_workflow(repo: Path) -> None:
+@pytest.mark.parametrize(
+    "workflow",
+    [
+        # A workflow this repository gets, by file name...
+        "release_from_changelog.yml",
+        # ...and by the display name gh resolves it from just as well.
+        "Release from changelog",
+        # One it would only get if it declared internal packages: sync deletes
+        # the file when it does not, so naming it leaves no receiver at all.
+        "auto_release_internal.yml",
+        "Auto-release internal packages",
+    ],
+)
+def test_sync_rejects_a_generated_post_release_workflow(
+    config: Config, repo: Path, workflow: str
+) -> None:
     """Handing a published tag back to the release pipeline is not a hook."""
-    reloaded = with_post_release(repo, "release_from_changelog.yml")
-    with pytest.raises(ReleaseError, match="a workflow this tool generates"):
+    assert INTERNAL_WORKFLOW not in managed_workflows(config)
+    reloaded = set_post_release_workflow(repo, workflow)
+    with pytest.raises(ReleaseError, match="names a workflow this tool generates"):
         sync(reloaded)
+
+
+def test_generated_workflow_names_cover_file_and_display_names() -> None:
+    names = generated_workflow_names()
+    assert set(GENERATED_WORKFLOWS) <= names
+    assert {"Publish to PyPI", "Dispatch release"} <= names
+
+
+def test_post_release_step_names_the_dispatch_contract(repo: Path) -> None:
+    """The generated comment and the dispatch payload come from one list."""
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    assert f"# {', '.join(POST_RELEASE_INPUTS)}." in render("publish.yml", reloaded)

@@ -550,9 +550,15 @@ on:
 ```
 
 All three inputs are required: GitHub rejects a dispatch that passes inputs the
-workflow does not declare. The workflow itself must exist on the default branch
-(GitHub's rule for `workflow_dispatch`) and be one of yours — naming a generated
-workflow is rejected by `sync`.
+workflow does not declare, and a dispatch with *empty* ones is accepted, so
+`post-release` refuses to run without all three rather than telling your
+workflow nothing.
+
+The workflow must exist on the default branch (GitHub's rule for
+`workflow_dispatch`) and be one of yours. `sync` rejects any name a generated
+workflow answers to — its file name *or* its display name, since `gh workflow
+run` resolves either, and including the ones your repository does not currently
+get, like `auto_release_internal.yml`.
 
 Adding or removing the setting changes `publish.yml` (the dispatch step) and the
 `actions: write` grant it needs in `publish.yml`, `release_from_changelog.yml`

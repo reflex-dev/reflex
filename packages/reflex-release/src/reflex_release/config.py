@@ -23,6 +23,16 @@ else:
 
 TOOL_TABLE = "reflex-release"
 
+#: The setting naming the workflow to dispatch after each published tag.
+POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
+
+#: The ``workflow_dispatch`` inputs that workflow is dispatched with, in the
+#: order they are passed. This is the contract a consumer repository writes its
+#: post-release workflow against, so the payload built by ``post-release``, the
+#: step scaffolded into ``publish.yml`` and the documentation all name it from
+#: here rather than repeating the list.
+POST_RELEASE_INPUTS = ("tag", "package", "version")
+
 _KNOWN_KEYS = frozenset({
     "allow-self-review",
     "cli-command",
@@ -40,7 +50,7 @@ _KNOWN_KEYS = frozenset({
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
-    "post-release-workflow",
+    POST_RELEASE_WORKFLOW_KEY,
     "lockstep",
 })
 
@@ -667,7 +677,7 @@ def load_config(root: Path) -> Config:
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
         # The documented opt-out is leaving the key out; an empty string is the
         # same thing rather than a workflow named "".
-        post_release_workflow=_string(table, "post-release-workflow", "").strip()
+        post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
         or None,
     )
 
