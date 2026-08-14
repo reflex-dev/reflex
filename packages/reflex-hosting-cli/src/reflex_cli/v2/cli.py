@@ -203,6 +203,35 @@ def _restore_provider_on_failure(
         raise
 
 
+@contextlib.contextmanager
+def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[None]:
+    """Report instance bounds that stuck when the deploy they were for failed.
+
+    Bounds are app state, not deployment state: there is no deployment-scoped
+    rollback to undo them, and the CLI has no way to read what they were before
+    to restore them. So when the submit they were applied for does not produce a
+    deployment -- rejected, raised, or interrupted -- say so, rather than let the
+    app's next deployment pick them up unannounced.
+
+    Args:
+        app_name: The name of the app whose bounds were changed.
+        applied: Whether bounds were actually applied; a no-op when False.
+
+    Yields:
+        None.
+
+    """
+    try:
+        yield
+    except BaseException:
+        if applied:
+            console.warn(
+                f"The new instance bounds were applied to '{app_name}' and will "
+                "be used by its next deployment, even though this deploy failed."
+            )
+        raise
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -652,30 +681,24 @@ def deploy(
                 console.error(bounds_error)
                 raise click.exceptions.Exit(1)
 
-        result = hosting.create_deployment(
-            app_id=app.get("id"),
-            app_name=app_name,
-            project_id=project_id,
-            regions=regions,
-            zip_dir=Path(temporary_dir_path),
-            hostname=extract_domain(host_url) if hostname else None,
-            vmtype=vmtype,
-            secrets=processed_envs,
-            client=authenticated_client,
-            packages=packages,
-            strategy=strategy,
-            description=deployment_description,
-        )
-        if "failed" in result:
-            console.error(result)
-            if bounds_applied:
-                # The bounds stuck even though the deployment did not; say so
-                # rather than let the next deploy pick them up unannounced.
-                console.warn(
-                    "The new instance bounds were applied to "
-                    f"'{app['name']}' and will be used by its next deployment."
-                )
-            raise click.exceptions.Exit(1)
+        with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
+            result = hosting.create_deployment(
+                app_id=app.get("id"),
+                app_name=app_name,
+                project_id=project_id,
+                regions=regions,
+                zip_dir=Path(temporary_dir_path),
+                hostname=extract_domain(host_url) if hostname else None,
+                vmtype=vmtype,
+                secrets=processed_envs,
+                client=authenticated_client,
+                packages=packages,
+                strategy=strategy,
+                description=deployment_description,
+            )
+            if "failed" in result:
+                console.error(result)
+                raise click.exceptions.Exit(1)
     hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
     console.print(
         f"deployment progress can now be viewed on the website: {hosting_ui_url}"
