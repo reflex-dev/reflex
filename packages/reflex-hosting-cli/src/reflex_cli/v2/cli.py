@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import tempfile
+import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -671,43 +672,66 @@ def deploy(
         # to (and, for a non-zero minimum, what it costs to run).
         bounds_applied = min_instances is not None or max_instances is not None
         if bounds_applied:
-            try:
-                bounds_error = hosting.set_instance_bounds(
-                    app_id=app["id"],
-                    min_instances=min_instances,
-                    max_instances=max_instances,
-                    client=authenticated_client,
-                )
-            except BaseException:
-                # A dropped connection says nothing about whether the server
-                # applied the write, and the bounds are billable state, so hedge
-                # rather than report either outcome as fact.
-                console.warn(
-                    f"Lost contact while setting the instance bounds of "
-                    f"'{app['name']}'; they may or may not have been applied. "
-                    "Check the app in the Reflex Cloud dashboard before relying "
-                    "on its scaling."
-                )
-                raise
+            # "Being scaled" is a short-lived refusal — usually the caller's
+            # own previous action still rolling out — so wait it out instead
+            # of failing a deploy the user will immediately rerun.
+            for attempt in range(8):
+                try:
+                    bounds_error = hosting.set_instance_bounds(
+                        app_id=app["id"],
+                        min_instances=min_instances,
+                        max_instances=max_instances,
+                        client=authenticated_client,
+                    )
+                except BaseException:
+                    # A dropped connection says nothing about whether the server
+                    # applied the write, and the bounds are billable state, so hedge
+                    # rather than report either outcome as fact.
+                    console.warn(
+                        f"Lost contact while setting the instance bounds of "
+                        f"'{app['name']}'; they may or may not have been applied. "
+                        "Check the app in the Reflex Cloud dashboard before relying "
+                        "on its scaling."
+                    )
+                    raise
+                if bounds_error and "being scaled" in bounds_error and attempt < 7:
+                    console.info(
+                        "The app is finishing a previous scale; retrying the "
+                        f"instance bounds in 15s ({attempt + 1}/8)."
+                    )
+                    time.sleep(15)
+                    continue
+                break
             if bounds_error:
                 console.error(bounds_error)
                 raise click.exceptions.Exit(1)
 
         with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
-            result = hosting.create_deployment(
-                app_id=app.get("id"),
-                app_name=app_name,
-                project_id=project_id,
-                regions=regions,
-                zip_dir=Path(temporary_dir_path),
-                hostname=extract_domain(host_url) if hostname else None,
-                vmtype=vmtype,
-                secrets=processed_envs,
-                client=authenticated_client,
-                packages=packages,
-                strategy=strategy,
-                description=deployment_description,
-            )
+            # The bounds call above re-rolls a running app immediately, so the
+            # submit right behind it can meet the same short-lived refusal.
+            for attempt in range(12):
+                result = hosting.create_deployment(
+                    app_id=app.get("id"),
+                    app_name=app_name,
+                    project_id=project_id,
+                    regions=regions,
+                    zip_dir=Path(temporary_dir_path),
+                    hostname=extract_domain(host_url) if hostname else None,
+                    vmtype=vmtype,
+                    secrets=processed_envs,
+                    client=authenticated_client,
+                    packages=packages,
+                    strategy=strategy,
+                    description=deployment_description,
+                )
+                if "being scaled" in result and attempt < 11:
+                    console.info(
+                        "The app is finishing a scale; retrying the deploy "
+                        f"in 15s ({attempt + 1}/12)."
+                    )
+                    time.sleep(15)
+                    continue
+                break
             if "failed" in result:
                 console.error(result)
                 raise click.exceptions.Exit(1)
