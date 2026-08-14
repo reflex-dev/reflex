@@ -489,7 +489,7 @@ class EventHandler(EventActionsMixin):
 
     @property
     def state_full_name(self) -> str:
-        """Get the full name of the state class this event handler is attached to.
+        """The full name of the state class this event handler is attached to.
 
         Returns:
             The full name of the state class this event handler is attached to.
@@ -516,7 +516,7 @@ class EventHandler(EventActionsMixin):
 
     @property
     def _parameters(self) -> Mapping[str, inspect.Parameter]:
-        """Get the parameters of the function.
+        """The parameters of the function.
 
         Returns:
             The parameters of the function.
@@ -3093,7 +3093,7 @@ class EventNamespace:
 
     @property
     def BaseState(self) -> "type[BaseState]":  # noqa: N802
-        """Get the BaseState class.
+        """The BaseState class.
 
         A reference to BaseState is needed for doc generation when resolving
         type hints, so add it to the namespace late to avoid circular import

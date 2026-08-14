@@ -21,7 +21,7 @@ from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
 if TYPE_CHECKING:
-    from reflex.event import Event, EventHandler, EventSpec
+    from reflex.event import Event, EventHandler
     from reflex.state import BaseState
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
@@ -191,7 +191,7 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
 
 
 async def chain_updates(
-    events: EventSpec | list[EventSpec] | None,
+    events: Any,
     handler_name: str,
     root_state: BaseState | None = None,
 ) -> None:
@@ -201,7 +201,9 @@ async def chain_updates(
     to be queued against the current EventContext.
 
     Args:
-        events: The events to queue with the update.
+        events: Whatever the handler yielded; `_check_valid_yield` raises TypeError
+            for anything that is not an Event, EventHandler, EventSpec, a sequence
+            of those, or None.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
     """

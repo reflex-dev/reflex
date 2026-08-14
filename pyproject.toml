@@ -188,6 +188,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Background event handlers hold `async with self` across `yield` by design.
+  "ASYNC119",
   "BLE",
   "C901",
   "COM",
@@ -213,6 +215,11 @@ lint.ignore = [
   "PYI",
   "RUF012",
   "RUF067",
+  # State managers deliberately skip write-back when the `with` body raises.
+  "RUF075",
+  # `noqa` comments stay readable to non-ruff tooling and to older ruff versions.
+  "RUF105",
+  "RUF201",
   "S",
   "SLF",
   "SLOT",

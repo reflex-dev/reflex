@@ -9,7 +9,7 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants
 from reflex_base.components.component import (
@@ -389,9 +389,13 @@ def _compile_root_stylesheet(
                 from sass import compile as sass_compile
 
                 target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
+                    # libsass is untyped; compiling from a filename returns the CSS.
+                    data=cast(
+                        "str",
+                        sass_compile(
+                            filename=str(stylesheet),
+                            output_style="compressed",
+                        ),
                     ),
                     encoding="utf8",
                 )

@@ -76,7 +76,7 @@ class StateManagerDisk(StateManager):
 
     @functools.cached_property
     def states_directory(self) -> Path:
-        """Get the states directory.
+        """The states directory.
 
         Returns:
             The states directory.

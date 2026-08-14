@@ -34,7 +34,7 @@ class StateManager(ABC):
 
     @property
     def state(self):
-        """Get the state class.
+        """The state class.
 
         Deprecated: the state manager no longer holds a reference to the state class.
 
