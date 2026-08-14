@@ -385,3 +385,27 @@ def test_upgrade_dev_pins_rolls_back_when_the_lock_cannot_follow(
     # A re-run therefore still has the pin to lift, rather than finding nothing
     # to do and leaving the stale lock file to be committed.
     assert pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+
+
+def test_upgrade_dev_pins_rolls_back_an_earlier_package(repo: Path) -> None:
+    """The rewrites run package by package; one that fails must strand none."""
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    git(repo, "tag", "v1.0")
+    # The sibling's own pin resolves, but names the same requirement twice, so
+    # rewriting it is ambiguous — and it is rewritten after the root package's.
+    sub = repo / "packages" / "widget-core" / "pyproject.toml"
+    sub.write_text(
+        sub.read_text(encoding="utf-8")
+        + 'dependencies = ["mypkg >= 1.0.dev1"]\n'
+        + '[project.optional-dependencies]\nextra = ["mypkg >= 1.0.dev1"]\n',
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    root = repo / "pyproject.toml"
+    before = root.read_text(encoding="utf-8")
+
+    with pytest.raises(ReleaseError, match="expected exactly one quoted"):
+        upgrade_dev_pins(reloaded, ["mypkg", "widget-core"], allow_prereleases=False)
+
+    assert root.read_text(encoding="utf-8") == before
