@@ -1,0 +1,1 @@
+`deploy()` accepts `min_instances` and `max_instances`, which are applied to the app before the deployment is submitted so it picks the new autoscaling bounds up. Only the bounds explicitly passed are sent, so apps keep their platform defaults otherwise.
