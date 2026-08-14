@@ -68,6 +68,7 @@ on:
           - reflex-components-sonner
           - reflex-docgen
           - reflex-hosting-cli
+          - reflex-release
           - reflex-site-shared
       version:
         description: "Target version (e.g. 1.2.3 or 1.2.3a1, no v prefix). Empty auto patch-bumps the newest tag — only for packages without a CHANGELOG.md."

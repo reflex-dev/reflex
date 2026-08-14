@@ -63,6 +63,7 @@ members = [
     "reflex-docs-bundle",
     "reflex-hosting-cli",
     "reflex-integrations-docs",
+    "reflex-release",
     "reflex-site-shared",
 ]
 
@@ -3673,7 +3674,9 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "reflex-docgen" },
+    { name = "reflex-release" },
     { name = "reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -3752,7 +3755,9 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
+    { name = "reflex-release", editable = "packages/reflex-release" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4119,6 +4124,24 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/6f/fd/e80f57f0f25612e2b2f72908b8ff639d5ee32d472f6e68385e982fcafa06/reflex_pyplot-0.2.1.tar.gz", hash = "sha256:965d035fbc13f7baef9f173c0ee120fe1192ba2e5fee66be7726174c0ecb4004", size = 72924, upload-time = "2025-07-09T18:37:11.516Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/1c/6afe1c37faa920b3b4bed3407dabbbc8d2f765eff62fc9d9de415f4e9752/reflex_pyplot-0.2.1-py3-none-any.whl", hash = "sha256:69e71d6ae063ada0b5fe073480d4c32b9271c1dd48e2263361f24a7cb7b183f5", size = 1827, upload-time = "2025-07-09T18:37:10.317Z" },
+]
+
+[[package]]
+name = "reflex-release"
+source = { editable = "packages/reflex-release" }
+dependencies = [
+    { name = "packaging" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "towncrier" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "packaging", specifier = ">=24.2,<27" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.1" },
+    { name = "towncrier", specifier = ">=24.8.0,<26" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
 ]
 
 [[package]]
