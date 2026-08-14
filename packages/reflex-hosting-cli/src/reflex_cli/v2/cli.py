@@ -671,12 +671,24 @@ def deploy(
         # to (and, for a non-zero minimum, what it costs to run).
         bounds_applied = min_instances is not None or max_instances is not None
         if bounds_applied:
-            bounds_error = hosting.set_instance_bounds(
-                app_id=app["id"],
-                min_instances=min_instances,
-                max_instances=max_instances,
-                client=authenticated_client,
-            )
+            try:
+                bounds_error = hosting.set_instance_bounds(
+                    app_id=app["id"],
+                    min_instances=min_instances,
+                    max_instances=max_instances,
+                    client=authenticated_client,
+                )
+            except BaseException:
+                # A dropped connection says nothing about whether the server
+                # applied the write, and the bounds are billable state, so hedge
+                # rather than report either outcome as fact.
+                console.warn(
+                    f"Lost contact while setting the instance bounds of "
+                    f"'{app['name']}'; they may or may not have been applied. "
+                    "Check the app in the Reflex Cloud dashboard before relying "
+                    "on its scaling."
+                )
+                raise
             if bounds_error:
                 console.error(bounds_error)
                 raise click.exceptions.Exit(1)

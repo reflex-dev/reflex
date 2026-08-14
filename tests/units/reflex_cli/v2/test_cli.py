@@ -1196,6 +1196,32 @@ def test_deploy_warns_when_bounds_outlive_a_failed_submit(
     )
 
 
+def test_deploy_hedges_when_the_bounds_response_is_lost(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """A dropped response leaves the outcome unknown, so neither is asserted."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.set_instance_bounds.side_effect = httpx.ConnectError("no route")
+    console_warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(httpx.ConnectError):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=3,
+        )
+
+    warning = next(
+        call.args[0]
+        for call in console_warn.call_args_list
+        if "instance bounds" in call.args[0]
+    )
+    assert "may or may not have been applied" in warning
+    recorder.create_deployment.assert_not_called()
+
+
 def test_deploy_does_not_warn_about_bounds_it_never_applied(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
