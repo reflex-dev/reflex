@@ -203,6 +203,35 @@ def _restore_provider_on_failure(
         raise
 
 
+@contextlib.contextmanager
+def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[None]:
+    """Report instance bounds that stuck when the deploy they were for failed.
+
+    Bounds are app state, not deployment state: there is no deployment-scoped
+    rollback to undo them, and the CLI has no way to read what they were before
+    to restore them. So when the submit they were applied for does not produce a
+    deployment -- rejected, raised, or interrupted -- say so, rather than let the
+    app's next deployment pick them up unannounced.
+
+    Args:
+        app_name: The name of the app whose bounds were changed.
+        applied: Whether bounds were actually applied; a no-op when False.
+
+    Yields:
+        None.
+
+    """
+    try:
+        yield
+    except BaseException:
+        if applied:
+            console.warn(
+                f"The new instance bounds were applied to '{app_name}' and will "
+                "be used by its next deployment, even though this deploy failed."
+            )
+        raise
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -223,6 +252,10 @@ def deploy(
     app_id: str | None = None,
     provider: str | None = None,
     deployment_description: str | None = None,
+    # Appended rather than grouped next to `vmtype` so existing positional
+    # callers keep binding to the same parameters.
+    min_instances: int | None = None,
+    max_instances: int | None = None,
     **kwargs,
 ):
     """Deploy the app to the Reflex hosting service.
@@ -249,6 +282,10 @@ def deploy(
             interactive mode.
         deployment_description: An optional changelog note recorded on this
             deployment and shown in ``reflex cloud apps history``.
+        min_instances: The minimum number of instances to keep running. Left at
+            the app's current value when omitted.
+        max_instances: The maximum number of instances to scale out to. Left at
+            the app's current value when omitted.
         **kwargs: Additional keyword arguments.
 
     Raises:
@@ -498,16 +535,15 @@ def deploy(
         else None
     )
     if effective_provider == hosting.PROVIDER_GCP:
-        # GCP Cloud Run ignores Reflex Cloud regions/VM types — the region and
-        # sizing come from the org's connected GCP account. Drop them so
-        # validation and the deploy don't send incompatible values.
-        if regions or vmtype:
+        # GCP Cloud Run takes its region from the org's connected GCP account,
+        # so a requested region is dropped. VM types are honored: the server
+        # maps them onto Cloud Run CPU/memory limits.
+        if regions:
             console.info(
-                "Ignoring --region/--vmtype for the Google Cloud target "
-                "(region and sizing come from the connected GCP account)."
+                "Ignoring --region for the Google Cloud target "
+                "(the region comes from the connected GCP account)."
             )
         regions = None
-        vmtype = None
 
     with _restore_provider_on_failure(app, switched_from, authenticated_client):
         urls = hosting.get_hostname(
@@ -628,23 +664,53 @@ def deploy(
                 shutil.rmtree(temporary_dir_path)
             raise click.exceptions.Exit(1) from ex
 
-        result = hosting.create_deployment(
-            app_id=app.get("id"),
-            app_name=app_name,
-            project_id=project_id,
-            regions=regions,
-            zip_dir=Path(temporary_dir_path),
-            hostname=extract_domain(host_url) if hostname else None,
-            vmtype=vmtype,
-            secrets=processed_envs,
-            client=authenticated_client,
-            packages=packages,
-            strategy=strategy,
-            description=deployment_description,
-        )
-        if "failed" in result:
-            console.error(result)
-            raise click.exceptions.Exit(1)
+        # Instance bounds are app state that the deployment reads when it is
+        # created, so they have to land before the submit below. Keep the two
+        # calls adjacent: a bound applied earlier would outlive an export that
+        # then fails, silently changing what the app's *next* deployment scales
+        # to (and, for a non-zero minimum, what it costs to run).
+        bounds_applied = min_instances is not None or max_instances is not None
+        if bounds_applied:
+            try:
+                bounds_error = hosting.set_instance_bounds(
+                    app_id=app["id"],
+                    min_instances=min_instances,
+                    max_instances=max_instances,
+                    client=authenticated_client,
+                )
+            except BaseException:
+                # A dropped connection says nothing about whether the server
+                # applied the write, and the bounds are billable state, so hedge
+                # rather than report either outcome as fact.
+                console.warn(
+                    f"Lost contact while setting the instance bounds of "
+                    f"'{app['name']}'; they may or may not have been applied. "
+                    "Check the app in the Reflex Cloud dashboard before relying "
+                    "on its scaling."
+                )
+                raise
+            if bounds_error:
+                console.error(bounds_error)
+                raise click.exceptions.Exit(1)
+
+        with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
+            result = hosting.create_deployment(
+                app_id=app.get("id"),
+                app_name=app_name,
+                project_id=project_id,
+                regions=regions,
+                zip_dir=Path(temporary_dir_path),
+                hostname=extract_domain(host_url) if hostname else None,
+                vmtype=vmtype,
+                secrets=processed_envs,
+                client=authenticated_client,
+                packages=packages,
+                strategy=strategy,
+                description=deployment_description,
+            )
+            if "failed" in result:
+                console.error(result)
+                raise click.exceptions.Exit(1)
     hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
     console.print(
         f"deployment progress can now be viewed on the website: {hosting_ui_url}"

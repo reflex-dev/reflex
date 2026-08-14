@@ -81,9 +81,10 @@ def mock_export_fn():
 
 @pytest.fixture
 def mock_export_import_error_fn():
-    def _mock_export_fn(
-        arg1: str, arg2: str, arg3: str, arg4: bool, arg5: bool, arg6: bool
-    ) -> None:
+    # Takes *args so it raises ImportError under both export_fn arities: reflex
+    # > 0.7.6 passes 7 arguments, and a fixed 6-argument signature would raise
+    # TypeError there instead, never exercising the ImportError path.
+    def _mock_export_fn(*args: str | bool) -> None:
         raise ImportError
 
     return MagicMock(side_effect=_mock_export_fn)
@@ -1044,6 +1045,229 @@ def test_deploy_empty_project_in_config_is_not_forwarded_to_create_app(
     get_project.assert_not_called()
     create_app.assert_called_once()
     assert create_app.call_args.kwargs.get("project_id") is None
+
+
+def _deploy_call_recorder(mocker: MockerFixture) -> MagicMock:
+    """Set up a succeeding non-interactive deploy on an existing app.
+
+    Returns:
+        A parent mock recording ``set_instance_bounds`` and ``create_deployment``
+        in call order.
+
+    """
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    recorder = MagicMock()
+    recorder.attach_mock(
+        mocker.patch("reflex_cli.utils.hosting.set_instance_bounds", return_value=None),
+        "set_instance_bounds",
+    )
+    recorder.attach_mock(
+        mocker.patch(
+            "reflex_cli.utils.hosting.create_deployment",
+            return_value={"deployment_id": "fake-deployment-id"},
+        ),
+        "create_deployment",
+    )
+    return recorder
+
+
+def test_deploy_forwards_vmtype_to_create_deployment(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """--vmtype reaches the deployment submit unchanged, with no CLI validation."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        vmtype="c2m2",
+    )
+
+    assert recorder.create_deployment.call_args.kwargs["vmtype"] == "c2m2"
+
+
+@pytest.mark.parametrize(
+    ("min_instances", "max_instances"),
+    [(1, 4), (2, None), (None, 8)],
+)
+def test_deploy_sets_instance_bounds_before_submitting(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    min_instances: int | None,
+    max_instances: int | None,
+):
+    """Bounds are applied to the app before the deployment that reads them."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        min_instances=min_instances,
+        max_instances=max_instances,
+    )
+
+    assert [call[0] for call in recorder.mock_calls] == [
+        "set_instance_bounds",
+        "create_deployment",
+    ]
+    bounds_kwargs = recorder.set_instance_bounds.call_args.kwargs
+    assert bounds_kwargs["app_id"] == "fake-id"
+    assert bounds_kwargs["min_instances"] == min_instances
+    assert bounds_kwargs["max_instances"] == max_instances
+
+
+def test_deploy_without_instance_bounds_flags_skips_the_call(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """An app keeps its platform defaults when neither bound is passed."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    recorder.set_instance_bounds.assert_not_called()
+    recorder.create_deployment.assert_called_once()
+
+
+def test_deploy_failed_export_does_not_apply_instance_bounds(
+    mocker: MockerFixture,
+    mock_export_import_error_fn: Callable[[str, str, str, bool, bool, bool], None],
+):
+    """A build that never produces a deployment leaves the bounds untouched."""
+    recorder = _deploy_call_recorder(mocker)
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_import_error_fn,
+            interactive=False,
+            min_instances=3,
+            max_instances=9,
+        )
+
+    recorder.set_instance_bounds.assert_not_called()
+    recorder.create_deployment.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("submit_result", "expected_exc"),
+    [
+        # The submit is rejected and reports the failure as a return value...
+        ({"return_value": "deployment failed: too large"}, click.exceptions.Exit),
+        # ...or dies before returning one at all (transport error, interrupt).
+        ({"side_effect": httpx.ConnectError("no route")}, httpx.ConnectError),
+        ({"side_effect": KeyboardInterrupt()}, KeyboardInterrupt),
+    ],
+)
+def test_deploy_warns_when_bounds_outlive_a_failed_submit(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    submit_result: dict[str, object],
+    expected_exc: type[BaseException],
+):
+    """Bounds that stuck without a deployment are called out on every exit path."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.create_deployment.configure_mock(**submit_result)
+    console_warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(expected_exc):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=3,
+        )
+
+    assert any(
+        "even though this deploy failed" in call.args[0]
+        for call in console_warn.call_args_list
+    )
+
+
+def test_deploy_hedges_when_the_bounds_response_is_lost(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """A dropped response leaves the outcome unknown, so neither is asserted."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.set_instance_bounds.side_effect = httpx.ConnectError("no route")
+    console_warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(httpx.ConnectError):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=3,
+        )
+
+    warning = next(
+        call.args[0]
+        for call in console_warn.call_args_list
+        if "instance bounds" in call.args[0]
+    )
+    assert "may or may not have been applied" in warning
+    recorder.create_deployment.assert_not_called()
+
+
+def test_deploy_does_not_warn_about_bounds_it_never_applied(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """A deploy that failed without touching the bounds stays quiet about them."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.create_deployment.return_value = "deployment failed: too large"
+    console_warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    assert not any(
+        "instance bounds" in call.args[0] for call in console_warn.call_args_list
+    )
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "set instance bounds failed: min_instances must be <= max_instances",
+        "set instance bounds failed: platform does not support instance bounds",
+        "set instance bounds failed: a scale operation is already running",
+    ],
+)
+def test_deploy_rejected_instance_bounds_aborts_before_submitting(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    detail: str,
+):
+    """A rejected bound surfaces the server message and stops the deploy."""
+    recorder = _deploy_call_recorder(mocker)
+    recorder.set_instance_bounds.return_value = detail
+    console_error = mocker.patch("reflex_cli.utils.console.error")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=5,
+            max_instances=1,
+        )
+
+    console_error.assert_called_once_with(detail)
+    recorder.create_deployment.assert_not_called()
 
 
 def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
