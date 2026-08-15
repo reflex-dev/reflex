@@ -5,7 +5,7 @@ import contextlib
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import MISSING
-from typing import TYPE_CHECKING, TypeVar
+from typing import Any, TYPE_CHECKING, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
@@ -125,7 +125,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, object, bool, object]],
+                dict[str, tuple[bool, Any, bool, Any]],
                 bool,
             ]
         ] = []
@@ -167,7 +167,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, object, bool, object]],
+                dict[str, tuple[bool, Any, bool, Any]],
             ]
         ] = []
         if not full_delta:
@@ -246,10 +246,13 @@ async def _patch_state(
                     computed_vars_refreshed.update(
                         name
                         for name, computed_var in state.computed_vars.items()
-                        if computed_var_snapshots[name]
+                        if (
+                            computed_var_snapshots[name][0],
+                            computed_var_snapshots[name][2],
+                            computed_var_snapshots[name][3],
+                        )
                         != (
                             hasattr(state, computed_var._cache_attr),
-                            getattr(state, computed_var._cache_attr, None),
                             hasattr(state, computed_var._last_updated_attr),
                             getattr(state, computed_var._last_updated_attr, None),
                         )
