@@ -1165,6 +1165,7 @@ async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
         hasattr(linked_state, last_updated_attr),
         getattr(linked_state, last_updated_attr, None),
     )
+    was_touched_before = linked_state._was_touched
 
     private_tree._clean()
     resolve_delta = private_tree._get_resolved_delta
@@ -1182,6 +1183,7 @@ async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
             assert private_tree.substates[shared_state_name] is linked_state
 
     assert linked_state.dirty_vars == set()
+    assert linked_state._was_touched is was_touched_before
     assert (
         hasattr(linked_state, cache_attr),
         getattr(linked_state, cache_attr, None),
