@@ -126,6 +126,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 dict[str, tuple[bool, object, bool, object]],
+                bool,
             ]
         ] = []
         if not full_delta:
@@ -152,6 +153,7 @@ async def _patch_state(
                     set(state.dirty_substates),
                     computed_vars_to_preserve,
                     computed_var_snapshots,
+                    state._was_touched,
                 ))
                 states_to_snapshot.extend(state.substates.values())
         root_state.dirty_vars.update(ROUTER_VARS)
@@ -175,6 +177,7 @@ async def _patch_state(
                 dirty_substates,
                 computed_vars_to_preserve,
                 computed_var_snapshots,
+                _,
             ) in dirty_state_snapshots:
                 router_dirty_snapshots.append((
                     state,
@@ -198,9 +201,11 @@ async def _patch_state(
                     dirty_substates,
                     _,
                     computed_var_snapshots,
+                    was_touched,
                 ) in dirty_state_snapshots:
                     state.dirty_vars = dirty_vars
                     state.dirty_substates = dirty_substates
+                    state._was_touched = was_touched
                     for name, computed_var in state.computed_vars.items():
                         (
                             had_cache,
