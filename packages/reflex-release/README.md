@@ -132,6 +132,10 @@ internal-packages = []
 # Packages excluded from the pull-request news-fragment requirement.
 changelog-exempt-packages = []
 
+# A workflow of your own to run after every published tag. Omit it (or leave it
+# empty) to dispatch nothing. See "Post-release workflow".
+post-release-workflow = "docs_publish.yml"
+
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
 # checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
@@ -344,7 +348,7 @@ can undermine it.
 | `build` / `custom-build-*` | `contents: read`. No OIDC, no secrets. | Your repository's code: the build backend, its hooks, and any [custom build workflow](#custom-builds). |
 | `collect` | `contents: read`. No OIDC, no secrets. | Artifact verification and `post_build.sh`. |
 | `publish` | `id-token: write` — the only job that can mint a PyPI token. | Nothing from your repository. Downloads the artifact, checks it, runs `uv publish`. |
-| `tag-and-release` | `contents: write`. | `git` and `gh`, after a successful upload. |
+| `tag-and-release` | `contents: write`, plus `actions: write` when a [post-release workflow](#post-release-workflow) is configured. | `git` and `gh`, after a successful upload. |
 | `materialize` (dispatch) | `contents`/`pull-requests`/`actions: write`. | towncrier and `git`/`gh`; writes changelogs, opens the PR. |
 
 The important split is between the build rows and `publish`: **arbitrary
@@ -690,6 +694,54 @@ checkout it runs in has full history and tags, but — unlike the build job — 
 release tag is not applied locally, since `collect` builds nothing. Use
 `$VERSION` rather than `git describe` to identify the release.
 
+## Post-release workflow
+
+Set `post-release-workflow` to a workflow of your own and `publish.yml`
+dispatches it once per published tag, after the upload, the tag and the GitHub
+release all exist — the hook for whatever has to follow a release: publishing
+docs, refreshing a container image, notifying a downstream repository.
+
+It runs **on the tag**, so it sees exactly the tree that was published, and it
+is handed the three facts about the release:
+
+```yaml
+# .github/workflows/docs_publish.yml
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The published tag"
+        required: true
+        type: string
+      package:
+        description: "The published package"
+        required: true
+        type: string
+      version:
+        description: "The published version"
+        required: true
+        type: string
+```
+
+All three inputs are required: GitHub rejects a dispatch that passes inputs the
+workflow does not declare, and a dispatch with *empty* ones is accepted, so
+`post-release` refuses to run without all three rather than telling your
+workflow nothing.
+
+The workflow must exist on the default branch (GitHub's rule for
+`workflow_dispatch`) and be one of yours. `sync` rejects any name a generated
+workflow answers to — its file name *or* its display name, since `gh workflow
+run` resolves either, and including the ones your repository does not currently
+get, like `auto_release_internal.yml`.
+
+Adding or removing the setting changes `publish.yml` (the dispatch step) and the
+`actions: write` grant it needs in `publish.yml`, `release_from_changelog.yml`
+and `auto_release_internal.yml`, so re-run `reflex-release sync`.
+
+The dispatch is the last thing a release does, so a failure there never leaves a
+half-published version — but it does fail the run, loudly, naming the tag whose
+follow-up did not start.
+
 ## Keeping the workflows current
 
 Bump `cli-command` in `pyproject.toml`, run `reflex-release sync`, commit the
@@ -721,6 +773,7 @@ a flag for running the same command by hand.
 | `check-dev-pins` | Reject `*.dev` dependency pins in published metadata. |
 | `extract-notes` | Write a version's changelog section for the release body. |
 | `push-tag` / `create-release` | Tag and publish the GitHub release. |
+| `post-release` | Dispatch the configured post-release workflow for a tag. |
 | `check-headings` | Reject hand-written changelog version headings (PR CI). |
 | `changelog-check` | Require news fragments for changed packages (PR CI). |
 | `detect-internal` | List internal packages touched by a push. |

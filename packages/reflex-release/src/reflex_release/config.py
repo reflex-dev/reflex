@@ -24,6 +24,16 @@ else:
 
 TOOL_TABLE = "reflex-release"
 
+#: The setting naming the workflow to dispatch after each published tag.
+POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
+
+#: The ``workflow_dispatch`` inputs that workflow is dispatched with, in the
+#: order they are passed. This is the contract a consumer repository writes its
+#: post-release workflow against, so the payload built by ``post-release``, the
+#: step scaffolded into ``publish.yml`` and the documentation all name it from
+#: here rather than repeating the list.
+POST_RELEASE_INPUTS = ("tag", "package", "version")
+
 _KNOWN_KEYS = frozenset({
     "allow-self-review",
     "cli-command",
@@ -42,6 +52,7 @@ _KNOWN_KEYS = frozenset({
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
+    POST_RELEASE_WORKFLOW_KEY,
     "lockstep",
 })
 
@@ -50,7 +61,7 @@ _KNOWN_LOCKSTEP_KEYS = frozenset({"members", "publish-last", "pin-exact"})
 _KNOWN_CUSTOM_BUILD_KEYS = frozenset({"packages", "workflow", "expect-artifacts"})
 
 _LOCKSTEP_LABEL = f"[[tool.{TOOL_TABLE}.lockstep]]"
-_CUSTOM_BUILD_LABEL = f"[[tool.{TOOL_TABLE}.custom-build]]"
+CUSTOM_BUILD_LABEL = f"[[tool.{TOOL_TABLE}.custom-build]]"
 
 #: A custom build workflow's filename, restricted to what is safe to write as a
 #: bare YAML scalar in the generated ``uses:``.
@@ -151,6 +162,9 @@ class Config:
             instead of from a changelog.
         changelog_exempt_packages: Packages excluded from the pull-request news
             fragment requirement.
+        post_release_workflow: A workflow dispatched once per published tag,
+            after the tag and the GitHub release exist, or None to dispatch
+            nothing.
         lockstep: The lockstep groups.
         custom_build: The repository-supplied build workflows.
     """
@@ -174,6 +188,7 @@ class Config:
     latest_release_package: str | None = None
     internal_packages: tuple[str, ...] = ()
     changelog_exempt_packages: tuple[str, ...] = ()
+    post_release_workflow: str | None = None
     lockstep: tuple[LockstepGroup, ...] = ()
     custom_build: tuple[CustomBuild, ...] = ()
 
@@ -689,19 +704,19 @@ def _load_custom_build(table: dict, config: Config) -> tuple[CustomBuild, ...]:
                 f"unknown key(s) in [[tool.{TOOL_TABLE}.custom-build]]: "
                 f"{', '.join(unknown)}"
             )
-        members = _string_list(entry, "packages", _CUSTOM_BUILD_LABEL)
+        members = _string_list(entry, "packages", CUSTOM_BUILD_LABEL)
         if not members:
             fail(
                 f"a [[tool.{TOOL_TABLE}.custom-build]] entry needs at least one "
                 "package in `packages`"
             )
-        workflow = _string(entry, "workflow", "", _CUSTOM_BUILD_LABEL)
+        workflow = _string(entry, "workflow", "", CUSTOM_BUILD_LABEL)
         # The name is interpolated into the generated workflow's `uses:` as a
         # bare scalar, so it has to be a plain filename and nothing that YAML
         # would read as structure.
         if not _WORKFLOW_FILENAME_RE.fullmatch(workflow):
             fail(
-                f"{_CUSTOM_BUILD_LABEL} workflow must be a bare filename under "
+                f"{CUSTOM_BUILD_LABEL} workflow must be a bare filename under "
                 '.github/workflows made of letters, digits, ".", "_" and "-", '
                 f'e.g. "build_wheels.yml" (got {workflow!r})'
             )
@@ -709,7 +724,7 @@ def _load_custom_build(table: dict, config: Config) -> tuple[CustomBuild, ...]:
             packages=members,
             workflow=workflow,
             expect_artifacts=_string_list(
-                entry, "expect-artifacts", _CUSTOM_BUILD_LABEL
+                entry, "expect-artifacts", CUSTOM_BUILD_LABEL
             ),
         )
         # One job per entry in the generated publish workflow, so two entries
@@ -833,6 +848,10 @@ def load_config(root: Path) -> Config:
         latest_release_package=latest_release_package or None,
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
+        # The documented opt-out is leaving the key out; an empty string is the
+        # same thing rather than a workflow named "".
+        post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
+        or None,
     )
 
     if not config.main_branch:

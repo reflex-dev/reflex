@@ -9,16 +9,18 @@ import pytest
 import yaml
 from reflex_release.actions import ReleaseError
 from reflex_release.commands import _split_selection
-from reflex_release.config import Config, load_config
+from reflex_release.config import POST_RELEASE_INPUTS, Config, load_config
 from reflex_release.scaffold import (
     CORE_WORKFLOWS,
     CUSTOM_BUILD_CONTRACT,
     CUSTOM_BUILD_INPUTS,
+    GENERATED_WORKFLOWS,
     INTERNAL_WORKFLOW,
     MAX_DISPATCH_CHECKBOXES,
     WORKFLOW_DIR,
     default_cli_command,
     dispatch_inputs,
+    generated_workflow_names,
     init,
     managed_workflows,
     render,
@@ -29,7 +31,7 @@ from reflex_release.scaffold import (
 )
 from reflex_release.versions import ACTIONS
 
-from .conftest import write_custom_build, write_lockstep
+from .conftest import set_post_release_workflow, write_custom_build, write_lockstep
 
 
 def test_render_substitutes_every_placeholder(config: Config) -> None:
@@ -843,3 +845,85 @@ def test_collect_keeps_the_git_context_the_hook_used_to_get(config: Config) -> N
     checkout = _job_steps(config, "collect")[0]
     assert checkout["with"]["fetch-tags"] is True
     assert checkout["with"]["fetch-depth"] == 0
+
+
+def test_publish_workflow_omits_the_post_release_step_by_default(
+    config: Config,
+) -> None:
+    """A repository that dispatches nothing gets no dispatch step, or its grant."""
+    job = yaml.safe_load(render("publish.yml", config))["jobs"]["tag-and-release"]
+    assert [step["name"] for step in job["steps"]][-1] == "Create GitHub release"
+    assert job["permissions"] == {"contents": "write", "actions": "read"}
+
+
+def test_publish_workflow_dispatches_the_post_release_workflow(repo: Path) -> None:
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    job = yaml.safe_load(render("publish.yml", reloaded))["jobs"]["tag-and-release"]
+    step = job["steps"][-1]
+    assert step["name"] == "Trigger the post-release workflow"
+    assert step["run"].endswith("post-release")
+    # The tag comes from the job that computed it, which tag-and-release needs.
+    assert step["env"]["TAG"] == "${{ needs.prepare.outputs.tag }}"
+    assert step["env"]["VERSION"] == "${{ needs.prepare.outputs.version }}"
+    assert set(job["needs"]) >= {"prepare"}
+    # Dispatching a workflow needs a write on the actions scope, in the called
+    # workflow and in every caller that bounds its permissions.
+    assert job["permissions"]["actions"] == "write"
+    for name in ("release_from_changelog.yml", "auto_release_internal.yml"):
+        rendered = yaml.safe_load(render(name, reloaded))
+        assert all(
+            job["permissions"]["actions"] == "write"
+            for job in rendered["jobs"].values()
+            if "actions" in job.get("permissions", {})
+        )
+
+
+@pytest.mark.parametrize(
+    "workflow",
+    [
+        # A workflow this repository gets, by file name...
+        "release_from_changelog.yml",
+        # ...and by the display name gh resolves it from just as well.
+        "Release from changelog",
+        # One it would only get if it declared internal packages: sync deletes
+        # the file when it does not, so naming it leaves no receiver at all.
+        "auto_release_internal.yml",
+        "Auto-release internal packages",
+    ],
+)
+def test_sync_rejects_a_generated_post_release_workflow(
+    config: Config, repo: Path, workflow: str
+) -> None:
+    """Handing a published tag back to the release pipeline is not a hook."""
+    assert INTERNAL_WORKFLOW not in managed_workflows(config)
+    reloaded = set_post_release_workflow(repo, workflow)
+    with pytest.raises(ReleaseError, match="names a workflow this tool generates"):
+        sync(reloaded)
+
+
+def test_generated_workflow_names_cover_file_and_display_names() -> None:
+    names = generated_workflow_names()
+    assert set(GENERATED_WORKFLOWS) <= names
+    assert {"Publish to PyPI", "Dispatch release"} <= names
+
+
+def test_post_release_step_names_the_dispatch_contract(repo: Path) -> None:
+    """The generated comment and the dispatch payload come from one list."""
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    assert f"# {', '.join(POST_RELEASE_INPUTS)}." in render("publish.yml", reloaded)
+
+
+def test_a_custom_build_and_a_post_release_workflow_coexist(
+    config: Config, repo: Path
+) -> None:
+    """Both features add optional blocks to the same generated workflow."""
+    write_custom_build(repo)
+    reloaded = set_post_release_workflow(repo, "docs_publish.yml")
+    jobs = yaml.safe_load(render("publish.yml", reloaded))["jobs"]
+    assert "custom-build-build_wheels" in jobs
+    # The dispatch reads the release facts from prepare, the job that computed
+    # them — build no longer carries them, and is skipped for this package.
+    step = jobs["tag-and-release"]["steps"][-1]
+    assert step["name"] == "Trigger the post-release workflow"
+    assert step["env"]["TAG"] == "${{ needs.prepare.outputs.tag }}"
+    assert "prepare" in jobs["tag-and-release"]["needs"]

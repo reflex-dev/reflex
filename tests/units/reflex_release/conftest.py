@@ -75,6 +75,27 @@ def write_lockstep(repo: Path) -> None:
     )
 
 
+def set_post_release_workflow(repo: Path, workflow: str) -> Config:
+    """Configure a post-release workflow and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        workflow: The workflow to dispatch after each published tag.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\npost-release-workflow = "{workflow}"',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
 def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> None:
     """Configure a custom build workflow for the root package.
 

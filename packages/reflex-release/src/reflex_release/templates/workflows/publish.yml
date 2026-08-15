@@ -42,6 +42,8 @@ run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
 # - Optional: a `.github/scripts/publish/post_build.sh` hook runs after the
 #   build with PACKAGE, VERSION, BUILD_DIR and DIST_DIR in the environment —
 #   use it for repository-specific artifact checks.
+# - Optional: post-release-workflow names a workflow this one dispatches on
+#   every published tag, once the release exists.
 
 on:
   workflow_call:
@@ -108,10 +110,12 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: @@CLI@@ prepare-publish
 @@CUSTOM_DEV_PIN_STEP@@
+
   build:
     needs: prepare
     if: >-
-      needs.prepare.outputs.skipped != 'true'@@DEFAULT_BUILD_GUARD@@
+      needs.prepare.outputs.skipped != 'true'
+@@DEFAULT_BUILD_GUARD@@
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -168,6 +172,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
 @@CUSTOM_BUILD_JOBS@@
+
   # Everything that turns "some files exist" into "these exact files are what
   # the reviewer is approving": the metadata check, the repository's own hook,
   # the release notes and the checksum manifest. One code path, whichever job
@@ -356,6 +361,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: @@ACTIONS_PERMISSION@@
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -389,3 +395,4 @@ jobs:
           CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: @@CLI@@ create-release
+@@POST_RELEASE_STEP@@

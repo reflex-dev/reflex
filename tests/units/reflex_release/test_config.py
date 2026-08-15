@@ -534,3 +534,35 @@ def test_lockstep_type_errors_name_their_own_table(config: Config, repo: Path) -
         ReleaseError, match=re.escape("[[tool.reflex-release.lockstep]] members")
     ):
         load_config(repo)
+
+
+def test_post_release_workflow_defaults_to_nothing(config: Config) -> None:
+    assert config.post_release_workflow is None
+
+
+def test_post_release_workflow_is_read_from_the_table(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'post-release-workflow = "docs_publish.yml"\n',
+    )
+    assert load_config(repo).post_release_workflow == "docs_publish.yml"
+
+
+def test_an_empty_post_release_workflow_dispatches_nothing(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'post-release-workflow = ""\n',
+    )
+    assert load_config(repo).post_release_workflow is None
+
+
+def test_post_release_workflow_must_be_a_string(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        "post-release-workflow = true\n",
+    )
+    with pytest.raises(ReleaseError, match="must be a string"):
+        load_config(repo)
