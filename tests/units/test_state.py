@@ -933,21 +933,25 @@ class _LinkedStatePatchShared(_LinkedStatePatchRoot):
 
     counter: int = 0
 
+    @rx.var
+    def root_value(self) -> int:
+        return self.value
+
 
 class _LinkedStatePatchIntervalRoot(BaseState):
     """Root state for testing interval computed refreshes during patching."""
 
     value: int = 0
 
-    @rx.var(interval=60)
-    def interval_value(self) -> int:
-        return self.value
-
 
 class _LinkedStatePatchIntervalShared(_LinkedStatePatchIntervalRoot):
     """Substate used to exercise interval computed refreshes."""
 
     counter: int = 0
+
+    @rx.var(interval=60)
+    def interval_value(self) -> int:
+        return self.value
 
 
 @pytest.mark.asyncio
@@ -1067,7 +1071,7 @@ async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve(
     )
 
     async with _patch_state(private_state, linked_state, full_delta=False):
-        pass
+        assert private_tree.substates[shared_state_name] is linked_state
 
     assert linked_state.dirty_vars == set()
     assert linked_state.dirty_substates == set()
@@ -1088,13 +1092,56 @@ async def test_linked_state_patch_preserves_interval_computed_refresh():
 
     private_tree._clean()
 
-    async with _patch_state(private_state, linked_state, full_delta=False):
-        pass
+    resolve_delta = private_tree._get_resolved_delta
 
-    assert "interval_value" in private_tree.dirty_vars
+    async def resolve_with_dirty_child():
+        linked_state._mark_dirty()
+        return await resolve_delta()
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_with_dirty_child)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+        interval_delta = private_tree.get_delta()
+
+    assert "interval_value" in linked_state.dirty_vars
+    assert private_tree.dirty_substates == {linked_state.get_name()}
     assert (
-        "interval_value" + FIELD_MARKER
-        in private_tree.get_delta()[private_tree.get_full_name()]
+        "interval_value" + FIELD_MARKER in interval_delta[linked_state.get_full_name()]
+    )
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_root_dependent_computed_refresh():
+    """Computed vars invalidated through the root must remain in the delta."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    private_tree._clean()
+
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_with_root_change():
+        private_tree.value = 1
+        return await resolve_delta()
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_with_root_change)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+        root_dependent_delta = private_tree.get_delta()
+
+    assert "root_value" in linked_state.dirty_vars
+    assert private_tree.dirty_substates == {linked_state.get_name()}
+    assert (
+        "root_value" + FIELD_MARKER
+        in root_dependent_delta[linked_state.get_full_name()]
     )
 
 

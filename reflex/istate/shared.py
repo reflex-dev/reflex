@@ -107,7 +107,11 @@ async def _patch_state(
         # it forces router-dependent computed vars to resolve for the patched
         # tree, but should not leak into the event's final delta.
         root_state = original_state._get_root_state()
-        dirty_state_snapshots: list[tuple[BaseState, set[str], set[str], set[str]]] = []
+        dirty_state_snapshots: list[
+            tuple[
+                BaseState, set[str], set[str], set[str], dict[str, tuple[bool, object]]
+            ]
+        ] = []
         if not full_delta:
             states_to_snapshot = [root_state]
             while states_to_snapshot:
@@ -117,18 +121,34 @@ async def _patch_state(
                 computed_vars_to_preserve = state._expired_computed_vars().union(
                     state._always_dirty_computed_vars
                 )
+                computed_var_snapshots = {
+                    name: (
+                        hasattr(state, computed_var._cache_attr),
+                        getattr(state, computed_var._last_updated_attr, None),
+                    )
+                    for name, computed_var in state.computed_vars.items()
+                }
                 dirty_state_snapshots.append((
                     state,
                     set(state.dirty_vars),
                     set(state.dirty_substates),
                     computed_vars_to_preserve,
+                    computed_var_snapshots,
                 ))
                 states_to_snapshot.extend(state.substates.values())
         root_state.dirty_vars.add("router")
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
         router_dirty_snapshots: list[
-            tuple[BaseState, set[str], set[str], set[str], set[str], set[str]]
+            tuple[
+                BaseState,
+                set[str],
+                set[str],
+                set[str],
+                set[str],
+                set[str],
+                dict[str, tuple[bool, object]],
+            ]
         ] = []
         if not full_delta:
             for (
@@ -136,6 +156,7 @@ async def _patch_state(
                 dirty_vars,
                 dirty_substates,
                 computed_vars_to_preserve,
+                computed_var_snapshots,
             ) in dirty_state_snapshots:
                 router_dirty_snapshots.append((
                     state,
@@ -144,59 +165,52 @@ async def _patch_state(
                     state.dirty_vars - dirty_vars - computed_vars_to_preserve,
                     state.dirty_substates - dirty_substates,
                     computed_vars_to_preserve,
+                    computed_var_snapshots,
                 ))
         try:
             await root_state._get_resolved_delta()
         except BaseException:
             if not full_delta:
-                for state, dirty_vars, dirty_substates, _ in dirty_state_snapshots:
+                for state, dirty_vars, dirty_substates, _, _ in dirty_state_snapshots:
                     state.dirty_vars = dirty_vars
                     state.dirty_substates = dirty_substates
             raise
         else:
             if not full_delta:
-                computed_refresh_state_names = {
-                    state.get_full_name()
-                    for (
-                        state,
-                        _,
-                        _,
-                        router_dirty_vars,
-                        _,
-                        computed_vars_to_preserve,
-                    ) in router_dirty_snapshots
-                    if computed_vars_to_preserve
-                    or (state.dirty_vars - router_dirty_vars).intersection(
-                        state.computed_vars
-                    )
-                }
+                computed_refresh_states: list[BaseState] = []
                 for (
                     state,
                     dirty_vars,
                     dirty_substates,
                     router_dirty_vars,
-                    router_dirty_substates,
+                    _,
                     computed_vars_to_preserve,
+                    computed_var_snapshots,
                 ) in router_dirty_snapshots:
-                    computed_vars_refreshed = (
+                    computed_vars_refreshed = set(computed_vars_to_preserve) | (
                         state.dirty_vars - router_dirty_vars
                     ).intersection(state.computed_vars)
-                    substates_with_computed_refresh = {
-                        substate_name
-                        for substate_name in state.dirty_substates
-                        - router_dirty_substates
-                        if any(
-                            refresh_name == substate_name
-                            or refresh_name.startswith(substate_name + ".")
-                            for refresh_name in computed_refresh_state_names
+                    computed_vars_refreshed.update(
+                        name
+                        for name, computed_var in state.computed_vars.items()
+                        if computed_var_snapshots[name]
+                        != (
+                            hasattr(state, computed_var._cache_attr),
+                            getattr(state, computed_var._last_updated_attr, None),
                         )
-                    }
+                        and hasattr(state, computed_var._cache_attr)
+                    )
+                    if computed_vars_refreshed:
+                        computed_refresh_states.append(state)
                     state.dirty_vars = (
                         dirty_vars | computed_vars_to_preserve | computed_vars_refreshed
                     )
-                    state.dirty_substates = dirty_substates | (
-                        substates_with_computed_refresh
-                    )
+                    state.dirty_substates = dirty_substates
+                for refreshed_state in computed_refresh_states:
+                    state = refreshed_state
+                    while state.parent_state is not None:
+                        state.parent_state.dirty_substates.add(state.get_name())
+                        state = state.parent_state
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
