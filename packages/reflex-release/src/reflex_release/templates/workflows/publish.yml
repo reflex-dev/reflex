@@ -33,6 +33,8 @@ run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
 # - Optional: a `.github/scripts/publish/post_build.sh` hook runs after the
 #   build with PACKAGE, VERSION and BUILD_DIR in the environment — use it for
 #   repository-specific artifact checks.
+# - Optional: post-release-workflow names a workflow this one dispatches on
+#   every published tag, once the release exists.
 
 on:
   workflow_call:
@@ -272,6 +274,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: @@ACTIONS_PERMISSION@@
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -305,3 +308,4 @@ jobs:
           CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: @@CLI@@ create-release
+@@POST_RELEASE_STEP@@
