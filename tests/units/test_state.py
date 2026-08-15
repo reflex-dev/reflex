@@ -934,6 +934,22 @@ class _LinkedStatePatchShared(_LinkedStatePatchRoot):
     counter: int = 0
 
 
+class _LinkedStatePatchIntervalRoot(BaseState):
+    """Root state for testing interval computed refreshes during patching."""
+
+    value: int = 0
+
+    @rx.var(interval=60)
+    def interval_value(self) -> int:
+        return self.value
+
+
+class _LinkedStatePatchIntervalShared(_LinkedStatePatchIntervalRoot):
+    """Substate used to exercise interval computed refreshes."""
+
+    counter: int = 0
+
+
 @pytest.mark.asyncio
 async def test_linked_state_event_does_not_dirty_root_state():
     """Linked-state events should not leak temporary router dirtiness."""
@@ -1056,6 +1072,30 @@ async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve(
     assert linked_state.dirty_vars == set()
     assert linked_state.dirty_substates == set()
     assert private_tree.dirty_substates == set()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_interval_computed_refresh():
+    """Interval computed vars refreshed during patching must be emitted."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    private_tree._clean()
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        pass
+
+    assert "interval_value" in private_tree.dirty_vars
+    assert (
+        "interval_value" + FIELD_MARKER
+        in private_tree.get_delta()[private_tree.get_full_name()]
+    )
 
 
 @pytest.mark.asyncio
