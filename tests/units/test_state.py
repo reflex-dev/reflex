@@ -1146,6 +1146,51 @@ async def test_linked_state_patch_preserves_root_dependent_computed_refresh():
 
 
 @pytest.mark.asyncio
+async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
+    """Failed resolution should not hide a partially refreshed computed value."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+    computed_var = _LinkedStatePatchIntervalShared.computed_vars["interval_value"]
+    cache_attr = computed_var._cache_attr
+    last_updated_attr = computed_var._last_updated_attr
+    cache_before = (
+        hasattr(linked_state, cache_attr),
+        getattr(linked_state, cache_attr, None),
+        hasattr(linked_state, last_updated_attr),
+        getattr(linked_state, last_updated_attr, None),
+    )
+
+    private_tree._clean()
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_then_fail():
+        linked_state._mark_dirty()
+        await resolve_delta()
+        msg = "computed refresh failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_then_fail)
+
+    with pytest.raises(RuntimeError, match="computed refresh failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            assert private_tree.substates[shared_state_name] is linked_state
+
+    assert linked_state.dirty_vars == set()
+    assert (
+        hasattr(linked_state, cache_attr),
+        getattr(linked_state, cache_attr, None),
+        hasattr(linked_state, last_updated_attr),
+        getattr(linked_state, last_updated_attr, None),
+    ) == cache_before
+
+
+@pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
     mock_base_state_event_processor: BaseStateEventProcessor,

@@ -109,7 +109,11 @@ async def _patch_state(
         root_state = original_state._get_root_state()
         dirty_state_snapshots: list[
             tuple[
-                BaseState, set[str], set[str], set[str], dict[str, tuple[bool, object]]
+                BaseState,
+                set[str],
+                set[str],
+                set[str],
+                dict[str, tuple[bool, object, bool, object]],
             ]
         ] = []
         if not full_delta:
@@ -124,6 +128,8 @@ async def _patch_state(
                 computed_var_snapshots = {
                     name: (
                         hasattr(state, computed_var._cache_attr),
+                        getattr(state, computed_var._cache_attr, None),
+                        hasattr(state, computed_var._last_updated_attr),
                         getattr(state, computed_var._last_updated_attr, None),
                     )
                     for name, computed_var in state.computed_vars.items()
@@ -147,7 +153,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, object]],
+                dict[str, tuple[bool, object, bool, object]],
             ]
         ] = []
         if not full_delta:
@@ -171,9 +177,36 @@ async def _patch_state(
             await root_state._get_resolved_delta()
         except BaseException:
             if not full_delta:
-                for state, dirty_vars, dirty_substates, _, _ in dirty_state_snapshots:
+                for (
+                    state,
+                    dirty_vars,
+                    dirty_substates,
+                    _,
+                    computed_var_snapshots,
+                ) in dirty_state_snapshots:
                     state.dirty_vars = dirty_vars
                     state.dirty_substates = dirty_substates
+                    for name, computed_var in state.computed_vars.items():
+                        (
+                            had_cache,
+                            cached_value,
+                            had_last_updated,
+                            last_updated,
+                        ) = computed_var_snapshots[name]
+                        if had_cache:
+                            setattr(state, computed_var._cache_attr, cached_value)
+                        else:
+                            with contextlib.suppress(AttributeError):
+                                delattr(state, computed_var._cache_attr)
+                        if had_last_updated:
+                            setattr(
+                                state,
+                                computed_var._last_updated_attr,
+                                last_updated,
+                            )
+                        else:
+                            with contextlib.suppress(AttributeError):
+                                delattr(state, computed_var._last_updated_attr)
             raise
         else:
             if not full_delta:
@@ -196,6 +229,8 @@ async def _patch_state(
                         if computed_var_snapshots[name]
                         != (
                             hasattr(state, computed_var._cache_attr),
+                            getattr(state, computed_var._cache_attr, None),
+                            hasattr(state, computed_var._last_updated_attr),
                             getattr(state, computed_var._last_updated_attr, None),
                         )
                         and hasattr(state, computed_var._cache_attr)
