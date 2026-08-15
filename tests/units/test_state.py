@@ -1172,6 +1172,7 @@ async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
 
     async def resolve_then_fail():
         linked_state._mark_dirty()
+        linked_state._was_touched = True
         await resolve_delta()
         msg = "computed refresh failed"
         raise RuntimeError(msg)
