@@ -32,7 +32,7 @@ from .changelog import (
     latest_version,
     parse_sections,
 )
-from .config import Config, is_final
+from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
 from .discovery import (
     alpha_train_packages,
     build_changelog,
@@ -980,6 +980,53 @@ def cmd_create_release(
     else:
         notice(f"no checksum manifest at {checksums_path}; releasing without one")
     gh_run(args, config.root)
+
+
+def cmd_post_release(config: Config, tag: str, package: str, version: str) -> None:
+    """Dispatch the configured post-release workflow for a published tag.
+
+    Runs once per published tag, after the upload, the tag and the GitHub
+    release: the workflow is dispatched on the tag itself, so it sees exactly
+    the tree that was published. A failure here is loud but harmless — the
+    version is already released — so it names the tag it could not hand on.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag that was published.
+        package: The published package.
+        version: The published version.
+    """
+    workflow = config.post_release_workflow
+    if workflow is None:
+        notice(f"no {POST_RELEASE_WORKFLOW_KEY} is configured; nothing to dispatch.")
+        return
+    # An unset environment variable reaches here as an empty string, and GitHub
+    # accepts a dispatch carrying empty inputs — the run would go green having
+    # told the workflow nothing.
+    values = {"tag": tag, "package": package, "version": version}
+    if missing := [name for name in POST_RELEASE_INPUTS if not values[name]]:
+        fail(
+            f"the post-release dispatch has no {', '.join(missing)}; it is run "
+            "from the publish workflow with TAG, PACKAGE and VERSION in the "
+            "environment"
+        )
+    config.require_known(package)
+
+    fields: list[str] = []
+    for name in POST_RELEASE_INPUTS:
+        fields += ["--field", f"{name}={values[name]}"]
+    failed = gh_run(
+        ["workflow", "run", workflow, "--ref", tag, *fields], config.root, check=False
+    )
+    if failed:
+        fail(
+            f"{package} {version} was published and tagged {tag}, but the "
+            f"post-release workflow {workflow!r} could not be dispatched on it. "
+            "Check that the workflow exists on the default branch and declares "
+            f"workflow_dispatch inputs named {', '.join(POST_RELEASE_INPUTS)}, "
+            "then dispatch it by hand."
+        )
+    notice(f"dispatched {workflow} for {tag}")
 
 
 def cmd_packages(config: Config) -> None:
