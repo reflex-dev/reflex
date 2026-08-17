@@ -444,12 +444,13 @@ def emit_json_print(
         return
     _write_json(
         {
+            # Extras first: the canonical fields below always win.
+            **fields,
             "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
             "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),
             "pid": os.getpid(),
-            **fields,
         },
         stderr=stderr,
     )
