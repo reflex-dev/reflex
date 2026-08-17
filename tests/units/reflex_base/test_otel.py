@@ -1,6 +1,7 @@
 """Tests for the reflex_base.otel trace points."""
 
 import asyncio
+from contextlib import nullcontext
 from time import perf_counter
 
 import pytest
@@ -215,3 +216,27 @@ def test_attach_context(otel_exporter: InMemorySpanExporter):
         assert trace.get_current_span() is outer
     finally:
         otel_context.detach(token)
+
+
+def test_span_helpers_noop_when_disabled():
+    assert isinstance(otel.span("x"), nullcontext)
+    assert isinstance(otel.compile_span("hot_reload", False), nullcontext)
+
+
+def test_compile_span_attributes(otel_exporter: InMemorySpanExporter):
+    with otel.compile_span(None, True), otel.span("Compile pages", {"k": "v"}):
+        pass
+    stage, compile = otel_exporter.get_finished_spans()
+    assert compile.name == otel.COMPILE_SPAN_NAME
+    assert compile.attributes == {otel.ATTR_COMPILE_DRY_RUN: True}
+    compile_context = compile.get_span_context()
+    assert stage.parent is not None
+    assert compile_context is not None
+    assert stage.parent.span_id == compile_context.span_id
+    assert stage.attributes == {"k": "v"}
+    with otel.compile_span("backend_startup", False):
+        pass
+    assert otel_exporter.get_finished_spans()[-1].attributes == {
+        otel.ATTR_COMPILE_DRY_RUN: False,
+        otel.ATTR_COMPILE_TRIGGER: "backend_startup",
+    }

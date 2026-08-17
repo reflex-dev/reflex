@@ -1649,32 +1649,33 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
-
-        with ctx:
-            did_real_compile = False
-            try:
-                did_real_compile = compiler.compile_app(
+        with otel.compile_span(trigger, dry_run):
+            ctx = TelemetryContext.start(trigger=trigger)
+            if ctx is None:
+                compiler.compile_app(
                     self,
                     prerender_routes=prerender_routes,
                     dry_run=dry_run,
                     use_rich=use_rich,
                 )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
-            finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                return
+
+            with ctx:
+                did_real_compile = False
+                try:
+                    did_real_compile = compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                except Exception as exc:
+                    ctx.set_exception(exc)
+                    did_real_compile = True
+                    raise
+                finally:
+                    if did_real_compile:
+                        telemetry_accounting.record_compile(self, ctx)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""

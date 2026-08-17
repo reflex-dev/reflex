@@ -13,7 +13,7 @@ provider is available.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
@@ -25,6 +25,8 @@ from opentelemetry.trace import SpanKind
 from reflex_base.constants.base import Reflex
 
 if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+
     from reflex_base.event import Event
     from reflex_base.event.context import EventContext
     from reflex_base.registry import RegisteredEventHandler
@@ -40,6 +42,11 @@ ATTR_SESSION_ID = "session.id"
 ATTR_CODE_FUNCTION_NAME = "code.function.name"
 ATTR_ERROR_TYPE = "error.type"
 ATTR_NETWORK_IO_DIRECTION = "network.io.direction"
+ATTR_COMPILE_TRIGGER = "reflex.compile.trigger"
+ATTR_COMPILE_DRY_RUN = "reflex.compile.dry_run"
+
+# Span name of one full app compile; the compile stages nest under it.
+COMPILE_SPAN_NAME = "reflex.compile"
 
 # Metric instrument names.
 METRIC_EVENT_DURATION = "reflex.event.duration"
@@ -215,6 +222,46 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
         A context manager to run the enqueue under.
     """
     return _AttachedContext(propagate.extract(carrier, context=Context()))
+
+
+def span(
+    name: str, attributes: Mapping[str, Any] | None = None
+) -> AbstractContextManager[trace.Span | None]:
+    """Open an internal span, or do nothing when tracing is off.
+
+    Used for coarse framework phases such as the compile stages; ``name``
+    must be a static, low-cardinality identifier such as ``reflex.compile.pages``.
+
+    Args:
+        name: The span name.
+        attributes: Attributes to set on the span.
+
+    Returns:
+        A context manager yielding the span (or None when tracing is off).
+    """
+    if not enabled:
+        return nullcontext()
+    return _tracer.start_as_current_span(name, attributes=attributes)
+
+
+def compile_span(
+    trigger: str | None, dry_run: bool
+) -> AbstractContextManager[trace.Span | None]:
+    """Open the span covering one app compile.
+
+    Args:
+        trigger: What initiated the compile, when known.
+        dry_run: Whether the compile writes nothing to disk.
+
+    Returns:
+        A context manager yielding the span (or None when tracing is off).
+    """
+    if not enabled:
+        return nullcontext()
+    attributes: dict[str, Any] = {ATTR_COMPILE_DRY_RUN: dry_run}
+    if trigger is not None:
+        attributes[ATTR_COMPILE_TRIGGER] = trigger
+    return _tracer.start_as_current_span(COMPILE_SPAN_NAME, attributes=attributes)
 
 
 @contextmanager
