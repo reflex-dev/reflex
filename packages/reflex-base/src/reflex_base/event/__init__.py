@@ -492,7 +492,8 @@ class EventHandler(EventActionsMixin):
 
     def __post_init__(self) -> None:
         """Resolve handler annotations while the state class is stable."""
-        self._get_type_hints()
+        if self.state is not None:
+            self._get_type_hints()
 
     def _get_type_hints(self) -> dict[str, Any]:
         """Get and cache the type hints for the handler function.
