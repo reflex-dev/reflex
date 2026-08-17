@@ -9,6 +9,8 @@ from typing import Any, Literal
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from reflex_base import otel
 
+from reflex_otel.plugin import OtelPlugin
+
 _instruments = ("reflex-base >= 0.9.7.post45.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
@@ -98,3 +100,6 @@ class ReflexInstrumentor(BaseInstrumentor):
             **kwargs: Ignored.
         """
         otel.disable()
+
+
+__all__ = ["OtelPlugin", "ReflexInstrumentor"]
