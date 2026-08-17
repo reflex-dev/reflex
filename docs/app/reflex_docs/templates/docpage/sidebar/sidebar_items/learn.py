@@ -161,11 +161,11 @@ def get_sidebar_items_backend():
         create_item(
             "State Structure",
             children=[
-                state_structure.scaling_state,
                 state_structure.overview,
                 state_structure.component_state,
                 state_structure.mixins,
                 state_structure.shared_state,
+                state_structure.scaling_state,
             ],
         ),
         create_item(
