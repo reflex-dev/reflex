@@ -4424,3 +4424,5 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
         await task
     (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert point.value == 1
+    # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()
