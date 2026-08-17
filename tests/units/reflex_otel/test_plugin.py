@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.constants.base import ReactRouter
 from reflex_base.constants.compiler import Embed
 from reflex_otel.plugin import (
@@ -79,11 +80,20 @@ def test_pre_compile_patches_entry(caplog: pytest.LogCaptureFixture):
 def test_render_timing_aliases_react_dom_profiling():
     (_, (path, fn)) = _pre_compile_tasks(OtelPlugin(render_timing=True))
     assert path == ReactRouter.VITE_CONFIG_FILE
-    config = (
-        'import x;\nexport default defineConfig((config) => ({\n  base: "/",\n}));\n'
+    config = vite_config_template(
+        base="/",
+        hmr=False,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
     )
     patched = fn(config)
-    assert '"react-dom/client": "react-dom/profiling"' in patched
+    # A single `resolve` key: a duplicate one would be overridden by the last.
+    assert patched.count("resolve: {") == 1
+    resolve_block = patched[patched.index("resolve: {") :]
+    assert (
+        'find: "react-dom/client", replacement: "react-dom/profiling"' in resolve_block
+    )
     assert fn(patched) == patched
     with pytest.raises(RuntimeError, match="render_timing"):
         _patch_vite_config("export default {};\n")
