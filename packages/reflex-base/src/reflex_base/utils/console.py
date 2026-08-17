@@ -19,16 +19,12 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from reflex_base.constants import LogLevel
-from reflex_base.constants.base import Reflex
 from reflex_base.utils import log as _log
 from reflex_base.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
-
-# The current log level.
-_LOG_LEVEL = LogLevel.INFO
 
 # Deprecated features who's warning has been printed.
 _EMITTED_DEPRECATION_WARNINGS = set()
@@ -61,11 +57,7 @@ def set_log_level(log_level: LogLevel | None):
     Args:
         log_level: The log level to set.
     """
-    if log_level is None:
-        return
     _log.set_log_level(log_level)
-    global _LOG_LEVEL
-    _LOG_LEVEL = log_level
 
 
 def is_debug() -> bool:
@@ -74,19 +66,20 @@ def is_debug() -> bool:
     Returns:
         True if the log level is debug.
     """
-    return _LOG_LEVEL <= LogLevel.DEBUG
+    return _log.is_debug()
 
 
-def print(msg: str, *, dedupe: bool = False, **kwargs):
+def print(msg: str, *, dedupe: bool = False, level: str = "info", **kwargs):
     """Print a message.
 
     Args:
         msg: The message to print.
         dedupe: If True, suppress multiple console logs of print message.
+        level: The severity reported in JSON mode.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _log.is_json_mode():
-        _log.emit_json_print(msg, dedupe=dedupe)
+        _log.emit_json_print(msg, level=level, dedupe=dedupe)
         return
     if dedupe:
         if msg in _EMITTED_PRINTS:
@@ -95,16 +88,17 @@ def print(msg: str, *, dedupe: bool = False, **kwargs):
     _console.print(msg, **kwargs)
 
 
-def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
+def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwargs):
     """Print a message to stderr.
 
     Args:
         msg: The message to print.
         dedupe: If True, suppress multiple console logs of print message.
+        level: The severity reported in JSON mode.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _log.is_json_mode():
-        _log.emit_json_print(msg, dedupe=dedupe, stderr=True)
+        _log.emit_json_print(msg, level=level, dedupe=dedupe, stderr=True)
         return
     if dedupe:
         if msg in _EMITTED_PRINTS:
@@ -117,22 +111,13 @@ def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
 def log_file_console():
     """Create a console that logs to a file.
 
+    Writes through the stream of the logging pipeline's file handler, so the
+    legacy helpers and the ``logging`` sinks share one full-logging file.
+
     Returns:
         A Console object that logs to a file.
     """
-    from reflex_base.environment import environment
-
-    if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
-        subseconds = int((time.time() % 1) * 1000)
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
-        log_file = Reflex.DIR / "logs" / (timestamp + ".log")
-        log_file.parent.mkdir(parents=True, exist_ok=True)
-    else:
-        log_file = env_log_file
-    if log_file.exists():
-        log_file.unlink()
-    log_file.touch()
-    return Console(file=log_file.open("a", encoding="utf-8"))
+    return Console(file=_log.log_file_stream())
 
 
 @once
@@ -175,7 +160,7 @@ def debug(msg: str, *, dedupe: bool = False, **kwargs):
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
-            print(msg_, **kwargs)
+            print(msg_, level="debug", **kwargs)
     if should_use_log_file_console() and kwargs.pop("progress", None) is None:
         print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
@@ -188,7 +173,7 @@ def info(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of info message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_INFO:
                 return
@@ -206,12 +191,12 @@ def success(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of success message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_SUCCESS:
                 return
             _EMITTED_SUCCESS.add(msg)
-        print(f"[green]Success: {msg}[/green]", **kwargs)
+        print(f"[green]Success: {msg}[/green]", level="success", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
@@ -224,12 +209,15 @@ def log(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of log message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_LOGS:
                 return
             _EMITTED_LOGS.add(msg)
-        _console.log(msg, **kwargs)
+        if _log.is_json_mode():
+            _log.emit_json_print(msg)
+        else:
+            _console.log(msg, **kwargs)
     if should_use_log_file_console():
         print_to_log_file(msg, **kwargs)
 
@@ -254,12 +242,12 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of warning message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.WARNING:
+    if _log.get_log_level() <= LogLevel.WARNING:
         if dedupe:
             if msg in _EMITTED_WARNINGS:
                 return
             _EMITTED_WARNINGS.add(msg)
-        print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+        print(f"[orange1]Warning: {msg}[/orange1]", level="warning", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
@@ -370,8 +358,12 @@ def deprecate(
             f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
             f"removed in {removal_version}.{loc}"
         )
-        if _LOG_LEVEL <= LogLevel.WARNING:
-            print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+        if _log.get_log_level() <= LogLevel.WARNING:
+            print(
+                f"[yellow]DeprecationWarning: {msg}[/yellow]",
+                level="warning",
+                **kwargs,
+            )
         if should_use_log_file_console():
             print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
@@ -386,7 +378,7 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of error message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.ERROR:
+    if _log.get_log_level() <= LogLevel.ERROR:
         if dedupe:
             if msg in _EMITTED_ERRORS:
                 return
@@ -429,6 +421,14 @@ def print_table(
         tabular_data: The data to print in tabular format.
         headers: The headers for the table.
     """
+    if _log.is_json_mode():
+        # A table is requested output, not decoration: keep the rows in the
+        # machine-readable stream instead of rendering Rich text into it.
+        _log.emit_json_print(
+            "",
+            table={"headers": list(headers), "rows": tabular_data},
+        )
+        return
     table = Table()
 
     for column in headers:
@@ -521,7 +521,9 @@ class PoorProgress:
         if task in self.tasks:
             self.tasks[task]["current"] += advance
             self.progress += advance
-            _console.print(f"Progress: {self.progress}/{self.total}")
+            # Through console.print, so JSON mode gets a record instead of a
+            # plain line in the machine-readable stream.
+            print(f"Progress: {self.progress}/{self.total}")
 
     def update(self, task: TaskID, total: int | None = None):
         """Update properties of a task.

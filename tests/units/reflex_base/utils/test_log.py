@@ -310,6 +310,7 @@ def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
     rich_print.assert_called_once_with(
         "[yellow]DeprecationWarning: OldFeature has been deprecated in version "
         "0.9.9. Use NewFeature. It will be completely removed in 1.0.[/yellow]",
+        level="warning",
         markup=False,
     )
 
@@ -330,6 +331,54 @@ def test_console_rule_json_mode(monkeypatch, capsys):
     console.rule("Section")
     out, _ = capsys.readouterr()
     assert out == ""
+
+
+def test_console_json_mode_preserves_severity(monkeypatch, capsys):
+    """Legacy helpers keep their severity in the JSON stream."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    console.error("boom")
+    console.warn("careful")
+    console.success("done")
+    out, err = capsys.readouterr()
+    error_record = json.loads(err)
+    assert (error_record["level"], error_record["message"]) == ("error", "boom")
+    warning_record, success_record = (json.loads(line) for line in out.splitlines())
+    assert (warning_record["level"], warning_record["message"]) == (
+        "warning",
+        "Warning: careful",
+    )
+    assert (success_record["level"], success_record["message"]) == (
+        "success",
+        "Success: done",
+    )
+
+
+def test_console_log_json_mode(monkeypatch, capsys):
+    """console.log emits a JSON record instead of a timestamped rich line."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    console.log("compiling app")
+    out, _ = capsys.readouterr()
+    assert json.loads(out)["message"] == "compiling app"
+
+
+def test_console_print_table_json_mode(monkeypatch, capsys):
+    """Tables stay in the machine-readable stream as structured rows."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    console.print_table([["app", "running"]], headers=["name", "status"])
+    out, _ = capsys.readouterr()
+    assert json.loads(out)["table"] == {
+        "headers": ["name", "status"],
+        "rows": [["app", "running"]],
+    }
+
+
+def test_poor_progress_json_mode(monkeypatch, capsys):
+    """The fallback progress bar does not write plain text in JSON mode."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    progress = console.PoorProgress()
+    progress.advance(progress.add_task("compile", total=2))
+    out, _ = capsys.readouterr()
+    assert json.loads(out)["message"] == "Progress: 1/2"
 
 
 def _file_record(msg: str, *, rich: bool = False) -> logging.LogRecord:
@@ -361,6 +410,39 @@ def test_log_file_path_honors_env(monkeypatch, tmp_path):
     log_file = tmp_path / "my.log"
     monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
     assert log._log_file_path() == log_file
+
+
+def test_log_file_path_creates_parent_of_configured_path(monkeypatch, tmp_path):
+    """A configured path pointing into a new directory is made writable."""
+    log_file = tmp_path / "nested" / "dir" / "my.log"
+    monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
+    assert log._log_file_path() == log_file
+    assert log_file.parent.is_dir()
+
+
+def test_console_and_pipeline_share_one_log_file(monkeypatch, tmp_path):
+    """Legacy console file output lands in the pipeline's log file."""
+    log_file = tmp_path / "full.log"
+    handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
+    monkeypatch.setattr(log, "_file_handler", lambda: handler)
+    # Bypass the ``once`` cache so the console reopens against this handler.
+    monkeypatch.setattr(
+        console,
+        "log_file_console",
+        console.log_file_console.__wrapped__,  # pyright: ignore[reportFunctionMemberAccess]
+    )
+    reflex_logger = logging.getLogger("reflex")
+    reflex_logger.addHandler(handler)
+    try:
+        console.print_to_log_file("from the legacy console")
+        logger.warning("from the logging pipeline")
+        handler.flush()
+        contents = log_file.read_text(encoding="utf-8")
+    finally:
+        reflex_logger.removeHandler(handler)
+        handler.close()
+    assert "from the legacy console" in contents
+    assert "from the logging pipeline" in contents
 
 
 def test_every_logging_package_root_is_registered():
@@ -407,6 +489,17 @@ def test_bootstrap_parents_package_loggers_under_reflex(library_mode):
         parents.append(node)
     assert reflex_logger in parents
     assert parents[-1] is logging.getLogger()
+
+
+def test_bootstrap_preserves_application_logger_config(library_mode):
+    """An app's own level on a package logger survives bootstrap."""
+    package_logger = logging.getLogger(log.PACKAGE_LOGGER_NAMES[0])
+    package_logger.setLevel(logging.CRITICAL)
+    try:
+        log.bootstrap()
+        assert package_logger.level == logging.CRITICAL
+    finally:
+        package_logger.setLevel(logging.NOTSET)
 
 
 def test_bootstrap_configures_when_managed(monkeypatch):

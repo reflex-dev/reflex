@@ -41,6 +41,7 @@ from reflex_base.utils.decorator import once
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
+    from typing import TextIO
 
 # Level between INFO and WARNING for user-facing success messages.
 SUCCESS = 25
@@ -311,11 +312,10 @@ def _log_file_path() -> Path:
     """
     from reflex_base.environment import environment
 
-    if env_log_file := environment.REFLEX_LOG_FILE.get():
-        return env_log_file
-    subseconds = int((time.time() % 1) * 1000)
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
-    log_file = Reflex.DIR / "logs" / (timestamp + ".log")
+    if not (log_file := environment.REFLEX_LOG_FILE.get()):
+        subseconds = int((time.time() % 1) * 1000)
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
+        log_file = Reflex.DIR / "logs" / (timestamp + ".log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
     return log_file
 
@@ -332,6 +332,18 @@ def _file_handler() -> logging.FileHandler:
         _FileFormatter("[{asctime}] {levelname}: {message}", style="{")
     )
     return handler
+
+
+def log_file_stream() -> TextIO:
+    """Open (once) and return the stream of the full-logging file.
+
+    The legacy ``console`` file writer renders through this same stream, so a
+    single file holds every record no matter which API produced it.
+
+    Returns:
+        The writable stream of the full-logging file.
+    """
+    return _file_handler().stream
 
 
 @once
@@ -407,7 +419,14 @@ def dedupe_once(key: Hashable) -> bool:
     return _dedupe_filter().register(key)
 
 
-def emit_json_print(msg: str, *, dedupe: bool = False, stderr: bool = False):
+def emit_json_print(
+    msg: str,
+    *,
+    level: str = "info",
+    dedupe: bool = False,
+    stderr: bool = False,
+    **fields,
+):
     """Emit a plain console message as a JSON record.
 
     Used by ``console.print`` in JSON mode so the output stream stays
@@ -416,18 +435,21 @@ def emit_json_print(msg: str, *, dedupe: bool = False, stderr: bool = False):
 
     Args:
         msg: The message.
+        level: The severity to report, matching the calling console helper.
         dedupe: If True, suppress repeats of the same message.
         stderr: Whether the message targets stderr.
+        fields: Extra fields to include in the record.
     """
     if dedupe and not dedupe_once(("print", msg)):
         return
     _write_json(
         {
             "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-            "level": "info",
+            "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),
             "pid": os.getpid(),
+            **fields,
         },
         stderr=stderr,
     )
@@ -469,10 +491,10 @@ def bootstrap():
     for name in PACKAGE_LOGGER_NAMES:
         child = logging.getLogger(name)
         child.parent = _REFLEX_LOGGER
-        child.propagate = True
-        # Inherit the effective level from "reflex"; setLevel also clears the
-        # isEnabledFor caches, which reparenting alone does not.
-        child.setLevel(logging.NOTSET)
+        # Re-set the level a logger already has: that leaves an application's
+        # own configuration untouched while clearing the isEnabledFor caches,
+        # which reparenting alone does not do.
+        child.setLevel(child.level)
     if is_managed_mode():
         configure()
 
