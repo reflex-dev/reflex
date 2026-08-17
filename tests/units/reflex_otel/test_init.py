@@ -3,6 +3,7 @@
 from collections.abc import Generator
 
 import pytest
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.sdk.trace import TracerProvider
 from reflex_base import otel
 from reflex_otel import ReflexInstrumentor
@@ -33,3 +34,16 @@ def test_instrument_is_idempotent(instrumentor: ReflexInstrumentor):
 def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):
     (dep,) = instrumentor.instrumentation_dependencies()
     assert dep.startswith("reflex-base")
+
+
+def test_instrument_installs_asgi_middleware(instrumentor: ReflexInstrumentor):
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert otel.asgi_middleware is not None
+
+    async def app(scope, receive, send): ...
+
+    wrapped = otel.asgi_middleware(app)
+    assert isinstance(wrapped, OpenTelemetryMiddleware)
+    assert wrapped.app is app
+    instrumentor.uninstrument()
+    assert otel.asgi_middleware is None

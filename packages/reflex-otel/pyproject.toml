@@ -9,7 +9,9 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
   "opentelemetry-api >=1.24.0,<2.0",
-  "opentelemetry-instrumentation >=0.45b0,<1.0",
+  "opentelemetry-instrumentation >=0.49b0,<1.0",
+  "opentelemetry-instrumentation-asgi >=0.49b0,<1.0",
+  "opentelemetry-util-http >=0.49b0,<1.0",
   "reflex-base >= 0.9.7.post45.dev0",
 ]
 
