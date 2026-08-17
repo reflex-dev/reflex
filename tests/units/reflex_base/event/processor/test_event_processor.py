@@ -1081,3 +1081,46 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_no_spans_when_otel_disabled(
+    mock_event_processor: EventProcessor, token: str
+):
+    """With tracing off the processor never touches the tracer.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+    from reflex_base import otel
+
+    assert otel.enabled is False
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+
+
+async def test_event_spans_chain_parent_child(token: str, otel_exporter):
+    """Each event gets a span; chained events are children of the enqueuing span.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    from reflex_base import otel
+
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+    assert _CALL_LOG == [{"value": "chained"}]
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    parent = spans["_chaining_handler"]
+    child = spans["_logging_handler"]
+    assert parent.parent is None
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert (
+        child.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == parent.attributes[otel.ATTR_EVENT_TXID]
+    )
+    assert child.attributes[otel.ATTR_SESSION_ID] == token
