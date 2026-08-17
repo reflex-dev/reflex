@@ -2699,6 +2699,13 @@ V5 = TypeVar("V5")
 class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
+    if TYPE_CHECKING:
+        # EventCallback is never instantiated: `event()` returns the undecorated
+        # function, which the state metaclass turns into an EventHandler. This
+        # class is only the static stand-in for it, so declare the EventHandler
+        # attribute that `SomeState.handler` actually exposes at runtime.
+        fn: Callable[[Any, Unpack[P]], Any]
+
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.
 
