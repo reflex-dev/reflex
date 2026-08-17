@@ -50,6 +50,10 @@ Traces:
   that decision on the server.
 - HTTP requests and the websocket connection are wrapped in the standard
   OpenTelemetry ASGI middleware (per-message websocket spans are off).
+- One `reflex.compile` span per app compile (`reflex.compile.trigger`,
+  `reflex.compile.dry_run`) with the stages `reflex.compile.evaluate_pages`,
+  `.pages`, `.copy_assets`, `.install_frontend_packages`, `.write` as
+  child spans.
 
 What leaves the process: event and handler names, a pseudonymous
 `session.id` (a truncated SHA-256 of the client token, never the token
