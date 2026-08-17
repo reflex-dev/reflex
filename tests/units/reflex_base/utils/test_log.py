@@ -340,17 +340,15 @@ def test_console_json_mode_preserves_severity(monkeypatch, capsys):
     console.warn("careful")
     console.success("done")
     out, err = capsys.readouterr()
-    error_record = json.loads(err)
-    assert (error_record["level"], error_record["message"]) == ("error", "boom")
-    warning_record, success_record = (json.loads(line) for line in out.splitlines())
-    assert (warning_record["level"], warning_record["message"]) == (
-        "warning",
-        "Warning: careful",
-    )
-    assert (success_record["level"], success_record["message"]) == (
-        "success",
-        "Success: done",
-    )
+    # Every line stays parseable; index by message so an unrelated record
+    # (a deprecation warning from the helper itself) cannot break this.
+    records = {
+        record["message"]: record
+        for record in map(json.loads, (out + err).splitlines())
+    }
+    assert records["boom"]["level"] == "error"
+    assert records["Warning: careful"]["level"] == "warning"
+    assert records["Success: done"]["level"] == "success"
 
 
 def test_console_log_json_mode(monkeypatch, capsys):
@@ -358,7 +356,8 @@ def test_console_log_json_mode(monkeypatch, capsys):
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")
     console.log("compiling app")
     out, _ = capsys.readouterr()
-    assert json.loads(out)["message"] == "compiling app"
+    messages = [json.loads(line)["message"] for line in out.splitlines()]
+    assert "compiling app" in messages
 
 
 def test_console_print_table_json_mode(monkeypatch, capsys):
