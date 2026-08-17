@@ -33,9 +33,13 @@ _ENTRY_ROOT_ANCHOR = "createElement(HydratedRouter)"
 _ENTRY_ROOT_WRAPPED = "createElement(OtelRoot, null, createElement(HydratedRouter))"
 
 # React strips <Profiler> from production builds; the profiling build keeps it.
-_VITE_CONFIG_ANCHOR = "export default defineConfig((config) => ({\n"
+# The alias is appended to the existing `resolve.alias` array of the generated
+# config: a second `resolve` key would silently override the first one.
+_VITE_CONFIG_ANCHOR = (
+    '  resolve: {\n    mainFields: ["browser", "module", "jsnext"],\n    alias: [\n'
+)
 _VITE_PROFILING_ALIAS = (
-    '  resolve: { alias: { "react-dom/client": "react-dom/profiling" } },\n'
+    '      { find: "react-dom/client", replacement: "react-dom/profiling" },\n'
 )
 
 
