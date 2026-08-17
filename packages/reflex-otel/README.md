@@ -50,5 +50,6 @@ Plus the ASGI middleware's `http.server.*` metrics.
 
 `instrument()` accepts `tracer_provider`, `meter_provider`, `excluded_urls`
 (comma-separated URL patterns skipped by the ASGI middleware; defaults to
-`OTEL_PYTHON_REFLEX_EXCLUDED_URLS`, else `/ping`) and the ASGI hooks
+`OTEL_PYTHON_REFLEX_EXCLUDED_URLS`, else `OTEL_PYTHON_EXCLUDED_URLS`, else
+`/ping`; pass `""` to exclude nothing) and the ASGI hooks
 `server_request_hook`, `client_request_hook`, `client_response_hook`.
