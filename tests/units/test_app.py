@@ -375,7 +375,11 @@ def test_add_the_same_page(
 ):
     app.add_page(first_page, route=route)
     app.add_page(second_page, route="/" + route.strip("/") if route else None)
-    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    warnings = [
+        r
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
     assert len(warnings) == 1
 
 
@@ -2452,7 +2456,14 @@ def test_component_from_import_path_invalid_returns_none(
     )
 
     assert component is None
-    assert len([r for r in caplog.records if r.levelno == logging.ERROR]) == 1
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
 def test_component_from_import_path_non_callable_returns_none(
@@ -2467,7 +2478,14 @@ def test_component_from_import_path_non_callable_returns_none(
     component = _component_from_import_path("reflex.constants", "hydrate_fallback")
 
     assert component is None
-    assert len([r for r in caplog.records if r.levelno == logging.ERROR]) == 1
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
 def test_compile_with_radix_component_auto_enables_radix_plugin(

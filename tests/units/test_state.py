@@ -1916,7 +1916,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    from reflex_base.utils import log
+    from reflex_base.utils import console as _base_console
 
     from reflex.state import State
     from reflex.utils import console
@@ -1924,11 +1924,12 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
 
     def _clear_dedupe():
-        seen = log._dedupe_filter().seen
-        seen -= {
+        # console.deprecate keeps its own emitted-warnings set; clear the
+        # entries for this feature so every block below re-emits.
+        _base_console._EMITTED_DEPRECATION_WARNINGS -= {
             k
-            for k in seen
-            if isinstance(k, str) and "Passing a string to modify_state" in k
+            for k in _base_console._EMITTED_DEPRECATION_WARNINGS
+            if "Passing a string to modify_state" in k
         }
 
     _clear_dedupe()
