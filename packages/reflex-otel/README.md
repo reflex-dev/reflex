@@ -53,3 +53,6 @@ Plus the ASGI middleware's `http.server.*` metrics.
 `OTEL_PYTHON_REFLEX_EXCLUDED_URLS`, else `OTEL_PYTHON_EXCLUDED_URLS`, else
 `/ping`; pass `""` to exclude nothing) and the ASGI hooks
 `server_request_hook`, `client_request_hook`, `client_response_hook`.
+Call `instrument()` before the app is served: `uninstrument()` turns the
+framework trace points off again, but an ASGI middleware that was already
+installed stays until the process restarts.
