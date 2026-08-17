@@ -5,9 +5,12 @@ import contextlib
 import dataclasses
 import logging
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -1084,19 +1087,21 @@ async def test_superseded_chain_cannot_chain_new_events(
 
 
 async def test_no_spans_when_otel_disabled(
-    mock_event_processor: EventProcessor, token: str
+    mock_event_processor: EventProcessor, token: str, monkeypatch
 ):
     """With tracing off the processor never touches the tracer.
 
     Args:
         mock_event_processor: The event processor with mock root context.
         token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
     """
-    from reflex_base import otel
-
     assert otel.enabled is False
+    tracer = Mock()
+    monkeypatch.setattr(otel, "_tracer", tracer)
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+    tracer.start_as_current_span.assert_not_called()
 
 
 async def test_event_spans_chain_parent_child(token: str, otel_exporter):
@@ -1106,8 +1111,6 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         token: The client token.
         otel_exporter: In-memory span exporter with tracing enabled.
     """
-    from reflex_base import otel
-
     ep = EventProcessor(graceful_shutdown_timeout=2)
     ep.configure()
     async with ep:
@@ -1117,8 +1120,10 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
     parent = spans["_chaining_handler"]
     child = spans["_logging_handler"]
     assert parent.parent is None
+    assert parent.kind == SpanKind.SERVER
     assert child.parent is not None
     assert child.parent.span_id == parent.context.span_id
+    assert child.kind == SpanKind.INTERNAL
     assert (
         child.attributes[otel.ATTR_EVENT_PARENT_TXID]
         == parent.attributes[otel.ATTR_EVENT_TXID]

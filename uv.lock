@@ -4254,7 +4254,6 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-instrumentation" },
     { name = "opentelemetry-instrumentation-asgi" },
-    { name = "opentelemetry-util-http" },
     { name = "reflex-base" },
 ]
 
@@ -4268,7 +4267,6 @@ requires-dist = [
     { name = "opentelemetry-api", specifier = ">=1.30.0,<2.0" },
     { name = "opentelemetry-instrumentation", specifier = ">=0.49b0,<1.0" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.49b0,<1.0" },
-    { name = "opentelemetry-util-http", specifier = ">=0.49b0,<1.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-base", marker = "extra == 'instruments'", editable = "packages/reflex-base" },
 ]

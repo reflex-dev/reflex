@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Collection
 from typing import Any, Literal
 
-from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
-from opentelemetry.util.http import get_excluded_urls
 from reflex_base import otel
 
 _instruments = ("reflex-base >= 0.9.7.post45.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]
+# Frontend health polling; override with excluded_urls / OTEL_PYTHON_REFLEX_EXCLUDED_URLS.
+_DEFAULT_EXCLUDED_URLS = "/ping"
 
 
 class ReflexInstrumentor(BaseInstrumentor):
@@ -47,22 +48,26 @@ class ReflexInstrumentor(BaseInstrumentor):
             **kwargs: ``tracer_provider`` and ``meter_provider`` select the
                 providers (default: the global ones). ``excluded_urls`` is a
                 comma-separated list of URL patterns the ASGI middleware skips
-                (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``).
+                (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``, else ``/ping``).
                 ``server_request_hook``, ``client_request_hook`` and
                 ``client_response_hook`` are forwarded to the ASGI middleware.
         """
+        # Imported here so `from reflex_otel import OtelPlugin` in rxconfig.py
+        # stays cheap for CLI processes that never instrument.
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+
         tracer_provider = kwargs.get("tracer_provider")
         meter_provider = kwargs.get("meter_provider")
-        excluded_urls = kwargs.get("excluded_urls")
+        excluded_urls = kwargs.get("excluded_urls") or (
+            os.environ.get("OTEL_PYTHON_REFLEX_EXCLUDED_URLS")
+            or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
+            or _DEFAULT_EXCLUDED_URLS
+        )
 
-        def asgi_middleware(app: Any) -> Any:
+        def asgi_middleware(app: otel.ASGIApp) -> otel.ASGIApp:
             return OpenTelemetryMiddleware(
                 app,
-                excluded_urls=(
-                    get_excluded_urls("REFLEX")
-                    if excluded_urls is None
-                    else excluded_urls
-                ),
+                excluded_urls=excluded_urls,
                 server_request_hook=kwargs.get("server_request_hook"),
                 client_request_hook=kwargs.get("client_request_hook"),
                 client_response_hook=kwargs.get("client_response_hook"),

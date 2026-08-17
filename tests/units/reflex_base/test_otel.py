@@ -1,6 +1,6 @@
 """Tests for the reflex_base.otel trace points."""
 
-from contextlib import nullcontext
+import asyncio
 from time import perf_counter
 
 import pytest
@@ -14,6 +14,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.registry import RegisteredEventHandler
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import metric_points
 
 
 def _ctx(token: str = "tok", parent_txid: str | None = None) -> EventContext:
@@ -97,19 +98,7 @@ def test_event_span_parents_under_captured_context(
     _root, child = otel_exporter.get_finished_spans()
     assert child.parent is not None
     assert child.parent.span_id == root.get_span_context().span_id
-
-
-def _metric_points(reader: InMemoryMetricReader, name: str) -> list:
-    data = reader.get_metrics_data()
-    assert data is not None
-    return [
-        point
-        for rm in data.resource_metrics
-        for sm in rm.scope_metrics
-        for metric in sm.metrics
-        if metric.name == name
-        for point in metric.data.data_points
-    ]
+    assert child.kind == SpanKind.INTERNAL
 
 
 def test_event_span_records_duration_metric(otel_metrics: InMemoryMetricReader):
@@ -121,10 +110,16 @@ def test_event_span_records_duration_metric(otel_metrics: InMemoryMetricReader):
         otel.event_span(Event(name="bad"), _ctx(), registered),
     ):
         raise RuntimeError
-    bad, ok = sorted(
-        _metric_points(otel_metrics, otel.METRIC_EVENT_DURATION),
+    with (
+        pytest.raises(asyncio.CancelledError),
+        otel.event_span(Event(name="cancelled"), _ctx(), registered),
+    ):
+        raise asyncio.CancelledError
+    bad, cancelled, ok = sorted(
+        metric_points(otel_metrics, otel.METRIC_EVENT_DURATION),
         key=lambda p: p.attributes[otel.ATTR_EVENT_NAME],
     )
+    assert otel.ATTR_ERROR_TYPE not in cancelled.attributes
     assert bad.attributes == {
         otel.ATTR_EVENT_NAME: "bad",
         otel.ATTR_EVENT_BACKGROUND: False,
@@ -144,19 +139,13 @@ def test_metric_helpers_record(otel_metrics: InMemoryMetricReader):
     otel.record_connection(1)
     otel.record_connection(1)
     otel.record_connection(-1)
-    (acquire,) = _metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    (acquire,) = metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
     assert acquire.attributes == {otel.ATTR_EVENT_NAME: "e"}
-    (size,) = _metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    (size,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
     assert size.sum == 42
     assert size.attributes == {otel.ATTR_NETWORK_IO_DIRECTION: "transmit"}
-    (conns,) = _metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    (conns,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert conns.value == 1
-
-
-def test_remote_context_disabled_is_noop():
-    with otel._tracer.start_as_current_span("outer"), otel.remote_context({}):
-        pass
-    assert isinstance(otel.remote_context({"traceparent": "x"}), nullcontext)
 
 
 def test_remote_context_uses_traceparent(otel_exporter: InMemorySpanExporter):
@@ -167,6 +156,7 @@ def test_remote_context_uses_traceparent(otel_exporter: InMemorySpanExporter):
     with otel.event_span(Event(name="e"), ctx, registered):
         pass
     (span,) = otel_exporter.get_finished_spans()
+    assert span.kind == SpanKind.SERVER
     assert span.parent is not None
     assert span.parent.is_remote
     assert format(span.parent.trace_id, "032x") == "0af7651916cd43dd8448eb211c80319c"
@@ -192,3 +182,16 @@ def test_asgi_middleware_hook_toggles():
     assert otel.asgi_middleware is factory
     otel.disable()
     assert otel.asgi_middleware is None
+
+
+def test_attach_context(otel_exporter: InMemorySpanExporter):
+    with otel._tracer.start_as_current_span("outer") as outer:
+        captured = otel.capture_context()
+    otel.attach_context(None)
+    assert not trace.get_current_span().get_span_context().is_valid
+    token = otel_context.attach(otel_context.get_current())
+    try:
+        otel.attach_context(captured)
+        assert trace.get_current_span() is outer
+    finally:
+        otel_context.detach(token)

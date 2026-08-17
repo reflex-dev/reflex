@@ -411,7 +411,7 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
-            if acquire_start:
+            if otel.enabled:
                 otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
@@ -520,6 +520,9 @@ class BaseStateEventProcessor(EventProcessor):
             if ev_ctx is not None:
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
+                if otel.enabled:
+                    # Keep events chained by the handler in the failed event's trace.
+                    otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,

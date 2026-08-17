@@ -19,7 +19,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_base
+from opentelemetry import trace
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
@@ -44,7 +46,14 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
+from reflex.app import (
+    App,
+    ComponentCallable,
+    EventNamespace,
+    _sio_dumps,
+    _sio_loads,
+    default_overlay_component,
+)
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -62,7 +71,7 @@ from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
-from .conftest import chdir
+from .conftest import chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -4348,8 +4357,6 @@ def test_compile_releases_memo_naming_caches(
 
 def test_call_app_wraps_with_otel_asgi_middleware():
     """The app's ASGI callable is wrapped when instrumentation installs a middleware."""
-    from reflex_base import otel
-
     app = App()
     app._compile = unittest.mock.Mock()
     wrapped = []
@@ -4363,36 +4370,22 @@ def test_call_app_wraps_with_otel_asgi_middleware():
 
 def test_sio_json_records_message_sizes(otel_metrics):
     """Socket.IO packet serialization records sizes in both directions."""
-    from reflex_base import otel
-
-    from reflex.app import _sio_dumps, _sio_loads
-
-    data = _sio_dumps({"a": 1}, separators=(",", ":"))
-    assert data == '{"a":1}'
-    assert _sio_loads(data) == {"a": 1}
-    metrics = otel_metrics.get_metrics_data()
-    (metric,) = [
-        m
-        for rm in metrics.resource_metrics
-        for sm in rm.scope_metrics
-        for m in sm.metrics
-        if m.name == otel.METRIC_WEBSOCKET_MESSAGE_SIZE
-    ]
+    data = _sio_dumps({"a": "é"}, separators=(",", ":"))
+    assert data == '{"a":"é"}'
+    assert _sio_loads(data) == {"a": "é"}
+    assert _sio_loads(data.encode()) == {"a": "é"}
     points = {
         p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
-        for p in metric.data.data_points
+        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
     }
-    assert points == {"transmit": len(data), "receive": len(data)}
+    size = len(data.encode())
+    assert size == len(data) + 1
+    assert points == {"transmit": size, "receive": 2 * size}
 
 
 @pytest.mark.asyncio
 async def test_on_event_uses_frontend_traceparent(otel_exporter):
     """A traceparent in the event payload becomes the parent of the event span."""
-    from opentelemetry import trace
-    from reflex_base import otel
-
-    from reflex.app import EventNamespace
-
     mock_app = unittest.mock.Mock()
     mock_app.router.return_value = "/"
     mock_app.sio.get_environ.return_value = {
@@ -4420,10 +4413,6 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
 @pytest.mark.asyncio
 async def test_connect_disconnect_counts_connections(otel_metrics):
     """Connect and disconnect adjust the open connection gauge."""
-    from reflex_base import otel
-
-    from reflex.app import EventNamespace
-
     mock_app = unittest.mock.Mock()
     mock_app._state = None
     ns = EventNamespace(namespace="/", app=mock_app)
@@ -4433,13 +4422,5 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
     task = ns.on_disconnect("sid1")
     if task is not None:
         await task
-    metrics = otel_metrics.get_metrics_data()
-    (metric,) = [
-        m
-        for rm in metrics.resource_metrics
-        for sm in rm.scope_metrics
-        for m in sm.metrics
-        if m.name == otel.METRIC_WEBSOCKET_CONNECTIONS
-    ]
-    (point,) = metric.data.data_points
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert point.value == 1

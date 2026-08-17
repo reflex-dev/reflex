@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from reflex_base import otel
 from reflex_base.constants import CompileVars
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event.context import EventContext
@@ -23,6 +24,7 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import OnLoadInternalState, State, StateUpdate
+from tests.units.conftest import metric_points
 
 
 @pytest.fixture
@@ -761,7 +763,6 @@ async def test_execute_event_records_state_acquire_duration(
         token: The client token.
         otel_metrics: In-memory metric reader with metrics enabled.
     """
-    from reflex_base import otel
 
     class AcquireState(State):
         @event
@@ -772,13 +773,8 @@ async def test_execute_event_records_state_acquire_duration(
         await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
         await processor.join(1)
 
-    metrics = otel_metrics.get_metrics_data()
-    (metric,) = [
-        m
-        for rm in metrics.resource_metrics
-        for sm in rm.scope_metrics
-        for m in sm.metrics
-        if m.name == otel.METRIC_STATE_ACQUIRE_DURATION
-    ]
-    names = {p.attributes[otel.ATTR_EVENT_NAME] for p in metric.data.data_points}
+    names = {
+        p.attributes[otel.ATTR_EVENT_NAME]
+        for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    }
     assert Event.from_event_type(AcquireState.noop())[0].name in names

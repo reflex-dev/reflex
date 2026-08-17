@@ -524,32 +524,71 @@ def preserve_memo_registries():
 
 
 @pytest.fixture
-def otel_exporter() -> Generator[InMemorySpanExporter, None, None]:
-    """Enable the reflex_base.otel trace points against an in-memory exporter.
+def otel_sdk() -> Generator[
+    tuple[InMemorySpanExporter, InMemoryMetricReader], None, None
+]:
+    """Enable the reflex_base.otel trace points and metrics against in-memory sinks.
 
     Yields:
-        The exporter collecting finished spans.
+        The span exporter and the metric reader.
     """
     exporter = InMemorySpanExporter()
-    provider = TracerProvider()
-    provider.add_span_processor(SimpleSpanProcessor(exporter))
-    otel.enable(tracer_provider=provider)
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+    reader = InMemoryMetricReader()
+    otel.enable(
+        tracer_provider=tracer_provider,
+        meter_provider=MeterProvider(metric_readers=[reader]),
+    )
     try:
-        yield exporter
+        yield exporter, reader
     finally:
         otel.disable()
 
 
 @pytest.fixture
-def otel_metrics() -> Generator[InMemoryMetricReader, None, None]:
-    """Enable the reflex_base.otel metrics against an in-memory reader.
+def otel_exporter(otel_sdk) -> InMemorySpanExporter:
+    """The in-memory span exporter of the enabled otel_sdk.
 
-    Yields:
-        The reader collecting recorded metrics.
+    Args:
+        otel_sdk: The enabled sinks.
+
+    Returns:
+        The span exporter.
     """
-    reader = InMemoryMetricReader()
-    otel.enable(meter_provider=MeterProvider(metric_readers=[reader]))
-    try:
-        yield reader
-    finally:
-        otel.disable()
+    return otel_sdk[0]
+
+
+@pytest.fixture
+def otel_metrics(otel_sdk) -> InMemoryMetricReader:
+    """The in-memory metric reader of the enabled otel_sdk.
+
+    Args:
+        otel_sdk: The enabled sinks.
+
+    Returns:
+        The metric reader.
+    """
+    return otel_sdk[1]
+
+
+def metric_points(reader: InMemoryMetricReader, name: str) -> list:
+    """Collect the data points recorded for one metric.
+
+    Args:
+        reader: The in-memory reader to collect from.
+        name: The metric name.
+
+    Returns:
+        The data points, in recording order.
+    """
+    data = reader.get_metrics_data()
+    assert data is not None
+    return [
+        point
+        for rm in data.resource_metrics
+        for sm in rm.scope_metrics
+        for metric in sm.metrics
+        if metric.name == name
+        for point in metric.data.data_points
+    ]

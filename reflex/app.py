@@ -1952,7 +1952,7 @@ def _sio_dumps(obj: Any, **kwargs: Any) -> str:
     """
     data = format.json_dumps(obj, **kwargs)
     if otel.enabled:
-        otel.record_message_size(len(data), "transmit")
+        otel.record_message_size(len(data.encode()), "transmit")
     return data
 
 
@@ -1967,7 +1967,9 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
         The decoded payload.
     """
     if otel.enabled:
-        otel.record_message_size(len(data), "receive")
+        otel.record_message_size(
+            len(data.encode()) if isinstance(data, str) else len(data), "receive"
+        )
     return json.loads(data, **kwargs)
 
 
@@ -2203,6 +2205,9 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
+        if not otel.enabled:
+            await self.app.event_processor.enqueue(token, event)
+            return
         with otel.remote_context(fields):
             await self.app.event_processor.enqueue(token, event)
 
