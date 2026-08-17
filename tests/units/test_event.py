@@ -167,20 +167,22 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
 
 
 def test_state_event_handler_caches_unresolved_type_hints():
-    """Unresolved annotations should not be re-evaluated after class patches."""
+    """Unresolved annotations should be retried after their type is defined."""
 
     class S(BaseState):
         @event
-        def on_event(self, event: "MissingType"):  # noqa: F821
+        def on_event(self, event: "_LateBoundEventType"):  # noqa: F821
             pass
 
     handler = cast(EventHandler, S.on_event)
-    cached_hints = handler._type_hints
-    assert cached_hints == {}
+    assert handler._type_hints is None
+    assert handler._get_type_hints() == {}
 
-    type.__setattr__(S, "MissingType", dict)
-
-    assert handler._get_type_hints() is cached_hints
+    globals()["_LateBoundEventType"] = dict
+    try:
+        assert handler._get_type_hints()["event"] is dict
+    finally:
+        del globals()["_LateBoundEventType"]
 
 
 @pytest.mark.parametrize(

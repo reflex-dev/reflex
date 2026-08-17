@@ -514,7 +514,7 @@ class EventHandler(EventActionsMixin):
         try:
             type_hints = get_type_hints(func)
         except NameError:
-            type_hints = {}
+            return {}
         object.__setattr__(self, "_type_hints", type_hints)
         return type_hints
 
