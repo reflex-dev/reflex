@@ -171,7 +171,10 @@ def test_state_event_handler_caches_unresolved_type_hints():
 
     class S(BaseState):
         @event
-        def on_event(self, event: "_LateBoundEventType"):  # noqa: F821
+        def on_event(
+            self,
+            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        ):
             pass
 
     handler = cast(EventHandler, S.on_event)
