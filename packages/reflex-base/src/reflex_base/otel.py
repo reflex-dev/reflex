@@ -12,8 +12,8 @@ provider is available.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from collections.abc import Awaitable, Callable, Iterator, Mapping
+from contextlib import contextmanager
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
@@ -25,8 +25,6 @@ from opentelemetry.trace import SpanKind
 from reflex_base.constants.base import Reflex
 
 if TYPE_CHECKING:
-    from contextlib import AbstractContextManager
-
     from reflex_base.event import Event
     from reflex_base.event.context import EventContext
     from reflex_base.registry import RegisteredEventHandler
@@ -71,10 +69,13 @@ _DURATION_BUCKETS = (
 )
 _SIZE_BUCKETS = (128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304)
 
+# An ASGI callable: (scope, receive, send) -> awaitable.
+ASGIApp = Callable[..., Awaitable[None]]
+
 # Read at every trace point; True only after enable() ran.
 enabled: bool = False
 # Wraps the app's ASGI callable when set (installed by enable()).
-asgi_middleware: Callable[[Any], Any] | None = None
+asgi_middleware: Callable[[ASGIApp], ASGIApp] | None = None
 
 _tracer: trace.Tracer = trace.NoOpTracer()
 _noop_meter = metrics.NoOpMeter(INSTRUMENTATION_NAME)
@@ -119,7 +120,7 @@ def _create_instruments(meter: metrics.Meter) -> None:
 def enable(
     tracer_provider: trace.TracerProvider | None = None,
     meter_provider: metrics.MeterProvider | None = None,
-    asgi_middleware_factory: Callable[[Any], Any] | None = None,
+    asgi_middleware_factory: Callable[[ASGIApp], ASGIApp] | None = None,
 ) -> None:
     """Turn the trace points and metrics on.
 
@@ -164,6 +165,16 @@ def capture_context() -> Context | None:
     return otel_context.get_current() if enabled else None
 
 
+def attach_context(context: Context | None) -> None:
+    """Make a captured context current for the rest of the running task.
+
+    Args:
+        context: The context to attach; None is ignored.
+    """
+    if context is not None:
+        otel_context.attach(context)
+
+
 class _AttachedContext:
     """Attach a context on enter and detach it on exit."""
 
@@ -190,20 +201,19 @@ class _AttachedContext:
         otel_context.detach(self._token)
 
 
-def remote_context(carrier: Mapping[str, Any]) -> AbstractContextManager[None]:
+def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     """Make the trace context carried by a frontend event the current context.
 
-    Events that carry no ``traceparent`` start a new trace: the websocket
-    connection span (if any) is deliberately not used as their parent.
+    Only call when ``enabled``. Events that carry no ``traceparent`` start a
+    new trace: the websocket connection span (if any) is deliberately not
+    used as their parent.
 
     Args:
         carrier: The raw event fields received from the frontend.
 
     Returns:
-        A context manager to run the enqueue under; a no-op when tracing is off.
+        A context manager to run the enqueue under.
     """
-    if not enabled:
-        return nullcontext()
     return _AttachedContext(propagate.extract(carrier, context=Context()))
 
 
@@ -213,8 +223,9 @@ def event_span(
 ) -> Iterator[trace.Span]:
     """Open the span for one event handler execution and record its duration.
 
-    Chained events are parented under the span that enqueued them; events
-    that arrive from the frontend start a new trace.
+    Chained events are INTERNAL children of the span that enqueued them;
+    events that arrive from the frontend are SERVER spans (a new trace, or a
+    child of the browser's remote span).
 
     Args:
         event: The event being processed.
@@ -229,24 +240,29 @@ def event_span(
         ATTR_EVENT_NAME: event.name,
         ATTR_EVENT_BACKGROUND: handler.is_background,
     }
+    attributes: dict[str, Any] = {
+        **metric_attributes,
+        ATTR_EVENT_TXID: ctx.txid,
+        ATTR_SESSION_ID: ctx.token,
+        ATTR_CODE_FUNCTION_NAME: getattr(handler.fn, "__qualname__", event.name),
+    }
+    if ctx.parent_txid:
+        attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
+    # An event whose parent span is local (a chained event) is an internal
+    # step of that request; anything else is a new inbound request.
+    parent = trace.get_current_span(ctx.otel_context).get_span_context()
+    kind = (
+        SpanKind.INTERNAL
+        if parent.is_valid and not parent.is_remote
+        else SpanKind.SERVER
+    )
     start = perf_counter()
     try:
         with _tracer.start_as_current_span(
-            event.name,
-            context=ctx.otel_context,
-            kind=SpanKind.SERVER,
-            attributes=metric_attributes
-            | {
-                ATTR_EVENT_TXID: ctx.txid,
-                ATTR_SESSION_ID: ctx.token,
-                ATTR_CODE_FUNCTION_NAME: getattr(
-                    handler.fn, "__qualname__", event.name
-                ),
-            }
-            | ({ATTR_EVENT_PARENT_TXID: ctx.parent_txid} if ctx.parent_txid else {}),
+            event.name, context=ctx.otel_context, kind=kind, attributes=attributes
         ) as span:
             yield span
-    except BaseException as ex:
+    except Exception as ex:
         metric_attributes[ATTR_ERROR_TYPE] = type(ex).__qualname__
         raise
     finally:
