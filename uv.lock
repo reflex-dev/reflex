@@ -3921,7 +3921,7 @@ pydantic = [
 
 [package.metadata]
 requires-dist = [
-    { name = "opentelemetry-api", specifier = ">=1.24.0,<2.0" },
+    { name = "opentelemetry-api", specifier = ">=1.30.0,<2.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },
@@ -4265,7 +4265,7 @@ instruments = [
 
 [package.metadata]
 requires-dist = [
-    { name = "opentelemetry-api", specifier = ">=1.24.0,<2.0" },
+    { name = "opentelemetry-api", specifier = ">=1.30.0,<2.0" },
     { name = "opentelemetry-instrumentation", specifier = ">=0.49b0,<1.0" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.49b0,<1.0" },
     { name = "opentelemetry-util-http", specifier = ">=0.49b0,<1.0" },
