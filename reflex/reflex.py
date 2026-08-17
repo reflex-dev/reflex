@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import click
 from reflex_base import constants
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
 from reflex_cli.v2.deployments import hosting_cli
@@ -378,7 +378,7 @@ def _run(
         config._set_persistent(backend_host=backend_host)
 
     # Reload the config to make sure the env vars are persistent.
-    get_config(reload=True)
+    reload_config()
 
     console.rule("[bold]Starting Reflex App")
 
@@ -562,7 +562,7 @@ def compile(dry: bool, rich: bool):
     # Check the app.
     if prerequisites.needs_reinit():
         _init(name=get_config().app_name)
-    get_config(reload=True)
+    reload_config()
     starting_time = time.monotonic()
     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
@@ -855,6 +855,18 @@ def makemigrations(message: str | None):
     help="Vm type id. Run `reflex cloud vmtypes` to get options.",
 )
 @click.option(
+    "--min-instances",
+    type=int,
+    help="The minimum number of instances to keep running. Left unchanged when "
+    "omitted. Only supported on apps deployed to Google Cloud.",
+)
+@click.option(
+    "--max-instances",
+    type=int,
+    help="The maximum number of instances to scale out to. Left unchanged when "
+    "omitted. Only supported on apps deployed to Google Cloud.",
+)
+@click.option(
     "--hostname",
     help="The hostname of the frontend.",
 )
@@ -917,6 +929,8 @@ def deploy(
     region: tuple[str, ...],
     env: tuple[str],
     vmtype: str | None,
+    min_instances: int | None,
+    max_instances: int | None,
     hostname: str | None,
     provider: str | None,
     description: str | None,
@@ -984,6 +998,8 @@ def deploy(
         regions=list(region),
         envs=list(env),
         vmtype=vmtype,
+        min_instances=min_instances,
+        max_instances=max_instances,
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
@@ -1006,6 +1022,8 @@ def rename(new_name: str):
     from reflex.utils.rename import rename_app
 
     prerequisites.validate_app_name(new_name)
+    # Reload so we read rxconfig.py from the current directory, not a cached one.
+    reload_config()
     rename_app(new_name, get_config().loglevel)
 
 

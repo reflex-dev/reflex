@@ -34,6 +34,7 @@ from reflex_cli.utils.hosting import (
     rollback_deployment,
     save_token_to_config,
     set_app_provider,
+    set_instance_bounds,
     submit_security_review,
     update_deployment_description,
     validate_token,
@@ -487,6 +488,55 @@ def test_set_app_provider_error(mocker: MockerFixture):
     assert "Enterprise required" in result
 
 
+@pytest.mark.parametrize(
+    ("min_instances", "max_instances", "expected_body"),
+    [
+        (0, 5, {"min_instances": 0, "max_instances": 5}),
+        (2, None, {"min_instances": 2}),
+        (None, 10, {"max_instances": 10}),
+    ],
+)
+def test_set_instance_bounds_sends_only_given_bounds(
+    mocker: MockerFixture,
+    min_instances: int | None,
+    max_instances: int | None,
+    expected_body: dict[str, int],
+):
+    """Only the bounds the caller passed are sent; the rest keep their value."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok(mocker))
+    assert (
+        set_instance_bounds(
+            "app-1",
+            _CLIENT,
+            min_instances=min_instances,
+            max_instances=max_instances,
+        )
+        is None
+    )
+    assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/instance_bounds")
+    assert mock_post.call_args.kwargs["json"] == expected_body
+    assert mock_post.call_args.kwargs["headers"]["X-API-TOKEN"] == "fake-token"
+
+
+@pytest.mark.parametrize(
+    ("status_code", "detail"),
+    [
+        (400, "min_instances must be less than or equal to max_instances"),
+        (400, "platform does not support instance bounds"),
+        (409, "a scale operation is already running for this app"),
+    ],
+)
+def test_set_instance_bounds_error(
+    mocker: MockerFixture, status_code: int, detail: str
+):
+    """Validation, unsupported-platform and conflict details reach the caller."""
+    mocker.patch("httpx.post", return_value=_error(mocker, status_code, detail))
+    result = set_instance_bounds("app-1", _CLIENT, min_instances=1, max_instances=0)
+    assert result is not None
+    assert result.startswith("set instance bounds failed")
+    assert detail in result
+
+
 def test_rollback_deployment_success(mocker: MockerFixture):
     """A successful rollback returns None and targets the rollback endpoint."""
     mock_post = mocker.patch("httpx.post", return_value=_ok(mocker))
@@ -564,6 +614,35 @@ def test_create_deployment_forwards_description(mocker: MockerFixture):
         description="my note",
     )
     assert mock_post.call_args.kwargs["data"]["description"] == "my note"
+
+
+@pytest.mark.parametrize("vmtype", ["c2m2", None])
+def test_create_deployment_forwards_vmtype(mocker: MockerFixture, vmtype: str | None):
+    """A requested VM type reaches the submit body; nothing is sent otherwise."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+    mocker.patch("importlib.metadata.version", return_value="0.1.99")
+    mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
+    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
+    from pathlib import Path
+
+    create_deployment(
+        zip_dir=Path("/tmp"),
+        client=_CLIENT,
+        app_name="n",
+        project_id=None,
+        regions=None,
+        hostname=None,
+        vmtype=vmtype,
+        secrets=None,
+        packages=None,
+        strategy=None,
+        app_id="app-1",
+    )
+    data = mock_post.call_args.kwargs["data"]
+    if vmtype is None:
+        assert "vm_type" not in data
+    else:
+        assert data["vm_type"] == vmtype
 
 
 def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
