@@ -20,6 +20,7 @@ from typing_extensions import Self
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -576,7 +577,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        await self._execute_event(entry=entry, registered_handler=registered_handler)
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
+            return
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,
