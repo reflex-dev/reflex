@@ -12,7 +12,7 @@ from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -1191,7 +1191,10 @@ def compile_app(
     app.style = evaluate_style_namespaces(app.style)
 
     if not should_compile and not dry_run:
-        with log.timing(logger, "Evaluate Pages (Backend)"):
+        with (
+            log.timing(logger, "Evaluate Pages (Backend)"),
+            otel.span("reflex.compile.evaluate_pages"),
+        ):
             for route in app._unevaluated_pages:
                 logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
@@ -1225,7 +1228,11 @@ def compile_app(
         ),
     )
 
-    with log.timing(logger, "Compile pages"), compile_ctx:
+    with (
+        log.timing(logger, "Compile pages"),
+        otel.span("reflex.compile.pages"),
+        compile_ctx,
+    ):
         compile_ctx.compile(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
@@ -1332,7 +1339,7 @@ def compile_app(
 
     assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
     if assets_src.is_dir() and not dry_run:
-        with log.timing(logger, "Copy assets"):
+        with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
             path_ops.update_directory_tree(
                 src=assets_src,
                 dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
@@ -1411,7 +1418,10 @@ def compile_app(
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
 
-    with log.timing(logger, "Install Frontend Packages"):
+    with (
+        log.timing(logger, "Install Frontend Packages"),
+        otel.span("reflex.compile.install_frontend_packages"),
+    ):
         app._get_frontend_packages(all_imports)
 
     frontend_skeleton.update_react_router_config(
@@ -1461,7 +1471,7 @@ def compile_app(
                 raise FileNotFoundError(msg)
         output_mapping[path] = modify_fn(file_content)
 
-    with log.timing(logger, "Write to Disk"):
+    with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
 

@@ -4426,3 +4426,32 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
     assert point.value == 1
     # Release t2 so a shared token store (redis) does not leak into other tests.
     await ns._token_manager.disconnect_all()
+
+
+def test_compile_emits_stage_spans(
+    compilable_app: tuple[App, Path], mocker: MockerFixture, otel_exporter
+):
+    """A real compile runs inside `reflex.compile` with the stages as children.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app._compile(trigger="hot_reload")
+    spans = {span.name: span for span in otel_exporter.get_finished_spans()}
+    root = spans[otel.COMPILE_SPAN_NAME]
+    assert root.parent is None
+    assert root.attributes[otel.ATTR_COMPILE_TRIGGER] == "hot_reload"
+    assert root.attributes[otel.ATTR_COMPILE_DRY_RUN] is False
+    stages = {name for name in spans if name.startswith("reflex.compile.")}
+    assert {"reflex.compile.pages", "reflex.compile.write"} <= stages
+    for name in stages:
+        parent = spans[name].parent
+        assert parent is not None
+        assert parent.span_id == root.get_span_context().span_id
