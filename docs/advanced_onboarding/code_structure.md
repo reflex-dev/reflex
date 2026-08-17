@@ -39,9 +39,7 @@ class LoginState(rx.State):
     @rx.event
     async def handle_submit(self, form_data):
         auth = await self.get_state(AuthState)
-        auth.logged_in = authenticate(
-            form_data["username"], form_data["password"]
-        )
+        auth.logged_in = authenticate(form_data["username"], form_data["password"])
 
 
 def login_field(name: str, **input_props):
