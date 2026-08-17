@@ -486,7 +486,7 @@ class EventHandler(EventActionsMixin):
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
     _type_hints: dict[str, Any] | None = dataclasses.field(
-        default=None, init=False, repr=False, compare=False
+        default=None, repr=False, compare=False
     )
 
     def __post_init__(self) -> None:
@@ -514,7 +514,7 @@ class EventHandler(EventActionsMixin):
         try:
             type_hints = get_type_hints(func)
         except NameError:
-            return {}
+            type_hints = {}
         object.__setattr__(self, "_type_hints", type_hints)
         return type_hints
 
