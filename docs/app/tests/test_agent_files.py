@@ -15,6 +15,14 @@ from agent_files._plugin import (
     markdown_path_for_trailing_slash_url,
 )
 
+AGENT_DIRECTIVE = (
+    "> For AI agents: the complete documentation index is at "
+    "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
+    "available by appending `.md` or sending `Accept: text/markdown`. For "
+    "large or multi-page apps, start with [Scaling State]"
+    "(https://reflex.dev/docs/state-structure/scaling-state.md)."
+)
+
 
 def _patch_config(monkeypatch, deploy_url: str, frontend_path: str = "/docs"):
     """Patch the site config everywhere it is read.
@@ -92,6 +100,15 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         "Use this index to find agent-readable Markdown docs, or see "
         "[llms-full.txt](https://reflex.dev/docs/llms-full.txt) for the "
         "complete docs in one file.\n\n"
+        "## Large App Architecture\n\n"
+        "For multi-page apps or apps with substantial state, read these guides "
+        "before choosing module and State boundaries:\n\n"
+        "1. [Scaling State]"
+        "(https://reflex.dev/docs/state-structure/scaling-state.md)\n"
+        "2. [Project Structure (Advanced)]"
+        "(https://reflex.dev/docs/advanced-onboarding/code-structure.md)\n"
+        "3. [State Structure]"
+        "(https://reflex.dev/docs/state-structure/overview.md)\n\n"
         "## Docs\n\n"
     )
     assert "### Components\n\n" in content
@@ -149,12 +166,7 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
         )
     )
 
-    assert content.startswith(
-        "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-        "# Overview"
-    )
+    assert content.startswith(f"{AGENT_DIRECTIVE}\n\n# Overview")
 
 
 def test_generate_markdown_file_content_appends_component_props_table(
@@ -218,10 +230,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
 
     assert Path("api-reference/var.md") in files
     assert files[Path("api-reference/var.md")].startswith(
-        "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-        "# Var\n\n"
+        f"{AGENT_DIRECTIVE}\n\n# Var\n\n"
     )
     assert "## Methods" in files[Path("api-reference/var.md")]
     assert "`reflex_base.vars.base.Var`" in files[Path("api-reference/var.md")]
@@ -230,10 +239,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     # Dynamic API markdown files match the existing lowercase page routes.
     assert Path("api-reference/eventhandler.md") in files
     assert files[Path("api-reference/eventhandler.md")].startswith(
-        "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-        "# Eventhandler\n\n"
+        f"{AGENT_DIRECTIVE}\n\n# Eventhandler\n\n"
     )
     assert Path("api-reference/event-handler.md") not in files
     assert Path("api-reference/componentstate.md") in files
@@ -241,12 +247,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert Path("api-reference/importvar.md") in files
 
     env_vars = files[Path("api-reference/environment-variables.md")]
-    assert env_vars.startswith(
-        "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-        "# Environment Variables\n\n"
-    )
+    assert env_vars.startswith(f"{AGENT_DIRECTIVE}\n\n# Environment Variables\n\n")
     assert "`reflex.config.EnvironmentVariables`" in env_vars
 
     # Dynamic API-reference pages must land in the llms.txt index.
@@ -303,10 +304,7 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
                     title="Eventhandler",
                     section="API Reference",
                 ),
-                "> For AI agents: the complete documentation index is at "
-                "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-                "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-                "# Eventhandler\n\n"
+                f"{AGENT_DIRECTIVE}\n\n# Eventhandler\n\n"
                 "`reflex_base.event.EventHandler`\n",
             )
         ],
@@ -319,6 +317,18 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
         "This file stitches together the full Reflex documentation as Markdown"
     )
     assert "[llms.txt](https://reflex.dev/docs/llms.txt)" in content
+    assert (
+        "[Scaling State](https://reflex.dev/docs/state-structure/scaling-state.md)"
+        in content
+    )
+    assert (
+        "[Project Structure (Advanced)]"
+        "(https://reflex.dev/docs/advanced-onboarding/code-structure.md)" in content
+    )
+    assert (
+        "[State Structure](https://reflex.dev/docs/state-structure/overview.md)"
+        in content
+    )
     assert (
         "# Introduction\n"
         "Source: https://reflex.dev/docs/getting-started/introduction.md\n\n"

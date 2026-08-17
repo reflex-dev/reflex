@@ -185,6 +185,8 @@ redirects.extend([
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
     ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
+    ("/substates/overview/", "/state-structure/overview/"),
+    ("/substates/component-state/", "/state-structure/component-state/"),
 ])
 
 

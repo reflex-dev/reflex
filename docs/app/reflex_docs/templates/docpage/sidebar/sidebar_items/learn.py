@@ -161,6 +161,7 @@ def get_sidebar_items_backend():
         create_item(
             "State Structure",
             children=[
+                state_structure.scaling_state,
                 state_structure.overview,
                 state_structure.component_state,
                 state_structure.mixins,

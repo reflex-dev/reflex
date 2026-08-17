@@ -64,6 +64,21 @@ def test_authentication_overview_moved_to_enterprise(routes_fixture):
     assert "/enterprise/auth/overview/" in paths
 
 
+def test_legacy_substate_redirects(monkeypatch):
+    """Legacy substate routes redirect to their State Structure replacements."""
+    import reflex_enterprise as rxe
+
+    # Import the app without requiring an enterprise login during unit tests.
+    monkeypatch.setattr(rxe, "App", rx.App)
+
+    from reflex_docs.reflex_docs import redirects
+
+    assert {
+        ("/substates/overview/", "/state-structure/overview/"),
+        ("/substates/component-state/", "/state-structure/component-state/"),
+    } <= set(redirects)
+
+
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
     """Generated docs meta descriptions should not exceed the SEO snippet cap."""
     overlong = {
