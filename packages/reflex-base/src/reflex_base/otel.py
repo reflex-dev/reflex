@@ -52,6 +52,25 @@ METRIC_WEBSOCKET_CONNECTIONS = "reflex.websocket.connections"
 # Key of the W3C trace context carried in an event payload sent by the frontend.
 TRACEPARENT_FIELD = "traceparent"
 
+# Histogram bucket advisories: seconds (semconv http.server.request.duration) and bytes.
+_DURATION_BUCKETS = (
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.075,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1,
+    2.5,
+    5,
+    7.5,
+    10,
+)
+_SIZE_BUCKETS = (128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304)
+
 # Read at every trace point; True only after enable() ran.
 enabled: bool = False
 # Wraps the app's ASGI callable when set (installed by enable()).
@@ -76,16 +95,19 @@ def _create_instruments(meter: metrics.Meter) -> None:
         METRIC_EVENT_DURATION,
         unit="s",
         description="Duration of event handler executions.",
+        explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
     )
     _state_acquire_duration = meter.create_histogram(
         METRIC_STATE_ACQUIRE_DURATION,
         unit="s",
         description="Time an event waited to acquire and load its session state.",
+        explicit_bucket_boundaries_advisory=_DURATION_BUCKETS,
     )
     _message_size = meter.create_histogram(
         METRIC_WEBSOCKET_MESSAGE_SIZE,
         unit="By",
         description="Serialized size of socket messages exchanged with the client.",
+        explicit_bucket_boundaries_advisory=_SIZE_BUCKETS,
     )
     _ws_connections = meter.create_up_down_counter(
         METRIC_WEBSOCKET_CONNECTIONS,
