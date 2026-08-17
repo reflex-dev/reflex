@@ -1921,8 +1921,6 @@ def _check_event_args_subclass_of_callback(
     # noqa: DAR401 delayed_exceptions[]
     # noqa: DAR402 EventHandlerArgTypeMismatchError
     """
-    from reflex_base.utils import console
-
     type_match_found: dict[str, bool] = {}
     delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
 

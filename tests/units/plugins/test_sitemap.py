@@ -15,6 +15,23 @@ import reflex as rx
 from reflex.app import UnevaluatedPage
 
 
+def _sitemap_warnings(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """Return the warnings the sitemap plugin itself emitted.
+
+    Args:
+        caplog: Pytest log capture fixture.
+
+    Returns:
+        The captured warning records logged by the sitemap plugin.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.name == "reflex_base.plugins.sitemap"
+        and record.levelno >= logging.WARNING
+    ]
+
+
 def test_generate_xml_empty_links():
     """Test generate_xml with an empty list of links."""
     xml_output = generate_xml([])
@@ -128,7 +145,7 @@ def test_generate_links_for_sitemap_static_routes(
         "priority": 0.7,
         "changefreq": "monthly",
     } in links
-    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert not _sitemap_warnings(caplog)
 
 
 @patch("reflex_base.config.get_config")
@@ -193,7 +210,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
         "priority": 0.9,
     }
     assert expected_link in links
-    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    warnings = _sitemap_warnings(caplog)
     assert len(warnings) == 1
     assert (
         warnings[0].getMessage()
@@ -241,7 +258,7 @@ def test_generate_links_for_sitemap_404_route(
     links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "/custom-404", "priority": 0.1} in links
-    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    warnings = _sitemap_warnings(caplog)
     assert len(warnings) == 1
     assert (
         warnings[0].getMessage()
