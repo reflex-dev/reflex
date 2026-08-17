@@ -426,6 +426,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend(event);
     socket.emit("event", event);
   }
 };
@@ -673,6 +675,7 @@ export const connect = async (
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     setConnectErrors([]);
+    window.__reflex_otel?.onSocketConnect();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     if (socket.current.rehydrate) {
@@ -702,6 +705,7 @@ export const connect = async (
 
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
+    window.__reflex_otel?.onSocketDisconnect(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
     window.removeEventListener("beforeunload", disconnectTrigger);
