@@ -48,7 +48,9 @@ class ReflexInstrumentor(BaseInstrumentor):
             **kwargs: ``tracer_provider`` and ``meter_provider`` select the
                 providers (default: the global ones). ``excluded_urls`` is a
                 comma-separated list of URL patterns the ASGI middleware skips
-                (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``, else ``/ping``).
+                (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``, else
+                ``OTEL_PYTHON_EXCLUDED_URLS``, else ``/ping``; pass ``""`` to
+                exclude nothing).
                 ``server_request_hook``, ``client_request_hook`` and
                 ``client_response_hook`` are forwarded to the ASGI middleware.
         """
@@ -58,11 +60,13 @@ class ReflexInstrumentor(BaseInstrumentor):
 
         tracer_provider = kwargs.get("tracer_provider")
         meter_provider = kwargs.get("meter_provider")
-        excluded_urls = kwargs.get("excluded_urls") or (
-            os.environ.get("OTEL_PYTHON_REFLEX_EXCLUDED_URLS")
-            or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
-            or _DEFAULT_EXCLUDED_URLS
-        )
+        excluded_urls = kwargs.get("excluded_urls")
+        if excluded_urls is None:
+            excluded_urls = (
+                os.environ.get("OTEL_PYTHON_REFLEX_EXCLUDED_URLS")
+                or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
+                or _DEFAULT_EXCLUDED_URLS
+            )
 
         def asgi_middleware(app: otel.ASGIApp) -> otel.ASGIApp:
             return OpenTelemetryMiddleware(

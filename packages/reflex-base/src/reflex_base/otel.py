@@ -3,8 +3,8 @@
 The framework calls into this module at a small number of fixed points (event
 dispatch, event context forks, state acquisition, socket messages). Every entry
 point checks the module-level ``enabled`` flag first, so with no
-instrumentation installed the cost is one attribute read and no
-``opentelemetry`` object is ever created.
+instrumentation installed the cost is one attribute read: no span is started
+and nothing is recorded (only no-op API objects exist, created at import).
 
 The ``reflex-otel`` package flips the flag via :func:`enable` once a tracer
 provider is available.

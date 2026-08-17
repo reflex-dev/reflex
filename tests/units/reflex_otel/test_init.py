@@ -47,3 +47,26 @@ def test_instrument_installs_asgi_middleware(instrumentor: ReflexInstrumentor):
     assert wrapped.app is app
     instrumentor.uninstrument()
     assert otel.asgi_middleware is None
+
+
+@pytest.mark.parametrize(
+    ("excluded_urls", "ping_disabled"),
+    [(None, True), ("", False), ("/health", False)],
+)
+def test_excluded_urls_only_defaults_when_omitted(
+    instrumentor: ReflexInstrumentor,
+    excluded_urls: str | None,
+    ping_disabled: bool,
+):
+    kwargs = {} if excluded_urls is None else {"excluded_urls": excluded_urls}
+    instrumentor.instrument(tracer_provider=TracerProvider(), **kwargs)
+    assert otel.asgi_middleware is not None
+
+    async def app(scope, receive, send): ...
+
+    wrapped = otel.asgi_middleware(app)
+    assert isinstance(wrapped, OpenTelemetryMiddleware)
+    assert (
+        bool(wrapped.excluded_urls and wrapped.excluded_urls.url_disabled("/ping"))
+        is ping_disabled
+    )

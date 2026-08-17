@@ -301,6 +301,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_otel",
   "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
