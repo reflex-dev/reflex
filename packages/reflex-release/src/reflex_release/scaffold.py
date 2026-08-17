@@ -34,7 +34,14 @@ from packaging.version import Version
 
 from .actions import echo, fail
 from .changelog import parse_sections, render_heading
-from .config import Config, load_config, load_pyproject
+from .config import (
+    POST_RELEASE_INPUTS,
+    POST_RELEASE_WORKFLOW_KEY,
+    TOOL_TABLE,
+    Config,
+    load_config,
+    load_pyproject,
+)
 from .discovery import releasable_packages, title_format
 from .versions import ACTIONS
 
@@ -57,11 +64,18 @@ INTERNAL_WORKFLOW = "auto_release_internal.yml"
 #: Generated workflows that a repository may stop needing.
 OPTIONAL_WORKFLOWS = (INTERNAL_WORKFLOW,)
 
+#: Every workflow this tool can generate, whether or not a given repository
+#: currently gets it.
+GENERATED_WORKFLOWS = (*CORE_WORKFLOWS, *OPTIONAL_WORKFLOWS)
+
 TEMPLATE_DIR = Path(__file__).parent / "templates" / "workflows"
 
 _GITHUB_REMOTE_RE = re.compile(
     r"github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
 )
+
+# A workflow's display name: the only top-level `name:` key, at column 0.
+_WORKFLOW_NAME_RE = re.compile(r"^name:[ \t]*(?P<name>\S.*?)[ \t]*$", re.MULTILINE)
 
 TOWNCRIER_TYPES = (
     ("breaking", "Breaking Changes"),
@@ -261,6 +275,22 @@ def _indented_list(items: list[str], indent: int) -> str:
     return "\n".join(f"{' ' * indent}- {item}" for item in items)
 
 
+#: The step that hands each published tag to the repository's own workflow.
+#: ``@@INPUTS@@`` is the dispatch contract, named from one place.
+POST_RELEASE_STEP = """
+      # One dispatch per published tag, on the tag itself, after the upload,
+      # the tag and the GitHub release: the workflow sees exactly the tree that
+      # was published. It must declare workflow_dispatch inputs named
+      # @@INPUTS@@.
+      - name: Trigger the post-release workflow
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ needs.build.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: @@CLI@@ post-release"""
+
+
 def render(name: str, config: Config) -> str:
     """Render one workflow template for a repository.
 
@@ -301,9 +331,23 @@ def render(name: str, config: Config) -> str:
         "@@PACKAGE_INPUTS@@": _package_input_block(config),
         "@@PACKAGE_SELECTION@@": _package_selection_block(config),
         "@@INTERNAL_PATHS@@": _indented_list(internal_paths, 6),
+        # Dispatching a workflow is a write on the actions scope, which the
+        # publish job never needs and so is not granted by default.
+        "@@ACTIONS_PERMISSION@@": ("write" if config.post_release_workflow else "read"),
+        "@@POST_RELEASE_STEP@@": (
+            POST_RELEASE_STEP.replace("@@CLI@@", cli).replace(
+                "@@INPUTS@@", ", ".join(POST_RELEASE_INPUTS)
+            )
+            if config.post_release_workflow
+            else ""
+        ),
     }
     text = (TEMPLATE_DIR / name).read_text(encoding="utf-8")
     for placeholder, value in substitutions.items():
+        # A placeholder alone on a line stands for an optional block: an empty
+        # value removes the line rather than leaving a blank one behind.
+        if not value:
+            text = text.replace(f"{placeholder}\n", "")
         text = text.replace(placeholder, value)
     if remaining := re.findall(r"@@[A-Z_]+@@", text):
         fail(
@@ -343,6 +387,48 @@ def check_title_format(config: Config) -> None:
         )
 
 
+def generated_workflow_names() -> set[str]:
+    """Return every name a workflow this tool generates answers to.
+
+    ``gh workflow run`` resolves a workflow by file name *or* by display name,
+    so both are the tool's own — and every workflow it can generate counts, not
+    just the ones a repository currently gets: a repository that drops its last
+    internal package would otherwise be left dispatching a workflow ``sync``
+    deletes.
+
+    Returns:
+        The file names and the ``name:`` of each generated workflow.
+    """
+    names: set[str] = set(GENERATED_WORKFLOWS)
+    for filename in GENERATED_WORKFLOWS:
+        text = (TEMPLATE_DIR / filename).read_text(encoding="utf-8")
+        match = _WORKFLOW_NAME_RE.search(text)
+        if match is None:
+            fail(f"the {filename} template declares no top-level name")
+        names.add(match["name"])
+    return names
+
+
+def check_post_release_workflow(config: Config) -> None:
+    """Fail when the post-release workflow is one this tool generates.
+
+    Handing a published tag back to the release pipeline itself would either
+    re-enter it or fail on inputs it does not declare, so a repository that
+    means to run something of its own after a release has to name that.
+
+    Args:
+        config: The repository configuration.
+    """
+    workflow = config.post_release_workflow
+    if workflow is not None and workflow in generated_workflow_names():
+        fail(
+            f"[tool.{TOOL_TABLE}] {POST_RELEASE_WORKFLOW_KEY} is {workflow!r}, which "
+            "names a workflow this tool generates (GitHub resolves a workflow by "
+            "file name or by display name); name a workflow of your own to run "
+            "after each published tag"
+        )
+
+
 def sync(config: Config, check: bool = False, force: bool = False) -> None:
     """Write the scaffolded workflows, or verify they are up to date.
 
@@ -352,6 +438,7 @@ def sync(config: Config, check: bool = False, force: bool = False) -> None:
         force: Overwrite files that were not generated by this tool.
     """
     check_title_format(config)
+    check_post_release_workflow(config)
     workflow_dir = config.root / WORKFLOW_DIR
     stale: list[str] = []
     for name in managed_workflows(config):

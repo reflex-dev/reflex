@@ -23,6 +23,16 @@ else:
 
 TOOL_TABLE = "reflex-release"
 
+#: The setting naming the workflow to dispatch after each published tag.
+POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
+
+#: The ``workflow_dispatch`` inputs that workflow is dispatched with, in the
+#: order they are passed. This is the contract a consumer repository writes its
+#: post-release workflow against, so the payload built by ``post-release``, the
+#: step scaffolded into ``publish.yml`` and the documentation all name it from
+#: here rather than repeating the list.
+POST_RELEASE_INPUTS = ("tag", "package", "version")
+
 _KNOWN_KEYS = frozenset({
     "allow-self-review",
     "cli-command",
@@ -40,6 +50,7 @@ _KNOWN_KEYS = frozenset({
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
+    POST_RELEASE_WORKFLOW_KEY,
     "lockstep",
 })
 
@@ -106,6 +117,9 @@ class Config:
             instead of from a changelog.
         changelog_exempt_packages: Packages excluded from the pull-request news
             fragment requirement.
+        post_release_workflow: A workflow dispatched once per published tag,
+            after the tag and the GitHub release exist, or None to dispatch
+            nothing.
         lockstep: The lockstep groups.
     """
 
@@ -128,6 +142,7 @@ class Config:
     latest_release_package: str | None = None
     internal_packages: tuple[str, ...] = ()
     changelog_exempt_packages: tuple[str, ...] = ()
+    post_release_workflow: str | None = None
     lockstep: tuple[LockstepGroup, ...] = ()
 
     def package_dir(self, package: str) -> str:
@@ -660,6 +675,10 @@ def load_config(root: Path) -> Config:
         latest_release_package=latest_release_package or None,
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
+        # The documented opt-out is leaving the key out; an empty string is the
+        # same thing rather than a workflow named "".
+        post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
+        or None,
     )
 
     if not config.main_branch:
