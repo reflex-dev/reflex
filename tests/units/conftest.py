@@ -9,6 +9,12 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from reflex_base import otel
 from reflex_base.components.memo import MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
@@ -515,3 +521,35 @@ def preserve_memo_registries():
     finally:
         MEMOS.clear()
         MEMOS.update(memos)
+
+
+@pytest.fixture
+def otel_exporter() -> Generator[InMemorySpanExporter, None, None]:
+    """Enable the reflex_base.otel trace points against an in-memory exporter.
+
+    Yields:
+        The exporter collecting finished spans.
+    """
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    otel.enable(tracer_provider=provider)
+    try:
+        yield exporter
+    finally:
+        otel.disable()
+
+
+@pytest.fixture
+def otel_metrics() -> Generator[InMemoryMetricReader, None, None]:
+    """Enable the reflex_base.otel metrics against an in-memory reader.
+
+    Yields:
+        The reader collecting recorded metrics.
+    """
+    reader = InMemoryMetricReader()
+    otel.enable(meter_provider=MeterProvider(metric_readers=[reader]))
+    try:
+        yield reader
+    finally:
+        otel.disable()

@@ -745,3 +745,40 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+async def test_execute_event_records_state_acquire_duration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_metrics,
+):
+    """Executing an event records how long acquiring the session state took.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_metrics: In-memory metric reader with metrics enabled.
+    """
+    from reflex_base import otel
+
+    class AcquireState(State):
+        @event
+        def noop(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
+        await processor.join(1)
+
+    metrics = otel_metrics.get_metrics_data()
+    (metric,) = [
+        m
+        for rm in metrics.resource_metrics
+        for sm in rm.scope_metrics
+        for m in sm.metrics
+        if m.name == otel.METRIC_STATE_ACQUIRE_DURATION
+    ]
+    names = {p.attributes[otel.ATTR_EVENT_NAME] for p in metric.data.data_points}
+    assert Event.from_event_type(AcquireState.noop())[0].name in names

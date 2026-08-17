@@ -1,8 +1,12 @@
 """Tests for the reflex_base.otel trace points."""
 
+from contextlib import nullcontext
+from time import perf_counter
+
 import pytest
 from opentelemetry import context as otel_context
 from opentelemetry import trace
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import SpanKind, StatusCode
 from reflex_base import otel
@@ -93,3 +97,98 @@ def test_event_span_parents_under_captured_context(
     _root, child = otel_exporter.get_finished_spans()
     assert child.parent is not None
     assert child.parent.span_id == root.get_span_context().span_id
+
+
+def _metric_points(reader: InMemoryMetricReader, name: str) -> list:
+    data = reader.get_metrics_data()
+    assert data is not None
+    return [
+        point
+        for rm in data.resource_metrics
+        for sm in rm.scope_metrics
+        for metric in sm.metrics
+        if metric.name == name
+        for point in metric.data.data_points
+    ]
+
+
+def test_event_span_records_duration_metric(otel_metrics: InMemoryMetricReader):
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    with otel.event_span(Event(name="ok"), _ctx(), registered):
+        pass
+    with (
+        pytest.raises(RuntimeError),
+        otel.event_span(Event(name="bad"), _ctx(), registered),
+    ):
+        raise RuntimeError
+    bad, ok = sorted(
+        _metric_points(otel_metrics, otel.METRIC_EVENT_DURATION),
+        key=lambda p: p.attributes[otel.ATTR_EVENT_NAME],
+    )
+    assert bad.attributes == {
+        otel.ATTR_EVENT_NAME: "bad",
+        otel.ATTR_EVENT_BACKGROUND: False,
+        otel.ATTR_ERROR_TYPE: "RuntimeError",
+    }
+    assert ok.attributes == {
+        otel.ATTR_EVENT_NAME: "ok",
+        otel.ATTR_EVENT_BACKGROUND: False,
+    }
+    assert ok.count == bad.count == 1
+    assert ok.sum >= 0
+
+
+def test_metric_helpers_record(otel_metrics: InMemoryMetricReader):
+    otel.record_state_acquired(perf_counter(), Event(name="e"))
+    otel.record_message_size(42, "transmit")
+    otel.record_connection(1)
+    otel.record_connection(1)
+    otel.record_connection(-1)
+    (acquire,) = _metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    assert acquire.attributes == {otel.ATTR_EVENT_NAME: "e"}
+    (size,) = _metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    assert size.sum == 42
+    assert size.attributes == {otel.ATTR_NETWORK_IO_DIRECTION: "transmit"}
+    (conns,) = _metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert conns.value == 1
+
+
+def test_remote_context_disabled_is_noop():
+    with otel._tracer.start_as_current_span("outer"), otel.remote_context({}):
+        pass
+    assert isinstance(otel.remote_context({"traceparent": "x"}), nullcontext)
+
+
+def test_remote_context_uses_traceparent(otel_exporter: InMemorySpanExporter):
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    with otel.remote_context({"traceparent": traceparent}):
+        ctx = _ctx().fork()
+    with otel.event_span(Event(name="e"), ctx, registered):
+        pass
+    (span,) = otel_exporter.get_finished_spans()
+    assert span.parent is not None
+    assert span.parent.is_remote
+    assert format(span.parent.trace_id, "032x") == "0af7651916cd43dd8448eb211c80319c"
+    assert format(span.parent.span_id, "016x") == "b7ad6b7169203331"
+
+
+def test_remote_context_without_traceparent_starts_new_trace(
+    otel_exporter: InMemorySpanExporter,
+):
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    with otel._tracer.start_as_current_span("websocket"), otel.remote_context({}):
+        ctx = _ctx().fork()
+    with otel.event_span(Event(name="e"), ctx, registered):
+        pass
+    _ws, span = otel_exporter.get_finished_spans()
+    assert span.parent is None
+
+
+def test_asgi_middleware_hook_toggles():
+    assert otel.asgi_middleware is None
+    factory = lambda app: app  # noqa: E731
+    otel.enable(asgi_middleware_factory=factory)
+    assert otel.asgi_middleware is factory
+    otel.disable()
+    assert otel.asgi_middleware is None

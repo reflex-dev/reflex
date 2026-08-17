@@ -10,12 +10,14 @@ import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -400,6 +402,7 @@ class BaseStateEventProcessor(EventProcessor):
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
+        acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -408,6 +411,8 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
+            if acquire_start:
+                otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
                 not state.router_data and event.name != _hydrate_event_name()

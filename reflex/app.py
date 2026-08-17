@@ -28,7 +28,7 @@ from contextvars import Token
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
@@ -580,8 +580,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(_sio_dumps),
+                    loads=staticmethod(_sio_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
@@ -812,6 +812,8 @@ class App(MiddlewareMixin, LifespanMixin):
             self._context_middleware(asgi_app),
         )
         App._add_cors(top_asgi_app)
+        if otel.asgi_middleware is not None:
+            return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
 
     def _add_default_endpoints(self):
@@ -1938,6 +1940,37 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(len(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(len(data), "receive")
+    return json.loads(data, **kwargs)
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -2018,6 +2051,8 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+        if otel.enabled:
+            otel.record_connection(1)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2028,6 +2063,8 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        if otel.enabled:
+            otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -2166,7 +2203,8 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(token, event)
+        with otel.remote_context(fields):
+            await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
