@@ -70,7 +70,10 @@ class Script(elements.Script):
                 custom_attrs=custom_attrs,
                 on_mount=on_mount,
                 on_unmount=on_unmount,
-            )
+            ),
+            # Flush head updates synchronously: the default rAF-deferred flush
+            # can be lost around hydration, dropping the script tags entirely.
+            defer=False,
         )
 
 
