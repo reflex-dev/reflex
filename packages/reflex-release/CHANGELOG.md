@@ -1,3 +1,11 @@
+## v0.1.0a2 (2026-08-17)
+
+### Features
+
+- `reflex-release` can now delegate a package's build to a workflow the consuming repository owns, for packages whose artifacts cannot come from a single `uv build` — a matrix of platform-specific wheels, say. A `[[tool.reflex-release.custom-build]]` entry names the packages and the workflow file, and the generated `publish.yml` calls it in place of its own build job, passing the package, version, tag, build directory and the artifact-name prefix to upload under. Everything either side of the build is unchanged: the whole matrix runs before the approval gate, in the same unprivileged trust boundary (`contents: read`, no secrets, no OIDC — a called workflow cannot hold more than its caller grants), and every file it produces is verified against the release, hashed into the manifest the approver sees, and published only after that approval. A failed leg fails the release rather than uploading a partial set, and `expect-artifacts` can additionally require the built set to match a list of filename patterns so a leg that silently produced nothing is caught too. `reflex-release sync` fails when a configured build workflow is missing or declares no `workflow_call` trigger, so a renamed file is a red pull request instead of a failed release. ([#6891](https://github.com/reflex-dev/reflex/issues/6891))
+- Add `post-release-workflow` to `[tool.reflex-release]`: the named workflow is dispatched once per published tag, on the tag itself, after the upload, the tag and the GitHub release exist — with `tag`, `package` and `version` as `workflow_dispatch` inputs. The dispatch step and the `actions: write` grant it needs are only scaffolded into `publish.yml` (and the workflows that call it) when the setting is present, so a repository that runs nothing after a release keeps the narrower permissions.
+
+
 ## v0.1.0a1 (2026-08-13)
 
 ### Features
