@@ -370,24 +370,37 @@ export const initialEvents = () => []
 // depth and dominates dev-mode render CPU on large pages. Pin the runtime's
 // per-second stack budget counter past its cap so element creation takes the
 // cheap branch; react-dom resets the plain property once per second, so a
-// pinned accessor is required for the change to stick. Set
-// REFLEX_REACT_OWNER_STACKS=1 to restore full owner stacks (e.g. for React
-// DevTools' owner-stack view).
-try {
-  const reactInternals =
-    React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
-  const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
-  if (
-    reactInternals &&
-    typeof reactInternals[ownerStackCounterKey] === "number"
-  ) {
-    Object.defineProperty(reactInternals, ownerStackCounterKey, {
-      get: () => 1e9,
-      set: () => {},
-      configurable: true,
-    });
-  }
-} catch {}
+// pinned accessor is required for the change to stick.
+//
+// Trade-off, in exchange for roughly a 3-4x drop in dev render CPU: elements
+// carry React's shared "unknown owner" placeholder instead of a real capture,
+// so `React.captureOwnerStack()` returns no owner frames. That affects React
+// DevTools' owner-stack view *and* anything built on the public API, such as
+// custom error overlays and the `onCaughtError` / `onUncaughtError` root
+// handlers. Component stacks in React's own error messages, dev warnings and
+// Fast Refresh are unaffected. Set REFLEX_REACT_OWNER_STACKS=1 to turn this
+// off and get full owner stacks back.
+//
+// Browser only: this module is also evaluated by the server renderer, and
+// mutating the shared React internals there would disable owner stacks for
+// SSR diagnostics in the same process.
+if (typeof window !== "undefined") {
+  try {
+    const reactInternals =
+      React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
+    if (
+      reactInternals &&
+      typeof reactInternals[ownerStackCounterKey] === "number"
+    ) {
+      Object.defineProperty(reactInternals, ownerStackCounterKey, {
+        get: () => 1e9,
+        set: () => {},
+        configurable: true,
+      });
+    }
+  } catch {}
+}
 """
         if disable_react_owner_stacks
         else ""
