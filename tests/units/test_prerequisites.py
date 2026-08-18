@@ -11,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
+from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
@@ -1804,7 +1805,10 @@ def test_rename_imports_and_app_name_preserves_line_endings(
     assert file_path.read_bytes() == expected.encode()
 
 
-def test_cli_rename_command(temp_directory):
+def test_cli_rename_command(temp_directory, monkeypatch):
+    # The ``cli`` group callback enables managed logging for the process;
+    # snapshot the marker so it does not leak into the rest of the session.
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
     (foo_dir / "__init__").touch()
@@ -1856,8 +1860,11 @@ app.add_page(index)
 """
     )
 
-    with chdir(temp_directory / "foo"):
-        result = runner.invoke(cli, ["rename", "bar"])
+    try:
+        with chdir(temp_directory / "foo"):
+            result = runner.invoke(cli, ["rename", "bar"])
+    finally:
+        log._reset()
 
     assert result.exit_code == 0, result.output
     assert (foo_dir / "rxconfig.py").read_text() == (
