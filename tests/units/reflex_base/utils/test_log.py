@@ -2,11 +2,15 @@
 
 import json
 import logging
+import subprocess
+import sys
+from pathlib import Path
 from unittest import mock
 
 import pytest
 from reflex_base.constants import LogLevel
 from reflex_base.utils import console, log
+from rich.console import Console
 
 logger = logging.getLogger("reflex_base.tests.logs")
 
@@ -516,3 +520,52 @@ def test_library_mode_records_propagate_to_root(library_mode, caplog):
     with caplog.at_level(logging.INFO, logger="reflex"):
         logger.info("through the root")
     assert "through the root" in caplog.text
+
+
+def test_import_reflex_stays_light():
+    """``import reflex`` must not drag in the log pipeline or rich.
+
+    The pipeline self-bootstraps when its module first loads (which importing
+    ``reflex_base.utils.console`` guarantees), so the root package import can
+    stay lazy.
+    """
+    script = (
+        "import sys\n"
+        "import reflex\n"
+        "assert 'reflex_base.utils.log' not in sys.modules, 'log loaded eagerly'\n"
+        "assert 'rich' not in sys.modules, 'rich loaded eagerly'\n"
+        "import logging\n"
+        "import reflex_base.utils.console\n"
+        "assert logging.getLogger('reflex_base').parent is logging.getLogger('reflex')\n"
+    )
+    subprocess.run([sys.executable, "-c", script], check=True)
+
+
+def test_traceback_file_paths_are_not_wrapped(monkeypatch, capsys):
+    """Tracebacks print without word-wrapping so file paths survive intact."""
+    monkeypatch.setattr(
+        log, "_console_stderr", Console(stderr=True, highlight=False, width=40)
+    )
+    try:
+        _ = 1 / 0
+    except ZeroDivisionError:
+        logger.exception("failed")
+    _, err = capsys.readouterr()
+    assert f'File "{__file__}"' in err
+
+
+def test_deprecate_json_location_is_user_frame(monkeypatch, capsys):
+    """Deprecation JSON records locate the user call site, not the framework."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    log.deprecate(
+        feature_name="LocatedFeature",
+        reason="Use something else.",
+        deprecation_version="0.1.0",
+        removal_version="1.0",
+    )
+    out, _ = capsys.readouterr()
+    location = json.loads(out)["location"]
+    path, _, lineno = location.rpartition(":")
+    assert Path(path).name == Path(__file__).name
+    assert lineno.isdigit()

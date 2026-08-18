@@ -87,17 +87,13 @@ from __future__ import annotations
 import sys
 
 from reflex_base.utils import lazy_loader
-from reflex_base.utils import log as _log
-
-# Parent the workspace package loggers under the single "reflex" logger so
-# all reflex logging is tunable in one place. Sinks attach only when the
-# reflex CLI manages this process, keeping this import cheap and leaving
-# library users' logging configuration untouched.
-_log.bootstrap()
-del _log
 
 if sys.version_info < (3, 11):
     import logging
+
+    # Loading the pipeline parents the package loggers and, under the CLI,
+    # attaches the sinks so this warning renders like every other record.
+    import reflex_base.utils.log
 
     logging.getLogger(__name__).warning(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."

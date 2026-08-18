@@ -1,9 +1,11 @@
 """Standard-library logging pipeline with rich rendering and JSON output.
 
 Reflex modules log through plain ``logging.getLogger(__name__)`` loggers.
-At import time :func:`bootstrap` parents every workspace package logger
-(``reflex_base``, ``reflex_cli``, ``reflex_components_*``) under the single
-``reflex`` logger, so downstream code tunes all reflex logging in one place
+When this module first loads (``reflex_base.utils.console`` imports it at
+module scope, so that happens the moment reflex does anything) :func:`bootstrap`
+parents every workspace package logger (``reflex_base``, ``reflex_cli``,
+``reflex_components_*``) under the single ``reflex`` logger, so downstream
+code tunes all reflex logging in one place
 (``logging.getLogger("reflex")``) or per package, with standard stdlib APIs.
 
 Handlers attach only in *managed* mode, i.e. when running under the reflex
@@ -210,7 +212,13 @@ class RichConsoleHandler(logging.Handler):
             )
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
-                console.print(self.format_exception(record), style=style, markup=False)
+                # Never word-wrap them either: wrapping breaks file paths.
+                console.print(
+                    self.format_exception(record),
+                    style=style,
+                    markup=False,
+                    soft_wrap=True,
+                )
         except Exception:
             self.handleError(record)
 
@@ -265,7 +273,10 @@ class JsonHandler(logging.Handler):
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
                 "message": message,
-                "location": f"{record.pathname}:{record.lineno}",
+                # Records may carry an explicit location (e.g. deprecations
+                # point at the user call site, not the framework frame).
+                "location": getattr(record, "location", None)
+                or f"{record.pathname}:{record.lineno}",
                 "pid": record.process,
             }
             for field in self.extra_fields:
@@ -482,9 +493,9 @@ def enable_managed_logging():
 def bootstrap():
     """Parent the package loggers under the top-level ``reflex`` logger.
 
-    Called at ``import reflex`` time, so it must stay import-light (no
-    :mod:`reflex_base.environment`). The manual parent assignment is permanent:
-    the logging manager only fixes up parents when it creates a logger, and
+    Runs at the bottom of this module, so importing the pipeline is enough to
+    fix up the hierarchy. The manual parent assignment is permanent: the
+    logging manager only fixes up parents when it creates a logger, and
     loggers created later under a package root chain to the existing root.
     In managed mode (marker inherited from the CLI) the sinks attach
     immediately so worker records render from the first line.
@@ -717,6 +728,7 @@ def deprecate(
     del kwargs
     dedupe_key = feature_name
     loc = ""
+    user_location = None
 
     # See if we can find where the deprecation exists in "user code"
     origin_frame = _get_first_non_framework_frame()
@@ -725,7 +737,8 @@ def deprecate(
         cwd = Path.cwd()
         if filename.is_relative_to(cwd):
             filename = filename.relative_to(cwd)
-        loc = f" ({filename}:{origin_frame.f_lineno})"
+        user_location = f"{filename}:{origin_frame.f_lineno}"
+        loc = f" ({user_location})"
         dedupe_key = f"{dedupe_key} {loc}"
 
     # Claim the key up front so repeat warnings skip formatting and emission
@@ -744,5 +757,12 @@ def deprecate(
             "feature_name": feature_name,
             "deprecation_version": deprecation_version,
             "removal_version": removal_version,
+            # Machine consumers need the user call site, not this frame.
+            "location": user_location,
         },
     )
+
+
+# Reparenting is permanent, so it happens the moment the pipeline loads —
+# keeping ``import reflex`` itself free of this module (and rich).
+bootstrap()
