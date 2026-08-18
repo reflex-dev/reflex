@@ -376,11 +376,12 @@ export const initialEvents = () => []
 try {
   const reactInternals =
     React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+  const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
   if (
     reactInternals &&
-    typeof reactInternals.recentlyCreatedOwnerStacks === "number"
+    typeof reactInternals[ownerStackCounterKey] === "number"
   ) {
-    Object.defineProperty(reactInternals, "recentlyCreatedOwnerStacks", {
+    Object.defineProperty(reactInternals, ownerStackCounterKey, {
       get: () => 1e9,
       set: () => {},
       configurable: true,
