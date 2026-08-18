@@ -251,8 +251,12 @@ A root can declare one start policy, which the engine applies before a run is ad
 runs by a payload field, or globally when no `key` is given.
 
 ```python
-@rx.event(durable=True, trigger=rx.manual(), effect="idempotent_write",
-          singleton=rx.Singleton(key="customer_id"))
+@rx.event(
+    durable=True,
+    trigger=rx.manual(),
+    effect="idempotent_write",
+    singleton=rx.Singleton(key="customer_id"),
+)
 def sync(self, customer_id: str): ...
 ```
 
@@ -317,6 +321,19 @@ to a waiting run, and `harness.cancel(...)` and `harness.resume(...)` drive the 
 
 Runs persist to a SQLite file next to your app by default; pass `rx.App(workflow_store=...)` to
 choose another store. Run one worker process per SQLite database file.
+
+`RunStore` is a supported extension point, and the invariants a store must satisfy ship as runnable
+checks rather than prose:
+
+```python
+import pytest
+from reflex.workflow import CONFORMANCE_CHECKS
+
+
+@pytest.mark.parametrize("check", CONFORMANCE_CHECKS, ids=lambda c: c.__name__)
+async def test_my_store_conforms(check):
+    await check(MyRunStore())
+```
 
 Deploying new code does not disturb runs already in flight. Adding state fields, retuning retries and
 timeouts, and changing hooks all apply to future steps. Only a change that makes a pending step

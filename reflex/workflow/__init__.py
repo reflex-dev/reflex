@@ -40,6 +40,7 @@ from reflex_base.workflow import (
     webhook,
 )
 
+from reflex.workflow.conformance import CONFORMANCE_CHECKS
 from reflex.workflow.definition import (
     HandlerDefinition,
     WorkflowDefinition,
@@ -68,6 +69,7 @@ from reflex.workflow.store import (
 from reflex.workflow.testing import WorkflowTestHarness
 
 __all__ = [
+    "CONFORMANCE_CHECKS",
     "ChannelDelivery",
     "Debounce",
     "DeliveryDisposition",
