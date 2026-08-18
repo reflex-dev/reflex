@@ -98,6 +98,7 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
+from reflex.workflow.kernel import WorkflowObserver
 from reflex.workflow.runtime import WorkflowRuntime
 from reflex.workflow.store import RunStore
 
@@ -455,6 +456,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # Durable run store for registered workflows; defaults to a local SQLite
     # store created when the app starts.
     workflow_store: RunStore | None = None
+
+    # Receives every recorded workflow run transition, for logs or tracing.
+    workflow_observer: WorkflowObserver | None = None
 
     # The workflow runtime owning registered definitions and the kernel.
     _workflow_runtime: WorkflowRuntime | None = None
@@ -969,7 +973,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 ``__workflow__ = rx.WorkflowConfig(id=...)`` declaration.
         """
         if self._workflow_runtime is None:
-            self._workflow_runtime = WorkflowRuntime(self.workflow_store)
+            self._workflow_runtime = WorkflowRuntime(
+                self.workflow_store, observer=self.workflow_observer
+            )
             self.register_lifespan_task(self._run_workflow_runtime)
         self._workflow_runtime.register(workflow_cls)
 

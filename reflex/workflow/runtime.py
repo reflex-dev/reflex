@@ -20,7 +20,11 @@ from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntim
 from reflex_base.workflow import DEFAULT_LEASE_DURATION, ChannelDelivery
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
-from reflex.workflow.kernel import DEFAULT_POLL_INTERVAL, WorkflowKernel
+from reflex.workflow.kernel import (
+    DEFAULT_POLL_INTERVAL,
+    WorkflowKernel,
+    WorkflowObserver,
+)
 from reflex.workflow.store import RunStore, SqliteRunStore
 
 if TYPE_CHECKING:
@@ -77,6 +81,7 @@ class WorkflowRuntime:
         lease_duration: float = DEFAULT_LEASE_DURATION,
         lease_renew_interval: float | None = None,
         recovery_interval: float | None = None,
+        observer: WorkflowObserver | None = None,
     ):
         """Initialize the runtime.
 
@@ -90,6 +95,7 @@ class WorkflowRuntime:
                 recovery may reclaim it.
             lease_renew_interval: Real seconds between lease renewals.
             recovery_interval: Seconds between recovery sweeps.
+            observer: Receives every recorded run transition.
         """
         self._store = store
         self._clock = clock
@@ -98,6 +104,7 @@ class WorkflowRuntime:
         self._lease_duration = lease_duration
         self._lease_renew_interval = lease_renew_interval
         self._recovery_interval = recovery_interval
+        self._observer = observer
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -185,6 +192,7 @@ class WorkflowRuntime:
             lease_duration=self._lease_duration,
             lease_renew_interval=self._lease_renew_interval,
             recovery_interval=self._recovery_interval,
+            observer=self._observer,
         )
         if start_worker:
             await self._kernel.start_worker()

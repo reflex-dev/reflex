@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.workflow import DEFAULT_LEASE_DURATION, parse_duration
 
+from reflex.workflow.kernel import WorkflowObserver
 from reflex.workflow.runtime import WorkflowRuntime, _context_runtime
 from reflex.workflow.store import MemoryRunStore
 
@@ -68,6 +69,7 @@ class WorkflowTestHarness:
         start_time: float = DEFAULT_START_TIME,
         lease_duration: DurationLike = DEFAULT_LEASE_DURATION,
         lease_renew_interval: float | None = None,
+        observer: WorkflowObserver | None = None,
     ):
         """Initialize the harness.
 
@@ -77,6 +79,7 @@ class WorkflowTestHarness:
             start_time: Initial virtual time in epoch seconds.
             lease_duration: Virtual seconds a claim survives without renewal.
             lease_renew_interval: Real seconds between lease renewals.
+            observer: Receives every recorded run transition.
         """
         self._clock = _VirtualClock(start_time)
         self._runtime = WorkflowRuntime(
@@ -85,6 +88,7 @@ class WorkflowTestHarness:
             rng=lambda: 1.0,
             lease_duration=parse_duration(lease_duration),
             lease_renew_interval=lease_renew_interval,
+            observer=observer,
         )
         for workflow_cls in workflow_classes:
             self._runtime.register(workflow_cls)

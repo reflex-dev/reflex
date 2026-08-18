@@ -46,7 +46,7 @@ from reflex.workflow.definition import (
     WorkflowDefinition,
     compile_workflow,
 )
-from reflex.workflow.kernel import WorkflowKernel
+from reflex.workflow.kernel import LoggingObserver, WorkflowKernel, WorkflowObserver
 from reflex.workflow.records import (
     HistoryEvent,
     HistoryEventType,
@@ -78,6 +78,7 @@ __all__ = [
     "HandlerDefinition",
     "HistoryEvent",
     "HistoryEventType",
+    "LoggingObserver",
     "ManualTrigger",
     "MemoryRunStore",
     "Parallel",
@@ -105,6 +106,7 @@ __all__ = [
     "WorkflowConfig",
     "WorkflowDefinition",
     "WorkflowKernel",
+    "WorkflowObserver",
     "WorkflowRuntime",
     "WorkflowTestHarness",
     "after",

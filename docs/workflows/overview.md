@@ -307,6 +307,28 @@ reflex workflows show <run-id> --history
 `reflex workflows cancel <run-id>` and `reflex workflows resume <run-id>` steer a run without
 opening the app, and `--json` on `list` and `show` makes the output scriptable.
 
+## Observability
+
+Pass an observer to see every recorded transition, correlated to its run, workflow, step, and
+attempt:
+
+```python
+from reflex.workflow import WorkflowObserver
+
+
+class Telemetry(WorkflowObserver):
+    def on_event(self, event_type, run_id, workflow_id, data):
+        metrics.increment(
+            f"workflow.{event_type.value}", tags={"workflow": workflow_id}
+        )
+
+
+app = rx.App(workflow_observer=Telemetry())
+```
+
+`rx.workflow.LoggingObserver` is a ready-made one that writes a structured line per transition.
+An observer that raises is reported and ignored — instrumentation never breaks a run.
+
 ## Testing
 
 The test harness runs your real workflow on a virtual clock, so a three-day wait takes microseconds

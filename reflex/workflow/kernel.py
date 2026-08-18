@@ -93,6 +93,64 @@ def _error_payload(error: BaseException) -> dict[str, Any]:
     }
 
 
+class WorkflowObserver:
+    """Receives every run transition the kernel records.
+
+    Subclass and pass to ``rx.App(workflow_observer=...)`` to forward workflow
+    activity to logs, metrics, or a tracing backend. Every call carries the
+    correlation a durable system needs -- run, workflow, step, and attempt --
+    so a line can be tied to the exact execution that produced it.
+
+    Callbacks must not raise and must not block: they run on the kernel's
+    event loop, and the kernel deliberately swallows their errors rather than
+    letting instrumentation break execution.
+    """
+
+    def on_event(
+        self,
+        event_type: HistoryEventType,
+        run_id: str,
+        workflow_id: str,
+        data: dict[str, Any],
+    ) -> None:
+        """Handle one recorded transition.
+
+        Args:
+            event_type: What happened.
+            run_id: The run it happened to.
+            workflow_id: That run's workflow identity.
+            data: Event payload, such as ordinal, handler, attempt, or error.
+        """
+
+
+class LoggingObserver(WorkflowObserver):
+    """Logs every transition as a structured line."""
+
+    def on_event(
+        self,
+        event_type: HistoryEventType,
+        run_id: str,
+        workflow_id: str,
+        data: dict[str, Any],
+    ) -> None:
+        """Log one transition.
+
+        Args:
+            event_type: What happened.
+            run_id: The run it happened to.
+            workflow_id: That run's workflow identity.
+            data: Event payload.
+        """
+        detail = " ".join(
+            f"{key}={value!r}" for key, value in data.items() if key != "error"
+        )
+        line = f"workflow={workflow_id} run={run_id} event={event_type.value} {detail}"
+        if "error" in data:
+            console.warn(f"{line} error={data['error']}")
+        else:
+            console.debug(line)
+
+
 class _SuccessorSpec:
     """A resolved successor slot to allocate at commit.
 
@@ -165,6 +223,7 @@ class WorkflowKernel:
         lease_duration: float = DEFAULT_LEASE_DURATION,
         lease_renew_interval: float | None = None,
         recovery_interval: float | None = None,
+        observer: WorkflowObserver | None = None,
     ):
         """Initialize the kernel.
 
@@ -181,6 +240,8 @@ class WorkflowKernel:
                 to a third of ``lease_duration``.
             recovery_interval: Seconds between recovery sweeps in the
                 background worker; defaults to half of ``lease_duration``.
+            observer: Receives every recorded transition, for logging, metrics,
+                or tracing.
 
         Raises:
             WorkflowRuntimeError: If the store cannot renew leases, or the
@@ -241,6 +302,7 @@ class WorkflowKernel:
         self._leases: dict[str, _Lease] = {}
         self._next_recovery_at = 0.0
         self._worker_id = uuid.uuid4().hex
+        self._observer = observer
         self._wakeup = asyncio.Event()
         self._worker: asyncio.Task | None = None
 
@@ -489,22 +551,22 @@ class WorkflowKernel:
             created_at=now,
             updated_at=now,
         )
-        created, authoritative_run_id = await self._store.admit(
-            run,
-            root_step,
+        admission = (
             (
-                (
-                    HistoryEventType.RUN_ADMITTED,
-                    {"handler_id": handler.id, "request_key": request_key},
-                ),
-                (
-                    HistoryEventType.STEP_SCHEDULED,
-                    {"ordinal": 0, "handler_id": handler.id},
-                ),
+                HistoryEventType.RUN_ADMITTED,
+                {"handler_id": handler.id, "request_key": request_key},
             ),
+            (
+                HistoryEventType.STEP_SCHEDULED,
+                {"ordinal": 0, "handler_id": handler.id},
+            ),
+        )
+        created, authoritative_run_id = await self._store.admit(
+            run, root_step, admission
         )
         if not created:
             return StartResult(disposition="deduplicated", run_id=authoritative_run_id)
+        self._notify(run, admission)
         self._wakeup.set()
         return StartResult(disposition="started", run_id=authoritative_run_id)
 
@@ -1217,6 +1279,28 @@ class WorkflowKernel:
             events=tuple(events),
         )
 
+    def _notify(
+        self,
+        run: RunRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+    ) -> None:
+        """Hand recorded transitions to the observer, if one is installed.
+
+        Instrumentation must never break execution, so an observer that raises
+        is reported and ignored.
+
+        Args:
+            run: The run the transitions belong to.
+            events: The (type, data) pairs just recorded.
+        """
+        if self._observer is None:
+            return
+        try:
+            for event_type, data in events:
+                self._observer.on_event(event_type, run.run_id, run.workflow_id, data)
+        except Exception as err:
+            console.warn(f"Workflow observer raised, ignoring: {err}")
+
     def _acquire_lease(self, claim: Claim) -> _Lease:
         """Register an in-flight claim and start renewing its lease.
 
@@ -1518,6 +1602,7 @@ class WorkflowKernel:
         except StaleClaimError:
             await self._record_abandoned(claim, handler, "fenced_at_commit")
             return
+        self._notify(claim.run, completion.events)
         if completion.children:
             await self._admit_children(claim, completion)
         await self._report_to_parent(claim.run, completion)
