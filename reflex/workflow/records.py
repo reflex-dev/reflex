@@ -288,15 +288,17 @@ class RunQuery:
         workflow_id: Restrict to one workflow identity.
         statuses: Restrict to these run statuses; empty means any.
         labels: Require every one of these server-derived label values.
-        created_before: Return runs admitted strictly before this epoch time,
-            which is the pagination cursor.
+        created_before: Pagination cursor, as the ``(created_at, run_id)`` of
+            the last row of the previous page. A fan-out stamps every child
+            with the same time, so the run id breaks the tie and no run is
+            skipped.
         limit: Maximum runs to return, newest first.
     """
 
     workflow_id: str | None = None
     statuses: tuple[RunStatus, ...] = ()
     labels: Mapping[str, str] | None = None
-    created_before: float | None = None
+    created_before: tuple[float, str] | None = None
     limit: int = 50
 
 

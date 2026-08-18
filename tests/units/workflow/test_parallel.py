@@ -199,8 +199,7 @@ async def test_duplicate_arrivals_are_counted_once(forked_registration_context):
         child = next(
             run
             for run in runs
-            if run.parent_run_id == result.run_id
-            and run.status is RunStatus.COMPLETED
+            if run.parent_run_id == result.run_id and run.status is RunStatus.COMPLETED
         )
         repeat = await harness.kernel.store.record_arrival(
             result.run_id,

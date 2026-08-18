@@ -223,7 +223,7 @@ async def test_lease_loss_abandons_and_then_recovers(
 
         # A peer reclaims the step once the lease lapses; the renewer notices.
         clock.now += 31.0
-        assert await store.recover_orphans(clock(), max_recoveries=10) == 1
+        assert (await store.recover_orphans(clock(), max_recoveries=10))[0] == 1
         # The first attempt stays blocked, so only the renewer can end it: it
         # sees the fence, cancels the attempt, and the loop re-runs the step.
         await asyncio.wait_for(pump, timeout=5)
@@ -288,9 +288,9 @@ async def test_shutdown_leaves_the_claim_recoverable(
         assert run is not None
         assert run.status is RunStatus.RUNNING
         # It becomes reclaimable only after the lease lapses.
-        assert await store.recover_orphans(clock(), max_recoveries=10) == 0
+        assert (await store.recover_orphans(clock(), max_recoveries=10))[0] == 0
         clock.now += 31.0
-        assert await store.recover_orphans(clock(), max_recoveries=10) == 1
+        assert (await store.recover_orphans(clock(), max_recoveries=10))[0] == 1
     finally:
         release.set()
         store.close()

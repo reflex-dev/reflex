@@ -249,7 +249,7 @@ async def check_recovery_spares_a_live_lease(store: RunStore) -> None:
     await store.admit(make_run(), make_step(), _ADMITTED)
     claim = await store.claim_next(NOW, lease_duration=LEASE)
     assert claim is not None
-    assert await store.recover_orphans(NOW + LEASE - 1, max_recoveries=10) == 0
+    assert (await store.recover_orphans(NOW + LEASE - 1, max_recoveries=10))[0] == 0
     steps = await store.get_steps("run1")
     assert steps[0].status is StepStatus.CLAIMED
     assert steps[0].recoveries == 0
@@ -260,7 +260,7 @@ async def check_recovery_reclaims_an_expired_lease(store: RunStore) -> None:
     await store.admit(make_run(), make_step(), _ADMITTED)
     claim = await store.claim_next(NOW, lease_duration=LEASE)
     assert claim is not None
-    assert await store.recover_orphans(NOW + LEASE, max_recoveries=10) == 1
+    assert (await store.recover_orphans(NOW + LEASE, max_recoveries=10))[0] == 1
     steps = await store.get_steps("run1")
     assert steps[0].status is StepStatus.RECOVERY_WAIT
     assert steps[0].recoveries == 1
@@ -590,6 +590,43 @@ async def check_reads_do_not_alias_stored_state(store: RunStore) -> None:
     assert fresh[0].args == {}
 
 
+async def check_pagination_skips_nothing_on_tied_timestamps(store: RunStore) -> None:
+    """Runs sharing a created_at must all be reachable by paging.
+
+    A fan-out stamps every child with the same time, so a cursor on time alone
+    silently hides runs from the operator surface.
+    """
+    for index in range(4):
+        await store.admit(
+            make_run(f"run{index}", created_at=NOW), make_step(f"run{index}"), _ADMITTED
+        )
+    seen: list[str] = []
+    cursor = None
+    while True:
+        page = await store.list_runs(RunQuery(limit=2, created_before=cursor))
+        if not page:
+            break
+        seen.extend(run.run_id for run in page)
+        cursor = (page[-1].created_at, page[-1].run_id)
+    assert sorted(seen) == ["run0", "run1", "run2", "run3"]
+
+
+async def check_label_filter_handles_awkward_keys(store: RunStore) -> None:
+    """A label key is data, never part of a query expression."""
+    await store.admit(
+        make_run("a", labels={"team.name": "core", 'quoted"key': "yes"}),
+        make_step("a"),
+        _ADMITTED,
+    )
+    await store.admit(
+        make_run("b", labels={"team.name": "other"}), make_step("b"), _ADMITTED
+    )
+    dotted = await store.list_runs(RunQuery(labels={"team.name": "core"}))
+    assert [run.run_id for run in dotted] == ["a"]
+    quoted = await store.list_runs(RunQuery(labels={'quoted"key': "yes"}))
+    assert [run.run_id for run in quoted] == ["a"]
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -615,5 +652,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_finalize_tombstones_open_slots,
     check_resume_only_reopens_a_suspended_run,
     check_list_runs_filters_and_orders,
+    check_pagination_skips_nothing_on_tied_timestamps,
+    check_label_filter_handles_awkward_keys,
     check_flow_control_queries,
 )

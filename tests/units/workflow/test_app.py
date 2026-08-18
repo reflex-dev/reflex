@@ -33,9 +33,15 @@ def _make_classes():
     return SessionCounter, DetachedWorkflow
 
 
-def test_add_workflow_detaches_from_session_tree(forked_registration_context):
+def test_a_workflow_class_is_never_in_the_session_tree(forked_registration_context):
+    """Detaching happens at class creation, so forgetting to register is safe.
+
+    A durable handler must never be dispatchable from a browser. Tying that to
+    app.add_workflow() would mean an omitted registration left the handlers
+    exposed, which is exactly the line a code generator drops.
+    """
     session_cls, workflow_cls = _make_classes()
-    assert workflow_cls in State.get_substates()
+    assert workflow_cls not in State.get_substates()
 
     app = rx.App()
     app.add_workflow(workflow_cls)

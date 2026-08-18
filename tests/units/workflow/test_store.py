@@ -257,7 +257,7 @@ async def test_recover_orphans_consumes_recovery_budget(store):
     await store.admit(_run(), _step(), _ADMIT_EVENTS)
     claim = await store.claim_next(NOW, lease_duration=5.0)
     assert claim is not None
-    recovered = await store.recover_orphans(NOW + 10, max_recoveries=2)
+    recovered, _ = await store.recover_orphans(NOW + 10, max_recoveries=2)
     assert recovered == 1
     steps = await store.get_steps("run1")
     assert steps[0].status is StepStatus.RECOVERY_WAIT
@@ -319,7 +319,7 @@ async def test_sqlite_persistence_across_reopen(tmp_path):
         assert not created
         assert run_id == "run1"
         # The orphaned claim recovers on the new process.
-        assert await second.recover_orphans(NOW + 5, max_recoveries=10) == 1
+        assert (await second.recover_orphans(NOW + 5, max_recoveries=10))[0] == 1
         steps = await second.get_steps("run1")
         assert steps[0].status is StepStatus.RECOVERY_WAIT
     finally:
@@ -366,7 +366,7 @@ async def test_recover_orphans_skips_unexpired_leases(store):
     await store.admit(_run(), _step(), _ADMIT_EVENTS)
     claim = await store.claim_next(NOW, lease_duration=30.0)
     assert claim is not None
-    assert await store.recover_orphans(NOW + 29.0, max_recoveries=10) == 0
+    assert (await store.recover_orphans(NOW + 29.0, max_recoveries=10))[0] == 0
     steps = await store.get_steps("run1")
     assert steps[0].status is StepStatus.CLAIMED
     assert steps[0].recoveries == 0
@@ -376,7 +376,7 @@ async def test_recover_orphans_reclaims_at_the_expiry_boundary(store):
     await store.admit(_run(), _step(), _ADMIT_EVENTS)
     claim = await store.claim_next(NOW, lease_duration=30.0)
     assert claim is not None
-    assert await store.recover_orphans(NOW + 30.0, max_recoveries=10) == 1
+    assert (await store.recover_orphans(NOW + 30.0, max_recoveries=10))[0] == 1
     steps = await store.get_steps("run1")
     assert steps[0].status is StepStatus.RECOVERY_WAIT
     assert steps[0].recoveries == 1
@@ -400,15 +400,15 @@ async def test_renewed_lease_survives_a_later_sweep(store):
     claim = await store.claim_next(NOW, lease_duration=30.0)
     assert claim is not None
     assert await store.renew_lease(claim, NOW + 20.0, lease_duration=30.0)
-    assert await store.recover_orphans(NOW + 40.0, max_recoveries=10) == 0
-    assert await store.recover_orphans(NOW + 50.0, max_recoveries=10) == 1
+    assert (await store.recover_orphans(NOW + 40.0, max_recoveries=10))[0] == 0
+    assert (await store.recover_orphans(NOW + 50.0, max_recoveries=10))[0] == 1
 
 
 async def test_renew_lease_refused_after_recovery(store):
     await store.admit(_run(), _step(), _ADMIT_EVENTS)
     claim = await store.claim_next(NOW, lease_duration=5.0)
     assert claim is not None
-    assert await store.recover_orphans(NOW + 10.0, max_recoveries=10) == 1
+    assert (await store.recover_orphans(NOW + 10.0, max_recoveries=10))[0] == 1
     assert not await store.renew_lease(claim, NOW + 11.0, lease_duration=30.0)
 
 
@@ -457,7 +457,7 @@ async def test_sqlite_migrates_a_database_without_the_lease_column(tmp_path):
         # A claim left by the previous binary has no lease, so it is a genuine
         # orphan and is reclaimed on the first sweep.
         assert steps[0].lease_expires_at == pytest.approx(0.0)
-        assert await reopened.recover_orphans(NOW, max_recoveries=10) == 1
+        assert (await reopened.recover_orphans(NOW, max_recoveries=10))[0] == 1
     finally:
         reopened.close()
     # Reopening an already-migrated database is a no-op.

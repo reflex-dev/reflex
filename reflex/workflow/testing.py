@@ -14,7 +14,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from reflex_base.workflow import DEFAULT_LEASE_DURATION, parse_duration
+from reflex_base.workflow import (
+    DEFAULT_LEASE_DURATION,
+    DEFAULT_MAX_RECOVERIES,
+    parse_duration,
+)
 
 from reflex.workflow.kernel import WorkflowObserver
 from reflex.workflow.runtime import WorkflowRuntime, _context_runtime
@@ -70,6 +74,7 @@ class WorkflowTestHarness:
         lease_duration: DurationLike = DEFAULT_LEASE_DURATION,
         lease_renew_interval: float | None = None,
         observer: WorkflowObserver | None = None,
+        max_recoveries: int = DEFAULT_MAX_RECOVERIES,
     ):
         """Initialize the harness.
 
@@ -80,6 +85,7 @@ class WorkflowTestHarness:
             lease_duration: Virtual seconds a claim survives without renewal.
             lease_renew_interval: Real seconds between lease renewals.
             observer: Receives every recorded run transition.
+            max_recoveries: Infrastructure recovery budget per logical step.
         """
         self._clock = _VirtualClock(start_time)
         self._runtime = WorkflowRuntime(
@@ -89,6 +95,7 @@ class WorkflowTestHarness:
             lease_duration=parse_duration(lease_duration),
             lease_renew_interval=lease_renew_interval,
             observer=observer,
+            max_recoveries=max_recoveries,
         )
         for workflow_cls in workflow_classes:
             self._runtime.register(workflow_cls)

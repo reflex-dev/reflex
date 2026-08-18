@@ -76,7 +76,7 @@ async def test_list_runs_orders_newest_first_and_paginates(store):
     page = await store.list_runs(RunQuery(limit=2))
     assert [run.run_id for run in page] == ["run4", "run3"]
     nextpage = await store.list_runs(
-        RunQuery(limit=2, created_before=page[-1].created_at)
+        RunQuery(limit=2, created_before=(page[-1].created_at, page[-1].run_id))
     )
     assert [run.run_id for run in nextpage] == ["run2", "run1"]
 

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 DeliveryDisposition = Literal[
     "resolved",
     "counted",
+    "expired",
     "buffered",
     "duplicate",
     "unknown_run",
@@ -416,7 +417,9 @@ class RunStore(Protocol):
         """
         ...
 
-    async def recover_orphans(self, now: float, max_recoveries: int) -> int:
+    async def recover_orphans(
+        self, now: float, max_recoveries: int
+    ) -> tuple[int, tuple[str, ...]]:
         """Recover claims whose lease has expired.
 
         A step is orphaned when it is CLAIMED and its lease lapsed at or before
@@ -430,7 +433,9 @@ class RunStore(Protocol):
             max_recoveries: Recovery budget per logical step.
 
         Returns:
-            The number of steps transitioned.
+            How many steps were transitioned, and the ids of runs this pass
+            failed outright by exhausting their recovery budget -- their
+            parents still need to be told.
         """
         ...
 
@@ -578,10 +583,29 @@ def _matches_query(run: RunRecord, query: RunQuery) -> bool:
         return False
     if query.statuses and run.status not in query.statuses:
         return False
-    if query.created_before is not None and run.created_at >= query.created_before:
+    if query.created_before is not None and (run.created_at, run.run_id) >= (
+        query.created_before
+    ):
         return False
     labels = run.labels or {}
     return all(labels.get(key) == value for key, value in (query.labels or {}).items())
+
+
+def _wait_expired(step: StepRecord, now: float) -> bool:
+    """Whether a blocked wait's deadline has already won its race.
+
+    Once the deadline falls due the timeout branch owns the slot, so a late
+    delivery must be refused outright rather than buffered: buffering it would
+    let a signal for an expired wait resolve a later one on the same channel.
+
+    Args:
+        step: The frontier slot.
+        now: Current time in epoch seconds.
+
+    Returns:
+        True when the wait has already timed out.
+    """
+    return step.status is StepStatus.BLOCKED and 0.0 < step.due_at <= now
 
 
 def _lease_expired(step: StepRecord, now: float) -> bool:
@@ -927,6 +951,8 @@ class MemoryRunStore:
             inbox[run_id, wait_key, dedupe_key] = True
             steps = self._steps[run_id]
             frontier = _frontier(steps)
+            if frontier is not None and _wait_expired(frontier, now):
+                return "expired"
             if (
                 frontier is not None
                 and frontier.status is StepStatus.BLOCKED
@@ -1248,18 +1274,21 @@ class MemoryRunStore:
             self._append_events(run_id, ((HistoryEventType.RUN_RESUMED, {}),), now)
             return True
 
-    async def recover_orphans(self, now: float, max_recoveries: int) -> int:
-        """Recover steps left claimed by a previous process.
+    async def recover_orphans(
+        self, now: float, max_recoveries: int
+    ) -> tuple[int, tuple[str, ...]]:
+        """Recover claims whose lease has expired.
 
         Args:
             now: Current time in epoch seconds.
             max_recoveries: Recovery budget per logical step.
 
         Returns:
-            The number of steps transitioned.
+            How many steps were transitioned, and the runs failed outright.
         """
         async with self._lock:
             recovered = 0
+            failed: list[str] = []
             for run in list(self._runs.values()):
                 if run.status in TERMINAL_RUN_STATUSES:
                     continue
@@ -1283,6 +1312,7 @@ class MemoryRunStore:
                             error={"reason": "recovery_budget_exhausted"},
                             updated_at=now,
                         )
+                        failed.append(run.run_id)
                         self._append_events(
                             run.run_id,
                             (
@@ -1312,7 +1342,7 @@ class MemoryRunStore:
                             ),
                             now,
                         )
-            return recovered
+            return recovered, tuple(failed)
 
     async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
         """List runs matching a query, newest first.
@@ -1325,7 +1355,7 @@ class MemoryRunStore:
         """
         async with self._lock:
             matched = [run for run in self._runs.values() if _matches_query(run, query)]
-            matched.sort(key=lambda run: run.created_at, reverse=True)
+            matched.sort(key=lambda run: (run.created_at, run.run_id), reverse=True)
             return tuple(_detach_run(run) for run in matched[: query.limit])
 
     async def find_by_request_key(
@@ -2116,6 +2146,9 @@ class SqliteRunStore:
                     self._db.execute("ROLLBACK")
                     return "duplicate"
                 frontier = _frontier(self._load_steps(run_id))
+                if frontier is not None and _wait_expired(frontier, now):
+                    self._db.execute("ROLLBACK")
+                    return "expired"
                 resolves = (
                     frontier is not None
                     and frontier.status is StepStatus.BLOCKED
@@ -2549,15 +2582,17 @@ class SqliteRunStore:
                 raise
             return True
 
-    async def recover_orphans(self, now: float, max_recoveries: int) -> int:
-        """Recover steps left claimed by a previous process.
+    async def recover_orphans(
+        self, now: float, max_recoveries: int
+    ) -> tuple[int, tuple[str, ...]]:
+        """Recover claims whose lease has expired.
 
         Args:
             now: Current time in epoch seconds.
             max_recoveries: Recovery budget per logical step.
 
         Returns:
-            The number of steps transitioned.
+            How many steps were transitioned, and the runs failed outright.
         """
         terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
         with self._lock:
@@ -2571,6 +2606,7 @@ class SqliteRunStore:
                     (StepStatus.CLAIMED.value, now, *terminal),
                 ).fetchall()
                 recovered = 0
+                failed: list[str] = []
                 for row in rows:
                     step = _step_from_row(row)
                     recovered += 1
@@ -2598,6 +2634,7 @@ class SqliteRunStore:
                                 step.run_id,
                             ),
                         )
+                        failed.append(step.run_id)
                         self._append_events(
                             step.run_id,
                             (
@@ -2636,7 +2673,7 @@ class SqliteRunStore:
             except BaseException:
                 self._db.execute("ROLLBACK")
                 raise
-            return recovered
+            return recovered, tuple(failed)
 
     async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
         """List runs matching a query, newest first.
@@ -2657,11 +2694,16 @@ class SqliteRunStore:
             clauses.append(f"status IN ({placeholders})")
             params.extend(status.value for status in query.statuses)
         if query.created_before is not None:
-            clauses.append("created_at < ?")
-            params.append(query.created_before)
+            clauses.append("(created_at, run_id) < (?, ?)")
+            params.extend(query.created_before)
         for key, value in (query.labels or {}).items():
-            clauses.append("json_extract(labels, ?) = ?")
-            params.extend((f"$.{key}", value))
+            # The key comes from user data, so it is matched as a value rather
+            # than spliced into a JSON path expression.
+            clauses.append(
+                "EXISTS (SELECT 1 FROM json_each(labels)"
+                " WHERE json_each.key = ? AND json_each.value = ?)"
+            )
+            params.extend((key, value))
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         with self._lock:
             rows = self._db.execute(

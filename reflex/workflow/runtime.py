@@ -17,7 +17,11 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
-from reflex_base.workflow import DEFAULT_LEASE_DURATION, ChannelDelivery
+from reflex_base.workflow import (
+    DEFAULT_LEASE_DURATION,
+    DEFAULT_MAX_RECOVERIES,
+    ChannelDelivery,
+)
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
 from reflex.workflow.kernel import (
@@ -45,29 +49,6 @@ _context_runtime: ContextVar[WorkflowRuntime | None] = ContextVar(
 _default_runtime: WorkflowRuntime | None = None
 
 
-def _detach_from_session_registry(workflow_cls: type[BaseState]) -> None:
-    """Remove a workflow class from the session state registry.
-
-    A registered workflow class is run-scoped: it must not be instantiated per
-    browser session, compiled into the client state schema, or reachable from
-    frontend event dispatch. Removing it from the registration context achieves
-    all three without changing the class itself.
-
-    Args:
-        workflow_cls: The workflow class being registered.
-    """
-    ctx = RegistrationContext.ensure_context()
-    ctx.base_states.pop(workflow_cls.get_full_name(), None)
-    parent = workflow_cls.get_parent_state()
-    if parent is not None:
-        ctx.base_state_substates.get(parent.get_full_name(), set()).discard(
-            workflow_cls
-        )
-    for full_name, registered in list(ctx.event_handlers.items()):
-        if workflow_cls in registered.states:
-            del ctx.event_handlers[full_name]
-
-
 class WorkflowRuntime:
     """Owns the workflow definitions and kernel for one process."""
 
@@ -82,6 +63,7 @@ class WorkflowRuntime:
         lease_renew_interval: float | None = None,
         recovery_interval: float | None = None,
         observer: WorkflowObserver | None = None,
+        max_recoveries: int = DEFAULT_MAX_RECOVERIES,
     ):
         """Initialize the runtime.
 
@@ -96,6 +78,7 @@ class WorkflowRuntime:
             lease_renew_interval: Real seconds between lease renewals.
             recovery_interval: Seconds between recovery sweeps.
             observer: Receives every recorded run transition.
+            max_recoveries: Infrastructure recovery budget per logical step.
         """
         self._store = store
         self._clock = clock
@@ -105,6 +88,7 @@ class WorkflowRuntime:
         self._lease_renew_interval = lease_renew_interval
         self._recovery_interval = recovery_interval
         self._observer = observer
+        self._max_recoveries = max_recoveries
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -142,7 +126,7 @@ class WorkflowRuntime:
             raise WorkflowDefinitionError(msg)
         self._definitions[definition.workflow_id] = definition
         self._classes[workflow_cls] = definition.workflow_id
-        _detach_from_session_registry(workflow_cls)
+        RegistrationContext.detach_workflow_state(workflow_cls)
         return definition
 
     @property
@@ -193,6 +177,7 @@ class WorkflowRuntime:
             lease_renew_interval=self._lease_renew_interval,
             recovery_interval=self._recovery_interval,
             observer=self._observer,
+            max_recoveries=self._max_recoveries,
         )
         if start_worker:
             await self._kernel.start_worker()
@@ -320,7 +305,7 @@ class WorkflowsNamespace:
         workflow_id: str | None = None,
         statuses: Iterable[RunStatus] = (),
         labels: Mapping[str, str] | None = None,
-        created_before: float | None = None,
+        created_before: tuple[float, str] | None = None,
         limit: int = 50,
     ) -> tuple[RunRecord, ...]:
         """List runs matching a filter, newest first.
@@ -329,7 +314,8 @@ class WorkflowsNamespace:
             workflow_id: Restrict to one workflow identity.
             statuses: Restrict to these run statuses; empty means any.
             labels: Require every one of these label values.
-            created_before: Pagination cursor; return runs admitted before this.
+            created_before: Pagination cursor, the (created_at, run_id) of the
+                previous page's last row.
             limit: Maximum runs to return.
 
         Returns:

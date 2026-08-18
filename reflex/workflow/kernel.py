@@ -697,7 +697,7 @@ class WorkflowKernel:
         workflow_id: str | None = None,
         statuses: Iterable[RunStatus] = (),
         labels: Mapping[str, str] | None = None,
-        created_before: float | None = None,
+        created_before: tuple[float, str] | None = None,
         limit: int = 50,
     ) -> tuple[RunRecord, ...]:
         """List runs matching a filter, newest first.
@@ -706,7 +706,8 @@ class WorkflowKernel:
             workflow_id: Restrict to one workflow identity.
             statuses: Restrict to these run statuses; empty means any.
             labels: Require every one of these label values.
-            created_before: Pagination cursor; return runs admitted before this.
+            created_before: Pagination cursor, the (created_at, run_id) of the
+                previous page's last row.
             limit: Maximum runs to return.
 
         Returns:
@@ -1935,7 +1936,17 @@ class WorkflowKernel:
         await self._renew_leases()
         now = self._clock()
         self._next_recovery_at = now + self._recovery_interval
-        return await self._store.recover_orphans(now, self._max_recoveries)
+        recovered, failed = await self._store.recover_orphans(now, self._max_recoveries)
+        for run_id in failed:
+            run = await self._store.get_run(run_id)
+            if run is not None:
+                await self._report_outcome(
+                    run,
+                    RunStatus.FAILED,
+                    None,
+                    {"reason": "recovery_budget_exhausted"},
+                )
+        return recovered
 
     async def run_until_idle(self) -> None:
         """Process work until nothing is claimable at the current clock time.

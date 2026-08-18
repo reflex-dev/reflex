@@ -558,9 +558,27 @@ def build_durable_config(
         WorkflowDefinitionError: If the combination of arguments is invalid.
     """
     # throttle= and debounce= carry either a browser event action (an int) or a
-    # durable start policy; only the policy objects are workflow options.
-    throttle = throttle if isinstance(throttle, Throttle) else None
-    debounce = debounce if isinstance(debounce, Debounce) else None
+    # durable start policy. Discriminate on the int, so a wrong type raises
+    # rather than vanishing: `debounce="30s"` is a very plausible mistake, and
+    # silently dropping it would leave the burst uncollapsed with no signal.
+    browser_throttle = isinstance(throttle, int) and not isinstance(throttle, bool)
+    browser_debounce = isinstance(debounce, int) and not isinstance(debounce, bool)
+    throttle = None if browser_throttle else throttle
+    debounce = None if browser_debounce else debounce
+    for name, value, expected in (
+        ("singleton", singleton, Singleton),
+        ("rate_limit", rate_limit, RateLimit),
+        ("throttle", throttle, Throttle),
+        ("debounce", debounce, Debounce),
+    ):
+        if value is not None and not isinstance(value, expected):
+            article = "an" if expected.__name__[0] in "AEIOU" else "a"
+            msg = (
+                f"@rx.event({name}=...) expects {article} rx.{expected.__name__}, "
+                f"got {type(value).__name__}. Write "
+                f"{name}=rx.{expected.__name__}(...)."
+            )
+            raise WorkflowDefinitionError(msg)
     if not durable:
         offending = next(
             (
