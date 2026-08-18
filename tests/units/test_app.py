@@ -671,23 +671,28 @@ async def test_router_delta_partial_only_when_connection_scope_unchanged(
 
     # A new session id must fall back to the full payload, otherwise the
     # client would keep serving the old token forever.
+    reconnected_sid = "a-different-session-id"
     new_session = await _router_delta({
         **router_data,
         RouteVar.PATH: "/third",
-        RouteVar.SESSION_ID: "a-different-session-id",
+        RouteVar.SESSION_ID: reconnected_sid,
     })
     assert isinstance(new_session, RouterData), (
         "session changed but the delta omitted it; the client would keep the stale value"
     )
 
-    # Changed headers with the same session id must also fall back to the
-    # full payload — headers are the other half of the connection scope.
+    # Changed headers with an unchanged session must also fall back to the
+    # full payload — headers are the other half of the connection scope. The
+    # state now holds `reconnected_sid` (assigned by the previous event), so
+    # reusing it here means the session compares equal and ONLY the headers
+    # differ; the mutation check for this leg is dropping "headers" from
+    # CONNECTION_SCOPED_ROUTER_FIELDS, which makes this assertion fail.
     original_headers = router_data[RouteVar.HEADERS]
     assert isinstance(original_headers, dict)
     new_headers = await _router_delta({
         **router_data,
         RouteVar.PATH: "/fourth",
-        RouteVar.SESSION_ID: "a-different-session-id",
+        RouteVar.SESSION_ID: reconnected_sid,
         RouteVar.HEADERS: {
             **original_headers,
             "user-agent": "A Different Agent",
