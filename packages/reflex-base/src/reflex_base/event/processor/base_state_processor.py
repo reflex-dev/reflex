@@ -12,7 +12,7 @@ from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, router_connection_scope
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -365,14 +365,14 @@ class BaseStateEventProcessor(EventProcessor):
                 if state.router != (router := RouterData.from_router_data(router_data)):
                     state.router = router
                     # When only the per-navigation fields changed, the delta
-                    # can elide the connection-scoped fields (session,
-                    # headers) the client already holds. Direct router writes
-                    # elsewhere reset this flag (see BaseState.__setattr__).
+                    # can elide the connection-scoped fields the client
+                    # already holds. Direct router writes elsewhere reset
+                    # this flag (see BaseState.__setattr__).
                     object.__setattr__(
                         state,
                         "_router_static_unchanged",
-                        previous_router.session == router.session
-                        and previous_router.headers == router.headers,
+                        router_connection_scope(previous_router)
+                        == router_connection_scope(router),
                     )
 
             # Preprocess the event.

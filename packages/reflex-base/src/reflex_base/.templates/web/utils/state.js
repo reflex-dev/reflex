@@ -156,6 +156,10 @@ export const isStateful = () => {
   return event_queue.some((event) => event.name.startsWith("reflex___state"));
 };
 
+// Root-state field carrying RouterData; must match `constants.ROUTER +
+// FIELD_MARKER` on the backend (see reflex.istate.data).
+const ROUTER_FIELD = "router_rx_state_";
+
 /**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
@@ -166,16 +170,17 @@ export const applyDelta = (state, delta) => {
   // Once the connection-scoped router fields (session, headers) have been
   // sent, the backend elides them from subsequent deltas; merge partial
   // router payloads over the previously received value so they carry
-  // forward.
-  const router = delta["router_rx_state_"];
-  const prev_router = state["router_rx_state_"];
+  // forward. The merge is field-agnostic, so adding RouterData fields on the
+  // backend needs no change here.
+  const router = delta[ROUTER_FIELD];
+  const prev_router = state[ROUTER_FIELD];
   if (
     router !== null &&
     prev_router !== null &&
     typeof router === "object" &&
     typeof prev_router === "object"
   ) {
-    new_state["router_rx_state_"] = { ...prev_router, ...router };
+    new_state[ROUTER_FIELD] = { ...prev_router, ...router };
   }
   return new_state;
 };

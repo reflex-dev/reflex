@@ -42,7 +42,14 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, _FrozenDictStrStr
+from reflex.istate.data import (
+    HeaderData,
+    RouterData,
+    _FrozenDictStrStr,
+    router_connection_scope,
+    serialize_partial_router_data,
+    serialize_router_data,
+)
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -1125,6 +1132,30 @@ def test_partial_router_delta(test_state, router_data):
     delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
     assert isinstance(delta_value, RouterData)
     test_state._clean()
+
+
+def test_partial_router_delta_covers_every_elided_field(router_data):
+    """Every field a navigation delta omits must be one that is compared.
+
+    A field that is elided but not compared would leave a stale value on the
+    client forever, so changing any omitted field must be visible to the
+    processor's comparison.
+
+    Args:
+        router_data: The router data fixture.
+    """
+    router = RouterData.from_router_data(router_data)
+    omitted = set(serialize_router_data(router)) - set(
+        serialize_partial_router_data(router)
+    )
+    assert omitted, "partial payload must omit something, else there is no saving"
+
+    for omitted_field in omitted:
+        changed = dataclasses.replace(router, **{omitted_field: None})
+        assert router_connection_scope(changed) != router_connection_scope(router), (
+            f"router field {omitted_field!r} is omitted from navigation deltas but is"
+            " not compared, so a change to it would never reach the client"
+        )
 
 
 def test_get_current_page(test_state):
