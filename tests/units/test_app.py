@@ -680,6 +680,21 @@ async def test_router_delta_partial_only_when_connection_scope_unchanged(
         "session changed but the delta omitted it; the client would keep the stale value"
     )
 
+    # Changed headers with the same session id must also fall back to the
+    # full payload — headers are the other half of the connection scope.
+    new_headers = await _router_delta({
+        **router_data,
+        RouteVar.PATH: "/fourth",
+        RouteVar.SESSION_ID: "a-different-session-id",
+        RouteVar.HEADERS: {
+            **router_data[RouteVar.HEADERS],
+            "user-agent": "A Different Agent",
+        },
+    })
+    assert isinstance(new_headers, RouterData), (
+        "headers changed but the delta omitted them; the client would keep stale headers"
+    )
+
 
 @pytest.fixture
 def list_mutation_state():

@@ -561,6 +561,12 @@ class BaseState(EvenMoreBasicBaseState):
 
         super().__init_subclass__(**kwargs)
 
+        # Internal router bookkeeping fields must not be redefined by user
+        # states: a shadowing value would silently control whether router
+        # deltas are sent partially. Checked before the mixin early-return so
+        # a mixin cannot smuggle the field into concrete states.
+        cls._check_reserved_internal_fields()
+
         if cls._mixin:
             return
 
@@ -573,11 +579,6 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
-
-        # Internal router bookkeeping fields must not be redefined by user
-        # states: a shadowing value would silently control whether router
-        # deltas are sent partially.
-        cls._check_reserved_internal_fields()
 
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()

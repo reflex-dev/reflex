@@ -1095,58 +1095,56 @@ def test_get_client_ip(test_state, router_data):
 
 
 def test_partial_router_delta(test_state, router_data):
-    """Navigation deltas elide unchanged connection-scoped router fields.
+    """get_delta ships a partial router payload only when flag and capability agree.
+
+    The comparison that arms `_router_static_unchanged` is driven end to end
+    through the event processor in
+    ``test_router_delta_partial_only_when_connection_scope_unchanged``; this
+    test treats the flag and the client capability as givens and pins down
+    ``get_delta``'s serialization for each combination.
 
     Args:
         test_state: A state.
         router_data: The router data fixture.
     """
     router_field = constants.ROUTER + FIELD_MARKER
-    # Simulate the connect handler having verified the client's version.
+
+    def router_delta_value(*, unchanged: bool, capable: bool, path: str):
+        test_state.router = RouterData.from_router_data({
+            **router_data,
+            RouteVar.PATH: path,
+        })
+        # The direct write above cleared the flag; apply the scenario.
+        test_state._router_static_unchanged = unchanged
+        test_state._partial_router_capable = capable
+        value = test_state.get_delta()[test_state.get_full_name()][router_field]
+        test_state._clean()
+        return value
+
+    # Unchanged connection scope + capable client: partial payload.
+    value = router_delta_value(unchanged=True, capable=True, path="/partial")
+    assert set(value) == {"page", "url", "route_id"}
+    assert value["route_id"] == "/partial"
+
+    # Capable client, but the connection scope changed: full payload.
+    value = router_delta_value(unchanged=False, capable=True, path="/changed")
+    assert isinstance(value, RouterData)
+
+    # Unchanged scope, but the client never advertised support (e.g. a cached
+    # pre-upgrade bundle during a rolling deployment): full payload.
+    value = router_delta_value(unchanged=True, capable=False, path="/legacy")
+    assert isinstance(value, RouterData)
+
+    # Any direct router write clears the flag, so a write after arming falls
+    # back to the full payload without help from the processor.
+    test_state._router_static_unchanged = True
     test_state._partial_router_capable = True
-
-    # First router assignment (hydrate): the full router is in the delta.
-    test_state.router = RouterData.from_router_data(router_data)
-    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
-    assert isinstance(delta_value, RouterData)
-    test_state._clean()
-
-    # Same connection navigates to a new page: the event processor detects
-    # unchanged session/headers and arms the partial-delta flag.
-    previous_router = test_state.router
-    new_router = RouterData.from_router_data({**router_data, RouteVar.PATH: "/other"})
-    test_state.router = new_router
-    object.__setattr__(
-        test_state,
-        "_router_static_unchanged",
-        previous_router.session == new_router.session
-        and previous_router.headers == new_router.headers,
-    )
-    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
-    assert set(delta_value) == {"page", "url", "route_id"}
-    assert delta_value["route_id"] == "/other"
-    test_state._clean()
-
-    # Any direct router write invalidates the flag: full router again.
     test_state.router = RouterData.from_router_data({
         **router_data,
         RouteVar.PATH: "/direct",
     })
-    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
-    assert isinstance(delta_value, RouterData)
-    test_state._clean()
-
-    # A client that did not advertise support (e.g. a cached pre-upgrade
-    # bundle during a rolling deployment) always gets the full router, even
-    # when the connection-scoped fields are unchanged.
-    test_state._partial_router_capable = False
-    test_state.router = RouterData.from_router_data({
-        **router_data,
-        RouteVar.PATH: "/legacy",
-    })
-    test_state._router_static_unchanged = True
-    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
-    assert isinstance(delta_value, RouterData)
+    value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert isinstance(value, RouterData)
     test_state._clean()
 
 
@@ -1167,6 +1165,20 @@ def test_reserved_internal_router_fields_cannot_be_redefined():
                     "__annotations__": {name: bool},
                     name: True,
                 },
+            )
+        # Mixins are checked at definition too, so the field cannot be
+        # smuggled into concrete states through a mixin base.
+        with pytest.raises(ReservedStateFieldError):
+            type(
+                "ShadowingMixin",
+                (BaseState,),
+                {
+                    "__module__": __name__,
+                    "__qualname__": "ShadowingMixin",
+                    "__annotations__": {name: bool},
+                    name: True,
+                },
+                mixin=True,
             )
 
 
