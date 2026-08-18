@@ -9,7 +9,10 @@ interprets them lives in ``reflex.workflow``.
 from __future__ import annotations
 
 import dataclasses
+import hmac
+import os
 import re
+from collections.abc import Callable, Mapping
 from datetime import timedelta
 from typing import Any, ClassVar, Final, Literal, get_args
 
@@ -208,6 +211,9 @@ class ManualTrigger(Trigger):
     kind: ClassVar[str] = "manual"
 
 
+WebhookVerifier = Callable[[bytes, Mapping[str, str]], bool]
+
+
 @dataclasses.dataclass(frozen=True)
 class WebhookTrigger(Trigger):
     """Marks a root handler started by an authenticated provider webhook.
@@ -215,25 +221,53 @@ class WebhookTrigger(Trigger):
     Attributes:
         topic: Stable provider event topic, e.g. ``"stripe.payment_succeeded"``.
         model: Optional typed payload model the raw payload is validated into.
-        verify: Provider signature verifier supplied by a connection binding.
-        dedupe_by: Payload field used as the ingress deduplication key.
+        verify: Callable given the raw body and headers that returns whether the
+            request genuinely came from the provider.
+        dedupe_by: Payload field used as the ingress deduplication key, so a
+            provider redelivering an event does not start a second run.
+        allow_unverified: Acknowledge that this endpoint accepts anonymous
+            traffic. Only valid with a non-empty ``unverified_reason``.
+        unverified_reason: Why anonymous traffic is acceptable here.
     """
 
     kind: ClassVar[str] = "webhook"
 
     topic: str
     model: type | None = None
-    verify: Any = None
+    verify: WebhookVerifier | None = None
     dedupe_by: str | None = None
+    allow_unverified: bool = False
+    unverified_reason: str = ""
 
     def __post_init__(self):
-        """Validate the topic.
+        """Validate the topic and the authentication decision.
 
         Raises:
-            WorkflowDefinitionError: If the topic is empty.
+            WorkflowDefinitionError: If the topic is empty, or the endpoint
+                would accept unauthenticated traffic without saying so.
         """
         if not self.topic:
             msg = "webhook trigger requires a non-empty topic."
+            raise WorkflowDefinitionError(msg)
+        if self.verify is None and not self.allow_unverified:
+            msg = (
+                f"webhook trigger {self.topic!r} has no verifier, so anyone who "
+                "knows the URL could start runs. Pass verify=rx.hmac_signature("
+                'secret_env="...", header="...") or, if the endpoint really is '
+                "public, allow_unverified=True with an unverified_reason."
+            )
+            raise WorkflowDefinitionError(msg)
+        if self.allow_unverified and not self.unverified_reason:
+            msg = (
+                f"webhook trigger {self.topic!r} sets allow_unverified=True and "
+                "must give a non-empty unverified_reason."
+            )
+            raise WorkflowDefinitionError(msg)
+        if self.verify is not None and self.allow_unverified:
+            msg = (
+                f"webhook trigger {self.topic!r} declares both a verifier and "
+                "allow_unverified=True; keep the verifier."
+            )
             raise WorkflowDefinitionError(msg)
 
 
@@ -276,21 +310,68 @@ def webhook(
     topic: str,
     *,
     model: type | None = None,
-    verify: Any = None,
+    verify: WebhookVerifier | None = None,
     dedupe_by: str | None = None,
+    allow_unverified: bool = False,
+    unverified_reason: str = "",
 ) -> WebhookTrigger:
     """Create a webhook trigger for a workflow root handler.
 
     Args:
         topic: Stable provider event topic.
         model: Optional typed payload model.
-        verify: Provider signature verifier from a connection binding.
+        verify: Callable given the raw body and headers that returns whether the
+            request genuinely came from the provider.
         dedupe_by: Payload field used as the ingress deduplication key.
+        allow_unverified: Acknowledge that this endpoint accepts anonymous traffic.
+        unverified_reason: Why anonymous traffic is acceptable here.
 
     Returns:
         The trigger specification.
     """
-    return WebhookTrigger(topic=topic, model=model, verify=verify, dedupe_by=dedupe_by)
+    return WebhookTrigger(
+        topic=topic,
+        model=model,
+        verify=verify,
+        dedupe_by=dedupe_by,
+        allow_unverified=allow_unverified,
+        unverified_reason=unverified_reason,
+    )
+
+
+def hmac_signature(
+    *,
+    secret_env: str,
+    header: str,
+    algorithm: str = "sha256",
+    prefix: str = "",
+) -> WebhookVerifier:
+    """Build a verifier for providers that HMAC-sign the raw request body.
+
+    This covers the common shape used by Stripe, GitHub, Shopify and others:
+    the provider sends a hex digest of the body keyed by a shared secret. The
+    secret is read from the environment at request time, so it never enters
+    workflow state, history, or a browser bundle.
+
+    Args:
+        secret_env: Name of the environment variable holding the shared secret.
+        header: Request header carrying the provider's signature.
+        algorithm: Hash algorithm name understood by ``hashlib``.
+        prefix: Fixed prefix the provider puts before the digest, e.g. ``"sha256="``.
+
+    Returns:
+        A verifier callable for ``rx.webhook(verify=...)``.
+    """
+
+    def verify(body: bytes, headers: Mapping[str, str]) -> bool:
+        secret = os.environ.get(secret_env)
+        presented = headers.get(header.lower()) or headers.get(header)
+        if not secret or not presented:
+            return False
+        expected = hmac.new(secret.encode(), body, algorithm).hexdigest()
+        return hmac.compare_digest(f"{prefix}{expected}", presented)
+
+    return verify
 
 
 def schedule(cron: str) -> ScheduleTrigger:

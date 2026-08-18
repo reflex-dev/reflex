@@ -242,6 +242,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "TransientWorkflowError",
         "manual",
         "webhook",
+        "hmac_signature",
         "schedule",
         "after",
         "complete",

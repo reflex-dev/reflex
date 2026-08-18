@@ -12,6 +12,7 @@ from reflex_base.workflow import (
     after,
     complete,
     fail,
+    hmac_signature,
     manual,
     needs_attention,
     webhook,
@@ -550,7 +551,12 @@ async def test_start_rejects_non_manual_roots(forked_registration_context):
         __workflow__ = WorkflowConfig(id="kernel.startrules")
 
         @rx.event(
-            durable=True, trigger=webhook("stripe.payment_succeeded"), effect="none"
+            durable=True,
+            trigger=webhook(
+                "stripe.payment_succeeded",
+                verify=hmac_signature(secret_env="SECRET", header="X-Signature"),
+            ),
+            effect="none",
         )
         def on_webhook(self):
             pass
@@ -564,9 +570,9 @@ async def test_start_rejects_non_manual_roots(forked_registration_context):
             pass
 
     async with WorkflowTestHarness(StartRules) as harness:
-        with pytest.raises(WorkflowRuntimeError, match="manual"):
+        with pytest.raises(WorkflowRuntimeError, match="cannot be started here"):
             await harness.start(StartRules.on_webhook())
-        with pytest.raises(WorkflowRuntimeError, match="manual"):
+        with pytest.raises(WorkflowRuntimeError, match="cannot be started here"):
             await harness.start(StartRules.internal())
         with pytest.raises(WorkflowRuntimeError, match="workflow"):
             await harness.start(object())

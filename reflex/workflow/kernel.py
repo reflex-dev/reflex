@@ -28,7 +28,6 @@ from reflex_base.workflow import (
     After,
     CompleteRun,
     FailRun,
-    ManualTrigger,
     NeedsAttention,
     parse_duration,
 )
@@ -307,27 +306,39 @@ class WorkflowKernel:
         *,
         request_key: str | None = None,
         labels: dict[str, str] | None = None,
+        trigger_kind: str = "manual",
     ) -> StartResult:
-        """Admit a new run from a manual root event.
+        """Admit a new run from a root event.
 
         Args:
             target: The root event, e.g. ``MyWorkflow.start(payload)``.
             request_key: Idempotent admission key; a repeated key returns the
                 prior run with disposition ``"deduplicated"``.
             labels: Server-derived indexing labels to record on the run.
+            trigger_kind: The ingress path admitting this run. It must match the
+                root's declared trigger, so a webhook root cannot be started by
+                application code and a manual root cannot be started by a
+                provider request.
 
         Returns:
             The admission result.
 
         Raises:
-            WorkflowRuntimeError: If the target is not a manual root handler.
+            WorkflowRuntimeError: If the target is not a root, or its trigger
+                does not match the admitting ingress.
         """
         defn, handler, payload = self._resolve_target(target)
-        if not isinstance(handler.trigger, ManualTrigger):
+        declared = getattr(handler.trigger, "kind", None)
+        if declared != trigger_kind:
+            expected = (
+                f"trigger=rx.{trigger_kind}(...)"
+                if trigger_kind == "manual"
+                else f"a {trigger_kind} trigger"
+            )
             msg = (
-                f"Handler {handler.id!r} of {defn.workflow_id!r} is not a manual "
-                "root; only handlers with trigger=rx.manual() can be started "
-                "directly."
+                f"Handler {handler.id!r} of {defn.workflow_id!r} declares "
+                f"{declared or 'no trigger'}, so it cannot be started here; "
+                f"starting through this path requires {expected}."
             )
             raise WorkflowRuntimeError(msg)
         now = self._clock()

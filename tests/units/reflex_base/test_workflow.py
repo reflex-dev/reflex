@@ -12,6 +12,7 @@ from reflex_base.workflow import (
     after,
     build_durable_config,
     default_retry_for_effect,
+    hmac_signature,
     manual,
     parse_duration,
     schedule,
@@ -131,14 +132,15 @@ def test_workflow_config_invalid_max_steps():
 
 def test_triggers():
     assert manual().kind == "manual"
-    hook = webhook("stripe.payment_succeeded", dedupe_by="id")
+    verifier = hmac_signature(secret_env="SECRET", header="X-Signature")
+    hook = webhook("stripe.payment_succeeded", verify=verifier, dedupe_by="id")
     assert hook.kind == "webhook"
     assert hook.topic == "stripe.payment_succeeded"
     assert hook.dedupe_by == "id"
     cron = schedule("0 9 * * 1")
     assert cron.kind == "schedule"
     with pytest.raises(WorkflowDefinitionError, match="topic"):
-        webhook("")
+        webhook("", verify=verifier)
     with pytest.raises(WorkflowDefinitionError, match="cron"):
         schedule("hourly")
 
@@ -236,3 +238,22 @@ def test_build_durable_config_parses_timeout():
     config = _build(durable=True, effect="read", timeout="45s")
     assert config is not None
     assert config.timeout == pytest.approx(45.0)
+
+
+def test_webhook_requires_authentication():
+    """An unverified webhook endpoint would let anyone start runs."""
+    with pytest.raises(WorkflowDefinitionError, match="no verifier"):
+        webhook("stripe.paid")
+    with pytest.raises(WorkflowDefinitionError, match="unverified_reason"):
+        webhook("stripe.paid", allow_unverified=True)
+    public = webhook(
+        "internal.ping", allow_unverified=True, unverified_reason="internal network"
+    )
+    assert public.allow_unverified
+    with pytest.raises(WorkflowDefinitionError, match="keep the verifier"):
+        webhook(
+            "stripe.paid",
+            verify=hmac_signature(secret_env="S", header="H"),
+            allow_unverified=True,
+            unverified_reason="mixed",
+        )

@@ -12,6 +12,7 @@ from reflex_base.workflow import (
     Retry,
     TransientWorkflowError,
     WorkflowConfig,
+    hmac_signature,
     manual,
     webhook,
 )
@@ -262,7 +263,11 @@ def test_webhook_root_compiles(forked_registration_context):
 
         @rx.event(
             durable=True,
-            trigger=webhook("stripe.payment_succeeded", dedupe_by="id"),
+            trigger=webhook(
+                "stripe.payment_succeeded",
+                verify=hmac_signature(secret_env="SECRET", header="X-Signature"),
+                dedupe_by="id",
+            ),
             effect="none",
         )
         def on_payment(self):

@@ -838,6 +838,25 @@ class App(MiddlewareMixin, LifespanMixin):
             methods=["GET"],
         )
 
+    def _add_workflow_endpoints(self):
+        """Add the webhook ingress endpoint when a workflow declares one."""
+        from reflex.workflow.ingress import (
+            WEBHOOK_ROUTE,
+            collect_webhook_routes,
+            webhook_endpoint,
+        )
+
+        if self._api is None or self._workflow_runtime is None:
+            return
+        if not collect_webhook_routes(self._workflow_runtime.definitions):
+            return
+        config = get_config()
+        self._api.add_route(
+            config.prepend_backend_path(WEBHOOK_ROUTE),
+            webhook_endpoint(self._workflow_runtime),
+            methods=["POST"],
+        )
+
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
         from reflex_components_core.core.upload import Upload, get_upload_dir
