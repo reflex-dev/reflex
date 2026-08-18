@@ -88,10 +88,13 @@ def test_default_retry_for_effect():
     for effect in ("none", "read", "idempotent_write"):
         retry = default_retry_for_effect(effect)
         assert retry.max_attempts == 3
-        assert retry.retry_on == (TransientWorkflowError,)
+        # Ordinary failures retry; that is the point of a durable step.
+        assert retry.is_retryable(ConnectionError("flaky"))
+        assert retry.is_retryable(TransientWorkflowError("explicit"))
     non_idempotent = default_retry_for_effect("non_idempotent_write")
     assert non_idempotent.max_attempts == 1
     assert non_idempotent.retry_on == ()
+    assert not non_idempotent.is_retryable(ConnectionError("flaky"))
 
 
 def test_workflow_config_valid():

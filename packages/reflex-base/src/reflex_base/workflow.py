@@ -81,12 +81,10 @@ def parse_duration(value: DurationLike, *, param: str = "duration") -> float:
 
 
 class TransientWorkflowError(Exception):
-    """Raise from a durable handler to mark a failure as safely retryable.
+    """Raise from a durable handler to mark a failure as explicitly retryable.
 
-    Retry policies for the ``none``, ``read``, and ``idempotent_write`` effect
-    classes treat this exception (and its subclasses) as retryable by default.
-    Any other exception is a non-retryable defect unless it is listed in
-    ``Retry.retry_on``.
+    Failures already retry by default, so this exists to state the intent in
+    code and to stay retryable under a policy that narrows ``retry_on``.
     """
 
 
@@ -179,9 +177,11 @@ class Retry:
 def default_retry_for_effect(effect: str) -> Retry:
     """Return the default retry policy for an effect class.
 
-    Unknown code defects never retry by default; only ``TransientWorkflowError``
-    marks a failure as safely retryable. Non-idempotent writes get exactly one
-    business attempt because the runtime cannot prove a retry is safe.
+    Failures retry three times with exponential backoff, which is what makes a
+    durable step survive a flaky dependency. A ``non_idempotent_write`` gets
+    exactly one business attempt instead: the runtime cannot prove the external
+    effect did not already land, so it suspends the run for an operator rather
+    than guessing.
 
     Args:
         effect: The declared effect class of the handler.
@@ -191,7 +191,7 @@ def default_retry_for_effect(effect: str) -> Retry:
     """
     if effect == "non_idempotent_write":
         return Retry(max_attempts=1, retry_on=())
-    return Retry(max_attempts=3, retry_on=(TransientWorkflowError,))
+    return Retry(max_attempts=3, retry_on=(Exception,))
 
 
 @dataclasses.dataclass(frozen=True)

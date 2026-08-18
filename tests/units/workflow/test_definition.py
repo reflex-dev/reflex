@@ -73,11 +73,28 @@ def test_digest_stable_and_sensitive(forked_registration_context):
     assert compile_workflow(OtherPolicy).digest != first.digest
 
 
-def test_explicit_retry_inherits_transient_default(forked_registration_context):
+def test_explicit_retry_retries_ordinary_failures(forked_registration_context):
+    """Retry(max_attempts=5) must mean five attempts, not one."""
     definition = compile_workflow(_billing_workflow())
     retry = definition.handlers["fulfill"].retry
     assert retry.max_attempts == 5
-    assert retry.retry_on == (TransientWorkflowError,)
+    assert retry.is_retryable(ConnectionError("provider down"))
+    assert retry.is_retryable(TransientWorkflowError("explicit"))
+
+
+def test_non_idempotent_write_never_retries(forked_registration_context):
+    """An uncertain write is never retried, whatever the exception."""
+
+    class UnsafeWrite(rx.State):
+        __workflow__ = WorkflowConfig(id="billing.unsafe_write")
+
+        @rx.event(durable=True, trigger=manual(), effect="non_idempotent_write")
+        def wire(self):
+            pass
+
+    retry = compile_workflow(UnsafeWrite).handlers["wire"].retry
+    assert retry.max_attempts == 1
+    assert not retry.is_retryable(ConnectionError("dropped"))
 
 
 def test_explicit_retry_on_preserved(forked_registration_context):

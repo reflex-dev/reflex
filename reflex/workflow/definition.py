@@ -18,7 +18,6 @@ from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
     DurableEventConfig,
     Retry,
-    TransientWorkflowError,
     Trigger,
     WorkflowConfig,
     default_retry_for_effect,
@@ -229,9 +228,11 @@ def _compile_fields(workflow_cls: type[BaseState]) -> tuple[FieldSchema, ...]:
 def _resolve_retry(retry: Retry | None, effect: str) -> Retry:
     """Materialize the effective retry policy for a handler.
 
-    An explicit policy that does not name retryable exception types inherits
-    the effect class's default retryable set, so ``Retry(max_attempts=5)``
-    keeps its meaning without restating the transient-error contract.
+    A policy that does not name retryable exception types retries on any
+    ``Exception``, so ``Retry(max_attempts=5)`` means five attempts. Narrow it
+    with ``do_not_retry_on`` to fail fast on specific errors. A
+    ``non_idempotent_write`` never retries: the runtime cannot prove the
+    external effect did not already land.
 
     Args:
         retry: The explicit policy, if the handler declared one.
@@ -241,10 +242,10 @@ def _resolve_retry(retry: Retry | None, effect: str) -> Retry:
         The fully resolved policy.
     """
     if retry is None:
-        return default_retry_for_effect(effect)
-    if not retry.retry_on and effect != "non_idempotent_write":
-        return dataclasses.replace(retry, retry_on=(TransientWorkflowError,))
-    return retry
+        retry = default_retry_for_effect(effect)
+    if retry.retry_on or effect == "non_idempotent_write":
+        return retry
+    return dataclasses.replace(retry, retry_on=(Exception,))
 
 
 def _compile_handlers(

@@ -193,13 +193,19 @@ async def test_retry_exhaustion_without_hook_fails_run(forked_registration_conte
         assert snapshot.error["type"] == "TransientWorkflowError"
 
 
-async def test_unknown_defect_does_not_retry(forked_registration_context):
+async def test_do_not_retry_on_fails_fast(forked_registration_context):
+    """A failure named in do_not_retry_on fails the run on the first attempt."""
     calls = []
 
     class DefectFlow(rx.State):
         __workflow__ = WorkflowConfig(id="kernel.defect")
 
-        @rx.event(durable=True, trigger=manual(), effect="none")
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="none",
+            retry=Retry(max_attempts=3, do_not_retry_on=(ValueError,)),
+        )
         def broken(self):
             calls.append(1)
             msg = "bug"
@@ -212,6 +218,34 @@ async def test_unknown_defect_does_not_retry(forked_registration_context):
         assert snapshot is not None
         assert snapshot.status is RunStatus.FAILED
         assert len(calls) == 1
+
+
+async def test_ordinary_failures_retry_by_default(forked_registration_context):
+    """A flaky dependency is survived without declaring a retry policy."""
+    calls = []
+
+    class FlakyFlow(rx.State):
+        __workflow__ = WorkflowConfig(id="kernel.flaky_default")
+        status: str = "pending"
+
+        @rx.event(durable=True, trigger=manual(), effect="read")
+        def fetch(self):
+            calls.append(1)
+            if len(calls) < 3:
+                msg = "connection reset"
+                raise ConnectionError(msg)
+            self.status = "fetched"
+
+    async with WorkflowTestHarness(FlakyFlow) as harness:
+        result = await harness.start(FlakyFlow.fetch())
+        assert result.run_id is not None
+        await harness.advance("1s")
+        await harness.advance("2s")
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.state == {"status": "fetched"}
+        assert len(calls) == 3
 
 
 async def test_timeout_consumes_attempts_and_runs_timeout_hook(
@@ -500,6 +534,10 @@ async def test_unserializable_state_fails_run(forked_registration_context):
     async with WorkflowTestHarness(BadStateFlow) as harness:
         result = await harness.start(BadStateFlow.begin())
         assert result.run_id is not None
+        # Unserializable state is not transient, but nothing can tell the
+        # difference at runtime, so it exhausts the default retries first.
+        await harness.advance("1s")
+        await harness.advance("2s")
         snapshot = await harness.get_run(result.run_id)
         assert snapshot is not None
         assert snapshot.status is RunStatus.FAILED
