@@ -294,6 +294,19 @@ await rx.workflows.list_runs(labels={"customer": customer.id})
 A suspended run is waiting for you, not finished: fix whatever made the outcome uncertain, then
 `resume()` to give the step a fresh attempt budget.
 
+The same operations are available from a terminal, reading the app's own database:
+
+```bash
+reflex workflows list --status NEEDS_ATTENTION
+```
+
+```bash
+reflex workflows show <run-id> --history
+```
+
+`reflex workflows cancel <run-id>` and `reflex workflows resume <run-id>` steer a run without
+opening the app, and `--json` on `list` and `show` makes the output scriptable.
+
 ## Testing
 
 The test harness runs your real workflow on a virtual clock, so a three-day wait takes microseconds

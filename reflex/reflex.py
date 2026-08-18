@@ -14,6 +14,7 @@ from reflex_base.utils import console
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.workflow.cli import workflows as workflows_cli
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -1097,6 +1098,7 @@ cli.add_command(hosting_cli_command, name="cloud")
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
 cli.add_command(custom_components_cli, name="component")
+cli.add_command(workflows_cli, name="workflows")
 
 if __name__ == "__main__":
     cli()
