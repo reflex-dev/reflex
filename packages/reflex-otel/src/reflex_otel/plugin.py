@@ -126,6 +126,9 @@ class OtelPlugin(Plugin):
     # One `react.render` span per React commit (uses the react-dom profiling
     # build in production). Off by default because of the span volume.
     render_timing: bool = False
+    # Fraction of browser traces to sample (0..1). Browser spans are trace
+    # roots, so the backend's parent-based sampler follows this decision.
+    sample_rate: float = 1.0
 
     def get_frontend_dependencies(self, **context: Any) -> tuple[str, ...]:
         """Return the npm packages the browser module imports.
@@ -176,6 +179,7 @@ class OtelPlugin(Plugin):
                 "headers": self.headers,
                 "web_vitals": self.web_vitals,
                 "render_timing": self.render_timing,
+                "sample_rate": self.sample_rate,
                 "version": Reflex.VERSION,
             }
         }

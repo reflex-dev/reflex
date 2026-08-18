@@ -17,6 +17,8 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   BatchSpanProcessor,
+  ParentBasedSampler,
+  TraceIdRatioBasedSampler,
   WebTracerProvider,
 } from "@opentelemetry/sdk-trace-web";
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from "web-vitals";
@@ -26,6 +28,11 @@ const config = env.OTEL ?? {};
 
 const provider = new WebTracerProvider({
   resource: resourceFromAttributes({ "service.name": config.service_name }),
+  // Browser spans are trace roots: their sampled flag travels in `traceparent`
+  // and a parent-based backend sampler follows it, so sample here.
+  sampler: new ParentBasedSampler({
+    root: new TraceIdRatioBasedSampler(config.sample_rate ?? 1),
+  }),
   spanProcessors: [
     new BatchSpanProcessor(
       new OTLPTraceExporter({ url: config.endpoint, headers: config.headers }),
@@ -74,13 +81,20 @@ window.__reflex_otel = {
       span.setStatus({ code: SpanStatusCode.ERROR, message: reason });
     }
     span.end();
+    // Unload disconnects happen after the processor's own pagehide flush ran,
+    // so the span would otherwise sit in the queue while the page tears down.
+    provider.forceFlush();
   },
 };
 
 if (config.web_vitals) {
-  // FCP/LCP/TTFB values are offsets from navigation start; INP is a duration
-  // starting at its interaction; CLS is unitless and reported as an instant.
+  // FCP/LCP/TTFB values are offsets from the current navigation: activation
+  // start for a (pre)rendered page, `navigationStartTime` for a BFCache
+  // restore or soft navigation. INP is a duration starting at its interaction;
+  // CLS is unitless and reported as an instant.
   const report = (metric) => {
+    const activationStart =
+      performance.getEntriesByType("navigation")[0]?.activationStart ?? 0;
     const attributes = {
       "web_vital.name": metric.name,
       "web_vital.value": metric.value,
@@ -88,8 +102,8 @@ if (config.web_vitals) {
       "web_vital.id": metric.id,
       "web_vital.navigation_type": metric.navigationType,
     };
-    let startTime = epoch(0);
-    let endTime = epoch(metric.value);
+    let startTime = epoch(metric.navigationStartTime || activationStart);
+    let endTime = startTime + metric.value;
     if (metric.name === "INP") {
       startTime = epoch(metric.entries[0]?.startTime ?? 0);
       endTime = startTime + metric.value;

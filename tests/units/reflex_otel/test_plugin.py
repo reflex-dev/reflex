@@ -44,6 +44,9 @@ def test_env_json_entry():
     assert entry["headers"] == {"x": "y"}
     assert entry["web_vitals"] is False
     assert entry["render_timing"] is False
+    assert entry["sample_rate"] is OtelPlugin.sample_rate
+    rate = 0.5
+    assert OtelPlugin(sample_rate=rate).update_env_json()["OTEL"]["sample_rate"] is rate
     assert entry["service_name"].endswith("-frontend")
     assert (
         OtelPlugin(service_name="web").update_env_json()["OTEL"]["service_name"]
