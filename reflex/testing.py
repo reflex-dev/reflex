@@ -415,7 +415,7 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    logger.error(str(e))
+                    logger.debug(str(e))
                     break
                 if not line:
                     break

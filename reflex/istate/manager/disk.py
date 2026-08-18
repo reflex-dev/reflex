@@ -81,10 +81,13 @@ class StateManagerDisk(StateManager):
     def states_directory(self) -> Path:
         """Get the states directory.
 
+        Resolved once so later cwd changes do not move where states are
+        written or purged.
+
         Returns:
-            The states directory.
+            The absolute states directory.
         """
-        return prerequisites.get_states_dir()
+        return prerequisites.get_states_dir().absolute()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
