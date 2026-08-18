@@ -532,8 +532,10 @@ def test_import_reflex_stays_light():
     script = (
         "import sys\n"
         "import reflex\n"
-        "assert 'reflex_base.utils.log' not in sys.modules, 'log loaded eagerly'\n"
-        "assert 'rich' not in sys.modules, 'rich loaded eagerly'\n"
+        # On py<3.11 the 3.10-deprecation warning imports the pipeline itself.
+        "if sys.version_info >= (3, 11):\n"
+        "    assert 'reflex_base.utils.log' not in sys.modules, 'log loaded eagerly'\n"
+        "    assert 'rich' not in sys.modules, 'rich loaded eagerly'\n"
         "import logging\n"
         "import reflex_base.utils.console\n"
         "assert logging.getLogger('reflex_base').parent is logging.getLogger('reflex')\n"
