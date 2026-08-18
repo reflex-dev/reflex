@@ -3,13 +3,18 @@
 The harness runs registered workflows on an in-memory store with a virtual
 clock, so tests drive retries, durable delays, and deadlines by advancing time
 instead of sleeping. Retry jitter is disabled for determinism.
+
+Lease renewal runs on a real-time cadence while lease expiry is measured on the
+virtual clock, so an attempt held across ``advance()`` is renewed by the next
+pump rather than expiring; ``lease_duration`` is virtual seconds and
+``lease_renew_interval`` is real seconds.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from reflex_base.workflow import parse_duration
+from reflex_base.workflow import DEFAULT_LEASE_DURATION, parse_duration
 
 from reflex.workflow.runtime import WorkflowRuntime, _context_runtime
 from reflex.workflow.store import MemoryRunStore
@@ -61,6 +66,8 @@ class WorkflowTestHarness:
         *workflow_classes: type[BaseState],
         store: RunStore | None = None,
         start_time: float = DEFAULT_START_TIME,
+        lease_duration: DurationLike = DEFAULT_LEASE_DURATION,
+        lease_renew_interval: float | None = None,
     ):
         """Initialize the harness.
 
@@ -68,12 +75,16 @@ class WorkflowTestHarness:
             workflow_classes: Workflow classes to register.
             store: Run store override; defaults to a fresh in-memory store.
             start_time: Initial virtual time in epoch seconds.
+            lease_duration: Virtual seconds a claim survives without renewal.
+            lease_renew_interval: Real seconds between lease renewals.
         """
         self._clock = _VirtualClock(start_time)
         self._runtime = WorkflowRuntime(
             store if store is not None else MemoryRunStore(),
             clock=self._clock,
             rng=lambda: 1.0,
+            lease_duration=parse_duration(lease_duration),
+            lease_renew_interval=lease_renew_interval,
         )
         for workflow_cls in workflow_classes:
             self._runtime.register(workflow_cls)

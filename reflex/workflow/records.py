@@ -33,10 +33,10 @@ TERMINAL_RUN_STATUSES = frozenset((
 class StepStatus(str, enum.Enum):
     """Lifecycle status of one logical step in a run's mailbox.
 
-    Successor slots are created ``READY`` because the in-process kernel is the
-    single writer and the frontier scan already enforces mailbox order; a
-    distributed kernel adapter would hold successors in a blocked state until
-    their predecessor commit is visible.
+    Successor slots are created ``READY`` because a slot can only be claimed
+    once it is the mailbox frontier, which requires its predecessor's commit to
+    be durable; a distributed kernel adapter would hold successors in a blocked
+    state until that commit is visible.
     """
 
     READY = "READY"
@@ -75,6 +75,7 @@ class HistoryEventType(str, enum.Enum):
     ATTEMPT_FAILED = "attempt_failed"
     ATTEMPT_TIMED_OUT = "attempt_timed_out"
     ATTEMPT_CANCELLED = "attempt_cancelled"
+    ATTEMPT_ABANDONED = "attempt_abandoned"
     STEP_RETRY_SCHEDULED = "step_retry_scheduled"
     STEP_RECOVERED = "step_recovered"
     STEP_TOMBSTONED = "step_tombstoned"
@@ -139,6 +140,9 @@ class StepRecord:
         recoveries: Infrastructure recoveries consumed so far.
         due_at: Earliest epoch time the step may be claimed.
         epoch: Fencing token, incremented on every claim.
+        lease_expires_at: Epoch time this claim's lease lapses; 0 when the step
+            is not claimed. A claim whose lease has lapsed is treated as
+            orphaned and is reclaimed by recovery, never by a direct claim.
         error: Last recorded attempt error payload.
         origin: How the slot was allocated (root, chain, delay, or hook).
         created_at: Allocation time in epoch seconds.
@@ -154,6 +158,7 @@ class StepRecord:
     recoveries: int = 0
     due_at: float = 0.0
     epoch: int = 0
+    lease_expires_at: float = 0.0
     error: dict[str, Any] | None = None
     origin: Literal["root", "chain", "delay", "hook"] = "chain"
     created_at: float = 0.0

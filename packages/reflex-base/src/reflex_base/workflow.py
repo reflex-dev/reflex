@@ -23,6 +23,8 @@ DURABLE_EVENT_MARKER: Final = "_rx_durable_event"
 
 DEFAULT_MAX_RECOVERIES: Final = 10
 
+DEFAULT_LEASE_DURATION: Final = 30.0
+
 DurationLike = str | int | float | timedelta
 
 _DURATION_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)\s*$")

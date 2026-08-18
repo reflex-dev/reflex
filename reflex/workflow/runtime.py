@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
+from reflex_base.workflow import DEFAULT_LEASE_DURATION
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
 from reflex.workflow.kernel import DEFAULT_POLL_INTERVAL, WorkflowKernel
@@ -70,6 +71,9 @@ class WorkflowRuntime:
         clock: Callable[[], float] = time.time,
         rng: Callable[[], float] = random.random,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        lease_renew_interval: float | None = None,
+        recovery_interval: float | None = None,
     ):
         """Initialize the runtime.
 
@@ -79,11 +83,18 @@ class WorkflowRuntime:
             clock: Epoch-seconds time source; injectable for virtual time.
             rng: Uniform [0, 1) source used for retry jitter.
             poll_interval: Worker sleep bound between due-time checks.
+            lease_duration: Seconds a claim survives without renewal before
+                recovery may reclaim it.
+            lease_renew_interval: Real seconds between lease renewals.
+            recovery_interval: Seconds between recovery sweeps.
         """
         self._store = store
         self._clock = clock
         self._rng = rng
         self._poll_interval = poll_interval
+        self._lease_duration = lease_duration
+        self._lease_renew_interval = lease_renew_interval
+        self._recovery_interval = recovery_interval
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -152,7 +163,7 @@ class WorkflowRuntime:
         return self._kernel
 
     async def startup(self, *, start_worker: bool = True) -> None:
-        """Build the kernel, recover orphaned claims, and start processing.
+        """Build the kernel, reclaim expired claims, and start processing.
 
         Args:
             start_worker: Whether to launch the background worker; tests pump
@@ -168,6 +179,9 @@ class WorkflowRuntime:
             clock=self._clock,
             rng=self._rng,
             poll_interval=self._poll_interval,
+            lease_duration=self._lease_duration,
+            lease_renew_interval=self._lease_renew_interval,
+            recovery_interval=self._recovery_interval,
         )
         if start_worker:
             await self._kernel.start_worker()
@@ -175,7 +189,7 @@ class WorkflowRuntime:
             await self._kernel.recover()
 
     async def shutdown(self) -> None:
-        """Stop the worker, leaving in-flight claims recoverable on restart."""
+        """Stop the worker; an in-flight claim is reclaimed after its lease expires."""
         if self._kernel is not None:
             await self._kernel.aclose()
             self._kernel = None

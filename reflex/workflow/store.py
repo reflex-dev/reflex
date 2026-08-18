@@ -1,12 +1,16 @@
 """Durable run stores for the workflow kernel.
 
 A store is the single authority for run state: admission with idempotent
-request keys, the ordered per-run mailbox, claim fencing, and the atomic step
-commit that persists a state patch together with its successor slots. The
-kernel decides what should happen; the store makes it durable atomically.
+request keys, the ordered per-run mailbox, claim fencing and leasing, and the
+atomic step commit that persists a state patch together with its successor
+slots. The kernel decides what should happen; the store makes it durable
+atomically.
 
 ``MemoryRunStore`` backs tests and the harness. ``SqliteRunStore`` provides
-crash-safe persistence on a single machine using the standard library.
+crash-safe persistence on a single machine using the standard library. Run
+exactly one worker process per database file: its calls are synchronous and
+cross-process write contention blocks the caller's event loop, which is
+hostile to lease renewal.
 """
 
 from __future__ import annotations
@@ -16,9 +20,10 @@ import dataclasses
 import json
 import sqlite3
 import threading
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from reflex_base.utils.exceptions import WorkflowRuntimeError
+from reflex_base.workflow import DEFAULT_LEASE_DURATION
 
 from reflex.workflow.records import (
     CLAIMABLE_STEP_STATUSES,
@@ -109,14 +114,46 @@ class RunStore(Protocol):
         """
         ...
 
-    async def claim_next(self, now: float) -> Claim | None:
+    async def claim_next(
+        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+    ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
+
+        The claim carries a lease expiring at ``now + lease_duration``. The
+        executing kernel must renew it through ``renew_lease``; a claim whose
+        lease lapses is reclaimed by ``recover_orphans``.
 
         Args:
             now: Current time in epoch seconds.
+            lease_duration: Seconds of renewal silence tolerated before the
+                claim is treated as orphaned.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
+        """
+        ...
+
+    async def renew_lease(
+        self,
+        claim: Claim,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+    ) -> bool:
+        """Extend a live claim's lease without transitioning the step.
+
+        Renewal is a liveness signal only: it must not change the step's
+        status, fencing epoch, or any committed state, and it never consumes a
+        budget.
+
+        Args:
+            claim: The claim being renewed.
+            now: Current time in epoch seconds.
+            lease_duration: Seconds to extend the lease from ``now``.
+
+        Returns:
+            True if the claim still owns its step and the lease was extended;
+            False if the claim was fenced and the attempt must be abandoned.
         """
         ...
 
@@ -219,10 +256,13 @@ class RunStore(Protocol):
         ...
 
     async def recover_orphans(self, now: float, max_recoveries: int) -> int:
-        """Recover steps left claimed by a previous process.
+        """Recover claims whose lease has expired.
 
-        Each orphan consumes one infrastructure recovery and becomes claimable
-        again; a step over budget fails its run.
+        A step is orphaned when it is CLAIMED and its lease lapsed at or before
+        ``now``: whoever held it stopped renewing. Each orphan consumes one
+        infrastructure recovery and becomes claimable again; a step over budget
+        fails its run. A claim with a live lease is left alone, so a peer that
+        is mid-attempt is never disturbed.
 
         Args:
             now: Current time in epoch seconds.
@@ -295,6 +335,19 @@ def _run_is_runnable(run: RunRecord, now: float) -> bool:
         and not run.cancel_requested
         and (run.deadline is None or run.deadline > now)
     )
+
+
+def _lease_expired(step: StepRecord, now: float) -> bool:
+    """Whether a claimed step's lease has lapsed and it may be recovered.
+
+    Args:
+        step: The step record.
+        now: Current time in epoch seconds.
+
+    Returns:
+        True when the step is claimed and its lease expired at or before now.
+    """
+    return step.status is StepStatus.CLAIMED and step.lease_expires_at <= now
 
 
 def _frontier(steps: Iterable[StepRecord]) -> StepRecord | None:
@@ -376,11 +429,15 @@ class MemoryRunStore:
             self._append_events(run.run_id, events, run.created_at)
             return True, run.run_id
 
-    async def claim_next(self, now: float) -> Claim | None:
+    async def claim_next(
+        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+    ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
         Args:
             now: Current time in epoch seconds.
+            lease_duration: Seconds of renewal silence tolerated before the
+                claim is treated as orphaned.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -401,6 +458,7 @@ class MemoryRunStore:
                     frontier,
                     status=StepStatus.CLAIMED,
                     epoch=frontier.epoch + 1,
+                    lease_expires_at=now + lease_duration,
                     updated_at=now,
                 )
                 steps[claimed.ordinal] = claimed
@@ -441,6 +499,34 @@ class MemoryRunStore:
             raise StaleClaimError(msg)
         return run, steps
 
+    async def renew_lease(
+        self,
+        claim: Claim,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+    ) -> bool:
+        """Extend a live claim's lease without transitioning the step.
+
+        Args:
+            claim: The claim being renewed.
+            now: Current time in epoch seconds.
+            lease_duration: Seconds to extend the lease from ``now``.
+
+        Returns:
+            True if the claim still owns its step; False if it was fenced.
+        """
+        async with self._lock:
+            try:
+                _, steps = self._check_claim(claim)
+            except StaleClaimError:
+                return False
+            step = steps[claim.step.ordinal]
+            steps[step.ordinal] = dataclasses.replace(
+                step, lease_expires_at=now + lease_duration
+            )
+            return True
+
     async def commit(
         self, claim: Claim, completion: StepCompletion, now: float
     ) -> None:
@@ -459,6 +545,7 @@ class MemoryRunStore:
                 status=completion.step_status,
                 attempts=step.attempts + (1 if completion.consume_attempt else 0),
                 due_at=completion.due_at if completion.due_at is not None else 0.0,
+                lease_expires_at=0.0,
                 error=completion.step_error,
                 updated_at=now,
             )
@@ -511,7 +598,7 @@ class MemoryRunStore:
                 return
             step = steps[claim.step.ordinal]
             steps[step.ordinal] = dataclasses.replace(
-                step, status=status, updated_at=now
+                step, status=status, lease_expires_at=0.0, updated_at=now
             )
             self._append_events(run.run_id, events, now)
 
@@ -645,7 +732,7 @@ class MemoryRunStore:
                     continue
                 steps = self._steps[run.run_id]
                 for step in list(steps):
-                    if step.status is not StepStatus.CLAIMED:
+                    if not _lease_expired(step, now):
                         continue
                     recovered += 1
                     if step.recoveries + 1 > max_recoveries:
@@ -653,6 +740,7 @@ class MemoryRunStore:
                             step,
                             status=StepStatus.FAILED,
                             recoveries=step.recoveries + 1,
+                            lease_expires_at=0.0,
                             error={"reason": "recovery_budget_exhausted"},
                             updated_at=now,
                         )
@@ -678,6 +766,7 @@ class MemoryRunStore:
                             status=StepStatus.RECOVERY_WAIT,
                             recoveries=step.recoveries + 1,
                             due_at=now,
+                            lease_expires_at=0.0,
                             updated_at=now,
                         )
                         self._append_events(
@@ -776,6 +865,7 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     recoveries INTEGER NOT NULL DEFAULT 0,
     due_at REAL NOT NULL DEFAULT 0,
     epoch INTEGER NOT NULL DEFAULT 0,
+    lease_expires_at REAL NOT NULL DEFAULT 0,
     error TEXT,
     origin TEXT NOT NULL,
     created_at REAL NOT NULL,
@@ -798,6 +888,13 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs (status);
 """
+
+_STEP_MIGRATIONS: Final = (
+    (
+        "lease_expires_at",
+        "ALTER TABLE workflow_steps ADD COLUMN lease_expires_at REAL NOT NULL DEFAULT 0",
+    ),
+)
 
 
 def _dump(value: Any) -> str | None:
@@ -871,6 +968,7 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         recoveries=row["recoveries"],
         due_at=row["due_at"],
         epoch=row["epoch"],
+        lease_expires_at=row["lease_expires_at"],
         error=_load(row["error"]),
         origin=row["origin"],
         created_at=row["created_at"],
@@ -894,6 +992,34 @@ class SqliteRunStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=NORMAL")
         self._db.executescript(_SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add columns and indexes missing from databases created by older versions.
+
+        The check and the alter run in one immediate transaction so two
+        processes opening the same file cannot both attempt it. Rows predating
+        a column take its default, which for ``lease_expires_at`` means an
+        already-lapsed lease: a step left claimed by the previous binary is a
+        genuine orphan and is recovered on the first recovery pass.
+        """
+        self._db.execute("BEGIN IMMEDIATE")
+        try:
+            columns = {
+                row["name"]
+                for row in self._db.execute("PRAGMA table_info(workflow_steps)")
+            }
+            for name, statement in _STEP_MIGRATIONS:
+                if name not in columns:
+                    self._db.execute(statement)
+            self._db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_steps_lease"
+                " ON workflow_steps (status, lease_expires_at)"
+            )
+            self._db.execute("COMMIT")
+        except BaseException:
+            self._db.execute("ROLLBACK")
+            raise
 
     def close(self) -> None:
         """Close the backing database connection."""
@@ -933,8 +1059,9 @@ class SqliteRunStore:
         """
         self._db.execute(
             "INSERT INTO workflow_steps (run_id, ordinal, handler_id, status, args,"
-            " attempts, recoveries, due_at, epoch, error, origin, created_at,"
-            " updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " attempts, recoveries, due_at, epoch, lease_expires_at, error, origin,"
+            " created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 step.run_id,
                 step.ordinal,
@@ -945,6 +1072,7 @@ class SqliteRunStore:
                 step.recoveries,
                 step.due_at,
                 step.epoch,
+                step.lease_expires_at,
                 _dump(step.error),
                 step.origin,
                 step.created_at,
@@ -1032,11 +1160,15 @@ class SqliteRunStore:
                 raise
             return True, run.run_id
 
-    async def claim_next(self, now: float) -> Claim | None:
+    async def claim_next(
+        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+    ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
         Args:
             now: Current time in epoch seconds.
+            lease_duration: Seconds of renewal silence tolerated before the
+                claim is treated as orphaned.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -1067,14 +1199,17 @@ class SqliteRunStore:
                         frontier,
                         status=StepStatus.CLAIMED,
                         epoch=frontier.epoch + 1,
+                        lease_expires_at=now + lease_duration,
                         updated_at=now,
                     )
                     self._db.execute(
                         "UPDATE workflow_steps SET status = ?, epoch = ?,"
-                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        " lease_expires_at = ?, updated_at = ?"
+                        " WHERE run_id = ? AND ordinal = ?",
                         (
                             claimed.status.value,
                             claimed.epoch,
+                            claimed.lease_expires_at,
                             now,
                             claimed.run_id,
                             claimed.ordinal,
@@ -1123,6 +1258,42 @@ class SqliteRunStore:
             )
             raise StaleClaimError(msg)
 
+    async def renew_lease(
+        self,
+        claim: Claim,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+    ) -> bool:
+        """Extend a live claim's lease without transitioning the step.
+
+        Args:
+            claim: The claim being renewed.
+            now: Current time in epoch seconds.
+            lease_duration: Seconds to extend the lease from ``now``.
+
+        Returns:
+            True if the claim still owns its step; False if it was fenced.
+        """
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                try:
+                    self._check_claim(claim)
+                except StaleClaimError:
+                    self._db.execute("ROLLBACK")
+                    return False
+                self._db.execute(
+                    "UPDATE workflow_steps SET lease_expires_at = ?"
+                    " WHERE run_id = ? AND ordinal = ?",
+                    (now + lease_duration, claim.run.run_id, claim.step.ordinal),
+                )
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return True
+
     async def commit(
         self, claim: Claim, completion: StepCompletion, now: float
     ) -> None:
@@ -1139,7 +1310,7 @@ class SqliteRunStore:
                 self._check_claim(claim)
                 self._db.execute(
                     "UPDATE workflow_steps SET status = ?, attempts = attempts + ?,"
-                    " due_at = ?, error = ?, updated_at = ?"
+                    " due_at = ?, lease_expires_at = 0, error = ?, updated_at = ?"
                     " WHERE run_id = ? AND ordinal = ?",
                     (
                         completion.step_status.value,
@@ -1218,8 +1389,8 @@ class SqliteRunStore:
                     self._db.execute("ROLLBACK")
                     return
                 self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, updated_at = ?"
-                    " WHERE run_id = ? AND ordinal = ?",
+                    "UPDATE workflow_steps SET status = ?, lease_expires_at = 0,"
+                    " updated_at = ? WHERE run_id = ? AND ordinal = ?",
                     (status.value, now, claim.run.run_id, claim.step.ordinal),
                 )
                 self._append_events(claim.run.run_id, events, now)
@@ -1388,9 +1559,9 @@ class SqliteRunStore:
                 rows = self._db.execute(
                     "SELECT s.* FROM workflow_steps s"
                     " JOIN workflow_runs r ON r.run_id = s.run_id"
-                    " WHERE s.status = ? AND r.status NOT IN"
-                    f" ({','.join('?' * len(terminal))})",
-                    (StepStatus.CLAIMED.value, *terminal),
+                    " WHERE s.status = ? AND s.lease_expires_at <= ?"
+                    f" AND r.status NOT IN ({','.join('?' * len(terminal))})",
+                    (StepStatus.CLAIMED.value, now, *terminal),
                 ).fetchall()
                 recovered = 0
                 for row in rows:
@@ -1399,7 +1570,8 @@ class SqliteRunStore:
                     if step.recoveries + 1 > max_recoveries:
                         self._db.execute(
                             "UPDATE workflow_steps SET status = ?, recoveries = ?,"
-                            " error = ?, updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                            " lease_expires_at = 0, error = ?, updated_at = ?"
+                            " WHERE run_id = ? AND ordinal = ?",
                             (
                                 StepStatus.FAILED.value,
                                 step.recoveries + 1,
@@ -1432,7 +1604,8 @@ class SqliteRunStore:
                     else:
                         self._db.execute(
                             "UPDATE workflow_steps SET status = ?, recoveries = ?,"
-                            " due_at = ?, updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                            " due_at = ?, lease_expires_at = 0, updated_at = ?"
+                            " WHERE run_id = ? AND ordinal = ?",
                             (
                                 StepStatus.RECOVERY_WAIT.value,
                                 step.recoveries + 1,

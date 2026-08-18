@@ -3,8 +3,9 @@
 The kernel admits runs, claims the due frontier step of each run's mailbox,
 executes the durable handler against a hydrated run-state instance, and
 atomically commits the state patch together with the successor slots the
-handler returned. Retries, timeouts, lifecycle hooks, cancellation drain, and
-crash recovery are decided here and made durable by the store.
+handler returned. Retries, timeouts, lifecycle hooks, cancellation drain,
+claim-lease renewal, and crash recovery are decided here and made durable by
+the store.
 """
 
 from __future__ import annotations
@@ -19,8 +20,10 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import TypeAdapter
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
+from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import (
+    DEFAULT_LEASE_DURATION,
     DEFAULT_MAX_RECOVERIES,
     After,
     CompleteRun,
@@ -51,6 +54,10 @@ if TYPE_CHECKING:
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
 
 DEFAULT_POLL_INTERVAL = 0.25
+
+LEASE_RENEW_FRACTION = 1 / 3
+
+RECOVERY_INTERVAL_FRACTION = 1 / 2
 
 
 def _error_payload(error: BaseException) -> dict[str, Any]:
@@ -104,6 +111,30 @@ class _SuccessorSpec:
         self.origin = origin
 
 
+class _Lease:
+    """The live claim lease of one in-flight attempt.
+
+    Attributes:
+        claim: The claim being kept alive.
+        attempt: The task running the handler, once created.
+        renewer: The background task extending the lease.
+        lost: Whether the store reported the claim was fenced.
+    """
+
+    __slots__ = ("attempt", "claim", "lost", "renewer")
+
+    def __init__(self, claim: Claim):
+        """Initialize the lease.
+
+        Args:
+            claim: The claim being kept alive.
+        """
+        self.claim = claim
+        self.attempt: asyncio.Task | None = None
+        self.renewer: asyncio.Task | None = None
+        self.lost = False
+
+
 class WorkflowKernel:
     """Executes durable workflow runs against a run store."""
 
@@ -116,6 +147,9 @@ class WorkflowKernel:
         rng: Callable[[], float] = random.random,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         max_recoveries: int = DEFAULT_MAX_RECOVERIES,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        lease_renew_interval: float | None = None,
+        recovery_interval: float | None = None,
     ):
         """Initialize the kernel.
 
@@ -126,6 +160,16 @@ class WorkflowKernel:
             rng: Uniform [0, 1) source used for retry jitter.
             poll_interval: Worker sleep bound between due-time checks.
             max_recoveries: Infrastructure recovery budget per logical step.
+            lease_duration: Seconds a claim survives without renewal before
+                recovery may reclaim it.
+            lease_renew_interval: Real seconds between lease renewals; defaults
+                to a third of ``lease_duration``.
+            recovery_interval: Seconds between recovery sweeps in the
+                background worker; defaults to half of ``lease_duration``.
+
+        Raises:
+            WorkflowRuntimeError: If the store cannot renew leases, or the
+                lease timings are inconsistent.
         """
         self._definitions: dict[str, WorkflowDefinition] = {
             defn.workflow_id: defn for defn in definitions
@@ -138,11 +182,40 @@ class WorkflowKernel:
         self._rng = rng
         self._poll_interval = poll_interval
         self._max_recoveries = max_recoveries
+        if not hasattr(store, "renew_lease"):
+            msg = (
+                f"{type(store).__name__} does not implement renew_lease; a run "
+                "store must renew claim leases or recovery will reclaim live "
+                "claims and execute steps twice."
+            )
+            raise WorkflowRuntimeError(msg)
+        renew = (
+            lease_renew_interval
+            if lease_renew_interval is not None
+            else lease_duration * LEASE_RENEW_FRACTION
+        )
+        recovery = (
+            recovery_interval
+            if recovery_interval is not None
+            else lease_duration * RECOVERY_INTERVAL_FRACTION
+        )
+        if lease_duration <= 0 or not 0 < renew < lease_duration or recovery <= 0:
+            msg = (
+                "Lease timings must satisfy 0 < lease_renew_interval < "
+                "lease_duration and recovery_interval > 0, got "
+                f"{renew} / {lease_duration} / {recovery}."
+            )
+            raise WorkflowRuntimeError(msg)
+        self._lease_duration = lease_duration
+        self._lease_renew_interval = renew
+        self._recovery_interval = recovery
         self._field_adapters: dict[tuple[str, str], TypeAdapter] = {}
         self._inflight: dict[str, asyncio.Task] = {}
+        self._leases: dict[str, _Lease] = {}
+        self._next_recovery_at = 0.0
+        self._worker_id = uuid.uuid4().hex
         self._wakeup = asyncio.Event()
         self._worker: asyncio.Task | None = None
-        self._recovered = False
 
     @property
     def store(self) -> RunStore:
@@ -851,6 +924,139 @@ class WorkflowKernel:
             events=tuple(events),
         )
 
+    def _acquire_lease(self, claim: Claim) -> _Lease:
+        """Register an in-flight claim and start renewing its lease.
+
+        Args:
+            claim: The claim to keep alive.
+
+        Returns:
+            The lease handle.
+        """
+        lease = _Lease(claim)
+        self._leases[claim.run.run_id] = lease
+        lease.renewer = asyncio.ensure_future(self._renew_forever(lease))
+        return lease
+
+    async def _renew(self, lease: _Lease) -> None:
+        """Extend one lease, abandoning the attempt when the store fences it.
+
+        A store error is transient: the lease is left alone and the next
+        renewal retries, which tolerates one lost round-trip before the lease
+        could lapse.
+
+        Args:
+            lease: The lease to extend.
+        """
+        if lease.lost:
+            return
+        try:
+            held = await self._store.renew_lease(
+                lease.claim, self._clock(), lease_duration=self._lease_duration
+            )
+        except Exception as err:
+            console.debug(f"Workflow lease renewal failed, retrying: {err}")
+            return
+        if not held:
+            self._lose_lease(lease)
+
+    async def _renew_forever(self, lease: _Lease) -> None:
+        """Renew a lease on a real-time cadence until it ends or is lost.
+
+        The cadence is real time so renewal makes progress under any injected
+        clock, while the expiry written is read from the injected clock so
+        virtual time alone decides when a lease has lapsed.
+
+        Args:
+            lease: The lease to renew.
+        """
+        while not lease.lost:
+            await asyncio.sleep(self._lease_renew_interval)
+            await self._renew(lease)
+
+    def _lose_lease(self, lease: _Lease) -> None:
+        """Mark a lease fenced and stop the attempt it was covering.
+
+        Args:
+            lease: The lease that was lost.
+        """
+        lease.lost = True
+        if lease.attempt is not None:
+            lease.attempt.cancel()
+
+    async def _release_lease(self, lease: _Lease) -> None:
+        """Stop renewing a lease and forget the in-flight claim.
+
+        Args:
+            lease: The lease to release.
+
+        Raises:
+            asyncio.CancelledError: If this task is cancelled while waiting for
+                the renewer to stop.
+        """
+        self._leases.pop(lease.claim.run.run_id, None)
+        renewer, lease.renewer = lease.renewer, None
+        if renewer is None:
+            return
+        renewer.cancel()
+        try:
+            await renewer
+        except asyncio.CancelledError:
+            if not renewer.cancelled():
+                raise
+
+    async def _renew_leases(self) -> None:
+        """Extend every lease this kernel holds before a recovery sweep.
+
+        Recovery reclaims any claim whose lease has lapsed, including one this
+        kernel is executing when an injected clock jumps past its expiry.
+        Renewing first makes a live attempt unstealable by its own process.
+        """
+        for lease in list(self._leases.values()):
+            await self._renew(lease)
+
+    async def _cancel_requested(self, run_id: str) -> bool:
+        """Whether a run carries cancellation intent.
+
+        Args:
+            run_id: The run to check.
+
+        Returns:
+            True when the run exists and cancellation was requested.
+        """
+        run = await self._store.get_run(run_id)
+        return run is not None and run.cancel_requested
+
+    async def _record_abandoned(
+        self, claim: Claim, handler: HandlerDefinition, reason: str
+    ) -> None:
+        """Record that an attempt lost its claim and committed nothing.
+
+        The event is appended outside the fence: the row belongs to another
+        worker now, and history is append-only evidence, not state.
+
+        Args:
+            claim: The fenced claim.
+            handler: The handler that was executing.
+            reason: Why the claim was lost.
+        """
+        await self._store.append_events(
+            claim.run.run_id,
+            (
+                (
+                    HistoryEventType.ATTEMPT_ABANDONED,
+                    {
+                        "ordinal": claim.step.ordinal,
+                        "epoch": claim.step.epoch,
+                        "worker": self._worker_id,
+                        "effect": handler.effect,
+                        "reason": reason,
+                    },
+                ),
+            ),
+            self._clock(),
+        )
+
     async def _execute_claim(self, claim: Claim) -> None:
         """Execute one claimed attempt and commit its outcome.
 
@@ -889,33 +1095,46 @@ class WorkflowKernel:
                         "ordinal": claim.step.ordinal,
                         "handler_id": handler.id,
                         "attempt": claim.step.attempts + 1,
+                        "epoch": claim.step.epoch,
                         "effect": handler.effect,
                     },
                 ),
             ),
             now,
         )
+        lease = self._acquire_lease(claim)
         try:
-            instance = self._hydrate(defn, claim.run.state)
-            value = await self._invoke(handler, instance, claim.step.args)
+            try:
+                instance = self._hydrate(defn, claim.run.state)
+                lease.attempt = asyncio.ensure_future(
+                    self._invoke(handler, instance, claim.step.args)
+                )
+                value = await lease.attempt
+            finally:
+                await self._release_lease(lease)
             successors, control = self._interpret_return(defn, value)
             state = self._snapshot(defn, instance)
             completion = self._success_completion(
                 defn, claim, steps, state, successors, control, self._clock()
             )
         except asyncio.CancelledError:
-            await self._store.release_claim(
-                claim,
-                status=StepStatus.CANCELLED,
-                events=(
-                    (
-                        HistoryEventType.ATTEMPT_CANCELLED,
-                        {"ordinal": claim.step.ordinal},
+            if lease.lost:
+                await self._record_abandoned(claim, handler, "lease_lost")
+                return
+            if await self._cancel_requested(claim.run.run_id):
+                await self._store.release_claim(
+                    claim,
+                    status=StepStatus.CANCELLED,
+                    events=(
+                        (
+                            HistoryEventType.ATTEMPT_CANCELLED,
+                            {"ordinal": claim.step.ordinal},
+                        ),
                     ),
-                ),
-                now=self._clock(),
-            )
-            return
+                    now=self._clock(),
+                )
+                return
+            raise
         except TimeoutError as err:
             completion = self._failure_completion(
                 defn, handler, claim, steps, err, timed_out=True, now=self._clock()
@@ -927,7 +1146,7 @@ class WorkflowKernel:
         try:
             await self._store.commit(claim, completion, self._clock())
         except StaleClaimError:
-            return
+            await self._record_abandoned(claim, handler, "fenced_at_commit")
 
     async def _tick(self) -> bool:
         """Run one scheduling round.
@@ -960,7 +1179,7 @@ class WorkflowKernel:
                     )
                     or progressed
                 )
-        claim = await self._store.claim_next(now)
+        claim = await self._store.claim_next(now, lease_duration=self._lease_duration)
         if claim is not None:
             task = asyncio.ensure_future(self._execute_claim(claim))
             self._inflight[claim.run.run_id] = task
@@ -972,51 +1191,68 @@ class WorkflowKernel:
         return progressed
 
     async def recover(self) -> int:
-        """Recover orphaned claims left by a previous process.
+        """Renew this kernel's live claims, then reclaim expired ones.
+
+        A claim is reclaimable only once its lease has lapsed, so a peer that
+        is mid-attempt is never disturbed and crash recovery is delayed by up
+        to one lease.
 
         Returns:
             The number of steps recovered.
         """
-        self._recovered = True
-        return await self._store.recover_orphans(self._clock(), self._max_recoveries)
+        await self._renew_leases()
+        now = self._clock()
+        self._next_recovery_at = now + self._recovery_interval
+        return await self._store.recover_orphans(now, self._max_recoveries)
 
     async def run_until_idle(self) -> None:
         """Process work until nothing is claimable at the current clock time.
 
-        Scheduled future work (retry backoff, ``rx.after`` delays) stays
-        pending; advance the clock and call again to run it.
+        Each call first sweeps for claims whose lease has expired, so advancing
+        the clock past a dead worker's lease reclaims its step. Scheduled
+        future work (retry backoff, ``rx.after`` delays) stays pending; advance
+        the clock and call again to run it.
         """
-        if not self._recovered:
-            await self.recover()
+        await self.recover()
         while await self._tick():
             pass
 
     async def _worker_loop(self) -> None:
         """Process work continuously until the kernel is closed."""
         while True:
-            progressed = await self._tick()
-            if progressed:
-                continue
-            now = self._clock()
-            due = await self._store.next_due(now)
-            delay = self._poll_interval
-            if due is not None:
-                delay = min(delay, max(due - now, 0.0))
-            if delay <= 0:
-                continue
-            self._wakeup.clear()
-            with contextlib.suppress(TimeoutError):
-                await asyncio.wait_for(self._wakeup.wait(), timeout=delay)
+            try:
+                if self._clock() >= self._next_recovery_at:
+                    await self.recover()
+                if await self._tick():
+                    continue
+                now = self._clock()
+                due = await self._store.next_due(now)
+                delay = min(self._poll_interval, max(self._next_recovery_at - now, 0.0))
+                if due is not None:
+                    delay = min(delay, max(due - now, 0.0))
+                if delay <= 0:
+                    continue
+                self._wakeup.clear()
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(self._wakeup.wait(), timeout=delay)
+            except Exception as err:
+                console.error(f"Workflow worker error, retrying: {err}")
+                await asyncio.sleep(self._poll_interval)
 
     async def start_worker(self) -> None:
-        """Start the background worker after recovering orphaned claims."""
+        """Start the background worker, which recovers expired claims as it runs."""
         if self._worker is not None:
             return
         await self.recover()
         self._worker = asyncio.create_task(self._worker_loop())
 
     async def aclose(self) -> None:
-        """Stop the background worker, leaving in-flight claims recoverable."""
+        """Stop the background worker.
+
+        An in-flight attempt is cancelled and its step is left claimed, so it
+        is reclaimed once its lease expires rather than being recorded as a
+        deliberate cancellation.
+        """
         if self._worker is None:
             return
         self._worker.cancel()

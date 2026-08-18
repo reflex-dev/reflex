@@ -255,7 +255,7 @@ async def test_deadline_makes_run_control_pending(store):
 
 async def test_recover_orphans_consumes_recovery_budget(store):
     await store.admit(_run(), _step(), _ADMIT_EVENTS)
-    claim = await store.claim_next(NOW)
+    claim = await store.claim_next(NOW, lease_duration=5.0)
     assert claim is not None
     recovered = await store.recover_orphans(NOW + 10, max_recoveries=2)
     assert recovered == 1
@@ -277,7 +277,7 @@ async def test_recover_orphans_consumes_recovery_budget(store):
 
 async def test_recover_orphans_exhaustion_fails_run(store):
     await store.admit(_run(), _step(recoveries=2), _ADMIT_EVENTS)
-    claim = await store.claim_next(NOW)
+    claim = await store.claim_next(NOW, lease_duration=5.0)
     assert claim is not None
     await store.recover_orphans(NOW + 10, max_recoveries=2)
     run = await store.get_run("run1")
@@ -300,7 +300,7 @@ async def test_sqlite_persistence_across_reopen(tmp_path):
     db_path = tmp_path / "workflow.db"
     first = SqliteRunStore(db_path)
     await first.admit(_run(request_key="key1"), _step(), _ADMIT_EVENTS)
-    claim = await first.claim_next(NOW)
+    claim = await first.claim_next(NOW, lease_duration=1.0)
     assert claim is not None
     first.close()
 
@@ -324,3 +324,142 @@ async def test_sqlite_persistence_across_reopen(tmp_path):
         assert steps[0].status is StepStatus.RECOVERY_WAIT
     finally:
         second.close()
+
+
+async def test_claim_sets_a_lease(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    assert claim.step.lease_expires_at == pytest.approx(NOW + 30.0)
+    steps = await store.get_steps("run1")
+    assert steps[0].lease_expires_at == pytest.approx(NOW + 30.0)
+
+
+async def test_renew_lease_extends_the_expiry(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    assert await store.renew_lease(claim, NOW + 10.0, lease_duration=30.0)
+    steps = await store.get_steps("run1")
+    assert steps[0].lease_expires_at == pytest.approx(NOW + 40.0)
+    # Renewal is a liveness signal only: it transitions nothing.
+    assert steps[0].status is StepStatus.CLAIMED
+    assert steps[0].epoch == claim.step.epoch
+    assert steps[0].attempts == 0
+    assert steps[0].recoveries == 0
+    # The renewed claim still commits.
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.COMPLETED,
+            state={"n": 1},
+        ),
+        NOW + 11.0,
+    )
+    run = await store.get_run("run1")
+    assert run is not None
+    assert run.status is RunStatus.COMPLETED
+
+
+async def test_recover_orphans_skips_unexpired_leases(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    assert await store.recover_orphans(NOW + 29.0, max_recoveries=10) == 0
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.CLAIMED
+    assert steps[0].recoveries == 0
+
+
+async def test_recover_orphans_reclaims_at_the_expiry_boundary(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    assert await store.recover_orphans(NOW + 30.0, max_recoveries=10) == 1
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.RECOVERY_WAIT
+    assert steps[0].recoveries == 1
+    # Lease loss is infrastructure, never a business attempt.
+    assert steps[0].attempts == 0
+    assert steps[0].lease_expires_at == pytest.approx(0.0)
+    with pytest.raises(StaleClaimError):
+        await store.commit(
+            claim,
+            StepCompletion(
+                step_status=StepStatus.SUCCEEDED,
+                run_status=RunStatus.COMPLETED,
+                state={"n": 9},
+            ),
+            NOW + 31.0,
+        )
+
+
+async def test_renewed_lease_survives_a_later_sweep(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    assert await store.renew_lease(claim, NOW + 20.0, lease_duration=30.0)
+    assert await store.recover_orphans(NOW + 40.0, max_recoveries=10) == 0
+    assert await store.recover_orphans(NOW + 50.0, max_recoveries=10) == 1
+
+
+async def test_renew_lease_refused_after_recovery(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=5.0)
+    assert claim is not None
+    assert await store.recover_orphans(NOW + 10.0, max_recoveries=10) == 1
+    assert not await store.renew_lease(claim, NOW + 11.0, lease_duration=30.0)
+
+
+async def test_renew_lease_refused_after_commit(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.COMPLETED,
+            state={"n": 1},
+        ),
+        NOW + 1.0,
+    )
+    assert not await store.renew_lease(claim, NOW + 2.0, lease_duration=30.0)
+    steps = await store.get_steps("run1")
+    assert steps[0].lease_expires_at == pytest.approx(0.0)
+
+
+async def test_release_claim_clears_the_lease(store):
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    await store.release_claim(claim, status=StepStatus.READY, events=(), now=NOW + 1.0)
+    steps = await store.get_steps("run1")
+    assert steps[0].lease_expires_at == pytest.approx(0.0)
+
+
+async def test_sqlite_migrates_a_database_without_the_lease_column(tmp_path):
+    db_path = tmp_path / "legacy.db"
+    store = SqliteRunStore(db_path)
+    await store.admit(_run(), _step(), _ADMIT_EVENTS)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    # Simulate a database written by a build that predates leases.
+    store._db.execute("DROP INDEX IF EXISTS idx_workflow_steps_lease")
+    store._db.execute("ALTER TABLE workflow_steps DROP COLUMN lease_expires_at")
+    store.close()
+
+    reopened = SqliteRunStore(db_path)
+    try:
+        steps = await reopened.get_steps("run1")
+        assert steps[0].status is StepStatus.CLAIMED
+        # A claim left by the previous binary has no lease, so it is a genuine
+        # orphan and is reclaimed on the first sweep.
+        assert steps[0].lease_expires_at == pytest.approx(0.0)
+        assert await reopened.recover_orphans(NOW, max_recoveries=10) == 1
+    finally:
+        reopened.close()
+    # Reopening an already-migrated database is a no-op.
+    again = SqliteRunStore(db_path)
+    again.close()
