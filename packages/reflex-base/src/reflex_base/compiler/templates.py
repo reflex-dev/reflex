@@ -364,26 +364,10 @@ export const initialEvents = () => []
 
     disable_owner_stacks_str = (
         r"""
-// React's development runtime captures an "owner stack" for every element it
-// creates: an Error() plus console.createTask() per createElement/jsx call.
-// The Error constructor walks the live JS stack, so its cost grows with render
-// depth and dominates dev-mode render CPU on large pages. Pin the runtime's
-// per-second stack budget counter past its cap so element creation takes the
-// cheap branch; react-dom resets the plain property once per second, so a
-// pinned accessor is required for the change to stick.
-//
-// Trade-off, in exchange for roughly a 3-4x drop in dev render CPU: elements
-// carry React's shared "unknown owner" placeholder instead of a real capture,
-// so `React.captureOwnerStack()` returns no owner frames. That affects React
-// DevTools' owner-stack view *and* anything built on the public API, such as
-// custom error overlays and the `onCaughtError` / `onUncaughtError` root
-// handlers. Component stacks in React's own error messages, dev warnings and
-// Fast Refresh are unaffected. Set REFLEX_REACT_OWNER_STACKS=1 to turn this
-// off and get full owner stacks back.
-//
-// Browser only: this module is also evaluated by the server renderer, and
-// mutating the shared React internals there would disable owner stacks for
-// SSR diagnostics in the same process.
+// Disable React dev-build owner-stack capture: the per-element Error()
+// dominates dev-mode render CPU on large pages. Costs owner frames in
+// `React.captureOwnerStack()`; set REFLEX_REACT_OWNER_STACKS=1 to restore.
+// Full context: https://github.com/reflex-dev/reflex/pull/6905
 if (typeof window !== "undefined") {
   try {
     const reactInternals =
