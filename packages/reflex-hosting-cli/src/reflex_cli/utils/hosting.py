@@ -938,9 +938,10 @@ def get_gcp_provider_status(org_id: str, client: AuthenticatedClient) -> dict:
         client: The authenticated client.
 
     Returns:
-        A dict ``{configured, allowed, project_id, region}``: ``configured`` is
-        whether a GCP account is connected, ``allowed`` whether the org's tier
-        permits GCP deploys.
+        A dict ``{configured, allowed, project_id, region, connections}``:
+        ``configured`` is whether a GCP account is connected, ``allowed``
+        whether the org's tier permits GCP deploys, and ``connections`` the
+        named connections that are usable deploy targets.
 
     Raises:
         NotAuthenticatedError: If the token is not valid.
@@ -998,8 +999,10 @@ def list_provider_accounts(org_id: str, client: AuthenticatedClient) -> list[dic
         client: The authenticated client.
 
     Returns:
-        A list of ``{provider, config, created_by, created_at, updated_at}``
-        dicts (no secret material).
+        A list of ``{id, provider, name, is_default, config, created_by,
+        created_at, updated_at}`` dicts (no secret material). Each row is one
+        named connection; ``config`` carries its ``project_id``, ``region``,
+        ``artifact_repo`` and ``runtime_service_account``.
 
     Raises:
         NotAuthenticatedError: If the token is not valid.
@@ -1021,7 +1024,12 @@ def list_provider_accounts(org_id: str, client: AuthenticatedClient) -> list[dic
     return response.json()
 
 
-def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) -> str:
+def set_app_provider(
+    app_id: str,
+    provider: str,
+    client: AuthenticatedClient,
+    provider_account_id: str | None = None,
+) -> str:
     """Choose which hosting platform an app deploys to.
 
     Switching providers on a deployed app tears down its resources on the
@@ -1033,6 +1041,10 @@ def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) ->
         provider: The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
             ``PROVIDER_GCP``).
         client: The authenticated client.
+        provider_account_id: Which of the org's GCP connections the app deploys
+            through (GCP only). None keeps the connection the app already has
+            when it stays on GCP, and means the org's default connection when
+            GCP is first chosen.
 
     Returns:
         The provider now set on the app, or a ``"... failed: ..."`` string on
@@ -1046,9 +1058,12 @@ def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) ->
 
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
+    payload: dict[str, Any] = {"provider": provider}
+    if provider_account_id is not None:
+        payload["provider_account_id"] = provider_account_id
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/provider"),
-        json={"provider": provider},
+        json=payload,
         headers=authorization_header(client.token),
         timeout=constants.Hosting.TIMEOUT,
     )
@@ -1061,6 +1076,114 @@ def set_app_provider(app_id: str, provider: str, client: AuthenticatedClient) ->
             ex_details = ex.response.text
         return f"set provider failed: {ex_details}"
     return response.json().get("provider", provider)
+
+
+def set_app_full_deploy(
+    app_id: str, full_deploy: bool, client: AuthenticatedClient
+) -> dict[str, Any] | str:
+    """Set whether the app's frontend is served from the provider too.
+
+    In full-deploy mode the compiled frontend is bundled into the provider's
+    container and served in front of the backend, so the whole app runs on the
+    connected cloud account and nothing is hosted on Reflex's CDN. It is
+    GCP-only and Enterprise-only. Flipping the mode on a running app stops it,
+    so the next deploy brings it back up in the new mode -- which is why this
+    has to be set before the hostname is reserved: the reserved URL is baked
+    into the exported frontend.
+
+    Args:
+        app_id: The id of the application.
+        full_deploy: Whether to serve the frontend from the provider.
+        client: The authenticated client.
+
+    Returns:
+        ``{full_deploy, stopped, stop_confirmed}`` -- whether the app was
+        stopped to apply the change, and whether the provider confirmed the
+        stop -- or a ``"... failed: ..."`` string on error.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    response = httpx.post(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/full_deploy"
+        ),
+        json={"full_deploy": full_deploy},
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        try:
+            ex_details = ex.response.json().get("detail")
+        except (ValueError, AttributeError):
+            ex_details = ex.response.text
+        return f"set full deploy failed: {ex_details}"
+    return response.json()
+
+
+def list_gcp_connections(
+    client: AuthenticatedClient, org_id: str | None = None
+) -> list[dict]:
+    """List the GCP connections an org can deploy through.
+
+    Read from the org's GCP status, which every member can see (the deploy
+    dialog reads the same thing) and which lists only connections that are
+    usable deploy targets. The provider-account listing is richer but is
+    limited to org admins.
+
+    Args:
+        client: The authenticated client.
+        org_id: The organization to query; defaults to the caller's token org.
+
+    Returns:
+        A list of ``{id, name, is_default, project_id, region}`` dicts, empty
+        if no org id can be resolved.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+
+    """
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+    org_id = org_id or get_token_org_id(client)
+    if not org_id:
+        return []
+    status = get_gcp_provider_status(org_id, client)
+    return [
+        connection
+        for connection in (status.get("connections") or [])
+        if isinstance(connection, dict)
+    ]
+
+
+def find_gcp_connection(connections: list[dict], name: str) -> dict | None:
+    """Pick the connection a user named, by id or by name.
+
+    Args:
+        connections: The connections to search, as returned by
+            ``list_gcp_connections``.
+        name: The connection id or name the user asked for.
+
+    Returns:
+        The matching connection, or None if nothing matched.
+
+    """
+    wanted = name.strip()
+    for connection in connections:
+        if str(connection.get("id") or "") == wanted:
+            return connection
+    lowered = wanted.lower()
+    for connection in connections:
+        if str(connection.get("name") or "").strip().lower() == lowered:
+            return connection
+    return None
 
 
 def set_instance_bounds(

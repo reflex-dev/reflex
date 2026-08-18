@@ -75,12 +75,91 @@ def logout(
     console.success("Successfully logged out.")
 
 
+def _resolve_gcp_connection(
+    gcp_connection: str | None, target: str | None, client: Any
+) -> dict[str, Any] | None:
+    """Resolve ``--gcp-connection`` against the org's named GCP connections.
+
+    Args:
+        gcp_connection: The connection name (or id) the user asked for.
+        target: The provider this deploy is targeting.
+        client: The authenticated client.
+
+    Returns:
+        The matching connection dict, or None when none was named.
+
+    Raises:
+        Exit: If the deploy is not targeting GCP, the connections cannot be
+            read, or nothing matches the given name.
+
+    """
+    from reflex_cli.utils import hosting
+
+    if not gcp_connection:
+        return None
+    if target != hosting.PROVIDER_GCP:
+        console.error(
+            "--gcp-connection only applies to Google Cloud deploys. Pass "
+            "--provider gcp to deploy through a connected GCP account."
+        )
+        raise click.exceptions.Exit(2)
+    # Unlike the availability probe, a failure here aborts: the user named a
+    # connection, and falling back to the org default would deploy into a
+    # different GCP project than the one they asked for.
+    try:
+        connections = hosting.list_gcp_connections(client)
+    except Exception as ex:
+        console.error(f"Unable to read this organization's GCP connections: {ex}")
+        raise click.exceptions.Exit(1) from ex
+    match = hosting.find_gcp_connection(connections, gcp_connection)
+    if match is None:
+        known = ", ".join(
+            sorted(str(c.get("name")) for c in connections if c.get("name"))
+        )
+        console.error(
+            f"No GCP connection named {gcp_connection!r} in this organization."
+            + (f" Connected: {known}." if known else "")
+            + " Run `reflex cloud providers connections` to list them."
+        )
+        raise click.exceptions.Exit(2)
+    return match
+
+
+def _pin_app_provider(
+    app: dict[str, Any], target: str, connection: dict[str, Any] | None, client: Any
+) -> None:
+    """Write the app's provider (and connection), aborting the deploy on refusal.
+
+    Args:
+        app: The resolved app dict (must contain "id").
+        target: The backend provider value to pin.
+        connection: The GCP connection to deploy through, if one was named.
+        client: The authenticated client.
+
+    Raises:
+        Exit: If the server refused the change.
+
+    """
+    from reflex_cli.utils import hosting
+
+    result = hosting.set_app_provider(
+        app["id"],
+        target,
+        client=client,
+        provider_account_id=str(connection["id"]) if connection else None,
+    )
+    if isinstance(result, str) and result.startswith("set provider failed"):
+        console.error(result)
+        raise click.exceptions.Exit(1)
+
+
 def _resolve_deploy_provider(
     app: dict[str, Any],
     provider_arg: str | None,
     interactive: bool,
     app_was_created: bool,
     client: Any,
+    gcp_connection: str | None = None,
 ) -> str | None:
     """Resolve and pin the hosting provider for this deploy.
 
@@ -96,6 +175,10 @@ def _resolve_deploy_provider(
         app_was_created: Whether the app was just created in this deploy (a
             switch then has nothing to tear down).
         client: The authenticated client.
+        gcp_connection: The ``--gcp-connection`` value: which of the org's GCP
+            connections to deploy through. Omitted leaves the app on the
+            connection it already has, or the org's default the first time it
+            targets GCP.
 
     Returns:
         The backend provider value in effect (Reflex Cloud's default or GCP), or
@@ -117,23 +200,41 @@ def _resolve_deploy_provider(
         if not gcp_status or not interactive:
             # No GCP connected, or non-interactive with no explicit choice: keep
             # whatever the app already targets.
-            return current
-        region = gcp_status.get("region")
-        console.print(
-            "This organization has Google Cloud connected"
-            + (f" (region {region})" if region else "")
-            + "."
-        )
-        default_choice = "gcp" if current == hosting.PROVIDER_GCP else "reflex-cloud"
-        choice = console.ask(
-            "Where would you like to deploy?",
-            choices=["reflex-cloud", "gcp"],
-            default=default_choice,
-        )
-        target = hosting.normalize_provider(choice)
+            target = current
+        else:
+            region = gcp_status.get("region")
+            console.print(
+                "This organization has Google Cloud connected"
+                + (f" (region {region})" if region else "")
+                + "."
+            )
+            default_choice = (
+                "gcp" if current == hosting.PROVIDER_GCP else "reflex-cloud"
+            )
+            choice = console.ask(
+                "Where would you like to deploy?",
+                choices=["reflex-cloud", "gcp"],
+                default=default_choice,
+            )
+            target = hosting.normalize_provider(choice)
+
+    connection = _resolve_gcp_connection(gcp_connection, target or current, client)
 
     if target is None or target == (current or hosting.PROVIDER_REFLEX_CLOUD):
-        # Nothing to change; the app already targets this provider.
+        # The provider is unchanged. A named connection is still written: it
+        # repoints the app at a different GCP project, which is a change even
+        # when the provider it deploys to is not.
+        if connection is not None:
+            _pin_app_provider(app, hosting.PROVIDER_GCP, connection, client)
+            console.info(
+                f"Deploying through GCP connection '{connection.get('name')}'"
+                + (
+                    f" (project {connection['project_id']})"
+                    if connection.get("project_id")
+                    else ""
+                )
+                + "."
+            )
         return target or current
 
     if not app_was_created and current is not None:
@@ -150,11 +251,12 @@ def _resolve_deploy_provider(
             console.info("Deployment cancelled.")
             raise click.exceptions.Exit(0)
 
-    result = hosting.set_app_provider(app["id"], target, client=client)
-    if isinstance(result, str) and result.startswith("set provider failed"):
-        console.error(result)
-        raise click.exceptions.Exit(1)
-    console.info(f"Deploying to {hosting.provider_display_name(target)}.")
+    _pin_app_provider(app, target, connection, client)
+    console.info(
+        f"Deploying to {hosting.provider_display_name(target)}"
+        + (f" through connection '{connection.get('name')}'" if connection else "")
+        + "."
+    )
     return target
 
 
@@ -232,6 +334,117 @@ def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[Non
         raise
 
 
+def _apply_full_deploy(
+    app: dict[str, Any],
+    full_deploy: bool | None,
+    provider: str | None,
+    client: Any,
+) -> bool:
+    """Set the app's hosting mode, before its hostname is reserved.
+
+    In full-deploy mode the frontend is served from the provider's own
+    container, on the same origin as the backend, so nothing is hosted on
+    Reflex's CDN. The reserved hostname is what the frontend is compiled
+    against, which is why the mode has to be written before it is reserved.
+
+    Args:
+        app: The resolved app dict (must contain "id" and "name").
+        full_deploy: The requested mode; None leaves the app's mode alone.
+        provider: The provider this deploy is targeting.
+        client: The authenticated client.
+
+    Returns:
+        Whether a running app was stopped to apply the change.
+
+    Raises:
+        Exit: If full deploy was asked for on a provider that cannot serve it,
+            or the server refused the change.
+
+    """
+    from reflex_cli.utils import hosting
+
+    if full_deploy is None:
+        return False
+    if provider != hosting.PROVIDER_GCP:
+        if full_deploy:
+            console.error(
+                "--full-deploy serves the frontend from the provider's own "
+                "container, which only the Google Cloud target supports. Pass "
+                "--provider gcp, or drop --full-deploy."
+            )
+            raise click.exceptions.Exit(2)
+        # Nothing to turn off: the mode is GCP-only and the provider write
+        # clears it for an app leaving GCP, so this is a guaranteed no-op. Skip
+        # the round trip rather than refuse it -- a config file carrying
+        # `full_deploy: false` must not fail a Reflex Cloud deploy.
+        return False
+
+    try:
+        result = hosting.set_app_full_deploy(app["id"], full_deploy, client=client)
+    except BaseException:
+        # A dropped connection says nothing about whether the server applied the
+        # change, and applying it stops a running app, so hedge rather than
+        # re-raise into a failure path that reports nothing about the app being
+        # down. The warning context below is not entered on this path.
+        console.warn(
+            f"Lost contact while changing the hosting mode of '{app['name']}'. "
+            "The change stops a running app, and it may have been applied, so "
+            "check the app in the Reflex Cloud dashboard before relying on it "
+            "still being up."
+        )
+        raise
+    if isinstance(result, str):
+        console.error(result)
+        raise click.exceptions.Exit(1)
+
+    stopped = bool(result.get("stopped"))
+    if stopped and not result.get("stop_confirmed", True):
+        console.warn(
+            f"'{app['name']}' was stopped to change its hosting mode, but the "
+            "provider did not confirm the teardown. This deploy may be refused "
+            "until that clears; check the app in the Reflex Cloud dashboard."
+        )
+    if result.get("full_deploy"):
+        console.info(
+            "Full deploy: the frontend is served from the provider, on the same "
+            "origin as the backend."
+        )
+    return stopped
+
+
+@contextlib.contextmanager
+def _warn_if_full_deploy_outlives_deploy(
+    app_name: str, stopped: bool
+) -> Iterator[None]:
+    """Report an app left down by a hosting-mode flip whose deploy then failed.
+
+    Flipping the mode stops a running app so the redeploy brings it back up in
+    the new one. When that redeploy does not happen, the app stays down, and
+    rollback is not a way back: the flip destroyed the images its previous
+    deployments were built from, and those were built for the old mode anyway.
+
+    Args:
+        app_name: The name of the app whose mode was changed.
+        stopped: Whether the flip actually stopped a running app; a no-op when
+            False.
+
+    Yields:
+        None.
+
+    """
+    try:
+        yield
+    except BaseException:
+        if stopped:
+            console.warn(
+                f"'{app_name}' was stopped to change its hosting mode and this "
+                "deploy did not bring it back up, so it stays down until one "
+                "succeeds. Its earlier deployments are not rollback targets: "
+                "they were built for the previous hosting mode."
+            )
+        raise
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -256,6 +469,9 @@ def deploy(
     # callers keep binding to the same parameters.
     min_instances: int | None = None,
     max_instances: int | None = None,
+    gcp_connection: str | None = None,
+    full_deploy: bool | None = None,
+    strategy: str | None = None,
     **kwargs,
 ):
     """Deploy the app to the Reflex hosting service.
@@ -286,6 +502,15 @@ def deploy(
             the app's current value when omitted.
         max_instances: The maximum number of instances to scale out to. Left at
             the app's current value when omitted.
+        gcp_connection: Which of the org's GCP connections to deploy through,
+            by name or id. Only valid when deploying to GCP; omitted leaves the
+            app on the connection it already has, or the org's default the
+            first time it targets GCP.
+        full_deploy: Whether to serve the frontend from the provider's own
+            container instead of Reflex's CDN (GCP only). None leaves the app's
+            current hosting mode unchanged.
+        strategy: The rollout strategy for this deployment ("immediate",
+            "rolling", "bluegreen" or "canary").
         **kwargs: Additional keyword arguments.
 
     Raises:
@@ -309,7 +534,6 @@ def deploy(
         config = dataclasses.asdict(config_from_file)
 
     packages = None
-    strategy = None
     include_db = False
     # If a config file is provided, use values from the file that are not provided as arguments.
     if config:
@@ -340,6 +564,10 @@ def deploy(
             include_db = config.get("include_db", False)
         if not strategy:
             strategy = config.get("strategy", None)
+        if not gcp_connection:
+            gcp_connection = config.get("gcp_connection", None)
+        if full_deploy is None:
+            full_deploy = config.get("full_deploy", None)
         app_name = config.get("name", app_name)
         if not isinstance(app_name, (str, type(None))):
             console.error(
@@ -524,6 +752,7 @@ def deploy(
         interactive=interactive,
         app_was_created=app_was_created,
         client=authenticated_client,
+        gcp_connection=gcp_connection,
     )
     # A destructive provider switch on an already-deployed app tears its old
     # resources down; remember what to restore to if a later step fails.
@@ -545,7 +774,47 @@ def deploy(
             )
         regions = None
 
-    with _restore_provider_on_failure(app, switched_from, authenticated_client):
+    with contextlib.ExitStack() as failure_guards:
+        failure_guards.enter_context(
+            _restore_provider_on_failure(app, switched_from, authenticated_client)
+        )
+        if not app_name:
+            console.error("Please set an app name.")
+            raise click.exceptions.Exit(1)
+
+        # at this point, if project_id is None, the App should have the correct project_id and
+        # we should use that going forward to pass validation checks.
+        project_id = project_id or app.get("project_id")
+
+        # Ahead of the hosting-mode change below, which stops a running app: a
+        # deployment argument the server rejects would otherwise take the app
+        # down for a deploy that never gets submitted. The provider switch above
+        # is destructive too, but it has a restore; this does not.
+        validation_message = hosting.validate_deployment_args(
+            app_name=app_name,
+            app_id=app.get("id"),
+            project_id=project_id,
+            regions=regions,
+            vmtype=vmtype,
+            hostname=hostname,
+            client=authenticated_client,
+        )
+
+        if validation_message != "success":
+            console.error(validation_message)
+            raise click.exceptions.Exit(1)
+
+        # Inside the provider guard (a refused mode change must still restore the
+        # provider it was asked for) and ahead of the reserve below, whose URL is
+        # what the frontend is compiled against.
+        failure_guards.enter_context(
+            _warn_if_full_deploy_outlives_deploy(
+                app["name"],
+                _apply_full_deploy(
+                    app, full_deploy, effective_provider, authenticated_client
+                ),
+            )
+        )
         urls = hosting.get_hostname(
             app_id=app["id"],
             app_name=app["name"],
@@ -562,28 +831,6 @@ def deploy(
             os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]
         )  # frontend
         processed_envs = hosting.process_envs(envs) if envs else None
-
-        if not app_name:
-            console.error("Please set an app name.")
-            raise click.exceptions.Exit(1)
-
-        # at this point, if project_id is None, the App should have the correct project_id and
-        # we should use that going forward to pass validation checks.
-        project_id = project_id or app.get("project_id")
-
-        validation_message = hosting.validate_deployment_args(
-            app_name=app_name,
-            app_id=app.get("id"),
-            project_id=project_id,
-            regions=regions,
-            vmtype=vmtype,
-            hostname=hostname,
-            client=authenticated_client,
-        )
-
-        if validation_message != "success":
-            console.error(validation_message)
-            raise click.exceptions.Exit(1)
 
         if envfile:
             try:

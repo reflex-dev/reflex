@@ -1,4 +1,10 @@
-"""GCP Cloud Run deploy commands for the Reflex Cloud CLI.
+"""Standalone GCP Cloud Run deploy command for the Reflex Cloud CLI.
+
+This is the *unmanaged* path: it deploys straight to Cloud Run under the
+user's own gcloud credentials, and Reflex Cloud is never told about the
+result -- no app, no dashboard, no logs, no rollback. For a GCP deploy the
+platform manages (through a GCP account connected to the organization), use
+``reflex deploy --provider gcp`` instead.
 
 Fetches a Dockerfile + bash deploy script from Reflex and runs the script
 against the user's source directory. The Dockerfile is materialized inside
@@ -111,7 +117,7 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
 })
 
 
-@click.command(name="deploy")
+@click.command(name="gcp-standalone")
 @click.option(
     "--gcp",
     "use_gcp",
@@ -190,7 +196,7 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     "--service-account",
     "service_account",
     default=None,
-    help="IAM service account email the Cloud Run service runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA.",
+    help="IAM service account email the Cloud Run service this command creates runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA. Unrelated to the credentials this command deploys with, and unrelated to managed GCP deploys, where the runtime identity belongs to the organization's connection: see `reflex cloud providers connections`.",
 )
 @click.option(
     "--envfile",
@@ -251,18 +257,34 @@ def deploy_command(
     dry_run: bool,
     loglevel: str,
 ):
-    """Deploy a Reflex app to a cloud target.
+    """Deploy a Reflex app to GCP Cloud Run yourself, outside Reflex Cloud.
 
-    Currently the only supported target is GCP Cloud Run via --gcp. The
-    command fetches a Dockerfile and bash deploy script from Reflex, embeds
+    The command fetches a Dockerfile and bash deploy script from Reflex, embeds
     the Dockerfile inside a generated ``cloudbuild.yaml`` (written to a
     tempfile), rewrites the script's ``gcloud builds submit`` invocation to
     reference that config, then runs the script with cwd= your source dir.
     Your project tree is never modified.
+
+    Everything runs under your own gcloud credentials and the resulting service
+    is yours alone: Reflex Cloud records no app for it, so it has no dashboard,
+    logs, rollback or teardown. For a GCP deploy the platform manages, through a
+    GCP account connected to your organization, use `reflex deploy --provider
+    gcp`.
     """
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
+
+    if click.get_current_context().info_name == "deploy":
+        console.warn(
+            "DeprecationWarning: `reflex cloud deploy` is deprecated as of "
+            "reflex-hosting-cli 0.1.70 and will be removed in 0.2.0. Use "
+            "`reflex cloud gcp-standalone`, which it is now named so it cannot "
+            "be mistaken for `reflex deploy`: this command deploys to Cloud Run "
+            "under your own gcloud credentials and Reflex Cloud never hears "
+            "about the result, while `reflex deploy --provider gcp` is the "
+            "managed GCP path."
+        )
 
     if not use_gcp:
         console.error(
