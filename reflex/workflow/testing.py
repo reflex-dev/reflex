@@ -183,6 +183,19 @@ class WorkflowTestHarness:
         """
         return await self.kernel.get_run(run_id)
 
+    async def resume(self, run_id: str) -> bool:
+        """Re-open a suspended run and process the work it unblocks.
+
+        Args:
+            run_id: The run to resume.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        resumed = await self.kernel.resume(run_id)
+        await self.kernel.run_until_idle()
+        return resumed
+
     async def cancel(self, run_id: str) -> bool:
         """Request cancellation of a run and process the drain.
 

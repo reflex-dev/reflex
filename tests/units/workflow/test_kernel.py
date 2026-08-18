@@ -639,9 +639,16 @@ async def test_sqlite_recovery_resumes_retry_schedule(
     second_store.close()
 
 
-async def test_definition_digest_mismatch_suspends_run(
+async def test_policy_changes_do_not_strand_in_flight_runs(
     forked_registration_context, tmp_path
 ):
+    """Retuning a step's effect and timeout must not disturb a live run.
+
+    Deploying new code is routine; only a step that can no longer be
+    dispatched suspends. See tests/units/workflow/test_versioning.py for the
+    incompatible cases.
+    """
+
     class PinnedV1(rx.State):
         __workflow__ = WorkflowConfig(id="kernel.pinned")
 
@@ -679,6 +686,5 @@ async def test_definition_digest_mismatch_suspends_run(
         await harness.run_until_idle()
         snapshot = await harness.get_run(result.run_id)
         assert snapshot is not None
-        assert snapshot.status is RunStatus.NEEDS_ATTENTION
-        assert snapshot.error == {"reason": "definition_digest_mismatch"}
+        assert snapshot.status is RunStatus.COMPLETED
     second_store.close()

@@ -255,6 +255,23 @@ class RunStore(Protocol):
         """
         ...
 
+    async def resume_run(self, run_id: str, now: float) -> bool:
+        """Re-open a suspended run so its frontier step runs again.
+
+        Suspension is an operator state, not an outcome: the run waits for a
+        human to fix whatever made the outcome uncertain. Resuming clears the
+        error, grants the frontier step a fresh attempt budget, and makes it
+        claimable immediately.
+
+        Args:
+            run_id: The run to resume.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        ...
+
     async def recover_orphans(self, now: float, max_recoveries: int) -> int:
         """Recover claims whose lease has expired.
 
@@ -713,6 +730,38 @@ class MemoryRunStore:
             )
             events.append((event, {} if error is None else dict(error)))
             self._append_events(run_id, events, now)
+            return True
+
+    async def resume_run(self, run_id: str, now: float) -> bool:
+        """Re-open a suspended run so its frontier step runs again.
+
+        Args:
+            run_id: The run to resume.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        async with self._lock:
+            run = self._runs.get(run_id)
+            if run is None or run.status is not RunStatus.NEEDS_ATTENTION:
+                return False
+            steps = self._steps[run_id]
+            for step in list(steps):
+                if step.status is StepStatus.NEEDS_ATTENTION:
+                    steps[step.ordinal] = dataclasses.replace(
+                        step,
+                        status=StepStatus.READY,
+                        attempts=0,
+                        due_at=now,
+                        lease_expires_at=0.0,
+                        error=None,
+                        updated_at=now,
+                    )
+            self._runs[run_id] = dataclasses.replace(
+                run, status=RunStatus.PENDING, error=None, updated_at=now
+            )
+            self._append_events(run_id, ((HistoryEventType.RUN_RESUMED, {}),), now)
             return True
 
     async def recover_orphans(self, now: float, max_recoveries: int) -> int:
@@ -1536,6 +1585,51 @@ class SqliteRunStore:
                 ]
                 events.append((event, {} if error is None else dict(error)))
                 self._append_events(run_id, events, now)
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return True
+
+    async def resume_run(self, run_id: str, now: float) -> bool:
+        """Re-open a suspended run so its frontier step runs again.
+
+        Args:
+            run_id: The run to resume.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                cursor = self._db.execute(
+                    "UPDATE workflow_runs SET status = ?, error = NULL,"
+                    " updated_at = ? WHERE run_id = ? AND status = ?",
+                    (
+                        RunStatus.PENDING.value,
+                        now,
+                        run_id,
+                        RunStatus.NEEDS_ATTENTION.value,
+                    ),
+                )
+                if cursor.rowcount == 0:
+                    self._db.execute("ROLLBACK")
+                    return False
+                self._db.execute(
+                    "UPDATE workflow_steps SET status = ?, attempts = 0, due_at = ?,"
+                    " lease_expires_at = 0, error = NULL, updated_at = ?"
+                    " WHERE run_id = ? AND status = ?",
+                    (
+                        StepStatus.READY.value,
+                        now,
+                        now,
+                        run_id,
+                        StepStatus.NEEDS_ATTENTION.value,
+                    ),
+                )
+                self._append_events(run_id, ((HistoryEventType.RUN_RESUMED, {}),), now)
                 self._db.execute("COMMIT")
             except BaseException:
                 self._db.execute("ROLLBACK")

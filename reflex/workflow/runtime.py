@@ -270,6 +270,21 @@ class WorkflowsNamespace:
         return await get_runtime().kernel.cancel(run_id)
 
     @staticmethod
+    async def resume(run_id: str) -> bool:
+        """Re-open a run suspended for operator attention.
+
+        Use this after fixing whatever made a step's outcome uncertain: the
+        frontier step gets a fresh attempt budget and runs again.
+
+        Args:
+            run_id: The run to resume.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        return await get_runtime().kernel.resume(run_id)
+
+    @staticmethod
     async def get_run(run_id: str) -> RunSnapshot | None:
         """Load a read-only snapshot of a run.
 

@@ -44,7 +44,12 @@ from reflex.workflow.records import (
     StepStatus,
 )
 from reflex.workflow.runtime import WorkflowRuntime, get_runtime, workflows
-from reflex.workflow.store import MemoryRunStore, RunStore, SqliteRunStore
+from reflex.workflow.store import (
+    MemoryRunStore,
+    RunStore,
+    SqliteRunStore,
+    StaleClaimError,
+)
 from reflex.workflow.testing import WorkflowTestHarness
 
 __all__ = [
@@ -62,6 +67,7 @@ __all__ = [
     "RunStore",
     "ScheduleTrigger",
     "SqliteRunStore",
+    "StaleClaimError",
     "StartResult",
     "StepRecord",
     "StepStatus",

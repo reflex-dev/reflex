@@ -394,6 +394,20 @@ class WorkflowKernel:
             self._wakeup.set()
         return recorded
 
+    async def resume(self, run_id: str) -> bool:
+        """Re-open a run that is suspended for operator attention.
+
+        Args:
+            run_id: The run to resume.
+
+        Returns:
+            True if a suspended run was re-opened.
+        """
+        resumed = await self._store.resume_run(run_id, self._clock())
+        if resumed:
+            self._wakeup.set()
+        return resumed
+
     async def get_run(self, run_id: str) -> RunSnapshot | None:
         """Load a read-only snapshot of a run.
 
@@ -852,8 +866,10 @@ class WorkflowKernel:
         if isinstance(control, NeedsAttention):
             error = {"reason": control.reason, "details": control.details}
             events.append((HistoryEventType.RUN_NEEDS_ATTENTION, {"error": error}))
+            # The attempt succeeded and its state is committed, but the step
+            # holds the suspension so resuming knows where to pick back up.
             return StepCompletion(
-                step_status=StepStatus.SUCCEEDED,
+                step_status=StepStatus.NEEDS_ATTENTION,
                 run_status=RunStatus.NEEDS_ATTENTION,
                 state=state,
                 run_error=error,
@@ -1057,6 +1073,56 @@ class WorkflowKernel:
             self._clock(),
         )
 
+    @staticmethod
+    def _incompatible_reason(
+        defn: WorkflowDefinition | None, claim: Claim
+    ) -> dict[str, Any] | None:
+        """Check that a pending step can still be dispatched after a redeploy.
+
+        Only two changes can strand a step: the handler it names is gone, or
+        its persisted payload no longer fits that handler's parameters. Adding
+        state fields or retuning retries, timeouts, and hooks is safe, so those
+        deploy without disturbing runs already in flight.
+
+        Args:
+            defn: The current definition of the run's workflow, if registered.
+            claim: The claim about to be executed.
+
+        Returns:
+            A JSON-compatible reason when the step cannot be dispatched, else None.
+        """
+        if defn is None:
+            return {
+                "reason": "unknown_workflow",
+                "workflow_id": claim.run.workflow_id,
+                "detail": (
+                    f"Workflow {claim.run.workflow_id!r} is no longer registered "
+                    "with this app; re-register it to resume the run."
+                ),
+            }
+        handler = defn.handlers.get(claim.step.handler_id)
+        if handler is None:
+            return {
+                "reason": "unknown_handler",
+                "handler_id": claim.step.handler_id,
+                "detail": (
+                    f"Handler {claim.step.handler_id!r} no longer exists on "
+                    f"{claim.run.workflow_id!r}; restore it or cancel the run."
+                ),
+            }
+        unexpected = sorted(set(claim.step.args) - set(handler.params))
+        if unexpected:
+            return {
+                "reason": "incompatible_payload",
+                "handler_id": handler.id,
+                "detail": (
+                    f"Step payload has arguments {unexpected} that handler "
+                    f"{handler.id!r} no longer accepts; restore the parameters "
+                    "or cancel the run."
+                ),
+            }
+        return None
+
     async def _execute_claim(self, claim: Claim) -> None:
         """Execute one claimed attempt and commit its outcome.
 
@@ -1065,20 +1131,19 @@ class WorkflowKernel:
         """
         defn = self._definitions.get(claim.run.workflow_id)
         now = self._clock()
-        if defn is None or defn.digest != claim.run.definition_digest:
-            reason = (
-                "unknown_workflow" if defn is None else "definition_digest_mismatch"
-            )
+        incompatible = self._incompatible_reason(defn, claim)
+        if defn is None or incompatible is not None:
+            incompatible = incompatible or {"reason": "unknown_workflow"}
             await self._store.commit(
                 claim,
                 StepCompletion(
                     step_status=StepStatus.NEEDS_ATTENTION,
                     run_status=RunStatus.NEEDS_ATTENTION,
                     state=None,
-                    step_error={"reason": reason},
-                    run_error={"reason": reason},
+                    step_error=incompatible,
+                    run_error=incompatible,
                     events=(
-                        (HistoryEventType.RUN_NEEDS_ATTENTION, {"reason": reason}),
+                        (HistoryEventType.RUN_NEEDS_ATTENTION, dict(incompatible)),
                     ),
                 ),
                 now,

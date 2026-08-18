@@ -85,6 +85,7 @@ class HistoryEventType(str, enum.Enum):
     RUN_CANCEL_REQUESTED = "run_cancel_requested"
     RUN_CANCELLED = "run_cancelled"
     RUN_NEEDS_ATTENTION = "run_needs_attention"
+    RUN_RESUMED = "run_resumed"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
