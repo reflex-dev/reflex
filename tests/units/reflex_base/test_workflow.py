@@ -162,6 +162,10 @@ def _build(**overrides):
         "queue": None,
         "on_failure": None,
         "on_timeout": None,
+        "singleton": None,
+        "rate_limit": None,
+        "throttle": None,
+        "debounce": None,
         "background": None,
         "has_browser_actions": False,
     }

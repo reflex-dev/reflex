@@ -297,6 +297,58 @@ class RunStore(Protocol):
         """
         ...
 
+    async def count_active(self, workflow_id: str, flow_key: str) -> int:
+        """Count runs of a root still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            How many non-terminal runs share the key.
+        """
+        ...
+
+    async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
+        """Find the oldest run still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            The run, or None when the key has no active run.
+        """
+        ...
+
+    async def count_started_since(
+        self, workflow_id: str, flow_key: str, since: float
+    ) -> int:
+        """Count runs of a root admitted under a key since a point in time.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            since: Exclusive lower bound in epoch seconds.
+
+        Returns:
+            How many runs were admitted in the window.
+        """
+        ...
+
+    async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
+        """Push a not-yet-started run's root slot later, for debouncing.
+
+        Args:
+            run_id: The pending run.
+            due_at: The new earliest start time.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when the root had not started and was deferred.
+        """
+        ...
+
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
 
@@ -925,6 +977,85 @@ class MemoryRunStore:
             )
             return "resolved" if done else "counted"
 
+    async def count_active(self, workflow_id: str, flow_key: str) -> int:
+        """Count runs of a root still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            How many non-terminal runs share the key.
+        """
+        async with self._lock:
+            return sum(
+                1
+                for run in self._runs.values()
+                if run.workflow_id == workflow_id
+                and run.flow_key == flow_key
+                and run.status not in TERMINAL_RUN_STATUSES
+            )
+
+    async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
+        """Find the oldest run still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            The run, or None when the key has no active run.
+        """
+        async with self._lock:
+            active = [
+                run
+                for run in self._runs.values()
+                if run.workflow_id == workflow_id
+                and run.flow_key == flow_key
+                and run.status not in TERMINAL_RUN_STATUSES
+            ]
+            return min(active, key=lambda run: run.created_at) if active else None
+
+    async def count_started_since(
+        self, workflow_id: str, flow_key: str, since: float
+    ) -> int:
+        """Count runs of a root admitted under a key since a point in time.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            since: Exclusive lower bound in epoch seconds.
+
+        Returns:
+            How many runs were admitted in the window.
+        """
+        async with self._lock:
+            return sum(
+                1
+                for run in self._runs.values()
+                if run.workflow_id == workflow_id
+                and run.flow_key == flow_key
+                and run.created_at > since
+            )
+
+    async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
+        """Push a not-yet-started run's root slot later, for debouncing.
+
+        Args:
+            run_id: The pending run.
+            due_at: The new earliest start time.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when the root had not started and was deferred.
+        """
+        async with self._lock:
+            steps = self._steps.get(run_id)
+            if not steps or steps[0].status is not StepStatus.READY:
+                return False
+            steps[0] = dataclasses.replace(steps[0], due_at=due_at, updated_at=now)
+            return True
+
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
 
@@ -1202,6 +1333,7 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     next_ordinal INTEGER NOT NULL,
     result TEXT,
     error TEXT,
+    flow_key TEXT,
     parent_run_id TEXT,
     parent_ordinal INTEGER,
     request_key TEXT,
@@ -1277,6 +1409,7 @@ _STEP_MIGRATIONS: Final = (
 )
 
 _RUN_MIGRATIONS: Final = (
+    ("flow_key", "ALTER TABLE workflow_runs ADD COLUMN flow_key TEXT"),
     ("parent_run_id", "ALTER TABLE workflow_runs ADD COLUMN parent_run_id TEXT"),
     ("parent_ordinal", "ALTER TABLE workflow_runs ADD COLUMN parent_ordinal INTEGER"),
 )
@@ -1325,6 +1458,7 @@ def _run_from_row(row: sqlite3.Row) -> RunRecord:
         next_ordinal=row["next_ordinal"],
         result=_load(row["result"]),
         error=_load(row["error"]),
+        flow_key=row["flow_key"],
         parent_run_id=row["parent_run_id"],
         parent_ordinal=row["parent_ordinal"],
         request_key=row["request_key"],
@@ -1454,9 +1588,9 @@ class SqliteRunStore:
         self._db.execute(
             "INSERT INTO workflow_runs (run_id, workflow_id, definition_digest,"
             " status, state, state_version, next_ordinal, result, error,"
-            " parent_run_id, parent_ordinal, request_key, labels, deadline,"
-            " cancel_requested, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " flow_key, parent_run_id, parent_ordinal, request_key, labels,"
+            " deadline, cancel_requested, created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 run.run_id,
                 run.workflow_id,
@@ -1467,6 +1601,7 @@ class SqliteRunStore:
                 run.next_ordinal,
                 _dump(run.result),
                 _dump(run.error),
+                run.flow_key,
                 run.parent_run_id,
                 run.parent_ordinal,
                 run.request_key,
@@ -2078,6 +2213,93 @@ class SqliteRunStore:
                 self._db.execute("ROLLBACK")
                 raise
             return "resolved" if done else "counted"
+
+    async def count_active(self, workflow_id: str, flow_key: str) -> int:
+        """Count runs of a root still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            How many non-terminal runs share the key.
+        """
+        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+        with self._lock:
+            row = self._db.execute(
+                "SELECT COUNT(*) AS n FROM workflow_runs"
+                " WHERE workflow_id = ? AND flow_key = ?"
+                f" AND status NOT IN ({','.join('?' * len(terminal))})",
+                (workflow_id, flow_key, *terminal),
+            ).fetchone()
+            return row["n"]
+
+    async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
+        """Find the oldest run still in flight under a flow-control key.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+
+        Returns:
+            The run, or None when the key has no active run.
+        """
+        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+        with self._lock:
+            row = self._db.execute(
+                "SELECT * FROM workflow_runs"
+                " WHERE workflow_id = ? AND flow_key = ?"
+                f" AND status NOT IN ({','.join('?' * len(terminal))})"
+                " ORDER BY created_at LIMIT 1",
+                (workflow_id, flow_key, *terminal),
+            ).fetchone()
+            return None if row is None else _run_from_row(row)
+
+    async def count_started_since(
+        self, workflow_id: str, flow_key: str, since: float
+    ) -> int:
+        """Count runs of a root admitted under a key since a point in time.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            since: Exclusive lower bound in epoch seconds.
+
+        Returns:
+            How many runs were admitted in the window.
+        """
+        with self._lock:
+            row = self._db.execute(
+                "SELECT COUNT(*) AS n FROM workflow_runs"
+                " WHERE workflow_id = ? AND flow_key = ? AND created_at > ?",
+                (workflow_id, flow_key, since),
+            ).fetchone()
+            return row["n"]
+
+    async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
+        """Push a not-yet-started run's root slot later, for debouncing.
+
+        Args:
+            run_id: The pending run.
+            due_at: The new earliest start time.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when the root had not started and was deferred.
+        """
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                cursor = self._db.execute(
+                    "UPDATE workflow_steps SET due_at = ?, updated_at = ?"
+                    " WHERE run_id = ? AND ordinal = 0 AND status = ?",
+                    (due_at, now, run_id, StepStatus.READY.value),
+                )
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return cursor.rowcount > 0
 
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.

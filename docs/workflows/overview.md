@@ -245,6 +245,32 @@ really is public, say so with `allow_unverified=True` and a reason.
 Schedules are evaluated in UTC and fire once per occurrence even across restarts. Deploying a
 schedule does not backfill history, and catch-up after an outage is bounded.
 
+## Controlling how runs start
+
+A root can declare one start policy, which the engine applies before a run is admitted. Each groups
+runs by a payload field, or globally when no `key` is given.
+
+```python
+@rx.event(durable=True, trigger=rx.manual(), effect="idempotent_write",
+          singleton=rx.Singleton(key="customer_id"))
+def sync(self, customer_id: str): ...
+```
+
+| Policy | Behavior |
+| --- | --- |
+| `rx.Singleton(key=..., mode="skip")` | one active run per key; a second start returns the first |
+| `rx.Singleton(key=..., mode="cancel")` | one active run per key; a second start replaces the first |
+| `rx.Debounce(period=..., key=...)` | collapse a burst into one run once things go quiet |
+| `rx.RateLimit(limit=..., period=..., key=...)` | cap starts per window, dropping the excess |
+| `rx.Throttle(limit=..., period=..., key=...)` | cap starts per window, delaying the excess |
+
+`start()` reports what happened through its disposition: `"started"`, `"skipped"`,
+`"coalesced"`, `"deduplicated"`, or `"rejected"` — a rejected start carries `retry_after`.
+
+Debounce is the one to reach for with chatty webhooks: ten deliveries in a second become one run.
+Rate limiting drops excess starts, which is what you want when a provider can flood you; throttling
+delays them instead, which is what you want when every start matters but the downstream is slow.
+
 ## Inspecting and steering runs
 
 ```python

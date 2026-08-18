@@ -327,6 +327,91 @@ class WorkflowKernel:
             msg = f"Workflow event payload is not serializable: {err}"
             raise WorkflowRuntimeError(msg) from None
 
+    @staticmethod
+    def _flow_key(handler: HandlerDefinition, payload: dict[str, Any]) -> str | None:
+        """Compute the grouping key a start policy applies to.
+
+        Args:
+            handler: The root handler definition.
+            payload: The decoded start payload.
+
+        Returns:
+            The key, or None when the handler declares no start policy.
+        """
+        policy = (
+            handler.singleton
+            or handler.rate_limit
+            or handler.throttle
+            or handler.debounce
+        )
+        if policy is None:
+            return None
+        field = getattr(policy, "key", None)
+        if field is None:
+            return handler.id
+        return f"{handler.id}:{payload.get(field)!r}"
+
+    async def _apply_start_policy(
+        self,
+        defn: WorkflowDefinition,
+        handler: HandlerDefinition,
+        flow_key: str,
+        now: float,
+    ) -> tuple[StartResult | None, float]:
+        """Decide whether and when a start may proceed.
+
+        Args:
+            defn: The workflow definition.
+            handler: The root handler being started.
+            flow_key: The computed grouping key.
+            now: Current time in epoch seconds.
+
+        Returns:
+            A result that ends admission, or None to proceed, together with the
+            time the root slot becomes due.
+        """
+        if handler.singleton is not None:
+            existing = await self._store.first_active(defn.workflow_id, flow_key)
+            if existing is not None:
+                if handler.singleton.mode == "skip":
+                    return (
+                        StartResult(disposition="skipped", run_id=existing.run_id),
+                        now,
+                    )
+                await self.cancel(existing.run_id)
+        if handler.rate_limit is not None:
+            window = parse_duration(handler.rate_limit.period)
+            started = await self._store.count_started_since(
+                defn.workflow_id, flow_key, now - window
+            )
+            if started >= handler.rate_limit.limit:
+                return (
+                    StartResult(
+                        disposition="rejected", retryable=True, retry_after=window
+                    ),
+                    now,
+                )
+        if handler.throttle is not None:
+            window = parse_duration(handler.throttle.period)
+            started = await self._store.count_started_since(
+                defn.workflow_id, flow_key, now - window
+            )
+            if started >= handler.throttle.limit:
+                # Delay rather than drop: the excess still runs, just later.
+                return None, now + window
+        if handler.debounce is not None:
+            window = parse_duration(handler.debounce.period)
+            pending = await self._store.first_active(defn.workflow_id, flow_key)
+            if pending is not None and await self._store.defer_root(
+                pending.run_id, now + window, now
+            ):
+                return (
+                    StartResult(disposition="coalesced", run_id=pending.run_id),
+                    now,
+                )
+            return None, now + window
+        return None, now
+
     async def start(
         self,
         target: Any,
@@ -369,6 +454,14 @@ class WorkflowKernel:
             )
             raise WorkflowRuntimeError(msg)
         now = self._clock()
+        flow_key = self._flow_key(handler, payload)
+        due_at = now
+        if flow_key is not None:
+            decided, due_at = await self._apply_start_policy(
+                defn, handler, flow_key, now
+            )
+            if decided is not None:
+                return decided
         run_id = uuid.uuid4().hex
         run = RunRecord(
             run_id=run_id,
@@ -378,6 +471,7 @@ class WorkflowKernel:
             state={field.name: field.default for field in defn.fields},
             state_version=0,
             next_ordinal=1,
+            flow_key=flow_key,
             request_key=request_key,
             labels=labels,
             deadline=(now + defn.run_timeout) if defn.run_timeout is not None else None,
@@ -390,6 +484,7 @@ class WorkflowKernel:
             handler_id=handler.id,
             status=StepStatus.READY,
             args=payload,
+            due_at=due_at,
             origin="root",
             created_at=now,
             updated_at=now,

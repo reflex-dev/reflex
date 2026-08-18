@@ -154,6 +154,7 @@ class RunRecord:
         next_ordinal: Next mailbox ordinal to allocate.
         result: Run result recorded at completion.
         error: Terminal or suspension error payload.
+        flow_key: Grouping key for start policies such as singleton, if any.
         parent_run_id: The run that spawned this one, if any.
         parent_ordinal: The join slot in the parent this run reports to.
         request_key: Idempotent admission key, if one was supplied.
@@ -173,6 +174,7 @@ class RunRecord:
     next_ordinal: int
     result: Any = None
     error: dict[str, Any] | None = None
+    flow_key: str | None = None
     parent_run_id: str | None = None
     parent_ordinal: int | None = None
     request_key: str | None = None

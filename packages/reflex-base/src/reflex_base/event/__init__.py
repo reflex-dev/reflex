@@ -2918,8 +2918,8 @@ class EventNamespace:
         background: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
         id: str | None = None,
         durable: bool = False,
@@ -2930,6 +2930,8 @@ class EventNamespace:
         queue: str | None = None,
         on_failure: Any = None,
         on_timeout: Any = None,
+        singleton: "workflow.Singleton | None" = None,
+        rate_limit: "workflow.RateLimit | None" = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -2942,8 +2944,8 @@ class EventNamespace:
         background: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
@@ -2954,8 +2956,8 @@ class EventNamespace:
         background: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
         id: str | None = None,
         durable: bool = False,
@@ -2966,6 +2968,8 @@ class EventNamespace:
         queue: str | None = None,
         on_failure: Any = None,
         on_timeout: Any = None,
+        singleton: "workflow.Singleton | None" = None,
+        rate_limit: "workflow.RateLimit | None" = None,
     ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
@@ -2974,8 +2978,10 @@ class EventNamespace:
             background: Whether the event should be run in the background. Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
-            throttle: Throttle the event handler to limit calls (in milliseconds).
-            debounce: Debounce the event handler to delay calls (in milliseconds).
+            throttle: Milliseconds to throttle a session handler, or an
+                rx.Throttle policy capping how often a durable root may start.
+            debounce: Milliseconds to debounce a session handler, or an
+                rx.Debounce policy collapsing a burst of durable starts.
             temporal: Whether the event should be dropped when the backend is down.
             id: Stable durable handler id; derived from the method name if omitted.
             durable: Whether the handler is a durable workflow step.
@@ -2986,6 +2992,8 @@ class EventNamespace:
             queue: Admission queue override for a durable handler.
             on_failure: Same-class handler run after a durable step finally fails.
             on_timeout: Same-class handler run after a durable step finally times out.
+            singleton: Allow at most one active run of this root per key.
+            rate_limit: Cap the start rate per key, dropping the excess.
 
         Returns:
             The wrapped function.
@@ -3003,17 +3011,17 @@ class EventNamespace:
             queue=queue,
             on_failure=on_failure,
             on_timeout=on_timeout,
+            singleton=singleton,
+            rate_limit=rate_limit,
+            throttle=throttle,
+            debounce=debounce,
             background=background,
             has_browser_actions=any(
                 value is not None
-                for value in (
-                    stop_propagation,
-                    prevent_default,
-                    throttle,
-                    debounce,
-                    temporal,
-                )
-            ),
+                for value in (stop_propagation, prevent_default, temporal)
+            )
+            or isinstance(throttle, int)
+            or isinstance(debounce, int),
         )
 
         def _build_event_actions():
@@ -3022,11 +3030,13 @@ class EventNamespace:
             Returns:
                 Dict of event actions to apply, or empty dict if none specified.
             """
+            browser_throttle = throttle if isinstance(throttle, int) else None
+            browser_debounce = debounce if isinstance(debounce, int) else None
             if not any([
                 stop_propagation,
                 prevent_default,
-                throttle,
-                debounce,
+                browser_throttle,
+                browser_debounce,
                 temporal,
             ]):
                 return {}
@@ -3036,10 +3046,10 @@ class EventNamespace:
                 event_actions["stopPropagation"] = stop_propagation
             if prevent_default is not None:
                 event_actions["preventDefault"] = prevent_default
-            if throttle is not None:
-                event_actions["throttle"] = throttle
-            if debounce is not None:
-                event_actions["debounce"] = debounce
+            if browser_throttle is not None:
+                event_actions["throttle"] = browser_throttle
+            if browser_debounce is not None:
+                event_actions["debounce"] = browser_debounce
             if temporal is not None:
                 event_actions["temporal"] = temporal
             return event_actions

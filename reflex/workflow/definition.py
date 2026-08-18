@@ -18,9 +18,13 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 
 from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
+    Debounce,
     DurableEventConfig,
+    RateLimit,
     Retry,
     ScheduleTrigger,
+    Singleton,
+    Throttle,
     Trigger,
     WorkflowConfig,
     default_retry_for_effect,
@@ -69,6 +73,10 @@ class HandlerDefinition:
         queue: Resolved admission queue name, or None.
         on_failure: Handler id run after final failure, or None.
         on_timeout: Handler id run after final timeout, or None.
+        singleton: At most one active run per key, if declared.
+        rate_limit: Start-rate cap that drops the excess, if declared.
+        throttle: Start-rate cap that delays the excess, if declared.
+        debounce: Burst collapsing window, if declared.
         params: Payload parameter names, excluding ``self``.
         type_hints: Resolved type hints for payload coercion.
         is_async: Whether the handler is a coroutine function.
@@ -84,6 +92,10 @@ class HandlerDefinition:
     queue: str | None
     on_failure: str | None
     on_timeout: str | None
+    singleton: Singleton | None
+    rate_limit: RateLimit | None
+    throttle: Throttle | None
+    debounce: Debounce | None
     params: tuple[str, ...]
     type_hints: Mapping[str, Any]
     is_async: bool
@@ -302,6 +314,10 @@ def _compile_handlers(
             queue=durable.queue or config.default_queue,
             on_failure=durable.on_failure,
             on_timeout=durable.on_timeout,
+            singleton=durable.singleton,
+            rate_limit=durable.rate_limit,
+            throttle=durable.throttle,
+            debounce=durable.debounce,
             params=params,
             type_hints=get_type_hints(fn),
             is_async=inspect.iscoroutinefunction(fn),
@@ -538,6 +554,14 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     fields = _compile_fields(workflow_cls)
     handlers = _resolve_hooks(workflow_cls, _compile_handlers(workflow_cls, config))
     for defn in handlers.values():
+        policy = defn.singleton or defn.rate_limit or defn.throttle or defn.debounce
+        key = getattr(policy, "key", None)
+        if key is not None and key not in defn.params:
+            raise _error(
+                workflow_cls,
+                f"handler {defn.name!r} groups runs by {key!r}, which is not one "
+                f"of its parameters ({', '.join(defn.params) or 'none'}).",
+            )
         if isinstance(defn.trigger, ScheduleTrigger):
             CronSchedule(defn.trigger.cron)
     durable_names = frozenset(defn.name for defn in handlers.values())

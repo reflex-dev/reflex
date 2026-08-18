@@ -454,6 +454,10 @@ class DurableEventConfig:
         queue: Admission queue override.
         on_failure: Same-class handler name run after final failure.
         on_timeout: Same-class handler name run after final timeout.
+        singleton: At most one active run per key, if declared.
+        rate_limit: Start-rate cap that drops the excess, if declared.
+        throttle: Start-rate cap that delays the excess, if declared.
+        debounce: Burst collapsing window, if declared.
     """
 
     effect: str
@@ -464,6 +468,10 @@ class DurableEventConfig:
     queue: str | None = None
     on_failure: str | None = None
     on_timeout: str | None = None
+    singleton: Any = None
+    rate_limit: Any = None
+    throttle: Any = None
+    debounce: Any = None
 
 
 def get_durable_config(fn: Any) -> DurableEventConfig | None:
@@ -517,6 +525,10 @@ def build_durable_config(
     queue: str | None,
     on_failure: Any,
     on_timeout: Any,
+    singleton: Any,
+    rate_limit: Any,
+    throttle: Any,
+    debounce: Any,
     background: bool | None,
     has_browser_actions: bool,
 ) -> DurableEventConfig | None:
@@ -532,6 +544,10 @@ def build_durable_config(
         queue: Admission queue override.
         on_failure: Failure hook reference.
         on_timeout: Timeout hook reference.
+        singleton: Singleton policy, if declared.
+        rate_limit: Rate limit policy, if declared.
+        throttle: Throttle policy, if declared.
+        debounce: Debounce policy, if declared.
         background: The decorator's ``background`` flag.
         has_browser_actions: Whether browser-only event actions were also set.
 
@@ -541,6 +557,10 @@ def build_durable_config(
     Raises:
         WorkflowDefinitionError: If the combination of arguments is invalid.
     """
+    # throttle= and debounce= carry either a browser event action (an int) or a
+    # durable start policy; only the policy objects are workflow options.
+    throttle = throttle if isinstance(throttle, Throttle) else None
+    debounce = debounce if isinstance(debounce, Debounce) else None
     if not durable:
         offending = next(
             (
@@ -554,6 +574,10 @@ def build_durable_config(
                     ("queue", queue),
                     ("on_failure", on_failure),
                     ("on_timeout", on_timeout),
+                    ("singleton", singleton),
+                    ("rate_limit", rate_limit),
+                    ("throttle", throttle),
+                    ("debounce", debounce),
                 )
                 if value is not None
             ),
@@ -605,6 +629,25 @@ def build_durable_config(
                 'effect="idempotent_write" or max_attempts=1.'
             )
             raise WorkflowDefinitionError(msg)
+    controls = {
+        "singleton": singleton,
+        "rate_limit": rate_limit,
+        "throttle": throttle,
+        "debounce": debounce,
+    }
+    declared = [name for name, value in controls.items() if value is not None]
+    if declared and trigger is None:
+        msg = (
+            f"@rx.event({declared[0]}=...) governs how runs start, so it needs a "
+            "trigger. Add trigger=rx.manual(), rx.webhook(...), or rx.schedule(...)."
+        )
+        raise WorkflowDefinitionError(msg)
+    if len(declared) > 1:
+        msg = (
+            f"@rx.event declares {' and '.join(declared)} together; a root takes "
+            "one start policy so its behavior stays predictable."
+        )
+        raise WorkflowDefinitionError(msg)
     timeout_seconds = (
         parse_duration(timeout, param="timeout") if timeout is not None else None
     )
@@ -617,6 +660,10 @@ def build_durable_config(
         queue=queue,
         on_failure=_hook_name(on_failure, param="on_failure"),
         on_timeout=_hook_name(on_timeout, param="on_timeout"),
+        singleton=singleton,
+        rate_limit=rate_limit,
+        throttle=throttle,
+        debounce=debounce,
     )
 
 
@@ -937,3 +984,102 @@ def parallel(*branches: Any, then: Any) -> Parallel:
         The control return value.
     """
     return Parallel(branches=branches, then=then)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class Singleton:
+    """At most one run of this root may be active per key.
+
+    Attributes:
+        key: Payload field whose value groups runs, or None for one group.
+        mode: ``"skip"`` returns the run already in flight; ``"cancel"``
+            cancels it and starts a fresh one.
+    """
+
+    key: str | None = None
+    mode: Literal["skip", "cancel"] = "skip"
+
+    def __post_init__(self):
+        """Validate the mode.
+
+        Raises:
+            WorkflowDefinitionError: If the mode is not skip or cancel.
+        """
+        if self.mode not in ("skip", "cancel"):
+            msg = f'Singleton.mode must be "skip" or "cancel", got {self.mode!r}.'
+            raise WorkflowDefinitionError(msg)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class RateLimit:
+    """Cap how many runs may start per key in a rolling window.
+
+    Starts beyond the cap are refused, which is what you want for a provider
+    that can flood you: the excess is dropped rather than queued forever.
+
+    Attributes:
+        limit: Maximum starts allowed inside the window.
+        period: Window length.
+        key: Payload field whose value groups runs, or None for one group.
+    """
+
+    limit: int
+    period: DurationLike
+    key: str | None = None
+
+    def __post_init__(self):
+        """Validate the limit and window.
+
+        Raises:
+            WorkflowDefinitionError: If the limit is not positive.
+        """
+        if self.limit < 1:
+            msg = f"RateLimit.limit must be >= 1, got {self.limit}."
+            raise WorkflowDefinitionError(msg)
+        parse_duration(self.period, param="RateLimit.period")
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class Throttle:
+    """Cap the start rate per key, delaying the excess instead of dropping it.
+
+    Attributes:
+        limit: Maximum starts allowed inside the window.
+        period: Window length.
+        key: Payload field whose value groups runs, or None for one group.
+    """
+
+    limit: int
+    period: DurationLike
+    key: str | None = None
+
+    def __post_init__(self):
+        """Validate the limit and window.
+
+        Raises:
+            WorkflowDefinitionError: If the limit is not positive.
+        """
+        if self.limit < 1:
+            msg = f"Throttle.limit must be >= 1, got {self.limit}."
+            raise WorkflowDefinitionError(msg)
+        parse_duration(self.period, param="Throttle.period")
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class Debounce:
+    """Collapse a burst of starts into one run after things go quiet.
+
+    Each new start inside the window pushes the pending run's start time out,
+    so a provider that fires ten webhooks in a second produces one run.
+
+    Attributes:
+        period: How long to wait for quiet before running.
+        key: Payload field whose value groups runs, or None for one group.
+    """
+
+    period: DurationLike
+    key: str | None = None
+
+    def __post_init__(self):
+        """Validate the window."""
+        parse_duration(self.period, param="Debounce.period")
