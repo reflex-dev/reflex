@@ -532,6 +532,8 @@ def test_import_reflex_stays_light():
     script = (
         "import sys\n"
         "import reflex\n"
+        # The package namespace must look the same on every Python version.
+        "assert 'reflex_base' not in vars(reflex), 'reflex_base leaked into rx'\n"
         # On py<3.11 the 3.10-deprecation warning imports the pipeline itself.
         "if sys.version_info >= (3, 11):\n"
         "    assert 'reflex_base.utils.log' not in sys.modules, 'log loaded eagerly'\n"
