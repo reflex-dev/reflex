@@ -365,15 +365,34 @@ def _apply_full_deploy(
 
     if full_deploy is None:
         return False
-    if full_deploy and provider != hosting.PROVIDER_GCP:
-        console.error(
-            "--full-deploy serves the frontend from the provider's own "
-            "container, which only the Google Cloud target supports. Pass "
-            "--provider gcp, or drop --full-deploy."
-        )
-        raise click.exceptions.Exit(2)
+    if provider != hosting.PROVIDER_GCP:
+        if full_deploy:
+            console.error(
+                "--full-deploy serves the frontend from the provider's own "
+                "container, which only the Google Cloud target supports. Pass "
+                "--provider gcp, or drop --full-deploy."
+            )
+            raise click.exceptions.Exit(2)
+        # Nothing to turn off: the mode is GCP-only and the provider write
+        # clears it for an app leaving GCP, so this is a guaranteed no-op. Skip
+        # the round trip rather than refuse it -- a config file carrying
+        # `full_deploy: false` must not fail a Reflex Cloud deploy.
+        return False
 
-    result = hosting.set_app_full_deploy(app["id"], full_deploy, client=client)
+    try:
+        result = hosting.set_app_full_deploy(app["id"], full_deploy, client=client)
+    except BaseException:
+        # A dropped connection says nothing about whether the server applied the
+        # change, and applying it stops a running app, so hedge rather than
+        # re-raise into a failure path that reports nothing about the app being
+        # down. The warning context below is not entered on this path.
+        console.warn(
+            f"Lost contact while changing the hosting mode of '{app['name']}'. "
+            "The change stops a running app, and it may have been applied, so "
+            "check the app in the Reflex Cloud dashboard before relying on it "
+            "still being up."
+        )
+        raise
     if isinstance(result, str):
         console.error(result)
         raise click.exceptions.Exit(1)
@@ -759,6 +778,32 @@ def deploy(
         failure_guards.enter_context(
             _restore_provider_on_failure(app, switched_from, authenticated_client)
         )
+        if not app_name:
+            console.error("Please set an app name.")
+            raise click.exceptions.Exit(1)
+
+        # at this point, if project_id is None, the App should have the correct project_id and
+        # we should use that going forward to pass validation checks.
+        project_id = project_id or app.get("project_id")
+
+        # Ahead of the hosting-mode change below, which stops a running app: a
+        # deployment argument the server rejects would otherwise take the app
+        # down for a deploy that never gets submitted. The provider switch above
+        # is destructive too, but it has a restore; this does not.
+        validation_message = hosting.validate_deployment_args(
+            app_name=app_name,
+            app_id=app.get("id"),
+            project_id=project_id,
+            regions=regions,
+            vmtype=vmtype,
+            hostname=hostname,
+            client=authenticated_client,
+        )
+
+        if validation_message != "success":
+            console.error(validation_message)
+            raise click.exceptions.Exit(1)
+
         # Inside the provider guard (a refused mode change must still restore the
         # provider it was asked for) and ahead of the reserve below, whose URL is
         # what the frontend is compiled against.
@@ -786,28 +831,6 @@ def deploy(
             os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]
         )  # frontend
         processed_envs = hosting.process_envs(envs) if envs else None
-
-        if not app_name:
-            console.error("Please set an app name.")
-            raise click.exceptions.Exit(1)
-
-        # at this point, if project_id is None, the App should have the correct project_id and
-        # we should use that going forward to pass validation checks.
-        project_id = project_id or app.get("project_id")
-
-        validation_message = hosting.validate_deployment_args(
-            app_name=app_name,
-            app_id=app.get("id"),
-            project_id=project_id,
-            regions=regions,
-            vmtype=vmtype,
-            hostname=hostname,
-            client=authenticated_client,
-        )
-
-        if validation_message != "success":
-            console.error(validation_message)
-            raise click.exceptions.Exit(1)
 
         if envfile:
             try:

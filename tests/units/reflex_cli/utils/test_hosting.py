@@ -7,7 +7,7 @@ import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
-from reflex_cli.utils.exceptions import TokenValidationError
+from reflex_cli.utils.exceptions import NotAuthenticatedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     AuthenticatedClient,
     ScaleParams,
@@ -534,6 +534,12 @@ def test_list_gcp_connections_reads_the_status(mocker: MockerFixture):
     assert list_gcp_connections(_client(org_id="org-1")) == [
         {"id": "c1", "name": "prod"}
     ]
+
+
+def test_list_gcp_connections_refuses_an_unauthenticated_client():
+    """The docstring promises NotAuthenticatedError, not an AttributeError."""
+    with pytest.raises(NotAuthenticatedError):
+        list_gcp_connections(None)  # pyright: ignore[reportArgumentType]
 
 
 def test_list_gcp_connections_without_org():

@@ -1150,6 +1150,8 @@ def list_gcp_connections(
         NotAuthenticatedError: If the token is not valid.
 
     """
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
     org_id = org_id or get_token_org_id(client)
     if not org_id:
         return []

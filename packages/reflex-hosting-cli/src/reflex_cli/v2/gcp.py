@@ -277,11 +277,13 @@ def deploy_command(
 
     if click.get_current_context().info_name == "deploy":
         console.warn(
-            "`reflex cloud deploy` is now `reflex cloud gcp-standalone`, so it "
-            "cannot be mistaken for `reflex deploy`. It deploys to Cloud Run "
+            "DeprecationWarning: `reflex cloud deploy` is deprecated as of "
+            "reflex-hosting-cli 0.1.70 and will be removed in 0.2.0. Use "
+            "`reflex cloud gcp-standalone`, which it is now named so it cannot "
+            "be mistaken for `reflex deploy`: this command deploys to Cloud Run "
             "under your own gcloud credentials and Reflex Cloud never hears "
-            "about the result; `reflex deploy --provider gcp` is the managed "
-            "GCP path."
+            "about the result, while `reflex deploy --provider gcp` is the "
+            "managed GCP path."
         )
 
     if not use_gcp:

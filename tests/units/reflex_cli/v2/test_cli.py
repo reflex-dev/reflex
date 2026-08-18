@@ -1339,6 +1339,78 @@ def test_deploy_applies_full_deploy_before_reserving_the_hostname(
     )
 
 
+def test_deploy_validates_arguments_before_changing_the_hosting_mode(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """A rejected argument must not take a running app down first."""
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+            "provider": "gcp",
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_deployment_args",
+        return_value="unknown vmtype",
+    )
+    set_full_deploy = mocker.patch("reflex_cli.utils.hosting.set_app_full_deploy")
+    get_hostname = mocker.patch("reflex_cli.utils.hosting.get_hostname")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            full_deploy=True,
+            vmtype="nope",
+        )
+
+    set_full_deploy.assert_not_called()
+    # And no hostname was reserved for a deploy that was never going to submit.
+    get_hostname.assert_not_called()
+
+
+def test_apply_full_deploy_skips_the_call_when_turning_it_off_elsewhere(
+    mocker: MockFixture,
+):
+    """`--no-full-deploy` off GCP is a no-op, not a refusal.
+
+    The mode is GCP-only and the provider write clears it for an app leaving
+    GCP, so there is nothing to turn off -- and refusing would fail every
+    Reflex Cloud deploy driven by a config file carrying `full_deploy: false`.
+    """
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    set_full_deploy = mocker.patch("reflex_cli.utils.hosting.set_app_full_deploy")
+
+    assert cli._apply_full_deploy(
+        {"id": "a", "name": "myapp"}, False, "fly", client
+    ) is (False)
+    set_full_deploy.assert_not_called()
+
+
+def test_apply_full_deploy_hedges_when_the_response_is_lost(mocker: MockFixture):
+    """A dropped connection may still have stopped the app; say so."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.set_app_full_deploy",
+        side_effect=ConnectionError("dropped"),
+    )
+    warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    with pytest.raises(ConnectionError):
+        cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
+
+    # The warning context is never entered on this path, so the hedge has to
+    # come from the call itself.
+    assert "Lost contact" in warn.call_args.args[0]
+
+
 def test_deploy_full_deploy_on_reflex_cloud_never_reaches_the_server(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],

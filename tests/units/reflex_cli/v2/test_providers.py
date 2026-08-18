@@ -216,6 +216,65 @@ def test_providers_list_falls_back_for_a_non_admin(mocker: MockFixture):
     assert connections.call_args.kwargs["org_id"] == "org-1"
 
 
+def test_providers_list_json_has_one_shape_either_way(mocker: MockFixture):
+    """The fallback emits the released row shape, not a second one."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(403, "no permission"),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[
+            {
+                "id": "conn-1",
+                "name": "us-prod",
+                "is_default": True,
+                "project_id": "my-proj",
+                "region": "us-central1",
+            }
+        ],
+    )
+
+    result = runner.invoke(providers_cli, ["list", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == [
+        {
+            "id": "conn-1",
+            "provider": "gcp",
+            "name": "us-prod",
+            "is_default": True,
+            # Nested like the account listing's, so one schema comes out of the
+            # command; the runtime service account is absent because it is what
+            # the caller could not read.
+            "config": {"project_id": "my-proj", "region": "us-central1"},
+        }
+    ]
+
+
+def test_providers_list_reports_the_fallback_failure(mocker: MockFixture):
+    """A failed fallback says what failed, not the refusal that led to it."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(403, "no permission"),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        side_effect=RuntimeError("gateway timeout"),
+    )
+
+    result = runner.invoke(providers_cli, ["list"], env=_WIDE)
+
+    assert result.exit_code == 1
+    assert "gateway timeout" in result.output
+
+
 def test_providers_list_other_error_exits_nonzero(mocker: MockFixture):
     """A server error is not a permissions problem, so nothing is guessed at."""
     mocker.patch(

@@ -103,6 +103,35 @@ def _runtime_service_accounts(org_id: str, client: Any) -> dict[str, str] | None
     return _runtime_service_accounts_of(accounts)
 
 
+def _as_account_row(connection: dict) -> dict:
+    """Reshape a GCP-status connection to look like a provider account row.
+
+    `providers list --json` has emitted account rows since v0.1.69, so the
+    fallback is reshaped to match rather than the reverse: one schema out of the
+    command, and the one already released. What only the account listing carries
+    -- who connected it, when, and its runtime service account -- is absent,
+    which is exactly what the fallback could not read.
+
+    Args:
+        connection: A connection as the org's GCP status reports it.
+
+    Returns:
+        The same connection in the provider account listing's shape.
+
+    """
+    return {
+        "id": connection.get("id"),
+        "provider": connection.get("provider") or "gcp",
+        "name": connection.get("name"),
+        "is_default": connection.get("is_default"),
+        "config": {
+            key: connection[key]
+            for key in ("project_id", "region")
+            if connection.get(key)
+        },
+    }
+
+
 def _connection_row(
     connection: dict, runtime_service_accounts: dict[str, str] | None
 ) -> list[str]:
@@ -313,11 +342,18 @@ def providers_list(
             # between, so fall back to the GCP status every member can read.
             console.debug(f"Falling back to the GCP status listing: {detail}")
             try:
-                connections = hosting.list_gcp_connections(
-                    authenticated_client, org_id=org_id
-                )
+                connections = [
+                    _as_account_row(connection)
+                    for connection in hosting.list_gcp_connections(
+                        authenticated_client, org_id=org_id
+                    )
+                ]
             except Exception as fallback_ex:
-                console.error(f"Failed to list provider accounts: {detail}")
+                console.error(
+                    f"Failed to list provider accounts: {detail}. Reading this "
+                    f"organization's GCP status instead also failed: "
+                    f"{fallback_ex}"
+                )
                 raise click.exceptions.Exit(1) from fallback_ex
             runtime_service_accounts = None
 
