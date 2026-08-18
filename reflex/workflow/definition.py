@@ -20,6 +20,7 @@ from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
     DurableEventConfig,
     Retry,
+    ScheduleTrigger,
     Trigger,
     WorkflowConfig,
     default_retry_for_effect,
@@ -27,6 +28,7 @@ from reflex_base.workflow import (
     parse_duration,
 )
 
+from reflex.workflow.cron import CronSchedule
 from reflex.workflow.serde import to_run_data
 
 if TYPE_CHECKING:
@@ -535,6 +537,9 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     config = _validate_class_shape(workflow_cls)
     fields = _compile_fields(workflow_cls)
     handlers = _resolve_hooks(workflow_cls, _compile_handlers(workflow_cls, config))
+    for defn in handlers.values():
+        if isinstance(defn.trigger, ScheduleTrigger):
+            CronSchedule(defn.trigger.cron)
     durable_names = frozenset(defn.name for defn in handlers.values())
     for defn in handlers.values():
         _validate_handler_body(workflow_cls, defn, durable_names)

@@ -29,10 +29,12 @@ from reflex_base.workflow import (
     CompleteRun,
     FailRun,
     NeedsAttention,
+    ScheduleTrigger,
     parse_duration,
 )
 
 from reflex.event import EventHandler, EventSpec
+from reflex.workflow.cron import CronSchedule
 from reflex.workflow.records import (
     TERMINAL_STEP_STATUSES,
     HistoryEventType,
@@ -58,6 +60,8 @@ DEFAULT_POLL_INTERVAL = 0.25
 LEASE_RENEW_FRACTION = 1 / 3
 
 RECOVERY_INTERVAL_FRACTION = 1 / 2
+
+MAX_SCHEDULE_CATCHUP = 10
 
 
 def _error_payload(error: BaseException) -> dict[str, Any]:
@@ -209,6 +213,18 @@ class WorkflowKernel:
         self._lease_duration = lease_duration
         self._lease_renew_interval = renew
         self._recovery_interval = recovery
+        self._schedules = [
+            (defn, handler, CronSchedule(handler.trigger.cron))
+            for defn in self._definitions.values()
+            for handler in (defn.handlers[hid] for hid in defn.roots)
+            if isinstance(handler.trigger, ScheduleTrigger)
+        ]
+        # Seeded at construction so a freshly started process never backfills
+        # occurrences from before it existed.
+        self._schedule_cursor: dict[str, float] = {
+            f"{defn.workflow_id}:{handler.id}": clock()
+            for defn, handler, _ in self._schedules
+        }
         self._field_adapters: dict[tuple[str, str], TypeAdapter] = {}
         self._inflight: dict[str, asyncio.Task] = {}
         self._leases: dict[str, _Lease] = {}
@@ -1256,6 +1272,51 @@ class WorkflowKernel:
         except StaleClaimError:
             await self._record_abandoned(claim, handler, "fenced_at_commit")
 
+    async def _admit_due_schedules(self, now: float) -> int:
+        """Admit a run for every schedule occurrence that has come due.
+
+        Each occurrence is admitted under a stable request key derived from its
+        exact time, so a restart, a second worker, or an overlapping sweep all
+        converge on one run per occurrence rather than a stampede.
+
+        Args:
+            now: Current time in epoch seconds.
+
+        Returns:
+            The number of runs admitted.
+        """
+        admitted = 0
+        for defn, handler, schedule in self._schedules:
+            key = f"{defn.workflow_id}:{handler.id}"
+            cursor = self._schedule_cursor[key]
+            for occurrence in schedule.occurrences_between(
+                cursor, now, limit=MAX_SCHEDULE_CATCHUP
+            ):
+                result = await self.start(
+                    getattr(defn.state_cls, handler.name),
+                    request_key=f"schedule:{key}:{int(occurrence)}",
+                    trigger_kind="schedule",
+                )
+                admitted += result.disposition == "started"
+            self._schedule_cursor[key] = now
+        return admitted
+
+    def _next_schedule_due(self, now: float) -> float | None:
+        """Earliest time any registered schedule next fires.
+
+        Args:
+            now: Current time in epoch seconds.
+
+        Returns:
+            The epoch time, or None when nothing is scheduled.
+        """
+        upcoming = [
+            occurrence
+            for _, _, schedule in self._schedules
+            if (occurrence := schedule.next_after(now)) is not None
+        ]
+        return min(upcoming) if upcoming else None
+
     async def _tick(self) -> bool:
         """Run one scheduling round.
 
@@ -1263,7 +1324,7 @@ class WorkflowKernel:
             True if any control transition or attempt was processed.
         """
         now = self._clock()
-        progressed = False
+        progressed = await self._admit_due_schedules(now) > 0
         for run in await self._store.control_pending(now):
             if run.cancel_requested:
                 progressed = (
@@ -1336,8 +1397,9 @@ class WorkflowKernel:
                 now = self._clock()
                 due = await self._store.next_due(now)
                 delay = min(self._poll_interval, max(self._next_recovery_at - now, 0.0))
-                if due is not None:
-                    delay = min(delay, max(due - now, 0.0))
+                for upcoming in (due, self._next_schedule_due(now)):
+                    if upcoming is not None:
+                        delay = min(delay, max(upcoming - now, 0.0))
                 if delay <= 0:
                     continue
                 self._wakeup.clear()
