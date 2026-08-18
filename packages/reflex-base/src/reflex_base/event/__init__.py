@@ -3073,6 +3073,18 @@ class EventNamespace:
                         "generators; return successor events instead of yielding."
                     )
                     raise WorkflowDefinitionError(msg)
+                if (
+                    durable_config.timeout is not None
+                    and not inspect.iscoroutinefunction(func)
+                ):
+                    msg = (
+                        "timeout= cannot bound a synchronous handler: it runs on "
+                        "a worker thread that cannot be interrupted, so the "
+                        "timeout would fire while the body kept running. Declare "
+                        "the handler 'async def', or drop timeout= and bound the "
+                        "work inside it."
+                    )
+                    raise WorkflowDefinitionError(msg)
                 setattr(func, workflow.DURABLE_EVENT_MARKER, durable_config)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."

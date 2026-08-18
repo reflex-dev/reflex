@@ -107,8 +107,9 @@ async def charge(self): ...
 
 Failures retry with exponential backoff by default. Narrow that with
 `rx.Retry(do_not_retry_on=(ValueError,))` when a specific error should fail fast. `timeout` bounds a
-single attempt. `on_failure` and `on_timeout` name a handler on the same class that runs once the
-step is finally out of attempts.
+single attempt, and requires an `async def` handler: a synchronous one runs on a worker thread that
+cannot be interrupted, so the timeout would fire while the body kept running. `on_failure` and
+`on_timeout` name a handler on the same class that runs once the step is finally out of attempts.
 
 Backoff is a persisted timer, not a sleep, so a retry scheduled for tomorrow survives a deploy
 tonight.

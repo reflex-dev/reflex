@@ -73,7 +73,7 @@ class Dunning(rx.State):
         timeout="30s",
         on_failure="escalate",
     )
-    def charge(self):
+    async def charge(self):
         """Charge the invoice, retrying a flaky gateway.
 
         Returns:

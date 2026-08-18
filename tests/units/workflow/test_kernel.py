@@ -670,7 +670,7 @@ async def test_policy_changes_do_not_strand_in_flight_runs(
         __workflow__ = WorkflowConfig(id="kernel.pinned")
 
         @rx.event(durable=True, trigger=manual(), effect="read", timeout="5s")
-        def begin(self):
+        async def begin(self):
             return after("1h", PinnedV2.finish)
 
         @rx.event(durable=True, effect="read")

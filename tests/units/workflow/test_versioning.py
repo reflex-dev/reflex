@@ -35,7 +35,7 @@ def _flow(*, extra_field: bool = False, slow_retry: bool = False):
             effect="read",
             timeout="90s" if slow_retry else None,
         )
-        def finish(self):
+        async def finish(self):
             self.status = "done"
 
     return Deployed

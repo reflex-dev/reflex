@@ -18,7 +18,7 @@ def test_durable_marker_attached(forked_registration_context):
             effect="read",
             queue="integrations",
         )
-        def begin(self):
+        async def begin(self):
             pass
 
     config = get_durable_config(MarkerWorkflow.event_handlers["begin"].fn)

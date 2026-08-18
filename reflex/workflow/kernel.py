@@ -316,6 +316,7 @@ class WorkflowKernel:
         self._observer = observer
         self._wakeup = asyncio.Event()
         self._admission = asyncio.Lock()
+        self._closing = False
         self._worker: asyncio.Task | None = None
 
     @property
@@ -531,6 +532,15 @@ class WorkflowKernel:
                 f"starting through this path requires {expected}."
             )
             raise WorkflowRuntimeError(msg)
+        if request_key is not None:
+            # Dedupe before any start policy: a redelivered event must return
+            # the run it already created, not be judged as a new start and
+            # cancel, throttle, or debounce that very run.
+            existing = await self._store.find_by_request_key(
+                defn.workflow_id, request_key
+            )
+            if existing is not None:
+                return StartResult(disposition="deduplicated", run_id=existing)
         flow_key = self._flow_key(handler, payload)
         if flow_key is None:
             return await self._admit(defn, handler, payload, request_key, labels, None)
@@ -1134,6 +1144,27 @@ class WorkflowKernel:
             now=now,
         )
 
+    def _control_error(self, reason: str, details: Any) -> dict[str, Any]:
+        """Build a durable error payload from a control return.
+
+        ``details`` comes from user code, so it is normalized here rather than
+        at commit: an unserializable value must not break the transaction that
+        is recording the failure.
+
+        Args:
+            reason: The stable failure reason.
+            details: Whatever the handler attached.
+
+        Returns:
+            A JSON-compatible error payload.
+        """
+        if details is None:
+            return {"reason": reason, "details": None}
+        try:
+            return {"reason": reason, "details": to_run_data(details)}
+        except (TypeError, ValueError):
+            return {"reason": reason, "details": {"unserializable": repr(details)}}
+
     def _success_completion(
         self,
         defn: WorkflowDefinition,
@@ -1162,7 +1193,7 @@ class WorkflowKernel:
             (HistoryEventType.ATTEMPT_SUCCEEDED, {"ordinal": claim.step.ordinal})
         ]
         if isinstance(control, FailRun):
-            error = {"reason": control.reason, "details": control.details}
+            error = self._control_error(control.reason, control.details)
             tombstones = self._open_ordinals(steps, exclude=claim.step.ordinal)
             events.extend(
                 (HistoryEventType.STEP_TOMBSTONED, {"ordinal": ordinal})
@@ -1178,7 +1209,7 @@ class WorkflowKernel:
                 events=tuple(events),
             )
         if isinstance(control, NeedsAttention):
-            error = {"reason": control.reason, "details": control.details}
+            error = self._control_error(control.reason, control.details)
             events.append((HistoryEventType.RUN_NEEDS_ATTENTION, {"error": error}))
             # The attempt succeeded and its state is committed, but the step
             # holds the suspension so resuming knows where to pick back up.
@@ -1623,20 +1654,10 @@ class WorkflowKernel:
                 defn, claim, steps, state, successors, control, self._clock()
             )
         except asyncio.CancelledError:
-            if lease.attempt is not None and not lease.attempt.cancelled():
-                # The handler raised CancelledError itself rather than being
-                # cancelled; that is a handler failure, not a control signal.
-                completion = self._failure_completion(
-                    defn,
-                    handler,
-                    claim,
-                    steps,
-                    _HandlerCancelledError(),
-                    timed_out=False,
-                    now=self._clock(),
-                )
-                await self._commit_outcome(claim, handler, completion)
-                return
+            # asyncio marks a task cancelled whether we cancelled it or the
+            # handler let CancelledError escape, so the task's own flag cannot
+            # tell them apart. Discriminate on this kernel's control signals
+            # instead; anything else came from user code.
             if lease.lost:
                 await self._record_abandoned(claim, handler, "lease_lost")
                 return
@@ -1653,7 +1674,23 @@ class WorkflowKernel:
                     now=self._clock(),
                 )
                 return
-            raise
+            current = asyncio.current_task()
+            if self._closing or (current is not None and current.cancelling()):
+                # Someone cancelled *us* -- worker shutdown or a supervising
+                # task -- so this is crash-equivalent: leave the step claimed
+                # for lease recovery rather than recording an outcome.
+                raise
+            completion = self._failure_completion(
+                defn,
+                handler,
+                claim,
+                steps,
+                _HandlerCancelledError(),
+                timed_out=False,
+                now=self._clock(),
+            )
+            await self._commit_outcome(claim, handler, completion)
+            return
         except TimeoutError as err:
             completion = self._failure_completion(
                 defn, handler, claim, steps, err, timed_out=True, now=self._clock()
@@ -1931,14 +1968,17 @@ class WorkflowKernel:
                 self._wakeup.clear()
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(self._wakeup.wait(), timeout=delay)
-            except Exception as err:
-                console.error(f"Workflow worker error, retrying: {err}")
+            except BaseException as err:
+                if self._closing:
+                    raise
+                console.error(f"Workflow worker error, retrying: {err!r}")
                 await asyncio.sleep(self._poll_interval)
 
     async def start_worker(self) -> None:
         """Start the background worker, which recovers expired claims as it runs."""
-        if self._worker is not None:
+        if self._worker is not None and not self._worker.done():
             return
+        self._closing = False
         await self.recover()
         self._worker = asyncio.create_task(self._worker_loop())
 
@@ -1951,6 +1991,7 @@ class WorkflowKernel:
         """
         if self._worker is None:
             return
+        self._closing = True
         self._worker.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await self._worker

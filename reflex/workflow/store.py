@@ -444,6 +444,25 @@ class RunStore(Protocol):
         """
         ...
 
+    async def find_by_request_key(
+        self, workflow_id: str, request_key: str
+    ) -> str | None:
+        """Find the run a request key already admitted, if any.
+
+        Admission dedupe must be answerable before any start policy runs, so a
+        provider redelivering an event cannot be treated as a new start and
+        trip a singleton, throttle, or debounce against the run it should
+        simply return.
+
+        Args:
+            workflow_id: The workflow identity.
+            request_key: The idempotent admission key.
+
+        Returns:
+            The existing run id, or None when the key is unused.
+        """
+        ...
+
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
 
@@ -1269,6 +1288,21 @@ class MemoryRunStore:
             matched = [run for run in self._runs.values() if _matches_query(run, query)]
             matched.sort(key=lambda run: run.created_at, reverse=True)
             return tuple(matched[: query.limit])
+
+    async def find_by_request_key(
+        self, workflow_id: str, request_key: str
+    ) -> str | None:
+        """Find the run a request key already admitted, if any.
+
+        Args:
+            workflow_id: The workflow identity.
+            request_key: The idempotent admission key.
+
+        Returns:
+            The existing run id, or None when the key is unused.
+        """
+        async with self._lock:
+            return self._dedupe.get((workflow_id, request_key))
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
@@ -2596,6 +2630,26 @@ class SqliteRunStore:
                 (*params, query.limit),
             ).fetchall()
             return tuple(_run_from_row(row) for row in rows)
+
+    async def find_by_request_key(
+        self, workflow_id: str, request_key: str
+    ) -> str | None:
+        """Find the run a request key already admitted, if any.
+
+        Args:
+            workflow_id: The workflow identity.
+            request_key: The idempotent admission key.
+
+        Returns:
+            The existing run id, or None when the key is unused.
+        """
+        with self._lock:
+            row = self._db.execute(
+                "SELECT run_id FROM workflow_dedupe"
+                " WHERE workflow_id = ? AND request_key = ?",
+                (workflow_id, request_key),
+            ).fetchone()
+            return None if row is None else row["run_id"]
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
