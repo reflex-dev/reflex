@@ -8,10 +8,12 @@ pins runs to the exact definition they were admitted under.
 
 from __future__ import annotations
 
+import ast
 import dataclasses
 import hashlib
 import inspect
 import json
+import textwrap
 from typing import TYPE_CHECKING, Any, get_type_hints
 
 from reflex_base.utils.exceptions import WorkflowDefinitionError
@@ -305,6 +307,79 @@ def _compile_handlers(
     return handlers
 
 
+def _handler_body(fn: Callable) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    """Parse a handler's source into its function definition node.
+
+    Args:
+        fn: The undecorated handler function.
+
+    Returns:
+        The parsed node, or None when the source is unavailable (a handler
+        built by exec or defined in a REPL).
+    """
+    try:
+        source = textwrap.dedent(inspect.getsource(fn))
+    except (OSError, TypeError):
+        return None
+    try:
+        module = ast.parse(source)
+    except SyntaxError:
+        return None
+    node = module.body[0] if module.body else None
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return node
+    return None
+
+
+def _validate_handler_body(
+    workflow_cls: type[BaseState],
+    defn: HandlerDefinition,
+    durable_names: frozenset[str],
+) -> None:
+    """Reject handler bodies that silently break the durability boundary.
+
+    Args:
+        workflow_cls: The workflow class being compiled.
+        defn: The handler definition to check.
+        durable_names: Method names of every durable handler on the class.
+
+    Raises:
+        WorkflowDefinitionError: If the body calls another durable handler
+            directly, or returns a value that is not a durable transition.
+    """
+    node = _handler_body(defn.fn)
+    if node is None:
+        return
+    self_name = next(iter(inspect.signature(defn.fn).parameters), None)
+    for child in ast.walk(node):
+        if (
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Attribute)
+            and isinstance(child.func.value, ast.Name)
+            and child.func.value.id == self_name
+            and child.func.attr in durable_names
+        ):
+            raise _error(
+                workflow_cls,
+                f"handler {defn.name!r} calls {child.func.attr!r} directly, which "
+                "runs it inline and loses its retries, timeout, and effect "
+                f"tracking. Return it as a transition instead: "
+                f"return {workflow_cls.__name__}.{child.func.attr}",
+            )
+        if (
+            isinstance(child, ast.Return)
+            and isinstance(child.value, ast.Constant)
+            and child.value.value is not None
+        ):
+            raise _error(
+                workflow_cls,
+                f"handler {defn.name!r} returns {child.value.value!r}. A durable "
+                "handler returns the next transition, not a value: return the "
+                "next handler, rx.after(...), rx.complete(result=...), "
+                "rx.fail(...), rx.needs_attention(...), or None.",
+            )
+
+
 def _resolve_hooks(
     workflow_cls: type[BaseState], handlers: dict[str, HandlerDefinition]
 ) -> dict[str, HandlerDefinition]:
@@ -460,6 +535,9 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     config = _validate_class_shape(workflow_cls)
     fields = _compile_fields(workflow_cls)
     handlers = _resolve_hooks(workflow_cls, _compile_handlers(workflow_cls, config))
+    durable_names = frozenset(defn.name for defn in handlers.values())
+    for defn in handlers.values():
+        _validate_handler_body(workflow_cls, defn, durable_names)
     roots = tuple(
         defn.id
         for defn in sorted(handlers.values(), key=lambda d: d.id)

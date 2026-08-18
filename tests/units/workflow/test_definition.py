@@ -1,5 +1,11 @@
 """Tests for the workflow definition compiler."""
 
+import importlib.util
+import sys
+import tempfile
+import uuid
+from pathlib import Path
+
 import pytest
 from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
@@ -12,6 +18,31 @@ from reflex_base.workflow import (
 
 import reflex as rx
 from reflex.workflow.definition import compile_workflow
+
+
+def _load_module(source: str) -> dict:
+    """Import workflow source from a real file so its body can be parsed.
+
+    The compiler reads handler source to reject bodies that break the
+    durability boundary, which needs an importable file rather than an exec'd
+    string.
+
+    Args:
+        source: The module source to write and import.
+
+    Returns:
+        The imported module's namespace.
+    """
+    name = f"wf_probe_{uuid.uuid4().hex}"
+    path = Path(tempfile.gettempdir()) / f"{name}.py"
+    path.write_text(source)
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return vars(module)
 
 
 def _billing_workflow():
@@ -298,3 +329,74 @@ def test_class_with_substates_rejected(forked_registration_context):
 
     with pytest.raises(WorkflowDefinitionError, match="substates"):
         compile_workflow(SubstateHaver)
+
+
+def test_direct_handler_call_is_rejected(forked_registration_context):
+    """Calling a durable handler inline silently loses its durability."""
+    source = """
+import reflex as rx
+from reflex_base.workflow import WorkflowConfig, manual
+
+
+class InlineCallFlow(rx.State):
+    __workflow__ = WorkflowConfig(id="billing.inline_call")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        self.charge()
+
+    @rx.event(durable=True, effect="idempotent_write")
+    def charge(self):
+        pass
+"""
+    namespace = _load_module(source)
+    with pytest.raises(WorkflowDefinitionError, match="calls 'charge' directly"):
+        compile_workflow(namespace["InlineCallFlow"])
+
+
+def test_literal_return_is_rejected(forked_registration_context):
+    """A durable handler returns a transition, not a value."""
+    source = """
+import reflex as rx
+from reflex_base.workflow import WorkflowConfig, manual
+
+
+class LiteralReturnFlow(rx.State):
+    __workflow__ = WorkflowConfig(id="billing.literal_return")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        return "done"
+"""
+    namespace = _load_module(source)
+    with pytest.raises(WorkflowDefinitionError, match="returns 'done'"):
+        compile_workflow(namespace["LiteralReturnFlow"])
+
+
+def test_valid_transitions_compile(forked_registration_context):
+    """The shapes the guards steer users toward all compile."""
+    source = """
+import reflex as rx
+from reflex_base.workflow import WorkflowConfig, after, complete, manual
+
+
+class TransitionsFlow(rx.State):
+    __workflow__ = WorkflowConfig(id="billing.transitions")
+    n: int = 0
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        self.n += 1
+        return TransitionsFlow.charge
+
+    @rx.event(durable=True, effect="idempotent_write")
+    def charge(self):
+        return after("1h", TransitionsFlow.finish)
+
+    @rx.event(durable=True, effect="none")
+    def finish(self):
+        return complete(result={"n": self.n})
+"""
+    namespace = _load_module(source)
+    definition = compile_workflow(namespace["TransitionsFlow"])
+    assert set(definition.handlers) == {"begin", "charge", "finish"}
