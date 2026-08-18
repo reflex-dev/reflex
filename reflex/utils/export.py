@@ -22,7 +22,7 @@ def export(
     api_url: str | None = None,
     deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
-    loglevel: constants.LogLevel = console._LOG_LEVEL,
+    loglevel: constants.LogLevel | None = None,
     backend_excluded_dirs: tuple[Path, ...] = (),
     prerender_routes: bool = True,
 ):
@@ -37,7 +37,7 @@ def export(
         api_url: The API URL to use. Defaults to None.
         deploy_url: The deploy URL to use. Defaults to None.
         env: The environment to use. Defaults to constants.Env.PROD.
-        loglevel: The log level to use. Defaults to console._LOG_LEVEL.
+        loglevel: The log level to use. Defaults to the current log level.
         backend_excluded_dirs: A tuple of files or directories to exclude from the backend zip.  Defaults to ().
         prerender_routes: Whether to prerender the routes. Defaults to True.
     """

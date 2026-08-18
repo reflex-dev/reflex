@@ -814,7 +814,7 @@ def run_granian_backend_prod(
 
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
-    if console._LOG_LEVEL > constants.LogLevel.DEBUG:
+    if not console.is_debug():
         return
 
     from reflex.utils import js_runtimes
