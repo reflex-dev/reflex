@@ -17,11 +17,14 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
-from reflex_base.workflow import DEFAULT_LEASE_DURATION
+from reflex_base.workflow import DEFAULT_LEASE_DURATION, ChannelDelivery
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
 from reflex.workflow.kernel import DEFAULT_POLL_INTERVAL, WorkflowKernel
 from reflex.workflow.store import RunStore, SqliteRunStore
+
+if TYPE_CHECKING:
+    from reflex.workflow.store import DeliveryDisposition
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterable, Mapping
@@ -268,6 +271,25 @@ class WorkflowsNamespace:
             True if intent was recorded on a nonterminal run.
         """
         return await get_runtime().kernel.cancel(run_id)
+
+    @staticmethod
+    async def signal(
+        run_id: str,
+        delivery: ChannelDelivery,
+        *,
+        key: str | None = None,
+    ) -> DeliveryDisposition:
+        """Deliver a payload to a run waiting on one of its channels.
+
+        Args:
+            run_id: The receiving run.
+            delivery: The addressed payload, e.g. ``MyFlow.approved(decision)``.
+            key: Sender idempotency key; a repeated key is a no-op.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        return await get_runtime().kernel.signal(run_id, delivery, key=key)
 
     @staticmethod
     async def resume(run_id: str) -> bool:

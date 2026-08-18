@@ -43,6 +43,7 @@ class StepStatus(str, enum.Enum):
     """
 
     READY = "READY"
+    BLOCKED = "BLOCKED"
     CLAIMED = "CLAIMED"
     RETRY_WAIT = "RETRY_WAIT"
     RECOVERY_WAIT = "RECOVERY_WAIT"
@@ -68,6 +69,46 @@ CLAIMABLE_STEP_STATUSES = frozenset((
 ))
 
 
+def step_claimable_at(step: StepRecord, now: float) -> bool:
+    """Whether a slot may be claimed at a point in time.
+
+    A blocked slot is claimable only once its deadline arrives, because
+    claiming it *is* the timeout branch. A blocked slot with ``due_at == 0``
+    waits forever, which is why ``BLOCKED`` is deliberately not a member of
+    ``CLAIMABLE_STEP_STATUSES``: that set is read by callers that do not bound
+    ``due_at``, and treating a deadline-less wait as claimable would spin.
+
+    Args:
+        step: The slot to test.
+        now: Current time in epoch seconds.
+
+    Returns:
+        True when the slot may be claimed right now.
+    """
+    if step.status in CLAIMABLE_STEP_STATUSES:
+        return step.due_at <= now
+    if step.status is StepStatus.BLOCKED:
+        return 0.0 < step.due_at <= now
+    return False
+
+
+def step_wake_at(step: StepRecord) -> float | None:
+    """When a slot next becomes claimable, for scheduler sleep bounds.
+
+    Args:
+        step: The slot to test.
+
+    Returns:
+        The epoch time, or None when no clock event alone can make it
+        claimable, as for a wait with no deadline.
+    """
+    if step.status in CLAIMABLE_STEP_STATUSES:
+        return step.due_at
+    if step.status is StepStatus.BLOCKED and step.due_at > 0.0:
+        return step.due_at
+    return None
+
+
 class HistoryEventType(str, enum.Enum):
     """Type of an append-only run history event."""
 
@@ -89,6 +130,12 @@ class HistoryEventType(str, enum.Enum):
     RUN_CANCELLED = "run_cancelled"
     RUN_NEEDS_ATTENTION = "run_needs_attention"
     RUN_RESUMED = "run_resumed"
+    WAIT_ARMED = "wait_armed"
+    WAIT_RESOLVED = "wait_resolved"
+    WAIT_EXPIRED = "wait_expired"
+    SIGNAL_DELIVERED = "signal_delivered"
+    SIGNAL_BUFFERED = "signal_buffered"
+    SIGNAL_DUPLICATE = "signal_duplicate"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -147,8 +194,10 @@ class StepRecord:
         lease_expires_at: Epoch time this claim's lease lapses; 0 when the step
             is not claimed. A claim whose lease has lapsed is treated as
             orphaned and is reclaimed by recovery, never by a direct claim.
+        wait_key: For a blocked slot, the address a delivery must carry, as
+            ``"sig:<channel>"`` or ``"approval:<token>"``. None otherwise.
         error: Last recorded attempt error payload.
-        origin: How the slot was allocated (root, chain, delay, or hook).
+        origin: How the slot was allocated.
         created_at: Allocation time in epoch seconds.
         updated_at: Last transition time in epoch seconds.
     """
@@ -163,8 +212,9 @@ class StepRecord:
     due_at: float = 0.0
     epoch: int = 0
     lease_expires_at: float = 0.0
+    wait_key: str | None = None
     error: dict[str, Any] | None = None
-    origin: Literal["root", "chain", "delay", "hook"] = "chain"
+    origin: Literal["root", "chain", "delay", "hook", "wait"] = "chain"
     created_at: float = 0.0
     updated_at: float = 0.0
 

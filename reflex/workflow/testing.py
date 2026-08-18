@@ -196,6 +196,23 @@ class WorkflowTestHarness:
         await self.kernel.run_until_idle()
         return resumed
 
+    async def signal(
+        self, run_id: str, delivery: Any, *, key: str | None = None
+    ) -> Any:
+        """Deliver a signal and process the work it unblocks.
+
+        Args:
+            run_id: The receiving run.
+            delivery: The addressed payload, e.g. ``MyFlow.approved(value)``.
+            key: Sender idempotency key.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        disposition = await self.kernel.signal(run_id, delivery, key=key)
+        await self.kernel.run_until_idle()
+        return disposition
+
     async def cancel(self, run_id: str) -> bool:
         """Request cancellation of a run and process the drain.
 

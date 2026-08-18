@@ -20,13 +20,12 @@ import dataclasses
 import json
 import sqlite3
 import threading
-from typing import TYPE_CHECKING, Any, Final, Protocol
+from typing import TYPE_CHECKING, Any, Final, Literal, Protocol
 
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import DEFAULT_LEASE_DURATION
 
 from reflex.workflow.records import (
-    CLAIMABLE_STEP_STATUSES,
     TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
     HistoryEvent,
@@ -36,11 +35,22 @@ from reflex.workflow.records import (
     RunStatus,
     StepRecord,
     StepStatus,
+    step_claimable_at,
+    step_wake_at,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
+
+
+DeliveryDisposition = Literal[
+    "resolved",
+    "buffered",
+    "duplicate",
+    "unknown_run",
+    "run_terminal",
+]
 
 
 class StaleClaimError(WorkflowRuntimeError):
@@ -203,6 +213,37 @@ class RunStore(Protocol):
             run_id: The owning run.
             events: The (type, data) pairs to append.
             now: Current time in epoch seconds.
+        """
+        ...
+
+    async def deliver(
+        self,
+        run_id: str,
+        wait_key: str,
+        dedupe_key: str,
+        payload: dict[str, Any],
+        now: float,
+    ) -> DeliveryDisposition:
+        """Deliver a payload to a run, resolving its wait or buffering it.
+
+        The delivery and the wait contend on one row: whichever of the delivery
+        and the deadline lands first flips the blocked slot and the other can
+        no longer resolve it. A delivery that arrives before the run has armed
+        its wait is buffered, and the arming commit consumes it atomically, so
+        a fast signal is never lost.
+
+        This path must never write ``run.state`` or ``run.state_version``: a
+        delivery must not be able to fence an attempt.
+
+        Args:
+            run_id: The receiving run.
+            wait_key: The address the waiting slot declared.
+            dedupe_key: Sender-supplied identity, making redelivery a no-op.
+            payload: JSON-compatible payload to hand the resuming handler.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the delivery.
         """
         ...
 
@@ -424,6 +465,8 @@ class MemoryRunStore:
         self._steps: dict[str, list[StepRecord]] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
+        self._inbox: dict[str, dict[tuple[str, str, str], bool]] = {}
+        self._pending: dict[str, dict[str, dict[str, Any]]] = {}
 
     def _append_events(
         self,
@@ -497,11 +540,7 @@ class MemoryRunStore:
                     continue
                 steps = self._steps[run.run_id]
                 frontier = _frontier(steps)
-                if (
-                    frontier is None
-                    or frontier.status not in CLAIMABLE_STEP_STATUSES
-                    or frontier.due_at > now
-                ):
+                if frontier is None or not step_claimable_at(frontier, now):
                     continue
                 claimed = dataclasses.replace(
                     frontier,
@@ -576,6 +615,33 @@ class MemoryRunStore:
             )
             return True
 
+    def _arm(self, step: StepRecord, now: float) -> StepRecord:
+        """Resolve a newly armed wait against an already-buffered delivery.
+
+        A signal that arrives before the run reaches its wait is buffered, so
+        arming must consume it in the same commit; otherwise a fast sender
+        would block the run forever.
+
+        Args:
+            step: The slot being appended.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The slot, already resolved when a matching delivery was waiting.
+        """
+        if step.status is not StepStatus.BLOCKED or step.wait_key is None:
+            return step
+        buffered = self._pending.get(step.run_id, {}).pop(step.wait_key, None)
+        if buffered is None:
+            return step
+        return dataclasses.replace(
+            step,
+            status=StepStatus.READY,
+            due_at=now,
+            args={**step.args, "__payload__": buffered},
+            updated_at=now,
+        )
+
     async def commit(
         self, claim: Claim, completion: StepCompletion, now: float
     ) -> None:
@@ -604,7 +670,8 @@ class MemoryRunStore:
                     steps[ordinal] = dataclasses.replace(
                         slot, status=StepStatus.CANCELLED, updated_at=now
                     )
-            steps.extend(completion.new_steps)
+            for new_step in completion.new_steps:
+                steps.append(self._arm(new_step, now))
             self._runs[run.run_id] = dataclasses.replace(
                 run,
                 status=completion.run_status,
@@ -666,6 +733,69 @@ class MemoryRunStore:
         """
         async with self._lock:
             self._append_events(run_id, events, now)
+
+    async def deliver(
+        self,
+        run_id: str,
+        wait_key: str,
+        dedupe_key: str,
+        payload: dict[str, Any],
+        now: float,
+    ) -> DeliveryDisposition:
+        """Deliver a payload to a run, resolving its wait or buffering it.
+
+        Args:
+            run_id: The receiving run.
+            wait_key: The address the waiting slot declared.
+            dedupe_key: Sender-supplied identity, making redelivery a no-op.
+            payload: JSON-compatible payload to hand the resuming handler.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        async with self._lock:
+            run = self._runs.get(run_id)
+            if run is None:
+                return "unknown_run"
+            if run.status in TERMINAL_RUN_STATUSES:
+                return "run_terminal"
+            inbox = self._inbox.setdefault(run_id, {})
+            if (run_id, wait_key, dedupe_key) in inbox:
+                return "duplicate"
+            inbox[run_id, wait_key, dedupe_key] = True
+            steps = self._steps[run_id]
+            frontier = _frontier(steps)
+            if (
+                frontier is not None
+                and frontier.status is StepStatus.BLOCKED
+                and frontier.wait_key == wait_key
+            ):
+                steps[frontier.ordinal] = dataclasses.replace(
+                    frontier,
+                    status=StepStatus.READY,
+                    due_at=now,
+                    args={**frontier.args, "__payload__": payload},
+                    updated_at=now,
+                )
+                self._append_events(
+                    run_id,
+                    (
+                        (
+                            HistoryEventType.WAIT_RESOLVED,
+                            {"ordinal": frontier.ordinal, "wait_key": wait_key},
+                        ),
+                    ),
+                    now,
+                )
+                return "resolved"
+            self._pending.setdefault(run_id, {})[wait_key] = payload
+            self._append_events(
+                run_id,
+                ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
+                now,
+            )
+            return "buffered"
 
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
@@ -927,8 +1057,9 @@ class MemoryRunStore:
                 if not _run_is_runnable(run, now):
                     continue
                 frontier = _frontier(self._steps[run.run_id])
-                if frontier is not None and frontier.status in CLAIMABLE_STEP_STATUSES:
-                    due_times.append(frontier.due_at)
+                wake_at = None if frontier is None else step_wake_at(frontier)
+                if wake_at is not None:
+                    due_times.append(wake_at)
             return min(due_times) if due_times else None
 
 
@@ -961,6 +1092,7 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     due_at REAL NOT NULL DEFAULT 0,
     epoch INTEGER NOT NULL DEFAULT 0,
     lease_expires_at REAL NOT NULL DEFAULT 0,
+    wait_key TEXT,
     error TEXT,
     origin TEXT NOT NULL,
     created_at REAL NOT NULL,
@@ -981,7 +1113,19 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
     run_id TEXT NOT NULL,
     PRIMARY KEY (workflow_id, request_key)
 );
+CREATE TABLE IF NOT EXISTS workflow_inbox (
+    run_id TEXT NOT NULL,
+    wait_key TEXT NOT NULL,
+    dedupe_key TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    payload TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (run_id, wait_key, dedupe_key)
+);
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs (status);
+CREATE INDEX IF NOT EXISTS idx_workflow_inbox_pending
+    ON workflow_inbox (run_id, wait_key, status, seq);
 """
 
 _STEP_MIGRATIONS: Final = (
@@ -989,6 +1133,7 @@ _STEP_MIGRATIONS: Final = (
         "lease_expires_at",
         "ALTER TABLE workflow_steps ADD COLUMN lease_expires_at REAL NOT NULL DEFAULT 0",
     ),
+    ("wait_key", "ALTER TABLE workflow_steps ADD COLUMN wait_key TEXT"),
 )
 
 
@@ -1064,6 +1209,7 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         due_at=row["due_at"],
         epoch=row["epoch"],
         lease_expires_at=row["lease_expires_at"],
+        wait_key=row["wait_key"],
         error=_load(row["error"]),
         origin=row["origin"],
         created_at=row["created_at"],
@@ -1154,9 +1300,9 @@ class SqliteRunStore:
         """
         self._db.execute(
             "INSERT INTO workflow_steps (run_id, ordinal, handler_id, status, args,"
-            " attempts, recoveries, due_at, epoch, lease_expires_at, error, origin,"
-            " created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " attempts, recoveries, due_at, epoch, lease_expires_at, wait_key,"
+            " error, origin, created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 step.run_id,
                 step.ordinal,
@@ -1168,6 +1314,7 @@ class SqliteRunStore:
                 step.due_at,
                 step.epoch,
                 step.lease_expires_at,
+                step.wait_key,
                 _dump(step.error),
                 step.origin,
                 step.created_at,
@@ -1284,11 +1431,7 @@ class SqliteRunStore:
                 for row in rows:
                     run = _run_from_row(row)
                     frontier = _frontier(self._load_steps(run.run_id))
-                    if (
-                        frontier is None
-                        or frontier.status not in CLAIMABLE_STEP_STATUSES
-                        or frontier.due_at > now
-                    ):
+                    if frontier is None or not step_claimable_at(frontier, now):
                         continue
                     claimed = dataclasses.replace(
                         frontier,
@@ -1389,6 +1532,39 @@ class SqliteRunStore:
                 raise
             return True
 
+    def _arm_sql(self, step: StepRecord, now: float) -> StepRecord:
+        """Resolve a newly armed wait against a buffered delivery, in-transaction.
+
+        Args:
+            step: The slot being inserted.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The slot, already resolved when a matching delivery was waiting.
+        """
+        if step.status is not StepStatus.BLOCKED or step.wait_key is None:
+            return step
+        row = self._db.execute(
+            "SELECT dedupe_key, payload FROM workflow_inbox"
+            " WHERE run_id = ? AND wait_key = ? AND status = ?"
+            " ORDER BY seq LIMIT 1",
+            (step.run_id, step.wait_key, "PENDING"),
+        ).fetchone()
+        if row is None:
+            return step
+        self._db.execute(
+            "UPDATE workflow_inbox SET status = ?"
+            " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+            ("CONSUMED", step.run_id, step.wait_key, row["dedupe_key"]),
+        )
+        return dataclasses.replace(
+            step,
+            status=StepStatus.READY,
+            due_at=now,
+            args={**step.args, "__payload__": json.loads(row["payload"])},
+            updated_at=now,
+        )
+
     async def commit(
         self, claim: Claim, completion: StepCompletion, now: float
     ) -> None:
@@ -1433,7 +1609,7 @@ class SqliteRunStore:
                         ),
                     )
                 for step in completion.new_steps:
-                    self._insert_step(step)
+                    self._insert_step(self._arm_sql(step, now))
                 self._db.execute(
                     "UPDATE workflow_runs SET status = ?,"
                     " state = CASE WHEN ? THEN ? ELSE state END,"
@@ -1515,6 +1691,103 @@ class SqliteRunStore:
             except BaseException:
                 self._db.execute("ROLLBACK")
                 raise
+
+    async def deliver(
+        self,
+        run_id: str,
+        wait_key: str,
+        dedupe_key: str,
+        payload: dict[str, Any],
+        now: float,
+    ) -> DeliveryDisposition:
+        """Deliver a payload to a run, resolving its wait or buffering it.
+
+        Args:
+            run_id: The receiving run.
+            wait_key: The address the waiting slot declared.
+            dedupe_key: Sender-supplied identity, making redelivery a no-op.
+            payload: JSON-compatible payload to hand the resuming handler.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._db.execute(
+                    "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                ).fetchone()
+                if row is None:
+                    self._db.execute("ROLLBACK")
+                    return "unknown_run"
+                if row["status"] in terminal:
+                    self._db.execute("ROLLBACK")
+                    return "run_terminal"
+                seen = self._db.execute(
+                    "SELECT 1 FROM workflow_inbox"
+                    " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+                    (run_id, wait_key, dedupe_key),
+                ).fetchone()
+                if seen is not None:
+                    self._db.execute("ROLLBACK")
+                    return "duplicate"
+                frontier = _frontier(self._load_steps(run_id))
+                resolves = (
+                    frontier is not None
+                    and frontier.status is StepStatus.BLOCKED
+                    and frontier.wait_key == wait_key
+                )
+                self._db.execute(
+                    "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+                    " payload, status, created_at)"
+                    " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
+                    " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
+                    (
+                        run_id,
+                        wait_key,
+                        dedupe_key,
+                        run_id,
+                        json.dumps(payload),
+                        "CONSUMED" if resolves else "PENDING",
+                        now,
+                    ),
+                )
+                if resolves and frontier is not None:
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, due_at = ?, args = ?,"
+                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        (
+                            StepStatus.READY.value,
+                            now,
+                            json.dumps({**frontier.args, "__payload__": payload}),
+                            now,
+                            run_id,
+                            frontier.ordinal,
+                        ),
+                    )
+                    self._append_events(
+                        run_id,
+                        (
+                            (
+                                HistoryEventType.WAIT_RESOLVED,
+                                {"ordinal": frontier.ordinal, "wait_key": wait_key},
+                            ),
+                        ),
+                        now,
+                    )
+                else:
+                    self._append_events(
+                        run_id,
+                        ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
+                        now,
+                    )
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return "resolved" if resolves else "buffered"
 
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
@@ -1877,6 +2150,7 @@ class SqliteRunStore:
             due_times = []
             for row in rows:
                 frontier = _frontier(self._load_steps(row["run_id"]))
-                if frontier is not None and frontier.status in CLAIMABLE_STEP_STATUSES:
-                    due_times.append(frontier.due_at)
+                wake_at = None if frontier is None else step_wake_at(frontier)
+                if wake_at is not None:
+                    due_times.append(wake_at)
             return min(due_times) if due_times else None

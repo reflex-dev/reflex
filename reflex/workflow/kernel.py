@@ -26,10 +26,13 @@ from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
     DEFAULT_MAX_RECOVERIES,
     After,
+    ChannelDelivery,
     CompleteRun,
     FailRun,
     NeedsAttention,
     ScheduleTrigger,
+    WaitFor,
+    _Never,
     parse_duration,
 )
 
@@ -47,7 +50,13 @@ from reflex.workflow.records import (
     StepStatus,
 )
 from reflex.workflow.serde import to_run_data
-from reflex.workflow.store import Claim, RunStore, StaleClaimError, StepCompletion
+from reflex.workflow.store import (
+    Claim,
+    DeliveryDisposition,
+    RunStore,
+    StaleClaimError,
+    StepCompletion,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -422,6 +431,34 @@ class WorkflowKernel:
             self._wakeup.set()
         return recorded
 
+    async def signal(
+        self,
+        run_id: str,
+        delivery: ChannelDelivery,
+        *,
+        key: str | None = None,
+    ) -> DeliveryDisposition:
+        """Deliver a payload to a run waiting on one of its channels.
+
+        Args:
+            run_id: The receiving run.
+            delivery: The addressed payload, e.g. ``MyFlow.approved(decision)``.
+            key: Sender idempotency key; a repeated key is a no-op.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        disposition = await self._store.deliver(
+            run_id,
+            f"sig:{delivery.channel}",
+            key or uuid.uuid4().hex,
+            to_run_data({"value": delivery.payload})["value"],
+            self._clock(),
+        )
+        if disposition == "resolved":
+            self._wakeup.set()
+        return disposition
+
     async def resume(self, run_id: str) -> bool:
         """Re-open a run that is suspended for operator attention.
 
@@ -593,7 +630,9 @@ class WorkflowKernel:
 
     def _interpret_return(
         self, defn: WorkflowDefinition, value: Any
-    ) -> tuple[list[_SuccessorSpec], CompleteRun | FailRun | NeedsAttention | None]:
+    ) -> tuple[
+        list[_SuccessorSpec], CompleteRun | FailRun | NeedsAttention | WaitFor | None
+    ]:
         """Interpret a durable handler's return value.
 
         Args:
@@ -609,7 +648,7 @@ class WorkflowKernel:
         """
         if value is None:
             return [], None
-        if isinstance(value, (CompleteRun, FailRun, NeedsAttention)):
+        if isinstance(value, (CompleteRun, FailRun, NeedsAttention, WaitFor)):
             return [], value
         if isinstance(value, (list, tuple)):
             successors = []
@@ -637,6 +676,10 @@ class WorkflowKernel:
         Returns:
             The handler return value.
         """
+        args = {key: value for key, value in args.items() if key != "__wait__"}
+        delivered = args.pop("__payload__", None)
+        if delivered is not None and handler.params:
+            args[handler.params[0]] = delivered
         try:
             payload = _transform_event_payload(args, handler.type_hints)
         except Exception:
@@ -886,7 +929,7 @@ class WorkflowKernel:
         steps: tuple[StepRecord, ...],
         state: dict[str, Any],
         successors: list[_SuccessorSpec],
-        control: CompleteRun | FailRun | NeedsAttention | None,
+        control: CompleteRun | FailRun | NeedsAttention | WaitFor | None,
         now: float,
     ) -> StepCompletion:
         """Build the commit for a successful attempt.
@@ -932,6 +975,53 @@ class WorkflowKernel:
                 run_status=RunStatus.NEEDS_ATTENTION,
                 state=state,
                 run_error=error,
+                events=tuple(events),
+            )
+        if isinstance(control, WaitFor):
+            resume = self._resolve_successor(defn, control.then)
+            timeout_id = (
+                self._resolve_successor(defn, control.on_timeout).handler_id
+                if control.on_timeout is not None
+                else None
+            )
+            deadline = (
+                0.0
+                if isinstance(control.timeout, _Never)
+                else now + parse_duration(control.timeout)
+            )
+            wait_key = f"sig:{control.channel}"
+            slot = StepRecord(
+                run_id=claim.run.run_id,
+                ordinal=claim.run.next_ordinal,
+                handler_id=resume.handler_id,
+                status=StepStatus.BLOCKED,
+                args={
+                    **resume.args,
+                    "__wait__": {
+                        "channel": control.channel,
+                        "on_timeout": timeout_id,
+                    },
+                },
+                due_at=deadline,
+                wait_key=wait_key,
+                origin="wait",
+                created_at=now,
+                updated_at=now,
+            )
+            events.append((
+                HistoryEventType.WAIT_ARMED,
+                {
+                    "ordinal": slot.ordinal,
+                    "wait_key": wait_key,
+                    "deadline": deadline or None,
+                },
+            ))
+            return StepCompletion(
+                step_status=StepStatus.SUCCEEDED,
+                run_status=RunStatus.WAITING,
+                state=state,
+                new_steps=(slot,),
+                next_ordinal=claim.run.next_ordinal + 1,
                 events=tuple(events),
             )
         if isinstance(control, CompleteRun):
@@ -1169,7 +1259,8 @@ class WorkflowKernel:
                     f"{claim.run.workflow_id!r}; restore it or cancel the run."
                 ),
             }
-        unexpected = sorted(set(claim.step.args) - set(handler.params))
+        supplied = {key for key in claim.step.args if not key.startswith("__")}
+        unexpected = sorted(supplied - set(handler.params))
         if unexpected:
             return {
                 "reason": "incompatible_payload",
@@ -1181,6 +1272,29 @@ class WorkflowKernel:
                 ),
             }
         return None
+
+    @staticmethod
+    def _expired_wait_handler(
+        defn: WorkflowDefinition, claim: Claim
+    ) -> HandlerDefinition | None:
+        """Pick the timeout branch when a wait is claimed at its deadline.
+
+        A wait resolved by a delivery arrives carrying a payload; a wait
+        claimed without one reached its deadline, so the timeout branch runs
+        instead of the resume branch.
+
+        Args:
+            defn: The workflow definition.
+            claim: The claim being executed.
+
+        Returns:
+            The timeout handler, or None when the wait was resolved normally.
+        """
+        wait = claim.step.args.get("__wait__")
+        if not isinstance(wait, dict) or "__payload__" in claim.step.args:
+            return None
+        timeout_id = wait.get("on_timeout")
+        return defn.handlers.get(timeout_id) if timeout_id else None
 
     async def _execute_claim(self, claim: Claim) -> None:
         """Execute one claimed attempt and commit its outcome.
@@ -1209,6 +1323,10 @@ class WorkflowKernel:
             )
             return
         handler = defn.handlers[claim.step.handler_id]
+        if claim.step.status is StepStatus.CLAIMED and claim.step.wait_key is not None:
+            expired = self._expired_wait_handler(defn, claim)
+            if expired is not None:
+                handler = expired
         steps = await self._store.get_steps(claim.run.run_id)
         await self._store.append_events(
             claim.run.run_id,

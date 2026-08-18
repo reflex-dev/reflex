@@ -8,13 +8,16 @@ Register classes with ``app.add_workflow(...)``; start runs with
 """
 
 from reflex_base.workflow import (
+    ChannelDelivery,
     DurableEventConfig,
     EffectClass,
     ManualTrigger,
     Retry,
     ScheduleTrigger,
+    Signal,
     TransientWorkflowError,
     Trigger,
+    WaitFor,
     WebhookTrigger,
     WebhookVerifier,
     WorkflowConfig,
@@ -24,8 +27,10 @@ from reflex_base.workflow import (
     hmac_signature,
     manual,
     needs_attention,
+    never,
     parse_duration,
     schedule,
+    wait_for,
     webhook,
 )
 
@@ -48,6 +53,7 @@ from reflex.workflow.records import (
 )
 from reflex.workflow.runtime import WorkflowRuntime, get_runtime, workflows
 from reflex.workflow.store import (
+    DeliveryDisposition,
     MemoryRunStore,
     RunStore,
     SqliteRunStore,
@@ -56,6 +62,8 @@ from reflex.workflow.store import (
 from reflex.workflow.testing import WorkflowTestHarness
 
 __all__ = [
+    "ChannelDelivery",
+    "DeliveryDisposition",
     "DurableEventConfig",
     "EffectClass",
     "HandlerDefinition",
@@ -70,6 +78,7 @@ __all__ = [
     "RunStatus",
     "RunStore",
     "ScheduleTrigger",
+    "Signal",
     "SqliteRunStore",
     "StaleClaimError",
     "StartResult",
@@ -77,6 +86,7 @@ __all__ = [
     "StepStatus",
     "TransientWorkflowError",
     "Trigger",
+    "WaitFor",
     "WebhookTrigger",
     "WebhookVerifier",
     "WorkflowConfig",
@@ -92,8 +102,10 @@ __all__ = [
     "hmac_signature",
     "manual",
     "needs_attention",
+    "never",
     "parse_duration",
     "schedule",
+    "wait_for",
     "webhook",
     "workflows",
 ]

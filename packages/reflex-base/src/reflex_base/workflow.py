@@ -711,3 +711,174 @@ def after(delay: DurationLike, target: Any) -> After:
         The control return value.
     """
     return After(delay=delay, target=target)
+
+
+class _Never:
+    """Sentinel meaning a wait has no deadline."""
+
+    def __repr__(self) -> str:
+        """Render the sentinel.
+
+        Returns:
+            The public spelling of this value.
+        """
+        return "rx.never"
+
+
+never: Final = _Never()
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ChannelDelivery:
+    """A payload addressed to one named channel of a run.
+
+    Attributes:
+        channel: The channel name the waiting run is listening on.
+        payload: JSON-compatible payload, already validated against the
+            channel's declared model.
+    """
+
+    channel: str
+    payload: Any
+
+
+class Signal:
+    """A typed, named channel a run can wait on and outside code can deliver to.
+
+    Declared as a class attribute on a workflow, which keeps it out of the run
+    state schema and out of the event-handler registry::
+
+        class Onboarding(rx.State):
+            docs_uploaded = rx.Signal(Docs)
+
+    Attributes:
+        model: The payload model deliveries are validated against, if any.
+        name: The channel name, defaulting to the attribute name.
+    """
+
+    def __init__(self, model: type | None = None, *, name: str | None = None):
+        """Declare a channel.
+
+        Args:
+            model: The payload model deliveries must satisfy.
+            name: Explicit channel name; defaults to the attribute name.
+        """
+        self.model = model
+        self.name = name or ""
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Adopt the attribute name as the channel name.
+
+        Args:
+            owner: The declaring class.
+            name: The attribute name.
+        """
+        if not self.name:
+            self.name = name
+
+    def __call__(self, payload: Any = None) -> ChannelDelivery:
+        """Build a delivery for this channel.
+
+        Args:
+            payload: The payload to deliver.
+
+        Returns:
+            The addressed delivery.
+
+        Raises:
+            WorkflowDefinitionError: If the payload does not match the declared
+                model, caught at the call site rather than inside a run.
+        """
+        if self.model is not None:
+            if isinstance(payload, self.model):
+                pass
+            elif isinstance(payload, dict):
+                payload = self.model(**payload)
+            else:
+                msg = (
+                    f"Channel {self.name!r} expects {self.model.__name__}, got "
+                    f"{type(payload).__name__}."
+                )
+                raise WorkflowDefinitionError(msg)
+        return ChannelDelivery(channel=self.name, payload=payload)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class WaitFor:
+    """Control return that blocks a run until a signal or a deadline.
+
+    Attributes:
+        channel: The channel name to wait on.
+        then: Handler to run when a delivery arrives; it takes the payload.
+        timeout: How long to wait, or ``rx.never`` for no deadline.
+        on_timeout: Handler to run when the deadline arrives first.
+    """
+
+    channel: str
+    then: Any
+    timeout: DurationLike | _Never
+    on_timeout: Any = None
+
+    def __post_init__(self):
+        """Validate the wait eagerly so authoring errors surface in place.
+
+        Raises:
+            WorkflowDefinitionError: If a bounded wait has no timeout branch.
+        """
+        if isinstance(self.timeout, _Never):
+            if self.on_timeout is not None:
+                msg = (
+                    "wait_for(timeout=rx.never) cannot have on_timeout: a wait "
+                    "with no deadline never times out."
+                )
+                raise WorkflowDefinitionError(msg)
+            return
+        parse_duration(self.timeout, param="wait_for() timeout")
+        if self.on_timeout is None:
+            msg = (
+                "wait_for(timeout=...) requires on_timeout, naming the handler "
+                "that runs when the deadline arrives first. Use "
+                "timeout=rx.never to wait indefinitely."
+            )
+            raise WorkflowDefinitionError(msg)
+
+
+def wait_for(
+    channel: Signal,
+    *,
+    then: Any,
+    timeout: DurationLike | _Never,
+    on_timeout: Any = None,
+) -> WaitFor:
+    """Block the run until a signal arrives or the deadline passes.
+
+    Whichever lands first wins, and the loser can no longer resolve the wait::
+
+        return rx.wait_for(
+            Onboarding.docs_uploaded,
+            then=Onboarding.verify,
+            timeout="3d",
+            on_timeout=Onboarding.nag,
+        )
+
+    Args:
+        channel: The channel declared on the workflow class.
+        then: Handler to run with the delivered payload.
+        timeout: How long to wait, or ``rx.never``.
+        on_timeout: Handler to run if the deadline arrives first.
+
+    Returns:
+        The control return value.
+
+    Raises:
+        WorkflowDefinitionError: If the channel is not an rx.Signal.
+    """
+    if not isinstance(channel, Signal):
+        msg = (
+            f"wait_for() expects a channel declared with rx.Signal(...), got "
+            f"{channel!r}."
+        )
+        raise WorkflowDefinitionError(msg)
+    return WaitFor(
+        channel=channel.name, then=then, timeout=timeout, on_timeout=on_timeout
+    )
