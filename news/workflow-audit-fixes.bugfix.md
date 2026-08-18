@@ -1,0 +1,1 @@
+Fixes three defects found by an adversarial audit: a handler raising `CancelledError` killed the worker, a crash between a fan-out commit and child creation wedged the parent, and a cancelled or timed-out child never reported to its join.

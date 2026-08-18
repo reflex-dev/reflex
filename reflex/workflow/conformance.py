@@ -509,6 +509,71 @@ async def check_flow_control_queries(store: RunStore) -> None:
     assert steps[0].due_at == pytest.approx(NOW + 30)
 
 
+async def check_early_deliveries_queue_in_order(store: RunStore) -> None:
+    """Several signals arriving before a wait are kept, not overwritten."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    assert await store.deliver("run1", "sig:ping", "d1", {"v": 1}, NOW) == "buffered"
+    assert await store.deliver("run1", "sig:ping", "d2", {"v": 2}, NOW) == "buffered"
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.WAITING,
+            state={"n": 1},
+            new_steps=(
+                make_step(
+                    ordinal=1,
+                    status=StepStatus.BLOCKED,
+                    wait_key="sig:ping",
+                    due_at=0.0,
+                    origin="wait",
+                ),
+            ),
+            next_ordinal=2,
+        ),
+        NOW,
+    )
+    steps = await store.get_steps("run1")
+    # The first signal to arrive is the one that resolves the wait.
+    assert steps[1].args["__payload__"] == {"v": 1}
+
+
+async def check_children_are_created_with_their_join(store: RunStore) -> None:
+    """A fan-out commit creates the join slot and its children together."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    child = make_run("child1", parent_run_id="run1", parent_ordinal=1)
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.WAITING,
+            state={"n": 1},
+            new_steps=(
+                make_step(
+                    ordinal=1,
+                    status=StepStatus.BLOCKED,
+                    wait_key="join:1",
+                    join_expected=1,
+                    origin="join",
+                    due_at=0.0,
+                ),
+            ),
+            next_ordinal=2,
+            children=((child, make_step("child1")),),
+        ),
+        NOW,
+    )
+    created = await store.get_run("child1")
+    assert created is not None
+    assert created.parent_run_id == "run1"
+    assert created.parent_ordinal == 1
+    assert len(await store.get_steps("child1")) == 1
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_admit_deduplicates_on_request_key,
@@ -526,6 +591,8 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_delivery_never_touches_run_state,
     check_duplicate_deliveries_are_ignored,
     check_an_early_delivery_is_buffered_then_consumed,
+    check_early_deliveries_queue_in_order,
+    check_children_are_created_with_their_join,
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,

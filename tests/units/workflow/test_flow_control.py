@@ -262,3 +262,15 @@ def test_browser_throttle_still_works_on_session_handlers(
         "throttle": 200,
         "debounce": 100,
     }
+
+
+async def test_singleton_cancel_keeps_one_active_run_per_key(
+    forked_registration_context,
+):
+    """Replacing the active run must not leave both of them active."""
+    flow = _singleton_flow(mode="cancel")
+    async with WorkflowTestHarness(flow) as harness:
+        for _ in range(3):
+            await harness.kernel.start(flow.start("acme"))
+        active = await harness.kernel.store.count_active("flow.sync", "start:'acme'")
+        assert active == 1

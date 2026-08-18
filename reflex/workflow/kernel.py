@@ -75,6 +75,17 @@ RECOVERY_INTERVAL_FRACTION = 1 / 2
 MAX_SCHEDULE_CATCHUP = 10
 
 
+class _HandlerCancelledError(Exception):
+    """A handler raised CancelledError itself instead of being cancelled."""
+
+    def __init__(self):
+        """Describe the failure for the recorded error payload."""
+        super().__init__(
+            "handler raised CancelledError; a durable handler must not cancel "
+            "itself, and must let cancellation propagate rather than raising it"
+        )
+
+
 def _error_payload(error: BaseException) -> dict[str, Any]:
     """Build a JSON-compatible error payload from an exception.
 
@@ -304,6 +315,7 @@ class WorkflowKernel:
         self._worker_id = uuid.uuid4().hex
         self._observer = observer
         self._wakeup = asyncio.Event()
+        self._admission = asyncio.Lock()
         self._worker: asyncio.Task | None = None
 
     @property
@@ -440,7 +452,11 @@ class WorkflowKernel:
                         StartResult(disposition="skipped", run_id=existing.run_id),
                         now,
                     )
+                # Drive the cancellation to a terminal state before admitting the
+                # replacement, so "one active run per key" holds at every instant
+                # rather than only once a worker happens to drain the old one.
                 await self.cancel(existing.run_id)
+                await self._finalize_control(now)
         if handler.rate_limit is not None:
             window = parse_duration(handler.rate_limit.period)
             started = await self._store.count_started_since(
@@ -515,15 +531,48 @@ class WorkflowKernel:
                 f"starting through this path requires {expected}."
             )
             raise WorkflowRuntimeError(msg)
-        now = self._clock()
         flow_key = self._flow_key(handler, payload)
-        due_at = now
-        if flow_key is not None:
+        if flow_key is None:
+            return await self._admit(defn, handler, payload, request_key, labels, None)
+        # A start policy is a check followed by an insert, so concurrent starts
+        # must not interleave between them or two runs slip past a singleton.
+        async with self._admission:
+            now = self._clock()
             decided, due_at = await self._apply_start_policy(
                 defn, handler, flow_key, now
             )
             if decided is not None:
                 return decided
+            return await self._admit(
+                defn, handler, payload, request_key, labels, flow_key, due_at
+            )
+
+    async def _admit(
+        self,
+        defn: WorkflowDefinition,
+        handler: HandlerDefinition,
+        payload: dict[str, Any],
+        request_key: str | None,
+        labels: dict[str, str] | None,
+        flow_key: str | None,
+        due_at: float | None = None,
+    ) -> StartResult:
+        """Create the run and its root slot.
+
+        Args:
+            defn: The workflow definition.
+            handler: The root handler.
+            payload: The decoded start payload.
+            request_key: Idempotent admission key.
+            labels: Server-derived indexing labels.
+            flow_key: Start-policy grouping key, if the root declares one.
+            due_at: Earliest start time, when a policy delayed it.
+
+        Returns:
+            The admission result.
+        """
+        now = self._clock()
+        due_at = now if due_at is None else due_at
         run_id = uuid.uuid4().hex
         run = RunRecord(
             run_id=run_id,
@@ -1141,6 +1190,9 @@ class WorkflowKernel:
                 events=tuple(events),
             )
         if isinstance(control, Parallel):
+            children = self._child_records(
+                claim, control.branches, claim.run.next_ordinal, now
+            )
             join = StepRecord(
                 run_id=claim.run.run_id,
                 ordinal=claim.run.next_ordinal,
@@ -1164,8 +1216,7 @@ class WorkflowKernel:
                 new_steps=(join,),
                 next_ordinal=claim.run.next_ordinal + 1,
                 events=tuple(events),
-                children=tuple(control.branches),
-                join_ordinal=join.ordinal,
+                children=children,
             )
         if isinstance(control, WaitFor):
             resume = self._resolve_successor(defn, control.then)
@@ -1572,6 +1623,20 @@ class WorkflowKernel:
                 defn, claim, steps, state, successors, control, self._clock()
             )
         except asyncio.CancelledError:
+            if lease.attempt is not None and not lease.attempt.cancelled():
+                # The handler raised CancelledError itself rather than being
+                # cancelled; that is a handler failure, not a control signal.
+                completion = self._failure_completion(
+                    defn,
+                    handler,
+                    claim,
+                    steps,
+                    _HandlerCancelledError(),
+                    timed_out=False,
+                    now=self._clock(),
+                )
+                await self._commit_outcome(claim, handler, completion)
+                return
             if lease.lost:
                 await self._record_abandoned(claim, handler, "lease_lost")
                 return
@@ -1597,15 +1662,7 @@ class WorkflowKernel:
             completion = self._failure_completion(
                 defn, handler, claim, steps, err, timed_out=False, now=self._clock()
             )
-        try:
-            await self._store.commit(claim, completion, self._clock())
-        except StaleClaimError:
-            await self._record_abandoned(claim, handler, "fenced_at_commit")
-            return
-        self._notify(claim.run, completion.events)
-        if completion.children:
-            await self._admit_children(claim, completion)
-        await self._report_to_parent(claim.run, completion)
+        await self._commit_outcome(claim, handler, completion)
 
     async def _admit_due_schedules(self, now: float) -> int:
         """Admit a run for every schedule occurrence that has come due.
@@ -1652,20 +1709,30 @@ class WorkflowKernel:
         ]
         return min(upcoming) if upcoming else None
 
-    async def _admit_children(self, claim: Claim, completion: StepCompletion) -> None:
-        """Create the child runs a fan-out commit declared.
+    def _child_records(
+        self,
+        claim: Claim,
+        branches: tuple[Any, ...],
+        join_ordinal: int,
+        now: float,
+    ) -> tuple[tuple[RunRecord, StepRecord], ...]:
+        """Build the child runs a fan-out will create.
 
-        Children are admitted after the parent's commit lands, so a crash in
-        between leaves a join slot with no children, which recovery re-runs
-        rather than a set of orphans with no parent.
+        They are built here, not admitted separately afterwards, so the store
+        can insert them in the same transaction as the join slot: a crash can
+        never leave a join waiting on children that were never created.
 
         Args:
             claim: The parent's claim.
-            completion: The committed outcome carrying the branches.
+            branches: The root events to run concurrently.
+            join_ordinal: The join slot the children report to.
+            now: Current time in epoch seconds.
+
+        Returns:
+            Each child run paired with its root slot.
         """
-        now = self._clock()
         records = []
-        for index, branch in enumerate(completion.children):
+        for index, branch in enumerate(branches):
             defn, handler, payload = self._resolve_target(branch)
             child_id = uuid.uuid4().hex
             records.append((
@@ -1678,10 +1745,8 @@ class WorkflowKernel:
                     state_version=0,
                     next_ordinal=1,
                     parent_run_id=claim.run.run_id,
-                    parent_ordinal=completion.join_ordinal,
-                    request_key=(
-                        f"child:{claim.run.run_id}:{completion.join_ordinal}:{index}"
-                    ),
+                    parent_ordinal=join_ordinal,
+                    request_key=f"child:{claim.run.run_id}:{join_ordinal}:{index}",
                     deadline=(
                         now + defn.run_timeout if defn.run_timeout is not None else None
                     ),
@@ -1699,8 +1764,27 @@ class WorkflowKernel:
                     updated_at=now,
                 ),
             ))
-        await self._store.admit_children(tuple(records), (), now)
-        self._wakeup.set()
+        return tuple(records)
+
+    async def _commit_outcome(
+        self, claim: Claim, handler: HandlerDefinition, completion: StepCompletion
+    ) -> None:
+        """Commit an attempt's outcome and follow up on what it scheduled.
+
+        Args:
+            claim: The claim being committed.
+            handler: The handler that ran.
+            completion: The outcome to apply.
+        """
+        try:
+            await self._store.commit(claim, completion, self._clock())
+        except StaleClaimError:
+            await self._record_abandoned(claim, handler, "fenced_at_commit")
+            return
+        self._notify(claim.run, completion.events)
+        if completion.children:
+            self._wakeup.set()
+        await self._report_to_parent(claim.run, completion)
 
     async def _report_to_parent(
         self, run: RunRecord, completion: StepCompletion
@@ -1711,23 +1795,75 @@ class WorkflowKernel:
             run: The child run, which may have no parent.
             completion: The committed outcome that finished it.
         """
-        if run.parent_run_id is None or run.parent_ordinal is None:
-            return
         if completion.run_status not in TERMINAL_RUN_STATUSES:
+            return
+        await self._report_outcome(
+            run, completion.run_status, completion.result, completion.run_error
+        )
+
+    async def _report_outcome(
+        self,
+        run: RunRecord,
+        status: RunStatus,
+        result: Any,
+        error: dict[str, Any] | None,
+    ) -> None:
+        """Tell a parent's join that this child has finished, however it finished.
+
+        Cancellation and run deadlines terminate a child without a commit, so
+        this is called from both paths: a join must never wait forever on a
+        child that has already stopped.
+
+        Args:
+            run: The child run, which may have no parent.
+            status: Its terminal status.
+            result: Its result, if any.
+            error: Its error, if any.
+        """
+        if run.parent_run_id is None or run.parent_ordinal is None:
             return
         await self._store.record_arrival(
             run.parent_run_id,
             run.parent_ordinal,
             {
                 "run_id": run.run_id,
-                "status": completion.run_status.value,
-                "result": completion.result,
-                "error": completion.run_error,
+                "status": status.value,
+                "result": result,
+                "error": error,
             },
             run.run_id,
             self._clock(),
         )
         self._wakeup.set()
+
+    async def _finalize_control(self, now: float) -> int:
+        """Finalize every drained run awaiting a control transition.
+
+        Args:
+            now: Current time in epoch seconds.
+
+        Returns:
+            How many runs were finalized.
+        """
+        finalized = 0
+        for run in await self._store.control_pending(now):
+            cancelled = run.cancel_requested
+            status = RunStatus.CANCELLED if cancelled else RunStatus.TIMED_OUT
+            error = None if cancelled else {"reason": "run_timeout"}
+            if await self._store.finalize_run(
+                run.run_id,
+                status=status,
+                error=error,
+                event=(
+                    HistoryEventType.RUN_CANCELLED
+                    if cancelled
+                    else HistoryEventType.RUN_TIMED_OUT
+                ),
+                now=now,
+            ):
+                await self._report_outcome(run, status, None, error)
+                finalized += 1
+        return finalized
 
     async def _tick(self) -> bool:
         """Run one scheduling round.
@@ -1737,29 +1873,7 @@ class WorkflowKernel:
         """
         now = self._clock()
         progressed = await self._admit_due_schedules(now) > 0
-        for run in await self._store.control_pending(now):
-            if run.cancel_requested:
-                progressed = (
-                    await self._store.finalize_run(
-                        run.run_id,
-                        status=RunStatus.CANCELLED,
-                        error=None,
-                        event=HistoryEventType.RUN_CANCELLED,
-                        now=now,
-                    )
-                    or progressed
-                )
-            else:
-                progressed = (
-                    await self._store.finalize_run(
-                        run.run_id,
-                        status=RunStatus.TIMED_OUT,
-                        error={"reason": "run_timeout"},
-                        event=HistoryEventType.RUN_TIMED_OUT,
-                        now=now,
-                    )
-                    or progressed
-                )
+        progressed = await self._finalize_control(now) > 0 or progressed
         claim = await self._store.claim_next(now, lease_duration=self._lease_duration)
         if claim is not None:
             task = asyncio.ensure_future(self._execute_claim(claim))

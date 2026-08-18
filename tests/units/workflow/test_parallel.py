@@ -207,3 +207,84 @@ async def test_duplicate_arrivals_are_counted_once(forked_registration_context):
         snapshot = await harness.get_run(result.run_id)
         assert snapshot is not None
         assert snapshot.steps[1].join_arrived == 1
+
+
+async def test_a_cancelled_child_reports_to_its_join(forked_registration_context):
+    """A child that is cancelled must not leave its parent waiting forever."""
+    BRANCH_CALLS.clear()
+
+    class SlowBranch(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.slow")
+        n: int = 0
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self, lead: str):
+            """Wait a long time before finishing.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                A far-future continuation.
+            """
+            return rx.after("30d", SlowBranch.later)
+
+        @rx.event(durable=True, effect="none")
+        def later(self):
+            """Never reached in this test."""
+
+    router = _router(Enrich, SlowBranch)
+    async with WorkflowTestHarness(router, Enrich, SlowBranch) as harness:
+        result = await harness.start(router.begin("acme"))
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.WAITING
+
+        runs = await harness.kernel.list_runs()
+        slow = next(
+            run
+            for run in runs
+            if run.parent_run_id == result.run_id and run.workflow_id == "fan.slow"
+        )
+        await harness.cancel(slow.run_id)
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.state["outcomes"] == ["CANCELLED", "COMPLETED"]
+
+
+async def test_a_timed_out_child_reports_to_its_join(forked_registration_context):
+    """A child that blows its run deadline still reports to the join."""
+    BRANCH_CALLS.clear()
+
+    class ExpiringBranch(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.expiring", run_timeout="1h")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self, lead: str):
+            """Wait past the run deadline.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                A continuation scheduled after the deadline.
+            """
+            return rx.after("2h", ExpiringBranch.later)
+
+        @rx.event(durable=True, effect="none")
+        def later(self):
+            """Never reached in this test."""
+
+    router = _router(Enrich, ExpiringBranch)
+    async with WorkflowTestHarness(router, Enrich, ExpiringBranch) as harness:
+        result = await harness.start(router.begin("acme"))
+        assert result.run_id is not None
+        await harness.advance("2h")
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.state["outcomes"] == ["COMPLETED", "TIMED_OUT"]

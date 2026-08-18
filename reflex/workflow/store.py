@@ -88,8 +88,8 @@ class StepCompletion:
         tombstones: Ordinals of unresolved slots to cancel.
         next_ordinal: Updated mailbox allocation counter, if slots were added.
         events: History events to append, in order, as (type, data) pairs.
-        children: Root events to admit as child runs once this commit lands.
-        join_ordinal: The join slot those children report back to.
+        children: Child runs to create in the same transaction as this commit,
+            each paired with its root slot.
     """
 
     step_status: StepStatus
@@ -104,8 +104,7 @@ class StepCompletion:
     tombstones: tuple[int, ...] = ()
     next_ordinal: int | None = None
     events: tuple[tuple[HistoryEventType, dict[str, Any]], ...] = ()
-    children: tuple[Any, ...] = ()
-    join_ordinal: int | None = None
+    children: tuple[tuple[RunRecord, StepRecord], ...] = ()
 
 
 class RunStore(Protocol):
@@ -568,7 +567,7 @@ class MemoryRunStore:
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
         self._inbox: dict[str, dict[tuple[str, str, str], bool]] = {}
-        self._pending: dict[str, dict[str, dict[str, Any]]] = {}
+        self._pending: dict[str, dict[str, list[dict[str, Any]]]] = {}
 
     def _append_events(
         self,
@@ -733,9 +732,10 @@ class MemoryRunStore:
         """
         if step.status is not StepStatus.BLOCKED or step.wait_key is None:
             return step
-        buffered = self._pending.get(step.run_id, {}).pop(step.wait_key, None)
-        if buffered is None:
+        queued = self._pending.get(step.run_id, {}).get(step.wait_key)
+        if not queued:
             return step
+        buffered = queued.pop(0)
         return dataclasses.replace(
             step,
             status=StepStatus.READY,
@@ -774,6 +774,9 @@ class MemoryRunStore:
                     )
             for new_step in completion.new_steps:
                 steps.append(self._arm(new_step, now))
+            for child_run, child_step in completion.children:
+                self._runs[child_run.run_id] = child_run
+                self._steps[child_run.run_id] = [child_step]
             self._runs[run.run_id] = dataclasses.replace(
                 run,
                 status=completion.run_status,
@@ -891,7 +894,9 @@ class MemoryRunStore:
                     now,
                 )
                 return "resolved"
-            self._pending.setdefault(run_id, {})[wait_key] = payload
+            self._pending.setdefault(run_id, {}).setdefault(wait_key, []).append(
+                payload
+            )
             self._append_events(
                 run_id,
                 ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
@@ -1910,6 +1915,9 @@ class SqliteRunStore:
                     )
                 for step in completion.new_steps:
                     self._insert_step(self._arm_sql(step, now))
+                for child_run, child_step in completion.children:
+                    self._insert_run(child_run)
+                    self._insert_step(child_step)
                 self._db.execute(
                     "UPDATE workflow_runs SET status = ?,"
                     " state = CASE WHEN ? THEN ? ELSE state END,"
