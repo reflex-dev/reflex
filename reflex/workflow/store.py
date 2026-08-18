@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 DeliveryDisposition = Literal[
     "resolved",
+    "counted",
     "buffered",
     "duplicate",
     "unknown_run",
@@ -87,6 +88,8 @@ class StepCompletion:
         tombstones: Ordinals of unresolved slots to cancel.
         next_ordinal: Updated mailbox allocation counter, if slots were added.
         events: History events to append, in order, as (type, data) pairs.
+        children: Root events to admit as child runs once this commit lands.
+        join_ordinal: The join slot those children report back to.
     """
 
     step_status: StepStatus
@@ -101,6 +104,8 @@ class StepCompletion:
     tombstones: tuple[int, ...] = ()
     next_ordinal: int | None = None
     events: tuple[tuple[HistoryEventType, dict[str, Any]], ...] = ()
+    children: tuple[Any, ...] = ()
+    join_ordinal: int | None = None
 
 
 class RunStore(Protocol):
@@ -244,6 +249,51 @@ class RunStore(Protocol):
 
         Returns:
             What the store did with the delivery.
+        """
+        ...
+
+    async def admit_children(
+        self,
+        runs: tuple[tuple[RunRecord, StepRecord], ...],
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        now: float,
+    ) -> None:
+        """Create child runs, each with its root slot.
+
+        Only ever inserts brand-new rows, so it locks no existing run and
+        cannot invert lock order against a concurrent commit.
+
+        Args:
+            runs: The child run records paired with their root slots.
+            events: History events to append to the parent.
+            now: Current time in epoch seconds.
+        """
+        ...
+
+    async def record_arrival(
+        self,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Count one arrival against a join slot.
+
+        The counter is only ever incremented by this compare-and-swap, so a
+        redelivered child result cannot be counted twice, and the slot becomes
+        claimable exactly when the last expected arrival lands.
+
+        Args:
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            ``"resolved"`` when this arrival completed the join, ``"counted"``
+            when more are still expected, or why it was refused.
         """
         ...
 
@@ -797,6 +847,84 @@ class MemoryRunStore:
             )
             return "buffered"
 
+    async def admit_children(
+        self,
+        runs: tuple[tuple[RunRecord, StepRecord], ...],
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        now: float,
+    ) -> None:
+        """Create child runs, each with its root slot.
+
+        Args:
+            runs: The child run records paired with their root slots.
+            events: History events to append to the parent.
+            now: Current time in epoch seconds.
+        """
+        async with self._lock:
+            for run, root_step in runs:
+                self._runs[run.run_id] = run
+                self._steps[run.run_id] = [root_step]
+            if runs and events:
+                self._append_events(runs[0][0].parent_run_id or "", events, now)
+
+    async def record_arrival(
+        self,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Count one arrival against a join slot.
+
+        Args:
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the arrival.
+        """
+        async with self._lock:
+            run = self._runs.get(run_id)
+            if run is None:
+                return "unknown_run"
+            if run.status in TERMINAL_RUN_STATUSES:
+                return "run_terminal"
+            seen = self._inbox.setdefault(run_id, {})
+            key = (run_id, f"join:{ordinal}", dedupe_key)
+            if key in seen:
+                return "duplicate"
+            seen[key] = True
+            steps = self._steps[run_id]
+            step = steps[ordinal]
+            if step.status is not StepStatus.BLOCKED:
+                return "run_terminal"
+            arrived = step.join_arrived + 1
+            results = [*step.args.get("__results__", []), payload]
+            done = arrived >= step.join_expected
+            steps[ordinal] = dataclasses.replace(
+                step,
+                status=StepStatus.READY if done else StepStatus.BLOCKED,
+                join_arrived=arrived,
+                due_at=now if done else step.due_at,
+                args={**step.args, "__results__": results},
+                updated_at=now,
+            )
+            self._append_events(
+                run_id,
+                (
+                    (
+                        HistoryEventType.CHILD_RESOLVED,
+                        {"ordinal": ordinal, "arrived": arrived},
+                    ),
+                ),
+                now,
+            )
+            return "resolved" if done else "counted"
+
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
 
@@ -1074,6 +1202,8 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     next_ordinal INTEGER NOT NULL,
     result TEXT,
     error TEXT,
+    parent_run_id TEXT,
+    parent_ordinal INTEGER,
     request_key TEXT,
     labels TEXT,
     deadline REAL,
@@ -1093,6 +1223,8 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     epoch INTEGER NOT NULL DEFAULT 0,
     lease_expires_at REAL NOT NULL DEFAULT 0,
     wait_key TEXT,
+    join_expected INTEGER NOT NULL DEFAULT 0,
+    join_arrived INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     origin TEXT NOT NULL,
     created_at REAL NOT NULL,
@@ -1134,6 +1266,19 @@ _STEP_MIGRATIONS: Final = (
         "ALTER TABLE workflow_steps ADD COLUMN lease_expires_at REAL NOT NULL DEFAULT 0",
     ),
     ("wait_key", "ALTER TABLE workflow_steps ADD COLUMN wait_key TEXT"),
+    (
+        "join_expected",
+        "ALTER TABLE workflow_steps ADD COLUMN join_expected INTEGER NOT NULL DEFAULT 0",
+    ),
+    (
+        "join_arrived",
+        "ALTER TABLE workflow_steps ADD COLUMN join_arrived INTEGER NOT NULL DEFAULT 0",
+    ),
+)
+
+_RUN_MIGRATIONS: Final = (
+    ("parent_run_id", "ALTER TABLE workflow_runs ADD COLUMN parent_run_id TEXT"),
+    ("parent_ordinal", "ALTER TABLE workflow_runs ADD COLUMN parent_ordinal INTEGER"),
 )
 
 
@@ -1180,6 +1325,8 @@ def _run_from_row(row: sqlite3.Row) -> RunRecord:
         next_ordinal=row["next_ordinal"],
         result=_load(row["result"]),
         error=_load(row["error"]),
+        parent_run_id=row["parent_run_id"],
+        parent_ordinal=row["parent_ordinal"],
         request_key=row["request_key"],
         labels=_load(row["labels"]),
         deadline=row["deadline"],
@@ -1210,6 +1357,8 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         epoch=row["epoch"],
         lease_expires_at=row["lease_expires_at"],
         wait_key=row["wait_key"],
+        join_expected=row["join_expected"],
+        join_arrived=row["join_arrived"],
         error=_load(row["error"]),
         origin=row["origin"],
         created_at=row["created_at"],
@@ -1246,13 +1395,17 @@ class SqliteRunStore:
         """
         self._db.execute("BEGIN IMMEDIATE")
         try:
-            columns = {
-                row["name"]
-                for row in self._db.execute("PRAGMA table_info(workflow_steps)")
-            }
-            for name, statement in _STEP_MIGRATIONS:
-                if name not in columns:
-                    self._db.execute(statement)
+            for table, migrations in (
+                ("workflow_steps", _STEP_MIGRATIONS),
+                ("workflow_runs", _RUN_MIGRATIONS),
+            ):
+                columns = {
+                    row["name"]
+                    for row in self._db.execute(f"PRAGMA table_info({table})")
+                }
+                for name, statement in migrations:
+                    if name not in columns:
+                        self._db.execute(statement)
             self._db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_workflow_steps_lease"
                 " ON workflow_steps (status, lease_expires_at)"
@@ -1292,6 +1445,39 @@ class SqliteRunStore:
                 (run_id, seq, event_type.value, now, json.dumps(data)),
             )
 
+    def _insert_run(self, run: RunRecord) -> None:
+        """Insert a run row inside the current transaction.
+
+        Args:
+            run: The run record.
+        """
+        self._db.execute(
+            "INSERT INTO workflow_runs (run_id, workflow_id, definition_digest,"
+            " status, state, state_version, next_ordinal, result, error,"
+            " parent_run_id, parent_ordinal, request_key, labels, deadline,"
+            " cancel_requested, created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                run.run_id,
+                run.workflow_id,
+                run.definition_digest,
+                run.status.value,
+                json.dumps(run.state),
+                run.state_version,
+                run.next_ordinal,
+                _dump(run.result),
+                _dump(run.error),
+                run.parent_run_id,
+                run.parent_ordinal,
+                run.request_key,
+                _dump(run.labels),
+                run.deadline,
+                int(run.cancel_requested),
+                run.created_at,
+                run.updated_at,
+            ),
+        )
+
     def _insert_step(self, step: StepRecord) -> None:
         """Insert a step row inside the current transaction.
 
@@ -1301,8 +1487,8 @@ class SqliteRunStore:
         self._db.execute(
             "INSERT INTO workflow_steps (run_id, ordinal, handler_id, status, args,"
             " attempts, recoveries, due_at, epoch, lease_expires_at, wait_key,"
-            " error, origin, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " join_expected, join_arrived, error, origin, created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 step.run_id,
                 step.ordinal,
@@ -1315,6 +1501,8 @@ class SqliteRunStore:
                 step.epoch,
                 step.lease_expires_at,
                 step.wait_key,
+                step.join_expected,
+                step.join_arrived,
                 _dump(step.error),
                 step.origin,
                 step.created_at,
@@ -1370,30 +1558,7 @@ class SqliteRunStore:
                         " VALUES (?, ?, ?)",
                         (run.workflow_id, run.request_key, run.run_id),
                     )
-                self._db.execute(
-                    "INSERT INTO workflow_runs (run_id, workflow_id,"
-                    " definition_digest, status, state, state_version, next_ordinal,"
-                    " result, error, request_key, labels, deadline, cancel_requested,"
-                    " created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (
-                        run.run_id,
-                        run.workflow_id,
-                        run.definition_digest,
-                        run.status.value,
-                        json.dumps(run.state),
-                        run.state_version,
-                        run.next_ordinal,
-                        _dump(run.result),
-                        _dump(run.error),
-                        run.request_key,
-                        _dump(run.labels),
-                        run.deadline,
-                        int(run.cancel_requested),
-                        run.created_at,
-                        run.updated_at,
-                    ),
-                )
+                self._insert_run(run)
                 self._insert_step(root_step)
                 self._append_events(run.run_id, events, run.created_at)
                 self._db.execute("COMMIT")
@@ -1788,6 +1953,131 @@ class SqliteRunStore:
                 self._db.execute("ROLLBACK")
                 raise
             return "resolved" if resolves else "buffered"
+
+    async def admit_children(
+        self,
+        runs: tuple[tuple[RunRecord, StepRecord], ...],
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        now: float,
+    ) -> None:
+        """Create child runs, each with its root slot.
+
+        Args:
+            runs: The child run records paired with their root slots.
+            events: History events to append to the parent.
+            now: Current time in epoch seconds.
+        """
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                for run, root_step in runs:
+                    self._insert_run(run)
+                    self._insert_step(root_step)
+                if runs and events:
+                    self._append_events(runs[0][0].parent_run_id or "", events, now)
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+
+    async def record_arrival(
+        self,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Count one arrival against a join slot.
+
+        Args:
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the arrival.
+        """
+        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+        wait_key = f"join:{ordinal}"
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                run_row = self._db.execute(
+                    "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                ).fetchone()
+                if run_row is None:
+                    self._db.execute("ROLLBACK")
+                    return "unknown_run"
+                if run_row["status"] in terminal:
+                    self._db.execute("ROLLBACK")
+                    return "run_terminal"
+                seen = self._db.execute(
+                    "SELECT 1 FROM workflow_inbox"
+                    " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+                    (run_id, wait_key, dedupe_key),
+                ).fetchone()
+                if seen is not None:
+                    self._db.execute("ROLLBACK")
+                    return "duplicate"
+                step_row = self._db.execute(
+                    "SELECT * FROM workflow_steps WHERE run_id = ? AND ordinal = ?",
+                    (run_id, ordinal),
+                ).fetchone()
+                if step_row is None or step_row["status"] != StepStatus.BLOCKED.value:
+                    self._db.execute("ROLLBACK")
+                    return "run_terminal"
+                step = _step_from_row(step_row)
+                self._db.execute(
+                    "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+                    " payload, status, created_at)"
+                    " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
+                    " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
+                    (
+                        run_id,
+                        wait_key,
+                        dedupe_key,
+                        run_id,
+                        json.dumps(payload),
+                        "CONSUMED",
+                        now,
+                    ),
+                )
+                arrived = step.join_arrived + 1
+                results = [*step.args.get("__results__", []), payload]
+                done = arrived >= step.join_expected
+                self._db.execute(
+                    "UPDATE workflow_steps SET status = ?, join_arrived = ?,"
+                    " due_at = ?, args = ?, updated_at = ?"
+                    " WHERE run_id = ? AND ordinal = ? AND join_arrived = ?",
+                    (
+                        StepStatus.READY.value if done else StepStatus.BLOCKED.value,
+                        arrived,
+                        now if done else step.due_at,
+                        json.dumps({**step.args, "__results__": results}),
+                        now,
+                        run_id,
+                        ordinal,
+                        step.join_arrived,
+                    ),
+                )
+                self._append_events(
+                    run_id,
+                    (
+                        (
+                            HistoryEventType.CHILD_RESOLVED,
+                            {"ordinal": ordinal, "arrived": arrived},
+                        ),
+                    ),
+                    now,
+                )
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return "resolved" if done else "counted"
 
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.

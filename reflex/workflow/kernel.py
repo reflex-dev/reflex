@@ -30,6 +30,7 @@ from reflex_base.workflow import (
     CompleteRun,
     FailRun,
     NeedsAttention,
+    Parallel,
     ScheduleTrigger,
     WaitFor,
     _Never,
@@ -39,6 +40,7 @@ from reflex_base.workflow import (
 from reflex.event import EventHandler, EventSpec
 from reflex.workflow.cron import CronSchedule
 from reflex.workflow.records import (
+    TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
     HistoryEventType,
     RunQuery,
@@ -631,7 +633,8 @@ class WorkflowKernel:
     def _interpret_return(
         self, defn: WorkflowDefinition, value: Any
     ) -> tuple[
-        list[_SuccessorSpec], CompleteRun | FailRun | NeedsAttention | WaitFor | None
+        list[_SuccessorSpec],
+        CompleteRun | FailRun | NeedsAttention | WaitFor | Parallel | None,
     ]:
         """Interpret a durable handler's return value.
 
@@ -648,7 +651,7 @@ class WorkflowKernel:
         """
         if value is None:
             return [], None
-        if isinstance(value, (CompleteRun, FailRun, NeedsAttention, WaitFor)):
+        if isinstance(value, (CompleteRun, FailRun, NeedsAttention, WaitFor, Parallel)):
             return [], value
         if isinstance(value, (list, tuple)):
             successors = []
@@ -678,6 +681,9 @@ class WorkflowKernel:
         """
         args = {key: value for key, value in args.items() if key != "__wait__"}
         delivered = args.pop("__payload__", None)
+        results = args.pop("__results__", None)
+        if delivered is None and results is not None:
+            delivered = results
         if delivered is not None and handler.params:
             args[handler.params[0]] = delivered
         try:
@@ -929,7 +935,7 @@ class WorkflowKernel:
         steps: tuple[StepRecord, ...],
         state: dict[str, Any],
         successors: list[_SuccessorSpec],
-        control: CompleteRun | FailRun | NeedsAttention | WaitFor | None,
+        control: CompleteRun | FailRun | NeedsAttention | WaitFor | Parallel | None,
         now: float,
     ) -> StepCompletion:
         """Build the commit for a successful attempt.
@@ -976,6 +982,33 @@ class WorkflowKernel:
                 state=state,
                 run_error=error,
                 events=tuple(events),
+            )
+        if isinstance(control, Parallel):
+            join = StepRecord(
+                run_id=claim.run.run_id,
+                ordinal=claim.run.next_ordinal,
+                handler_id=self._resolve_successor(defn, control.then).handler_id,
+                status=StepStatus.BLOCKED,
+                args={"__results__": []},
+                wait_key=f"join:{claim.run.next_ordinal}",
+                join_expected=len(control.branches),
+                origin="join",
+                created_at=now,
+                updated_at=now,
+            )
+            events.append((
+                HistoryEventType.CHILD_STARTED,
+                {"ordinal": join.ordinal, "branches": len(control.branches)},
+            ))
+            return StepCompletion(
+                step_status=StepStatus.SUCCEEDED,
+                run_status=RunStatus.WAITING,
+                state=state,
+                new_steps=(join,),
+                next_ordinal=claim.run.next_ordinal + 1,
+                events=tuple(events),
+                children=tuple(control.branches),
+                join_ordinal=join.ordinal,
             )
         if isinstance(control, WaitFor):
             resume = self._resolve_successor(defn, control.then)
@@ -1389,6 +1422,10 @@ class WorkflowKernel:
             await self._store.commit(claim, completion, self._clock())
         except StaleClaimError:
             await self._record_abandoned(claim, handler, "fenced_at_commit")
+            return
+        if completion.children:
+            await self._admit_children(claim, completion)
+        await self._report_to_parent(claim.run, completion)
 
     async def _admit_due_schedules(self, now: float) -> int:
         """Admit a run for every schedule occurrence that has come due.
@@ -1434,6 +1471,83 @@ class WorkflowKernel:
             if (occurrence := schedule.next_after(now)) is not None
         ]
         return min(upcoming) if upcoming else None
+
+    async def _admit_children(self, claim: Claim, completion: StepCompletion) -> None:
+        """Create the child runs a fan-out commit declared.
+
+        Children are admitted after the parent's commit lands, so a crash in
+        between leaves a join slot with no children, which recovery re-runs
+        rather than a set of orphans with no parent.
+
+        Args:
+            claim: The parent's claim.
+            completion: The committed outcome carrying the branches.
+        """
+        now = self._clock()
+        records = []
+        for index, branch in enumerate(completion.children):
+            defn, handler, payload = self._resolve_target(branch)
+            child_id = uuid.uuid4().hex
+            records.append((
+                RunRecord(
+                    run_id=child_id,
+                    workflow_id=defn.workflow_id,
+                    definition_digest=defn.digest,
+                    status=RunStatus.PENDING,
+                    state={field.name: field.default for field in defn.fields},
+                    state_version=0,
+                    next_ordinal=1,
+                    parent_run_id=claim.run.run_id,
+                    parent_ordinal=completion.join_ordinal,
+                    request_key=(
+                        f"child:{claim.run.run_id}:{completion.join_ordinal}:{index}"
+                    ),
+                    deadline=(
+                        now + defn.run_timeout if defn.run_timeout is not None else None
+                    ),
+                    created_at=now,
+                    updated_at=now,
+                ),
+                StepRecord(
+                    run_id=child_id,
+                    ordinal=0,
+                    handler_id=handler.id,
+                    status=StepStatus.READY,
+                    args=payload,
+                    origin="root",
+                    created_at=now,
+                    updated_at=now,
+                ),
+            ))
+        await self._store.admit_children(tuple(records), (), now)
+        self._wakeup.set()
+
+    async def _report_to_parent(
+        self, run: RunRecord, completion: StepCompletion
+    ) -> None:
+        """Report a finished child's outcome to the join slot awaiting it.
+
+        Args:
+            run: The child run, which may have no parent.
+            completion: The committed outcome that finished it.
+        """
+        if run.parent_run_id is None or run.parent_ordinal is None:
+            return
+        if completion.run_status not in TERMINAL_RUN_STATUSES:
+            return
+        await self._store.record_arrival(
+            run.parent_run_id,
+            run.parent_ordinal,
+            {
+                "run_id": run.run_id,
+                "status": completion.run_status.value,
+                "result": completion.result,
+                "error": completion.run_error,
+            },
+            run.run_id,
+            self._clock(),
+        )
+        self._wakeup.set()
 
     async def _tick(self) -> bool:
         """Run one scheduling round.

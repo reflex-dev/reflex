@@ -126,6 +126,7 @@ would run it inline and lose its retries and effect tracking, which the compiler
 | `[MyFlow.a, MyFlow.b]` | run both, in order |
 | `rx.after("2d", MyFlow.later)` | run it after a durable delay |
 | `rx.wait_for(...)` | block until a signal or a deadline |
+| `rx.parallel(a, b, then=...)` | run branches concurrently, then join |
 | `rx.complete(result=...)` | finish the run successfully |
 | `rx.fail("reason")` | finish the run as failed |
 | `rx.needs_attention("reason")` | suspend for a human |
@@ -182,6 +183,33 @@ class ReviewPage(rx.State):
 Use `timeout=rx.never` to wait indefinitely. A signal that arrives before the run reaches its wait is
 buffered and applied as soon as the wait arms, so a fast approver never blocks the run.
 
+## Running work in parallel
+
+Each branch of a fan-out becomes its own run, with its own state, retries, and history, so a slow or
+failing branch never blocks its siblings. The parent blocks until every branch reports.
+
+```python
+class Router(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="sales.router")
+
+    @rx.event(durable=True, trigger=rx.manual(), effect="none")
+    def begin(self, lead_id: str):
+        return rx.parallel(
+            Enrich.start(lead_id),
+            Score.start(lead_id),
+            then=Router.route,
+        )
+
+    @rx.event(durable=True, effect="none")
+    def route(self, results: list):
+        # One entry per branch: run_id, status, result, error.
+        return rx.complete(result={"branches": len(results)})
+```
+
+A branch that fails still reports, so the join handler decides what a partial success means rather
+than the engine guessing. Child runs are ordinary runs: they appear in `list_runs()` and can be
+inspected and cancelled on their own.
+
 ## Triggers
 
 A root handler declares how runs of it begin.
@@ -189,6 +217,7 @@ A root handler declares how runs of it begin.
 ```python
 @rx.event(durable=True, trigger=rx.manual(), effect="none")
 def start(self): ...
+
 
 @rx.event(
     durable=True,
@@ -201,6 +230,7 @@ def start(self): ...
     ),
 )
 def on_failed(self, invoice: Invoice): ...
+
 
 @rx.event(durable=True, effect="read", trigger=rx.schedule("0 3 * * *"))
 def nightly_sweep(self): ...

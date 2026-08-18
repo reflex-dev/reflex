@@ -130,6 +130,8 @@ class HistoryEventType(str, enum.Enum):
     RUN_CANCELLED = "run_cancelled"
     RUN_NEEDS_ATTENTION = "run_needs_attention"
     RUN_RESUMED = "run_resumed"
+    CHILD_STARTED = "child_started"
+    CHILD_RESOLVED = "child_resolved"
     WAIT_ARMED = "wait_armed"
     WAIT_RESOLVED = "wait_resolved"
     WAIT_EXPIRED = "wait_expired"
@@ -152,6 +154,8 @@ class RunRecord:
         next_ordinal: Next mailbox ordinal to allocate.
         result: Run result recorded at completion.
         error: Terminal or suspension error payload.
+        parent_run_id: The run that spawned this one, if any.
+        parent_ordinal: The join slot in the parent this run reports to.
         request_key: Idempotent admission key, if one was supplied.
         labels: Server-derived indexing labels.
         deadline: Absolute run deadline in epoch seconds, if configured.
@@ -169,6 +173,8 @@ class RunRecord:
     next_ordinal: int
     result: Any = None
     error: dict[str, Any] | None = None
+    parent_run_id: str | None = None
+    parent_ordinal: int | None = None
     request_key: str | None = None
     labels: dict[str, str] | None = None
     deadline: float | None = None
@@ -195,7 +201,10 @@ class StepRecord:
             is not claimed. A claim whose lease has lapsed is treated as
             orphaned and is reclaimed by recovery, never by a direct claim.
         wait_key: For a blocked slot, the address a delivery must carry, as
-            ``"sig:<channel>"`` or ``"approval:<token>"``. None otherwise.
+            ``"sig:<channel>"`` or ``"join:<ordinal>"``. None otherwise.
+        join_expected: Arrivals required before a join slot becomes ready.
+        join_arrived: Arrivals recorded so far, only ever incremented by a
+            compare-and-swap so a redelivered result cannot count twice.
         error: Last recorded attempt error payload.
         origin: How the slot was allocated.
         created_at: Allocation time in epoch seconds.
@@ -213,8 +222,10 @@ class StepRecord:
     epoch: int = 0
     lease_expires_at: float = 0.0
     wait_key: str | None = None
+    join_expected: int = 0
+    join_arrived: int = 0
     error: dict[str, Any] | None = None
-    origin: Literal["root", "chain", "delay", "hook", "wait"] = "chain"
+    origin: Literal["root", "chain", "delay", "hook", "wait", "join"] = "chain"
     created_at: float = 0.0
     updated_at: float = 0.0
 

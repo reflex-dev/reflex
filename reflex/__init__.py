@@ -247,6 +247,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "Signal",
         "wait_for",
         "never",
+        "parallel",
         "after",
         "complete",
         "fail",

@@ -882,3 +882,58 @@ def wait_for(
     return WaitFor(
         channel=channel.name, then=then, timeout=timeout, on_timeout=on_timeout
     )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class Parallel:
+    """Control return that runs branches concurrently and joins their results.
+
+    Each branch becomes its own run with its own mailbox, retries, and
+    history, so a slow or failing branch never blocks its siblings. The parent
+    blocks on a join slot until every branch reports.
+
+    Attributes:
+        branches: The root events to run concurrently.
+        then: Handler that receives the list of branch results.
+    """
+
+    branches: tuple[Any, ...]
+    then: Any
+
+    def __post_init__(self):
+        """Validate the fan-out.
+
+        Raises:
+            WorkflowDefinitionError: If no branches were given.
+        """
+        if not self.branches:
+            msg = (
+                "parallel() needs at least one branch; pass the root events to "
+                "run concurrently."
+            )
+            raise WorkflowDefinitionError(msg)
+
+
+def parallel(*branches: Any, then: Any) -> Parallel:
+    """Run branches concurrently, then continue with all their results.
+
+    Each branch runs as its own child run, so branches retry and fail
+    independently::
+
+        return rx.parallel(
+            Enrich.start(lead.id),
+            Score.start(lead.id),
+            then=Sales.route,
+        )
+
+    The ``then`` handler receives one argument: the list of branch results, in
+    the order the branches were given.
+
+    Args:
+        branches: Root events to run concurrently.
+        then: Handler to run once every branch has finished.
+
+    Returns:
+        The control return value.
+    """
+    return Parallel(branches=branches, then=then)
