@@ -1270,6 +1270,95 @@ def test_deploy_rejected_instance_bounds_aborts_before_submitting(
     recorder.create_deployment.assert_not_called()
 
 
+def test_deploy_forwards_strategy_to_create_deployment(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """--strategy reaches the deployment submit without a config file."""
+    recorder = _deploy_call_recorder(mocker)
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        strategy="rolling",
+    )
+
+    assert recorder.create_deployment.call_args.kwargs["strategy"] == "rolling"
+
+
+def test_deploy_applies_full_deploy_before_reserving_the_hostname(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """The hosting mode is written first: the reserved URL is compiled in."""
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+            "provider": "gcp",
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    recorder = MagicMock()
+    recorder.attach_mock(
+        mocker.patch(
+            "reflex_cli.utils.hosting.set_app_full_deploy",
+            return_value={
+                "full_deploy": True,
+                "stopped": False,
+                "stop_confirmed": True,
+            },
+        ),
+        "set_app_full_deploy",
+    )
+    recorder.attach_mock(
+        mocker.patch(
+            "reflex_cli.utils.hosting.get_hostname",
+            return_value={"hostname": "fake-hostname", "server": "fake-server"},
+        ),
+        "get_hostname",
+    )
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        interactive=False,
+        full_deploy=True,
+    )
+
+    assert [call[0] for call in recorder.mock_calls] == [
+        "set_app_full_deploy",
+        "get_hostname",
+    ]
+    recorder.set_app_full_deploy.assert_called_once_with(
+        "fake-id", True, client=mocker.ANY
+    )
+
+
+def test_deploy_full_deploy_on_reflex_cloud_never_reaches_the_server(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    """Full deploy is a provider capability, so the CLI refuses it up front."""
+    recorder = _deploy_call_recorder(mocker)
+    set_full_deploy = mocker.patch("reflex_cli.utils.hosting.set_app_full_deploy")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            full_deploy=True,
+        )
+
+    set_full_deploy.assert_not_called()
+    recorder.create_deployment.assert_not_called()
+
+
 def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
     """--provider gcp on a fly app switches it and returns the new provider."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
@@ -1281,7 +1370,9 @@ def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
         app, "gcp", interactive=False, app_was_created=True, client=client
     )
     assert result == "gcp"
-    mock_set.assert_called_once_with("app-1", "gcp", client=client)
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id=None
+    )
 
 
 def test_resolve_deploy_provider_reflex_cloud_no_switch(mocker: MockFixture):
@@ -1408,3 +1499,215 @@ def test_restore_provider_on_failure_noop_on_success(mocker: MockFixture):
         pass
 
     mock_set.assert_not_called()
+
+
+def test_resolve_deploy_provider_named_connection_is_pinned(mocker: MockFixture):
+    """--gcp-connection resolves to a connection id and rides the switch."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[{"id": "conn-2", "name": "eu-prod", "project_id": "p2"}],
+    )
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=True,
+        client=client,
+        gcp_connection="eu-prod",
+    )
+
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id="conn-2"
+    )
+
+
+def test_resolve_deploy_provider_repoints_without_a_provider_switch(
+    mocker: MockFixture,
+):
+    """An app already on GCP is still repointed when a connection is named."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[{"id": "conn-2", "name": "eu-prod"}],
+    )
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "gcp"}
+
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=False,
+        client=client,
+        gcp_connection="eu-prod",
+    )
+
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id="conn-2"
+    )
+
+
+def test_resolve_deploy_provider_unknown_connection_aborts(mocker: MockFixture):
+    """A connection name nothing matches stops the deploy before it starts."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[{"id": "conn-1", "name": "us-prod"}],
+    )
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._resolve_deploy_provider(
+            app,
+            "gcp",
+            interactive=False,
+            app_was_created=True,
+            client=client,
+            gcp_connection="eu-prod",
+        )
+
+    mock_set.assert_not_called()
+
+
+def test_resolve_deploy_provider_connection_requires_gcp(mocker: MockFixture):
+    """--gcp-connection on a Reflex Cloud deploy is refused, not ignored."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_list = mocker.patch("reflex_cli.utils.hosting.list_gcp_connections")
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._resolve_deploy_provider(
+            app,
+            "reflex-cloud",
+            interactive=False,
+            app_was_created=False,
+            client=client,
+            gcp_connection="eu-prod",
+        )
+
+    mock_list.assert_not_called()
+    mock_set.assert_not_called()
+
+
+def test_resolve_deploy_provider_unreadable_connections_abort(mocker: MockFixture):
+    """A failed connection lookup aborts rather than silently using the default."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections", side_effect=Exception("boom")
+    )
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
+    app = {"id": "app-1", "name": "myapp", "provider": "gcp"}
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._resolve_deploy_provider(
+            app,
+            "gcp",
+            interactive=False,
+            app_was_created=False,
+            client=client,
+            gcp_connection="eu-prod",
+        )
+
+    mock_set.assert_not_called()
+
+
+def test_apply_full_deploy_noop_when_unset(mocker: MockFixture):
+    """No --full-deploy flag leaves the app's hosting mode alone."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_full_deploy")
+    app = {"id": "app-1", "name": "myapp"}
+
+    assert cli._apply_full_deploy(app, None, "gcp", client) is False
+    mock_set.assert_not_called()
+
+
+def test_apply_full_deploy_requires_gcp(mocker: MockFixture):
+    """--full-deploy on a Reflex Cloud deploy is refused before any call."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_full_deploy")
+    app = {"id": "app-1", "name": "myapp"}
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._apply_full_deploy(app, True, "fly", client)
+
+    mock_set.assert_not_called()
+
+
+def test_apply_full_deploy_reports_a_stopped_app(mocker: MockFixture):
+    """A flip that stopped the app says so, for the failure warning to use."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_full_deploy",
+        return_value={"full_deploy": True, "stopped": True, "stop_confirmed": True},
+    )
+    app = {"id": "app-1", "name": "myapp"}
+
+    assert cli._apply_full_deploy(app, True, "gcp", client) is True
+    mock_set.assert_called_once_with("app-1", True, client=client)
+
+
+def test_apply_full_deploy_warns_on_an_unconfirmed_stop(mocker: MockFixture):
+    """An unconfirmed teardown is surfaced: the deploy may be refused."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.set_app_full_deploy",
+        return_value={"full_deploy": True, "stopped": True, "stop_confirmed": False},
+    )
+    warn = mocker.patch("reflex_cli.utils.console.warn")
+
+    assert cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
+    assert "did not confirm" in warn.call_args.args[0]
+
+
+def test_apply_full_deploy_refusal_aborts(mocker: MockFixture):
+    """A server refusal stops the deploy instead of exporting for the old mode."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.set_app_full_deploy",
+        return_value="set full deploy failed: Enterprise required",
+    )
+
+    with pytest.raises(click.exceptions.Exit):
+        cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
+
+
+def test_warn_if_full_deploy_outlives_deploy(mocker: MockFixture):
+    """A stopped app whose deploy then failed is reported as still down."""
+    warn = mocker.patch("reflex_cli.utils.console.warn")
+    error = RuntimeError("export failed")
+
+    with (
+        pytest.raises(RuntimeError),
+        cli._warn_if_full_deploy_outlives_deploy("myapp", True),
+    ):
+        raise error
+
+    assert "stays down" in warn.call_args.args[0]
+
+
+def test_warn_if_full_deploy_outlives_deploy_stays_quiet_when_nothing_stopped(
+    mocker: MockFixture,
+):
+    """Nothing was stopped, so a failed deploy left nothing behind to report."""
+    warn = mocker.patch("reflex_cli.utils.console.warn")
+    error = RuntimeError("export failed")
+
+    with (
+        pytest.raises(RuntimeError),
+        cli._warn_if_full_deploy_outlives_deploy("myapp", False),
+    ):
+        raise error
+
+    warn.assert_not_called()

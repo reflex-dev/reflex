@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import overload
 
-from rich.console import Console
+from rich.console import Console, OverflowMethod
 
 from reflex_cli.constants import LogLevel
 
@@ -46,19 +46,23 @@ def print(msg: str, **kwargs):
 def print_table(
     tabular_data: list[list[str]],
     headers: Sequence[str] = (),
+    overflow: OverflowMethod = "ellipsis",
 ) -> None:
     """Print a table to the console.
 
     Args:
         tabular_data: The data to print in tabular format.
         headers: The headers for the table.
+        overflow: What to do with a cell too wide for its column. The default
+            cuts it short; pass "fold" for values a user has to read in full,
+            such as an email or an identifier.
     """
     from rich.table import Table
 
     table = Table()
 
     for column in headers:
-        table.add_column(column)
+        table.add_column(column, overflow=overflow)
 
     for row in tabular_data:
         table.add_row(*row)

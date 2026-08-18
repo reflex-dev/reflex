@@ -132,6 +132,10 @@ class Config:
     appid: str | None = dataclasses.field(default=None)
     strategy: str | None = dataclasses.field(default=None)
     provider: str | None = dataclasses.field(default=None)
+    gcp_connection: str | None = dataclasses.field(default=None)
+    # None, not False: an unset mode leaves the app's alone, while False would
+    # take every deploy from this config file off full deploy.
+    full_deploy: bool | None = dataclasses.field(default=None)
     include_db: bool = dataclasses.field(default=False)
 
     _cloud_config_path: Path | None = dataclasses.field(default=None)

@@ -132,6 +132,173 @@ def test_providers_list_empty(mocker: MockFixture):
     assert "No cloud providers connected" in result.output
 
 
+# Wide enough that a service account email is not wrapped across table rows.
+_WIDE = {"COLUMNS": "200"}
+
+
+def _http_error(status_code: int, detail: str) -> httpx.HTTPStatusError:
+    """Build the error httpx raises for a failed provider-account read."""
+    response = httpx.Response(
+        status_code, json={"detail": detail}, request=httpx.Request("GET", "https://x")
+    )
+    return httpx.HTTPStatusError("e", request=response.request, response=response)
+
+
+def test_providers_list_shows_the_runtime_service_account(mocker: MockFixture):
+    """A connection's runtime identity is listed; without one, the default is."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        return_value=[
+            {
+                "id": "conn-1",
+                "provider": "gcp",
+                "name": "us-prod",
+                "is_default": True,
+                "config": {
+                    "project_id": "my-proj",
+                    "region": "us-central1",
+                    "runtime_service_account": "apps@my-proj.iam.gserviceaccount.com",
+                },
+            },
+            {
+                "id": "conn-2",
+                "provider": "gcp",
+                "name": "eu-prod",
+                "is_default": False,
+                "config": {"project_id": "eu-proj", "region": "europe-west1"},
+            },
+        ],
+    )
+
+    result = runner.invoke(providers_cli, ["list"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "us-prod" in result.output
+    assert "eu-prod" in result.output
+    assert "apps@my-proj.iam.gserviceaccount.com" in result.output
+    # The connection that names none runs as the project's default, which is
+    # not the same as one whose identity could not be read.
+    assert "(project default)" in result.output
+
+
+def test_providers_list_falls_back_for_a_non_admin(mocker: MockFixture):
+    """A member who cannot read the accounts still gets the connection names."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(403, "no permission"),
+    )
+    connections = mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[
+            {
+                "id": "conn-1",
+                "name": "us-prod",
+                "is_default": True,
+                "project_id": "my-proj",
+                "region": "us-central1",
+            }
+        ],
+    )
+
+    result = runner.invoke(providers_cli, ["list"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "us-prod" in result.output
+    # Not "(project default)": the runtime identity was unreadable, which is a
+    # different answer from a connection that names none.
+    assert "(needs org admin)" in result.output
+    assert connections.call_args.kwargs["org_id"] == "org-1"
+
+
+def test_providers_list_other_error_exits_nonzero(mocker: MockFixture):
+    """A server error is not a permissions problem, so nothing is guessed at."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(500, "boom"),
+    )
+    fallback = mocker.patch("reflex_cli.utils.hosting.list_gcp_connections")
+
+    result = runner.invoke(providers_cli, ["list"])
+
+    assert result.exit_code == 1
+    fallback.assert_not_called()
+
+
+def test_providers_connections_is_the_same_listing(mocker: MockFixture):
+    """`providers connections` is the name the deploy flag points at."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        return_value=[
+            {
+                "id": "conn-1",
+                "provider": "gcp",
+                "name": "us-prod",
+                "is_default": True,
+                "config": {"project_id": "my-proj", "region": "us-central1"},
+            }
+        ],
+    )
+
+    result = runner.invoke(providers_cli, ["connections"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "us-prod" in result.output
+
+
+def test_providers_status_lists_the_connections(mocker: MockFixture):
+    """Status names the connections a deploy can select between."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        return_value={
+            "configured": True,
+            "allowed": True,
+            "project_id": "my-proj",
+            "region": "us-central1",
+            "connections": [
+                {
+                    "id": "conn-1",
+                    "name": "us-prod",
+                    "is_default": True,
+                    "project_id": "my-proj",
+                    "region": "us-central1",
+                }
+            ],
+        },
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        return_value=[
+            {
+                "id": "conn-1",
+                "config": {
+                    "runtime_service_account": "apps@my-proj.iam.gserviceaccount.com"
+                },
+            }
+        ],
+    )
+
+    result = runner.invoke(providers_cli, ["status"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "us-prod" in result.output
+    assert "apps@my-proj.iam.gserviceaccount.com" in result.output
+
+
 def test_providers_status_requires_org(mocker: MockFixture):
     """With no token org and no --org-id, the command errors out."""
     client = hosting.AuthenticatedClient(token="fake-token", validated_data={})

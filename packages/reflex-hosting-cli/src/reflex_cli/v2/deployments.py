@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.metadata
 from importlib.util import find_spec
 from typing import TYPE_CHECKING
@@ -73,6 +74,18 @@ hosting_cli.add_command(
 )
 hosting_cli.add_command(
     gcp_deploy_command,
+    name="gcp-standalone",
+)
+# The name it shipped under. Inside `reflex cloud`, "deploy" meant the
+# standalone gcloud script runner while `reflex deploy` meant the managed
+# platform deploy -- one namespace apart, opposite semantics. Kept working, and
+# hidden, so existing scripts keep running while the help only offers the name
+# that says what it does; the command itself warns when reached this way.
+_legacy_gcp_deploy_command = copy.copy(gcp_deploy_command)
+_legacy_gcp_deploy_command.name = "deploy"
+_legacy_gcp_deploy_command.hidden = True
+hosting_cli.add_command(
+    _legacy_gcp_deploy_command,
     name="deploy",
 )
 hosting_cli.add_command(

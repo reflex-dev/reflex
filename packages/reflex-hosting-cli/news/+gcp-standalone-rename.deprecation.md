@@ -1,0 +1,1 @@
+`reflex cloud deploy` is renamed to `reflex cloud gcp-standalone`. Inside the `reflex cloud` group, `deploy` meant the standalone gcloud script runner while `reflex deploy` meant the managed platform deploy — one namespace apart, opposite semantics. The old name still works and is hidden from help; invoking it warns and names both paths.

@@ -17,6 +17,7 @@ from reflex_cli.utils.hosting import (
     create_app,
     create_deployment,
     delete_token_from_config,
+    find_gcp_connection,
     gcp_deploy_available,
     get_app_history,
     get_auth_request_id,
@@ -27,12 +28,14 @@ from reflex_cli.utils.hosting import (
     get_selected_project,
     get_token_org_id,
     get_token_tier,
+    list_gcp_connections,
     list_provider_accounts,
     normalize_project_id,
     normalize_provider,
     provider_display_name,
     rollback_deployment,
     save_token_to_config,
+    set_app_full_deploy,
     set_app_provider,
     set_instance_bounds,
     submit_security_review,
@@ -478,6 +481,92 @@ def test_set_app_provider_success(mocker: MockerFixture):
     assert set_app_provider("app-1", "gcp", _CLIENT) == "gcp"
     assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/provider")
     assert mock_post.call_args.kwargs["json"] == {"provider": "gcp"}
+
+
+def test_set_app_provider_forwards_connection(mocker: MockerFixture):
+    """A named connection rides along as provider_account_id."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"provider": "gcp"})
+    )
+    assert set_app_provider("app-1", "gcp", _CLIENT, provider_account_id="conn-1") == (
+        "gcp"
+    )
+    assert mock_post.call_args.kwargs["json"] == {
+        "provider": "gcp",
+        "provider_account_id": "conn-1",
+    }
+
+
+def test_set_app_full_deploy_success(mocker: MockerFixture):
+    """The mode change posts to the app's full_deploy endpoint."""
+    mock_post = mocker.patch(
+        "httpx.post",
+        return_value=_ok(
+            mocker, {"full_deploy": True, "stopped": True, "stop_confirmed": True}
+        ),
+    )
+    result = set_app_full_deploy("app-1", True, _CLIENT)
+    assert result == {"full_deploy": True, "stopped": True, "stop_confirmed": True}
+    assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/full_deploy")
+    assert mock_post.call_args.kwargs["json"] == {"full_deploy": True}
+
+
+def test_set_app_full_deploy_error(mocker: MockerFixture):
+    """A refused mode change surfaces the server detail as an error string."""
+    mocker.patch(
+        "httpx.post", return_value=_error(mocker, 400, "full deploy requires GCP")
+    )
+    result = set_app_full_deploy("app-1", True, _CLIENT)
+    assert isinstance(result, str)
+    assert result.startswith("set full deploy failed")
+    assert "full deploy requires GCP" in result
+
+
+def test_list_gcp_connections_reads_the_status(mocker: MockerFixture):
+    """Connections come from the member-visible GCP status."""
+    mocker.patch(
+        "httpx.get",
+        return_value=_ok(
+            mocker,
+            {"configured": True, "connections": [{"id": "c1", "name": "prod"}, "junk"]},
+        ),
+    )
+    assert list_gcp_connections(_client(org_id="org-1")) == [
+        {"id": "c1", "name": "prod"}
+    ]
+
+
+def test_list_gcp_connections_without_org():
+    """No resolvable org id means there is nothing to list."""
+    assert list_gcp_connections(_client()) == []
+
+
+def test_list_gcp_connections_explicit_org(mocker: MockerFixture):
+    """An explicit org id wins over the token's own."""
+    mock_get = mocker.patch("httpx.get", return_value=_ok(mocker, {"connections": []}))
+    assert list_gcp_connections(_client(org_id="token-org"), org_id="other-org") == []
+    assert "other-org" in mock_get.call_args.args[0]
+
+
+@pytest.mark.parametrize(
+    ("wanted", "expected"),
+    [
+        ("prod", "c1"),
+        ("PROD", "c1"),
+        ("  prod  ", "c1"),
+        ("c2", "c2"),
+        ("staging", "c2"),
+        ("nope", None),
+    ],
+)
+def test_find_gcp_connection(wanted: str, expected: str | None):
+    """Connections match on id first, then on name, case-insensitively."""
+    connections = [
+        {"id": "c1", "name": "prod"},
+        {"id": "c2", "name": "Staging"},
+    ]
+    match = find_gcp_connection(connections, wanted)
+    assert (match or {}).get("id") == expected
 
 
 def test_set_app_provider_error(mocker: MockerFixture):

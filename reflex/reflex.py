@@ -874,7 +874,31 @@ def makemigrations(message: str | None):
     "--provider",
     help="The hosting provider to deploy to: 'reflex-cloud' (default) or 'gcp' "
     "(a GCP account connected to your org, Enterprise tier). When omitted and "
-    "GCP is connected, you'll be prompted in interactive mode.",
+    "GCP is connected, you'll be prompted in interactive mode. Deploys through "
+    "Reflex Cloud either way; for an unmanaged deploy run under your own "
+    "gcloud credentials, see `reflex cloud gcp-standalone`.",
+)
+@click.option(
+    "--gcp-connection",
+    help="Which of your organization's GCP connections to deploy through, by "
+    "name. Run `reflex cloud providers connections` to list them. Only valid "
+    "with --provider gcp; omitted keeps the app on the connection it already "
+    "has, or your organization's default the first time it deploys to GCP.",
+)
+@click.option(
+    "--full-deploy/--no-full-deploy",
+    "full_deploy",
+    default=None,
+    help="Serve the frontend from the provider's own container, on the same "
+    "origin as the backend, instead of Reflex's CDN. GCP only, Enterprise "
+    "tier. Omitted leaves the app's hosting mode unchanged; changing it stops "
+    "a running app so this deploy brings it back up in the new mode.",
+)
+@click.option(
+    "--strategy",
+    type=click.Choice(["immediate", "rolling", "bluegreen", "canary"]),
+    help="How the new version rolls out. Defaults to the app's last strategy, "
+    "or 'immediate'.",
 )
 @click.option(
     "--description",
@@ -933,6 +957,9 @@ def deploy(
     max_instances: int | None,
     hostname: str | None,
     provider: str | None,
+    gcp_connection: str | None,
+    full_deploy: bool | None,
+    strategy: str | None,
     description: str | None,
     interactive: bool,
     envfile: str | None,
@@ -1008,6 +1035,9 @@ def deploy(
         project=project,
         project_name=project_name,
         provider=provider,
+        gcp_connection=gcp_connection,
+        full_deploy=full_deploy,
+        strategy=strategy,
         deployment_description=description,
         **({"config_path": config_path} if config_path is not None else {}),
     )
