@@ -356,7 +356,12 @@ to a waiting run, and `harness.cancel(...)` and `harness.resume(...)` drive the 
 ## Deploying
 
 Runs persist to a SQLite file next to your app by default; pass `rx.App(workflow_store=...)` to
-choose another store. Run one worker process per SQLite database file.
+choose another store.
+
+Run **one worker process per SQLite database file**. The store's calls are synchronous on the event
+loop that also serves your app, so two processes writing the same file contend for it; contention is
+bounded to a short busy timeout and surfaces as a transient error the kernel retries, but throughput
+does not improve. Horizontal scale wants a store that supports concurrent writers.
 
 `RunStore` is a supported extension point, and the invariants a store must satisfy ship as runnable
 checks rather than prose:

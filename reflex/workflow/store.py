@@ -8,9 +8,11 @@ atomically.
 
 ``MemoryRunStore`` backs tests and the harness. ``SqliteRunStore`` provides
 crash-safe persistence on a single machine using the standard library. Run
-exactly one worker process per database file: its calls are synchronous and
-cross-process write contention blocks the caller's event loop, which is
-hostile to lease renewal.
+exactly one worker process per database file: its calls are synchronous on the
+caller's event loop, so cross-process write contention stalls the app that is
+serving requests. Contended writes are bounded to a short busy timeout and
+surface as transient errors the kernel retries, rather than freezing the loop
+for seconds.
 """
 
 from __future__ import annotations
@@ -1431,6 +1433,8 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
+BUSY_TIMEOUT_MS: Final = 250
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS workflow_runs (
     run_id TEXT PRIMARY KEY,
@@ -1624,6 +1628,11 @@ class SqliteRunStore:
         self._db.isolation_level = None
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=NORMAL")
+        # These calls are synchronous on the caller's event loop, which also
+        # serves HTTP and websockets, so a contended write must fail fast
+        # rather than block everything for SQLite's multi-second default. The
+        # kernel treats the resulting error as transient and retries.
+        self._db.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
         self._db.executescript(_SCHEMA)
         self._migrate()
 
