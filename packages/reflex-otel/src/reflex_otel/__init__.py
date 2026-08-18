@@ -57,6 +57,7 @@ class ReflexInstrumentor(BaseInstrumentor):
         # Imported here so `from reflex_otel import OtelPlugin` in rxconfig.py
         # stays cheap for CLI processes that never instrument.
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+        from opentelemetry.util.http import parse_excluded_urls
 
         tracer_provider = kwargs.get("tracer_provider")
         meter_provider = kwargs.get("meter_provider")
@@ -67,6 +68,10 @@ class ReflexInstrumentor(BaseInstrumentor):
                 or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
                 or _DEFAULT_EXCLUDED_URLS
             )
+        # opentelemetry-instrumentation-asgi < 0.56b0 stores a str verbatim and
+        # then calls .url_disabled() on it, failing every request; parse first.
+        if isinstance(excluded_urls, str):
+            excluded_urls = parse_excluded_urls(excluded_urls)
 
         def asgi_middleware(app: otel.ASGIApp) -> otel.ASGIApp:
             return OpenTelemetryMiddleware(

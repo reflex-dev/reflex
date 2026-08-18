@@ -133,6 +133,26 @@ def test_event_span_records_duration_metric(otel_metrics: InMemoryMetricReader):
     assert ok.sum >= 0
 
 
+def test_event_duration_recorded_inside_span(
+    otel_exporter: InMemorySpanExporter, monkeypatch: pytest.MonkeyPatch
+):
+    seen: list[trace.Span] = []
+
+    class Histogram:
+        def record(self, amount, attributes=None):
+            seen.append(trace.get_current_span())
+
+    monkeypatch.setattr(otel, "_event_duration", Histogram())
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    with otel.event_span(Event(name="ok"), _ctx(), registered) as span:
+        pass
+    # The sample must be taken while the event span is still current so
+    # exporter latency is excluded and exemplars keep the trace/span IDs.
+    assert len(seen) == 1
+    assert seen[0] is span
+    assert seen[0].get_span_context().is_valid
+
+
 def test_metric_helpers_record(otel_metrics: InMemoryMetricReader):
     otel.record_state_acquired(perf_counter(), Event(name="e"))
     otel.record_message_size(42, "transmit")

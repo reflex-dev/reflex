@@ -256,17 +256,19 @@ def event_span(
         if parent.is_valid and not parent.is_remote
         else SpanKind.SERVER
     )
-    start = perf_counter()
-    try:
-        with _tracer.start_as_current_span(
-            event.name, context=ctx.otel_context, kind=kind, attributes=attributes
-        ) as span:
+    with _tracer.start_as_current_span(
+        event.name, context=ctx.otel_context, kind=kind, attributes=attributes
+    ) as span:
+        # Record while the span is still current: exporter latency stays out
+        # of the sample and exemplars keep the trace/span IDs.
+        start = perf_counter()
+        try:
             yield span
-    except Exception as ex:
-        metric_attributes[ATTR_ERROR_TYPE] = type(ex).__qualname__
-        raise
-    finally:
-        _event_duration.record(perf_counter() - start, metric_attributes)
+        except Exception as ex:
+            metric_attributes[ATTR_ERROR_TYPE] = type(ex).__qualname__
+            raise
+        finally:
+            _event_duration.record(perf_counter() - start, metric_attributes)
 
 
 def record_state_acquired(start: float, event: Event) -> None:
