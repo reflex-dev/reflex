@@ -130,6 +130,16 @@ class OtelPlugin(Plugin):
     # roots, so the backend's parent-based sampler follows this decision.
     sample_rate: float = 1.0
 
+    def __post_init__(self):
+        """Validate the sampling ratio.
+
+        Raises:
+            ValueError: If ``sample_rate`` is outside ``[0, 1]``.
+        """
+        if not 0 <= self.sample_rate <= 1:
+            msg = f"sample_rate must be between 0 and 1, got {self.sample_rate!r}."
+            raise ValueError(msg)
+
     def get_frontend_dependencies(self, **context: Any) -> tuple[str, ...]:
         """Return the npm packages the browser module imports.
 
