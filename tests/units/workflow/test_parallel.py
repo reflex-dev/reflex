@@ -194,7 +194,14 @@ async def test_duplicate_arrivals_are_counted_once(forked_registration_context):
         await harness.kernel.run_until_idle()
 
         runs = await harness.kernel.list_runs()
-        child = next(run for run in runs if run.parent_run_id == result.run_id)
+        # The branch that already reported, not merely the first one listed:
+        # re-reporting a branch still in flight would be a new arrival.
+        child = next(
+            run
+            for run in runs
+            if run.parent_run_id == result.run_id
+            and run.status is RunStatus.COMPLETED
+        )
         repeat = await harness.kernel.store.record_arrival(
             result.run_id,
             1,

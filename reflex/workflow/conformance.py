@@ -574,8 +574,25 @@ async def check_children_are_created_with_their_join(store: RunStore) -> None:
     assert len(await store.get_steps("child1")) == 1
 
 
+async def check_reads_do_not_alias_stored_state(store: RunStore) -> None:
+    """Mutating a returned record must not change what the store holds."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    run = await store.get_run("run1")
+    assert run is not None
+    run.state["n"] = 999
+    steps = await store.get_steps("run1")
+    steps[0].args["injected"] = True
+
+    again = await store.get_run("run1")
+    assert again is not None
+    assert again.state == {"n": 0}
+    fresh = await store.get_steps("run1")
+    assert fresh[0].args == {}
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
+    check_reads_do_not_alias_stored_state,
     check_admit_deduplicates_on_request_key,
     check_only_the_frontier_is_claimable,
     check_commit_is_atomic,

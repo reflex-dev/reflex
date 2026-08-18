@@ -16,6 +16,7 @@ hostile to lease renewal.
 from __future__ import annotations
 
 import asyncio
+import copy
 import dataclasses
 import json
 import sqlite3
@@ -524,6 +525,42 @@ def _run_is_runnable(run: RunRecord, now: float) -> bool:
         and run.status is not RunStatus.NEEDS_ATTENTION
         and not run.cancel_requested
         and (run.deadline is None or run.deadline > now)
+    )
+
+
+def _detach_run(run: RunRecord) -> RunRecord:
+    """Copy a run record's mutable payloads before handing it to a caller.
+
+    The in-memory store would otherwise hand out live references to the values
+    it is storing, so a caller mutating a returned run's state would silently
+    change committed data -- behavior a database-backed store cannot have.
+
+    Args:
+        run: The stored record.
+
+    Returns:
+        A record that shares no mutable structure with the store.
+    """
+    return dataclasses.replace(
+        run,
+        state=copy.deepcopy(run.state),
+        result=copy.deepcopy(run.result),
+        error=copy.deepcopy(run.error),
+        labels=copy.deepcopy(run.labels),
+    )
+
+
+def _detach_step(step: StepRecord) -> StepRecord:
+    """Copy a step record's mutable payloads before handing it to a caller.
+
+    Args:
+        step: The stored record.
+
+    Returns:
+        A record that shares no mutable structure with the store.
+    """
+    return dataclasses.replace(
+        step, args=copy.deepcopy(step.args), error=copy.deepcopy(step.error)
     )
 
 
@@ -1038,7 +1075,9 @@ class MemoryRunStore:
                 and run.flow_key == flow_key
                 and run.status not in TERMINAL_RUN_STATUSES
             ]
-            return min(active, key=lambda run: run.created_at) if active else None
+            if not active:
+                return None
+            return _detach_run(min(active, key=lambda run: run.created_at))
 
     async def count_started_since(
         self, workflow_id: str, flow_key: str, since: float
@@ -1287,7 +1326,7 @@ class MemoryRunStore:
         async with self._lock:
             matched = [run for run in self._runs.values() if _matches_query(run, query)]
             matched.sort(key=lambda run: run.created_at, reverse=True)
-            return tuple(matched[: query.limit])
+            return tuple(_detach_run(run) for run in matched[: query.limit])
 
     async def find_by_request_key(
         self, workflow_id: str, request_key: str
@@ -1314,7 +1353,8 @@ class MemoryRunStore:
             The record, or None if unknown.
         """
         async with self._lock:
-            return self._runs.get(run_id)
+            run = self._runs.get(run_id)
+            return None if run is None else _detach_run(run)
 
     async def get_steps(self, run_id: str) -> tuple[StepRecord, ...]:
         """Load a run's mailbox slots in ordinal order.
@@ -1326,7 +1366,7 @@ class MemoryRunStore:
             The step records.
         """
         async with self._lock:
-            return tuple(self._steps.get(run_id, ()))
+            return tuple(_detach_step(step) for step in self._steps.get(run_id, ()))
 
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.

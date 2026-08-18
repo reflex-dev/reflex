@@ -139,16 +139,16 @@ async def test_unregistered_workflow_suspends(forked_registration_context):
 async def test_resume_reopens_a_suspended_run(forked_registration_context):
     """Resuming grants the frontier step a fresh attempt budget."""
     attempts = []
+    resolved = []
 
     class ReviewFlow(rx.State):
         __workflow__ = WorkflowConfig(id="versioning.review")
         status: str = "pending"
-        resolved: bool = False
 
         @rx.event(durable=True, trigger=manual(), effect="none")
         def begin(self):
             attempts.append(1)
-            if not self.resolved:
+            if not resolved:
                 return needs_attention("manual_review")
             self.status = "done"
             return None
@@ -160,10 +160,8 @@ async def test_resume_reopens_a_suspended_run(forked_registration_context):
         assert snapshot is not None
         assert snapshot.status is RunStatus.NEEDS_ATTENTION
 
-        # An operator fixes the cause, then resumes.
-        run = await harness.kernel.store.get_run(result.run_id)
-        assert run is not None
-        run.state["resolved"] = True
+        # An operator fixes the cause outside the run, then resumes it.
+        resolved.append(True)
         assert await harness.resume(result.run_id)
 
         snapshot = await harness.get_run(result.run_id)
