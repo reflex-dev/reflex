@@ -2094,6 +2094,10 @@ class BaseState(EvenMoreBasicBaseState):
         state.pop("parent_state", None)
         state.pop("substates", None)
         state.pop("_was_touched", None)
+        # Transient, request-scoped: recomputed by the event processor on every
+        # router reassignment. Persisting it could arm a partial router delta
+        # for a client that never received the connection-scoped fields.
+        state.pop("_router_static_unchanged", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state.pop(inherited_var_name, None)
