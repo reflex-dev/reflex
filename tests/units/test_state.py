@@ -46,7 +46,7 @@ from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.istate.proxy import StateProxy
 from reflex.state import (
     BaseState,
@@ -4427,6 +4427,34 @@ async def test_state_manager_disk_close_resets_write_queue_task():
     await state_manager.close()
 
     assert state_manager._write_queue_task is None
+
+
+@pytest.mark.asyncio
+async def test_state_manager_disk_set_state_updates_queued_write(tmp_path, token):
+    """Test that a second set_state call for an already-queued token replaces
+    the queued state, so the latest value is what gets flushed to disk.
+
+    Args:
+        tmp_path: A temporary directory (pytest fixture).
+        token: A token.
+    """
+    state_manager = StateManagerDisk()
+    object.__setattr__(state_manager, "states_directory", tmp_path)
+    state_manager._write_debounce_seconds = 60
+
+    state_token = StateToken(ident=token, cls=int)
+
+    await state_manager.set_state(state_token, 1)
+    await state_manager.set_state(state_token, 2)
+
+    assert state_manager._write_queue[state_token].state == 2
+
+    await state_manager.close()
+
+    reloaded_state_manager = StateManagerDisk()
+    object.__setattr__(reloaded_state_manager, "states_directory", tmp_path)
+    assert await reloaded_state_manager.load_state(state_token) == 2
+    await reloaded_state_manager.close()
 
 
 class Obj(Base):

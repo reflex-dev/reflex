@@ -340,6 +340,15 @@ class StateManagerDisk(StateManager):
                     state=state,
                     timestamp=time.time(),
                 )
+            else:
+                # A write for this token is already queued; replace the queued
+                # state with the latest value so a stale snapshot is not
+                # flushed to disk. Preserve the original timestamp so the
+                # item still flushes at its originally scheduled time.
+                self._write_queue[token] = dataclasses.replace(
+                    self._write_queue[token],
+                    state=state,
+                )
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
