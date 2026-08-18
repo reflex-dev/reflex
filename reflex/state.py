@@ -46,6 +46,7 @@ from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
+    ReservedStateFieldError,
     SetUndefinedStateVarError,
     StateMismatchError,
     StateSchemaMismatchError,
@@ -441,6 +442,19 @@ class BaseState(EvenMoreBasicBaseState):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = field(default=False, is_var=False)
 
+    # Whether the event processor's last router reassignment left the
+    # connection-scoped fields (session, headers) unchanged. Transient:
+    # recomputed on every reassignment, cleared by any direct router write,
+    # and never pickled.
+    _router_static_unchanged: bool = field(default=False, is_var=False)
+
+    # Whether the connected client advertised, via an exact version match on
+    # the websocket subprotocol, that its applyDelta merges partial router
+    # payloads. Set on connect; False for older frontends (e.g. cached
+    # bundles during a rolling deployment), which then receive the full
+    # router in every delta.
+    _partial_router_capable: bool = field(default=False, is_var=False)
+
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
@@ -559,6 +573,11 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
+
+        # Internal router bookkeeping fields must not be redefined by user
+        # states: a shadowing value would silently control whether router
+        # deltas are sent partially.
+        cls._check_reserved_internal_fields()
 
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
@@ -961,6 +980,29 @@ class BaseState(EvenMoreBasicBaseState):
         for method_name in overridden_methods:
             msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             raise EventHandlerShadowsBuiltInStateMethodError(msg)
+
+    _RESERVED_INTERNAL_FIELD_NAMES = frozenset({
+        "_partial_router_capable",
+        "_router_static_unchanged",
+    })
+
+    @classmethod
+    def _check_reserved_internal_fields(cls):
+        """Check that internal bookkeeping fields are not redefined.
+
+        Raises:
+            ReservedStateFieldError: When a state class declares a field
+                reserved for internal use.
+        """
+        declared = set(inspect.get_annotations(cls)) | {
+            name for name in cls._RESERVED_INTERNAL_FIELD_NAMES if name in cls.__dict__
+        }
+        for name in cls._RESERVED_INTERNAL_FIELD_NAMES & declared:
+            msg = (
+                f"The field name `{name}` in {cls.__module__}.{cls.__name__} is "
+                "reserved for internal use; use a different name instead"
+            )
+            raise ReservedStateFieldError(msg)
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -1894,7 +1936,8 @@ class BaseState(EvenMoreBasicBaseState):
         if (
             self.parent_state is None
             and (router_field := constants.ROUTER + FIELD_MARKER) in subdelta
-            and getattr(self, "_router_static_unchanged", False)
+            and self._router_static_unchanged
+            and self._partial_router_capable
         ):
             # The connection-scoped router fields (session, headers) this
             # client already received are unchanged, so ship only the

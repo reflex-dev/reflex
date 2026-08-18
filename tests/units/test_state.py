@@ -32,6 +32,7 @@ from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
+    ReservedStateFieldError,
     SetUndefinedStateVarError,
     StateSerializationError,
     UnretrievableVarValueError,
@@ -1101,6 +1102,8 @@ def test_partial_router_delta(test_state, router_data):
         router_data: The router data fixture.
     """
     router_field = constants.ROUTER + FIELD_MARKER
+    # Simulate the connect handler having verified the client's version.
+    test_state._partial_router_capable = True
 
     # First router assignment (hydrate): the full router is in the delta.
     test_state.router = RouterData.from_router_data(router_data)
@@ -1132,6 +1135,39 @@ def test_partial_router_delta(test_state, router_data):
     delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
     assert isinstance(delta_value, RouterData)
     test_state._clean()
+
+    # A client that did not advertise support (e.g. a cached pre-upgrade
+    # bundle during a rolling deployment) always gets the full router, even
+    # when the connection-scoped fields are unchanged.
+    test_state._partial_router_capable = False
+    test_state.router = RouterData.from_router_data({
+        **router_data,
+        RouteVar.PATH: "/legacy",
+    })
+    test_state._router_static_unchanged = True
+    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert isinstance(delta_value, RouterData)
+    test_state._clean()
+
+
+def test_reserved_internal_router_fields_cannot_be_redefined():
+    """User states must not shadow the internal router bookkeeping fields.
+
+    A shadowing value would silently control whether router deltas are sent
+    partially, so redefinition raises instead.
+    """
+    for name in ("_router_static_unchanged", "_partial_router_capable"):
+        with pytest.raises(ReservedStateFieldError):
+            type(
+                "ShadowingState",
+                (BaseState,),
+                {
+                    "__module__": __name__,
+                    "__qualname__": "ShadowingState",
+                    "__annotations__": {name: bool},
+                    name: True,
+                },
+            )
 
 
 def test_partial_router_delta_covers_every_elided_field(router_data):

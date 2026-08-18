@@ -53,7 +53,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData, serialize_partial_router_data
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -591,6 +591,7 @@ async def test_dynamic_var_event(
 async def test_router_delta_partial_only_when_connection_scope_unchanged(
     test_state: type[ATestState],
     mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
     emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
     token: str,
     clean_registration_context: RegistrationContext,
@@ -605,6 +606,7 @@ async def test_router_delta_partial_only_when_connection_scope_unchanged(
     Args:
         test_state: State Fixture.
         mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        mock_root_event_context: The mock event context (for direct state access).
         emitted_deltas: List to store emitted deltas.
         token: a Token.
         clean_registration_context: The registration context fixture.
@@ -639,10 +641,26 @@ async def test_router_delta_partial_only_when_connection_scope_unchanged(
                     return substate[router_field]
         return None
 
-    # First event on this connection: the client has no router yet, so the
-    # full payload (session + headers) must be sent.
-    first = await _router_delta(router_data)
-    assert isinstance(first, RouterData)
+    # Before the connect handler has verified the client version, deltas are
+    # always full — even across repeated navigations with an unchanged
+    # session. This is what a cached pre-upgrade frontend receives during a
+    # rolling deployment.
+    legacy_first = await _router_delta(router_data)
+    assert isinstance(legacy_first, RouterData)
+    legacy_second = await _router_delta({**router_data, RouteVar.PATH: "/legacy"})
+    assert isinstance(legacy_second, RouterData)
+
+    # The connect handler verified an exact version match: partial deltas
+    # allowed from here on.
+    root = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=test_state)
+    )
+    root._partial_router_capable = True
+
+    # First navigation after capability: session/headers changed relative to
+    # nothing? No — they were already sent above; unchanged, so partial.
+    first = await _router_delta({**router_data, RouteVar.PATH: "/armed"})
+    assert not isinstance(first, RouterData)
 
     # Same session and headers, different page: connection-scoped fields are
     # elided.
@@ -1996,11 +2014,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
-        # The connection-scoped router fields (session, headers) are unchanged
-        # across these navigations, so deltas carry the partial router payload.
-        exp_router = serialize_partial_router_data(
-            RouterData.from_router_data(on_load_internal.router_data)
-        )
+        # This client never advertises partial-router capability (no connect
+        # handshake in this flow), so deltas always carry the full router.
+        exp_router = RouterData.from_router_data(on_load_internal.router_data)
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,

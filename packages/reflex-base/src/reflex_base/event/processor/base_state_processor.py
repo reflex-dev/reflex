@@ -368,12 +368,9 @@ class BaseStateEventProcessor(EventProcessor):
                     # can elide the connection-scoped fields the client
                     # already holds. Direct router writes elsewhere reset
                     # this flag (see BaseState.__setattr__).
-                    object.__setattr__(
-                        state,
-                        "_router_static_unchanged",
-                        router_connection_scope(previous_router)
-                        == router_connection_scope(router),
-                    )
+                    state._router_static_unchanged = router_connection_scope(
+                        previous_router
+                    ) == router_connection_scope(router)
 
             # Preprocess the event.
             if (
