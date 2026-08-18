@@ -5,6 +5,7 @@ from collections.abc import Generator
 import pytest
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.util.http import ExcludeList
 from reflex_base import otel
 from reflex_otel import ReflexInstrumentor
 
@@ -66,7 +67,45 @@ def test_excluded_urls_only_defaults_when_omitted(
 
     wrapped = otel.asgi_middleware(app)
     assert isinstance(wrapped, OpenTelemetryMiddleware)
-    assert (
-        bool(wrapped.excluded_urls and wrapped.excluded_urls.url_disabled("/ping"))
-        is ping_disabled
-    )
+    # Older ASGI instrumentation stores strings verbatim and then calls
+    # .url_disabled() on them; always hand it a parsed ExcludeList.
+    assert isinstance(wrapped.excluded_urls, ExcludeList)
+    assert wrapped.excluded_urls.url_disabled("/ping") is ping_disabled
+
+
+async def test_asgi_middleware_handles_requests(instrumentor: ReflexInstrumentor):
+    """The wrapped app must serve requests, including at the ASGI floor.
+
+    Older ASGI instrumentation stores excluded_urls verbatim, so a raw string
+    made every request raise AttributeError.
+    """
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert otel.asgi_middleware is not None
+    served: list[str] = []
+
+    async def app(scope, receive, send):
+        served.append(scope["path"])
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    async def receive():  # noqa: RUF029
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        pass
+
+    wrapped = otel.asgi_middleware(app)
+    for path in ("/ping", "/_event"):
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": path,
+            "raw_path": path.encode(),
+            "query_string": b"",
+            "headers": [],
+            "scheme": "http",
+            "server": ("localhost", 80),
+            "http_version": "1.1",
+        }
+        await wrapped(scope, receive, send)
+    assert served == ["/ping", "/_event"]
