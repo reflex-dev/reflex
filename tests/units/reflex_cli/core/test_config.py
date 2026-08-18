@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from reflex_cli.core.config import Config
 from reflex_cli.utils.exceptions import ConfigInvalidFieldValueError
@@ -14,7 +16,7 @@ from reflex_cli.utils.exceptions import ConfigInvalidFieldValueError
         ("strategy", []),
     ],
 )
-def test_optional_fields_are_validated(field: str, value: object):
+def test_optional_fields_are_validated(field: str, value: Any):
     """`X | None` fields validate on every supported Python, not just 3.14.
 
     They read as ``types.UnionType`` below 3.14, which the dispatcher used to
@@ -36,7 +38,7 @@ def test_optional_fields_are_validated(field: str, value: object):
         ("full_deploy", None),
     ],
 )
-def test_new_gcp_fields_accept_their_types(field: str, value: object):
+def test_new_gcp_fields_accept_their_types(field: str, value: Any):
     """The GCP settings take their own types, and None for "unset"."""
     assert getattr(Config(**{field: value}), field) == value
 
