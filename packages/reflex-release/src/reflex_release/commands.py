@@ -512,7 +512,12 @@ def cmd_verify_dist(config: Config, package: str, version: str, dist_dir: str) -
     """
     config.require_known(package)
     distribution = config.distribution_name(package)
-    count = verify_dist(config.root / dist_dir, distribution, Version(version))
+    count = verify_dist(
+        config.root / dist_dir,
+        distribution,
+        Version(version),
+        config.expect_artifacts(package),
+    )
     echo(f"{count} artifact(s) of {distribution} at version {version}")
 
 

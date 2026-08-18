@@ -42,7 +42,7 @@ give every package a [tag-derived version](#tag-derived-versions), and commit.
 | --- | --- | --- |
 | `.github/workflows/dispatch_release.yml` | manual | Materializes news fragments into `CHANGELOG.md` at the next version. Final releases land through a pull request; prereleases go straight to an `r/pre-*` branch. |
 | `.github/workflows/release_from_changelog.yml` | push to `main`, `r/pre-**`, `r/hotfix/**` | Publishes any changelog version that has no git tag. |
-| `.github/workflows/publish.yml` | called by the two above, or manual | Builds one package, waits for `pypi` environment approval, uploads, then tags and creates the GitHub release. |
+| `.github/workflows/publish.yml` | called by the two above, or manual | Builds one package — in-repo, or through a [workflow you supply](#custom-builds) — waits for `pypi` environment approval, uploads, then tags and creates the GitHub release. |
 | `.github/workflows/changelog.yml` | pull request | Requires a news fragment for every package the PR touches, rejects hand-written version headings, and fails if the generated workflows have drifted. |
 | `.github/workflows/auto_release_internal.yml` | push to `main` | Only for repos with `internal-packages`: patch-releases them whenever they change. |
 
@@ -142,6 +142,22 @@ post-release-workflow = "docs_publish.yml"
 # free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
+
+### Custom build workflows
+
+A package whose artifacts cannot come from a plain `uv build` — a matrix of
+platform-specific wheels, say — delegates its build to a workflow the
+repository owns:
+
+```toml
+[[tool.reflex-release.custom-build]]
+packages = ["mypkg"]
+workflow = "build_wheels.yml"
+# Optional: filename globs that must each match at least one built file.
+expect-artifacts = ["*.tar.gz", "*-manylinux*_x86_64.whl", "*-macosx_*_arm64.whl"]
+```
+
+See [Custom builds](#custom-builds) for the workflow's contract.
 
 Package names are **directory names**: `mypkg` for the root package (whatever
 you called it) and the directory name under `packages/` for the rest.
@@ -328,16 +344,20 @@ can undermine it.
 
 | Stage | Privileges | Runs |
 | --- | --- | --- |
-| `build` | `contents: read`. No OIDC, no secrets. | Your repository's code: the build backend, its hooks, `post_build.sh`. |
+| `prepare` | `contents: read`. No OIDC, no secrets. | Validation only: no build, no repository hooks. |
+| `build` / `custom-build-*` | `contents: read`. No OIDC, no secrets. | Your repository's code: the build backend, its hooks, and any [custom build workflow](#custom-builds). |
+| `collect` | `contents: read`. No OIDC, no secrets. | Artifact verification and `post_build.sh`. |
 | `publish` | `id-token: write` — the only job that can mint a PyPI token. | Nothing from your repository. Downloads the artifact, checks it, runs `uv publish`. |
-| `tag-and-release` | `contents: write`. | `git` and `gh`, after a successful upload. |
+| `tag-and-release` | `contents: write`, plus `actions: write` when a [post-release workflow](#post-release-workflow) is configured. | `git` and `gh`, after a successful upload. |
 | `materialize` (dispatch) | `contents`/`pull-requests`/`actions: write`. | towncrier and `git`/`gh`; writes changelogs, opens the PR. |
 
-The important split is the first two rows: **arbitrary repository code executes
-only where there is nothing to steal**, and the job holding the credential runs
-no repository code at all. A malicious build backend or `post_build.sh` can
-corrupt the artifact — a reviewer approving it is the control — but it cannot
-reach the token.
+The important split is between the build rows and `publish`: **arbitrary
+repository code executes only where there is nothing to steal**, and the job
+holding the credential runs no repository code at all. A malicious build
+backend, custom build workflow or `post_build.sh` can corrupt the artifact — a
+reviewer approving it is the control — but it cannot reach the token. Delegating
+a build to your own workflow does not move that line: a called workflow inherits
+the calling job's `contents: read` and cannot ask for more.
 
 Every checkout uses `persist-credentials: false`, no `${{ }}` expression is
 interpolated into a shell script (inputs travel through `env:`), and no workflow
@@ -376,7 +396,7 @@ Either way, the reviewer list is the control worth auditing.
 The reviewer approves the `publish` job of a specific run. At that point the
 version, the changelog section and the built artifact already exist and are
 visible in the run. **Check the version and the package in the run name**, and
-that the run was triggered by a merge you recognize. The build job's summary
+that the run was triggered by a merge you recognize. The `collect` job's summary
 lists the SHA-256 of every file that will be uploaded, so what you are approving
 is named down to the byte before you approve it.
 
@@ -385,12 +405,15 @@ metadata against the release: not just the version — which lockstep siblings
 share — but the **distribution name**, since every package in a repository
 publishes through the same trusted-publishing identity and nothing else would
 stop a misconfigured build from uploading one package under another's approval.
+For a build spread over a matrix, `expect-artifacts` additionally requires the
+set to be complete, so a leg that silently produced nothing stops the release
+rather than shipping a version that can never be completed.
 
 The `SHA256SUMS` manifest travels *inside* the same artifact, so it proves the
 upload matches the build — it is an integrity check against truncation and
-partial downloads, **not** a defense against a compromised build job, which
-could write both the files and the manifest. The defense there is that the
-artifact can only be written by the build job of the same run, and that the run
+partial downloads, **not** a defense against a compromised build, which could
+write both the files and the manifest. The defense there is that the artifact
+can only be written by the unprivileged jobs of the same run, and that the run
 is triggered by a branch your ruleset controls.
 
 The manifest is attached to the GitHub release as well, so the record of what a
@@ -504,21 +527,172 @@ weigh it against [Ways to weaken it](#ways-to-weaken-it). They need no `news/` d
 from the fragment check. Adding or removing one changes
 `auto_release_internal.yml`, so re-run `reflex-release sync`.
 
+## Custom builds
+
+Some packages cannot be built by `uv build` on one runner: a project shipping
+compiled extensions needs one job per platform, each on its own operating
+system. Those packages hand the build to a workflow **your repository owns**,
+and the pipeline keeps everything either side of it:
+
+```toml
+[[tool.reflex-release.custom-build]]
+packages = ["mypkg"]
+workflow = "build_wheels.yml"
+```
+
+`publish.yml` then calls `.github/workflows/build_wheels.yml` in place of its
+own build job for `mypkg`, and nothing else about the release changes — same
+changelog detection, same version, same approval gate, same tag-after-upload.
+The whole matrix runs **before** the gate: the reviewer approves a set of files
+that already exists and has already been checked.
+
+### The contract
+
+Your workflow declares these inputs, and uploads what it builds:
+
+```yaml
+name: Build wheels
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: "Package being built"
+        required: true
+        type: string
+      version:
+        description: "Version being released (no v prefix)"
+        required: true
+        type: string
+      tag:
+        description: "Tag the checkout with this so the build derives that version"
+        required: true
+        type: string
+      build-dir:
+        description: "Repo-relative directory of the package"
+        required: true
+        type: string
+      artifact-prefix:
+        description: "Name every uploaded artifact <artifact-prefix><leg>"
+        required: true
+        type: string
+
+jobs:
+  wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: linux-x86_64 }
+          - { os: macos-latest, target: macos-arm64 }
+          - { os: windows-latest, target: windows-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The dynamic-versioning backend reads the version off the newest tag, so
+      # tagging the local checkout is what makes the wheels carry `version`.
+      - run: git tag "$TAG"
+        env:
+          TAG: ${{ inputs.tag }}
+
+      - uses: pypa/cibuildwheel@v3
+        with:
+          package-dir: ${{ inputs.build-dir }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-prefix }}${{ matrix.target }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          overwrite: true
+```
+
+Four rules, all of them load-bearing:
+
+1. **Name every artifact `${{ inputs.artifact-prefix }}<leg>`.** The prefix
+   already ends in the separator the publish workflow globs on, so appending
+   anything unique per matrix leg is enough. Anything not matching that prefix
+   is not collected, and therefore not published.
+2. **Upload the distribution files themselves** — wheels and sdists, nothing
+   else. Every file that lands in `dist/` is checked and uploaded to PyPI, so a
+   build log or a `.zip` of debug symbols fails the release.
+3. **Tag the checkout with `tag`** (or otherwise make the build produce
+   `version`). If the artifacts carry a different version, `verify-dist` fails
+   the release before the gate rather than shipping `0.0.0dev0`.
+4. **Let failures fail.** Every job your workflow starts must succeed; a lost
+   matrix leg fails the called workflow, which skips the gate and turns the run
+   red. Do not paper over a leg with `continue-on-error`.
+
+`fail-fast: false` is a good idea but not required — it only decides whether
+the sibling legs are cancelled when one fails, not whether the release stops.
+
+### Requiring the full set
+
+A matrix leg that runs, succeeds and uploads nothing is indistinguishable from
+one you never configured — and an incomplete upload cannot be taken back,
+because PyPI accepts a version once. Name what the release must contain:
+
+```toml
+[[tool.reflex-release.custom-build]]
+packages = ["mypkg"]
+workflow = "build_wheels.yml"
+expect-artifacts = ["*.tar.gz", "*-manylinux*_x86_64.whl", "*-macosx_*_arm64.whl"]
+```
+
+Each pattern is matched against the built filenames, and each one must match at
+least one file or the release stops before the approval.
+
+### What stays the pipeline's job
+
+Only the build is delegated. Before your workflow runs, `prepare` has validated
+the request against the changelog, the branch rules, the lockstep invariant and
+the existing tags, and computed the version. After it, `collect` verifies every
+file is that package at that version, runs your `post_build.sh` hook, extracts
+the release notes and writes the SHA-256 manifest the approver sees.
+
+Two constraints follow from where the build sits:
+
+- **No secrets, no OIDC.** The calling job grants `contents: read`, and a called
+  workflow cannot hold more privilege than its caller grants — so a custom build
+  is inside the same trust boundary as the built-in one. A build needing a
+  credential does not belong here.
+- **Not compatible with `pin-exact`.** That rewrites the package's
+  `pyproject.toml` in the build checkout, and your workflow builds from a
+  checkout this pipeline never touches. Configuring both is rejected at load
+  time.
+
+`reflex-release sync` (and so `sync --check` on every pull request) fails if a
+configured build workflow is missing, has no `workflow_call` trigger, or does
+not declare all five inputs — GitHub rejects a call naming an undeclared input,
+so without that check a renamed input would surface as a failed release instead
+of a red PR.
+
 ## Post-build hook
 
 Create `.github/scripts/publish/post_build.sh` for repository-specific artifact
-checks. It runs in the unprivileged build job — after a successful build, with
-`PACKAGE`, `VERSION` and `BUILD_DIR` in the environment, no secrets and no OIDC
-— and a non-zero exit fails the release before anything is uploaded:
+checks. It runs in the unprivileged `collect` job — after a successful build,
+with `PACKAGE`, `VERSION`, `BUILD_DIR` (the package's directory in the checkout)
+and `DIST_DIR` (where the built files are) in the environment, no secrets and no
+OIDC — and a non-zero exit fails the release before anything is uploaded:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 [[ "$PACKAGE" == "mypkg" ]] || exit 0
-unzip -l "$BUILD_DIR"/dist/*.whl | grep -q '\.pyi$' || {
+unzip -l "$DIST_DIR"/*.whl | grep -q '\.pyi$' || {
   echo "Error: no .pyi files in the wheel"; exit 1
 }
 ```
+
+It runs for custom builds too, on exactly the files that were collected. The
+checkout it runs in has full history and tags, but — unlike the build job — the
+release tag is not applied locally, since `collect` builds nothing. Use
+`$VERSION` rather than `git describe` to identify the release.
 
 ## Post-release workflow
 
