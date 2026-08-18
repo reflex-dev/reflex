@@ -292,3 +292,11 @@ class UnretrievableVarValueError(ReflexError):
 
 class HybridPropertyError(ReflexError):
     """Raised when a hybrid property is misused while building its frontend var."""
+
+
+class WorkflowDefinitionError(ReflexError, ValueError):
+    """Raised when a workflow class or durable event declaration is invalid."""
+
+
+class WorkflowRuntimeError(ReflexError, RuntimeError):
+    """Raised when the workflow runtime is misused or reaches an invalid state."""

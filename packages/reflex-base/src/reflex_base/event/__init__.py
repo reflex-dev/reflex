@@ -34,7 +34,7 @@ from typing_extensions import (
     is_typeddict,
 )
 
-from reflex_base import constants
+from reflex_base import constants, workflow
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
@@ -44,6 +44,7 @@ from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
+    WorkflowDefinitionError,
 )
 from reflex_base.utils.types import (
     ArgsSpec,
@@ -2920,6 +2921,15 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        id: str | None = None,
+        durable: bool = False,
+        trigger: "workflow.Trigger | None" = None,
+        retry: "workflow.Retry | None" = None,
+        timeout: "workflow.DurationLike | None" = None,
+        effect: "workflow.EffectClass | None" = None,
+        queue: str | None = None,
+        on_failure: Any = None,
+        on_timeout: Any = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -2947,6 +2957,15 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        id: str | None = None,
+        durable: bool = False,
+        trigger: "workflow.Trigger | None" = None,
+        retry: "workflow.Retry | None" = None,
+        timeout: "workflow.DurationLike | None" = None,
+        effect: "workflow.EffectClass | None" = None,
+        queue: str | None = None,
+        on_failure: Any = None,
+        on_timeout: Any = None,
     ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
@@ -2958,6 +2977,15 @@ class EventNamespace:
             throttle: Throttle the event handler to limit calls (in milliseconds).
             debounce: Debounce the event handler to delay calls (in milliseconds).
             temporal: Whether the event should be dropped when the backend is down.
+            id: Stable durable handler id; derived from the method name if omitted.
+            durable: Whether the handler is a durable workflow step.
+            trigger: How a durable root handler starts a run.
+            retry: Business-attempt retry policy for a durable handler.
+            timeout: Per-attempt execution timeout for a durable handler.
+            effect: Declared external-effect class; required when durable=True.
+            queue: Admission queue override for a durable handler.
+            on_failure: Same-class handler run after a durable step finally fails.
+            on_timeout: Same-class handler run after a durable step finally times out.
 
         Returns:
             The wrapped function.
@@ -2965,6 +2993,28 @@ class EventNamespace:
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
         """
+        durable_config = workflow.build_durable_config(
+            durable=durable,
+            id=id,
+            trigger=trigger,
+            retry=retry,
+            timeout=timeout,
+            effect=effect,
+            queue=queue,
+            on_failure=on_failure,
+            on_timeout=on_timeout,
+            background=background,
+            has_browser_actions=any(
+                value is not None
+                for value in (
+                    stop_propagation,
+                    prevent_default,
+                    throttle,
+                    debounce,
+                    temporal,
+                )
+            ),
+        )
 
         def _build_event_actions():
             """Build event_actions dict from decorator parameters.
@@ -3004,6 +3054,16 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if durable_config is not None:
+                if inspect.isasyncgenfunction(func) or inspect.isgeneratorfunction(
+                    func
+                ):
+                    msg = (
+                        "Durable event handlers commit exactly once and cannot be "
+                        "generators; return successor events instead of yielding."
+                    )
+                    raise WorkflowDefinitionError(msg)
+                setattr(func, workflow.DURABLE_EVENT_MARKER, durable_config)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)

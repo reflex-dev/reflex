@@ -98,6 +98,8 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
+from reflex.workflow.runtime import WorkflowRuntime
+from reflex.workflow.store import RunStore
 
 if sys.version_info < (3, 13):
     from typing_extensions import deprecated
@@ -449,6 +451,13 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # The processor queue for handling events.
     _event_processor: EventProcessor | None = None
+
+    # Durable run store for registered workflows; defaults to a local SQLite
+    # store created when the app starts.
+    workflow_store: RunStore | None = None
+
+    # The workflow runtime owning registered definitions and the kernel.
+    _workflow_runtime: WorkflowRuntime | None = None
 
     # Store the RegistrationContext to apply inside the ASGI callable task.
     _registration_context: RegistrationContext = dataclasses.field(
@@ -927,6 +936,36 @@ class App(MiddlewareMixin, LifespanMixin):
         if isinstance(component, Callable):
             return format.format_route(format.to_kebab_case(component.__name__))
         return None
+
+    def add_workflow(self, workflow_cls: type[BaseState]) -> None:
+        """Register a durable workflow class with the app.
+
+        Registration classifies the class as workflow-focused: its fields
+        become run-scoped, it is detached from the session state tree, and its
+        durable handlers become executable by the app's workflow kernel.
+        Registration does not publish or activate anything by itself.
+
+        Args:
+            workflow_cls: A workflow-focused ``rx.State`` subclass with a
+                ``__workflow__ = rx.WorkflowConfig(id=...)`` declaration.
+        """
+        if self._workflow_runtime is None:
+            self._workflow_runtime = WorkflowRuntime(self.workflow_store)
+            self.register_lifespan_task(self._run_workflow_runtime)
+        self._workflow_runtime.register(workflow_cls)
+
+    @contextlib.asynccontextmanager
+    async def _run_workflow_runtime(self) -> AsyncIterator[None]:
+        """Run the workflow runtime for the duration of the app lifespan.
+
+        Yields:
+            Nothing; the runtime processes runs while the app serves.
+        """
+        if self._workflow_runtime is None:
+            yield
+            return
+        async with self._workflow_runtime.running():
+            yield
 
     def add_page(
         self,
