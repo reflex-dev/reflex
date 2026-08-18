@@ -36,6 +36,7 @@ from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import (
     HistoryEvent,
     HistoryEventType,
+    RunQuery,
     RunRecord,
     RunSnapshot,
     RunStatus,
@@ -61,6 +62,7 @@ __all__ = [
     "ManualTrigger",
     "MemoryRunStore",
     "Retry",
+    "RunQuery",
     "RunRecord",
     "RunSnapshot",
     "RunStatus",

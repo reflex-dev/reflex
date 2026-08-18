@@ -24,10 +24,10 @@ from reflex.workflow.kernel import DEFAULT_POLL_INTERVAL, WorkflowKernel
 from reflex.workflow.store import RunStore, SqliteRunStore
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable
+    from collections.abc import AsyncIterator, Callable, Iterable, Mapping
 
     from reflex.state import BaseState
-    from reflex.workflow.records import RunSnapshot, StartResult
+    from reflex.workflow.records import RunRecord, RunSnapshot, RunStatus, StartResult
 
 DEFAULT_DB_FILENAME = "workflow.db"
 
@@ -283,6 +283,35 @@ class WorkflowsNamespace:
             True if a suspended run was re-opened.
         """
         return await get_runtime().kernel.resume(run_id)
+
+    @staticmethod
+    async def list_runs(
+        *,
+        workflow_id: str | None = None,
+        statuses: Iterable[RunStatus] = (),
+        labels: Mapping[str, str] | None = None,
+        created_before: float | None = None,
+        limit: int = 50,
+    ) -> tuple[RunRecord, ...]:
+        """List runs matching a filter, newest first.
+
+        Args:
+            workflow_id: Restrict to one workflow identity.
+            statuses: Restrict to these run statuses; empty means any.
+            labels: Require every one of these label values.
+            created_before: Pagination cursor; return runs admitted before this.
+            limit: Maximum runs to return.
+
+        Returns:
+            The matching run records.
+        """
+        return await get_runtime().kernel.list_runs(
+            workflow_id=workflow_id,
+            statuses=statuses,
+            labels=labels,
+            created_before=created_before,
+            limit=limit,
+        )
 
     @staticmethod
     async def get_run(run_id: str) -> RunSnapshot | None:

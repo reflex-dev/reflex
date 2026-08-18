@@ -37,6 +37,7 @@ from reflex.event import EventHandler, EventSpec
 from reflex.workflow.records import (
     TERMINAL_STEP_STATUSES,
     HistoryEventType,
+    RunQuery,
     RunRecord,
     RunSnapshot,
     RunStatus,
@@ -48,7 +49,7 @@ from reflex.workflow.serde import to_run_data
 from reflex.workflow.store import Claim, RunStore, StaleClaimError, StepCompletion
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
 
     from reflex.state import BaseState
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
@@ -407,6 +408,37 @@ class WorkflowKernel:
         if resumed:
             self._wakeup.set()
         return resumed
+
+    async def list_runs(
+        self,
+        *,
+        workflow_id: str | None = None,
+        statuses: Iterable[RunStatus] = (),
+        labels: Mapping[str, str] | None = None,
+        created_before: float | None = None,
+        limit: int = 50,
+    ) -> tuple[RunRecord, ...]:
+        """List runs matching a filter, newest first.
+
+        Args:
+            workflow_id: Restrict to one workflow identity.
+            statuses: Restrict to these run statuses; empty means any.
+            labels: Require every one of these label values.
+            created_before: Pagination cursor; return runs admitted before this.
+            limit: Maximum runs to return.
+
+        Returns:
+            The matching run records.
+        """
+        return await self._store.list_runs(
+            RunQuery(
+                workflow_id=workflow_id,
+                statuses=tuple(statuses),
+                labels=labels,
+                created_before=created_before,
+                limit=limit,
+            )
+        )
 
     async def get_run(self, run_id: str) -> RunSnapshot | None:
         """Load a read-only snapshot of a run.

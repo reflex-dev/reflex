@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class RunStatus(str, enum.Enum):
@@ -212,6 +215,26 @@ class StartResult:
     admission_id: str | None = None
     retryable: bool = False
     retry_after: float | None = None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class RunQuery:
+    """Filters for listing runs in an operator surface.
+
+    Attributes:
+        workflow_id: Restrict to one workflow identity.
+        statuses: Restrict to these run statuses; empty means any.
+        labels: Require every one of these server-derived label values.
+        created_before: Return runs admitted strictly before this epoch time,
+            which is the pagination cursor.
+        limit: Maximum runs to return, newest first.
+    """
+
+    workflow_id: str | None = None
+    statuses: tuple[RunStatus, ...] = ()
+    labels: Mapping[str, str] | None = None
+    created_before: float | None = None
+    limit: int = 50
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

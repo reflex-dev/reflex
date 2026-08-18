@@ -31,6 +31,7 @@ from reflex.workflow.records import (
     TERMINAL_STEP_STATUSES,
     HistoryEvent,
     HistoryEventType,
+    RunQuery,
     RunRecord,
     RunStatus,
     StepRecord,
@@ -290,6 +291,17 @@ class RunStore(Protocol):
         """
         ...
 
+    async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
+        """List runs matching a query, newest first.
+
+        Args:
+            query: The filters and pagination cursor to apply.
+
+        Returns:
+            The matching run records.
+        """
+        ...
+
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
 
@@ -352,6 +364,26 @@ def _run_is_runnable(run: RunRecord, now: float) -> bool:
         and not run.cancel_requested
         and (run.deadline is None or run.deadline > now)
     )
+
+
+def _matches_query(run: RunRecord, query: RunQuery) -> bool:
+    """Whether a run satisfies every filter in a query.
+
+    Args:
+        run: The run record to test.
+        query: The filters to apply.
+
+    Returns:
+        True when the run matches.
+    """
+    if query.workflow_id is not None and run.workflow_id != query.workflow_id:
+        return False
+    if query.statuses and run.status not in query.statuses:
+        return False
+    if query.created_before is not None and run.created_at >= query.created_before:
+        return False
+    labels = run.labels or {}
+    return all(labels.get(key) == value for key, value in (query.labels or {}).items())
 
 
 def _lease_expired(step: StepRecord, now: float) -> bool:
@@ -829,6 +861,20 @@ class MemoryRunStore:
                             now,
                         )
             return recovered
+
+    async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
+        """List runs matching a query, newest first.
+
+        Args:
+            query: The filters and pagination cursor to apply.
+
+        Returns:
+            The matching run records.
+        """
+        async with self._lock:
+            matched = [run for run in self._runs.values() if _matches_query(run, query)]
+            matched.sort(key=lambda run: run.created_at, reverse=True)
+            return tuple(matched[: query.limit])
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
@@ -1724,6 +1770,39 @@ class SqliteRunStore:
                 self._db.execute("ROLLBACK")
                 raise
             return recovered
+
+    async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
+        """List runs matching a query, newest first.
+
+        Args:
+            query: The filters and pagination cursor to apply.
+
+        Returns:
+            The matching run records.
+        """
+        clauses: list[str] = []
+        params: list[Any] = []
+        if query.workflow_id is not None:
+            clauses.append("workflow_id = ?")
+            params.append(query.workflow_id)
+        if query.statuses:
+            placeholders = ",".join("?" * len(query.statuses))
+            clauses.append(f"status IN ({placeholders})")
+            params.extend(status.value for status in query.statuses)
+        if query.created_before is not None:
+            clauses.append("created_at < ?")
+            params.append(query.created_before)
+        for key, value in (query.labels or {}).items():
+            clauses.append("json_extract(labels, ?) = ?")
+            params.extend((f"$.{key}", value))
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._lock:
+            rows = self._db.execute(
+                f"SELECT * FROM workflow_runs{where}"
+                " ORDER BY created_at DESC, run_id DESC LIMIT ?",
+                (*params, query.limit),
+            ).fetchall()
+            return tuple(_run_from_row(row) for row in rows)
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
