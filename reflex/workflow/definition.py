@@ -349,6 +349,56 @@ def _handler_body(fn: Callable) -> ast.FunctionDef | ast.AsyncFunctionDef | None
     return None
 
 
+def _validate_branches(
+    workflow_cls: type[BaseState],
+    defn: HandlerDefinition,
+    handlers: Mapping[str, HandlerDefinition],
+) -> None:
+    """Reject fan-outs whose branches are handlers of this same workflow.
+
+    A branch becomes a child run with its own fresh state, so naming a sibling
+    handler produces a child that cannot see anything the parent has done --
+    silently, and only at runtime. Fan out to another workflow class instead.
+
+    Args:
+        workflow_cls: The workflow class being compiled.
+        defn: The handler to check.
+        handlers: Every durable handler on this class.
+
+    Raises:
+        WorkflowDefinitionError: If a branch names a handler of this class.
+    """
+    node = _handler_body(defn.fn)
+    if node is None:
+        return
+    for child in ast.walk(node):
+        if not (
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Name)
+            and child.func.id == "parallel"
+        ) and not (
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Attribute)
+            and child.func.attr == "parallel"
+        ):
+            continue
+        for branch in child.args:
+            target = branch.func if isinstance(branch, ast.Call) else branch
+            if (
+                isinstance(target, ast.Attribute)
+                and isinstance(target.value, ast.Name)
+                and target.value.id == workflow_cls.__name__
+                and target.attr in {h.name for h in handlers.values()}
+            ):
+                raise _error(
+                    workflow_cls,
+                    f"handler {defn.name!r} fans out to {target.attr!r} on its "
+                    "own class. Each branch runs as a child run with fresh "
+                    "state, so it would not see this run's state. Move the "
+                    "branch to its own workflow class.",
+                )
+
+
 def _validate_handler_body(
     workflow_cls: type[BaseState],
     defn: HandlerDefinition,
@@ -554,6 +604,7 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     fields = _compile_fields(workflow_cls)
     handlers = _resolve_hooks(workflow_cls, _compile_handlers(workflow_cls, config))
     for defn in handlers.values():
+        _validate_branches(workflow_cls, defn, handlers)
         policy = defn.singleton or defn.rate_limit or defn.throttle or defn.debounce
         key = getattr(policy, "key", None)
         if key is not None and key not in defn.params:

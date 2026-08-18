@@ -325,3 +325,110 @@ async def test_a_child_failed_by_recovery_reports_to_its_join(
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
         assert "FAILED" in snapshot.state["outcomes"]
+
+
+def test_fanning_out_to_your_own_class_is_rejected(forked_registration_context):
+    """A same-class branch would silently get empty state."""
+    import importlib.util
+    import sys
+    import tempfile
+    import uuid as uuid_module
+    from pathlib import Path
+
+    source = """
+import reflex as rx
+from reflex_base.workflow import WorkflowConfig, manual, parallel
+
+
+class SelfFanOut(rx.State):
+    __workflow__ = WorkflowConfig(id="audit.self_fanout")
+    lead_id: str = ""
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self, lead_id: str):
+        self.lead_id = lead_id
+        return parallel(SelfFanOut.enrich, SelfFanOut.score, then=SelfFanOut.join)
+
+    @rx.event(durable=True, effect="none")
+    def enrich(self):
+        pass
+
+    @rx.event(durable=True, effect="none")
+    def score(self):
+        pass
+
+    @rx.event(durable=True, effect="none")
+    def join(self, results: list):
+        pass
+"""
+    name = f"wf_selffan_{uuid_module.uuid4().hex}"
+    path = Path(tempfile.gettempdir()) / f"{name}.py"
+    path.write_text(source)
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+
+    from reflex.workflow.definition import compile_workflow
+
+    with pytest.raises(WorkflowDefinitionError, match="its own class"):
+        compile_workflow(module.SelfFanOut)
+
+
+async def test_a_branch_must_be_a_manual_root(forked_registration_context):
+    """Fan-out must not reach a root that only a provider may start."""
+    from reflex_base.workflow import hmac_signature, parallel, webhook
+
+    class Hooked(rx.State):
+        __workflow__ = WorkflowConfig(id="audit.hooked")
+
+        @rx.event(
+            durable=True,
+            effect="none",
+            trigger=webhook(
+                "audit.topic",
+                verify=hmac_signature(secret_env="S", header="X-Sig"),
+            ),
+        )
+        def on_event(self):
+            """Only a verified provider may start this."""
+
+    class Driver(rx.State):
+        __workflow__ = WorkflowConfig(id="audit.driver")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Try to fan out to a webhook-only root.
+
+            Returns:
+                The fan-out.
+            """
+            return parallel(Hooked.on_event, then=Driver.join)
+
+        @rx.event(durable=True, effect="none")
+        def join(self, results: list):
+            """Never reached.
+
+            Args:
+                results: Branch outcomes.
+            """
+
+    async with WorkflowTestHarness(Driver, Hooked) as harness:
+        result = await harness.start(Driver.begin)
+        assert result.run_id is not None
+        # The branch is resolved while the parent's step runs, so the gate
+        # surfaces as a failed parent rather than a raise at start().
+        await harness.advance("1s")
+        await harness.advance("2s")
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+        assert snapshot.error is not None
+        assert "manual root" in snapshot.error["message"]
+        # No child run was created for the webhook-only root.
+        assert all(
+            run.workflow_id != "audit.hooked"
+            for run in await harness.kernel.list_runs()
+        )

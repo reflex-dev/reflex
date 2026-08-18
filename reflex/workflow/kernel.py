@@ -29,6 +29,7 @@ from reflex_base.workflow import (
     ChannelDelivery,
     CompleteRun,
     FailRun,
+    ManualTrigger,
     NeedsAttention,
     Parallel,
     ScheduleTrigger,
@@ -202,10 +203,11 @@ class _Lease:
         claim: The claim being kept alive.
         attempt: The task running the handler, once created.
         renewer: The background task extending the lease.
+        expires_at: When this lease lapses if renewal keeps failing.
         lost: Whether the store reported the claim was fenced.
     """
 
-    __slots__ = ("attempt", "claim", "lost", "renewer")
+    __slots__ = ("attempt", "claim", "expires_at", "lost", "renewer")
 
     def __init__(self, claim: Claim):
         """Initialize the lease.
@@ -216,6 +218,7 @@ class _Lease:
         self.claim = claim
         self.attempt: asyncio.Task | None = None
         self.renewer: asyncio.Task | None = None
+        self.expires_at = claim.step.lease_expires_at
         self.lost = False
 
 
@@ -1410,15 +1413,29 @@ class WorkflowKernel:
         """
         if lease.lost:
             return
+        now = self._clock()
         try:
             held = await self._store.renew_lease(
-                lease.claim, self._clock(), lease_duration=self._lease_duration
+                lease.claim, now, lease_duration=self._lease_duration
             )
         except Exception as err:
-            console.debug(f"Workflow lease renewal failed, retrying: {err}")
+            # The lease keeps ticking down while renewal fails. Once too little
+            # of it remains to survive another failed round-trip, stop the
+            # attempt rather than keep running work this kernel can no longer
+            # prove it owns -- recovery is about to hand the step to someone else.
+            if lease.expires_at - now <= self._lease_renew_interval:
+                console.warn(
+                    "Workflow lease renewal keeps failing and the lease is about "
+                    f"to lapse; abandoning the attempt: {err}"
+                )
+                self._lose_lease(lease)
+            else:
+                console.debug(f"Workflow lease renewal failed, retrying: {err}")
             return
         if not held:
             self._lose_lease(lease)
+            return
+        lease.expires_at = now + self._lease_duration
 
     async def _renew_forever(self, lease: _Lease) -> None:
         """Renew a lease on a real-time cadence until it ends or is lost.
@@ -1772,6 +1789,13 @@ class WorkflowKernel:
         records = []
         for index, branch in enumerate(branches):
             defn, handler, payload = self._resolve_target(branch)
+            if not isinstance(handler.trigger, ManualTrigger):
+                msg = (
+                    f"Cannot fan out to {handler.id!r} of {defn.workflow_id!r}: "
+                    f"it declares {getattr(handler.trigger, 'kind', 'no trigger')}, "
+                    "and a branch must be a manual root just like a direct start."
+                )
+                raise WorkflowRuntimeError(msg)
             child_id = uuid.uuid4().hex
             records.append((
                 RunRecord(
