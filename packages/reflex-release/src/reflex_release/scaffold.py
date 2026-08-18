@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import dataclasses
 import difflib
+import json
 import re
 import subprocess
 from importlib import metadata
@@ -35,6 +36,7 @@ from packaging.version import Version
 from .actions import echo, fail
 from .changelog import parse_sections, render_heading
 from .config import (
+    CUSTOM_BUILD_LABEL,
     POST_RELEASE_INPUTS,
     POST_RELEASE_WORKFLOW_KEY,
     TOOL_TABLE,
@@ -69,6 +71,36 @@ OPTIONAL_WORKFLOWS = (INTERNAL_WORKFLOW,)
 GENERATED_WORKFLOWS = (*CORE_WORKFLOWS, *OPTIONAL_WORKFLOWS)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates" / "workflows"
+
+#: The inputs the generated publish workflow passes to a custom build workflow.
+CUSTOM_BUILD_INPUTS = ("package", "version", "tag", "build-dir", "artifact-prefix")
+
+#: The ``workflow_call`` interface a custom build workflow has to declare.
+CUSTOM_BUILD_CONTRACT = """\
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: "Package being built"
+        required: true
+        type: string
+      version:
+        description: "Version being released (no v prefix)"
+        required: true
+        type: string
+      tag:
+        description: "Tag the checkout with this so the build derives that version"
+        required: true
+        type: string
+      build-dir:
+        description: "Repo-relative directory of the package"
+        required: true
+        type: string
+      artifact-prefix:
+        description: "Name every uploaded artifact <artifact-prefix><leg>"
+        required: true
+        type: string\
+"""
 
 _GITHUB_REMOTE_RE = re.compile(
     r"github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
@@ -275,6 +307,126 @@ def _indented_list(items: list[str], indent: int) -> str:
     return "\n".join(f"{' ' * indent}- {item}" for item in items)
 
 
+def _selects_package(packages: tuple[str, ...]) -> str:
+    """Render the workflow expression matching a set of packages.
+
+    Args:
+        packages: The package names to match.
+
+    Returns:
+        A ``contains(fromJson(...), inputs.package)`` expression.
+    """
+    listing = json.dumps(list(packages), separators=(",", ":"))
+    return f"contains(fromJson('{listing}'), inputs.package)"
+
+
+def _custom_build_note(config: Config) -> str:
+    """Render the header comment describing the custom build stage.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The comment lines, or an empty string for a repository that builds
+        every package with ``uv build``.
+    """
+    if not config.custom_build:
+        return ""
+    return "".join(
+        f"{line}\n"
+        for line in (
+            "#   custom-build-*   unprivileged: packages configured with a custom",
+            "#                    build workflow build there instead of in `build`.",
+            "#                    The workflow is this repository's own file, and",
+            "#                    uploads its distribution files as artifacts named",
+            "#                    after the `artifact-prefix` input it is given.",
+        )
+    )
+
+
+def _default_build_guard(config: Config) -> str:
+    """Render the clause keeping custom-built packages out of the build job.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The extra ``if`` condition, or an empty string.
+    """
+    packages = config.custom_build_packages()
+    if not packages:
+        return ""
+    return f"      && !{_selects_package(packages)}"
+
+
+def _custom_dev_pin_step(config: Config) -> str:
+    """Render the dev-pin gate for packages that skip the built-in build job.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The step, indented under the prepare job's ``steps``, or an empty
+        string.
+    """
+    packages = config.custom_build_packages()
+    if not packages:
+        return ""
+    return "\n" + "\n".join([
+        "      # Custom-built packages never reach the `build` job, where this gate",
+        "      # normally runs after the lockstep pin rewrites their metadata. They",
+        "      # cannot be exact-pin lockstep members, so nothing rewrites theirs",
+        "      # and the gate belongs here — still before anything is built.",
+        "      - name: Reject development-release dependency pins",
+        "        if: >-",
+        "          steps.prepare.outputs.skipped != 'true' &&",
+        f"          {_selects_package(packages)}",
+        "        env:",
+        "          PACKAGE: ${{ inputs.package }}",
+        f'        run: {config.cli_command} check-dev-pins "$PACKAGE"',
+    ])
+
+
+def _custom_build_jobs(config: Config) -> str:
+    """Render one publish-workflow job per custom build workflow.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The job blocks, or an empty string.
+    """
+    if not config.custom_build:
+        return ""
+    blocks = [
+        "\n".join([
+            "  # Repository-supplied build, replacing the `build` job for:",
+            f"  #   {', '.join(entry.packages)}",
+            "  # A called workflow can hold no more privilege than the calling job",
+            "  # grants it, so this runs inside the same unprivileged boundary as",
+            "  # `build`: no secrets, no OIDC, and everything it produces is verified",
+            "  # by `collect` before the approval gate. Every job it starts has to",
+            "  # succeed, so a lost matrix leg stops the release.",
+            f"  {entry.job_id}:",
+            "    needs: prepare",
+            "    if: >-",
+            "      needs.prepare.outputs.skipped != 'true' &&",
+            f"      {_selects_package(entry.packages)}",
+            "    permissions:",
+            "      contents: read",
+            f"    uses: ./{WORKFLOW_DIR}/{entry.workflow}",
+            "    with:",
+            "      package: ${{ inputs.package }}",
+            "      version: ${{ needs.prepare.outputs.version }}",
+            "      tag: ${{ needs.prepare.outputs.tag }}",
+            "      build-dir: ${{ needs.prepare.outputs.build_dir }}",
+            "      artifact-prefix: dist-${{ inputs.package }}--",
+        ])
+        for entry in config.custom_build
+    ]
+    return "\n" + "\n\n".join(blocks)
+
+
 #: The step that hands each published tag to the repository's own workflow.
 #: ``@@INPUTS@@`` is the dispatch contract, named from one place.
 POST_RELEASE_STEP = """
@@ -284,9 +436,9 @@ POST_RELEASE_STEP = """
       # @@INPUTS@@.
       - name: Trigger the post-release workflow
         env:
-          TAG: ${{ needs.build.outputs.tag }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ needs.build.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: @@CLI@@ post-release"""
 
@@ -331,6 +483,13 @@ def render(name: str, config: Config) -> str:
         "@@PACKAGE_INPUTS@@": _package_input_block(config),
         "@@PACKAGE_SELECTION@@": _package_selection_block(config),
         "@@INTERNAL_PATHS@@": _indented_list(internal_paths, 6),
+        "@@CUSTOM_BUILD_NOTE@@": _custom_build_note(config),
+        "@@CUSTOM_DEV_PIN_STEP@@": _custom_dev_pin_step(config),
+        "@@DEFAULT_BUILD_GUARD@@": _default_build_guard(config),
+        "@@CUSTOM_BUILD_JOBS@@": _custom_build_jobs(config),
+        "@@CUSTOM_BUILD_NEEDS@@": "".join(
+            f", {entry.job_id}" for entry in config.custom_build
+        ),
         # Dispatching a workflow is a write on the actions scope, which the
         # publish job never needs and so is not granted by default.
         "@@ACTIONS_PERMISSION@@": ("write" if config.post_release_workflow else "read"),
@@ -387,6 +546,144 @@ def check_title_format(config: Config) -> None:
         )
 
 
+def _indent_of(line: str) -> int:
+    """Return a line's leading-whitespace width.
+
+    Args:
+        line: The line to measure.
+
+    Returns:
+        The number of leading whitespace characters.
+    """
+    return len(line) - len(line.lstrip())
+
+
+def _nested_lines(lines: list[str], index: int) -> list[str]:
+    """Return the lines nested under the mapping key at an index.
+
+    Args:
+        lines: Significant lines of a YAML document (no blanks or comments).
+        index: The index of the key whose block to return.
+
+    Returns:
+        The following lines indented deeper than that key.
+    """
+    outer = _indent_of(lines[index])
+    end = next(
+        (
+            offset
+            for offset, line in enumerate(lines[index + 1 :])
+            if _indent_of(line) <= outer
+        ),
+        len(lines) - index - 1,
+    )
+    return lines[index + 1 : index + 1 + end]
+
+
+def _key_index(lines: list[str], key: str) -> int | None:
+    """Return the index of the line declaring a block mapping key.
+
+    Args:
+        lines: Significant lines of a YAML document.
+        key: The key to find.
+
+    Returns:
+        The index, or None when no line declares that key with a nested block.
+    """
+    pattern = re.compile(rf"\s*{re.escape(key)}:$")
+    return next(
+        (index for index, line in enumerate(lines) if pattern.fullmatch(line.rstrip())),
+        None,
+    )
+
+
+def workflow_call_inputs(text: str) -> set[str]:
+    """List the input names a workflow declares under ``on: workflow_call``.
+
+    This reads the block by indentation rather than parsing YAML: the tool runs
+    in the jobs holding write access on the release path, so it deliberately
+    carries no YAML parser. It is lenient by design — an input it fails to see
+    is still caught by GitHub, which rejects a call naming an undeclared input
+    before any job in the run starts.
+
+    Args:
+        text: The workflow file's contents.
+
+    Returns:
+        The declared input names, empty when the block cannot be found.
+    """
+    lines = [
+        line
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    call = _key_index(lines, "workflow_call")
+    if call is None:
+        return set()
+    block = _nested_lines(lines, call)
+    inputs = _key_index(block, "inputs")
+    if inputs is None:
+        return set()
+    declared = _nested_lines(block, inputs)
+    if not declared:
+        return set()
+    # Only the keys at the shallowest depth are the input names; anything
+    # deeper describes one of them.
+    depth = min(_indent_of(line) for line in declared)
+    return {
+        line.strip().partition(":")[0] for line in declared if _indent_of(line) == depth
+    }
+
+
+def check_custom_build_workflows(config: Config) -> None:
+    """Fail unless every configured custom build workflow exists and is callable.
+
+    The generated publish workflow calls these files by path, so a missing file
+    or a missing ``workflow_call`` trigger is a run that fails at release time.
+    Checking here means the pull-request drift check catches it instead.
+
+    Args:
+        config: The repository configuration.
+    """
+    for entry in config.custom_build:
+        listing = ", ".join(entry.packages)
+        # GENERATED_WORKFLOWS, not managed_workflows: a repository with no
+        # internal packages does not get auto_release_internal.yml, but naming
+        # it here would still collide the moment one is added.
+        if entry.workflow in GENERATED_WORKFLOWS:
+            fail(
+                f"{CUSTOM_BUILD_LABEL} names {entry.workflow}, which "
+                "reflex-release generates; a custom build workflow has to be a "
+                "separate file this repository owns"
+            )
+        target = config.root / WORKFLOW_DIR / entry.workflow
+        if not target.is_file():
+            fail(
+                f"{listing} builds through {WORKFLOW_DIR}/{entry.workflow}, which "
+                f"does not exist. Create it with:\n\n{CUSTOM_BUILD_CONTRACT}"
+            )
+        text = target.read_text(encoding="utf-8")
+        if not re.search(r"\bworkflow_call\b", text):
+            fail(
+                f"{WORKFLOW_DIR}/{entry.workflow} declares no `workflow_call` "
+                f"trigger, so publish.yml cannot call it to build {listing}. It "
+                f"needs:\n\n{CUSTOM_BUILD_CONTRACT}"
+            )
+        # GitHub rejects a call naming an undeclared input, which would fail the
+        # release itself; catching it here makes it a red pull request instead.
+        if missing := [
+            name
+            for name in CUSTOM_BUILD_INPUTS
+            if name not in workflow_call_inputs(text)
+        ]:
+            fail(
+                f"{WORKFLOW_DIR}/{entry.workflow} does not declare the input(s) "
+                f"publish.yml passes it: {', '.join(missing)}. Building {listing} "
+                f"would fail the release when GitHub validates the call. It "
+                f"needs:\n\n{CUSTOM_BUILD_CONTRACT}"
+            )
+
+
 def generated_workflow_names() -> set[str]:
     """Return every name a workflow this tool generates answers to.
 
@@ -438,6 +735,7 @@ def sync(config: Config, check: bool = False, force: bool = False) -> None:
         force: Overwrite files that were not generated by this tool.
     """
     check_title_format(config)
+    check_custom_build_workflows(config)
     check_post_release_workflow(config)
     workflow_dir = config.root / WORKFLOW_DIR
     stale: list[str] = []

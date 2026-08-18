@@ -9,6 +9,7 @@ single-package repository needs no more than ``root-package``.
 from __future__ import annotations
 
 import dataclasses
+import re
 import sys
 from pathlib import Path
 
@@ -36,6 +37,7 @@ POST_RELEASE_INPUTS = ("tag", "package", "version")
 _KNOWN_KEYS = frozenset({
     "allow-self-review",
     "cli-command",
+    "custom-build",
     "dispatch-package-inputs",
     "root-package",
     "root-source-dirs",
@@ -55,6 +57,49 @@ _KNOWN_KEYS = frozenset({
 })
 
 _KNOWN_LOCKSTEP_KEYS = frozenset({"members", "publish-last", "pin-exact"})
+
+_KNOWN_CUSTOM_BUILD_KEYS = frozenset({"packages", "workflow", "expect-artifacts"})
+
+_LOCKSTEP_LABEL = f"[[tool.{TOOL_TABLE}.lockstep]]"
+CUSTOM_BUILD_LABEL = f"[[tool.{TOOL_TABLE}.custom-build]]"
+
+#: A custom build workflow's filename, restricted to what is safe to write as a
+#: bare YAML scalar in the generated ``uses:``.
+_WORKFLOW_FILENAME_RE = re.compile(r"[A-Za-z0-9_.-]+\.ya?ml")
+
+
+@dataclasses.dataclass(frozen=True)
+class CustomBuild:
+    """A repository-supplied workflow that builds some packages' artifacts.
+
+    Packages whose artifacts cannot come from a plain ``uv build`` — a matrix of
+    platform-specific wheels, say — delegate the build to a workflow the
+    repository owns. It runs unprivileged, before the approval gate, like the
+    built-in build job; everything it uploads is verified against the release
+    before a reviewer ever sees it.
+
+    Attributes:
+        packages: The packages built by this workflow.
+        workflow: The workflow's filename under ``.github/workflows``.
+        expect_artifacts: Filename glob patterns that must each match at least
+            one built file, so a matrix leg that quietly produced nothing fails
+            the release instead of publishing an incomplete set.
+    """
+
+    packages: tuple[str, ...]
+    workflow: str
+    expect_artifacts: tuple[str, ...] = ()
+
+    @property
+    def job_id(self) -> str:
+        """Return the publish-workflow job id that calls this workflow.
+
+        Returns:
+            The workflow filename reduced to the characters GitHub allows in a
+            job id, behind a fixed prefix.
+        """
+        stem = re.sub(r"[^A-Za-z0-9_-]+", "-", self.workflow.rpartition(".")[0])
+        return f"custom-build-{stem}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -121,6 +166,7 @@ class Config:
             after the tag and the GitHub release exist, or None to dispatch
             nothing.
         lockstep: The lockstep groups.
+        custom_build: The repository-supplied build workflows.
     """
 
     root: Path
@@ -144,6 +190,7 @@ class Config:
     changelog_exempt_packages: tuple[str, ...] = ()
     post_release_workflow: str | None = None
     lockstep: tuple[LockstepGroup, ...] = ()
+    custom_build: tuple[CustomBuild, ...] = ()
 
     def package_dir(self, package: str) -> str:
         """Return the repo-relative directory of a package.
@@ -415,6 +462,42 @@ class Config:
             return ()
         return tuple(member for member in group.members if member != package)
 
+    def custom_build_for(self, package: str) -> CustomBuild | None:
+        """Return the repository-supplied workflow that builds a package.
+
+        Args:
+            package: The package name.
+
+        Returns:
+            The entry, or None when the package builds with ``uv build``.
+        """
+        return next(
+            (entry for entry in self.custom_build if package in entry.packages), None
+        )
+
+    def custom_build_packages(self) -> tuple[str, ...]:
+        """List every package built by a repository-supplied workflow.
+
+        Returns:
+            The package names, in configuration order.
+        """
+        return tuple(
+            package for entry in self.custom_build for package in entry.packages
+        )
+
+    def expect_artifacts(self, package: str) -> tuple[str, ...]:
+        """Return the filename patterns a package's build must produce.
+
+        Args:
+            package: The package being released.
+
+        Returns:
+            The configured glob patterns, or an empty tuple when the build is
+            only required to produce artifacts of the right name and version.
+        """
+        entry = self.custom_build_for(package)
+        return entry.expect_artifacts if entry is not None else ()
+
     def branch_allows_publish(self, version: Version, ref_name: str) -> bool:
         """Return whether a version may be published from a branch.
 
@@ -479,36 +562,44 @@ def load_pyproject(path: Path) -> dict:
         return tomllib.load(f)
 
 
-def _string_list(table: dict, key: str) -> tuple[str, ...]:
+def _string_list(
+    table: dict, key: str, label: str = f"[tool.{TOOL_TABLE}]"
+) -> tuple[str, ...]:
     """Read a list-of-strings setting.
 
     Args:
         table: The table to read from.
         key: The setting name.
+        label: How to name the table in an error, so a key in a sub-table does
+            not send the reader looking for it in the top-level one.
 
     Returns:
         The values as a tuple (empty when the key is absent).
     """
     value = table.get(key, [])
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-        fail(f"[tool.{TOOL_TABLE}] {key} must be a list of strings")
+        fail(f"{label} {key} must be a list of strings")
     return tuple(value)
 
 
-def _string(table: dict, key: str, default: str) -> str:
+def _string(
+    table: dict, key: str, default: str, label: str = f"[tool.{TOOL_TABLE}]"
+) -> str:
     """Read a string setting.
 
     Args:
         table: The table to read from.
         key: The setting name.
         default: The value to use when the key is absent.
+        label: How to name the table in an error, so a key in a sub-table does
+            not send the reader looking for it in the top-level one.
 
     Returns:
         The configured string.
     """
     value = table.get(key, default)
     if not isinstance(value, str):
-        fail(f"[tool.{TOOL_TABLE}] {key} must be a string")
+        fail(f"{label} {key} must be a string")
     return value
 
 
@@ -553,8 +644,8 @@ def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...
                 f"unknown key(s) in [[tool.{TOOL_TABLE}.lockstep]]: "
                 f"{', '.join(unknown)}"
             )
-        members = _string_list(entry, "members")
-        publish_last = _string_list(entry, "publish-last")
+        members = _string_list(entry, "members", _LOCKSTEP_LABEL)
+        publish_last = _string_list(entry, "publish-last", _LOCKSTEP_LABEL)
         if len(members) < 2:
             fail(f"a [[tool.{TOOL_TABLE}.lockstep]] group needs at least two members")
         if len(set(members)) != len(members):
@@ -585,6 +676,88 @@ def _load_lockstep(table: dict, packages: list[str]) -> tuple[LockstepGroup, ...
             )
         )
     return tuple(groups)
+
+
+def _load_custom_build(table: dict, config: Config) -> tuple[CustomBuild, ...]:
+    """Parse and validate the ``[[tool.reflex-release.custom-build]]`` entries.
+
+    Args:
+        table: The ``[tool.reflex-release]`` table.
+        config: The configuration loaded so far, with its lockstep groups.
+
+    Returns:
+        The validated custom build entries.
+    """
+    entries = table.get("custom-build", [])
+    if not isinstance(entries, list):
+        fail(f"[[tool.{TOOL_TABLE}.custom-build]] must be an array of tables")
+
+    packages = config.all_packages()
+    builds: list[CustomBuild] = []
+    seen: set[str] = set()
+    workflows: dict[str, str] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            fail(f"[[tool.{TOOL_TABLE}.custom-build]] must be an array of tables")
+        if unknown := sorted(set(entry) - _KNOWN_CUSTOM_BUILD_KEYS):
+            fail(
+                f"unknown key(s) in [[tool.{TOOL_TABLE}.custom-build]]: "
+                f"{', '.join(unknown)}"
+            )
+        members = _string_list(entry, "packages", CUSTOM_BUILD_LABEL)
+        if not members:
+            fail(
+                f"a [[tool.{TOOL_TABLE}.custom-build]] entry needs at least one "
+                "package in `packages`"
+            )
+        workflow = _string(entry, "workflow", "", CUSTOM_BUILD_LABEL)
+        # The name is interpolated into the generated workflow's `uses:` as a
+        # bare scalar, so it has to be a plain filename and nothing that YAML
+        # would read as structure.
+        if not _WORKFLOW_FILENAME_RE.fullmatch(workflow):
+            fail(
+                f"{CUSTOM_BUILD_LABEL} workflow must be a bare filename under "
+                '.github/workflows made of letters, digits, ".", "_" and "-", '
+                f'e.g. "build_wheels.yml" (got {workflow!r})'
+            )
+        build = CustomBuild(
+            packages=members,
+            workflow=workflow,
+            expect_artifacts=_string_list(
+                entry, "expect-artifacts", CUSTOM_BUILD_LABEL
+            ),
+        )
+        # One job per entry in the generated publish workflow, so two entries
+        # whose workflows share a job id would silently collapse into one.
+        if previous := workflows.get(build.job_id):
+            fail(
+                f"[[tool.{TOOL_TABLE}.custom-build]] entries for {previous} and "
+                f"{workflow} produce the same publish job ({build.job_id}); list "
+                "every package one workflow builds in a single entry"
+            )
+        workflows[build.job_id] = workflow
+        for member in members:
+            if member not in packages:
+                fail(
+                    f"custom-build package {member!r} is not a package in this "
+                    "repository"
+                )
+            if member in seen:
+                fail(f"package {member!r} appears in more than one custom-build entry")
+            seen.add(member)
+            # pin-exact rewrites the package's pyproject.toml in the build
+            # checkout; a custom build workflow builds from a checkout this
+            # pipeline never touches, so the pin would silently not be applied.
+            if config.exact_pin_targets(member):
+                fail(
+                    f"{member} pins its lockstep siblings exactly (pin-exact), "
+                    "which rewrites its pyproject.toml in the build checkout — a "
+                    "custom build workflow builds from its own checkout, so the "
+                    "pin would never be applied. Drop pin-exact or build "
+                    f"{member} in-repo."
+                )
+        builds.append(build)
+    return tuple(builds)
 
 
 def _default_root_source_dirs(root: Path, root_package: str | None) -> tuple[str, ...]:
@@ -734,4 +907,7 @@ def load_config(root: Path) -> Config:
     if latest is not None and latest not in packages:
         fail(f"[tool.{TOOL_TABLE}] latest-release-package is unknown: {latest!r}")
 
-    return dataclasses.replace(config, lockstep=_load_lockstep(table, packages))
+    # Custom builds are validated against the lockstep groups, so they load
+    # onto a configuration that already carries them.
+    config = dataclasses.replace(config, lockstep=_load_lockstep(table, packages))
+    return dataclasses.replace(config, custom_build=_load_custom_build(table, config))

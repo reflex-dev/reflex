@@ -3,14 +3,19 @@ name: Publish to PyPI
 
 run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
 
-# Publishes one package at one version, in three stages:
+# Publishes one package at one version, in five stages:
 #
-#   build            unprivileged: validates the request against the changelog
+#   prepare          unprivileged: validates the request against the changelog
 #                    (source of truth), branch rules, lockstep invariant and
-#                    existing tags; tags the local checkout (the dynamic
-#                    versioning backend derives the version from it); builds;
-#                    verifies the built metadata; extracts release notes;
-#                    uploads everything as a workflow artifact.
+#                    existing tags, then emits the version, tag and build
+#                    directory every later job works from.
+#   build            unprivileged: tags the local checkout (the dynamic
+#                    versioning backend derives the version from it), builds,
+#                    and uploads what it produced as a workflow artifact.
+@@CUSTOM_BUILD_NOTE@@#   collect          unprivileged: gathers every file the build produced,
+#                    verifies each one is this package at this version, extracts
+#                    the release notes and writes the checksum manifest the
+#                    approver sees.
 #   publish          gated by the `pypi` environment — a human reviewer must
 #                    approve every upload, alphas included. Holds the only
 #                    OIDC (id-token) privilege and runs nothing but
@@ -20,6 +25,10 @@ run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
 #                    no tag behind — fix the problem on top of the changelog
 #                    bump and the release-from-changelog workflow retries on
 #                    the next push.
+#
+# Every build job runs before the approval gate and none of them holds a
+# credential, so a build that fails — any leg of a matrix included — stops the
+# release instead of publishing an incomplete set.
 #
 # REQUIRED CONFIGURATION:
 # - The `pypi` environment MUST have required reviewers configured
@@ -31,8 +40,8 @@ run-name: Publish ${{ inputs.package }} ${{ inputs.version }}
 # - If the `pypi` environment restricts deployment branches, allow
 #   @@MAIN_BRANCH@@, @@PRERELEASE_PREFIX@@* and @@HOTFIX_PREFIX@@*.
 # - Optional: a `.github/scripts/publish/post_build.sh` hook runs after the
-#   build with PACKAGE, VERSION and BUILD_DIR in the environment — use it for
-#   repository-specific artifact checks.
+#   build with PACKAGE, VERSION, BUILD_DIR and DIST_DIR in the environment —
+#   use it for repository-specific artifact checks.
 # - Optional: post-release-workflow names a workflow this one dispatches on
 #   every published tag, once the release exists.
 
@@ -71,7 +80,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,6 +88,7 @@ jobs:
       skipped: ${{ steps.prepare.outputs.skipped }}
       version: ${{ steps.prepare.outputs.version }}
       tag: ${{ steps.prepare.outputs.tag }}
+      build_dir: ${{ steps.prepare.outputs.build_dir }}
       prerelease: ${{ steps.prepare.outputs.prerelease }}
       mark_latest: ${{ steps.prepare.outputs.mark_latest }}
     steps:
@@ -99,20 +109,39 @@ jobs:
           VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}
         run: @@CLI@@ prepare-publish
+@@CUSTOM_DEV_PIN_STEP@@
+
+  build:
+    needs: prepare
+    if: >-
+      needs.prepare.outputs.skipped != 'true'
+@@DEFAULT_BUILD_GUARD@@
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
       - name: Pin lockstep siblings to exact versions
-        if: steps.prepare.outputs.skipped != 'true'
         env:
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ steps.prepare.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: @@CLI@@ pin-lockstep
 
       # A *.dev dependency pin references an unpublished version, so it must
       # never reach released package metadata. Scoped to the package being
       # published so a dependency can still be released while dependents
-      # temporarily dev-pin it.
+      # temporarily dev-pin it. It runs after the lockstep pin, which is what
+      # turns a sibling's dev pin into the exact version being released.
       - name: Reject development-release dependency pins
-        if: steps.prepare.outputs.skipped != 'true'
         env:
           PACKAGE: ${{ inputs.package }}
         run: @@CLI@@ check-dev-pins "$PACKAGE"
@@ -122,9 +151,8 @@ jobs:
       # is what selects the version being built. The tag is only pushed after a
       # successful upload (tag-and-release job).
       - name: Tag local checkout
-        if: steps.prepare.outputs.skipped != 'true'
         env:
-          TAG: ${{ steps.prepare.outputs.tag }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: git tag "$TAG"
 
       # --out-dir is absolute so the artifacts land in the repository root
@@ -132,31 +160,92 @@ jobs:
       # build into the workspace root and a standalone package into its own
       # directory.
       - name: Build
-        if: steps.prepare.outputs.skipped != 'true'
         env:
-          BUILD_DIR: ${{ steps.prepare.outputs.build_dir }}
+          BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
         run: uv build --directory "$BUILD_DIR" --out-dir "$GITHUB_WORKSPACE/dist"
 
+      - name: Upload the built distribution files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-${{ inputs.package }}--build
+          path: dist/*
+          if-no-files-found: error
+          overwrite: true
+@@CUSTOM_BUILD_JOBS@@
+
+  # Everything that turns "some files exist" into "these exact files are what
+  # the reviewer is approving": the metadata check, the repository's own hook,
+  # the release notes and the checksum manifest. One code path, whichever job
+  # produced the files.
+  collect:
+    needs: [prepare, build@@CUSTOM_BUILD_NEEDS@@]
+    # Exactly one build path runs for a given package, so the others report
+    # 'skipped' — which this tolerates while still failing closed on a build
+    # that errored, was cancelled, or (in a matrix) lost a single leg.
+    if: >-
+      !cancelled() && !failure() &&
+      needs.prepare.outputs.skipped != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Full history and tags: post_build.sh used to run in the build job, whose
+      # checkout has both, and a hook that inspects them must keep working.
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      # One artifact per build job — a platform matrix uploads one per leg —
+      # merged into a single dist/. The `--` in the pattern is what keeps a
+      # package from collecting a sibling's artifacts when its name is a prefix
+      # of theirs (mypkg vs mypkg-base).
+      - name: Download the built distribution files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: dist-${{ inputs.package }}--*
+          path: dist
+          merge-multiple: true
+
+      - name: Flatten the downloaded artifacts
+        run: |
+          set -euo pipefail
+          # mkdir, because no matching artifact leaves nothing behind at all —
+          # verify-dist reports that far better than `find` reports a missing
+          # directory.
+          mkdir -p dist
+          # `uv publish dist/*` uploads files, not directories, so a build
+          # workflow that kept its files in a subdirectory is normalized here
+          # rather than failing the release over a layout detail. A name
+          # collision leaves the directory non-empty and fails the step.
+          find dist -mindepth 2 -type f -exec mv -n -t dist -- {} +
+          find dist -mindepth 1 -type d -delete
+          ls -l dist
+
       - name: Verify built artifact names and versions
-        if: steps.prepare.outputs.skipped != 'true'
         env:
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ steps.prepare.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: @@CLI@@ verify-dist
 
       - name: Repository-specific post-build checks
-        if: steps.prepare.outputs.skipped != 'true' && hashFiles('.github/scripts/publish/post_build.sh') != ''
+        if: hashFiles('.github/scripts/publish/post_build.sh') != ''
         env:
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ steps.prepare.outputs.version }}
-          BUILD_DIR: ${{ steps.prepare.outputs.build_dir }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
+          DIST_DIR: dist
         run: bash .github/scripts/publish/post_build.sh
 
       - name: Extract release notes from changelog
-        if: steps.prepare.outputs.skipped != 'true'
         env:
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ steps.prepare.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           NOTES_PATH: release_notes.md
         run: @@CLI@@ extract-notes
 
@@ -166,7 +255,6 @@ jobs:
       # front of the approver (job summary), and it is attached to the GitHub
       # release so the record of what a version contains outlives this run.
       - name: Write checksum manifest
-        if: steps.prepare.outputs.skipped != 'true'
         run: |
           set -euo pipefail
           # Bare filenames, covering exactly the files that go to PyPI: the
@@ -182,7 +270,6 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifacts for the gated publish
-        if: steps.prepare.outputs.skipped != 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: publish-${{ inputs.package }}
@@ -196,10 +283,10 @@ jobs:
   # The human approval gate: this job targets the `pypi` environment, whose
   # required reviewers must approve before it starts. It holds the only OIDC
   # privilege and deliberately runs no repository code and resolves no script
-  # dependencies — it only uploads the artifact built above.
+  # dependencies — it only uploads the artifact collected above.
   publish:
-    needs: build
-    if: needs.build.outputs.skipped != 'true'
+    needs: [prepare, collect]
+    if: needs.prepare.outputs.skipped != 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -270,7 +357,7 @@ jobs:
         run: uv publish --check-url https://pypi.org/simple/ dist/*
 
   tag-and-release:
-    needs: [build, publish]
+    needs: [prepare, publish]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -293,17 +380,17 @@ jobs:
 
       - name: Push tag
         env:
-          TAG: ${{ needs.build.outputs.tag }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: @@CLI@@ push-tag
 
       - name: Create GitHub release
         env:
-          TAG: ${{ needs.build.outputs.tag }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           PACKAGE: ${{ inputs.package }}
-          VERSION: ${{ needs.build.outputs.version }}
-          PRERELEASE: ${{ needs.build.outputs.prerelease }}
-          MARK_LATEST: ${{ needs.build.outputs.mark_latest }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          MARK_LATEST: ${{ needs.prepare.outputs.mark_latest }}
           NOTES_PATH: release_notes.md
           CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
