@@ -18,7 +18,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_base
+from opentelemetry import trace
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
@@ -43,7 +45,14 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
+from reflex.app import (
+    App,
+    ComponentCallable,
+    EventNamespace,
+    _sio_dumps,
+    _sio_loads,
+    default_overlay_component,
+)
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -61,7 +70,7 @@ from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
-from .conftest import chdir
+from .conftest import chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -4257,3 +4266,76 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+def test_call_app_wraps_with_otel_asgi_middleware():
+    """The app's ASGI callable is wrapped when instrumentation installs a middleware."""
+    app = App()
+    app._compile = unittest.mock.Mock()
+    wrapped = []
+    otel.enable(asgi_middleware_factory=lambda asgi: wrapped.append(asgi) or asgi)
+    try:
+        api = app()
+    finally:
+        otel.disable()
+    assert wrapped == [api]
+
+
+def test_sio_json_records_message_sizes(otel_metrics):
+    """Socket.IO packet serialization records sizes in both directions."""
+    data = _sio_dumps({"a": "é"}, separators=(",", ":"))
+    assert data == '{"a":"é"}'
+    assert _sio_loads(data) == {"a": "é"}
+    assert _sio_loads(data.encode()) == {"a": "é"}
+    points = {
+        p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
+        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    }
+    size = len(data.encode())
+    assert size == len(data) + 1
+    assert points == {"transmit": size, "receive": 2 * size}
+
+
+@pytest.mark.asyncio
+async def test_on_event_uses_frontend_traceparent(otel_exporter):
+    """A traceparent in the event payload becomes the parent of the event span."""
+    mock_app = unittest.mock.Mock()
+    mock_app.router.return_value = "/"
+    mock_app.sio.get_environ.return_value = {
+        "asgi.scope": {"headers": [], "client": ("127.0.0.1", 1)}
+    }
+    seen: list = []
+
+    async def enqueue(token, event):
+        await asyncio.sleep(0)
+        seen.append(trace.get_current_span().get_span_context())
+
+    mock_app.event_processor.enqueue = enqueue
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns._token_manager.sid_to_token["sid"] = "tok"
+
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    with otel._tracer.start_as_current_span("websocket"):
+        await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
+        await ns.on_event("sid", {"name": "state.h"})
+    remote, fresh = seen
+    assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
+    assert not fresh.is_valid
+
+
+@pytest.mark.asyncio
+async def test_connect_disconnect_counts_connections(otel_metrics):
+    """Connect and disconnect adjust the open connection gauge."""
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns.emit = unittest.mock.AsyncMock()
+    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
+    await ns.on_connect("sid2", {"QUERY_STRING": "token=t2"})
+    task = ns.on_disconnect("sid1")
+    if task is not None:
+        await task
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert point.value == 1
+    # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()

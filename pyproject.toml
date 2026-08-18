@@ -86,6 +86,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "opentelemetry-sdk",
   "pandas",
   "pillow",
   "playwright",
@@ -107,6 +108,7 @@ dev = [
   "python-dotenv",
   "pyyaml",
   "reflex-docgen",
+  "reflex-otel",
   "reflex-release",
   "reflex-site-shared",
   "ruff",
@@ -159,6 +161,7 @@ extraPaths = [
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
   "packages/reflex-components-internal/src",
+  "packages/reflex-otel/src",
   "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
@@ -285,6 +288,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_otel",
   "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
@@ -427,6 +431,7 @@ reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
+reflex-otel.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true

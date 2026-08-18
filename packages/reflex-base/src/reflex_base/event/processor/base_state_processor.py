@@ -9,12 +9,14 @@ import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -340,6 +342,7 @@ class BaseStateEventProcessor(EventProcessor):
         ctx = entry.ctx
         event = entry.event
         router_data = event.router_data or {}
+        acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -348,6 +351,8 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
+            if otel.enabled:
+                otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
                 not state.router_data and event.name != _hydrate_event_name()
@@ -411,6 +416,10 @@ class BaseStateEventProcessor(EventProcessor):
             if ev_ctx is not None:
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
+                if otel.enabled:
+                    # Chain the handler's events under the failed event's parent context
+                    # (its remote or enqueuing span); parent_txid links them to it.
+                    otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,

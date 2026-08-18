@@ -68,6 +68,7 @@ on:
           - reflex-components-sonner
           - reflex-docgen
           - reflex-hosting-cli
+          - reflex-otel
           - reflex-release
           - reflex-site-shared
       version:

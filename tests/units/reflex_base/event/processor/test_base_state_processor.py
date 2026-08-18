@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from reflex_base import otel
 from reflex_base.constants import CompileVars
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event.context import EventContext
@@ -19,6 +20,7 @@ from reflex.event import Event
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.middleware.middleware import Middleware
 from reflex.state import OnLoadInternalState, State, StateUpdate
+from tests.units.conftest import metric_points
 
 
 @pytest.fixture
@@ -214,3 +216,34 @@ async def test_preprocess_update_routes_frontend_events_to_client(
     client_event_names = {e.name for _, events in emitted_events for e in events}
     assert "_call_function" in client_event_names
     assert "_redirect" in client_event_names
+
+
+async def test_execute_event_records_state_acquire_duration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_metrics,
+):
+    """Executing an event records how long acquiring the session state took.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_metrics: In-memory metric reader with metrics enabled.
+    """
+
+    class AcquireState(State):
+        @event
+        def noop(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
+        await processor.join(1)
+
+    names = {
+        p.attributes[otel.ATTR_EVENT_NAME]
+        for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    }
+    assert Event.from_event_type(AcquireState.noop())[0].name in names
