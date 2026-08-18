@@ -216,6 +216,63 @@ def test_providers_list_falls_back_for_a_non_admin(mocker: MockFixture):
     assert connections.call_args.kwargs["org_id"] == "org-1"
 
 
+def test_providers_status_separates_a_refusal_from_a_failed_read(
+    mocker: MockFixture,
+):
+    """A 5xx is a broken minute, not a standing permissions fact."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        return_value={
+            "configured": True,
+            "allowed": True,
+            "connections": [{"id": "conn-1", "name": "us-prod", "is_default": True}],
+        },
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(500, "boom"),
+    )
+
+    result = runner.invoke(providers_cli, ["status"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "(unavailable)" in result.output
+    assert "(needs org admin)" not in result.output
+    # Warned rather than swallowed, but the status itself still answers.
+    assert "Could not read the runtime service accounts" in result.output
+    assert "ready for deploys" in result.output
+
+
+def test_providers_status_names_a_permission_gap_as_one(mocker: MockFixture):
+    """A 403 is exactly the case the "needs org admin" label is for."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_gcp_provider_status",
+        return_value={
+            "configured": True,
+            "allowed": True,
+            "connections": [{"id": "conn-1", "name": "us-prod", "is_default": True}],
+        },
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_provider_accounts",
+        side_effect=_http_error(403, "no permission"),
+    )
+
+    result = runner.invoke(providers_cli, ["status"], env=_WIDE)
+
+    assert result.exit_code == 0, result.output
+    assert "(needs org admin)" in result.output
+    assert "(unavailable)" not in result.output
+    # Not a warning: a member who is not an admin is not a problem to report.
+    assert "Could not read" not in result.output
+
+
 def test_providers_list_json_has_one_shape_either_way(mocker: MockFixture):
     """The fallback emits the released row shape, not a second one."""
     mocker.patch(

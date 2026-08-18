@@ -36,8 +36,8 @@ envfile: .env.production           # Optional: defaults to .env
 
 # Google Cloud (Enterprise, requires a connected GCP account)
 provider: gcp                      # Optional: defaults to reflex-cloud
-gcp_connection: eu-prod            # Optional: defaults to your org's default connection
-full_deploy: true                  # Optional: leaves the app's hosting mode unchanged
+gcp_connection: eu-prod            # Optional: omit to keep the app's current connection
+full_deploy: true                  # Optional: omit to leave the app's hosting mode unchanged
 
 # Additional dependencies
 packages:                          # Optional: empty by default
@@ -125,15 +125,15 @@ rx.table.root(
             (
                 "gcp_connection",
                 "string",
-                "null",
-                "Which connected GCP account to deploy through",
+                "unset",
+                "Connected GCP account to deploy through (see below)",
                 None,
             ),
             (
                 "full_deploy",
                 "boolean",
-                "null",
-                "Serve the frontend from the GCP container",
+                "unset",
+                "Serve the frontend from the GCP container (see below)",
                 None,
             ),
         ]
@@ -214,11 +214,14 @@ gcp_connection: eu-prod
 ```
 
 Run `reflex cloud providers connections` to list the connections available to
-you, with the project, region and runtime service account of each. Omitting
-`gcp_connection` keeps the app on the connection it already uses, or your
-organization's default connection the first time it deploys to GCP. A
-connection can only be changed before the app has been deployed; afterwards,
-switch providers instead so the old project is torn down properly.
+you, with the project, region and runtime service account of each.
+
+Leaving `gcp_connection` unset keeps the app on the connection it already uses.
+An app that has never deployed to GCP has no connection yet, so for that first
+deploy the unset value means your organization's default connection — which is
+why the options table above lists no fixed default. A connection can only be
+changed before the app has been deployed; afterwards, switch providers instead
+so the old project is torn down properly.
 
 Two settings are ignored on this target: `regions` (the region comes from the
 connected account) and `hostname`. `vmtype` is honored — it maps onto Cloud Run

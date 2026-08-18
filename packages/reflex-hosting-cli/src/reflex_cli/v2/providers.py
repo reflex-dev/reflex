@@ -52,9 +52,10 @@ def _resolve_org_id(org_id: str | None, client: Any) -> str:
 _CONNECTION_HEADERS = ["Name", "Provider", "Project", "Region", "Runs as", "Default"]
 
 # What a connection's Cloud Run services run as when it names no service
-# account of its own, and what the CLI can say when it may not read that.
+# account of its own, and the two different reasons the CLI may not know.
 _RUNTIME_SA_PROJECT_DEFAULT = "(project default)"
 _RUNTIME_SA_UNKNOWN = "(needs org admin)"
+_RUNTIME_SA_UNAVAILABLE = "(unavailable)"
 
 
 def _runtime_service_accounts_of(accounts: list[dict]) -> dict[str, str]:
@@ -76,31 +77,47 @@ def _runtime_service_accounts_of(accounts: list[dict]) -> dict[str, str]:
     }
 
 
-def _runtime_service_accounts(org_id: str, client: Any) -> dict[str, str] | None:
+def _runtime_service_accounts(
+    org_id: str, client: Any
+) -> tuple[dict[str, str] | None, str]:
     """Look up what each of an org's connections runs its services as.
 
     Best effort: only the provider account listing carries the runtime service
     account, and that listing is limited to org admins, while this detail is
-    worth showing to anyone who can read a status.
+    worth showing to anyone who can read a status. A status that answers
+    "can this org deploy to GCP" is not failed over an enrichment it could not
+    read -- but the two reasons it could not are kept apart, since "you are not
+    an admin" is a standing fact and a 5xx is a broken minute.
 
     Args:
         org_id: The organization id to query.
         client: The authenticated client.
 
     Returns:
-        ``{connection id: runtime service account}``, or None when the listing
-        could not be read -- which is not the same answer as a connection that
-        names no service account.
+        ``({connection id: runtime service account}, label)`` where the map is
+        None if the listing could not be read, and the label is what to render
+        for a connection the map does not answer for.
 
     """
+    import httpx
+
     from reflex_cli.utils import hosting
 
     try:
         accounts = hosting.list_provider_accounts(org_id, client=client)
+    except httpx.HTTPStatusError as ex:
+        if ex.response.status_code in (
+            httpx.codes.UNAUTHORIZED,
+            httpx.codes.FORBIDDEN,
+        ):
+            console.debug(f"Not permitted to read provider account details: {ex}")
+            return None, _RUNTIME_SA_UNKNOWN
+        console.warn(f"Could not read the runtime service accounts: {ex}")
+        return None, _RUNTIME_SA_UNAVAILABLE
     except Exception as ex:
-        console.debug(f"Unable to read provider account details: {ex}")
-        return None
-    return _runtime_service_accounts_of(accounts)
+        console.warn(f"Could not read the runtime service accounts: {ex}")
+        return None, _RUNTIME_SA_UNAVAILABLE
+    return _runtime_service_accounts_of(accounts), _RUNTIME_SA_UNKNOWN
 
 
 def _as_account_row(connection: dict) -> dict:
@@ -133,7 +150,9 @@ def _as_account_row(connection: dict) -> dict:
 
 
 def _connection_row(
-    connection: dict, runtime_service_accounts: dict[str, str] | None
+    connection: dict,
+    runtime_service_accounts: dict[str, str] | None,
+    unknown_label: str = _RUNTIME_SA_UNKNOWN,
 ) -> list[str]:
     """Render one connection as a row of ``_CONNECTION_HEADERS``.
 
@@ -145,6 +164,9 @@ def _connection_row(
         connection: The connection to render.
         runtime_service_accounts: The runtime service accounts by connection
             id, or None when they could not be read.
+        unknown_label: What to render when they could not be read, which says
+            why -- a caller who may not read them is not a caller whose read
+            failed.
 
     Returns:
         The row's cells, in header order.
@@ -152,7 +174,7 @@ def _connection_row(
     """
     config = connection.get("config") or {}
     if runtime_service_accounts is None:
-        runs_as = _RUNTIME_SA_UNKNOWN
+        runs_as = unknown_label
     else:
         runs_as = (
             runtime_service_accounts.get(str(connection.get("id") or ""))
@@ -255,7 +277,7 @@ def providers_status(
             if isinstance(connection, dict)
         ]
         if connections:
-            runtime_service_accounts = _runtime_service_accounts(
+            runtime_service_accounts, unknown_label = _runtime_service_accounts(
                 org_id, authenticated_client
             )
             console.print(
@@ -263,7 +285,7 @@ def providers_status(
             )
             console.print_table(
                 [
-                    _connection_row(connection, runtime_service_accounts)
+                    _connection_row(connection, runtime_service_accounts, unknown_label)
                     for connection in connections
                 ],
                 headers=_CONNECTION_HEADERS,
