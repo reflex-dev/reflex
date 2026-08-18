@@ -358,11 +358,22 @@ class BaseStateEventProcessor(EventProcessor):
 
             # re-assign only when the value is set and different
             if router_data and state.router_data != router_data:
+                previous_router = state.router
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
                 if state.router != (router := RouterData.from_router_data(router_data)):
                     state.router = router
+                    # When only the per-navigation fields changed, the delta
+                    # can elide the connection-scoped fields (session,
+                    # headers) the client already holds. Direct router writes
+                    # elsewhere reset this flag (see BaseState.__setattr__).
+                    object.__setattr__(
+                        state,
+                        "_router_static_unchanged",
+                        previous_router.session == router.session
+                        and previous_router.headers == router.headers,
+                    )
 
             # Preprocess the event.
             if (

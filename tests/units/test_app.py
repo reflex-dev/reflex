@@ -52,7 +52,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, serialize_partial_router_data
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -1919,7 +1919,11 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
-        exp_router = RouterData.from_router_data(on_load_internal.router_data)
+        # The connection-scoped router fields (session, headers) are unchanged
+        # across these navigations, so deltas carry the partial router payload.
+        exp_router = serialize_partial_router_data(
+            RouterData.from_router_data(on_load_internal.router_data)
+        )
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,

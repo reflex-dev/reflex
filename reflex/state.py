@@ -73,7 +73,7 @@ from typing_extensions import Self
 import reflex.istate.dynamic
 from reflex import event
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, serialize_partial_router_data
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
@@ -1560,6 +1560,12 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.add(name)
             self._mark_dirty()
 
+        # Any direct router write invalidates the partial-router-delta
+        # optimization; the event processor re-arms it after comparing the
+        # connection-scoped fields (see BaseStateEventProcessor).
+        if name == constants.ROUTER:
+            object.__setattr__(self, "_router_static_unchanged", False)
+
     def reset(self):
         """Reset all the base vars to their default values."""
         # Reset the base vars.
@@ -1884,6 +1890,19 @@ class BaseState(EvenMoreBasicBaseState):
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
+
+        if (
+            self.parent_state is None
+            and (router_field := constants.ROUTER + FIELD_MARKER) in subdelta
+            and getattr(self, "_router_static_unchanged", False)
+        ):
+            # The connection-scoped router fields (session, headers) this
+            # client already received are unchanged, so ship only the
+            # per-navigation fields; the frontend merges the partial payload
+            # over its previously received router value.
+            subdelta[router_field] = serialize_partial_router_data(
+                subdelta[router_field]
+            )
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta

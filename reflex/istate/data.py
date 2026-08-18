@@ -474,6 +474,24 @@ def serialize_router_data(obj: RouterData) -> dict:
     return {
         "session": obj.session,
         "headers": obj.headers,
+        **serialize_partial_router_data(obj),
+    }
+
+
+def serialize_partial_router_data(obj: RouterData) -> dict:
+    """Serialize only the per-navigation fields of a RouterData object.
+
+    Used for state deltas once the connection-scoped fields (session and
+    headers) have already been sent to the client; the frontend merges this
+    partial payload over its previously received router value.
+
+    Args:
+        obj: the RouterData object.
+
+    Returns:
+        A dict with the per-navigation fields of the RouterData object.
+    """
+    return {
         "page": obj._page,
         # ReflexURL is a str subclass, so json.dumps handles it natively and
         # never invokes the `default=serialize` hook. Call the URL serializer

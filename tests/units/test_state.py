@@ -1086,6 +1086,47 @@ def test_get_client_ip(test_state, router_data):
     assert test_state.router.session.client_ip == "127.0.0.1"
 
 
+def test_partial_router_delta(test_state, router_data):
+    """Navigation deltas elide unchanged connection-scoped router fields.
+
+    Args:
+        test_state: A state.
+        router_data: The router data fixture.
+    """
+    router_field = constants.ROUTER + FIELD_MARKER
+
+    # First router assignment (hydrate): the full router is in the delta.
+    test_state.router = RouterData.from_router_data(router_data)
+    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert isinstance(delta_value, RouterData)
+    test_state._clean()
+
+    # Same connection navigates to a new page: the event processor detects
+    # unchanged session/headers and arms the partial-delta flag.
+    previous_router = test_state.router
+    new_router = RouterData.from_router_data({**router_data, RouteVar.PATH: "/other"})
+    test_state.router = new_router
+    object.__setattr__(
+        test_state,
+        "_router_static_unchanged",
+        previous_router.session == new_router.session
+        and previous_router.headers == new_router.headers,
+    )
+    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert set(delta_value) == {"page", "url", "route_id"}
+    assert delta_value["route_id"] == "/other"
+    test_state._clean()
+
+    # Any direct router write invalidates the flag: full router again.
+    test_state.router = RouterData.from_router_data({
+        **router_data,
+        RouteVar.PATH: "/direct",
+    })
+    delta_value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert isinstance(delta_value, RouterData)
+    test_state._clean()
+
+
 def test_get_current_page(test_state):
     assert test_state.router._page.path == ""
 

@@ -162,7 +162,22 @@ export const isStateful = () => {
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
-  return { ...state, ...delta };
+  const new_state = { ...state, ...delta };
+  // Once the connection-scoped router fields (session, headers) have been
+  // sent, the backend elides them from subsequent deltas; merge partial
+  // router payloads over the previously received value so they carry
+  // forward.
+  const router = delta["router_rx_state_"];
+  const prev_router = state["router_rx_state_"];
+  if (
+    router !== null &&
+    prev_router !== null &&
+    typeof router === "object" &&
+    typeof prev_router === "object"
+  ) {
+    new_state["router_rx_state_"] = { ...prev_router, ...router };
+  }
+  return new_state;
 };
 
 /**
