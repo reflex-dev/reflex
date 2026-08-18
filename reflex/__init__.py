@@ -91,14 +91,10 @@ from reflex_base.utils import lazy_loader
 if sys.version_info < (3, 11):
     import logging
 
-    # Loading the pipeline parents the package loggers and, under the CLI,
-    # attaches the sinks so this warning renders like every other record.
-    from reflex_base.utils import log as _log
-
     logging.getLogger(__name__).warning(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
     )
-    del logging, _log
+    del logging
 del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
