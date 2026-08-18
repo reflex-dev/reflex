@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -505,13 +506,29 @@ def test_bootstrap_preserves_application_logger_config(library_mode):
         package_logger.setLevel(logging.NOTSET)
 
 
-def test_bootstrap_configures_when_managed(monkeypatch):
-    """Workers inherit the CLI marker and attach sinks at import time."""
+def test_bootstrap_never_attaches_sinks(monkeypatch):
+    """Import-time bootstrap only reparents; sinks wait for ensure_configured.
+
+    Attaching sinks needs ``reflex_base.environment``, which imports the
+    component tree, so doing it at import time can close a circular import
+    (``vars`` -> ``console`` -> ``log`` -> ``environment`` -> ``vars``).
+    """
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     log._reset()
     log.bootstrap()
-    assert log._configured
+    assert not log._configured
+    assert log._console_handler() not in logging.getLogger("reflex").handlers
+    log.ensure_configured()
     assert log._console_handler() in logging.getLogger("reflex").handlers
+
+
+def test_managed_worker_can_import_vars_first():
+    """A managed worker importing ``reflex_base.vars`` before anything else works."""
+    subprocess.run(
+        [sys.executable, "-c", "import reflex_base.vars"],
+        check=True,
+        env={**os.environ, log._MANAGED_ENV_VAR: "true"},
+    )
 
 
 def test_library_mode_records_propagate_to_root(library_mode, caplog):

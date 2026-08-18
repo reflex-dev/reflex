@@ -484,7 +484,8 @@ def enable_managed_logging():
     """Mark this process (and its subprocesses) as CLI-managed and attach sinks.
 
     Called from the reflex CLI entry point. Worker subprocesses inherit the
-    marker through the environment and configure themselves in bootstrap().
+    marker through the environment and attach their sinks through
+    ensure_configured() once configuration is loaded.
     """
     os.environ[_MANAGED_ENV_VAR] = "true"
     configure()
@@ -497,8 +498,11 @@ def bootstrap():
     fix up the hierarchy. The manual parent assignment is permanent: the
     logging manager only fixes up parents when it creates a logger, and
     loggers created later under a package root chain to the existing root.
-    In managed mode (marker inherited from the CLI) the sinks attach
-    immediately so worker records render from the first line.
+    Sinks are never attached here: that needs :mod:`reflex_base.environment`
+    (and with it the component tree), which is not safe to import from
+    within this module's own import. Managed processes attach them through
+    :func:`enable_managed_logging` (the CLI) or :func:`ensure_configured`
+    (workers, from ``get_config``).
     """
     for name in PACKAGE_LOGGER_NAMES:
         child = logging.getLogger(name)
@@ -507,8 +511,6 @@ def bootstrap():
         # own configuration untouched while clearing the isEnabledFor caches,
         # which reparenting alone does not do.
         child.setLevel(child.level)
-    if is_managed_mode():
-        configure()
 
 
 def configure():
