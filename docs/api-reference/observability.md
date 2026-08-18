@@ -88,4 +88,6 @@ The compiled frontend then
 `OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/traces`, then
 `http://localhost:4318/v1/traces`; it must accept OTLP/HTTP from the browser
 (CORS). `service_name` defaults to `<app_name>-frontend`. `headers` are
-compiled into the public bundle, so never put secrets in them.
+compiled into the public bundle, so never put secrets in them. `sample_rate`
+(default `1.0`) samples browser traces at the root; a parent-based backend
+sampler follows that decision, so it also bounds the backend event traces.
