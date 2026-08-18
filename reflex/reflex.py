@@ -855,6 +855,18 @@ def makemigrations(message: str | None):
     help="Vm type id. Run `reflex cloud vmtypes` to get options.",
 )
 @click.option(
+    "--min-instances",
+    type=int,
+    help="The minimum number of instances to keep running. Left unchanged when "
+    "omitted. Only supported on apps deployed to Google Cloud.",
+)
+@click.option(
+    "--max-instances",
+    type=int,
+    help="The maximum number of instances to scale out to. Left unchanged when "
+    "omitted. Only supported on apps deployed to Google Cloud.",
+)
+@click.option(
     "--hostname",
     help="The hostname of the frontend.",
 )
@@ -941,6 +953,8 @@ def deploy(
     region: tuple[str, ...],
     env: tuple[str],
     vmtype: str | None,
+    min_instances: int | None,
+    max_instances: int | None,
     hostname: str | None,
     provider: str | None,
     gcp_connection: str | None,
@@ -1011,6 +1025,8 @@ def deploy(
         regions=list(region),
         envs=list(env),
         vmtype=vmtype,
+        min_instances=min_instances,
+        max_instances=max_instances,
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
