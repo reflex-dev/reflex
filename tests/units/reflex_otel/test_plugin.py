@@ -100,3 +100,9 @@ def test_render_timing_aliases_react_dom_profiling():
     assert fn(patched) == patched
     with pytest.raises(RuntimeError, match="render_timing"):
         _patch_vite_config("export default {};\n")
+
+
+@pytest.mark.parametrize("rate", [-0.1, 1.5])
+def test_sample_rate_out_of_range(rate: float):
+    with pytest.raises(ValueError, match="sample_rate"):
+        OtelPlugin(sample_rate=rate)
