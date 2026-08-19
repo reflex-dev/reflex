@@ -155,3 +155,47 @@ def test_a_dotted_module_resolves_from_the_project_root(
     result = CliRunner().invoke(workflows, ["check", "myflows.orders"])
     assert result.exit_code == 0, result.output
     assert "check.greeter" in result.output
+
+
+WORKER_FLOW = '''
+import reflex as rx
+
+class Batch(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="worker.batch")
+    label: str = ""
+
+    @rx.event(durable=True, trigger=rx.manual(), effect="none")
+    def go(self, label: str):
+        """Record the label.
+
+        Args:
+            label: What to record.
+
+        Returns:
+            Completion.
+        """
+        self.label = label
+        return rx.complete(result={"label": label})
+'''
+
+
+def test_the_worker_refuses_a_module_with_no_workflows(
+    tmp_path, forked_registration_context
+):
+    """Starting a worker that would serve nothing is an error, not a hang.
+
+    A process that sits there having silently loaded zero workflows is the
+    worst failure mode for a background worker: it looks healthy forever.
+    """
+    module = tmp_path / "empty.py"
+    module.write_text("x = 1\n")
+    result = CliRunner().invoke(workflows, ["worker", str(module)])
+    assert result.exit_code == 1
+    assert "No workflow classes" in result.output
+
+
+def test_the_worker_refuses_an_unloadable_target(tmp_path, forked_registration_context):
+    """A bad path is named, not raised as a traceback."""
+    result = CliRunner().invoke(workflows, ["worker", str(tmp_path / "nope.py")])
+    assert result.exit_code == 1
+    assert "Could not load" in result.output

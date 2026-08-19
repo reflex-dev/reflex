@@ -134,6 +134,83 @@ def workflows():
     """Inspect and steer durable workflow runs."""
 
 
+@workflows.command()
+@database_option
+@click.argument("target")
+@click.option(
+    "--queue",
+    "queues",
+    multiple=True,
+    help="Serve only these queues. Repeatable; default serves every queue.",
+)
+@click.option("--concurrency", default=None, type=int, help="Attempts to run at once.")
+def worker(
+    database: str | None,
+    target: str,
+    queues: tuple[str, ...],
+    concurrency: int | None,
+):
+    """Run workflows from TARGET with no frontend and no web server.
+
+    TARGET is a Python file or dotted module defining workflow classes. This
+    is the deployment shape for a background worker: a plain process that
+    claims steps from the shared store and executes them. Scale by starting
+    more of them, and narrow what a process takes with --queue.
+
+    The workflows do not have to live in a Reflex app -- a module importable
+    from a FastAPI service, a Django project, or a bare script works, because
+    a worker needs only the definitions and the store.
+    """
+    import asyncio
+
+    from reflex.workflow.runtime import WorkflowRuntime
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+
+    classes = [
+        value
+        for value in vars(module).values()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    ]
+    if not classes:
+        console.error(
+            f"No workflow classes in {target!r}. A workflow is an rx.State "
+            "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
+        )
+        raise click.exceptions.Exit(1)
+
+    async def serve() -> None:
+        """Run the kernel until interrupted."""
+        from reflex.workflow.kernel import DEFAULT_MAX_CONCURRENCY
+        from reflex.workflow.store import resolve_store
+
+        runtime = WorkflowRuntime(
+            resolve_store(database),
+            queues=queues or None,
+            max_concurrency=concurrency or DEFAULT_MAX_CONCURRENCY,
+        )
+        for workflow_cls in classes:
+            runtime.register(workflow_cls)
+        served = ", ".join(sorted(d.workflow_id for d in runtime.definitions))
+        console.print(
+            f"Serving {served} on "
+            f"{'queues ' + ', '.join(queues) if queues else 'every queue'}."
+        )
+        async with runtime.running():
+            # The kernel's worker does the work; this task only waits for the
+            # operator (or the platform) to stop the process.
+            await asyncio.Event().wait()
+
+    try:
+        asyncio.run(serve())
+    except KeyboardInterrupt:
+        console.print("Worker stopped.")
+
+
 @workflows.command("list")
 @database_option
 @click.option("--workflow", "-w", default=None, help="Only this workflow id.")
