@@ -377,3 +377,111 @@ async def test_a_signal_is_refused_for_a_run_that_is_gone(
         assert (
             await harness.signal("no-such-run", Quick.pinged({"v": 1})) == "unknown_run"
         )
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Known defect: a losing alternative of a decided approval is buffered "
+        "and then consumed by the next wait on the same channel. Fixing it "
+        "needs a durable decision-group identity shared by the alternatives "
+        "minted together, which is a store-shape change."
+    ),
+)
+async def test_a_rejected_alternative_does_not_answer_the_next_wait(
+    forked_registration_context,
+):
+    """One decision must not silently answer a later, unrelated question.
+
+    An approval mints two links -- approve and reject -- with distinct
+    delivery keys, on purpose, so a second person can reject after a first
+    approved. If approve lands first the run continues; the reject that lands
+    afterwards is buffered because nothing is waiting for it right then. When
+    the continuation opens a *second* wait on the same channel, that stale
+    reject resolves it, and a two-stage approval completes with a decision
+    nobody made in the second stage.
+    """
+
+    class TwoStage(rx.State):
+        __workflow__ = WorkflowConfig(id="waits.two_stage")
+        first: str = ""
+        second: str = ""
+
+        review = Signal(Decision)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Ask the first question.
+
+            Returns:
+                The first wait.
+            """
+            return wait_for(
+                TwoStage.review,
+                then=TwoStage.stage_one,
+                timeout="7d",
+                on_timeout=TwoStage.expire,
+            )
+
+        @rx.event(durable=True, effect="none")
+        def stage_one(self, decision: Decision):
+            """Record the first answer and ask a second question.
+
+            Args:
+                decision: The delivered decision.
+
+            Returns:
+                The second wait.
+            """
+            self.first = decision.by
+            return wait_for(
+                TwoStage.review,
+                then=TwoStage.stage_two,
+                timeout="7d",
+                on_timeout=TwoStage.expire,
+            )
+
+        @rx.event(durable=True, effect="none")
+        def stage_two(self, decision: Decision):
+            """Record the second answer.
+
+            Args:
+                decision: The delivered decision.
+
+            Returns:
+                Completion.
+            """
+            self.second = decision.by
+            return rx.complete(result={"first": self.first, "second": self.second})
+
+        @rx.event(durable=True, effect="none")
+        def expire(self):
+            """Nobody answered.
+
+            Returns:
+                Failure.
+            """
+            return rx.fail(reason="no decision")
+
+    async with WorkflowTestHarness(TwoStage) as harness:
+        started = await harness.start(TwoStage.start())
+        assert started.run_id is not None
+        await harness.signal(
+            started.run_id,
+            TwoStage.review(Decision(approved=True, by="approver")),
+            key="approve-link",
+        )
+        # The rejecting link for the *same* question, spent a moment later.
+        await harness.signal(
+            started.run_id,
+            TwoStage.review(Decision(approved=False, by="rejecter")),
+            key="reject-link",
+        )
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is not RunStatus.COMPLETED, (
+            "the second stage was answered by the first stage's losing "
+            f"alternative: {snapshot.result}"
+        )

@@ -575,3 +575,39 @@ async def test_join_results_arrive_in_declaration_order(forked_registration_cont
         assert snapshot.result == ["slow", "fast"], (
             "the fast branch finished first, but it was declared second"
         )
+
+
+async def test_a_race_loser_performs_no_effect_after_it_has_lost(
+    forked_registration_context,
+):
+    """One worker that resolves a race does stop the loser it is running.
+
+    This is the case that holds: the kernel that saw the winner arrive
+    cancels the losing child it owns, so the loser's deferred answer never
+    runs and whatever external thing it would have done does not happen.
+
+    It is deliberately not the whole guarantee. Cancelling the loser is
+    advisory follow-up work by one worker, so it does not survive that worker
+    dying between the winning commit and the cleanup, and it does not reach a
+    loser another worker is already executing. Both of those need cancellation
+    intent written in the same transaction that resolves the race, with
+    commits fenced against it, and neither is covered here -- a passing test
+    on this file says nothing about them.
+    """
+    RACE_CALLS.clear()
+
+    async with WorkflowTestHarness(Shopper, SlowVendor, FastVendor) as harness:
+        started = await harness.start(Shopper.start())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+
+        parent = await harness.get_run(started.run_id)
+        assert parent is not None
+        assert parent.status is RunStatus.COMPLETED, "the fast vendor should win"
+
+        await harness.advance("2h")
+
+        assert "slow-answer" not in RACE_CALLS, (
+            "the losing branch answered after the race was already decided: "
+            f"{RACE_CALLS}"
+        )
