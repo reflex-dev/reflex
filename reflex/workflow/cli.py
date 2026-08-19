@@ -26,6 +26,32 @@ if TYPE_CHECKING:
     from reflex.workflow.store import RunStore
 
 
+def _operator_action(database: str | None, run_id: str, action: str, **extra):
+    """Apply one operator action to a run, reporting what happened.
+
+    Args:
+        database: Connection URL or SQLite path, or None for the default.
+        run_id: The run to act on.
+        action: The store method to call.
+        extra: Extra keyword arguments for the store method.
+
+    Raises:
+        Exit: When the run was not in a state the action allows.
+    """
+    import time
+
+    applied = _with_store(
+        database,
+        lambda store: getattr(store, action)(run_id, time.time(), **extra),
+    )
+    if not applied:
+        console.error(
+            f"Run {run_id!r} is not in a state that allows {action.split('_')[0]!r}."
+        )
+        raise click.exceptions.Exit(1)
+    console.print(f"Applied {action.split('_')[0]} to {run_id}.")
+
+
 def _open_store(database: str | None) -> RunStore:
     """Open the run store the app persists to.
 
@@ -382,6 +408,18 @@ def cancel(database: str | None, run_id: str):
         console.error(f"Run {run_id!r} is unknown or already finished.")
         raise click.exceptions.Exit(1)
     console.print(f"Cancellation requested for {run_id}.")
+
+
+@workflows.command()
+@database_option
+@click.argument("run_id")
+def retry(database: str | None, run_id: str):
+    """Re-open a failed run at the step that failed.
+
+    The step runs again with a fresh attempt budget; the original failure
+    stays in the run's history.
+    """
+    _operator_action(database, run_id, "retry_run")
 
 
 @workflows.command()

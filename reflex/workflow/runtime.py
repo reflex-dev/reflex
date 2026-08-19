@@ -316,6 +316,55 @@ class WorkflowsNamespace:
         return await get_runtime().kernel.resume(run_id)
 
     @staticmethod
+    async def retry(run_id: str) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        Use this once the cause is fixed: the failed step runs again with a
+        fresh attempt budget, and the original failure stays in history.
+
+        Args:
+            run_id: The run to retry.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+        return await get_runtime().kernel.retry(run_id)
+
+    @staticmethod
+    async def force_complete(run_id: str, result: Any = None) -> bool:
+        """End a run as completed by operator decision.
+
+        For a run no code path will finish -- a wait nobody will answer, a
+        provider that is gone. Refused while a step is claimed; cancel first
+        if a worker still holds it.
+
+        Args:
+            run_id: The run to complete.
+            result: Result to record on the run.
+
+        Returns:
+            True if the run was finalized.
+        """
+        return await get_runtime().kernel.force_finalize(
+            run_id, status=RunStatus.COMPLETED, result=result
+        )
+
+    @staticmethod
+    async def force_fail(run_id: str, reason: str) -> bool:
+        """End a run as failed by operator decision.
+
+        Args:
+            run_id: The run to fail.
+            reason: Why the operator gave up on it, recorded on the run.
+
+        Returns:
+            True if the run was finalized.
+        """
+        return await get_runtime().kernel.force_finalize(
+            run_id, status=RunStatus.FAILED, error={"reason": reason}
+        )
+
+    @staticmethod
     async def list_runs(
         *,
         workflow_id: str | None = None,

@@ -1,0 +1,179 @@
+"""Tests for the operator actions in CONTRACT.md section 9.
+
+Each action is legal only from the states the contract names; anything else
+is a refused no-op. These assert both halves, because an action that silently
+succeeds from the wrong state is how an operator corrupts a run they were
+trying to rescue.
+"""
+
+from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
+
+import reflex as rx
+from reflex.workflow.records import RunStatus, StepStatus
+from reflex.workflow.testing import WorkflowTestHarness
+
+ATTEMPTS: list[int] = []
+
+
+class Fragile(rx.State):
+    """Fails until told otherwise."""
+
+    __workflow__ = WorkflowConfig(id="ops.fragile")
+    healed: bool = False
+
+    @rx.event(
+        durable=True,
+        trigger=manual(),
+        effect="read",
+        retry=Retry(max_attempts=1),
+    )
+    def start(self):
+        """Fail while the world is broken.
+
+        Returns:
+            Completion once healed.
+
+        Raises:
+            TransientWorkflowError: Until the operator fixes things.
+        """
+        ATTEMPTS.append(1)
+        if not HEALED:
+            msg = "downstream is down"
+            raise TransientWorkflowError(msg)
+        return rx.complete(result={"attempts": len(ATTEMPTS)})
+
+
+HEALED = False
+
+
+async def test_retry_reopens_a_failed_run(forked_registration_context):
+    """A failure the operator has since fixed runs again, from that step."""
+    global HEALED
+    ATTEMPTS.clear()
+    HEALED = False
+    async with WorkflowTestHarness(Fragile) as harness:
+        result = await harness.start(Fragile.start)
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+        assert len(ATTEMPTS) == 1
+
+        HEALED = True
+        assert await harness.kernel.retry(result.run_id)
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert len(ATTEMPTS) == 2
+        # The failure is still on the record; a retry does not rewrite history.
+        history = await harness.kernel.store.get_history(result.run_id)
+        assert any(event.type.value == "run_failed" for event in history)
+
+
+async def test_retry_is_refused_on_a_healthy_run(forked_registration_context):
+    """Retry applies to failures, not to runs that are fine."""
+    global HEALED
+    ATTEMPTS.clear()
+    HEALED = True
+    async with WorkflowTestHarness(Fragile) as harness:
+        result = await harness.start(Fragile.start)
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+
+        assert not await harness.kernel.retry(result.run_id)
+        assert not await harness.kernel.retry("no-such-run")
+
+
+async def test_force_complete_ends_a_stuck_run(forked_registration_context):
+    """A wait nobody will ever answer can be ended by decision."""
+
+    class Waiting(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.waiting")
+
+        answered = rx.Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Wait forever.
+
+            Returns:
+                An unbounded wait.
+            """
+            return rx.wait_for(Waiting.answered, then=Waiting.done, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def done(self, payload: dict):
+            """Never reached in this test.
+
+            Args:
+                payload: The delivered answer.
+            """
+
+    async with WorkflowTestHarness(Waiting) as harness:
+        result = await harness.start(Waiting.start)
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.WAITING
+
+        assert await harness.kernel.force_finalize(
+            result.run_id, status=RunStatus.COMPLETED, result={"by": "operator"}
+        )
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == {"by": "operator"}
+        # The abandoned wait is tombstoned, not left dangling.
+        assert all(
+            step.status in (StepStatus.SUCCEEDED, StepStatus.CANCELLED)
+            for step in snapshot.steps
+        )
+
+
+async def test_force_fail_records_the_reason(forked_registration_context):
+    """Giving up on a run says who gave up and why."""
+
+    class Stuck(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.stuck")
+
+        nudged = rx.Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Wait forever.
+
+            Returns:
+                An unbounded wait.
+            """
+            return rx.wait_for(Stuck.nudged, then=Stuck.done, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def done(self, payload: dict):
+            """Never reached.
+
+            Args:
+                payload: The delivered answer.
+            """
+
+    async with WorkflowTestHarness(Stuck) as harness:
+        result = await harness.start(Stuck.start)
+        assert result.run_id is not None
+        assert await harness.kernel.force_finalize(
+            result.run_id,
+            status=RunStatus.FAILED,
+            error={"reason": "vendor retired the endpoint"},
+        )
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+        assert snapshot.error is not None
+        assert "vendor retired" in snapshot.error["reason"]
+
+        # Already terminal: a second decision changes nothing.
+        assert not await harness.kernel.force_finalize(
+            result.run_id, status=RunStatus.COMPLETED
+        )

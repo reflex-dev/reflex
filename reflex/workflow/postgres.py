@@ -1343,6 +1343,7 @@ class PostgresRunStore:
         error: dict[str, Any] | None,
         event: HistoryEventType,
         now: float,
+        result: Any = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -1352,6 +1353,7 @@ class PostgresRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            result: Result to record, for an operator forcing completion.
 
         Returns:
             True if the run was finalized.
@@ -1383,9 +1385,10 @@ class PostgresRunStore:
                 (StepStatus.CANCELLED.value, now, run_id, _TERMINAL_STEPS),
             )
             await conn.execute(
-                "UPDATE workflow_runs SET status = %s, error = %s, updated_at = %s"
+                "UPDATE workflow_runs SET status = %s, error = %s,"
+                " result = COALESCE(%s, result), updated_at = %s"
                 " WHERE run_id = %s",
-                (status.value, _json(error), now, run_id),
+                (status.value, _json(error), _json(result), now, run_id),
             )
             events: list[tuple[HistoryEventType, dict[str, Any]]] = [
                 (HistoryEventType.STEP_TOMBSTONED, {"ordinal": open_row["ordinal"]})
@@ -1428,6 +1431,46 @@ class PostgresRunStore:
             )
             await self._append_events(
                 conn, run_id, ((HistoryEventType.RUN_RESUMED, {}),), now
+            )
+        return True
+
+    async def retry_run(self, run_id: str, now: float) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        Args:
+            run_id: The run to retry.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await self._lock_run(conn, run_id)
+            cursor = await conn.execute(
+                "SELECT ordinal FROM workflow_steps WHERE run_id = %s"
+                " AND status = ANY(%s) ORDER BY ordinal LIMIT 1",
+                (run_id, [StepStatus.FAILED.value, StepStatus.TIMED_OUT.value]),
+            )
+            row = await cursor.fetchone()
+            cursor = await conn.execute(
+                "UPDATE workflow_runs SET status = %s, error = NULL, updated_at = %s"
+                " WHERE run_id = %s AND status = %s",
+                (RunStatus.PENDING.value, now, run_id, RunStatus.FAILED.value),
+            )
+            if row is None or cursor.rowcount == 0:
+                return False
+            await conn.execute(
+                "UPDATE workflow_steps SET status = %s, attempts = 0, due_at = %s,"
+                " lease_expires_at = 0, error = NULL, updated_at = %s"
+                " WHERE run_id = %s AND ordinal = %s",
+                (StepStatus.READY.value, now, now, run_id, row["ordinal"]),
+            )
+            await self._append_events(
+                conn,
+                run_id,
+                ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),),
+                now,
             )
         return True
 

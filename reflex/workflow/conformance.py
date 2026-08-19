@@ -687,6 +687,56 @@ async def check_substeps_record_once_and_fence_stale_writers(
     assert list(await store.get_substeps("run1", 0)) == ["charge", "label"]
 
 
+async def check_retry_reopens_only_failed_runs(store: RunStore) -> None:
+    """An operator retry applies to a failed run and nothing else."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    # A pending run is not a failure to retry.
+    assert not await store.retry_run("run1", NOW)
+
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.FAILED,
+            run_status=RunStatus.FAILED,
+            state={},
+            run_error={"reason": "boom"},
+        ),
+        NOW,
+    )
+    assert await store.retry_run("run1", NOW + 1)
+    run = await store.get_run("run1")
+    assert run is not None
+    assert run.status is RunStatus.PENDING
+    assert run.error is None
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.READY
+    assert steps[0].attempts == 0
+    # Now re-opened, it is no longer a failed run.
+    assert not await store.retry_run("run1", NOW + 2)
+    assert not await store.retry_run("missing", NOW)
+
+
+async def check_force_finalize_records_a_result(store: RunStore) -> None:
+    """An operator ending a run may record what it should be treated as."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    assert await store.finalize_run(
+        "run1",
+        status=RunStatus.COMPLETED,
+        error=None,
+        event=HistoryEventType.RUN_COMPLETED,
+        now=NOW,
+        result={"by": "operator"},
+    )
+    run = await store.get_run("run1")
+    assert run is not None
+    assert run.status is RunStatus.COMPLETED
+    assert run.result == {"by": "operator"}
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.CANCELLED
+
+
 async def check_schedule_cursors_persist(store: RunStore) -> None:
     """A schedule's catch-up position survives the process that wrote it."""
     assert await store.read_schedule_cursor("wf:tick") is None
@@ -775,6 +825,8 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_list_children_finds_a_joins_branches,
     check_claims_respect_queue_boundaries,
     check_substeps_record_once_and_fence_stale_writers,
+    check_retry_reopens_only_failed_runs,
+    check_force_finalize_records_a_result,
     check_schedule_cursors_persist,
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,

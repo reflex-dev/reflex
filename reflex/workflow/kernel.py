@@ -762,6 +762,69 @@ class WorkflowKernel:
             self._wakeup.set()
         return resumed
 
+    async def retry(self, run_id: str) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        Args:
+            run_id: The run to retry.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+        retried = await self._store.retry_run(run_id, self._clock())
+        if retried:
+            await self._notify_run(
+                run_id, ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),)
+            )
+            self._wakeup.set()
+        return retried
+
+    async def force_finalize(
+        self,
+        run_id: str,
+        *,
+        status: RunStatus,
+        result: Any = None,
+        error: dict[str, Any] | None = None,
+    ) -> bool:
+        """End a run by operator decision, tombstoning what it had open.
+
+        The escape hatch for a run no code path will finish: a wait nobody
+        will answer, a branch whose provider is gone. Refused while any step
+        is claimed, so it never races a working attempt -- cancel first if a
+        worker still holds it.
+
+        Args:
+            run_id: The run to finalize.
+            status: The terminal status to record.
+            result: Result to record when completing.
+            error: Error payload to record when failing.
+
+        Returns:
+            True if the run was finalized.
+        """
+        now = self._clock()
+        run = await self._store.get_run(run_id)
+        if run is None:
+            return False
+        event = (
+            HistoryEventType.RUN_COMPLETED
+            if status is RunStatus.COMPLETED
+            else HistoryEventType.RUN_FAILED
+        )
+        finalized = await self._store.finalize_run(
+            run_id,
+            status=status,
+            error=error,
+            event=event,
+            now=now,
+            result=result,
+        )
+        if finalized:
+            self._notify(run, ((event, {"origin": "operator"}),))
+            await self._report_outcome(run, status, result, error)
+        return finalized
+
     async def list_runs(
         self,
         *,

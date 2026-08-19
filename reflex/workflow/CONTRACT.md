@@ -201,14 +201,14 @@ no-op with a reason.
 - `cancel(run)` — any nonterminal run.
 - `resume(run)` — `NEEDS_ATTENTION` only; re-opens the suspended step with a
   fresh attempt budget.
-- `retry(run)` — a `FAILED` run: re-opens its failed frontier step with a
-  fresh attempt budget and re-runs from there. History keeps the failure.
-- `skip(run)` — a suspended or failed run: marks the blocking step `SKIPPED`
-  (terminal, recorded as an operator decision) and lets the run continue as
-  if it had succeeded *with no transition* — the next open slot, if any,
-  proceeds; otherwise the run completes with no result.
-- `force_complete(run, result)` / `force_fail(run, error)` — a nonterminal,
+- `retry(run)` — a `FAILED` run: re-opens its failed step with a fresh
+  attempt budget and re-runs from there. History keeps the failure; a retry
+  never rewrites the record of why it was needed.
+- `force_complete(run, result)` / `force_fail(run, reason)` — a nonterminal,
   drained run: finalizes immediately, tombstoning open slots, recording the
-  operator origin. Parent joins receive the arrival like any terminal path.
+  operator origin and (for completion) the result to treat it as having
+  produced. Parent joins receive the arrival like any terminal path. Refused
+  while a step is claimed, so it never races a working attempt — cancel
+  first if a worker still holds one.
 
 All of these are store transactions under the same atomicity rules as §1.

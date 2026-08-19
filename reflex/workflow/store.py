@@ -423,6 +423,7 @@ class RunStore(Protocol):
         error: dict[str, Any] | None,
         event: HistoryEventType,
         now: float,
+        result: Any = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -432,10 +433,27 @@ class RunStore(Protocol):
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            result: Result to record, for an operator forcing completion.
 
         Returns:
             True if the run was finalized; False if it was already terminal
             or still has a claimed step.
+        """
+        ...
+
+    async def retry_run(self, run_id: str, now: float) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        The operator's answer to a run that failed for a reason now fixed: the
+        failed step runs again with a fresh attempt budget, and the failure
+        stays in history rather than being erased.
+
+        Args:
+            run_id: The run to retry.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a failed run was re-opened.
         """
         ...
 
@@ -1396,6 +1414,7 @@ class MemoryRunStore:
         error: dict[str, Any] | None,
         event: HistoryEventType,
         now: float,
+        result: Any = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -1405,6 +1424,7 @@ class MemoryRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            result: Result to record, for an operator forcing completion.
 
         Returns:
             True if the run was finalized.
@@ -1427,10 +1447,57 @@ class MemoryRunStore:
                         {"ordinal": step.ordinal},
                     ))
             self._runs[run_id] = dataclasses.replace(
-                run, status=status, error=error, updated_at=now
+                run,
+                status=status,
+                error=error,
+                result=result if result is not None else run.result,
+                updated_at=now,
             )
             events.append((event, {} if error is None else dict(error)))
             self._append_events(run_id, events, now)
+            return True
+
+    async def retry_run(self, run_id: str, now: float) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        The operator's answer to a run that failed for a reason now fixed: the
+        failed step runs again with a fresh attempt budget, and the failure
+        stays in history rather than being erased.
+
+        Args:
+            run_id: The run to retry.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+        async with self._lock:
+            run = self._runs.get(run_id)
+            if run is None or run.status is not RunStatus.FAILED:
+                return False
+            steps = self._steps[run_id]
+            reopened = False
+            for index, step in enumerate(steps):
+                if step.status in (StepStatus.FAILED, StepStatus.TIMED_OUT):
+                    steps[index] = dataclasses.replace(
+                        step,
+                        status=StepStatus.READY,
+                        attempts=0,
+                        due_at=now,
+                        lease_expires_at=0.0,
+                        error=None,
+                        updated_at=now,
+                    )
+                    reopened = True
+                    break
+            if not reopened:
+                return False
+            self._runs[run_id] = dataclasses.replace(
+                run, status=RunStatus.PENDING, error=None, updated_at=now
+            )
+            self._append_events(
+                run_id, ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),), now
+            )
             return True
 
     async def resume_run(self, run_id: str, now: float) -> bool:
@@ -3115,6 +3182,7 @@ class SqliteRunStore:
         error: dict[str, Any] | None,
         event: HistoryEventType,
         now: float,
+        result: Any = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -3124,6 +3192,7 @@ class SqliteRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            result: Result to record, for an operator forcing completion.
 
         Returns:
             True if the run was finalized.
@@ -3166,9 +3235,10 @@ class SqliteRunStore:
                         (StepStatus.CANCELLED.value, now, run_id, *terminal_step),
                     )
                     self._db.execute(
-                        "UPDATE workflow_runs SET status = ?, error = ?, updated_at = ?"
+                        "UPDATE workflow_runs SET status = ?, error = ?,"
+                        " result = COALESCE(?, result), updated_at = ?"
                         " WHERE run_id = ?",
-                        (status.value, _dump(error), now, run_id),
+                        (status.value, _dump(error), _dump(result), now, run_id),
                     )
                     events: list[tuple[HistoryEventType, dict[str, Any]]] = [
                         (HistoryEventType.STEP_TOMBSTONED, {"ordinal": row["ordinal"]})
@@ -3176,6 +3246,62 @@ class SqliteRunStore:
                     ]
                     events.append((event, {} if error is None else dict(error)))
                     self._append_events(run_id, events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
+
+    async def retry_run(self, run_id: str, now: float) -> bool:
+        """Re-open a failed run at the step that failed.
+
+        The operator's answer to a run that failed for a reason now fixed: the
+        failed step runs again with a fresh attempt budget, and the failure
+        stays in history rather than being erased.
+
+        Args:
+            run_id: The run to retry.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+
+        def work() -> bool:
+            """Re-open the failed step on the worker thread.
+
+            Returns:
+                Whether a failed run was re-opened.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    row = self._db.execute(
+                        "SELECT ordinal FROM workflow_steps WHERE run_id = ?"
+                        " AND status IN (?, ?) ORDER BY ordinal LIMIT 1",
+                        (run_id, StepStatus.FAILED.value, StepStatus.TIMED_OUT.value),
+                    ).fetchone()
+                    cursor = self._db.execute(
+                        "UPDATE workflow_runs SET status = ?, error = NULL,"
+                        " updated_at = ? WHERE run_id = ? AND status = ?",
+                        (RunStatus.PENDING.value, now, run_id, RunStatus.FAILED.value),
+                    )
+                    if row is None or cursor.rowcount == 0:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, attempts = 0,"
+                        " due_at = ?, lease_expires_at = 0, error = NULL,"
+                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        (StepStatus.READY.value, now, now, run_id, row["ordinal"]),
+                    )
+                    self._append_events(
+                        run_id,
+                        ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),),
+                        now,
+                    )
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")
