@@ -147,6 +147,34 @@ class FlowGate:
     throttle: tuple[int, float] | None = None
     debounce: float | None = None
 
+    def __post_init__(self):
+        """Refuse combined policies.
+
+        The decorator already enforces one policy per root; this makes the
+        combinations unrepresentable at the store boundary too, because the
+        three stores genuinely diverge on what a half-applied combination
+        would leave behind (a rejected start after a singleton cancellation
+        rolls back on SQLite and commits elsewhere), and an invariant that
+        holds only because callers are polite is not an invariant.
+
+        Raises:
+            ValueError: If more than one policy is declared.
+        """
+        declared = sum(
+            1
+            for flag in (
+                self.singleton_skip,
+                self.singleton_cancel,
+                self.rate_limit is not None,
+                self.throttle is not None,
+                self.debounce is not None,
+            )
+            if flag
+        )
+        if declared > 1:
+            msg = "FlowGate takes exactly one policy; combinations diverge."
+            raise ValueError(msg)
+
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class FlowAdmission:
@@ -1534,6 +1562,8 @@ class MemoryRunStore:
                 self._history.pop(run_id, None)
                 self._pending.pop(run_id, None)
                 self._inbox.pop(run_id, None)
+                for key in [k for k in self._substeps if k[0] == run_id]:
+                    del self._substeps[key]
                 if run.request_key is not None:
                     self._dedupe.pop((run.workflow_id, run.request_key), None)
             return len(doomed)

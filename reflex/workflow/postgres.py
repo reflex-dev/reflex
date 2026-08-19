@@ -710,19 +710,27 @@ class PostgresRunStore:
             cancelled: list[str] = []
             if gate.singleton_cancel and active:
                 ids = [row["run_id"] for row in active]
-                await conn.execute(
+                # The active SELECT is an unlocked snapshot, and a worker
+                # committing one of these runs to a terminal status does not
+                # hold the flow lock: under READ COMMITTED this UPDATE would
+                # wait out that commit and then flip the finished run back to
+                # CANCELLING -- resurrecting a terminal run. The non-terminal
+                # guard makes the row-version re-check decide correctly, and
+                # RETURNING reports only what was actually cancelled.
+                cursor = await conn.execute(
                     "UPDATE workflow_runs SET cancel_requested = TRUE,"
-                    " status = %s, updated_at = %s WHERE run_id = ANY(%s)",
-                    (RunStatus.CANCELLING.value, now, ids),
+                    " status = %s, updated_at = %s WHERE run_id = ANY(%s)"
+                    " AND NOT (status = ANY(%s)) RETURNING run_id",
+                    (RunStatus.CANCELLING.value, now, ids, _TERMINAL_RUNS),
                 )
-                for run_id in ids:
+                cancelled = [row["run_id"] for row in await cursor.fetchall()]
+                for run_id in cancelled:
                     await self._append_events(
                         conn,
                         run_id,
                         ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),),
                         now,
                     )
-                cancelled = ids
             due_at = root_step.due_at
             if gate.rate_limit is not None:
                 limit, window = gate.rate_limit
@@ -765,11 +773,25 @@ class PostgresRunStore:
                         return FlowAdmission("coalesced", active[0]["run_id"])
                 due_at = now + gate.debounce
             if run.request_key is not None:
-                await conn.execute(
+                # Same reservation shape as admit(): the advisory lock is
+                # keyed on the flow key, and two admissions can share a
+                # request key while computing different flow keys, so a plain
+                # INSERT here can lose a race the lock does not cover and
+                # raise instead of deduplicating.
+                cursor = await conn.execute(
                     "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
-                    " VALUES (%s, %s, %s)",
+                    " VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING run_id",
                     (run.workflow_id, run.request_key, run.run_id),
                 )
+                if await cursor.fetchone() is None:
+                    cursor = await conn.execute(
+                        "SELECT run_id FROM workflow_dedupe"
+                        " WHERE workflow_id = %s AND request_key = %s",
+                        (run.workflow_id, run.request_key),
+                    )
+                    existing = await cursor.fetchone()
+                    if existing is not None:
+                        return FlowAdmission("deduplicated", existing["run_id"])
             await self._insert_run(conn, run)
             await self._insert_step(conn, dataclasses.replace(root_step, due_at=due_at))
             await self._append_events(conn, run.run_id, events, run.created_at)

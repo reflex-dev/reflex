@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 import hmac
+import math
 import os
 import re
 import time
@@ -453,6 +454,10 @@ class StripeVerifier:
         try:
             signed_at = float(timestamp)
         except ValueError:
+            return False
+        if not math.isfinite(signed_at):
+            # NaN compares False against everything, which would wave it
+            # through the window check.
             return False
         if abs(time.time() - signed_at) > self.tolerance:
             return False

@@ -2799,10 +2799,17 @@ class WorkflowKernel:
             # claimable work AND none of the attempts THIS pump started still
             # live -- an attempt some other caller owns (a hanging handler a
             # test controls, a concurrent pump's work) is not ours to wait on.
-            live = [task for task in own if not task.done()]
-            if not live:
+            own = {task for task in own if not task.done()}
+            if not own:
                 return
-            await asyncio.wait(live, return_when=asyncio.FIRST_COMPLETED)
+            try:
+                await asyncio.wait(own, return_when=asyncio.FIRST_COMPLETED)
+            except asyncio.CancelledError:
+                # Same contract as _tick's wait: a cancelled pump must stop
+                # the attempts it started or they run on unsupervised.
+                if not self._draining:
+                    await self._cancel_inflight()
+                raise
             self._prune()
 
     async def _worker_loop(self) -> None:
