@@ -22,7 +22,36 @@ from reflex_base.utils import log
 # before click has parsed the subcommand's options -- anything it says would
 # otherwise land on stdout ahead of the document.
 _JSON_FLAGS = frozenset({"--json", "-j"})
+_JSON_SHORT = "j"
 _NO_JSON_FLAG = "--no-json"
+
+
+def _json_flag_state(arg: str) -> bool | None:
+    """Read what one command-line argument says about JSON output.
+
+    Args:
+        arg: A single command-line argument.
+
+    Returns:
+        True if it asks for JSON, False if it refuses it, None if it says
+        nothing either way.
+    """
+    if arg == _NO_JSON_FLAG:
+        return False
+    if arg in _JSON_FLAGS:
+        return True
+    # Short flags combine, so `-ij` is `-i -j`. Reading them means this scan
+    # can also fire on a `-j` that click would take as some other option's
+    # value, which is the direction to be wrong in: a message on stderr costs
+    # a little context, one inside the document costs the whole parse.
+    return (
+        True
+        if len(arg) > 1
+        and arg.startswith("-")
+        and not arg.startswith("--")
+        and _JSON_SHORT in arg[1:]
+        else None
+    )
 
 
 def stdout_is_tty() -> bool:
@@ -73,17 +102,43 @@ interactive_option = click.option(
 def json_requested(argv: Sequence[str] | None = None) -> bool:
     """Check whether a command line asks for JSON output.
 
+    Scanned back to front, so the last flag decides -- the same answer click
+    reaches for a boolean flag pair, which a set membership test cannot give:
+    ``--no-json --json`` enables JSON and ``--json --no-json`` does not.
+
     Args:
         argv: The arguments to inspect; defaults to this process's own.
 
     Returns:
-        True if a JSON flag is present and not overridden by ``--no-json``.
+        True if the command line asks for JSON output.
     """
-    args = set(sys.argv[1:] if argv is None else argv)
-    return bool(_JSON_FLAGS & args) and _NO_JSON_FLAG not in args
+    args = sys.argv[1:] if argv is None else argv
+    for arg in reversed(list(args)):
+        if (state := _json_flag_state(arg)) is not None:
+            return state
+    return False
 
 
-def reserve_stdout_for_argv(argv: Sequence[str] | None = None) -> None:
+def _hold_reservation(ctx: click.Context, reserved: bool) -> None:
+    """Reserve stdout for this context, releasing it again when it closes.
+
+    The reservation is process-global, so without an explicit release a
+    ``--json`` command leaves every later log line in the process writing to
+    stderr -- which a CLI process never notices, and an embedding one or a
+    second run in the same interpreter does.
+
+    Args:
+        ctx: The click context whose lifetime the reservation follows.
+        reserved: Whether stdout carries data rather than human output.
+    """
+    previous = log.is_stdout_reserved()
+    log.reserve_stdout(reserved)
+    ctx.call_on_close(lambda: log.reserve_stdout(previous))
+
+
+def reserve_stdout_for_argv(
+    argv: Sequence[str] | None = None, *, ctx: click.Context | None = None
+) -> None:
     """Reserve stdout up front when the command line asks for JSON.
 
     Always writes the reservation rather than only setting it, so a long-lived
@@ -92,8 +147,13 @@ def reserve_stdout_for_argv(argv: Sequence[str] | None = None) -> None:
 
     Args:
         argv: The arguments to inspect; defaults to this process's own.
+        ctx: The click context to release the reservation with, if there is one.
     """
-    log.reserve_stdout(json_requested(argv))
+    reserved = json_requested(argv)
+    if ctx is None:
+        log.reserve_stdout(reserved)
+        return
+    _hold_reservation(ctx, reserved)
 
 
 def _reserve_stdout(ctx: click.Context, param: click.Parameter, value: bool) -> bool:
@@ -108,7 +168,7 @@ def _reserve_stdout(ctx: click.Context, param: click.Parameter, value: bool) -> 
         The flag's value, unchanged.
     """
     if value:
-        log.reserve_stdout()
+        _hold_reservation(ctx, True)
     return value
 
 

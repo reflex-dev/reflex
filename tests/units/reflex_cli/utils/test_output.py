@@ -64,20 +64,26 @@ def test_stdout_is_tty_false_when_the_stream_has_no_isatty(monkeypatch):
     assert output.stdout_is_tty() is False
 
 
-@pytest.mark.parametrize(
-    ("argv", "expected"),
-    [
-        ([], False),
-        (["apps", "list"], False),
-        (["apps", "list", "--json"], True),
-        (["apps", "list", "-j"], True),
-        (["apps", "list", "--no-json"], False),
-        # An explicit refusal wins over the flag that asked for it, matching
-        # click's own last-word-wins parsing closely enough for a stream
-        # decision made before parsing.
-        (["apps", "list", "--json", "--no-json"], False),
-    ],
-)
+# Every spelling that has to agree with click, since the scan runs before
+# click parses and decides where the group callback's own output goes.
+_JSON_ARGV_CASES = [
+    ([], False),
+    (["apps", "list"], False),
+    (["apps", "list", "--json"], True),
+    (["apps", "list", "-j"], True),
+    (["apps", "list", "--no-json"], False),
+    # Last flag wins, in both directions: click parses these as a pair, so a
+    # membership test that answers "--no-json is present" is wrong about the
+    # second one.
+    (["apps", "list", "--json", "--no-json"], False),
+    (["apps", "list", "--no-json", "--json"], True),
+    # Short flags combine.
+    (["apps", "list", "-ij"], True),
+    (["apps", "list", "-ji"], True),
+]
+
+
+@pytest.mark.parametrize(("argv", "expected"), _JSON_ARGV_CASES)
 def test_json_requested(argv: list[str], expected: bool):
     """A JSON flag on the command line is recognized before click parses it.
 
@@ -86,6 +92,23 @@ def test_json_requested(argv: list[str], expected: bool):
         expected: Whether they ask for JSON.
     """
     assert output.json_requested(argv) is expected
+
+
+@pytest.mark.parametrize(("argv", "expected"), _JSON_ARGV_CASES)
+def test_json_requested_agrees_with_click(argv: list[str], expected: bool):
+    """The pre-parse scan reaches the same answer click's parser does.
+
+    The scan only exists to route output emitted before parsing, so a
+    disagreement puts a log line on the stdout a document is about to own.
+
+    Args:
+        argv: The arguments to inspect.
+        expected: Whether they ask for JSON.
+    """
+    result = runner.invoke(_probe, argv[2:])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["as_json"] is expected
 
 
 def test_reserve_stdout_for_argv_clears_a_stale_reservation():
@@ -149,6 +172,30 @@ def test_json_flag_reserves_stdout_before_the_command_runs():
 
 def test_no_json_leaves_stdout_unreserved():
     """Without --json, human-readable output keeps stdout."""
+    result = runner.invoke(_probe, [])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["stdout_reserved"] is False
+
+
+def test_reservation_is_released_when_the_command_ends():
+    """The reservation lasts the command, not the process.
+
+    A CLI process exits and never notices, but an embedding one -- or a second
+    run in the same interpreter -- would have every later log line writing to
+    stderr on behalf of a command that finished.
+    """
+    result = runner.invoke(_probe, ["--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["stdout_reserved"] is True
+    assert log.is_stdout_reserved() is False
+
+
+def test_a_later_command_is_not_reserved_by_an_earlier_one():
+    """A plain run after a --json run still writes to stdout."""
+    runner.invoke(_probe, ["--json"])
+
     result = runner.invoke(_probe, [])
 
     assert result.exit_code == 0, result.output
