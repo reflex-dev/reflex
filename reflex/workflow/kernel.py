@@ -1195,6 +1195,37 @@ class WorkflowKernel:
             return successors, None
         return [self._resolve_successor(defn, value)], None
 
+    async def _in_declaration_order(self, results: list) -> list:
+        """Sort a join's arrivals into the order their branches were declared.
+
+        An arrival carries its branch index. One recorded before that field
+        existed does not, and a join can span the upgrade that introduced it,
+        so the index is recovered from the branch's admission key -- which
+        every release has written, because it is what makes re-running a
+        fan-out idempotent. Anything still unidentifiable keeps its arrival
+        position rather than being reordered on a guess.
+
+        Args:
+            results: The arrivals recorded on the join slot.
+
+        Returns:
+            The arrivals in declaration order where that is knowable.
+        """
+        ordered: list[tuple[int, Any]] = []
+        for position, entry in enumerate(results):
+            branch = entry.get("branch") if isinstance(entry, dict) else None
+            if not isinstance(branch, int) and isinstance(entry, dict):
+                run_id = entry.get("run_id")
+                child = (
+                    await self._store.get_run(run_id)
+                    if isinstance(run_id, str)
+                    else None
+                )
+                if child is not None:
+                    branch = _branch_index(child.request_key)
+            ordered.append((branch if isinstance(branch, int) else position, entry))
+        return [entry for _, entry in sorted(ordered, key=operator.itemgetter(0))]
+
     async def _invoke(
         self,
         handler: HandlerDefinition,
@@ -1218,15 +1249,12 @@ class WorkflowKernel:
         args = {key: value for key, value in args.items() if key != "__wait__"}
         delivered = args.pop("__payload__", None)
         results = args.pop("__results__", None)
-        if isinstance(results, list) and all(
-            isinstance(entry, dict) and isinstance(entry.get("branch"), int)
-            for entry in results
-        ):
+        if isinstance(results, list):
             # A join accumulates arrivals as they land, which is finishing
             # order; rx.parallel promises declaration order, and a caller
             # unpacking `a, b = results` has no other way to tell which is
             # which.
-            results = sorted(results, key=operator.itemgetter("branch"))
+            results = await self._in_declaration_order(results)
         if delivered is None and results is not None:
             delivered = results
         if delivered is not None and handler.params:
@@ -1669,6 +1697,11 @@ class WorkflowKernel:
                     "__wait__": {
                         "channel": control.channel,
                         "on_timeout": timeout_id,
+                        # Which step asked the question. An approval link is
+                        # minted while that step runs, so this is what lets a
+                        # link be checked against the question it belongs to
+                        # rather than against whatever is waiting now.
+                        "armed_by": claim.step.ordinal,
                     },
                 },
                 due_at=deadline,

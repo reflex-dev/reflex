@@ -3,7 +3,9 @@
 from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
 
 import reflex as rx
+from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import HistoryEventType, RunStatus, StepStatus
+from reflex.workflow.store import MemoryRunStore
 from reflex.workflow.testing import WorkflowTestHarness
 
 BRANCH_CALLS: list[str] = []
@@ -611,3 +613,65 @@ async def test_a_race_loser_performs_no_effect_after_it_has_lost(
             "the losing branch answered after the race was already decided: "
             f"{RACE_CALLS}"
         )
+
+
+async def test_arrivals_from_before_the_upgrade_are_still_ordered(
+    forked_registration_context,
+):
+    """A join can span the deploy that taught arrivals to carry their branch.
+
+    A worker on the older release records an arrival with no branch index, and
+    the join it belongs to may already be half full when the new release comes
+    up. The index is still recoverable: a fan-out has always stamped each
+    branch with `child:<parent>:<ordinal>:<index>` as its admission key,
+    because that is what makes re-running the fan-out idempotent.
+    """
+    store = MemoryRunStore()
+    kernel = WorkflowKernel([], store)
+
+    class _Legacy:
+        """Stands in for a child run admitted by the older release."""
+
+        def __init__(self, run_id: str, index: int):
+            self.run_id = run_id
+            self.request_key = f"child:parent:0:{index}"
+
+    admitted = {
+        "late": _Legacy("late", 0),
+        "early": _Legacy("early", 1),
+    }
+
+    async def fake_get_run(run_id: str):  # noqa: RUF029
+        """Look up a child the way the store would.
+
+        Args:
+            run_id: The child run to load.
+
+        Returns:
+            The stand-in record, or None.
+        """
+        return admitted.get(run_id)
+
+    kernel._store = type(  # pyright: ignore[reportAttributeAccessIssue]
+        "_Stub", (), {"get_run": staticmethod(fake_get_run)}
+    )()
+
+    ordered = await kernel._in_declaration_order([  # pyright: ignore[reportPrivateUsage]
+        {"run_id": "early", "result": "second-declared"},
+        {"run_id": "late", "result": "first-declared"},
+    ])
+    assert [entry["result"] for entry in ordered] == [
+        "first-declared",
+        "second-declared",
+    ]
+
+
+async def test_unidentifiable_arrivals_keep_their_position(
+    forked_registration_context,
+):
+    """Ordering is recovered where it is knowable, never guessed at."""
+    store = MemoryRunStore()
+    kernel = WorkflowKernel([], store)
+    entries = [{"result": "a"}, {"result": "b"}, {"result": "c"}]
+    ordered = await kernel._in_declaration_order(entries)  # pyright: ignore[reportPrivateUsage]
+    assert [entry["result"] for entry in ordered] == ["a", "b", "c"]

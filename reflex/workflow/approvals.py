@@ -35,6 +35,7 @@ from reflex_base.workflow import ChannelDelivery, parse_duration
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
 from reflex.workflow.context import require_run
+from reflex.workflow.records import StepStatus
 from reflex.workflow.serde import to_run_data
 
 if TYPE_CHECKING:
@@ -163,6 +164,10 @@ def approval_link(
         "c": delivery.channel,
         "p": payload,
         "k": key,
+        # The step that asked. A link answers the question it was minted for
+        # and no other: without this a link for a question that timed out
+        # unanswered stays live and resolves the next wait on the channel.
+        "o": context.ordinal,
         "e": time.time() + parse_duration(expires_in, param="expires_in"),
     }
     body = json.dumps(claims, separators=(",", ":"), sort_keys=True).encode()
@@ -266,6 +271,45 @@ def _wants_json(request: Request) -> bool:
     return "application/json" in request.headers.get("accept", "")
 
 
+async def _answers_the_open_question(
+    runtime: WorkflowRuntime, claims: dict[str, Any]
+) -> bool:
+    """Whether a link's question is the one the run is still waiting on.
+
+    A link is minted while one step runs, and that step's question is the only
+    one it may answer. Without this a link outlives its question: nobody
+    clicks it, the wait times out, the run asks something else on the same
+    channel, and the forgotten link answers that instead.
+
+    Links minted before this claim existed carry no step, and are let through
+    rather than being invalidated by an upgrade.
+
+    Args:
+        runtime: The runtime holding the run.
+        claims: The verified token claims.
+
+    Returns:
+        True when the link may be delivered.
+    """
+    asked_by = claims.get("o")
+    if not isinstance(asked_by, int):
+        return True
+    snapshot = await runtime.kernel.get_run(claims["r"])
+    if snapshot is None:
+        return True
+    waiting = next(
+        (step for step in snapshot.steps if step.status is StepStatus.BLOCKED),
+        None,
+    )
+    if waiting is None:
+        # Nothing is waiting; let the store give its own answer, which is a
+        # better message than this one.
+        return True
+    wait = waiting.args.get("__wait__")
+    armed_by = wait.get("armed_by") if isinstance(wait, dict) else None
+    return not isinstance(armed_by, int) or armed_by == asked_by
+
+
 def approval_endpoint(
     runtime: WorkflowRuntime,
 ) -> Callable[[Request], Coroutine[Any, Any, Response]]:
@@ -315,6 +359,18 @@ def approval_endpoint(
                 "Submitting this records your decision on the waiting run.",
                 form=_FORM.format(label="Confirm"),
             )
+
+        if not await _answers_the_open_question(runtime, claims):
+            # The question this link belongs to is over -- answered, or timed
+            # out unanswered. Delivering anyway would let it resolve whatever
+            # the run happens to be waiting on now, which is a different
+            # question that nobody asked this person.
+            stale = "This decision is no longer open."
+            if _wants_json(request):
+                return JSONResponse(
+                    {"error": stale, "status": "stale"}, status_code=409
+                )
+            return _page("No longer open", stale, status=409)
 
         disposition = await runtime.kernel.signal(
             claims["r"],

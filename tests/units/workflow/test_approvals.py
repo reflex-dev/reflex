@@ -479,6 +479,77 @@ def test_a_token_missing_a_claim_is_refused(monkeypatch):
 
 
 TWO_STAGE_LINKS: dict[str, str] = {}
+_NOW = [1_000_000.0]
+
+
+class Lapsing(rx.State):
+    """A question that lapses, then asks a different one on the same channel."""
+
+    __workflow__ = WorkflowConfig(id="approval.lapsing")
+
+    decided = rx.Signal(dict)
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def submit(self):
+        """Ask, with links nobody will click.
+
+        Returns:
+            The first wait.
+        """
+        TWO_STAGE_LINKS["one_approve"] = rx.approval_link(Lapsing.decided({"ok": True}))
+        return rx.wait_for(
+            Lapsing.decided,
+            then=Lapsing.first,
+            timeout="7d",
+            on_timeout=Lapsing.ask_again,
+        )
+
+    @rx.event(durable=True, effect="none")
+    def ask_again(self):
+        """Nobody answered; ask a fresh question on the same channel.
+
+        Returns:
+            The second wait.
+        """
+        return rx.wait_for(
+            Lapsing.decided,
+            then=Lapsing.second,
+            timeout="7d",
+            on_timeout=Lapsing.give_up,
+        )
+
+    @rx.event(durable=True, effect="none")
+    def first(self, decision: dict):
+        """Record a first-question answer.
+
+        Args:
+            decision: The delivered payload.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result={"answered": "first", "decision": decision})
+
+    @rx.event(durable=True, effect="none")
+    def second(self, decision: dict):
+        """Record a second-question answer.
+
+        Args:
+            decision: The delivered payload.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result={"answered": "second", "decision": decision})
+
+    @rx.event(durable=True, effect="none")
+    def give_up(self):
+        """Nobody answered either question.
+
+        Returns:
+            Failure.
+        """
+        return rx.fail(reason="lapsed twice")
 
 
 class TwoStage(rx.State):
@@ -589,7 +660,8 @@ async def test_a_losing_alternative_cannot_answer_the_next_question(
         # The second question is now open. The first question's discarded
         # choice must not be able to answer it.
         stale = client.post(TWO_STAGE_LINKS["one_reject"])
-        assert "already been used" in stale.text.lower(), stale.text
+        assert stale.status_code == 409, stale.text
+        assert "no longer open" in stale.text.lower(), stale.text
         await runtime.kernel.run_until_idle()
 
     snapshot = await runtime.kernel.get_run(started.run_id)
@@ -605,3 +677,54 @@ async def test_a_losing_alternative_cannot_answer_the_next_question(
     snapshot = await runtime.kernel.get_run(started.run_id)
     assert snapshot is not None
     assert snapshot.result == {"first": "approved", "second": "approved"}
+
+
+async def test_a_link_from_a_timed_out_question_cannot_answer_the_next_one(
+    monkeypatch, forked_registration_context
+):
+    """A question nobody answered is over, and its links go with it.
+
+    Nothing was spent, so there is no spent-link record to catch this: the
+    first question simply lapsed. If the run then asks something else on the
+    same channel, the forgotten link from the first question must not answer
+    it. The link names the step that asked; only that step's question is its
+    to answer.
+
+    Args:
+        monkeypatch: Used to set the signing secret.
+        forked_registration_context: Isolates state registration.
+    """
+    monkeypatch.setenv(SECRET_ENV, SECRET)
+    TWO_STAGE_LINKS.clear()
+    store = MemoryRunStore()
+    runtime = WorkflowRuntime(store, clock=lambda: _NOW[0])
+    runtime.register(Lapsing)
+    app = Starlette(
+        routes=[
+            Route(APPROVAL_ROUTE, approval_endpoint(runtime), methods=["GET", "POST"])
+        ]
+    )
+    await runtime.startup(start_worker=False)
+    started = await runtime.kernel.start(Lapsing.submit())
+    await runtime.kernel.run_until_idle()
+    assert started.run_id is not None
+    stale_link = TWO_STAGE_LINKS["one_approve"]
+
+    # Nobody answers. The deadline arrives and the run asks a second question
+    # on the same channel.
+    _NOW[0] += 8 * 24 * 3600
+    await runtime.kernel.run_until_idle()
+    snapshot = await runtime.kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.status is RunStatus.WAITING, "the second question is open"
+
+    with TestClient(app) as client:
+        late = client.post(stale_link)
+    assert late.status_code == 409, late.text
+
+    await runtime.kernel.run_until_idle()
+    snapshot = await runtime.kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.status is RunStatus.WAITING, (
+        f"a link from the lapsed question answered the second one: {snapshot.result}"
+    )
