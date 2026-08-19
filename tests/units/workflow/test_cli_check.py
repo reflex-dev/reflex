@@ -303,3 +303,72 @@ def test_init_writes_a_workflow_that_compiles(tmp_path, forked_registration_cont
         again = runner.invoke(group, ["init", "orders"])
         assert again.exit_code == 1
         assert "already exists" in again.output
+
+
+TRIGGERED = '''
+import reflex as rx
+
+class Billing(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="check.billing")
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=rx.webhook(
+            "stripe.paid",
+            verify=rx.hmac_signature(secret_env="S", header="X-Sig"),
+            dedupe_by="id",
+        ),
+    )
+    def on_paid(self, payload: dict):
+        """Handle a payment.
+
+        Args:
+            payload: The delivered body.
+        """
+
+    @rx.event(durable=True, effect="none", trigger=rx.schedule("0 3 * * *"))
+    def nightly(self):
+        """Run nightly."""
+
+    @rx.event(durable=True, effect="none", trigger=rx.manual())
+    def by_hand(self):
+        """Started from code."""
+'''
+
+
+def test_triggers_reports_how_each_workflow_starts(
+    tmp_path, forked_registration_context
+):
+    """An operator can see what starts a deployment without reading its source.
+
+    "Is the cron registered, and what URL does the provider post to" are the
+    questions asked when something has not fired, and reading the code is the
+    wrong answer to both.
+    """
+    module = tmp_path / "billing.py"
+    module.write_text(TRIGGERED)
+    result = CliRunner().invoke(workflows, ["triggers", str(module), "--json"])
+    assert result.exit_code == 0, result.output
+    rows = {entry["handler"]: entry for entry in json.loads(result.output)}
+
+    assert rows["on_paid"]["kind"] == "webhook"
+    assert rows["on_paid"]["path"] == "/_workflow/webhook/stripe.paid"
+    assert rows["on_paid"]["verified"] is True
+    assert rows["on_paid"]["dedupe_by"] == "id"
+
+    assert rows["nightly"]["kind"] == "schedule"
+    assert rows["nightly"]["detail"] == "0 3 * * *"
+    assert rows["nightly"]["next_fire"], "a schedule with no next occurrence"
+
+    assert rows["by_hand"]["kind"] == "manual"
+
+
+def test_triggers_flags_an_unverified_webhook(tmp_path, forked_registration_context):
+    """The text view says which endpoints are open, since that is the risk."""
+    module = tmp_path / "billing2.py"
+    module.write_text(TRIGGERED)
+    result = CliRunner().invoke(workflows, ["triggers", str(module)])
+    assert result.exit_code == 0
+    assert "signature verified" in result.output
+    assert "POST /_workflow/webhook/stripe.paid" in result.output

@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import operator
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -241,6 +242,88 @@ class {klass}(rx.State):
         """
         return rx.complete(result={{"order": self.order, "charge": self.charge_id}})
 '''
+
+
+@workflows.command()
+@click.argument("target")
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON instead of a table.")
+def triggers(target: str, as_json: bool):
+    """List what starts the workflows in TARGET, and how.
+
+    The answer to "is my cron actually registered, and what is the URL this
+    provider should post to" -- questions whose only other answer is reading
+    the source, which is exactly what an operator should never have to do to
+    understand a deployment.
+    """
+    from reflex_base.workflow import ScheduleTrigger, WebhookTrigger
+
+    from reflex.workflow.cron import CronSchedule
+    from reflex.workflow.definition import compile_workflow
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+
+    rows: list[dict[str, Any]] = []
+    for value in vars(module).values():
+        if not (isinstance(value, type) and "__workflow__" in vars(value)):
+            continue
+        definition = compile_workflow(value)
+        for handler in definition.handlers.values():
+            trigger = handler.trigger
+            if isinstance(trigger, WebhookTrigger):
+                rows.append({
+                    "workflow": definition.workflow_id,
+                    "handler": handler.name,
+                    "kind": "webhook",
+                    "detail": trigger.topic,
+                    "path": f"/_workflow/webhook/{trigger.topic}",
+                    "verified": trigger.verify is not None,
+                    "dedupe_by": trigger.dedupe_by,
+                })
+            elif isinstance(trigger, ScheduleTrigger):
+                import time
+
+                schedule = CronSchedule(trigger.cron)
+                upcoming = schedule.next_after(time.time())
+                rows.append({
+                    "workflow": definition.workflow_id,
+                    "handler": handler.name,
+                    "kind": "schedule",
+                    "detail": trigger.cron,
+                    "next_fire": upcoming,
+                })
+            elif trigger is not None:
+                rows.append({
+                    "workflow": definition.workflow_id,
+                    "handler": handler.name,
+                    "kind": "manual",
+                    "detail": "started from code or the API",
+                })
+
+    if as_json:
+        click.echo(json.dumps(rows, indent=2, default=str))
+        return
+    if not rows:
+        console.print(f"No triggers declared in {target!r}.")
+        return
+    click.echo(f"{'KIND':10}{'WORKFLOW':28}{'HANDLER':16}DETAIL")
+    for row in sorted(rows, key=operator.itemgetter("kind", "workflow")):
+        click.echo(
+            f"{row['kind']:10}{row['workflow']:28}{row['handler']:16}{row['detail']}"
+        )
+        if row["kind"] == "webhook":
+            guard = "signature verified" if row["verified"] else "UNVERIFIED"
+            click.echo(f"{'':54}POST {row['path']}  ({guard})")
+        elif row["kind"] == "schedule" and row.get("next_fire"):
+            import datetime
+
+            when = datetime.datetime.fromtimestamp(
+                row["next_fire"], tz=datetime.timezone.utc
+            )
+            click.echo(f"{'':54}next {when:%Y-%m-%d %H:%M} UTC")
 
 
 @workflows.command("init")
