@@ -275,3 +275,31 @@ def test_webhook_roots_are_named_for_the_worker(forked_registration_context):
 
     names = webhook_root_names([compile_workflow(Mixed)])
     assert names == ["check.mixed.on_hook"], names
+
+
+def test_init_writes_a_workflow_that_compiles(tmp_path, forked_registration_context):
+    """The scaffold must be correct code, not a sketch.
+
+    It is the first thing a new developer runs, and the commands it prints
+    are the next two. A scaffold that does not compile teaches the engine's
+    rules by failing at them.
+    """
+    from reflex.workflow.cli import workflows as group
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        written = runner.invoke(group, ["init", "orders"])
+        assert written.exit_code == 0, written.output
+        assert "reflex workflows dev orders.py Orders.start" in written.output
+
+        # The generated module passes the same compiler the app applies.
+        checked = runner.invoke(group, ["check", "orders.py", "--json"])
+        assert checked.exit_code == 0, checked.output
+        payload = json.loads(checked.output)
+        assert payload["ok"] is True
+        assert payload["workflows"][0]["workflow_id"] == "orders.orders"
+
+        # A second init does not quietly overwrite the first.
+        again = runner.invoke(group, ["init", "orders"])
+        assert again.exit_code == 1
+        assert "already exists" in again.output

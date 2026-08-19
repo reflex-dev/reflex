@@ -172,6 +172,108 @@ def workflows():
     """Inspect and steer durable workflow runs."""
 
 
+_SCAFFOLD = '''"""A durable workflow.
+
+Run it:
+
+    reflex workflows dev {module}.py {klass}.start --arg order=ord-1
+
+Serve it as a background worker:
+
+    reflex workflows worker {module}.py
+
+Point it at Postgres for more than one worker:
+
+    REFLEX_WORKFLOW_DATABASE=postgresql://... reflex workflows worker {module}.py
+"""
+
+import reflex as rx
+
+
+def charge_card(order: str) -> dict:
+    """Stand in for a real call to a payment provider.
+
+    Args:
+        order: The order being charged.
+
+    Returns:
+        The provider's response.
+    """
+    return {{"charge_id": f"ch_{{order}}"}}
+
+
+class {klass}(rx.State):
+    """Charges an order, then follows up a day later."""
+
+    __workflow__ = rx.WorkflowConfig(id="{workflow_id}")
+
+    order: str = ""
+    charge_id: str = ""
+
+    @rx.event(
+        durable=True,
+        trigger=rx.manual(),
+        effect="idempotent_write",
+        retry=rx.Retry(max_attempts=5),
+    )
+    async def start(self, order: str):
+        """Charge the order, then wait a day before following up.
+
+        Args:
+            order: The order to charge.
+
+        Returns:
+            The next step, due tomorrow.
+        """
+        self.order = order
+        # rx.step records its result, so a retry of this handler replays the
+        # charge instead of making it twice.
+        charge = await rx.step("charge", charge_card, order)
+        self.charge_id = charge["charge_id"]
+        return rx.after("1d", {klass}.follow_up)
+
+    @rx.event(durable=True, effect="idempotent_write")
+    def follow_up(self):
+        """Run a day after the charge, whatever happened in between.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result={{"order": self.order, "charge": self.charge_id}})
+'''
+
+
+@workflows.command("init")
+@click.argument("name", default="workflows")
+def init_workflow(name: str):
+    """Write a runnable workflow module to NAME.py and say what to do next.
+
+    The workflow-only starting point: one file, no app, no frontend, nothing
+    to configure. It uses the pieces worth knowing on the first day -- a
+    durable step, a recorded side effect, a retry policy, and a timer that
+    survives restarts -- and the commands printed afterwards run it.
+    """
+    module = Path(f"{name}.py")
+    if module.exists():
+        console.error(f"{module} already exists; choose another name.")
+        raise click.exceptions.Exit(1)
+
+    stem = module.stem.replace("-", "_")
+    klass = "".join(part.title() for part in stem.split("_")) or "Orders"
+    module.write_text(
+        _SCAFFOLD.format(
+            module=stem, klass=klass, workflow_id=f"{stem}.{klass.lower()}"
+        )
+    )
+    console.print(f"Wrote {module}.")
+    console.print("")
+    console.print("Run it once, watching every step:")
+    console.print(f"    reflex workflows dev {module} {klass}.start --arg order=ord-1")
+    console.print("")
+    console.print("Or serve it as a worker and start runs from your own code:")
+    console.print(f"    reflex workflows worker {module}")
+
+
 @workflows.command()
 @database_option
 @click.argument("target")
