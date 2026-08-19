@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any
 import click
 from reflex_base.utils import console
 
-from reflex.workflow.records import RunStatus
+from reflex.workflow.records import RunStatus, attempts_made
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable
@@ -883,7 +883,7 @@ def show(database: str | None, run_id: str, as_json: bool, history: bool):
                             "ordinal": step.ordinal,
                             "handler_id": step.handler_id,
                             "status": step.status.value,
-                            "attempts": step.attempts,
+                            "attempts": attempts_made(step),
                             "recoveries": step.recoveries,
                         }
                         for step in steps
@@ -910,7 +910,7 @@ def show(database: str | None, run_id: str, as_json: bool, history: bool):
     click.echo("")
     click.echo(f"{'#':<4}{'HANDLER':28}{'STATUS':17}ATTEMPTS")
     for step in steps:
-        attempts = f"{step.attempts}"
+        attempts = f"{attempts_made(step)}"
         if step.recoveries:
             attempts += f" (+{step.recoveries} recovered)"
         click.echo(

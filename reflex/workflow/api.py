@@ -23,6 +23,8 @@ from typing import TYPE_CHECKING, Any, Final
 from reflex_base.utils import console
 from starlette.responses import JSONResponse
 
+from reflex.workflow.records import attempts_made
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
 
@@ -183,7 +185,7 @@ def run_endpoint(
                     "ordinal": step.ordinal,
                     "handler": step.handler_id,
                     "status": step.status.value,
-                    "attempts": step.attempts,
+                    "attempts": attempts_made(step),
                 }
                 for step in snapshot.steps
             ],

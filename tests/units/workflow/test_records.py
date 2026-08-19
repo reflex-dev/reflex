@@ -9,6 +9,8 @@ they were only ever exercised through store behaviour, where a regression
 would surface far from its cause.
 """
 
+import dataclasses
+
 import pytest
 
 from reflex.workflow.records import (
@@ -16,6 +18,7 @@ from reflex.workflow.records import (
     TERMINAL_STEP_STATUSES,
     StepRecord,
     StepStatus,
+    attempts_made,
     step_claimable_at,
     step_wake_at,
 )
@@ -110,3 +113,32 @@ def test_blocked_is_deliberately_not_in_the_claimable_set():
     """
     assert StepStatus.BLOCKED not in CLAIMABLE_STEP_STATUSES
     assert step_claimable_at(make(StepStatus.BLOCKED, NOW), NOW)
+
+
+def test_a_step_that_worked_first_try_has_made_one_attempt():
+    """The retry budget spent nothing, but the handler still ran once.
+
+    ``attempts`` is budget accounting, so a first-try success leaves it at
+    zero; a run view that printed that would be telling an operator the step
+    never ran.
+    """
+    assert attempts_made(make(StepStatus.SUCCEEDED)) == 1
+    assert attempts_made(make(StepStatus.CLAIMED)) == 1
+
+
+def test_waiting_steps_count_only_what_has_already_run():
+    """Nothing is in flight, so the counters are the whole story."""
+    assert attempts_made(make(StepStatus.READY)) == 0
+    assert attempts_made(make(StepStatus.BLOCKED)) == 0
+    assert (
+        attempts_made(dataclasses.replace(make(StepStatus.RETRY_WAIT), attempts=2)) == 2
+    )
+    assert attempts_made(dataclasses.replace(make(StepStatus.SKIPPED), attempts=1)) == 1
+
+
+def test_failed_attempts_and_lost_attempts_both_count_as_runs():
+    """A crash took the attempt away from the budget, not from history."""
+    step = dataclasses.replace(make(StepStatus.SUCCEEDED), attempts=2, recoveries=1)
+    assert attempts_made(step) == 4
+    lost = dataclasses.replace(make(StepStatus.RECOVERY_WAIT), recoveries=1)
+    assert attempts_made(lost) == 1

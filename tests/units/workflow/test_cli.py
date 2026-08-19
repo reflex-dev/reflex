@@ -140,6 +140,11 @@ def test_show_json_carries_state_and_steps(seeded):
     assert payload["state"] == {"cid": "acme"}
     assert payload["status"] == RunStatus.WAITING.value
     assert [step["handler_id"] for step in payload["steps"]] == ["start", "finish"]
+    by_handler = {step["handler_id"]: step for step in payload["steps"]}
+    assert by_handler["start"]["attempts"] == 1, (
+        "a step that succeeded on its first try ran once, not zero times"
+    )
+    assert by_handler["finish"]["attempts"] == 0
 
 
 def test_show_unknown_run_fails(seeded):

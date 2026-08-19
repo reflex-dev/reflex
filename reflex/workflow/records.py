@@ -71,6 +71,28 @@ CLAIMABLE_STEP_STATUSES = frozenset((
 ))
 
 
+def attempts_made(step: StepRecord) -> int:
+    """How many times a slot's handler has actually been started.
+
+    ``StepRecord.attempts`` counts what a slot has spent from its retry
+    budget, and a handler that worked the first time spent nothing, so that
+    field is zero for a step that plainly ran. ``recoveries`` is the same
+    story for attempts a crash took away. Neither is what an operator means
+    by "how many times has this run", which is what a run view shows, so this
+    adds the attempt that succeeded or is in flight to both counters.
+
+    Args:
+        step: The slot to count.
+
+    Returns:
+        The number of attempts started on this slot, including one running.
+    """
+    started = step.attempts + step.recoveries
+    if step.status in (StepStatus.SUCCEEDED, StepStatus.CLAIMED):
+        return started + 1
+    return started
+
+
 def step_claimable_at(step: StepRecord, now: float) -> bool:
     """Whether a slot may be claimed at a point in time.
 
