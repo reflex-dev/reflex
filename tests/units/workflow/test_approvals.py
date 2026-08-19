@@ -426,3 +426,53 @@ async def test_a_link_can_carry_a_model_payload(
     assert snapshot is not None
     assert snapshot.result == {"outcome": "ada:True"}
     await runtime.shutdown()
+
+
+@pytest.mark.parametrize(
+    ("name", "expiry"),
+    [("infinite", float("inf")), ("not-a-number", float("nan"))],
+)
+def test_a_token_can_never_be_immortal(monkeypatch, name, expiry):
+    """An expiry that is not a finite number must not pass the check.
+
+    NaN loses every comparison, so `nan < now` is False and the deadline
+    silently never arrives; infinity does it outright. Signing means only our
+    own bug could mint such a token, which is exactly why the verifier must
+    not assume it never will.
+    """
+    import json
+
+    from reflex.workflow.approvals import _b64, _sign, decode_token
+
+    monkeypatch.setenv(SECRET_ENV, SECRET)
+    claims = {
+        "r": "run1",
+        "c": "decided",
+        "p": {"ok": True},
+        "k": "key",
+        "e": expiry,
+    }
+    body = json.dumps(claims, separators=(",", ":"), sort_keys=True).encode()
+    with pytest.raises(WorkflowRuntimeError, match="not valid"):
+        decode_token(f"{_b64(body)}.{_sign(body)}")
+
+
+def test_a_token_missing_a_claim_is_refused(monkeypatch):
+    """Every claim the delivery depends on must be present and signed."""
+    import json
+
+    from reflex.workflow.approvals import _b64, _sign, decode_token
+
+    monkeypatch.setenv(SECRET_ENV, SECRET)
+    complete = {
+        "r": "run1",
+        "c": "decided",
+        "p": {"ok": True},
+        "k": "key",
+        "e": time.time() + 60,
+    }
+    for dropped in complete:
+        claims = {key: value for key, value in complete.items() if key != dropped}
+        body = json.dumps(claims, separators=(",", ":"), sort_keys=True).encode()
+        with pytest.raises(WorkflowRuntimeError, match="not valid"):
+            decode_token(f"{_b64(body)}.{_sign(body)}")

@@ -23,6 +23,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import time
 from html import escape
@@ -188,7 +189,17 @@ def decode_token(token: str) -> dict[str, Any]:
         raise WorkflowRuntimeError(invalid) from exc
     if not isinstance(claims, dict) or not {"r", "c", "p", "k", "e"} <= claims.keys():
         raise WorkflowRuntimeError(invalid)
-    if not isinstance(claims["e"], (int, float)) or claims["e"] < time.time():
+    expiry = claims["e"]
+    # Finite is not pedantry: NaN fails every comparison, so `nan < now` is
+    # False and a NaN expiry would make a token immortal; infinity would do it
+    # outright. Signing means only our own bug could mint one, which is
+    # precisely why the verifier should not depend on that being true.
+    if (
+        not isinstance(expiry, (int, float))
+        or isinstance(expiry, bool)
+        or not math.isfinite(expiry)
+        or expiry < time.time()
+    ):
         raise WorkflowRuntimeError(invalid)
     return claims
 
