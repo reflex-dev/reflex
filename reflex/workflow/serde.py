@@ -47,6 +47,13 @@ def to_run_data(value: Any) -> Any:
 
     Raises:
         TypeError: If the value contains something no serializer handles.
-        ValueError: If the value cannot be encoded (e.g. circular references).
+        ValueError: If the value cannot be encoded -- a circular reference, or
+            a float that JSON has no representation for (NaN, infinity).
     """
-    return json.loads(json.dumps(value, ensure_ascii=False, default=_strict_default))
+    # allow_nan=False is the whole point: NaN and Infinity are not JSON, and
+    # Python emitting them anyway is how a workflow that works on SQLite and
+    # in memory fails at commit against Postgres, whose JSONB refuses them.
+    # Failing here names the value; failing there names a column.
+    return json.loads(
+        json.dumps(value, ensure_ascii=False, allow_nan=False, default=_strict_default)
+    )
