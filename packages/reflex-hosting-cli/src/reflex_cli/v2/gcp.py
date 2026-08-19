@@ -37,6 +37,7 @@ import click
 
 from reflex_cli import constants
 from reflex_cli.utils import console, log
+from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -221,12 +222,8 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="The directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified.",
 )
 @click.option("--token", help="The Reflex authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to prompt before running the deploy script.",
-)
+@json_option
+@interactive_option
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -256,6 +253,7 @@ def deploy_command(
     envs: tuple[str, ...],
     source_dir: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
     dry_run: bool,
     loglevel: str,
@@ -424,6 +422,16 @@ def deploy_command(
             console.print(env_vars_yaml)
             console.print("─" * 60)
         logger.info("Dry run — nothing staged or executed.")
+        if as_json:
+            print_json({
+                "dry_run": True,
+                "source_dir": str(source_path),
+                "deploy_env": deploy_env,
+                "cloudbuild_yaml": cloudbuild_yaml,
+                "dockerfile": dockerfile,
+                "deploy_script": deploy_script,
+                "env_vars_yaml": env_vars_yaml,
+            })
         return
 
     if interactive:
@@ -450,6 +458,16 @@ def deploy_command(
             cwd=source_path,
             env_overrides=env_overrides,
         )
+    if as_json:
+        print_json({
+            "dry_run": False,
+            "deployed": exit_code == 0,
+            "exit_code": exit_code,
+            "gcp_project": gcp_project,
+            "region": region,
+            "service_name": service_name,
+            "version": version_value,
+        })
     if exit_code != 0:
         logger.error(f"Deploy script exited with status {exit_code}.")
         raise click.exceptions.Exit(exit_code)
@@ -790,7 +808,7 @@ def _run_deploy_script(
             cwd=cwd,
             env=env,
             check=False,
-            stdout=sys.stdout,
+            stdout=sys.stderr if log.is_stdout_reserved() else sys.stdout,
             stderr=sys.stderr,
         )
     except OSError as ex:
