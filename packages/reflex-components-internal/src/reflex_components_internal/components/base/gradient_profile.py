@@ -2,7 +2,7 @@
 
 import uuid
 
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
 from reflex.assets import asset
@@ -18,8 +18,11 @@ class GradientProfile(CoreComponent):
 
     tag = "GradientProfile"
 
-    seed: Var[str | int | uuid.UUID] = field(doc="Seed to generate gradient for.")
-    available_colors: Var[list[str]] = field(doc="Available colors for the gradient.")
+    # Seed to generate gradient for
+    seed: Var[str | int | uuid.UUID]
+
+    # Available colors for the gradient
+    available_colors: Var[list[str]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
