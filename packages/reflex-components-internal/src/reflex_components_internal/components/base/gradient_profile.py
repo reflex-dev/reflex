@@ -1,7 +1,11 @@
 """Gradient profile component."""
 
-from reflex.components.component import Component
-from reflex.vars.base import Var
+import uuid
+
+from reflex_base.components.component import Component, field
+from reflex_base.vars.base import Var
+
+from reflex.assets import asset
 from reflex_components_internal.components.component import CoreComponent
 
 DEFAULT_CLASS_NAME = "size-4 pointer-events-none rounded-full"
@@ -10,15 +14,12 @@ DEFAULT_CLASS_NAME = "size-4 pointer-events-none rounded-full"
 class GradientProfile(CoreComponent):
     """Gradient profile component."""
 
-    library = "@carlosabadia/gradient-profile@github:carlosabadia/gradient-profile"
+    library = asset(path="GradientProfile.js", shared=True).importable_path
 
     tag = "GradientProfile"
 
-    # Seed to generate gradient for
-    seed: Var[str | int]
-
-    # Available colors
-    available_colors: Var[list[str]]
+    seed: Var[str | int | uuid.UUID] = field(doc="Seed to generate gradient for.")
+    available_colors: Var[list[str]] = field(doc="Available colors for the gradient.")
 
     @classmethod
     def create(cls, *children, **props) -> Component:
