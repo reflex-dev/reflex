@@ -94,6 +94,11 @@ class StepCompletion:
         events: History events to append, in order, as (type, data) pairs.
         children: Child runs to create in the same transaction as this commit,
             each paired with its root slot.
+        parent_arrival: When this transition ends a child run, the arrival to
+            deliver to its parent's join slot, as (parent_run_id, ordinal,
+            payload, dedupe_key). Delivered inside this transaction: a crash
+            between a child finishing and its parent hearing about it would
+            leave the join waiting forever.
     """
 
     step_status: StepStatus
@@ -109,6 +114,7 @@ class StepCompletion:
     next_ordinal: int | None = None
     events: tuple[tuple[HistoryEventType, dict[str, Any]], ...] = ()
     children: tuple[tuple[RunRecord, StepRecord], ...] = ()
+    parent_arrival: tuple[str, int, dict[str, Any], str] | None = None
 
 
 class RunStore(Protocol):
@@ -590,6 +596,30 @@ class RunStore(Protocol):
         """
         ...
 
+    async def read_schedule_cursor(self, key: str) -> float | None:
+        """Read where a schedule's catch-up last reached.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+
+        Returns:
+            The last swept time, or None when the schedule is new here.
+        """
+        ...
+
+    async def write_schedule_cursor(self, key: str, at: float) -> None:
+        """Record where a schedule's catch-up has now reached.
+
+        Persisting this is what makes a restart resume rather than silently
+        skip: an in-memory cursor reseeded at startup treats every occurrence
+        during the downtime as if it had already fired.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+            at: The time swept up to, in epoch seconds.
+        """
+        ...
+
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None
     ) -> float | None:
@@ -736,6 +766,7 @@ class MemoryRunStore:
         self._runs: dict[str, RunRecord] = {}
         self._steps: dict[str, list[StepRecord]] = {}
         self._substeps: dict[tuple[str, int], dict[str, Any]] = {}
+        self._schedule_cursors: dict[str, float] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
         self._inbox: dict[str, dict[tuple[str, str, str], bool]] = {}
@@ -976,6 +1007,9 @@ class MemoryRunStore:
                 updated_at=now,
             )
             self._append_events(run.run_id, completion.events, now)
+            if completion.parent_arrival is not None:
+                parent_id, ordinal, payload, dedupe_key = completion.parent_arrival
+                self._apply_arrival(parent_id, ordinal, payload, dedupe_key, now)
 
     async def release_claim(
         self,
@@ -1128,42 +1162,64 @@ class MemoryRunStore:
             What the store did with the arrival.
         """
         async with self._lock:
-            run = self._runs.get(run_id)
-            if run is None:
-                return "unknown_run"
-            if run.status in TERMINAL_RUN_STATUSES:
-                return "run_terminal"
-            seen = self._inbox.setdefault(run_id, {})
-            key = (run_id, f"join:{ordinal}", dedupe_key)
-            if key in seen:
-                return "duplicate"
-            seen[key] = True
-            steps = self._steps[run_id]
-            step = steps[ordinal]
-            if step.status is not StepStatus.BLOCKED:
-                return "run_terminal"
-            arrived = step.join_arrived + 1
-            results = [*step.args.get("__results__", []), payload]
-            done = arrived >= step.join_expected
-            steps[ordinal] = dataclasses.replace(
-                step,
-                status=StepStatus.READY if done else StepStatus.BLOCKED,
-                join_arrived=arrived,
-                due_at=now if done else step.due_at,
-                args={**step.args, "__results__": results},
-                updated_at=now,
-            )
-            self._append_events(
-                run_id,
+            return self._apply_arrival(run_id, ordinal, payload, dedupe_key, now)
+
+    def _apply_arrival(
+        self,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Count one arrival, with the lock already held.
+
+        Args:
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the arrival.
+        """
+        run = self._runs.get(run_id)
+        if run is None:
+            return "unknown_run"
+        if run.status in TERMINAL_RUN_STATUSES:
+            return "run_terminal"
+        seen = self._inbox.setdefault(run_id, {})
+        key = (run_id, f"join:{ordinal}", dedupe_key)
+        if key in seen:
+            return "duplicate"
+        seen[key] = True
+        steps = self._steps[run_id]
+        step = steps[ordinal]
+        if step.status is not StepStatus.BLOCKED:
+            return "run_terminal"
+        arrived = step.join_arrived + 1
+        results = [*step.args.get("__results__", []), payload]
+        done = arrived >= step.join_expected
+        steps[ordinal] = dataclasses.replace(
+            step,
+            status=StepStatus.READY if done else StepStatus.BLOCKED,
+            join_arrived=arrived,
+            due_at=now if done else step.due_at,
+            args={**step.args, "__results__": results},
+            updated_at=now,
+        )
+        self._append_events(
+            run_id,
+            (
                 (
-                    (
-                        HistoryEventType.CHILD_RESOLVED,
-                        {"ordinal": ordinal, "arrived": arrived},
-                    ),
+                    HistoryEventType.CHILD_RESOLVED,
+                    {"ordinal": ordinal, "arrived": arrived},
                 ),
-                now,
-            )
-            return "resolved" if done else "counted"
+            ),
+            now,
+        )
+        return "resolved" if done else "counted"
 
     async def count_active(self, workflow_id: str, flow_key: str) -> int:
         """Count runs of a root still in flight under a flow-control key.
@@ -1626,6 +1682,32 @@ class MemoryRunStore:
         async with self._lock:
             return tuple(self._history.get(run_id, ()))
 
+    async def read_schedule_cursor(self, key: str) -> float | None:
+        """Read where a schedule's catch-up last reached.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+
+        Returns:
+            The last swept time, or None when the schedule is new here.
+        """
+        async with self._lock:
+            return self._schedule_cursors.get(key)
+
+    async def write_schedule_cursor(self, key: str, at: float) -> None:
+        """Record where a schedule's catch-up has now reached.
+
+        Persisting this is what makes a restart resume rather than silently
+        skip: an in-memory cursor reseeded at startup treats every occurrence
+        during the downtime as if it had already fired.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+            at: The time swept up to, in epoch seconds.
+        """
+        async with self._lock:
+            self._schedule_cursors[key] = at
+
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None
     ) -> float | None:
@@ -1744,6 +1826,10 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
     request_key TEXT NOT NULL,
     run_id TEXT NOT NULL,
     PRIMARY KEY (workflow_id, request_key)
+);
+CREATE TABLE IF NOT EXISTS workflow_schedules (
+    key TEXT PRIMARY KEY,
+    at REAL NOT NULL
 );
 CREATE TABLE IF NOT EXISTS workflow_substeps (
     run_id TEXT NOT NULL,
@@ -2364,6 +2450,8 @@ class SqliteRunStore:
                         ),
                     )
                     self._append_events(claim.run.run_id, completion.events, now)
+                    if completion.parent_arrival is not None:
+                        self._apply_arrival_sql(*completion.parent_arrival, now)
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")
@@ -2582,6 +2670,94 @@ class SqliteRunStore:
                     raise
 
         await asyncio.to_thread(work)
+
+    def _apply_arrival_sql(
+        self,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> str:
+        """Count one arrival inside the caller's open transaction.
+
+        Args:
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the arrival.
+        """
+        terminal = tuple(status.value for status in TERMINAL_RUN_STATUSES)
+        wait_key = f"join:{ordinal}"
+        run_row = self._db.execute(
+            "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+        ).fetchone()
+        if run_row is None:
+            return "unknown_run"
+        if run_row["status"] in terminal:
+            return "run_terminal"
+        seen = self._db.execute(
+            "SELECT 1 FROM workflow_inbox"
+            " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+            (run_id, wait_key, dedupe_key),
+        ).fetchone()
+        if seen is not None:
+            return "duplicate"
+        step_row = self._db.execute(
+            "SELECT * FROM workflow_steps WHERE run_id = ? AND ordinal = ?",
+            (run_id, ordinal),
+        ).fetchone()
+        if step_row is None or step_row["status"] != StepStatus.BLOCKED.value:
+            return "run_terminal"
+        step = _step_from_row(step_row)
+        self._db.execute(
+            "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+            " payload, status, created_at)"
+            " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
+            " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
+            (
+                run_id,
+                wait_key,
+                dedupe_key,
+                run_id,
+                json.dumps(payload),
+                "CONSUMED",
+                now,
+            ),
+        )
+        arrived = step.join_arrived + 1
+        results = [*step.args.get("__results__", []), payload]
+        done = arrived >= step.join_expected
+        self._db.execute(
+            "UPDATE workflow_steps SET status = ?, join_arrived = ?,"
+            " due_at = ?, args = ?, updated_at = ?"
+            " WHERE run_id = ? AND ordinal = ? AND join_arrived = ?",
+            (
+                StepStatus.READY.value if done else StepStatus.BLOCKED.value,
+                arrived,
+                now if done else step.due_at,
+                json.dumps({**step.args, "__results__": results}),
+                now,
+                run_id,
+                ordinal,
+                step.join_arrived,
+            ),
+        )
+        self._append_events(
+            run_id,
+            (
+                (
+                    HistoryEventType.CHILD_RESOLVED,
+                    {"ordinal": ordinal, "arrived": arrived},
+                ),
+            ),
+            now,
+        )
+        return "resolved" if done else "counted"
 
     async def record_arrival(
         self,
@@ -3446,6 +3622,59 @@ class SqliteRunStore:
                 )
 
         return await asyncio.to_thread(work)
+
+    async def read_schedule_cursor(self, key: str) -> float | None:
+        """Read where a schedule's catch-up last reached.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+
+        Returns:
+            The last swept time, or None when the schedule is new here.
+        """
+
+        def work() -> float | None:
+            """Read the cursor on the worker thread.
+
+            Returns:
+                The stored time, or None.
+            """
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT at FROM workflow_schedules WHERE key = ?", (key,)
+                ).fetchone()
+                return None if row is None else row["at"]
+
+        return await asyncio.to_thread(work)
+
+    async def write_schedule_cursor(self, key: str, at: float) -> None:
+        """Record where a schedule's catch-up has now reached.
+
+        Persisting this is what makes a restart resume rather than silently
+        skip: an in-memory cursor reseeded at startup treats every occurrence
+        during the downtime as if it had already fired.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+            at: The time swept up to, in epoch seconds.
+        """
+
+        def work() -> None:
+            """Write the cursor on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    self._db.execute(
+                        "INSERT INTO workflow_schedules (key, at) VALUES (?, ?)"
+                        " ON CONFLICT(key) DO UPDATE SET at = excluded.at",
+                        (key, at),
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+
+        await asyncio.to_thread(work)
 
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None

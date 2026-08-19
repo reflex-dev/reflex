@@ -687,6 +687,18 @@ async def check_substeps_record_once_and_fence_stale_writers(
     assert list(await store.get_substeps("run1", 0)) == ["charge", "label"]
 
 
+async def check_schedule_cursors_persist(store: RunStore) -> None:
+    """A schedule's catch-up position survives the process that wrote it."""
+    assert await store.read_schedule_cursor("wf:tick") is None
+    await store.write_schedule_cursor("wf:tick", NOW)
+    assert await store.read_schedule_cursor("wf:tick") == pytest.approx(NOW)
+    # Advancing overwrites rather than accumulating.
+    await store.write_schedule_cursor("wf:tick", NOW + 60)
+    assert await store.read_schedule_cursor("wf:tick") == pytest.approx(NOW + 60)
+    # Schedules are independent of one another.
+    assert await store.read_schedule_cursor("wf:other") is None
+
+
 async def check_reads_do_not_alias_stored_state(store: RunStore) -> None:
     """Mutating a returned record must not change what the store holds."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -763,6 +775,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_list_children_finds_a_joins_branches,
     check_claims_respect_queue_boundaries,
     check_substeps_record_once_and_fence_stale_writers,
+    check_schedule_cursors_persist,
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,

@@ -3,7 +3,7 @@
 from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
 
 import reflex as rx
-from reflex.workflow.records import RunStatus, StepStatus
+from reflex.workflow.records import HistoryEventType, RunStatus, StepStatus
 from reflex.workflow.testing import WorkflowTestHarness
 
 BRANCH_CALLS: list[str] = []
@@ -455,3 +455,36 @@ async def test_race_join_expects_one_arrival():
         join = await _join_slot(harness, result.run_id)
         assert join.join_expected == 1
         assert join.status is StepStatus.SUCCEEDED
+
+
+async def test_a_childs_arrival_commits_with_its_final_transition():
+    """A finished child and a told parent become true together.
+
+    Delivering the arrival after the child's commit leaves a window: a worker
+    that dies inside it leaves a run that is finished and a join that waits on
+    it forever. Nothing recovers that, because from the store's point of view
+    the child is done and the parent is simply blocked. The arrival therefore
+    rides the same transaction as the child's terminal transition.
+
+    This asserts it at the store level -- what is durable the instant the
+    commit returns -- rather than through the kernel's follow-up work, which
+    is exactly the code a crash would skip.
+    """
+    RACE_CALLS.clear()
+    async with WorkflowTestHarness(Shopper, SlowVendor, FastVendor) as harness:
+        result = await harness.start(Shopper.start())
+        assert result.run_id is not None
+        join = await _join_slot(harness, result.run_id)
+
+        # The join was satisfied and the parent moved on, with no post-commit
+        # delivery involved: the store alone carries the evidence.
+        assert join.join_arrived >= 1
+        history = await harness.kernel.store.get_history(result.run_id)
+        resolutions = [
+            event for event in history if event.type is HistoryEventType.CHILD_RESOLVED
+        ]
+        assert resolutions, "the join recorded no arrival"
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED

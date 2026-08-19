@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import random
 import time
 import traceback
@@ -344,12 +345,11 @@ class WorkflowKernel:
             for handler in (defn.handlers[hid] for hid in defn.roots)
             if isinstance(handler.trigger, ScheduleTrigger)
         ]
-        # Seeded at construction so a freshly started process never backfills
-        # occurrences from before it existed.
-        self._schedule_cursor: dict[str, float] = {
-            f"{defn.workflow_id}:{handler.id}": clock()
-            for defn, handler, _ in self._schedules
-        }
+        # Filled lazily from the store on first sweep: a restart resumes the
+        # previous worker's cursor, and only a schedule this deployment has
+        # never seen starts from now (never backfilling its whole history).
+        self._schedule_cursor: dict[str, float] = {}
+        self._started_at = clock()
         self._field_adapters: dict[tuple[str, str], TypeAdapter] = {}
         self._inflight: dict[str, asyncio.Task] = {}
         self._leases: dict[str, _Lease] = {}
@@ -1945,7 +1945,14 @@ class WorkflowKernel:
         admitted = 0
         for defn, handler, schedule in self._schedules:
             key = f"{defn.workflow_id}:{handler.id}"
-            cursor = self._schedule_cursor[key]
+            cursor = self._schedule_cursor.get(key)
+            if cursor is None:
+                # A restart must resume where the last worker stopped, not
+                # skip the downtime: an in-memory cursor seeded at startup
+                # treats every missed occurrence as already fired.
+                stored = await self._store.read_schedule_cursor(key)
+                cursor = stored if stored is not None else self._started_at
+                self._schedule_cursor[key] = cursor
             for occurrence in schedule.occurrences_between(
                 cursor, now, limit=MAX_SCHEDULE_CATCHUP
             ):
@@ -1956,6 +1963,7 @@ class WorkflowKernel:
                 )
                 admitted += result.disposition == "started"
             self._schedule_cursor[key] = now
+            await self._store.write_schedule_cursor(key, now)
         return admitted
 
     def _next_schedule_due(self, now: float) -> float | None:
@@ -2049,6 +2057,7 @@ class WorkflowKernel:
             handler: The handler that ran.
             completion: The outcome to apply.
         """
+        completion = self._with_parent_arrival(claim.run, completion)
         try:
             await self._store.commit(claim, completion, self._clock())
         except StaleClaimError:
@@ -2059,20 +2068,80 @@ class WorkflowKernel:
             self._wakeup.set()
         await self._report_to_parent(claim.run, completion)
 
+    @staticmethod
+    def _with_parent_arrival(
+        run: RunRecord, completion: StepCompletion
+    ) -> StepCompletion:
+        """Attach a child's parent arrival so it commits with the transition.
+
+        A child that finishes and a parent that hears about it must become
+        true together. Delivering afterwards leaves a window where a crash
+        strands the join forever, waiting on a child that is already done.
+
+        Args:
+            run: The run being committed, which may have no parent.
+            completion: The outcome about to be applied.
+
+        Returns:
+            The completion, carrying the arrival when one is owed.
+        """
+        if (
+            run.parent_run_id is None
+            or run.parent_ordinal is None
+            or completion.run_status not in TERMINAL_RUN_STATUSES
+        ):
+            return completion
+        return dataclasses.replace(
+            completion,
+            parent_arrival=(
+                run.parent_run_id,
+                run.parent_ordinal,
+                {
+                    "run_id": run.run_id,
+                    "status": completion.run_status.value,
+                    "result": completion.result,
+                    "error": completion.run_error,
+                },
+                run.run_id,
+            ),
+        )
+
     async def _report_to_parent(
         self, run: RunRecord, completion: StepCompletion
     ) -> None:
-        """Report a finished child's outcome to the join slot awaiting it.
+        """Follow up on an arrival that committed with the child's transition.
+
+        The arrival itself is already durable (see _with_parent_arrival); what
+        remains is advisory: waking the parent's worker and, for a decided
+        race, cancelling the branches that lost.
 
         Args:
             run: The child run, which may have no parent.
             completion: The committed outcome that finished it.
         """
-        if completion.run_status not in TERMINAL_RUN_STATUSES:
+        if (
+            completion.run_status not in TERMINAL_RUN_STATUSES
+            or run.parent_run_id is None
+            or run.parent_ordinal is None
+        ):
             return
-        await self._report_outcome(
-            run, completion.run_status, completion.result, completion.run_error
+        await self._notify_run(
+            run.parent_run_id,
+            (
+                (
+                    HistoryEventType.CHILD_RESOLVED,
+                    {"ordinal": run.parent_ordinal, "child": run.run_id},
+                ),
+            ),
         )
+        parent_steps = await self._store.get_steps(run.parent_run_id)
+        join = next(
+            (step for step in parent_steps if step.ordinal == run.parent_ordinal),
+            None,
+        )
+        if join is not None and join.status is not StepStatus.BLOCKED:
+            await self._cancel_losing_branches(run)
+        self._wakeup.set()
 
     async def _report_outcome(
         self,

@@ -10,6 +10,7 @@ import reflex as rx
 from reflex.workflow.cron import CronSchedule
 from reflex.workflow.definition import compile_workflow
 from reflex.workflow.records import RunStatus
+from reflex.workflow.store import MemoryRunStore
 from reflex.workflow.testing import WorkflowTestHarness
 
 # A Tuesday at 12:00 UTC, chosen so quarter-hour schedules are 15 minutes away.
@@ -162,3 +163,37 @@ async def test_schedule_root_cannot_be_started_by_application_code(
     async with WorkflowTestHarness(Cronly, start_time=START) as harness:
         with pytest.raises(WorkflowRuntimeError, match="cannot be started here"):
             await harness.kernel.start(Cronly.sweep)
+
+
+async def test_a_restart_resumes_the_schedule_cursor(forked_registration_context):
+    """A worker that restarts catches up instead of skipping the downtime.
+
+    With the cursor only in memory, a process starting up treats every
+    occurrence that happened while it was down as already fired -- the hourly
+    report simply does not run for the hour you were deploying, and nothing
+    records that it was skipped.
+    """
+    fired: list[float] = []
+
+    class Hourly(rx.State):
+        __workflow__ = WorkflowConfig(id="sched.restart")
+
+        @rx.event(durable=True, trigger=schedule("0 * * * *"), effect="none")
+        def tick(self):
+            """Note the occurrence."""
+            fired.append(1)
+
+    store = MemoryRunStore()
+    async with WorkflowTestHarness(Hourly, store=store) as harness:
+        await harness.advance("90m")
+        first_count = len(fired)
+        assert first_count >= 1
+
+    # A new process on the same store: the cursor survived, so the hours that
+    # passed while nothing was running are caught up rather than skipped.
+    async with WorkflowTestHarness(
+        Hourly, store=store, start_time=harness.now + 7200
+    ) as resumed:
+        await resumed.advance("1m")
+
+    assert len(fired) > first_count, "the restarted worker skipped the downtime"

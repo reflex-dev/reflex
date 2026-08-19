@@ -116,6 +116,10 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
     run_id TEXT NOT NULL,
     PRIMARY KEY (workflow_id, request_key)
 );
+CREATE TABLE IF NOT EXISTS workflow_schedules (
+    key TEXT PRIMARY KEY,
+    at DOUBLE PRECISION NOT NULL
+);
 CREATE TABLE IF NOT EXISTS workflow_substeps (
     run_id TEXT NOT NULL,
     ordinal INTEGER NOT NULL,
@@ -805,6 +809,8 @@ class PostgresRunStore:
                 ),
             )
             await self._append_events(conn, claim.run.run_id, completion.events, now)
+            if completion.parent_arrival is not None:
+                await self._apply_arrival(conn, *completion.parent_arrival, now)
 
     async def release_claim(
         self,
@@ -990,6 +996,97 @@ class PostgresRunStore:
                 parent = runs[0][0].parent_run_id or ""
                 await self._lock_run(conn, parent)
                 await self._append_events(conn, parent, events, now)
+
+    async def _apply_arrival(
+        self,
+        conn: Connection,
+        run_id: str,
+        ordinal: int,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        now: float,
+    ) -> str:
+        """Count one arrival inside the caller's open transaction.
+
+        Args:
+            conn: The connection inside an open transaction.
+            run_id: The waiting parent run.
+            ordinal: The join slot's ordinal.
+            payload: The arriving result.
+            dedupe_key: Identity of the arrival.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the arrival.
+        """
+        wait_key = f"join:{ordinal}"
+        cursor = await conn.execute(
+            "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
+            (run_id,),
+        )
+        run_row = await cursor.fetchone()
+        if run_row is None:
+            return "unknown_run"
+        if run_row["status"] in _TERMINAL_RUNS:
+            return "run_terminal"
+        cursor = await conn.execute(
+            "SELECT 1 FROM workflow_inbox"
+            " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
+            (run_id, wait_key, dedupe_key),
+        )
+        if await cursor.fetchone() is not None:
+            return "duplicate"
+        cursor = await conn.execute(
+            "SELECT * FROM workflow_steps WHERE run_id = %s AND ordinal = %s",
+            (run_id, ordinal),
+        )
+        step_row = await cursor.fetchone()
+        if step_row is None or step_row["status"] != StepStatus.BLOCKED.value:
+            return "run_terminal"
+        step = _step_from_row(step_row)
+        await conn.execute(
+            "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+            " payload, status, created_at)"
+            " VALUES (%s, %s, %s, %s, %s, 'CONSUMED', %s)",
+            (
+                run_id,
+                wait_key,
+                dedupe_key,
+                await self._next_inbox_seq(conn, run_id),
+                _json(payload),
+                now,
+            ),
+        )
+        arrived = step.join_arrived + 1
+        results = [*step.args.get("__results__", []), payload]
+        done = arrived >= step.join_expected
+        await conn.execute(
+            "UPDATE workflow_steps SET status = %s, join_arrived = %s,"
+            " due_at = %s, args = %s, updated_at = %s"
+            " WHERE run_id = %s AND ordinal = %s AND join_arrived = %s",
+            (
+                StepStatus.READY.value if done else StepStatus.BLOCKED.value,
+                arrived,
+                now if done else step.due_at,
+                _json({**step.args, "__results__": results}),
+                now,
+                run_id,
+                ordinal,
+                step.join_arrived,
+            ),
+        )
+        await self._append_events(
+            conn,
+            run_id,
+            (
+                (
+                    HistoryEventType.CHILD_RESOLVED,
+                    {"ordinal": ordinal, "arrived": arrived},
+                ),
+            ),
+            now,
+        )
+        return "resolved" if done else "counted"
 
     async def record_arrival(
         self,
@@ -1619,6 +1716,38 @@ class PostgresRunStore:
                     data=row["data"],
                 )
                 for row in await cursor.fetchall()
+            )
+
+    async def read_schedule_cursor(self, key: str) -> float | None:
+        """Read where a schedule's catch-up last reached.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+
+        Returns:
+            The last swept time, or None when the schedule is new here.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "SELECT at FROM workflow_schedules WHERE key = %s", (key,)
+            )
+            row = await cursor.fetchone()
+            return None if row is None else row["at"]
+
+    async def write_schedule_cursor(self, key: str, at: float) -> None:
+        """Record where a schedule's catch-up has now reached.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+            at: The time swept up to, in epoch seconds.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await conn.execute(
+                "INSERT INTO workflow_schedules (key, at) VALUES (%s, %s)"
+                " ON CONFLICT (key) DO UPDATE SET at = EXCLUDED.at",
+                (key, at),
             )
 
     async def next_due(
