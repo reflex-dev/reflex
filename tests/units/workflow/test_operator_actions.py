@@ -6,6 +6,7 @@ succeeds from the wrong state is how an operator corrupts a run they were
 trying to rescue.
 """
 
+import pytest
 from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
 
 import reflex as rx
@@ -308,3 +309,79 @@ async def test_skip_is_refused_on_a_healthy_run(forked_registration_context):
 
         assert not await rx.workflows.skip(result.run_id)
         assert not await rx.workflows.skip("no-such-run")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Known defect: a returned list preallocates a sequential chain, so a "
+        "step failing tombstones the rest of it. retry() reopens the failed "
+        "step but does not restore the successors that failure cancelled, so "
+        "the run completes having skipped them. Fixing it means restoring "
+        "steps tombstoned by that failure in retry_run/skip_step across all "
+        "three stores."
+    ),
+)
+async def test_retry_restores_the_chain_the_failure_tombstoned(
+    forked_registration_context,
+):
+    """Retrying continues from the failed step, not past everything after it.
+
+    A handler returning a list preallocates the whole chain, so a terminal
+    failure cancels the steps behind it. An operator retrying expects the run
+    to carry on from there -- including the finalizer that was already
+    allocated and is now cancelled.
+    """
+    attempts: list[str] = []
+
+    class Chain(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.chain")
+        note: str = ""
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Preallocate the rest of the chain.
+
+            Returns:
+                Two successors, run in order.
+            """
+            return [Chain.middle(), Chain.finish()]
+
+        @rx.event(durable=True, effect="none", retry=Retry(max_attempts=1))
+        def middle(self):
+            """Fail the first time an operator has not yet fixed anything.
+
+            Raises:
+                ValueError: On the first attempt.
+            """
+            attempts.append("middle")
+            if len(attempts) == 1:
+                msg = "the reason an operator would retry"
+                raise ValueError(msg)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """The finalizer the chain exists for.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="finished")
+
+    async with WorkflowTestHarness(Chain) as harness:
+        started = await harness.start(Chain.begin())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+
+        assert await harness.kernel.retry(started.run_id)
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.result == "finished", (
+            "the retried run completed without running the finalizer the "
+            f"chain preallocated: {[step.status.value for step in snapshot.steps]}"
+        )
