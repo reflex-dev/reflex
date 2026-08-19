@@ -2670,7 +2670,11 @@ class SqliteRunStore:
         # is locked" purely because opening the store ran CREATEs and an
         # immediate-mode migration it did not need.
         current = self._db.execute("PRAGMA user_version").fetchone()[0]
-        if current != SCHEMA_VERSION:
+        if current < SCHEMA_VERSION:
+            # Strictly upward: a stamp from a newer binary means a newer
+            # schema owns this file, and rerunning our DDL would stamp the
+            # OLDER version over it -- a silent downgrade. Newer schemas are
+            # additive by policy, so reading them with this binary is safe.
             self._db.executescript(_SCHEMA)
             self._migrate()
 

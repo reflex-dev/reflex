@@ -2737,10 +2737,16 @@ class WorkflowKernel:
             except asyncio.CancelledError:
                 # asyncio.wait does not cancel what it waits on, so cancelling
                 # the scheduler must stop the attempts it started or they run
-                # on unsupervised. A drain is the exception: there the closer
-                # is waiting on them itself and cancels whatever is left over.
+                # on unsupervised -- and only those: with several pumps on one
+                # kernel, another pump's attempts are its own to supervise,
+                # and the closer's aclose() sweeps whatever remains. A drain
+                # is the exception: there the closer is waiting on them
+                # itself and cancels the leftovers.
                 if not self._draining:
-                    await self._cancel_inflight()
+                    for task in started:
+                        task.cancel()
+                    await asyncio.gather(*started, return_exceptions=True)
+                    self._prune()
                 raise
             progressed = self._prune() > 0 or progressed
         return progressed
@@ -2805,10 +2811,16 @@ class WorkflowKernel:
             try:
                 await asyncio.wait(own, return_when=asyncio.FIRST_COMPLETED)
             except asyncio.CancelledError:
-                # Same contract as _tick's wait: a cancelled pump must stop
-                # the attempts it started or they run on unsupervised.
+                # A cancelled pump must stop the attempts it started or they
+                # run on unsupervised -- but only its own: another pump's
+                # attempts are that pump's to supervise, and cancelling them
+                # from here turns one caller's timeout into another's lost
+                # work.
                 if not self._draining:
-                    await self._cancel_inflight()
+                    for task in own:
+                        task.cancel()
+                    await asyncio.gather(*own, return_exceptions=True)
+                    self._prune()
                 raise
             self._prune()
 

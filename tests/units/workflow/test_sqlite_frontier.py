@@ -99,3 +99,25 @@ async def test_a_due_run_is_found_among_ten_thousand_sleepers(tmp_path):
     assert due is not None
     assert abs(due - (NOW + 86_400)) < 1e-6, "the earliest sleeper is the next wake"
     store.close()
+
+
+def test_a_future_schema_stamp_is_never_downgraded(tmp_path):
+    """An older binary must not restamp a newer schema as its own.
+
+    Newer schemas are additive by policy, so reading one is safe -- but
+    rerunning this binary's DDL would overwrite the newer version stamp with
+    the older one, and the newer binary would then re-migrate a database that
+    is already ahead of it.
+    """
+    from reflex.workflow.store import SCHEMA_VERSION
+
+    path = tmp_path / "future.db"
+    store = SqliteRunStore(path)
+    assert store._db.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION  # pyright: ignore[reportPrivateUsage]
+    store._db.execute(f"PRAGMA user_version = {SCHEMA_VERSION + 7}")  # pyright: ignore[reportPrivateUsage]
+    store.close()
+
+    reopened = SqliteRunStore(path)
+    stamp = reopened._db.execute("PRAGMA user_version").fetchone()[0]  # pyright: ignore[reportPrivateUsage]
+    assert stamp == SCHEMA_VERSION + 7, "the newer stamp was downgraded"
+    reopened.close()

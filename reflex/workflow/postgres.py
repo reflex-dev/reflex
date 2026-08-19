@@ -689,14 +689,28 @@ class PostgresRunStore:
                 (f"{run.workflow_id}\x1f{run.flow_key}",),
             )
             if run.request_key is not None:
+                # Reserve the key before any policy mutation, exactly as
+                # admit() does. Two admissions can share a request key while
+                # computing different flow keys -- different advisory locks --
+                # and if the reservation came after the singleton-cancel
+                # branch, the duplicate would cancel the other flow key's
+                # incumbents and then commit those cancellations on its way
+                # out as "deduplicated". A duplicate must leave with zero
+                # side effects.
                 cursor = await conn.execute(
-                    "SELECT run_id FROM workflow_dedupe"
-                    " WHERE workflow_id = %s AND request_key = %s",
-                    (run.workflow_id, run.request_key),
+                    "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
+                    " VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING run_id",
+                    (run.workflow_id, run.request_key, run.run_id),
                 )
-                row = await cursor.fetchone()
-                if row is not None:
-                    return FlowAdmission("deduplicated", row["run_id"])
+                if await cursor.fetchone() is None:
+                    cursor = await conn.execute(
+                        "SELECT run_id FROM workflow_dedupe"
+                        " WHERE workflow_id = %s AND request_key = %s",
+                        (run.workflow_id, run.request_key),
+                    )
+                    existing = await cursor.fetchone()
+                    if existing is not None:
+                        return FlowAdmission("deduplicated", existing["run_id"])
             cursor = await conn.execute(
                 "SELECT run_id FROM workflow_runs"
                 " WHERE workflow_id = %s AND flow_key = %s"
@@ -772,26 +786,6 @@ class PostgresRunStore:
                     if cursor.rowcount:
                         return FlowAdmission("coalesced", active[0]["run_id"])
                 due_at = now + gate.debounce
-            if run.request_key is not None:
-                # Same reservation shape as admit(): the advisory lock is
-                # keyed on the flow key, and two admissions can share a
-                # request key while computing different flow keys, so a plain
-                # INSERT here can lose a race the lock does not cover and
-                # raise instead of deduplicating.
-                cursor = await conn.execute(
-                    "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
-                    " VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING run_id",
-                    (run.workflow_id, run.request_key, run.run_id),
-                )
-                if await cursor.fetchone() is None:
-                    cursor = await conn.execute(
-                        "SELECT run_id FROM workflow_dedupe"
-                        " WHERE workflow_id = %s AND request_key = %s",
-                        (run.workflow_id, run.request_key),
-                    )
-                    existing = await cursor.fetchone()
-                    if existing is not None:
-                        return FlowAdmission("deduplicated", existing["run_id"])
             await self._insert_run(conn, run)
             await self._insert_step(conn, dataclasses.replace(root_step, due_at=due_at))
             await self._append_events(conn, run.run_id, events, run.created_at)

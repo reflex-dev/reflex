@@ -136,3 +136,59 @@ def test_an_unparseable_budget_does_not_stop_the_process_leaving(monkeypatch):
     """A typo in a deployment variable must not wedge a shutdown."""
     monkeypatch.setenv(DRAIN_ENV, "half an hour")
     assert configured_drain() == pytest.approx(0.0)
+
+
+async def test_cancelling_one_pump_leaves_the_other_pumps_attempt_alone(
+    forked_registration_context,
+):
+    """A pump's timeout is not another pump's lost work.
+
+    Two callers pump one kernel; each owns the attempt it started. Cancelling
+    the first must stop only its own attempt -- the second pump is
+    supervising the other one, and having it yanked from outside turns one
+    caller's cancellation into unrelated abandoned work.
+    """
+    started_one, release_one = asyncio.Event(), asyncio.Event()
+    started_two, release_two = asyncio.Event(), asyncio.Event()
+    flow_one = _flow(started_one, release_one)
+
+    class SecondFlow(rx.State):
+        __workflow__ = WorkflowConfig(id="drain.second")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        async def work(self):
+            """Block until released, then finish.
+
+            Returns:
+                Completion.
+            """
+            started_two.set()
+            await release_two.wait()
+            return rx.complete(result="second survived")
+
+    store = MemoryRunStore()
+    kernel = WorkflowKernel(
+        [compile_workflow(flow_one), compile_workflow(SecondFlow)],
+        store,
+        max_concurrency=2,
+    )
+    await kernel.start(flow_one.work())
+    pump_one = asyncio.create_task(kernel.run_until_idle())
+    await asyncio.wait_for(started_one.wait(), timeout=5)
+
+    await kernel.start(SecondFlow.work())
+    pump_two = asyncio.create_task(kernel.run_until_idle())
+    await asyncio.wait_for(started_two.wait(), timeout=5)
+
+    pump_one.cancel()
+    await asyncio.gather(pump_one, return_exceptions=True)
+
+    release_two.set()
+    await asyncio.wait_for(pump_two, timeout=5)
+    release_one.set()
+
+    runs = await store.list_runs(RunQuery(limit=10))
+    second = next(r for r in runs if r.workflow_id == "drain.second")
+    assert second.status is RunStatus.COMPLETED, (
+        "cancelling pump one killed pump two's attempt"
+    )

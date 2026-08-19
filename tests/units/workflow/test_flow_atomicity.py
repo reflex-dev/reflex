@@ -237,3 +237,62 @@ async def test_gated_dedupe_is_atomic_across_instances(store_pair):
         assert dispositions == ["deduplicated", "started"], (
             f"trial {trial}: {dispositions}"
         )
+
+
+async def test_a_duplicate_under_a_different_flow_key_mutates_nothing(store_pair):
+    """A duplicate admission must leave with zero side effects.
+
+    Two admissions can share a request key while computing different flow
+    keys -- different advisory locks -- so the loser's dedupe check is not
+    serialized against the winner. If the dedupe reservation came after the
+    policy mutations, the duplicate would cancel the OTHER flow key's
+    incumbent and commit that cancellation on its way out as "deduplicated":
+    an unrelated live run killed by an event that had already been handled.
+    """
+    a, b = store_pair
+    for trial in range(TRIALS):
+        # A live incumbent on flow key B that nothing should ever touch.
+        incumbent, incumbent_step = _records(f"other-{trial}")
+        assert (
+            await a.admit_flow(
+                incumbent,
+                incumbent_step,
+                (),
+                FlowGate(singleton_cancel=True),
+                1_000_000.0,
+            )
+        ).disposition == "started"
+
+        async def admit(store: RunStore, key: str, trial: int = trial):
+            """Admit one delivery of the shared event.
+
+            Args:
+                store: The store to admit through.
+                key: This admission's flow key.
+                trial: The trial number.
+
+            Returns:
+                The admission outcome.
+            """
+            run, step = _records(key)
+            run = dataclasses.replace(run, request_key=f"shared-{trial}")
+            return await store.admit_flow(
+                run, step, (), FlowGate(singleton_cancel=True), 1_000_000.0
+            )
+
+        mine_outcome, other_outcome = await asyncio.gather(
+            admit(a, f"mine-{trial}"), admit(b, f"other-{trial}")
+        )
+        dispositions = sorted([mine_outcome.disposition, other_outcome.disposition])
+        assert dispositions == ["deduplicated", "started"], (
+            f"trial {trial}: {dispositions}"
+        )
+        survivor = await a.get_run(incumbent.run_id)
+        assert survivor is not None
+        if other_outcome.disposition == "deduplicated":
+            # The admission on the incumbent's flow key lost the dedupe race,
+            # so it decided nothing: the incumbent must be untouched.
+            assert not survivor.cancel_requested, (
+                f"trial {trial}: a duplicate cancelled an unrelated incumbent"
+            )
+            assert other_outcome.cancelled == ()
