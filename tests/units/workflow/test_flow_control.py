@@ -429,3 +429,56 @@ def test_an_ambiguous_key_is_a_compile_error(forked_registration_context):
         from reflex.workflow.definition import compile_workflow
 
         compile_workflow(TwoSources)
+
+
+async def test_a_singleton_holds_under_concurrent_starts(
+    forked_registration_context,
+):
+    """Two starts racing for one key admit one run, not two.
+
+    Checking "is anything active?" before admitting is a check-then-act race:
+    both callers look, both see nothing, both insert. For a singleton that is
+    precisely the duplicate the policy exists to prevent -- two dunning runs
+    for one invoice, two charges. The limit is therefore enforced inside the
+    admitting transaction, and this races six starts to prove it.
+    """
+    import asyncio
+
+    class OnePerOrder(rx.State):
+        __workflow__ = WorkflowConfig(id="flow.oneperorder")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="none",
+            singleton=Singleton(key="order_id", mode="skip"),
+        )
+        def start(self, order_id: str):
+            """Hold the run open so the race has something to collide with.
+
+            Args:
+                order_id: The order this run belongs to.
+
+            Returns:
+                A far-future continuation.
+            """
+            return after("1h", OnePerOrder.finish)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """Never reached in this test."""
+
+    async with WorkflowTestHarness(OnePerOrder) as harness:
+        results = await asyncio.gather(
+            *(harness.kernel.start(OnePerOrder.start("ord-1")) for _ in range(6))
+        )
+
+        started = [r for r in results if r.disposition == "started"]
+        skipped = [r for r in results if r.disposition == "skipped"]
+        assert len(started) == 1, f"{len(started)} runs admitted for one key"
+        assert len(skipped) == 5
+        # Every loser points at the winner, so a caller can find the live run.
+        assert {r.run_id for r in skipped} == {started[0].run_id}
+
+        runs = await harness.kernel.list_runs(workflow_id="flow.oneperorder")
+        assert len(runs) == 1

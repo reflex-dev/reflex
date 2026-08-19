@@ -579,6 +579,8 @@ class PostgresRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        *,
+        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
 
@@ -586,6 +588,9 @@ class PostgresRunStore:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
+            max_active: When set, admit only if fewer than this many runs are
+                already active under the run's flow key, decided inside this
+                transaction so concurrent starts cannot both pass.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -607,6 +612,19 @@ class PostgresRunStore:
                     existing = await cursor.fetchone()
                     if existing is not None:
                         return False, existing["run_id"]
+            if max_active is not None and run.flow_key is not None:
+                # FOR UPDATE serializes concurrent admissions under one key:
+                # the second waits, then sees the first and is refused.
+                cursor = await conn.execute(
+                    "SELECT run_id FROM workflow_runs"
+                    " WHERE workflow_id = %s AND flow_key = %s"
+                    " AND NOT (status = ANY(%s))"
+                    " ORDER BY created_at, run_id FOR UPDATE",
+                    (run.workflow_id, run.flow_key, _TERMINAL_RUNS),
+                )
+                active = await cursor.fetchall()
+                if len(active) >= max_active:
+                    return False, active[0]["run_id"]
             await self._insert_run(conn, run)
             await self._insert_step(conn, root_step)
             await self._append_events(conn, run.run_id, events, run.created_at)

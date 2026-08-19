@@ -783,6 +783,41 @@ async def check_finalize_delivers_a_childs_arrival(store: RunStore) -> None:
     assert steps[1].status is StepStatus.READY
 
 
+async def check_admission_enforces_the_active_limit(store: RunStore) -> None:
+    """A singleton's limit is decided by the admitting transaction itself."""
+    first = make_run("a", flow_key="k1")
+    assert await store.admit(first, make_step("a"), _ADMITTED, max_active=1) == (
+        True,
+        "a",
+    )
+    # A second start under the same key is refused, and told which run holds it.
+    second = make_run("b", flow_key="k1", created_at=NOW + 1)
+    assert await store.admit(second, make_step("b"), _ADMITTED, max_active=1) == (
+        False,
+        "a",
+    )
+    assert await store.get_run("b") is None
+    # A different key is unaffected.
+    other = make_run("c", flow_key="k2", created_at=NOW + 2)
+    assert await store.admit(other, make_step("c"), _ADMITTED, max_active=1) == (
+        True,
+        "c",
+    )
+    # Once the holder is terminal the key is free again.
+    assert await store.finalize_run(
+        "a",
+        status=RunStatus.COMPLETED,
+        error=None,
+        event=HistoryEventType.RUN_COMPLETED,
+        now=NOW + 3,
+    )
+    third = make_run("d", flow_key="k1", created_at=NOW + 4)
+    assert await store.admit(third, make_step("d"), _ADMITTED, max_active=1) == (
+        True,
+        "d",
+    )
+
+
 async def check_skip_unsticks_a_stopped_run(store: RunStore) -> None:
     """Skipping marks the blocking step terminal and lets the run continue."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -959,6 +994,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_recovery_respects_a_live_lease,
     check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,
+    check_admission_enforces_the_active_limit,
     check_skip_unsticks_a_stopped_run,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,

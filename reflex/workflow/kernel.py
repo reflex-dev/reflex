@@ -564,12 +564,12 @@ class WorkflowKernel:
         """
         if handler.singleton is not None:
             existing = await self._store.first_active(defn.workflow_id, flow_key)
+            if handler.singleton.mode == "skip":
+                # Deliberately not decided here: admission re-checks inside its
+                # own transaction (see _admit), because a decision made out
+                # here is one that two concurrent starts both win.
+                return None, now
             if existing is not None:
-                if handler.singleton.mode == "skip":
-                    return (
-                        StartResult(disposition="skipped", run_id=existing.run_id),
-                        now,
-                    )
                 # Drive the cancellation to a terminal state before admitting the
                 # replacement, so "one active run per key" holds at every instant
                 # rather than only once a worker happens to drain the old one.
@@ -742,11 +742,29 @@ class WorkflowKernel:
                 {"ordinal": 0, "handler_id": handler.id},
             ),
         )
+        # A singleton's "at most one active run per key" is enforced by the
+        # store inside the admitting transaction. Deciding it beforehand is a
+        # check-then-act race that two concurrent starts both pass, which for
+        # a singleton means exactly the duplicate it exists to prevent.
+        singleton = handler.singleton
+        max_active = 1 if singleton is not None and singleton.mode == "skip" else None
         created, authoritative_run_id = await self._store.admit(
-            run, root_step, admission
+            run, root_step, admission, max_active=max_active
         )
         if not created:
-            return StartResult(disposition="deduplicated", run_id=authoritative_run_id)
+            disposition = "skipped" if max_active is not None else "deduplicated"
+            if run.request_key is not None and disposition == "skipped":
+                # A redelivery that also hits the limit is still a dedupe:
+                # the caller is asking about a run it already started.
+                existing = await self._store.find_by_request_key(
+                    defn.workflow_id, run.request_key
+                )
+                if existing == authoritative_run_id:
+                    disposition = "deduplicated"
+            return StartResult(
+                disposition=disposition,  # pyright: ignore[reportArgumentType]
+                run_id=authoritative_run_id,
+            )
         self._notify(run, admission)
         self._wakeup.set()
         return StartResult(disposition="started", run_id=authoritative_run_id)

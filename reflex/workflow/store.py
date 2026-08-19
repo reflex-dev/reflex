@@ -125,6 +125,8 @@ class RunStore(Protocol):
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        *,
+        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
 
@@ -132,6 +134,10 @@ class RunStore(Protocol):
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
+            max_active: When set, admit only if fewer than this many runs are
+                already active under the run's flow key. Checked inside the
+                admitting transaction, because a check made outside it is a
+                race that two concurrent starts both win.
 
         Returns:
             ``(True, run_id)`` when the run was created, or
@@ -842,6 +848,8 @@ class MemoryRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        *,
+        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
 
@@ -849,6 +857,10 @@ class MemoryRunStore:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
+            max_active: When set, admit only if fewer than this many runs are
+                already active under the run's flow key. Checked inside the
+                admitting transaction, because a check made outside it is a
+                race that two concurrent starts both win.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -859,7 +871,21 @@ class MemoryRunStore:
                 existing = self._dedupe.get(dedupe_key)
                 if existing is not None:
                     return False, existing
-                self._dedupe[dedupe_key] = run.run_id
+            if max_active is not None and run.flow_key is not None:
+                active = sorted(
+                    (
+                        other
+                        for other in self._runs.values()
+                        if other.workflow_id == run.workflow_id
+                        and other.flow_key == run.flow_key
+                        and other.status not in TERMINAL_RUN_STATUSES
+                    ),
+                    key=lambda other: (other.created_at, other.run_id),
+                )
+                if len(active) >= max_active:
+                    return False, active[0].run_id
+            if run.request_key is not None:
+                self._dedupe[run.workflow_id, run.request_key] = run.run_id
             self._runs[run.run_id] = run
             self._steps[run.run_id] = [root_step]
             self._append_events(run.run_id, events, run.created_at)
@@ -2315,6 +2341,8 @@ class SqliteRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        *,
+        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
 
@@ -2322,6 +2350,10 @@ class SqliteRunStore:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
+            max_active: When set, admit only if fewer than this many runs are
+                already active under the run's flow key. Checked inside the
+                admitting transaction, because a check made outside it is a
+                race that two concurrent starts both win.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -2350,6 +2382,18 @@ class SqliteRunStore:
                             " VALUES (?, ?, ?)",
                             (run.workflow_id, run.request_key, run.run_id),
                         )
+                    if max_active is not None and run.flow_key is not None:
+                        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+                        rows = self._db.execute(
+                            "SELECT run_id FROM workflow_runs"
+                            " WHERE workflow_id = ? AND flow_key = ?"
+                            f" AND status NOT IN ({','.join('?' * len(terminal))})"
+                            " ORDER BY created_at, run_id",
+                            (run.workflow_id, run.flow_key, *terminal),
+                        ).fetchall()
+                        if len(rows) >= max_active:
+                            self._db.execute("ROLLBACK")
+                            return False, rows[0]["run_id"]
                     self._insert_run(run)
                     self._insert_step(root_step)
                     self._append_events(run.run_id, events, run.created_at)
