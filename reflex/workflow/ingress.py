@@ -232,8 +232,24 @@ def webhook_endpoint(
             if not verified:
                 return JSONResponse({"error": "invalid signature"}, status_code=401)
 
+        content_type = headers.get("content-type", "")
+        if "application/x-www-form-urlencoded" in content_type:
+            # GitHub's form mode wraps the JSON document in a form field:
+            # payload=<urlencoded JSON>. The signature is over the raw form
+            # body and was already checked against exactly those bytes.
+            from urllib.parse import parse_qs
+
+            form = parse_qs(body.decode("utf-8", errors="replace"))
+            wrapped = form.get("payload", [None])[0]
+            if wrapped is None:
+                return JSONResponse(
+                    {"error": "form body has no 'payload' field"}, status_code=400
+                )
+            source = wrapped
+        else:
+            source = body
         try:
-            payload = json.loads(body) if body else {}
+            payload = json.loads(source) if source else {}
         except ValueError:
             return JSONResponse({"error": "payload is not JSON"}, status_code=400)
 

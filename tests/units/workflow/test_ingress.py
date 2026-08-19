@@ -615,3 +615,41 @@ async def test_a_delivery_missing_its_configured_identity_is_refused(
         assert no_field.status_code == 400, no_field.text
         assert "'id'" in no_field.json()["error"]
     await runtime.shutdown()
+
+
+async def test_github_form_encoded_deliveries_are_understood(
+    monkeypatch, forked_registration_context
+):
+    """GitHub can be configured to send payload=<json> as a form body.
+
+    The signature covers the raw form bytes and was already verified against
+    them; only the JSON extraction changes. Refusing this mode as 'not JSON'
+    forced users to reconfigure the provider to learn what was wrong.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Ships)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    from urllib.parse import urlencode
+
+    body = urlencode({"payload": json.dumps({"sha": "abc123"})}).encode()
+    with TestClient(app) as client:
+        response = client.post(
+            "/_workflow/webhook/shipped",
+            content=body,
+            headers={
+                "x-signature": _sign(body),
+                "x-github-delivery": "guid-form-1",
+                "content-type": "application/x-www-form-urlencoded",
+            },
+        )
+    assert response.status_code == 202, response.text
+    assert response.json()["disposition"] == "started"
+    await runtime.kernel.run_until_idle()
+    snapshot = await runtime.kernel.get_run(response.json()["run_id"])
+    assert snapshot is not None
+    assert snapshot.result == {"sha": "abc123"}, "the wrapped JSON is the payload"
+    await runtime.shutdown()
