@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -353,6 +354,13 @@ def _load_module(target: str):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
+    # A dotted name is resolved from the project root, the way `python -m`
+    # would: the console script's sys.path does not include the working
+    # directory, and "myapp.workflows" failing from the project's own root
+    # is indistinguishable from a typo to the person running it.
+    cwd = str(Path.cwd())
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
     return importlib.import_module(target)
 
 

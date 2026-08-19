@@ -8,6 +8,7 @@ output.
 """
 
 import json
+import sys
 
 from click.testing import CliRunner
 
@@ -133,3 +134,24 @@ def test_a_missing_target_fails_cleanly(tmp_path, forked_registration_context):
     assert result.exit_code == 1
     payload = json.loads(result.output)
     assert payload["ok"] is False
+
+
+def test_a_dotted_module_resolves_from_the_project_root(
+    tmp_path, monkeypatch, forked_registration_context
+):
+    """`reflex workflows check myapp.flows` works from the project's own root.
+
+    The console script's sys.path does not include the working directory the
+    way `python -m` does, so without help the dotted form failed with "No
+    module named", indistinguishable from a typo.
+    """
+    package = tmp_path / "myflows"
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    (package / "orders.py").write_text(VALID)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("sys.path", [p for p in sys.path if p != str(tmp_path)])
+
+    result = CliRunner().invoke(workflows, ["check", "myflows.orders"])
+    assert result.exit_code == 0, result.output
+    assert "check.greeter" in result.output
