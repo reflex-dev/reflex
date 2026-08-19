@@ -380,6 +380,7 @@ class StateManagerRedis(StateManager):
         state: TOKEN_TYPE,
         *,
         lock_id: bytes | None = None,
+        lock_checked: bool = False,
         **context: Unpack[StateModificationContext],
     ):
         """Set the state for a token.
@@ -388,6 +389,9 @@ class StateManagerRedis(StateManager):
             token: The token to set the state for.
             state: The state to set.
             lock_id: If provided, the lock must be held with this value to set the state.
+            lock_checked: If true, skip Redis lock revalidation for this fan-out. Parent
+                calls validate once, then recurse with this set so each substate does not
+                repeat GET/PTTL on the same session lock key.
             context: The event context.
 
         Raises:
@@ -395,24 +399,26 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         token = self._coerce_token(token)
-        # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
-            != lock_id
-        ):
-            msg = (
-                f"Lock expired for token {token} while processing. Consider increasing "
-                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks. "
-                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-                + (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
+        # Validate the session lock once per fan-out (not once per substate).
+        did_lock_check = False
+        if lock_id is not None and not lock_checked:
+            if (
+                existing_lock_id := await self.redis.get(self._lock_key(token))
+            ) != lock_id:
+                msg = (
+                    f"Lock expired for token {token} while processing. Consider increasing "
+                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                    "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                    f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
+                    + (
+                        f" Happened in event: {event.name}"
+                        if (event := context.get("event")) is not None
+                        else ""
+                    )
                 )
-            )
-            raise LockExpiredError(msg)
+                raise LockExpiredError(msg)
+            did_lock_check = True
+            lock_checked = True
 
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key write.
@@ -425,7 +431,7 @@ class StateManagerRedis(StateManager):
 
         lock_key = token.lock_key
 
-        if lock_id is not None and lock_key not in self._local_leases:
+        if did_lock_check and lock_key not in self._local_leases:
             time_taken = (
                 self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
             ) / 1000
@@ -448,6 +454,7 @@ class StateManagerRedis(StateManager):
                     token,
                     substate,
                     lock_id=lock_id,
+                    lock_checked=lock_checked,
                     **context,
                 ),
                 name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",

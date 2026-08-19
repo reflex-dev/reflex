@@ -115,6 +115,80 @@ async def test_basic_get_set(
     )
 
 
+def _redis_key_bytes(key: Any) -> bytes:
+    """Normalize a redis key to bytes for comparisons.
+
+    Args:
+        key: The redis key.
+
+    Returns:
+        The key as bytes.
+    """
+    if isinstance(key, bytes):
+        return key
+    if isinstance(key, str):
+        return key.encode()
+    if isinstance(key, memoryview):
+        return key.tobytes()
+    return bytes(key)
+
+
+@pytest.mark.asyncio
+async def test_set_state_validates_lock_once_per_fanout(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Lock GET/PTTL should run once per set_state fan-out, not per substate.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    # Ensure the PTTL warning path is eligible (no local lease).
+    state_manager_redis._local_leases.clear()
+
+    ident = str(uuid.uuid4())
+    token = BaseStateToken(ident=ident, cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    lock_id = b"test-lock-id"
+
+    await state_manager_redis.redis.set(
+        lock_key, lock_id, px=state_manager_redis.lock_expiration
+    )
+
+    state = await state_manager_redis.get_state(token)
+    assert len(state.substates) >= 2
+
+    lock_gets = 0
+    lock_pttls = 0
+    original_get = state_manager_redis.redis.get
+    original_pttl = state_manager_redis.redis.pttl
+
+    async def tracked_get(key: Any, *args: Any, **kwargs: Any):
+        nonlocal lock_gets
+        if _redis_key_bytes(key) == lock_key:
+            lock_gets += 1
+        return await original_get(key, *args, **kwargs)
+
+    async def tracked_pttl(key: Any, *args: Any, **kwargs: Any):
+        nonlocal lock_pttls
+        if _redis_key_bytes(key) == lock_key:
+            lock_pttls += 1
+        return await original_pttl(key, *args, **kwargs)
+
+    state_manager_redis.redis.get = tracked_get  # pyright: ignore[reportAttributeAccessIssue]
+    state_manager_redis.redis.pttl = tracked_pttl  # pyright: ignore[reportAttributeAccessIssue]
+    try:
+        await state_manager_redis.set_state(token, state, lock_id=lock_id)
+    finally:
+        state_manager_redis.redis.get = original_get  # pyright: ignore[reportAttributeAccessIssue]
+        state_manager_redis.redis.pttl = original_pttl  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert lock_gets == 1
+    assert lock_pttls == 1
+
+
 async def test_modify(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
