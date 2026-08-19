@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import operator
 import random
 import time
 import traceback
@@ -183,6 +184,27 @@ class CompositeObserver(WorkflowObserver):
         for observer in self.observers:
             with contextlib.suppress(Exception):
                 observer.on_event(event_type, run_id, workflow_id, data)
+
+
+def _branch_index(request_key: str | None) -> int | None:
+    """Recover which branch of a fan-out a child run was.
+
+    A branch's declaration index is already durable: fan-out stamps each child
+    with ``child:<parent>:<ordinal>:<index>`` as its request key, which is what
+    makes a re-run of the fan-out idempotent. Reading it back is what lets a
+    join report results in the order they were declared rather than the order
+    they happened to finish.
+
+    Args:
+        request_key: The child run's admission key.
+
+    Returns:
+        The branch index, or None when the run was not admitted by a fan-out.
+    """
+    if not request_key or not request_key.startswith("child:"):
+        return None
+    _, _, tail = request_key.rpartition(":")
+    return int(tail) if tail.isdigit() else None
 
 
 class MetricsObserver(WorkflowObserver):
@@ -1196,6 +1218,15 @@ class WorkflowKernel:
         args = {key: value for key, value in args.items() if key != "__wait__"}
         delivered = args.pop("__payload__", None)
         results = args.pop("__results__", None)
+        if isinstance(results, list) and all(
+            isinstance(entry, dict) and isinstance(entry.get("branch"), int)
+            for entry in results
+        ):
+            # A join accumulates arrivals as they land, which is finishing
+            # order; rx.parallel promises declaration order, and a caller
+            # unpacking `a, b = results` has no other way to tell which is
+            # which.
+            results = sorted(results, key=operator.itemgetter("branch"))
         if delivered is None and results is not None:
             delivered = results
         if delivered is not None and handler.params:
@@ -2341,6 +2372,7 @@ class WorkflowKernel:
                 "status": status.value,
                 "result": result,
                 "error": error,
+                "branch": _branch_index(run.request_key),
             },
             run.run_id,
         )
@@ -2378,6 +2410,7 @@ class WorkflowKernel:
                     "status": completion.run_status.value,
                     "result": completion.result,
                     "error": completion.run_error,
+                    "branch": _branch_index(run.request_key),
                 },
                 run.run_id,
             ),
@@ -2449,6 +2482,7 @@ class WorkflowKernel:
                 "status": status.value,
                 "result": result,
                 "error": error,
+                "branch": _branch_index(run.request_key),
             },
             run.run_id,
             self._clock(),

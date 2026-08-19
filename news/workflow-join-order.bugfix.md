@@ -1,0 +1,1 @@
+`rx.parallel(..., then=...)` hands its results to the join in declaration order, as the API promises, instead of the order the branches happened to finish. A fan-out already stamps each child with its branch index as part of its idempotent request key, so the arrival carries that index and the join sorts by it — no extra state and no store schema change.

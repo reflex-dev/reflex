@@ -488,3 +488,90 @@ async def test_a_childs_arrival_commits_with_its_final_transition():
         snapshot = await harness.get_run(result.run_id)
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
+
+
+async def test_join_results_arrive_in_declaration_order(forked_registration_context):
+    """`a, b = results` has to mean what the fan-out said, not who won.
+
+    The join accumulates arrivals as they land. A branch that takes a day and
+    a branch that takes a second finish in the opposite order to the one they
+    were written in, and a caller unpacking the list has no other way to tell
+    which result is which.
+    """
+
+    class Slow(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.slow")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self, lead: str):
+            """Finish only after a delay.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                The delayed completion.
+            """
+            return rx.after("1h", Slow.finish)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """Complete late.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="slow")
+
+    class Fast(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.fast")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self, lead: str):
+            """Complete immediately.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="fast")
+
+    class Ordered(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.ordered")
+        seen: list = []
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out slow first, fast second.
+
+            Returns:
+                The parallel fan-out.
+            """
+            return rx.parallel(
+                Slow.start("lead"), Fast.start("lead"), then=Ordered.route
+            )
+
+        @rx.event(durable=True, effect="none")
+        def route(self, results: list):
+            """Record the results in the order they were handed over.
+
+            Args:
+                results: One entry per branch.
+
+            Returns:
+                Completion carrying the ordered results.
+            """
+            return rx.complete(result=[entry["result"] for entry in results])
+
+    async with WorkflowTestHarness(Ordered, Slow, Fast) as harness:
+        started = await harness.start(Ordered.begin())
+        assert started.run_id is not None
+        await harness.advance("2h")
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == ["slow", "fast"], (
+            "the fast branch finished first, but it was declared second"
+        )
