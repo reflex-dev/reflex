@@ -220,6 +220,10 @@ no-op with a reason.
 - `retry(run)` — a `FAILED` run: re-opens its failed step with a fresh
   attempt budget and re-runs from there. History keeps the failure; a retry
   never rewrites the record of why it was needed.
+- `skip(run)` — a run stopped for attention or failure: marks the blocking
+  step `SKIPPED` (terminal, recorded as a decision rather than an outcome)
+  and lets the run continue at whatever comes next. With nothing left to run,
+  the run completes with no result rather than sitting pending forever.
 - `force_complete(run, result)` / `force_fail(run, reason)` — a nonterminal,
   drained run: finalizes immediately, tombstoning open slots, recording the
   operator origin and (for completion) the result to treat it as having

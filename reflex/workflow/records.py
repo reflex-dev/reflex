@@ -52,6 +52,7 @@ class StepStatus(str, enum.Enum):
     TIMED_OUT = "TIMED_OUT"
     CANCELLED = "CANCELLED"
     NEEDS_ATTENTION = "NEEDS_ATTENTION"
+    SKIPPED = "SKIPPED"
 
 
 TERMINAL_STEP_STATUSES = frozenset((
@@ -60,6 +61,7 @@ TERMINAL_STEP_STATUSES = frozenset((
     StepStatus.TIMED_OUT,
     StepStatus.CANCELLED,
     StepStatus.NEEDS_ATTENTION,
+    StepStatus.SKIPPED,
 ))
 
 CLAIMABLE_STEP_STATUSES = frozenset((
@@ -130,6 +132,7 @@ class HistoryEventType(str, enum.Enum):
     RUN_CANCELLED = "run_cancelled"
     RUN_NEEDS_ATTENTION = "run_needs_attention"
     RUN_RESUMED = "run_resumed"
+    STEP_SKIPPED = "step_skipped"
     CHILD_STARTED = "child_started"
     CHILD_RESOLVED = "child_resolved"
     WAIT_ARMED = "wait_armed"

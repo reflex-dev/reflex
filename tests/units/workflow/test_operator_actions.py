@@ -242,3 +242,69 @@ async def test_force_complete_through_the_facade(forked_registration_context):
         assert snapshot.status is RunStatus.COMPLETED
         assert snapshot.result == {"by": "ops"}
         _ = harness
+
+
+async def test_skip_lets_a_stuck_run_continue(forked_registration_context):
+    """A step that cannot succeed need not fail the whole run.
+
+    The vendor retired the endpoint; the notification it sent no longer
+    matters; the rest of the run does. Skipping records a decision and moves
+    on, which is the difference between an operator resolving a run and an
+    operator abandoning it.
+    """
+    calls: list[str] = []
+
+    class Pipeline(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.pipeline")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="non_idempotent_write",
+            retry=Retry(max_attempts=1),
+        )
+        def notify(self):
+            """Fail in a way that suspends rather than fails the run.
+
+            Raises:
+                TransientWorkflowError: Always.
+            """
+            calls.append("notify")
+            msg = "vendor endpoint is gone"
+            raise TransientWorkflowError(msg)
+
+    async with WorkflowTestHarness(Pipeline) as harness:
+        result = await harness.start(Pipeline.notify)
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.NEEDS_ATTENTION
+
+        assert await rx.workflows.skip(result.run_id)
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        # Nothing followed the skipped step, so the run is simply done.
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.steps[0].status is StepStatus.SKIPPED
+        assert calls == ["notify"], "skipping re-ran the step"
+
+        history = await harness.kernel.store.get_history(result.run_id)
+        assert any(event.type.value == "step_skipped" for event in history)
+
+
+async def test_skip_is_refused_on_a_healthy_run(forked_registration_context):
+    """Skipping applies to a stopped run, never to one that is working."""
+    global HEALED
+    ATTEMPTS.clear()
+    HEALED = True
+    async with WorkflowTestHarness(Fragile) as harness:
+        result = await harness.start(Fragile.start)
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+
+        assert not await rx.workflows.skip(result.run_id)
+        assert not await rx.workflows.skip("no-such-run")

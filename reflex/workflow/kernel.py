@@ -853,6 +853,23 @@ class WorkflowKernel:
             self._wakeup.set()
         return retried
 
+    async def skip(self, run_id: str) -> bool:
+        """Skip the step blocking a stopped run and let it continue.
+
+        Args:
+            run_id: The run to unstick.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        skipped = await self._store.skip_step(run_id, self._clock())
+        if skipped:
+            await self._notify_run(
+                run_id, ((HistoryEventType.STEP_SKIPPED, {"origin": "operator"}),)
+            )
+            self._wakeup.set()
+        return skipped
+
     async def force_finalize(
         self,
         run_id: str,

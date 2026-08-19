@@ -546,6 +546,18 @@ def retry(database: str | None, run_id: str):
 @workflows.command()
 @database_option
 @click.argument("run_id")
+def skip(database: str | None, run_id: str):
+    """Skip the step blocking a stopped run and let it continue.
+
+    For a step that cannot succeed and is not worth failing the run over. It
+    is recorded as an operator decision, not as an outcome.
+    """
+    _operator_action(database, run_id, "skip_step")
+
+
+@workflows.command()
+@database_option
+@click.argument("run_id")
 def resume(database: str | None, run_id: str):
     """Re-open a run suspended for operator attention."""
     import time

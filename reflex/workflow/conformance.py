@@ -783,6 +783,38 @@ async def check_finalize_delivers_a_childs_arrival(store: RunStore) -> None:
     assert steps[1].status is StepStatus.READY
 
 
+async def check_skip_unsticks_a_stopped_run(store: RunStore) -> None:
+    """Skipping marks the blocking step terminal and lets the run continue."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    # A pending run has nothing to skip.
+    assert not await store.skip_step("run1", NOW)
+
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.NEEDS_ATTENTION,
+            run_status=RunStatus.NEEDS_ATTENTION,
+            state={},
+            run_error={"reason": "uncertain"},
+        ),
+        NOW,
+    )
+
+    assert await store.skip_step("run1", NOW + 1)
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.SKIPPED
+    run = await store.get_run("run1")
+    assert run is not None
+    # Nothing was left to run, so the run is finished rather than pending.
+    assert run.status is RunStatus.COMPLETED
+    assert run.error is None
+    # And it is no longer a stopped run, so skipping again does nothing.
+    assert not await store.skip_step("run1", NOW + 2)
+    assert not await store.skip_step("missing", NOW)
+
+
 async def check_retry_reopens_only_failed_runs(store: RunStore) -> None:
     """An operator retry applies to a failed run and nothing else."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -927,6 +959,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_recovery_respects_a_live_lease,
     check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,
+    check_skip_unsticks_a_stopped_run,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,
     check_schedule_cursors_persist,

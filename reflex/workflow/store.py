@@ -444,6 +444,25 @@ class RunStore(Protocol):
         """
         ...
 
+    async def skip_step(self, run_id: str, now: float) -> bool:
+        """Give up on a stuck step and let the run carry on past it.
+
+        The operator's answer to a step that cannot succeed and is not worth
+        failing the run over -- a vendor that retired an endpoint, a
+        notification nobody needs any more. The step is marked SKIPPED, which
+        is terminal and recorded as a decision rather than an outcome, and the
+        run continues at whatever comes next. Legal only on a run stopped for
+        attention or failure, so it can never race a working attempt.
+
+        Args:
+            run_id: The run to unstick.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        ...
+
     async def retry_run(self, run_id: str, now: float) -> bool:
         """Re-open a failed run at the step that failed.
 
@@ -1464,6 +1483,64 @@ class MemoryRunStore:
             if parent_arrival is not None:
                 self._apply_arrival(*parent_arrival, now)
             return True
+
+    async def skip_step(self, run_id: str, now: float) -> bool:
+        """Give up on a stuck step and let the run carry on past it.
+
+        The operator's answer to a step that cannot succeed and is not worth
+        failing the run over -- a vendor that retired an endpoint, a
+        notification nobody needs any more. The step is marked SKIPPED, which
+        is terminal and recorded as a decision rather than an outcome, and the
+        run continues at whatever comes next. Legal only on a run stopped for
+        attention or failure, so it can never race a working attempt.
+
+        Args:
+            run_id: The run to unstick.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        async with self._lock:
+            run = self._runs.get(run_id)
+            if run is None or run.status not in (
+                RunStatus.NEEDS_ATTENTION,
+                RunStatus.FAILED,
+            ):
+                return False
+            steps = self._steps[run_id]
+            for index, step in enumerate(steps):
+                if step.status in (
+                    StepStatus.FAILED,
+                    StepStatus.TIMED_OUT,
+                    StepStatus.NEEDS_ATTENTION,
+                ):
+                    steps[index] = dataclasses.replace(
+                        step,
+                        status=StepStatus.SKIPPED,
+                        lease_expires_at=0.0,
+                        updated_at=now,
+                    )
+                    # Skipping the last open slot leaves nothing to run, so
+                    # the run is finished rather than pending forever -- being
+                    # stuck in a new way is not a resolution.
+                    open_left = any(
+                        other.status not in TERMINAL_STEP_STATUSES for other in steps
+                    )
+                    events = [
+                        (HistoryEventType.STEP_SKIPPED, {"ordinal": step.ordinal})
+                    ]
+                    if not open_left:
+                        events.append((HistoryEventType.RUN_COMPLETED, {}))
+                    self._runs[run_id] = dataclasses.replace(
+                        run,
+                        status=RunStatus.PENDING if open_left else RunStatus.COMPLETED,
+                        error=None,
+                        updated_at=now,
+                    )
+                    self._append_events(run_id, events, now)
+                    return True
+            return False
 
     async def retry_run(self, run_id: str, now: float) -> bool:
         """Re-open a failed run at the step that failed.
@@ -3279,6 +3356,87 @@ class SqliteRunStore:
                     self._append_events(run_id, events, now)
                     if parent_arrival is not None:
                         self._apply_arrival_sql(*parent_arrival, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
+
+    async def skip_step(self, run_id: str, now: float) -> bool:
+        """Give up on a stuck step and let the run carry on past it.
+
+        The operator's answer to a step that cannot succeed and is not worth
+        failing the run over -- a vendor that retired an endpoint, a
+        notification nobody needs any more. The step is marked SKIPPED, which
+        is terminal and recorded as a decision rather than an outcome, and the
+        run continues at whatever comes next. Legal only on a run stopped for
+        attention or failure, so it can never race a working attempt.
+
+        Args:
+            run_id: The run to unstick.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+
+        def work() -> bool:
+            """Skip the blocking step on the worker thread.
+
+            Returns:
+                Whether a blocking step was skipped.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    row = self._db.execute(
+                        "SELECT s.ordinal AS ordinal FROM workflow_steps s"
+                        " JOIN workflow_runs r ON r.run_id = s.run_id"
+                        " WHERE s.run_id = ? AND s.status IN (?, ?, ?)"
+                        " AND r.status IN (?, ?) ORDER BY s.ordinal LIMIT 1",
+                        (
+                            run_id,
+                            StepStatus.FAILED.value,
+                            StepStatus.TIMED_OUT.value,
+                            StepStatus.NEEDS_ATTENTION.value,
+                            RunStatus.NEEDS_ATTENTION.value,
+                            RunStatus.FAILED.value,
+                        ),
+                    ).fetchone()
+                    if row is None:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, lease_expires_at = 0,"
+                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        (StepStatus.SKIPPED.value, now, run_id, row["ordinal"]),
+                    )
+                    terminal = tuple(s.value for s in TERMINAL_STEP_STATUSES)
+                    open_left = self._db.execute(
+                        "SELECT 1 FROM workflow_steps WHERE run_id = ?"
+                        f" AND status NOT IN ({','.join('?' * len(terminal))})"
+                        " LIMIT 1",
+                        (run_id, *terminal),
+                    ).fetchone()
+                    self._db.execute(
+                        "UPDATE workflow_runs SET status = ?, error = NULL,"
+                        " updated_at = ? WHERE run_id = ?",
+                        (
+                            RunStatus.PENDING.value
+                            if open_left
+                            else RunStatus.COMPLETED.value,
+                            now,
+                            run_id,
+                        ),
+                    )
+                    events = [
+                        (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]})
+                    ]
+                    if not open_left:
+                        events.append((HistoryEventType.RUN_COMPLETED, {}))
+                    self._append_events(run_id, events, now)
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")

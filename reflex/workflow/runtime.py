@@ -332,6 +332,22 @@ class WorkflowsNamespace:
         return await get_runtime().kernel.retry(run_id)
 
     @staticmethod
+    async def skip(run_id: str) -> bool:
+        """Skip the step blocking a stopped run and let it continue.
+
+        For a step that cannot succeed and is not worth failing the run over.
+        It is recorded as an operator decision, and the run resumes at
+        whatever comes next.
+
+        Args:
+            run_id: The run to unstick.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        return await get_runtime().kernel.skip(run_id)
+
+    @staticmethod
     async def force_complete(run_id: str, result: Any = None) -> bool:
         """End a run as completed by operator decision.
 

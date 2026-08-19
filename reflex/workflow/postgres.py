@@ -1479,6 +1479,63 @@ class PostgresRunStore:
             )
         return True
 
+    async def skip_step(self, run_id: str, now: float) -> bool:
+        """Give up on a stuck step and let the run carry on past it.
+
+        Args:
+            run_id: The run to unstick.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await self._lock_run(conn, run_id)
+            cursor = await conn.execute(
+                "SELECT s.ordinal AS ordinal FROM workflow_steps s"
+                " JOIN workflow_runs r ON r.run_id = s.run_id"
+                " WHERE s.run_id = %s AND s.status = ANY(%s)"
+                " AND r.status = ANY(%s) ORDER BY s.ordinal LIMIT 1",
+                (
+                    run_id,
+                    [
+                        StepStatus.FAILED.value,
+                        StepStatus.TIMED_OUT.value,
+                        StepStatus.NEEDS_ATTENTION.value,
+                    ],
+                    [RunStatus.NEEDS_ATTENTION.value, RunStatus.FAILED.value],
+                ),
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                return False
+            await conn.execute(
+                "UPDATE workflow_steps SET status = %s, lease_expires_at = 0,"
+                " updated_at = %s WHERE run_id = %s AND ordinal = %s",
+                (StepStatus.SKIPPED.value, now, run_id, row["ordinal"]),
+            )
+            cursor = await conn.execute(
+                "SELECT 1 FROM workflow_steps WHERE run_id = %s"
+                " AND NOT (status = ANY(%s)) LIMIT 1",
+                (run_id, _TERMINAL_STEPS),
+            )
+            open_left = await cursor.fetchone() is not None
+            await conn.execute(
+                "UPDATE workflow_runs SET status = %s, error = NULL, updated_at = %s"
+                " WHERE run_id = %s",
+                (
+                    RunStatus.PENDING.value if open_left else RunStatus.COMPLETED.value,
+                    now,
+                    run_id,
+                ),
+            )
+            events = [(HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]})]
+            if not open_left:
+                events.append((HistoryEventType.RUN_COMPLETED, {}))
+            await self._append_events(conn, run_id, tuple(events), now)
+        return True
+
     async def recover_orphans(
         self, now: float, max_recoveries: int
     ) -> tuple[int, tuple[str, ...]]:
