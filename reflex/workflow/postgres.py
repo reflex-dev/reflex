@@ -1344,6 +1344,7 @@ class PostgresRunStore:
         event: HistoryEventType,
         now: float,
         result: Any = None,
+        parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -1354,6 +1355,8 @@ class PostgresRunStore:
             event: The terminal history event type.
             now: Current time in epoch seconds.
             result: Result to record, for an operator forcing completion.
+            parent_arrival: When this run is a child, the arrival to deliver
+                to its parent's join, applied in this same transaction.
 
         Returns:
             True if the run was finalized.
@@ -1396,6 +1399,8 @@ class PostgresRunStore:
             ]
             events.append((event, {} if error is None else dict(error)))
             await self._append_events(conn, run_id, events, now)
+            if parent_arrival is not None:
+                await self._apply_arrival(conn, *parent_arrival, now)
         return True
 
     async def resume_run(self, run_id: str, now: float) -> bool:
@@ -1528,6 +1533,26 @@ class PostgresRunStore:
                         ),
                     )
                     failed.append(step.run_id)
+                    cursor = await conn.execute(
+                        "SELECT parent_run_id, parent_ordinal FROM workflow_runs"
+                        " WHERE run_id = %s",
+                        (step.run_id,),
+                    )
+                    parent = await cursor.fetchone()
+                    if parent is not None and parent["parent_run_id"] is not None:
+                        await self._apply_arrival(
+                            conn,
+                            parent["parent_run_id"],
+                            parent["parent_ordinal"],
+                            {
+                                "run_id": step.run_id,
+                                "status": RunStatus.FAILED.value,
+                                "result": None,
+                                "error": dict(exhausted),
+                            },
+                            step.run_id,
+                            now,
+                        )
                     await self._append_events(
                         conn,
                         step.run_id,

@@ -893,6 +893,7 @@ class WorkflowKernel:
             event=event,
             now=now,
             result=result,
+            parent_arrival=self._arrival_for(run, status, result, error),
         )
         if finalized:
             self._notify(run, ((event, {"origin": "operator"}),))
@@ -2206,6 +2207,38 @@ class WorkflowKernel:
         await self._report_to_parent(claim.run, completion)
 
     @staticmethod
+    def _arrival_for(
+        run: RunRecord,
+        status: RunStatus,
+        result: Any = None,
+        error: dict[str, Any] | None = None,
+    ) -> tuple[str, int, dict[str, Any], str] | None:
+        """Build the arrival a terminating run owes its parent, if any.
+
+        Args:
+            run: The run that is ending.
+            status: Its terminal status.
+            result: Its result, if any.
+            error: Its error, if any.
+
+        Returns:
+            The arrival tuple, or None when the run has no parent.
+        """
+        if run.parent_run_id is None or run.parent_ordinal is None:
+            return None
+        return (
+            run.parent_run_id,
+            run.parent_ordinal,
+            {
+                "run_id": run.run_id,
+                "status": status.value,
+                "result": result,
+                "error": error,
+            },
+            run.run_id,
+        )
+
+    @staticmethod
     def _with_parent_arrival(
         run: RunRecord, completion: StepCompletion
     ) -> StepCompletion:
@@ -2369,7 +2402,12 @@ class WorkflowKernel:
                 else HistoryEventType.RUN_TIMED_OUT
             )
             if await self._store.finalize_run(
-                run.run_id, status=status, error=error, event=event, now=now
+                run.run_id,
+                status=status,
+                error=error,
+                event=event,
+                now=now,
+                parent_arrival=self._arrival_for(run, status, None, error),
             ):
                 self._notify(run, ((event, {} if error is None else dict(error)),))
                 await self._report_outcome(run, status, None, error)

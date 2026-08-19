@@ -424,6 +424,7 @@ class RunStore(Protocol):
         event: HistoryEventType,
         now: float,
         result: Any = None,
+        parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -434,6 +435,8 @@ class RunStore(Protocol):
             event: The terminal history event type.
             now: Current time in epoch seconds.
             result: Result to record, for an operator forcing completion.
+            parent_arrival: When this run is a child, the arrival to deliver
+                to its parent's join, applied in this same transaction.
 
         Returns:
             True if the run was finalized; False if it was already terminal
@@ -1415,6 +1418,7 @@ class MemoryRunStore:
         event: HistoryEventType,
         now: float,
         result: Any = None,
+        parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -1425,6 +1429,8 @@ class MemoryRunStore:
             event: The terminal history event type.
             now: Current time in epoch seconds.
             result: Result to record, for an operator forcing completion.
+            parent_arrival: When this run is a child, the arrival to deliver
+                to its parent's join, applied in this same transaction.
 
         Returns:
             True if the run was finalized.
@@ -1455,6 +1461,8 @@ class MemoryRunStore:
             )
             events.append((event, {} if error is None else dict(error)))
             self._append_events(run_id, events, now)
+            if parent_arrival is not None:
+                self._apply_arrival(*parent_arrival, now)
             return True
 
     async def retry_run(self, run_id: str, now: float) -> bool:
@@ -1571,6 +1579,21 @@ class MemoryRunStore:
                             updated_at=now,
                         )
                         failed.append(run.run_id)
+                        if run.parent_run_id is not None and (
+                            run.parent_ordinal is not None
+                        ):
+                            self._apply_arrival(
+                                run.parent_run_id,
+                                run.parent_ordinal,
+                                {
+                                    "run_id": run.run_id,
+                                    "status": RunStatus.FAILED.value,
+                                    "result": None,
+                                    "error": {"reason": "recovery_budget_exhausted"},
+                                },
+                                run.run_id,
+                                now,
+                            )
                         self._append_events(
                             run.run_id,
                             (
@@ -3188,6 +3211,7 @@ class SqliteRunStore:
         event: HistoryEventType,
         now: float,
         result: Any = None,
+        parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -3198,6 +3222,8 @@ class SqliteRunStore:
             event: The terminal history event type.
             now: Current time in epoch seconds.
             result: Result to record, for an operator forcing completion.
+            parent_arrival: When this run is a child, the arrival to deliver
+                to its parent's join, applied in this same transaction.
 
         Returns:
             True if the run was finalized.
@@ -3251,6 +3277,8 @@ class SqliteRunStore:
                     ]
                     events.append((event, {} if error is None else dict(error)))
                     self._append_events(run_id, events, now)
+                    if parent_arrival is not None:
+                        self._apply_arrival_sql(*parent_arrival, now)
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")
@@ -3431,6 +3459,28 @@ class SqliteRunStore:
                                 ),
                             )
                             failed.append(step.run_id)
+                            parent = self._db.execute(
+                                "SELECT parent_run_id, parent_ordinal FROM"
+                                " workflow_runs WHERE run_id = ?",
+                                (step.run_id,),
+                            ).fetchone()
+                            if parent is not None and (
+                                parent["parent_run_id"] is not None
+                            ):
+                                self._apply_arrival_sql(
+                                    parent["parent_run_id"],
+                                    parent["parent_ordinal"],
+                                    {
+                                        "run_id": step.run_id,
+                                        "status": RunStatus.FAILED.value,
+                                        "result": None,
+                                        "error": {
+                                            "reason": "recovery_budget_exhausted"
+                                        },
+                                    },
+                                    step.run_id,
+                                    now,
+                                )
                             self._append_events(
                                 step.run_id,
                                 (

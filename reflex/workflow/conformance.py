@@ -687,6 +687,57 @@ async def check_substeps_record_once_and_fence_stale_writers(
     assert list(await store.get_substeps("run1", 0)) == ["charge", "label"]
 
 
+async def check_finalize_delivers_a_childs_arrival(store: RunStore) -> None:
+    """Ending a child by cancellation or timeout tells its parent, atomically.
+
+    The commit path is not the only way a child ends. If cancellation and
+    run-timeout delivered their arrival afterwards, a crash in that window
+    would strand the join exactly as it would have on commit.
+    """
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    child = make_run("child1", parent_run_id="run1", parent_ordinal=1)
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.WAITING,
+            state={},
+            new_steps=(
+                make_step(
+                    ordinal=1,
+                    status=StepStatus.BLOCKED,
+                    wait_key="join:1",
+                    join_expected=1,
+                    origin="join",
+                    due_at=0.0,
+                ),
+            ),
+            next_ordinal=2,
+            children=((child, make_step("child1")),),
+        ),
+        NOW,
+    )
+
+    assert await store.finalize_run(
+        "child1",
+        status=RunStatus.CANCELLED,
+        error=None,
+        event=HistoryEventType.RUN_CANCELLED,
+        now=NOW + 1,
+        parent_arrival=(
+            "run1",
+            1,
+            {"run_id": "child1", "status": "CANCELLED", "result": None, "error": None},
+            "child1",
+        ),
+    )
+    steps = await store.get_steps("run1")
+    assert steps[1].join_arrived == 1
+    assert steps[1].status is StepStatus.READY
+
+
 async def check_retry_reopens_only_failed_runs(store: RunStore) -> None:
     """An operator retry applies to a failed run and nothing else."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -828,6 +879,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_list_children_finds_a_joins_branches,
     check_claims_respect_queue_boundaries,
     check_substeps_record_once_and_fence_stale_writers,
+    check_finalize_delivers_a_childs_arrival,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,
     check_schedule_cursors_persist,
