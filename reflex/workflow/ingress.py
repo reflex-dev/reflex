@@ -128,9 +128,7 @@ def _root_args(handler: HandlerDefinition, payload: Any) -> dict[str, Any]:
         return {}
     if len(handler.params) == 1:
         return {handler.params[0]: payload}
-    if isinstance(payload, dict):
-        return {name: payload.get(name) for name in handler.params}
-    return {}
+    return {name: payload.get(name) for name in handler.params}
 
 
 def webhook_endpoint(
@@ -181,6 +179,14 @@ def webhook_endpoint(
                 )
 
         spec = getattr(route.definition.state_cls, route.handler.name)
+        if len(route.handler.params) > 1 and not isinstance(payload, dict):
+            # Several named parameters can only be filled from an object.
+            # Admitting the run anyway would drop the payload silently and
+            # produce a run that fails on its first step for a reason the
+            # provider is never told, so the boundary refuses it instead.
+            return JSONResponse(
+                {"error": "payload must be a JSON object"}, status_code=400
+            )
         args = _root_args(route.handler, payload)
         result = await runtime.kernel.start(
             spec(**args) if args else spec,

@@ -265,3 +265,72 @@ async def test_the_harness_starts_a_webhook_root_directly(paid_workflow):
         snapshot = await harness.get_run(result.run_id)
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
+
+
+async def test_a_payload_that_cannot_be_mapped_is_refused(
+    monkeypatch, forked_registration_context
+):
+    """A body that cannot fill the root's parameters is a 400, not a doomed run.
+
+    A root taking several named parameters can only be filled from a JSON
+    object. Admitting a run from an array or a scalar dropped the payload
+    silently and produced a run that failed on its first step, with the
+    provider told nothing -- it received a 202 and moved on.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+
+    class MultiArg(rx.State):
+        __workflow__ = WorkflowConfig(id="ingress.multiarg")
+        seen: str = ""
+
+        @rx.event(
+            durable=True,
+            effect="none",
+            trigger=webhook(
+                "multi",
+                verify=hmac_signature(
+                    secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+                ),
+            ),
+        )
+        def on_event(self, first: str, second: int):
+            """Take two named fields.
+
+            Args:
+                first: The first field.
+                second: The second field.
+            """
+            self.seen = f"{first}:{second}"
+
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(MultiArg)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    try:
+        with TestClient(app) as client:
+            body = json.dumps([1, 2, 3]).encode()
+            refused = client.post(
+                "/_workflow/webhook/multi",
+                content=body,
+                headers={
+                    "X-Signature": _sign(body),
+                    "content-type": "application/json",
+                },
+            )
+            assert refused.status_code == 400
+            assert "object" in refused.json()["error"]
+
+            good = json.dumps({"first": "a", "second": 2}).encode()
+            accepted = client.post(
+                "/_workflow/webhook/multi",
+                content=good,
+                headers={
+                    "X-Signature": _sign(good),
+                    "content-type": "application/json",
+                },
+            )
+            assert accepted.status_code == 202, accepted.text
+    finally:
+        await runtime.shutdown()
