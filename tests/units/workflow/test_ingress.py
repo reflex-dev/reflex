@@ -334,3 +334,133 @@ async def test_a_payload_that_cannot_be_mapped_is_refused(
             assert accepted.status_code == 202, accepted.text
     finally:
         await runtime.shutdown()
+
+
+class Invoices(rx.State):
+    """One workflow serving two lifecycle topics for the same object."""
+
+    __workflow__ = WorkflowConfig(id="ingress.invoices")
+    outcome: str = ""
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=webhook(
+            "invoice_failed",
+            dedupe_by="id",
+            verify=hmac_signature(
+                secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+            ),
+        ),
+    )
+    def on_failed(self, id: str):
+        """Record a failed invoice.
+
+        Args:
+            id: The invoice identifier.
+
+        Returns:
+            Completion.
+        """
+        self.outcome = "failed"
+        return rx.complete(result={"invoice": id, "outcome": "failed"})
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=webhook(
+            "invoice_paid",
+            dedupe_by="id",
+            verify=hmac_signature(
+                secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+            ),
+        ),
+    )
+    def on_paid(self, id: str):
+        """Record a paid invoice.
+
+        Args:
+            id: The invoice identifier.
+
+        Returns:
+            Completion.
+        """
+        self.outcome = "paid"
+        return rx.complete(result={"invoice": id, "outcome": "paid"})
+
+
+async def test_two_topics_sharing_a_dedupe_value_are_separate_events(
+    monkeypatch, forked_registration_context
+):
+    """A provider numbers events per object, not per topic.
+
+    `invoice_failed` and `invoice_paid` for one invoice carry the same id.
+    Deduplicating on that alone makes the payment a redelivery of the failure
+    and drops it, which is the one outcome a billing workflow must never have.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Invoices)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+
+    started: list[str] = []
+    dispositions: list[str] = []
+    with TestClient(app) as client:
+        for topic in ("invoice_failed", "invoice_paid"):
+            body = json.dumps({"id": "inv_1"}).encode()
+            response = client.post(
+                f"/_workflow/webhook/{topic}",
+                content=body,
+                headers={"x-signature": _sign(body)},
+            )
+            assert response.status_code == 202, response.text
+            started.append(response.json()["run_id"])
+            dispositions.append(response.json()["disposition"])
+
+    assert dispositions == ["started", "started"], (
+        "the payment was taken for a redelivery of the failure"
+    )
+    assert started[0] != started[1], "both lifecycle events must have their own run"
+    await runtime.shutdown()
+
+
+async def test_a_redelivery_admitted_under_the_old_key_still_deduplicates(
+    monkeypatch, forked_registration_context
+):
+    """Changing the key format must not replay every event admitted before it.
+
+    A run that exists under the unqualified key the older release wrote is
+    still that event's run. Matching the old spelling on the way in is what
+    keeps the provider's next redelivery from starting it a second time.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    store = MemoryRunStore()
+    runtime = WorkflowRuntime(store)
+    runtime.register(Invoices)
+    await runtime.startup(start_worker=False)
+
+    # Exactly what the previous release recorded: the bare provider value.
+    legacy = await runtime.kernel.start(
+        Invoices.on_failed("inv_2"),
+        request_key="inv_2",
+        trigger_kind="webhook",
+    )
+    assert legacy.disposition == "started"
+
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    with TestClient(app) as client:
+        body = json.dumps({"id": "inv_2"}).encode()
+        response = client.post(
+            "/_workflow/webhook/invoice_failed",
+            content=body,
+            headers={"x-signature": _sign(body)},
+        )
+    assert response.status_code == 202, response.text
+    assert response.json()["disposition"] == "deduplicated"
+    assert response.json()["run_id"] == legacy.run_id
+    await runtime.shutdown()

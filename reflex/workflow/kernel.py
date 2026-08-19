@@ -683,6 +683,7 @@ class WorkflowKernel:
         target: Any,
         *,
         request_key: str | None = None,
+        superseded_keys: tuple[str, ...] = (),
         labels: dict[str, str] | None = None,
         trigger_kind: str | None = "manual",
     ) -> StartResult:
@@ -692,6 +693,10 @@ class WorkflowKernel:
             target: The root event, e.g. ``MyWorkflow.start(payload)``.
             request_key: Idempotent admission key; a repeated key returns the
                 prior run with disposition ``"deduplicated"``.
+            superseded_keys: Older spellings of the same admission key, matched
+                for deduplication but never recorded. This is what lets the
+                key format change without every event admitted under the old
+                one being admitted a second time after the upgrade.
             labels: Server-derived indexing labels to record on the run.
             trigger_kind: Which ingress is starting this run; the root must
                 declare the same kind, so a webhook-only root stays
@@ -721,12 +726,16 @@ class WorkflowKernel:
                 f"starting through this path requires {expected}."
             )
             raise WorkflowRuntimeError(msg)
-        if request_key is not None:
+        for candidate in (request_key, *superseded_keys):
+            if candidate is None:
+                continue
             # Dedupe before any start policy: a redelivered event must return
             # the run it already created, not be judged as a new start and
-            # cancel, throttle, or debounce that very run.
+            # cancel, throttle, or debounce that very run. Superseded keys are
+            # matched too but never written: a key format that changes must
+            # not make every event admitted under the old one arrive twice.
             existing = await self._store.find_by_request_key(
-                defn.workflow_id, request_key
+                defn.workflow_id, candidate
             )
             if existing is not None:
                 return StartResult(disposition="deduplicated", run_id=existing)

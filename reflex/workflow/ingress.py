@@ -97,10 +97,20 @@ def collect_webhook_routes(
     return routes
 
 
-def _dedupe_key(trigger: WebhookTrigger, payload: Any) -> str | None:
+def _dedupe_key(
+    handler: HandlerDefinition, trigger: WebhookTrigger, payload: Any
+) -> str | None:
     """Extract the deduplication key a provider redelivery would repeat.
 
+    The key is namespaced by the handler it starts. A provider numbers its
+    events per object, not per topic, so ``invoice_failed`` and
+    ``invoice_paid`` for one invoice arrive carrying the same id: unqualified,
+    the second is deduplicated against the first and the payment is silently
+    dropped. Two deliveries are the same event only if they would start the
+    same handler.
+
     Args:
+        handler: The root handler this delivery starts.
         trigger: The webhook trigger declaring the key field.
         payload: The decoded request payload.
 
@@ -111,7 +121,27 @@ def _dedupe_key(trigger: WebhookTrigger, payload: Any) -> str | None:
     if trigger.dedupe_by is None or not isinstance(payload, dict):
         return None
     value = payload.get(trigger.dedupe_by)
-    return None if value is None else str(value)
+    return None if value is None else f"webhook:{handler.id}:{value}"
+
+
+def _legacy_dedupe_keys(trigger: WebhookTrigger, payload: Any) -> tuple[str, ...]:
+    """Spellings this delivery's key had in earlier releases.
+
+    Keys used to be the provider's raw value, unqualified by the handler. A
+    run admitted under one must still be found after the upgrade, or the
+    provider's next redelivery of an event already handled starts it again.
+
+    Args:
+        trigger: The webhook trigger declaring the key field.
+        payload: The decoded request payload.
+
+    Returns:
+        The older keys to match, newest spelling first.
+    """
+    if trigger.dedupe_by is None or not isinstance(payload, dict):
+        return ()
+    value = payload.get(trigger.dedupe_by)
+    return () if value is None else (str(value),)
 
 
 def _root_args(handler: HandlerDefinition, payload: Any) -> dict[str, Any]:
@@ -190,7 +220,8 @@ def webhook_endpoint(
         args = _root_args(route.handler, payload)
         result = await runtime.kernel.start(
             spec(**args) if args else spec,
-            request_key=_dedupe_key(route.trigger, payload),
+            request_key=_dedupe_key(route.handler, route.trigger, payload),
+            superseded_keys=_legacy_dedupe_keys(route.trigger, payload),
             trigger_kind="webhook",
         )
         return JSONResponse(
