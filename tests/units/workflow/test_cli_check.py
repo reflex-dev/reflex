@@ -199,3 +199,17 @@ def test_the_worker_refuses_an_unloadable_target(tmp_path, forked_registration_c
     result = CliRunner().invoke(workflows, ["worker", str(tmp_path / "nope.py")])
     assert result.exit_code == 1
     assert "Could not load" in result.output
+
+
+def test_the_worker_names_a_compile_error(tmp_path, forked_registration_context):
+    """A workflow that does not compile stops the worker with the reason.
+
+    Starting a worker is the moment a deployment finds out its code is wrong.
+    A traceback there names the compiler; the compiler's own message names the
+    fix, which is what the operator reading the logs needs.
+    """
+    module = tmp_path / "broken_worker.py"
+    module.write_text(BROKEN)
+    result = CliRunner().invoke(workflows, ["worker", str(module)])
+    assert result.exit_code == 1
+    assert "runs it inline" in result.output

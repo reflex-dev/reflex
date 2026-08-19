@@ -163,6 +163,8 @@ def worker(
     """
     import asyncio
 
+    from reflex_base.utils.exceptions import WorkflowDefinitionError
+
     from reflex.workflow.runtime import WorkflowRuntime
 
     try:
@@ -193,8 +195,16 @@ def worker(
             queues=queues or None,
             max_concurrency=concurrency or DEFAULT_MAX_CONCURRENCY,
         )
-        for workflow_cls in classes:
-            runtime.register(workflow_cls)
+        try:
+            for workflow_cls in classes:
+                runtime.register(workflow_cls)
+        except WorkflowDefinitionError as err:
+            # The compiler's message names the fix; a traceback out of a
+            # worker's startup names only the compiler. Refusing to start at
+            # all beats serving a half-registered set, where the workflows
+            # that did compile run and the rest vanish silently.
+            console.error(f"Cannot serve {target!r}: {err}")
+            raise click.exceptions.Exit(1) from None
         served = ", ".join(sorted(d.workflow_id for d in runtime.definitions))
         console.print(
             f"Serving {served} on "

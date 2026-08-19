@@ -1778,9 +1778,7 @@ class MemoryRunStore:
             # Re-scanning is harmless (occurrences dedupe on their request
             # key) but it is pure waste, and a cursor that can go back is not
             # a position anyone can reason about.
-            self._schedule_cursors[key] = max(
-                at, self._schedule_cursors.get(key, at)
-            )
+            self._schedule_cursors[key] = max(at, self._schedule_cursors.get(key, at))
 
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None
