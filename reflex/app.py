@@ -98,7 +98,7 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
-from reflex.workflow.kernel import WorkflowObserver
+from reflex.workflow.kernel import DEFAULT_MAX_CONCURRENCY, WorkflowObserver
 from reflex.workflow.runtime import WorkflowRuntime
 from reflex.workflow.store import RunStore
 
@@ -459,6 +459,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # Receives every recorded workflow run transition, for logs or tracing.
     workflow_observer: WorkflowObserver | None = None
+
+    # How many workflow attempts run at once, across different runs.
+    workflow_concurrency: int = DEFAULT_MAX_CONCURRENCY
 
     # The workflow runtime owning registered definitions and the kernel.
     _workflow_runtime: WorkflowRuntime | None = None
@@ -974,7 +977,9 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if self._workflow_runtime is None:
             self._workflow_runtime = WorkflowRuntime(
-                self.workflow_store, observer=self.workflow_observer
+                self.workflow_store,
+                observer=self.workflow_observer,
+                max_concurrency=self.workflow_concurrency,
             )
             self.register_lifespan_task(self._run_workflow_runtime)
         self._workflow_runtime.register(workflow_cls)

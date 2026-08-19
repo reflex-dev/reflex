@@ -69,6 +69,8 @@ if TYPE_CHECKING:
 
 DEFAULT_POLL_INTERVAL = 0.25
 
+DEFAULT_MAX_CONCURRENCY = 8
+
 LEASE_RENEW_FRACTION = 1 / 3
 
 RECOVERY_INTERVAL_FRACTION = 1 / 2
@@ -238,6 +240,7 @@ class WorkflowKernel:
         lease_renew_interval: float | None = None,
         recovery_interval: float | None = None,
         observer: WorkflowObserver | None = None,
+        max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
     ):
         """Initialize the kernel.
 
@@ -256,6 +259,8 @@ class WorkflowKernel:
                 background worker; defaults to half of ``lease_duration``.
             observer: Receives every recorded transition, for logging, metrics,
                 or tracing.
+            max_concurrency: How many attempts this kernel runs at once. Each
+                belongs to a different run, so a run's own steps stay serial.
 
         Raises:
             WorkflowRuntimeError: If the store cannot renew leases, or the
@@ -272,6 +277,7 @@ class WorkflowKernel:
         self._rng = rng
         self._poll_interval = poll_interval
         self._max_recoveries = max_recoveries
+        self._max_concurrency = max(1, max_concurrency)
         if not hasattr(store, "renew_lease"):
             msg = (
                 f"{type(store).__name__} does not implement renew_lease; a run "
@@ -1927,6 +1933,57 @@ class WorkflowKernel:
                 finalized += 1
         return finalized
 
+    def _spawn(self, claim: Claim) -> asyncio.Task:
+        """Start executing a claim, tracking it until it finishes.
+
+        Args:
+            claim: The claim to execute.
+
+        Returns:
+            The task running the attempt.
+        """
+        task = asyncio.ensure_future(self._execute_claim(claim))
+        self._inflight[claim.run.run_id] = task
+        return task
+
+    def _prune(self) -> int:
+        """Drop finished attempts from the in-flight set.
+
+        Pruning is synchronous rather than done-callback driven: a callback
+        runs on a later loop iteration, so the scheduler would keep seeing
+        completed work as in flight and spin.
+
+        Returns:
+            How many attempts had finished.
+        """
+        finished = [run_id for run_id, task in self._inflight.items() if task.done()]
+        for run_id in finished:
+            del self._inflight[run_id]
+        return len(finished)
+
+    async def _fill_slots(self, now: float) -> list[asyncio.Task]:
+        """Claim work up to this kernel's concurrency limit.
+
+        Each run has one frontier, so two concurrent claims are always
+        different runs: parallelism across runs never breaks the serial
+        mailbox each run relies on.
+
+        Args:
+            now: Current time in epoch seconds.
+
+        Returns:
+            The attempts this call started.
+        """
+        started: list[asyncio.Task] = []
+        while len(self._inflight) < self._max_concurrency:
+            claim = await self._store.claim_next(
+                now, lease_duration=self._lease_duration
+            )
+            if claim is None:
+                break
+            started.append(self._spawn(claim))
+        return started
+
     async def _tick(self) -> bool:
         """Run one scheduling round.
 
@@ -1934,18 +1991,33 @@ class WorkflowKernel:
             True if any control transition or attempt was processed.
         """
         now = self._clock()
-        progressed = await self._admit_due_schedules(now) > 0
+        progressed = self._prune() > 0
+        progressed = await self._admit_due_schedules(now) > 0 or progressed
         progressed = await self._finalize_control(now) > 0 or progressed
-        claim = await self._store.claim_next(now, lease_duration=self._lease_duration)
-        if claim is not None:
-            task = asyncio.ensure_future(self._execute_claim(claim))
-            self._inflight[claim.run.run_id] = task
+        started = await self._fill_slots(now)
+        progressed = bool(started) or progressed
+        # Wait only on what this round started: another caller pumping the same
+        # kernel must not block on an attempt it does not own.
+        if started:
             try:
-                await task
-            finally:
-                self._inflight.pop(claim.run.run_id, None)
-            progressed = True
+                await asyncio.wait(started, return_when=asyncio.FIRST_COMPLETED)
+            except asyncio.CancelledError:
+                # asyncio.wait does not cancel what it waits on, so cancelling
+                # the scheduler must stop the attempts it started or they run
+                # on unsupervised.
+                await self._cancel_inflight()
+                raise
+            progressed = self._prune() > 0 or progressed
         return progressed
+
+    async def _cancel_inflight(self) -> None:
+        """Stop every attempt this kernel is running and wait for them."""
+        tasks = list(self._inflight.values())
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        self._prune()
 
     async def recover(self) -> int:
         """Renew this kernel's live claims, then reclaim expired ones.

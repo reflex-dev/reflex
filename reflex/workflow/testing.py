@@ -75,6 +75,7 @@ class WorkflowTestHarness:
         lease_renew_interval: float | None = None,
         observer: WorkflowObserver | None = None,
         max_recoveries: int = DEFAULT_MAX_RECOVERIES,
+        max_concurrency: int = 1,
     ):
         """Initialize the harness.
 
@@ -86,6 +87,8 @@ class WorkflowTestHarness:
             lease_renew_interval: Real seconds between lease renewals.
             observer: Receives every recorded run transition.
             max_recoveries: Infrastructure recovery budget per logical step.
+            max_concurrency: Attempts run at once. One by default, so tests on a
+                virtual clock stay deterministic.
         """
         self._clock = _VirtualClock(start_time)
         self._runtime = WorkflowRuntime(
@@ -96,6 +99,7 @@ class WorkflowTestHarness:
             lease_renew_interval=lease_renew_interval,
             observer=observer,
             max_recoveries=max_recoveries,
+            max_concurrency=max_concurrency,
         )
         for workflow_cls in workflow_classes:
             self._runtime.register(workflow_cls)

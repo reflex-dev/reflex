@@ -308,6 +308,15 @@ reflex workflows show <run-id> --history
 `reflex workflows cancel <run-id>` and `reflex workflows resume <run-id>` steer a run without
 opening the app, and `--json` on `list` and `show` makes the output scriptable.
 
+## Throughput
+
+The kernel runs several attempts at once, defaulting to eight. Each belongs to a different run --
+a run has exactly one open step, so its own work stays strictly in order no matter how many other
+runs are executing. Tune it with `rx.App(workflow_concurrency=...)`.
+
+Concurrency is per process. A step that blocks the event loop, rather than awaiting, still stalls
+its neighbours, so prefer `async def` handlers for anything that waits on the network.
+
 ## Observability
 
 Pass an observer to see every recorded transition, correlated to its run, workflow, step, and

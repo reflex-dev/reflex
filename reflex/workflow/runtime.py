@@ -25,6 +25,7 @@ from reflex_base.workflow import (
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
 from reflex.workflow.kernel import (
+    DEFAULT_MAX_CONCURRENCY,
     DEFAULT_POLL_INTERVAL,
     WorkflowKernel,
     WorkflowObserver,
@@ -64,6 +65,7 @@ class WorkflowRuntime:
         recovery_interval: float | None = None,
         observer: WorkflowObserver | None = None,
         max_recoveries: int = DEFAULT_MAX_RECOVERIES,
+        max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
     ):
         """Initialize the runtime.
 
@@ -79,6 +81,7 @@ class WorkflowRuntime:
             recovery_interval: Seconds between recovery sweeps.
             observer: Receives every recorded run transition.
             max_recoveries: Infrastructure recovery budget per logical step.
+            max_concurrency: How many attempts run at once.
         """
         self._store = store
         self._clock = clock
@@ -89,6 +92,7 @@ class WorkflowRuntime:
         self._recovery_interval = recovery_interval
         self._observer = observer
         self._max_recoveries = max_recoveries
+        self._max_concurrency = max_concurrency
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -178,6 +182,7 @@ class WorkflowRuntime:
             recovery_interval=self._recovery_interval,
             observer=self._observer,
             max_recoveries=self._max_recoveries,
+            max_concurrency=self._max_concurrency,
         )
         if start_worker:
             await self._kernel.start_worker()
