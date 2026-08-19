@@ -1,0 +1,1 @@
+`reflex workflows dev` now prints each transition as it happens rather than when the process exits, says when a run is asleep and until when, and takes `--fast-forward` to jump the clock to each wake time so a workflow that waits a day can be run end to end in seconds.

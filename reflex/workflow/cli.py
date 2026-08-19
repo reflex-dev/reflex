@@ -152,6 +152,53 @@ database_option = click.option(
 )
 
 
+_DEV_WATCH_INTERVAL: float = 0.25
+
+
+class _DevClock:
+    """The clock `reflex workflows dev` reads, movable by --fast-forward.
+
+    The kernel takes the time source as an argument, so a foreground dev
+    session can hand it a clock it is allowed to push forward when the only
+    thing left to wait for is a timer.
+
+    Attributes:
+        now: The current time in epoch seconds.
+    """
+
+    __slots__ = ("now",)
+
+    def __init__(self, now: float):
+        """Start the clock.
+
+        Args:
+            now: The starting time in epoch seconds.
+        """
+        self.now = now
+
+    def __call__(self) -> float:
+        """Read the clock.
+
+        Returns:
+            The current time in epoch seconds.
+        """
+        return self.now
+
+
+def _format_time(when: float) -> str:
+    """Render an epoch time the way a person reads a log line.
+
+    Args:
+        when: The time in epoch seconds.
+
+    Returns:
+        A local-time string.
+    """
+    import datetime
+
+    return datetime.datetime.fromtimestamp(when).strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _terminal_events() -> frozenset:
     """The history events that mean a run has stopped for good.
 
@@ -432,10 +479,18 @@ def init_workflow(name: str):
     console.print(f"Wrote {module}.")
     console.print("")
     console.print("Run it once, watching every step:")
-    console.print(f"    reflex workflows dev {module} {klass}.start --arg order=ord-1")
+    click.echo(
+        f"    reflex workflows dev {module} {klass}.start --arg order=ord-1"
+        " --fast-forward"
+    )
+    console.print("")
+    console.print(
+        "  (--fast-forward skips the workflow's one-day wait. Without it the "
+        "run really waits a day, which is the point of durability.)"
+    )
     console.print("")
     console.print("Or serve it as a worker and start runs from your own code:")
-    console.print(f"    reflex workflows worker {module}")
+    click.echo(f"    reflex workflows worker {module}")
 
 
 @workflows.command()
@@ -448,7 +503,18 @@ def init_workflow(name: str):
     multiple=True,
     help="Argument for the started handler, as name=value. Repeatable.",
 )
-def dev(database: str | None, target: str, start: str | None, args: tuple[str, ...]):
+@click.option(
+    "--fast-forward",
+    is_flag=True,
+    help="Skip a run's sleeps instead of waiting for them in real time.",
+)
+def dev(
+    database: str | None,
+    target: str,
+    start: str | None,
+    args: tuple[str, ...],
+    fast_forward: bool,
+):
     """Run TARGET's workflows in the foreground, printing every transition.
 
     The loop for building a workflow: start one, watch each step, attempt,
@@ -456,14 +522,24 @@ def dev(database: str | None, target: str, start: str | None, args: tuple[str, .
     the handler to launch (`Workflow.handler`), with --arg name=value for its
     payload; without it, this just serves and reports whatever arrives.
 
-    Timers are real here. Use WorkflowTestHarness to skip days instantly.
+    Timers are real by default, so a handler that returns ``rx.after("1d",
+    ...)`` leaves the run asleep for a day and this command says so and keeps
+    serving. Pass --fast-forward to jump the clock to each wake time as the
+    run reaches it, which runs the whole path in seconds.
     """
     import asyncio
+    import sys
+    import time
 
     from reflex_base.utils.exceptions import WorkflowDefinitionError
 
     from reflex.workflow.kernel import WorkflowObserver
-    from reflex.workflow.records import HistoryEventType
+    from reflex.workflow.records import (
+        TERMINAL_RUN_STATUSES,
+        HistoryEventType,
+        step_claimable_at,
+        step_wake_at,
+    )
     from reflex.workflow.runtime import WorkflowRuntime
     from reflex.workflow.runtime import workflows as rx_workflows
     from reflex.workflow.store import resolve_store
@@ -511,12 +587,57 @@ def dev(database: str | None, target: str, start: str | None, args: tuple[str, .
             click.echo(f"  {run_id[:8]} {event_type.value:<22}{detail}")
             if "error" in data and isinstance(data["error"], dict):
                 click.echo(f"           {data['error'].get('message', data['error'])}")
+            sys.stdout.flush()
             if event_type in _terminal_events():
                 finished.set()
 
+    clock = _DevClock(time.time())
+
+    async def watch_sleeps(run_id: str) -> None:
+        """Report -- or skip -- the times a run is waiting for.
+
+        A run that returned ``rx.after("1d", ...)`` is not stuck, but a
+        terminal that prints nothing for a day looks identical to one that is.
+        This says when the run wakes, and with --fast-forward moves the clock
+        there so the rest of the path runs now.
+
+        Args:
+            run_id: The run to watch.
+        """
+        announced: set[float] = set()
+        while True:
+            await asyncio.sleep(_DEV_WATCH_INTERVAL)
+            snapshot = await rx_workflows.get_run(run_id)
+            if snapshot is None or snapshot.status in TERMINAL_RUN_STATUSES:
+                return
+            now = clock()
+            if any(step_claimable_at(step, now) for step in snapshot.steps):
+                continue
+            wakes = [
+                wake
+                for step in snapshot.steps
+                if (wake := step_wake_at(step)) is not None and wake > now
+            ]
+            if not wakes:
+                continue
+            wake = min(wakes)
+            if fast_forward:
+                clock.now = wake
+                click.echo(f"  {run_id[:8]} fast-forward       +{wake - now:.0f}s")
+                sys.stdout.flush()
+            elif wake not in announced:
+                announced.add(wake)
+                console.print(
+                    f"Run {run_id[:8]} sleeps until "
+                    f"{_format_time(wake)} (in {wake - now:.0f}s). Serving until "
+                    "then; --fast-forward skips it."
+                )
+
     async def serve() -> None:
         """Run the kernel until the started run ends, or forever."""
-        runtime = WorkflowRuntime(resolve_store(database), observer=Narrator())
+        runtime = WorkflowRuntime(
+            resolve_store(database), clock=clock, observer=Narrator()
+        )
         try:
             for workflow_cls in classes.values():
                 runtime.register(workflow_cls)
@@ -541,7 +662,11 @@ def dev(database: str | None, target: str, start: str | None, args: tuple[str, .
             spec = getattr(workflow_cls, handler_name)
             handle = await rx_workflows.submit(spec(**payload) if payload else spec)
             console.print(f"Started {handle.run_id} ({handle.disposition}).")
-            await finished.wait()
+            watcher = asyncio.create_task(watch_sleeps(handle.run_id))
+            try:
+                await finished.wait()
+            finally:
+                watcher.cancel()
             snapshot = await handle.snapshot()
             if snapshot is not None:
                 console.print(f"Run {snapshot.status.value}: {snapshot.result}")
