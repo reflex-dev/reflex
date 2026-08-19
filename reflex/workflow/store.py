@@ -23,6 +23,7 @@ import dataclasses
 import json
 import sqlite3
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, Protocol
 
 from reflex_base.utils.exceptions import WorkflowRuntimeError
@@ -44,7 +45,6 @@ from reflex.workflow.records import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from pathlib import Path
 
 
 DeliveryDisposition = Literal[
@@ -1654,6 +1654,37 @@ class MemoryRunStore:
                 if wake_at is not None:
                     due_times.append(wake_at)
             return min(due_times) if due_times else None
+
+
+DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
+DEFAULT_DB_FILENAME: Final = "workflow.db"
+
+
+def resolve_store(target: str | None = None) -> RunStore:
+    """Open the store a deployment's configuration names.
+
+    This is the one place the app, the CLI, and a hosting platform agree on
+    what a database target means: a ``postgres://`` or ``postgresql://`` URL
+    opens the Postgres store, anything else is a path to a SQLite file, and
+    with nothing configured the default is a SQLite file next to the app.
+    Hosting sets ``REFLEX_WORKFLOW_DATABASE`` and every surface follows it,
+    with no code changes in the app.
+
+    Args:
+        target: Connection URL or SQLite path. None reads the environment,
+            then falls back to the local default.
+
+    Returns:
+        The store.
+    """
+    import os
+
+    resolved = target or os.environ.get(DATABASE_ENV)
+    if resolved is not None and resolved.startswith(("postgres://", "postgresql://")):
+        from reflex.workflow.postgres import PostgresRunStore
+
+        return PostgresRunStore(resolved)
+    return SqliteRunStore(resolved or Path.cwd() / DEFAULT_DB_FILENAME)
 
 
 BUSY_TIMEOUT_MS: Final = 250

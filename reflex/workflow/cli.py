@@ -11,7 +11,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -25,30 +24,21 @@ if TYPE_CHECKING:
 
     from reflex.workflow.store import RunStore
 
-DEFAULT_DB_FILENAME = "workflow.db"
-
 
 def _open_store(database: str | None) -> RunStore:
     """Open the run store the app persists to.
 
-    A ``postgres://`` or ``postgresql://`` target opens the Postgres store;
-    anything else is a path to a SQLite file.
-
     Args:
-        database: Connection URL or SQLite path, or None for the default.
+        database: Connection URL or SQLite path, or None to resolve the same
+            way the app does: ``REFLEX_WORKFLOW_DATABASE``, then the local
+            default file.
 
     Returns:
         The store.
     """
-    target = database or os.environ.get("REFLEX_WORKFLOW_DATABASE")
-    if target is not None and target.startswith(("postgres://", "postgresql://")):
-        from reflex.workflow.postgres import PostgresRunStore
+    from reflex.workflow.store import resolve_store
 
-        return PostgresRunStore(target)
-
-    from reflex.workflow.store import SqliteRunStore
-
-    return SqliteRunStore(target or DEFAULT_DB_FILENAME)
+    return resolve_store(database)
 
 
 def _with_store(database: str | None, work: Callable[[RunStore], Awaitable[Any]]):

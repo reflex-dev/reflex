@@ -12,7 +12,6 @@ import random
 import time
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.registry import RegistrationContext
@@ -30,7 +29,7 @@ from reflex.workflow.kernel import (
     WorkflowKernel,
     WorkflowObserver,
 )
-from reflex.workflow.store import RunStore, SqliteRunStore
+from reflex.workflow.store import RunStore, resolve_store
 
 if TYPE_CHECKING:
     from reflex.workflow.store import DeliveryDisposition
@@ -41,7 +40,6 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex.workflow.records import RunRecord, RunSnapshot, RunStatus, StartResult
 
-DEFAULT_DB_FILENAME = "workflow.db"
 
 _context_runtime: ContextVar[WorkflowRuntime | None] = ContextVar(
     "reflex_workflow_runtime", default=None
@@ -179,7 +177,10 @@ class WorkflowRuntime:
         if self._kernel is not None:
             return
         if self._store is None:
-            self._store = SqliteRunStore(Path.cwd() / DEFAULT_DB_FILENAME)
+            # Nothing was configured in code, so the environment decides:
+            # hosting points REFLEX_WORKFLOW_DATABASE at managed Postgres and
+            # the same app that used a local file in development scales out.
+            self._store = resolve_store()
         self._kernel = WorkflowKernel(
             self._definitions.values(),
             self._store,
