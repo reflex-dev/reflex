@@ -14,8 +14,6 @@ DEFAULT_CLASS_NAME = "size-4 pointer-events-none rounded-full"
 class GradientProfile(CoreComponent):
     """Gradient profile component."""
 
-    library = asset(path="GradientProfile.js", shared=True).importable_path
-
     tag = "GradientProfile"
 
     # Seed to generate gradient for
@@ -31,6 +29,9 @@ class GradientProfile(CoreComponent):
         Returns:
             The component.
         """
+        props.setdefault(
+            "library", asset(path="GradientProfile.js", shared=True).importable_path
+        )
         cls.set_class_name(DEFAULT_CLASS_NAME, props)
         return super().create(*children, **props)
 

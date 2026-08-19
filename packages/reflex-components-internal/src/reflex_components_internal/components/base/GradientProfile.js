@@ -40,6 +40,7 @@ function simpleHashCode(value) {
 const GradientProfileComponent = ({
   seed = "0",
   className,
+  style,
   availableColors = PREDEFINED_COLORS,
   ...restProps
 }) => {
@@ -60,10 +61,9 @@ const GradientProfileComponent = ({
   );
 
   return React.createElement("div", {
-    style: gradientStyle,
-    className,
-    role: "img",
     ...restProps,
+    style: { ...style, ...gradientStyle },
+    className,
   });
 };
 
