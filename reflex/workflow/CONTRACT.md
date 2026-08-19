@@ -183,6 +183,15 @@ Checked in this order at start:
   queues — a run whose frontier is on an unserved queue waits. Recovery is
   queue-agnostic (any worker recovers; the reclaimed step is then claimed by
   the right one).
+- **Stopping** is not a decision about a run. A worker asked to stop (SIGTERM,
+  Ctrl-C, or an app lifespan ending) stops claiming immediately and gives the
+  attempts it is already running a drain budget — `reflex workflows worker
+  --drain`, 30s by default — to commit their own outcome. Anything still
+  running when that budget expires is cancelled and *keeps its claim*: it is
+  reclaimed after the lease lapses, exactly as if the process had been killed.
+  A claim is never released early, because cancelling an attempt does not stop
+  work it handed to a thread, and the lease is what keeps a peer off it. A
+  drained attempt costs nothing; a cancelled one costs one recovery.
 - Multiple workers share one Postgres store via `SKIP LOCKED` claims; SQLite
   is a one-process store (calls off-loop, contention bounded); memory is for
   tests. All three answer the same conformance suite.
@@ -240,6 +249,7 @@ outcome.
 | between a child's terminal commit and anything else | nothing is pending: the parent arrival was inside the commit |
 | during recovery sweep | idempotent; re-run by the next sweep |
 | worker dies holding N claims | each lease lapses independently; each step recovered independently |
+| worker asked to stop mid-attempt | attempt gets the drain budget to commit; if it commits, nothing is lost and nothing is spent; if it does not, it is cancelled and the step stays claimed until its lease lapses |
 | store unreachable at commit | attempt abandoned (fence unverifiable); step recovered later; `rx.step` records already made stand |
 | everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule, remainder skipped with a history record |
 

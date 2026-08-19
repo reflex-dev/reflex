@@ -20,6 +20,8 @@ from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
     DEFAULT_MAX_RECOVERIES,
     ChannelDelivery,
+    DurationLike,
+    parse_duration,
 )
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
@@ -202,15 +204,25 @@ class WorkflowRuntime:
         else:
             await self._kernel.recover()
 
-    async def shutdown(self) -> None:
-        """Stop the worker; an in-flight claim is reclaimed after its lease expires."""
+    async def shutdown(self, drain: DurationLike = 0) -> None:
+        """Stop the worker.
+
+        Args:
+            drain: How long to let attempts already running commit before
+                they are cancelled. Whatever is still running when that runs
+                out keeps its claim, and is reclaimed after its lease expires.
+        """
         if self._kernel is not None:
-            await self._kernel.aclose()
+            await self._kernel.aclose(drain=parse_duration(drain))
             self._kernel = None
 
     @asynccontextmanager
-    async def running(self) -> AsyncIterator[WorkflowRuntime]:
+    async def running(self, drain: DurationLike = 0) -> AsyncIterator[WorkflowRuntime]:
         """Run the runtime for the duration of an app lifespan.
+
+        Args:
+            drain: How long to let attempts already running commit when the
+                lifespan ends.
 
         Yields:
             The active runtime.
@@ -223,7 +235,7 @@ class WorkflowRuntime:
             yield self
         finally:
             _default_runtime = previous
-            await self.shutdown()
+            await self.shutdown(drain=drain)
 
 
 def get_runtime() -> WorkflowRuntime:

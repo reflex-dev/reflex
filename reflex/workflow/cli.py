@@ -9,6 +9,7 @@ running deployment or a stopped one.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import json
 import operator
@@ -687,11 +688,17 @@ def dev(
     help="Serve only these queues. Repeatable; default serves every queue.",
 )
 @click.option("--concurrency", default=None, type=int, help="Attempts to run at once.")
+@click.option(
+    "--drain",
+    default="30s",
+    help="How long a stopping worker lets running attempts finish.",
+)
 def worker(
     database: str | None,
     target: str,
     queues: tuple[str, ...],
     concurrency: int | None,
+    drain: str,
 ):
     """Run workflows from TARGET with no frontend and no web server.
 
@@ -703,12 +710,24 @@ def worker(
     The workflows do not have to live in a Reflex app -- a module importable
     from a FastAPI service, a Django project, or a bare script works, because
     a worker needs only the definitions and the store.
+
+    On SIGTERM or Ctrl-C the worker stops claiming and gives the attempts it
+    is already running --drain to commit, so a rolling deploy hands over
+    cleanly instead of leaving steps claimed until their leases lapse.
     """
     import asyncio
+    import signal
 
     from reflex_base.utils.exceptions import WorkflowDefinitionError
+    from reflex_base.workflow import parse_duration
 
     from reflex.workflow.runtime import WorkflowRuntime
+
+    try:
+        drain_seconds = parse_duration(drain)
+    except Exception as err:
+        console.error(f"--drain {drain!r} is not a duration: {err}")
+        raise click.exceptions.Exit(1) from None
 
     try:
         module = _load_module(target)
@@ -766,10 +785,20 @@ def worker(
                 "will execute the runs they admit. Schedules and timers do "
                 "fire here."
             )
-        async with runtime.running():
+        stopping = asyncio.Event()
+        loop = asyncio.get_running_loop()
+        for signal_name in ("SIGTERM", "SIGINT"):
+            handled = getattr(signal, signal_name, None)
+            if handled is not None:
+                with contextlib.suppress(NotImplementedError):
+                    loop.add_signal_handler(handled, stopping.set)
+
+        async with runtime.running(drain=drain_seconds):
             # The kernel's worker does the work; this task only waits for the
             # operator (or the platform) to stop the process.
-            await asyncio.Event().wait()
+            await stopping.wait()
+            console.print(f"Stopping; finishing running attempts ({drain}).")
+        console.print("Worker stopped.")
 
     try:
         asyncio.run(serve())

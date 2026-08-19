@@ -426,6 +426,7 @@ class WorkflowKernel:
         self._started_at = clock()
         self._field_adapters: dict[tuple[str, str], TypeAdapter] = {}
         self._inflight: dict[str, asyncio.Task] = {}
+        self._draining = False
         self._leases: dict[str, _Lease] = {}
         self._next_recovery_at = 0.0
         self._worker_id = uuid.uuid4().hex
@@ -2520,8 +2521,10 @@ class WorkflowKernel:
             except asyncio.CancelledError:
                 # asyncio.wait does not cancel what it waits on, so cancelling
                 # the scheduler must stop the attempts it started or they run
-                # on unsupervised.
-                await self._cancel_inflight()
+                # on unsupervised. A drain is the exception: there the closer
+                # is waiting on them itself and cancels whatever is left over.
+                if not self._draining:
+                    await self._cancel_inflight()
                 raise
             progressed = self._prune() > 0 or progressed
         return progressed
@@ -2622,20 +2625,36 @@ class WorkflowKernel:
         await self.recover()
         self._worker = asyncio.create_task(self._worker_loop())
 
-    async def aclose(self) -> None:
+    async def aclose(self, drain: float = 0.0) -> None:
         """Stop the background worker.
 
-        An in-flight attempt is cancelled and its step is left claimed, so it
-        is reclaimed once its lease expires rather than being recorded as a
-        deliberate cancellation.
+        Claiming stops immediately. With a drain budget, attempts already
+        running are given that long to commit their own outcome, which is what
+        makes a rolling deploy cheap: a step that finishes during the drain is
+        durable before the process leaves, instead of sitting claimed until
+        its lease lapses.
+
+        An attempt still running when the budget runs out is cancelled and its
+        step is left claimed, so it is reclaimed once the lease expires rather
+        than being recorded as a deliberate cancellation. The claim is not
+        released early on purpose: cancelling an attempt does not stop work it
+        handed to a thread, and the lease is what keeps a peer from running
+        the step alongside it.
+
+        Args:
+            drain: Seconds to let in-flight attempts finish before cancelling.
         """
         if self._worker is None:
             return
         self._closing = True
+        self._draining = drain > 0.0
         self._worker.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await self._worker
         self._worker = None
+        if self._inflight and self._draining:
+            await asyncio.wait(set(self._inflight.values()), timeout=drain)
+        self._draining = False
         # The kernel owns its attempts, so closing it stops them rather than
         # leaving them running against a store nobody is reading any more.
         await self._cancel_inflight()
