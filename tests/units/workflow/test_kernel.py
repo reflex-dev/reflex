@@ -760,3 +760,46 @@ async def test_cancelling_a_task_inside_release_lease_sticks(
         await asyncio.wait_for(asyncio.shield(releasing), timeout=2)
     assert releasing.done(), "the release task outlived its cancellation"
     assert releasing.cancelled(), "the release task swallowed its own cancellation"
+
+
+async def test_run_until_idle_drains_every_attempt_it_started(
+    forked_registration_context,
+):
+    """One call processes the whole batch, not the first completion's worth.
+
+    A round can start several attempts and return after the first finishes;
+    a later round that finds nothing newly claimable must still wait for the
+    attempts this pump started, or the caller gets a half-processed graph
+    and the harness cancels the survivors on exit.
+    """
+
+    class Slow(rx.State):
+        __workflow__ = WorkflowConfig(id="kernel.slowbatch")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        async def start(self, n: int):
+            """Take long enough to still be running next round.
+
+            Args:
+                n: Which of the batch this is.
+
+            Returns:
+                Completion.
+            """
+            await asyncio.sleep(0.05)
+            return rx.complete(result=n)
+
+    store = MemoryRunStore()
+    definition = compile_workflow(Slow)
+    kernel = WorkflowKernel([definition], store, max_concurrency=8)
+    for n in range(8):
+        await kernel.start(Slow.start(n))
+    await kernel.run_until_idle()
+
+    from reflex.workflow.records import RunQuery
+
+    runs = await store.list_runs(RunQuery(limit=20))
+    statuses = sorted(run.status.value for run in runs)
+    assert statuses == ["COMPLETED"] * 8, (
+        f"run_until_idle returned with live attempts: {statuses}"
+    )

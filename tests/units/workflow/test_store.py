@@ -448,6 +448,9 @@ async def test_sqlite_migrates_a_database_without_the_lease_column(tmp_path):
     # Simulate a database written by a build that predates leases.
     store._db.execute("DROP INDEX IF EXISTS idx_workflow_steps_lease")
     store._db.execute("ALTER TABLE workflow_steps DROP COLUMN lease_expires_at")
+    # A database written by an older build carries no schema-version stamp,
+    # which is what tells the next open to run DDL at all.
+    store._db.execute("PRAGMA user_version = 0")
     store.close()
 
     reopened = SqliteRunStore(db_path)

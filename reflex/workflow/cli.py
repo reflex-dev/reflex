@@ -124,7 +124,19 @@ def _with_store(database: str | None, work: Callable[[RunStore], Awaitable[Any]]
                 if inspect.isawaitable(closed):
                     await closed
 
-    return asyncio.run(session())
+    import sqlite3
+
+    try:
+        return asyncio.run(session())
+    except sqlite3.OperationalError as err:
+        if "locked" not in str(err) and "busy" not in str(err):
+            raise
+        # Bounded contention against a busy worker is an operational fact,
+        # not a traceback: say what happened and what to do.
+        console.error(
+            "The store is busy (a worker holds its write lock). Retry in a moment."
+        )
+        raise click.exceptions.Exit(1) from None
 
 
 def _age(seconds: float) -> str:
@@ -901,6 +913,44 @@ def stats(
             click.echo(f"{status.value:<20}{count:>8}")
     console.print("")
     console.print(f"{total} run(s); {open_runs} open, {attention} needing attention.")
+
+
+@workflows.command()
+@database_option
+@click.option(
+    "--older-than",
+    required=True,
+    help="Delete terminal runs whose last update is older than this, e.g. 30d.",
+)
+@click.option("--workflow", "-w", default=None, help="Only this workflow id.")
+@click.option("--yes", is_flag=True, help="Delete without asking.")
+def purge(database: str | None, older_than: str, workflow: str | None, yes: bool):
+    """Delete finished runs older than a cutoff, reclaiming the store.
+
+    Terminal data grows forever otherwise. Purging a run also forgets its
+    deduplication key, so a provider redelivery arriving after the retention
+    window is admitted as a new run -- keep the window longer than the
+    provider's redelivery horizon.
+    """
+    import time
+
+    from reflex_base.workflow import parse_duration
+
+    try:
+        cutoff = time.time() - parse_duration(older_than)
+    except Exception as err:
+        console.error(f"--older-than {older_than!r} is not a duration: {err}")
+        raise click.exceptions.Exit(1) from None
+    if not yes:
+        click.confirm(
+            f"Delete terminal runs untouched for {older_than}"
+            f"{' in ' + workflow if workflow else ''}?",
+            abort=True,
+        )
+    deleted = _with_store(
+        database, lambda store: store.purge_runs(cutoff, workflow_id=workflow)
+    )
+    console.print(f"Purged {deleted} run(s).")
 
 
 @workflows.command("list")

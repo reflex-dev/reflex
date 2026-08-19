@@ -32,7 +32,13 @@ from reflex.workflow.records import (
     StepRecord,
     StepStatus,
 )
-from reflex.workflow.store import Claim, FlowAdmission, FlowGate, StaleClaimError
+from reflex.workflow.store import (
+    Claim,
+    FlowAdmission,
+    FlowGate,
+    StaleClaimError,
+    _child_admission_events,
+)
 
 try:
     import psycopg
@@ -769,6 +775,50 @@ class PostgresRunStore:
             await self._append_events(conn, run.run_id, events, run.created_at)
         return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
+    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+        """Delete terminal runs not updated since a cutoff, and all their data.
+
+        Args:
+            before: Delete runs whose last update is older than this.
+            workflow_id: Restrict to one workflow identity.
+
+        Returns:
+            How many runs were deleted.
+        """
+        pool = await self._open()
+        where = "status = ANY(%s) AND updated_at < %s"
+        params: tuple[Any, ...] = (_TERMINAL_RUNS, before)
+        if workflow_id is not None:
+            where += " AND workflow_id = %s"
+            params = (*params, workflow_id)
+        async with pool.connection() as conn, conn.transaction():
+            cursor = await conn.execute(
+                f"SELECT run_id FROM workflow_runs WHERE {where}",
+                params,
+            )
+            doomed = [row["run_id"] for row in await cursor.fetchall()]
+            if not doomed:
+                return 0
+            for table in (
+                "workflow_steps",
+                "workflow_history",
+                "workflow_inbox",
+                "workflow_substeps",
+            ):
+                await conn.execute(
+                    SQL("DELETE FROM {} WHERE run_id = ANY(%s)").format(
+                        Identifier(table)
+                    ),
+                    (doomed,),
+                )
+            await conn.execute(
+                "DELETE FROM workflow_dedupe WHERE run_id = ANY(%s)", (doomed,)
+            )
+            await conn.execute(
+                "DELETE FROM workflow_runs WHERE run_id = ANY(%s)", (doomed,)
+            )
+        return len(doomed)
+
     async def claim_next(
         self,
         now: float,
@@ -946,6 +996,12 @@ class PostgresRunStore:
             for child_run, child_step in completion.children:
                 await self._insert_run(conn, child_run)
                 await self._insert_step(conn, child_step)
+                await self._append_events(
+                    conn,
+                    child_run.run_id,
+                    _child_admission_events(child_run, child_step),
+                    now,
+                )
             await conn.execute(
                 "UPDATE workflow_runs SET status = %s,"
                 " state = CASE WHEN %s THEN %s ELSE state END,"

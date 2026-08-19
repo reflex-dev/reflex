@@ -405,6 +405,23 @@ class RunStore(Protocol):
         """
         ...
 
+    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+        """Delete terminal runs not updated since a cutoff, and all their data.
+
+        Terminal data otherwise grows forever. Purging a run also forgets its
+        request key, so a provider redelivery arriving after the retention
+        window is admitted as a new run: retention must exceed the provider's
+        redelivery horizon.
+
+        Args:
+            before: Delete runs whose last update is older than this.
+            workflow_id: Restrict to one workflow identity.
+
+        Returns:
+            How many runs were deleted.
+        """
+        ...
+
     async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
         """Find the oldest run still in flight under a flow-control key.
 
@@ -1134,6 +1151,11 @@ class MemoryRunStore:
             for child_run, child_step in completion.children:
                 self._runs[child_run.run_id] = child_run
                 self._steps[child_run.run_id] = [child_step]
+                self._append_events(
+                    child_run.run_id,
+                    _child_admission_events(child_run, child_step),
+                    now,
+                )
             self._runs[run.run_id] = dataclasses.replace(
                 run,
                 status=completion.run_status,
@@ -1487,6 +1509,34 @@ class MemoryRunStore:
             self._steps[run.run_id] = [dataclasses.replace(root_step, due_at=due_at)]
             self._append_events(run.run_id, events, run.created_at)
             return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
+
+    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+        """Delete terminal runs not updated since a cutoff, and all their data.
+
+        Args:
+            before: Delete runs whose last update is older than this.
+            workflow_id: Restrict to one workflow identity.
+
+        Returns:
+            How many runs were deleted.
+        """
+        async with self._lock:
+            doomed = [
+                run.run_id
+                for run in self._runs.values()
+                if run.status in TERMINAL_RUN_STATUSES
+                and run.updated_at < before
+                and (workflow_id is None or run.workflow_id == workflow_id)
+            ]
+            for run_id in doomed:
+                run = self._runs.pop(run_id)
+                self._steps.pop(run_id, None)
+                self._history.pop(run_id, None)
+                self._pending.pop(run_id, None)
+                self._inbox.pop(run_id, None)
+                if run.request_key is not None:
+                    self._dedupe.pop((run.workflow_id, run.request_key), None)
+            return len(doomed)
 
     async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
         """Find the oldest run still in flight under a flow-control key.
@@ -2188,6 +2238,9 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
+SCHEMA_VERSION: Final = 2
+"""Stamped into PRAGMA user_version; bump when _SCHEMA or migrations change."""
+
 DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
 DEFAULT_DB_FILENAME: Final = "workflow.db"
 
@@ -2419,6 +2472,38 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
     )
 
 
+def _child_admission_events(
+    child_run: RunRecord, child_step: StepRecord
+) -> tuple[tuple[HistoryEventType, dict[str, Any]], ...]:
+    """The admission history a fan-out child gets, same as any run.
+
+    Children are advertised as ordinary runs, so a history that begins at
+    attempt_started -- with no admission, no scheduling -- breaks the
+    invariant every other reader relies on, and a metrics observer counting
+    runs_started reports one start for a four-run graph.
+
+    Args:
+        child_run: The child being created.
+        child_step: Its root slot.
+
+    Returns:
+        The admission events to record with the creating transaction.
+    """
+    return (
+        (
+            HistoryEventType.RUN_ADMITTED,
+            {
+                "handler_id": child_step.handler_id,
+                "request_key": child_run.request_key,
+            },
+        ),
+        (
+            HistoryEventType.STEP_SCHEDULED,
+            {"ordinal": child_step.ordinal, "handler_id": child_step.handler_id},
+        ),
+    )
+
+
 def _sqlite_frontier_query(
     select: str,
     now: float,
@@ -2549,8 +2634,15 @@ class SqliteRunStore:
         # rather than block everything for SQLite's multi-second default. The
         # kernel treats the resulting error as transient and retries.
         self._db.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
-        self._db.executescript(_SCHEMA)
-        self._migrate()
+        # A current database opens without taking any write lock: DDL only
+        # runs when the stamped schema version is behind. An operator's
+        # list/stats/show against a busy worker used to fail with "database
+        # is locked" purely because opening the store ran CREATEs and an
+        # immediate-mode migration it did not need.
+        current = self._db.execute("PRAGMA user_version").fetchone()[0]
+        if current != SCHEMA_VERSION:
+            self._db.executescript(_SCHEMA)
+            self._migrate()
 
     def _migrate(self) -> None:
         """Add columns and indexes missing from databases created by older versions.
@@ -2582,6 +2674,7 @@ class SqliteRunStore:
                 "CREATE INDEX IF NOT EXISTS idx_workflow_runs_parent"
                 " ON workflow_runs (parent_run_id, parent_ordinal)"
             )
+            self._db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
             self._db.execute("COMMIT")
         except BaseException:
             self._db.execute("ROLLBACK")
@@ -2882,6 +2975,63 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
+    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+        """Delete terminal runs not updated since a cutoff, and all their data.
+
+        Args:
+            before: Delete runs whose last update is older than this.
+            workflow_id: Restrict to one workflow identity.
+
+        Returns:
+            How many runs were deleted.
+        """
+
+        def work() -> int:
+            """Delete in one transaction on the worker thread.
+
+            Returns:
+                How many runs were deleted.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            where = f"status IN ({','.join('?' * len(terminal))}) AND updated_at < ?"
+            params: tuple[Any, ...] = (*terminal, before)
+            if workflow_id is not None:
+                where += " AND workflow_id = ?"
+                params = (*params, workflow_id)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    doomed = [
+                        row["run_id"]
+                        for row in self._db.execute(
+                            f"SELECT run_id FROM workflow_runs WHERE {where}",
+                            params,
+                        ).fetchall()
+                    ]
+                    for run_id in doomed:
+                        for table in (
+                            "workflow_steps",
+                            "workflow_history",
+                            "workflow_inbox",
+                            "workflow_substeps",
+                        ):
+                            self._db.execute(
+                                f"DELETE FROM {table} WHERE run_id = ?", (run_id,)
+                            )
+                        self._db.execute(
+                            "DELETE FROM workflow_dedupe WHERE run_id = ?", (run_id,)
+                        )
+                        self._db.execute(
+                            "DELETE FROM workflow_runs WHERE run_id = ?", (run_id,)
+                        )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return len(doomed)
+
+        return await asyncio.to_thread(work)
+
     async def claim_next(
         self,
         now: float,
@@ -3127,6 +3277,11 @@ class SqliteRunStore:
                     for child_run, child_step in completion.children:
                         self._insert_run(child_run)
                         self._insert_step(child_step)
+                        self._append_events(
+                            child_run.run_id,
+                            _child_admission_events(child_run, child_step),
+                            now,
+                        )
                     self._db.execute(
                         "UPDATE workflow_runs SET status = ?,"
                         " state = CASE WHEN ? THEN ? ELSE state END,"

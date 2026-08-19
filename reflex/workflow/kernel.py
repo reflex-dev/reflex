@@ -65,6 +65,7 @@ from reflex.workflow.store import (
     RunStore,
     StaleClaimError,
     StepCompletion,
+    _child_admission_events,
 )
 
 if TYPE_CHECKING:
@@ -2420,6 +2421,11 @@ class WorkflowKernel:
             await self._record_abandoned(claim, handler, "fenced_at_commit")
             return
         self._notify(claim.run, completion.events)
+        for child_run, child_step in completion.children:
+            # The store recorded each child's admission inside the commit;
+            # the observer hears the same events, so runs_started counts a
+            # four-run graph as four.
+            self._notify(child_run, _child_admission_events(child_run, child_step))
         if completion.children:
             self._wakeup.set()
         await self._report_to_parent(claim.run, completion)
@@ -2704,8 +2710,13 @@ class WorkflowKernel:
             started.append(self._spawn(claim))
         return started
 
-    async def _tick(self) -> bool:
+    async def _tick(self, own: set[asyncio.Task] | None = None) -> bool:
         """Run one scheduling round.
+
+        Args:
+            own: When given, the attempts this round starts are added, so the
+                caller can later drain exactly what it started and nothing a
+                concurrent pump owns.
 
         Returns:
             True if any control transition or attempt was processed.
@@ -2715,6 +2726,8 @@ class WorkflowKernel:
         progressed = await self._admit_due_schedules(now) > 0 or progressed
         progressed = await self._finalize_control(now) > 0 or progressed
         started = await self._fill_slots(now)
+        if own is not None:
+            own.update(started)
         progressed = bool(started) or progressed
         # Wait only on what this round started: another caller pumping the same
         # kernel must not block on an attempt it does not own.
@@ -2775,8 +2788,22 @@ class WorkflowKernel:
         the clock and call again to run it.
         """
         await self.recover()
-        while await self._tick():
-            pass
+        own: set[asyncio.Task] = set()
+        while True:
+            if await self._tick(own):
+                continue
+            # A round can start several attempts and return after the first
+            # completion, so "nothing newly claimable" is not "nothing
+            # running": returning here hands a test a half-processed graph
+            # and cancels the survivors when the harness exits. Idle means no
+            # claimable work AND none of the attempts THIS pump started still
+            # live -- an attempt some other caller owns (a hanging handler a
+            # test controls, a concurrent pump's work) is not ours to wait on.
+            live = [task for task in own if not task.done()]
+            if not live:
+                return
+            await asyncio.wait(live, return_when=asyncio.FIRST_COMPLETED)
+            self._prune()
 
     async def _worker_loop(self) -> None:
         """Process work continuously until the kernel is closed."""

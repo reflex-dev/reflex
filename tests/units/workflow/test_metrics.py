@@ -9,6 +9,7 @@ from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, 
 
 import reflex as rx
 from reflex.workflow.kernel import MetricsObserver
+from reflex.workflow.records import HistoryEventType, RunStatus
 from reflex.workflow.testing import WorkflowTestHarness
 
 CALLS: list[int] = []
@@ -129,3 +130,76 @@ async def test_a_failed_run_is_counted_as_failed(forked_registration_context):
     assert totals["runs_failed"] == 1
     assert totals["attempts_failed"] == 1
     assert "runs_completed" not in totals
+
+
+async def test_fanout_children_count_as_started_runs(forked_registration_context):
+    """A four-run graph reports four starts, not one.
+
+    Children are advertised as ordinary runs, so their history begins with
+    admission and scheduling like anyone else's, and a dashboard's
+    runs_started reconciles with its terminal counts instead of trailing
+    them by the fan-out width.
+    """
+
+    class Branch(rx.State):
+        __workflow__ = WorkflowConfig(id="metrics.branch")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self, lead: str):
+            """Complete immediately.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=lead)
+
+    class Fans(rx.State):
+        __workflow__ = WorkflowConfig(id="metrics.fans")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out three branches.
+
+            Returns:
+                The parallel fan-out.
+            """
+            return rx.parallel(
+                Branch.start("a"), Branch.start("b"), Branch.start("c"), then=Fans.done
+            )
+
+        @rx.event(durable=True, effect="none")
+        def done(self, results: list):
+            """Complete with the branch count.
+
+            Args:
+                results: One entry per branch.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=len(results))
+
+    metrics = MetricsObserver()
+    async with WorkflowTestHarness(Fans, Branch, observer=metrics) as harness:
+        started = await harness.start(Fans.begin())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+
+        # The durable record agrees: each child's history begins at admission.
+        store = harness.kernel._store  # pyright: ignore[reportPrivateUsage]
+        children = await store.list_children(started.run_id, 1)
+        assert len(children) == 3
+        for child in children:
+            history = [event.type for event in await store.get_history(child.run_id)]
+            assert history[0] is HistoryEventType.RUN_ADMITTED, history
+            assert history[1] is HistoryEventType.STEP_SCHEDULED, history
+
+    counts = metrics.snapshot()["totals"]
+    assert counts["runs_started"] == 4, counts
+    assert counts["runs_completed"] == 4, counts

@@ -253,3 +253,18 @@ def test_complete_refuses_a_result_that_is_not_json(seeded):
     result = _invoke("complete", "-d", database, waiting, "--result", "{oops")
     assert result.exit_code == 1
     assert "not JSON" in result.output
+
+
+def test_purge_deletes_only_stale_terminal_runs(seeded):
+    """Retention is an operator command, not out-of-band SQL."""
+    database, waiting, _ = seeded
+    kept = _invoke("purge", "-d", database, "--older-than", "0s", "--yes")
+    assert kept.exit_code == 0, kept.output
+    assert "Purged 0 run(s)" in kept.output, "no seeded run is terminal yet"
+
+    done = _invoke("complete", "-d", database, waiting, "--result", '"ok"')
+    assert done.exit_code == 0, done.output
+    purged = _invoke("purge", "-d", database, "--older-than", "0s", "--yes")
+    assert purged.exit_code == 0, purged.output
+    assert "Purged 1 run(s)" in purged.output
+    assert _invoke("show", "-d", database, waiting).exit_code == 1

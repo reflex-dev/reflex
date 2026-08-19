@@ -1086,6 +1086,44 @@ async def check_flow_gate_singleton_cancel_replaces(store: RunStore) -> None:
     )
 
 
+async def check_purge_deletes_only_stale_terminal_runs(store: RunStore) -> None:
+    """Retention removes finished history and never touches live work."""
+    await store.admit(
+        make_run("done", status=RunStatus.COMPLETED, request_key="evt-done"),
+        make_step("done", status=StepStatus.SUCCEEDED),
+        _ADMITTED,
+    )
+    await store.admit(
+        make_run(
+            "fresh",
+            status=RunStatus.COMPLETED,
+            created_at=NOW + 500,
+            updated_at=NOW + 500,
+        ),
+        make_step("fresh", status=StepStatus.SUCCEEDED),
+        _ADMITTED,
+    )
+    await store.admit(make_run("live", created_at=NOW), make_step("live"), _ADMITTED)
+
+    deleted = await store.purge_runs(NOW + 100)
+    assert deleted == 1
+    assert await store.get_run("done") is None
+    assert await store.get_steps("done") == ()
+    assert await store.get_history("done") == ()
+    fresh = await store.get_run("fresh")
+    assert fresh is not None, "a terminal run inside the window stays"
+    live = await store.get_run("live")
+    assert live is not None, "an open run is never retention's business"
+    # The purged run's dedupe key is forgotten with it: a redelivery after
+    # the retention window is a fresh admission, by design.
+    replay = await store.admit(
+        make_run("done2", request_key="evt-done", created_at=NOW + 600),
+        make_step("done2"),
+        _ADMITTED,
+    )
+    assert replay == (True, "done2")
+
+
 async def check_flow_gate_dedupes_before_policy(store: RunStore) -> None:
     """A redelivered event is its prior run, not a new start to be policed."""
     from reflex.workflow.store import FlowGate
@@ -1292,6 +1330,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_flow_gate_rate_throttle_and_debounce,
     check_flow_gate_singleton_cancel_replaces,
     check_flow_gate_dedupes_before_policy,
+    check_purge_deletes_only_stale_terminal_runs,
     check_skip_unsticks_a_stopped_run,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,
