@@ -213,3 +213,65 @@ def test_the_worker_names_a_compile_error(tmp_path, forked_registration_context)
     result = CliRunner().invoke(workflows, ["worker", str(module)])
     assert result.exit_code == 1
     assert "runs it inline" in result.output
+
+
+HOOKED = '''
+import reflex as rx
+
+class Hooked(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="check.hooked")
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=rx.webhook(
+            "orders",
+            verify=rx.hmac_signature(secret_env="X_SECRET", header="X-Sig"),
+        ),
+    )
+    def on_hook(self, payload: dict):
+        """Handle a delivery.
+
+        Args:
+            payload: The delivered body.
+        """
+'''
+
+
+def test_webhook_roots_are_named_for_the_worker(forked_registration_context):
+    """A worker serves no HTTP, so it must say what it cannot start.
+
+    Without this the symptom is a workflow that never runs beside a worker
+    that looks entirely healthy -- nothing tells the operator that the process
+    they are watching was never the one meant to receive the request.
+    """
+    from reflex_base.workflow import WorkflowConfig, hmac_signature, manual, webhook
+
+    import reflex as rx
+    from reflex.workflow.cli import webhook_root_names
+    from reflex.workflow.definition import compile_workflow
+
+    class Mixed(rx.State):
+        __workflow__ = WorkflowConfig(id="check.mixed")
+
+        @rx.event(
+            durable=True,
+            effect="none",
+            trigger=webhook(
+                "orders",
+                verify=hmac_signature(secret_env="X_SECRET", header="X-Sig"),
+            ),
+        )
+        def on_hook(self, payload: dict):
+            """Handle a delivery.
+
+            Args:
+                payload: The delivered body.
+            """
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def by_hand(self):
+            """Startable anywhere."""
+
+    names = webhook_root_names([compile_workflow(Mixed)])
+    assert names == ["check.mixed.on_hook"], names

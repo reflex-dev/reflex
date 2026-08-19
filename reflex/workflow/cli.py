@@ -21,9 +21,30 @@ from reflex_base.utils import console
 from reflex.workflow.records import RunStatus
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Iterable
 
+    from reflex.workflow.definition import WorkflowDefinition
     from reflex.workflow.store import RunStore
+
+
+def webhook_root_names(definitions: Iterable[WorkflowDefinition]) -> list[str]:
+    """Name the roots that can only be started by an HTTP delivery.
+
+    A worker process serves no HTTP, so these are exactly the workflows it can
+    execute but never begin.
+
+    Args:
+        definitions: The compiled workflow definitions being served.
+
+    Returns:
+        Sorted "workflow_id.handler" names, empty when none are webhook roots.
+    """
+    return sorted(
+        f"{definition.workflow_id}.{handler.name}"
+        for definition in definitions
+        for handler in definition.handlers.values()
+        if getattr(handler.trigger, "kind", None) == "webhook"
+    )
 
 
 def _operator_action(database: str | None, run_id: str, action: str, **extra):
@@ -210,6 +231,19 @@ def worker(
             f"Serving {served} on "
             f"{'queues ' + ', '.join(queues) if queues else 'every queue'}."
         )
+        webhook_roots = webhook_root_names(runtime.definitions)
+        if webhook_roots:
+            # A worker has no HTTP server, so it executes runs but cannot
+            # receive the requests that start these. Left unsaid, the symptom
+            # is a workflow that simply never runs and a worker that looks
+            # perfectly healthy.
+            console.warn(
+                f"{', '.join(webhook_roots)} start from webhooks, which this "
+                "worker does not serve. Run the app (or another process "
+                "serving the workflow endpoints) to receive them; this worker "
+                "will execute the runs they admit. Schedules and timers do "
+                "fire here."
+            )
         async with runtime.running():
             # The kernel's worker does the work; this task only waits for the
             # operator (or the platform) to stop the process.
