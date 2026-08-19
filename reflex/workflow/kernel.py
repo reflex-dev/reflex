@@ -39,6 +39,7 @@ from reflex_base.workflow import (
 )
 
 from reflex.event import EventHandler, EventSpec
+from reflex.workflow.context import RunContext, bind_run, unbind_run
 from reflex.workflow.cron import CronSchedule
 from reflex.workflow.records import (
     TERMINAL_RUN_STATUSES,
@@ -918,7 +919,11 @@ class WorkflowKernel:
         return [self._resolve_successor(defn, value)], None
 
     async def _invoke(
-        self, handler: HandlerDefinition, instance: BaseState, args: dict[str, Any]
+        self,
+        handler: HandlerDefinition,
+        instance: BaseState,
+        args: dict[str, Any],
+        context: RunContext,
     ) -> Any:
         """Invoke a handler attempt with its per-attempt timeout.
 
@@ -926,6 +931,7 @@ class WorkflowKernel:
             handler: The handler definition.
             instance: The hydrated run-state instance.
             args: The step payload.
+            context: Identity of this attempt, readable inside the handler.
 
         Returns:
             The handler return value.
@@ -941,13 +947,19 @@ class WorkflowKernel:
             payload = _transform_event_payload(args, handler.type_hints)
         except Exception:
             payload = dict(args)
-        if handler.is_async:
-            coroutine = handler.fn(instance, **payload)
-        else:
-            coroutine = asyncio.to_thread(handler.fn, instance, **payload)
-        if handler.timeout is not None:
-            return await asyncio.wait_for(coroutine, timeout=handler.timeout)
-        return await coroutine
+        token = bind_run(context)
+        try:
+            if handler.is_async:
+                coroutine = handler.fn(instance, **payload)
+            else:
+                # to_thread copies the current context, so a sync handler sees
+                # the same attempt identity as an async one.
+                coroutine = asyncio.to_thread(handler.fn, instance, **payload)
+            if handler.timeout is not None:
+                return await asyncio.wait_for(coroutine, timeout=handler.timeout)
+            return await coroutine
+        finally:
+            unbind_run(token)
 
     def _build_new_steps(
         self,
@@ -1738,7 +1750,19 @@ class WorkflowKernel:
             try:
                 instance = self._hydrate(defn, claim.run.state)
                 lease.attempt = asyncio.ensure_future(
-                    self._invoke(handler, instance, claim.step.args)
+                    self._invoke(
+                        handler,
+                        instance,
+                        claim.step.args,
+                        RunContext(
+                            run_id=claim.run.run_id,
+                            workflow_id=claim.run.workflow_id,
+                            ordinal=claim.step.ordinal,
+                            handler_id=handler.id,
+                            attempt=claim.step.attempts + 1,
+                            epoch=claim.step.epoch,
+                        ),
+                    )
                 )
                 value = await lease.attempt
             finally:
@@ -2169,6 +2193,17 @@ class WorkflowKernel:
                     await self.recover()
                 if await self._tick():
                     continue
+                if len(self._inflight) >= self._max_concurrency:
+                    # Every slot is busy, so the only thing that can change is
+                    # an attempt finishing; due times cannot matter until one
+                    # does. A round normally blocks on the attempts it started,
+                    # so this is a guard on the invariant rather than a path
+                    # the loop is expected to take.
+                    await asyncio.wait(
+                        list(self._inflight.values()),
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    continue
                 now = self._clock()
                 due = await self._store.next_due(now)
                 delay = min(self._poll_interval, max(self._next_recovery_at - now, 0.0))
@@ -2180,9 +2215,15 @@ class WorkflowKernel:
                 self._wakeup.clear()
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(self._wakeup.wait(), timeout=delay)
-            except BaseException as err:
-                if self._closing:
-                    raise
+            except asyncio.CancelledError:
+                # Cancellation is never a retryable error. Catching it here --
+                # which `except BaseException` did -- made the worker
+                # unkillable by anything except aclose(): a supervisor, a task
+                # group, or an event loop shutting down would cancel it, be
+                # told nothing, and wait forever for a task that had already
+                # gone back to polling.
+                raise
+            except Exception as err:
                 console.error(f"Workflow worker error, retrying: {err!r}")
                 await asyncio.sleep(self._poll_interval)
 
@@ -2208,3 +2249,6 @@ class WorkflowKernel:
         with contextlib.suppress(asyncio.CancelledError):
             await self._worker
         self._worker = None
+        # The kernel owns its attempts, so closing it stops them rather than
+        # leaving them running against a store nobody is reading any more.
+        await self._cancel_inflight()

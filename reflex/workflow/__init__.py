@@ -40,7 +40,9 @@ from reflex_base.workflow import (
     webhook,
 )
 
+from reflex.workflow.approvals import approval_link
 from reflex.workflow.conformance import CONFORMANCE_CHECKS
+from reflex.workflow.context import RunContext, current_run
 from reflex.workflow.definition import (
     HandlerDefinition,
     WorkflowDefinition,
@@ -84,6 +86,7 @@ __all__ = [
     "Parallel",
     "RateLimit",
     "Retry",
+    "RunContext",
     "RunQuery",
     "RunRecord",
     "RunSnapshot",
@@ -110,8 +113,10 @@ __all__ = [
     "WorkflowRuntime",
     "WorkflowTestHarness",
     "after",
+    "approval_link",
     "compile_workflow",
     "complete",
+    "current_run",
     "fail",
     "get_runtime",
     "hmac_signature",

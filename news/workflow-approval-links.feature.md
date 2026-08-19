@@ -1,0 +1,1 @@
+`rx.approval_link()` builds signed, single-use, expiring URLs that let someone answer a waiting run from an email, and `rx.current_run()` exposes the attempt a durable handler is executing, including a retry-stable idempotency key.

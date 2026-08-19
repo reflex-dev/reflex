@@ -12,6 +12,7 @@ pump rather than expiring; ``lease_duration`` is virtual seconds and
 
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.workflow import (
@@ -91,8 +92,12 @@ class WorkflowTestHarness:
                 virtual clock stay deterministic.
         """
         self._clock = _VirtualClock(start_time)
+        # A store the harness built is the harness's to close. Leaving a
+        # pooled store open leaks its connections and its worker threads into
+        # every later test in the process.
+        self._owned_store = MemoryRunStore() if store is None else None
         self._runtime = WorkflowRuntime(
-            store if store is not None else MemoryRunStore(),
+            store if store is not None else self._owned_store,
             clock=self._clock,
             rng=lambda: 1.0,
             lease_duration=parse_duration(lease_duration),
@@ -152,6 +157,11 @@ class WorkflowTestHarness:
             _context_runtime.reset(self._token)
             self._token = None
         await self._runtime.shutdown()
+        closer = getattr(self._owned_store, "close", None)
+        if closer is not None:
+            closed = closer()
+            if inspect.isawaitable(closed):
+                await closed
 
     async def start(
         self,

@@ -257,6 +257,8 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "fail",
         "needs_attention",
         "workflows",
+        "approval_link",
+        "current_run",
     ],
 }
 

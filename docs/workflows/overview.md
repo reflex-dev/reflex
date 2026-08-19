@@ -184,6 +184,54 @@ class ReviewPage(rx.State):
 Use `timeout=rx.never` to wait indefinitely. A signal that arrives before the run reaches its wait is
 buffered and applied as soon as the wait arms, so a fast approver never blocks the run.
 
+### Approving from an email
+
+Not every approver will open your app. `rx.approval_link()` builds a signed URL that delivers one
+decision to the run that created it, so the reply can come straight from a message:
+
+```python
+@rx.event(durable=True, effect="idempotent_write")
+async def ask(self):
+    approve = rx.approval_link(
+        Expense.review(Decision(approved=True, by="manager")),
+        base_url="https://app.example.com",
+    )
+    reject = rx.approval_link(
+        Expense.review(Decision(approved=False, by="manager")),
+        base_url="https://app.example.com",
+    )
+    await send_email(self.manager, approve_url=approve, reject_url=reject)
+    return rx.wait_for(
+        Expense.review, then=Expense.decide, timeout="3d", on_timeout=Expense.escalate
+    )
+```
+
+Set `REFLEX_WORKFLOW_APPROVAL_SECRET` to a long random string; links are signed with it and there is
+no default, because a built-in secret would make every deployment's links forgeable. The signature
+covers the run, the channel, the payload, and the expiry, so an edited link is refused rather than
+believed.
+
+Following a link shows a confirmation page, and only submitting it records the decision. That is not
+politeness: mail clients and link scanners fetch URLs before a person reads the message, so a link
+that decided on `GET` would approve itself in transit. A link is spent once — replaying it, or
+following the other choice afterwards, changes nothing.
+
+### Knowing which run you are
+
+`rx.current_run()` returns the attempt a durable handler is executing, which is what you need to
+correlate logs — and to make an outbound call safely:
+
+```python
+@rx.event(durable=True, effect="non_idempotent_write")
+async def charge(self):
+    run = rx.current_run()
+    await stripe.charge(self.amount, idempotency_key=run.idempotency_key())
+```
+
+The key is stable across retries of that step and different for every other step, which is exactly
+the contract a payment API's idempotency key wants: a retry must not charge twice, and the next step
+must not be mistaken for this one.
+
 ## Running work in parallel
 
 Each branch of a fan-out becomes its own run, with its own state, retries, and history, so a slow or

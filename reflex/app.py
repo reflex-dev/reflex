@@ -846,7 +846,8 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
     def _add_workflow_endpoints(self):
-        """Add the webhook ingress endpoint when a workflow declares one."""
+        """Add the workflow ingress endpoints: webhooks in, approvals back."""
+        from reflex.workflow.approvals import APPROVAL_ROUTE, approval_endpoint
         from reflex.workflow.ingress import (
             WEBHOOK_ROUTE,
             collect_webhook_routes,
@@ -855,13 +856,20 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if self._api is None or self._workflow_runtime is None:
             return
-        if not collect_webhook_routes(self._workflow_runtime.definitions):
-            return
         config = get_config()
+        if collect_webhook_routes(self._workflow_runtime.definitions):
+            self._api.add_route(
+                config.prepend_backend_path(WEBHOOK_ROUTE),
+                webhook_endpoint(self._workflow_runtime),
+                methods=["POST"],
+            )
+        # Approval links are addressed to a run, not to a workflow, so the
+        # route is mounted whenever workflows are served rather than being
+        # driven by a declaration.
         self._api.add_route(
-            config.prepend_backend_path(WEBHOOK_ROUTE),
-            webhook_endpoint(self._workflow_runtime),
-            methods=["POST"],
+            config.prepend_backend_path(APPROVAL_ROUTE),
+            approval_endpoint(self._workflow_runtime),
+            methods=["GET", "POST"],
         )
 
     def _add_optional_endpoints(self):

@@ -1,6 +1,7 @@
 """Tests for running attempts from different runs at the same time."""
 
 import asyncio
+import contextlib
 
 from reflex_base.workflow import WorkflowConfig, manual
 
@@ -140,3 +141,44 @@ async def test_one_run_still_runs_its_steps_in_order(forked_registration_context
                 break
             await asyncio.sleep(0.02)
         assert order == ["first", "second"]
+
+
+class _Idle(rx.State):
+    """A workflow that is never started, so the worker only polls."""
+
+    __workflow__ = WorkflowConfig(id="conc.idle")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def go(self):
+        """Do nothing."""
+
+
+async def test_the_worker_dies_when_its_task_is_cancelled(
+    forked_registration_context,
+):
+    """Cancelling the worker task must stop it, without going through aclose.
+
+    Not everything that stops a worker calls aclose: a supervisor, a task
+    group, or an event loop being torn down all just cancel the task. A loop
+    that treats cancellation as a retryable error goes back to polling, and
+    then nothing can stop it -- the process hangs on shutdown waiting for a
+    task that has already resumed work.
+    """
+    runtime = WorkflowRuntime(MemoryRunStore(), poll_interval=0.05)
+    runtime.register(_Idle)
+    await runtime.startup()
+    worker = runtime.kernel._worker
+    assert worker is not None
+    # Let the loop reach its idle wait, which is where a shutdown finds it.
+    await asyncio.sleep(0.15)
+
+    worker.cancel()
+    for _ in range(40):
+        if worker.done():
+            break
+        await asyncio.sleep(0.05)
+
+    assert worker.done(), "the worker went back to polling after being cancelled"
+    with contextlib.suppress(asyncio.CancelledError):
+        await worker
+    await runtime.shutdown()
