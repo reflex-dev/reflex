@@ -745,6 +745,9 @@ async def check_schedule_cursors_persist(store: RunStore) -> None:
     # Advancing overwrites rather than accumulating.
     await store.write_schedule_cursor("wf:tick", NOW + 60)
     assert await store.read_schedule_cursor("wf:tick") == pytest.approx(NOW + 60)
+    # An out-of-order write from a second worker never rewinds it.
+    await store.write_schedule_cursor("wf:tick", NOW)
+    assert await store.read_schedule_cursor("wf:tick") == pytest.approx(NOW + 60)
     # Schedules are independent of one another.
     assert await store.read_schedule_cursor("wf:other") is None
 

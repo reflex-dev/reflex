@@ -1789,7 +1789,8 @@ class PostgresRunStore:
         async with pool.connection() as conn, conn.transaction():
             await conn.execute(
                 "INSERT INTO workflow_schedules (key, at) VALUES (%s, %s)"
-                " ON CONFLICT (key) DO UPDATE SET at = EXCLUDED.at",
+                " ON CONFLICT (key) DO UPDATE SET"
+                " at = GREATEST(workflow_schedules.at, EXCLUDED.at)",
                 (key, at),
             )
 

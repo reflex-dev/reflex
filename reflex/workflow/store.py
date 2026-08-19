@@ -1773,7 +1773,14 @@ class MemoryRunStore:
             at: The time swept up to, in epoch seconds.
         """
         async with self._lock:
-            self._schedule_cursors[key] = at
+            # Never move backwards: two workers sweeping out of order would
+            # otherwise rewind the cursor and re-scan ground already covered.
+            # Re-scanning is harmless (occurrences dedupe on their request
+            # key) but it is pure waste, and a cursor that can go back is not
+            # a position anyone can reason about.
+            self._schedule_cursors[key] = max(
+                at, self._schedule_cursors.get(key, at)
+            )
 
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None
@@ -3792,7 +3799,8 @@ class SqliteRunStore:
                 try:
                     self._db.execute(
                         "INSERT INTO workflow_schedules (key, at) VALUES (?, ?)"
-                        " ON CONFLICT(key) DO UPDATE SET at = excluded.at",
+                        " ON CONFLICT(key) DO UPDATE SET"
+                        " at = MAX(at, excluded.at)",
                         (key, at),
                     )
                     self._db.execute("COMMIT")
