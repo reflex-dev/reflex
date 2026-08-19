@@ -9,6 +9,7 @@ from reflex.assets import asset
 from reflex_components_internal.components.component import CoreComponent
 
 DEFAULT_CLASS_NAME = "size-4 pointer-events-none rounded-full"
+GRADIENT_PROFILE_ASSET_PATH = "GradientProfile.js"
 
 
 class GradientProfile(CoreComponent):
@@ -29,9 +30,10 @@ class GradientProfile(CoreComponent):
         Returns:
             The component.
         """
-        props.setdefault(
-            "library", asset(path="GradientProfile.js", shared=True).importable_path
-        )
+        if "library" not in props:
+            props["library"] = asset(
+                path=GRADIENT_PROFILE_ASSET_PATH, shared=True
+            ).importable_path
         cls.set_class_name(DEFAULT_CLASS_NAME, props)
         return super().create(*children, **props)
 

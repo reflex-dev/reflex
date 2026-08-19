@@ -65,6 +65,22 @@ def test_create_resolves_shared_asset(
     ).is_symlink()
 
 
+def test_create_with_library_override_does_not_resolve_asset(monkeypatch) -> None:
+    """A caller-supplied library must bypass shared-asset resolution."""
+    module = importlib.import_module(MODULE)
+    calls = []
+
+    def tracking_asset(*args, **kwargs):
+        calls.append((args, kwargs))
+        return SimpleNamespace(importable_path="$/public/stub.js")
+
+    monkeypatch.setattr(module, "asset", tracking_asset)
+    component = module.GradientProfile.create(library="custom-library")
+
+    assert calls == []
+    assert component.library == "custom-library"
+
+
 def test_javascript_merges_caller_style_with_gradient() -> None:
     """Caller styles must not replace the generated gradient style."""
     source = _javascript_source()
