@@ -274,3 +274,49 @@ async def test_singleton_cancel_keeps_one_active_run_per_key(
             await harness.kernel.start(flow.start("acme"))
         active = await harness.kernel.store.count_active("flow.sync", "start:'acme'")
         assert active == 1
+
+
+async def test_throttle_spaces_a_backlog_instead_of_bunching_it(
+    forked_registration_context,
+):
+    """A held-back burst must not all fire at the same instant.
+
+    Deferring every excess start by one window turns a burst of a hundred into
+    a burst of ninety, one window later. The provider the throttle exists to
+    protect sees the same spike, just delayed.
+    """
+    calls: list[int] = []
+
+    class Spaced(rx.State):
+        __workflow__ = WorkflowConfig(id="flow.spaced")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="none",
+            throttle=Throttle(limit=2, period="10s"),
+        )
+        def start(self):
+            """Record that this run ran."""
+            calls.append(1)
+
+    async with WorkflowTestHarness(Spaced) as harness:
+        begin = harness.now
+        run_ids = []
+        for _ in range(6):
+            result = await harness.start(Spaced.start)
+            assert result.disposition == "started"
+            assert result.run_id is not None
+            run_ids.append(result.run_id)
+        assert len(calls) == 2
+
+        due = []
+        for run_id in run_ids:
+            steps = await harness.kernel.store.get_steps(run_id)
+            due.append(max(steps[0].due_at, begin) - begin)
+        assert due == [0.0, 0.0, 10.0, 10.0, 20.0, 20.0]
+
+        await harness.advance("10s")
+        assert len(calls) == 4
+        await harness.advance("10s")
+        assert len(calls) == 6

@@ -290,7 +290,9 @@ def sync(self, customer_id: str): ...
 
 Debounce is the one to reach for with chatty webhooks: ten deliveries in a second become one run.
 Rate limiting drops excess starts, which is what you want when a provider can flood you; throttling
-delays them instead, which is what you want when every start matters but the downstream is slow.
+delays them instead, which is what you want when every start matters but the downstream is slow. A
+throttled backlog is spaced out rather than released together: with `limit=2, period="10s"`, a burst
+of six runs starts two now, two in ten seconds, and two in twenty.
 
 ## Inspecting and steering runs
 

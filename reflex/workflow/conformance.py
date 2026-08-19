@@ -509,6 +509,35 @@ async def check_flow_control_queries(store: RunStore) -> None:
     assert steps[0].due_at == pytest.approx(NOW + 30)
 
 
+async def check_nth_recent_start_orders_by_scheduled_time(store: RunStore) -> None:
+    """Throttling can find the nth most recent scheduled start under a key."""
+    for index, offset in enumerate((0.0, 5.0, 20.0)):
+        await store.admit(
+            make_run(f"s{index}", flow_key="k1", created_at=NOW + offset),
+            make_step(f"s{index}"),
+            _ADMITTED,
+        )
+    await store.admit(
+        make_run("other", flow_key="k2", created_at=NOW + 99),
+        make_step("other"),
+        _ADMITTED,
+    )
+    assert await store.nth_recent_start("conformance.flow", "k1", 1) == pytest.approx(
+        NOW + 20
+    )
+    assert await store.nth_recent_start("conformance.flow", "k1", 3) == pytest.approx(
+        NOW
+    )
+    assert await store.nth_recent_start("conformance.flow", "k1", 4) is None
+    assert await store.nth_recent_start("conformance.flow", "missing", 1) is None
+
+    # A deferred run is scheduled by its due time, not by when it was admitted.
+    assert await store.defer_root("s0", NOW + 50, NOW)
+    assert await store.nth_recent_start("conformance.flow", "k1", 1) == pytest.approx(
+        NOW + 50
+    )
+
+
 async def check_early_deliveries_queue_in_order(store: RunStore) -> None:
     """Several signals arriving before a wait are kept, not overwritten."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -697,4 +726,5 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_pagination_skips_nothing_on_tied_timestamps,
     check_label_filter_handles_awkward_keys,
     check_flow_control_queries,
+    check_nth_recent_start_orders_by_scheduled_time,
 )

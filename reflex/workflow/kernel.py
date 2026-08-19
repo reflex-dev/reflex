@@ -481,12 +481,14 @@ class WorkflowKernel:
                 )
         if handler.throttle is not None:
             window = parse_duration(handler.throttle.period)
-            started = await self._store.count_started_since(
-                defn.workflow_id, flow_key, now - window
+            previous = await self._store.nth_recent_start(
+                defn.workflow_id, flow_key, handler.throttle.limit
             )
-            if started >= handler.throttle.limit:
-                # Delay rather than drop: the excess still runs, just later.
-                return None, now + window
+            if previous is not None and previous + window > now:
+                # Delay rather than drop, and space the backlog: each start
+                # sits a window after the limit-th most recent one, so a held
+                # burst is released at the configured rate instead of at once.
+                return None, previous + window
         if handler.debounce is not None:
             window = parse_duration(handler.debounce.period)
             pending = await self._store.first_active(defn.workflow_id, flow_key)

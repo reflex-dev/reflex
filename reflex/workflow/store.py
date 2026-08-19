@@ -339,6 +339,30 @@ class RunStore(Protocol):
         """
         ...
 
+    async def nth_recent_start(
+        self, workflow_id: str, flow_key: str, n: int
+    ) -> float | None:
+        """Find the nth most recent scheduled start under a flow key.
+
+        Throttling has to place each new run relative to the ones already
+        scheduled, not merely count them: deferring every excess start by one
+        window replays the burst intact, one window later. Keeping each start
+        at least a window after the nth most recent one spaces the backlog and
+        holds the sliding-window limit.
+
+        A run's scheduled start is when its root slot comes due, which for an
+        undeferred run is when it was admitted.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            n: How far back to look, counting from the most recent as 1.
+
+        Returns:
+            The scheduled start, or None when fewer than n runs exist.
+        """
+        ...
+
     async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
         """Push a not-yet-started run's root slot later, for debouncing.
 
@@ -1146,6 +1170,40 @@ class MemoryRunStore:
                 and run.flow_key == flow_key
                 and run.created_at > since
             )
+
+    async def nth_recent_start(
+        self, workflow_id: str, flow_key: str, n: int
+    ) -> float | None:
+        """Find the nth most recent scheduled start under a flow key.
+
+        Throttling has to place each new run relative to the ones already
+        scheduled, not merely count them: deferring every excess start by one
+        window replays the burst intact, one window later. Keeping each start
+        at least a window after the nth most recent one spaces the backlog and
+        holds the sliding-window limit.
+
+        A run's scheduled start is when its root slot comes due, which for an
+        undeferred run is when it was admitted.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            n: How far back to look, counting from the most recent as 1.
+
+        Returns:
+            The scheduled start, or None when fewer than n runs exist.
+        """
+        async with self._lock:
+            starts = sorted(
+                (
+                    max(steps[0].due_at, run.created_at)
+                    for run in self._runs.values()
+                    if run.workflow_id == workflow_id and run.flow_key == flow_key
+                    if (steps := self._steps.get(run.run_id))
+                ),
+                reverse=True,
+            )
+            return starts[n - 1] if len(starts) >= n else None
 
     async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
         """Push a not-yet-started run's root slot later, for debouncing.
@@ -2443,6 +2501,38 @@ class SqliteRunStore:
                 (workflow_id, flow_key, since),
             ).fetchone()
             return row["n"]
+
+    async def nth_recent_start(
+        self, workflow_id: str, flow_key: str, n: int
+    ) -> float | None:
+        """Find the nth most recent scheduled start under a flow key.
+
+        Throttling has to place each new run relative to the ones already
+        scheduled, not merely count them: deferring every excess start by one
+        window replays the burst intact, one window later. Keeping each start
+        at least a window after the nth most recent one spaces the backlog and
+        holds the sliding-window limit.
+
+        A run's scheduled start is when its root slot comes due, which for an
+        undeferred run is when it was admitted.
+
+        Args:
+            workflow_id: The workflow identity.
+            flow_key: The computed grouping key.
+            n: How far back to look, counting from the most recent as 1.
+
+        Returns:
+            The scheduled start, or None when fewer than n runs exist.
+        """
+        with self._lock:
+            row = self._db.execute(
+                "SELECT MAX(s.due_at, r.created_at) AS start FROM workflow_runs r"
+                " JOIN workflow_steps s ON s.run_id = r.run_id AND s.ordinal = 0"
+                " WHERE r.workflow_id = ? AND r.flow_key = ?"
+                " ORDER BY start DESC LIMIT 1 OFFSET ?",
+                (workflow_id, flow_key, n - 1),
+            ).fetchone()
+            return None if row is None else row["start"]
 
     async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
         """Push a not-yet-started run's root slot later, for debouncing.
