@@ -39,7 +39,7 @@ def hosting_cli(ctx: click.Context) -> None:
     # Before anything below can speak: this callback runs ahead of the
     # subcommand's own option parsing, so its --json is not known yet and a
     # warning from here would land on stdout in front of the document.
-    reserve_stdout_for_argv()
+    reserve_stdout_for_argv(ctx=ctx)
 
     if _reflex_version is None:
         ctx.fail("Reflex is not installed. Install it with `pip install reflex`.")
