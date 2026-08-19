@@ -177,3 +177,68 @@ async def test_force_fail_records_the_reason(forked_registration_context):
         assert not await harness.kernel.force_finalize(
             result.run_id, status=RunStatus.COMPLETED
         )
+
+
+async def test_the_public_facade_exposes_every_action(forked_registration_context):
+    """rx.workflows.* is the surface user code calls, so it is what is tested.
+
+    The kernel methods were covered while the facade wrapping them was not,
+    which is how force_complete and force_fail shipped raising NameError from
+    a type-checking-only import: every test called past the layer that was
+    broken.
+    """
+    global HEALED
+    ATTEMPTS.clear()
+    HEALED = True
+    async with WorkflowTestHarness(Fragile) as harness:
+        result = await harness.start(Fragile.start)
+        assert result.run_id is not None
+
+        # Each action answers for an unknown run rather than raising.
+        assert await rx.workflows.cancel("no-such-run") is False
+        assert await rx.workflows.retry("no-such-run") is False
+        assert await rx.workflows.resume("no-such-run") is False
+        assert await rx.workflows.force_complete("no-such-run") is False
+        assert await rx.workflows.force_fail("no-such-run", "gone") is False
+        assert await rx.workflows.get_run("no-such-run") is None
+
+        # And on a real run, the facade does what the kernel does.
+        runs = await rx.workflows.list_runs(workflow_id="ops.fragile")
+        assert [run.run_id for run in runs] == [result.run_id]
+        _ = harness
+
+
+async def test_force_complete_through_the_facade(forked_registration_context):
+    """The documented call, exercised the way an operator would make it."""
+
+    class Parked(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.parked")
+
+        answered = rx.Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Wait forever.
+
+            Returns:
+                An unbounded wait.
+            """
+            return rx.wait_for(Parked.answered, then=Parked.done, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def done(self, payload: dict):
+            """Never reached.
+
+            Args:
+                payload: The delivered answer.
+            """
+
+    async with WorkflowTestHarness(Parked) as harness:
+        result = await harness.start(Parked.start)
+        assert result.run_id is not None
+        assert await rx.workflows.force_complete(result.run_id, {"by": "ops"})
+        snapshot = await rx.workflows.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == {"by": "ops"}
+        _ = harness

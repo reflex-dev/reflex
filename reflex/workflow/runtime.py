@@ -29,6 +29,7 @@ from reflex.workflow.kernel import (
     WorkflowKernel,
     WorkflowObserver,
 )
+from reflex.workflow.records import RunStatus
 from reflex.workflow.store import RunStore, resolve_store
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterable, Mapping
 
     from reflex.state import BaseState
-    from reflex.workflow.records import RunRecord, RunSnapshot, RunStatus, StartResult
+    from reflex.workflow.records import RunRecord, RunSnapshot, StartResult
 
 
 _context_runtime: ContextVar[WorkflowRuntime | None] = ContextVar(
