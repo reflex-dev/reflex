@@ -654,6 +654,9 @@ class WorkflowKernel:
         """
         recorded = await self._store.request_cancel(run_id, self._clock())
         if recorded:
+            await self._notify_run(
+                run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),)
+            )
             task = self._inflight.get(run_id)
             if task is not None:
                 task.cancel()
@@ -685,7 +688,26 @@ class WorkflowKernel:
             self._clock(),
         )
         if disposition == "resolved":
+            await self._notify_run(
+                run_id,
+                (
+                    (
+                        HistoryEventType.WAIT_RESOLVED,
+                        {"wait_key": f"sig:{delivery.channel}"},
+                    ),
+                ),
+            )
             self._wakeup.set()
+        elif disposition == "buffered":
+            await self._notify_run(
+                run_id,
+                (
+                    (
+                        HistoryEventType.SIGNAL_BUFFERED,
+                        {"wait_key": f"sig:{delivery.channel}"},
+                    ),
+                ),
+            )
         return disposition
 
     async def resume(self, run_id: str) -> bool:
@@ -699,6 +721,7 @@ class WorkflowKernel:
         """
         resumed = await self._store.resume_run(run_id, self._clock())
         if resumed:
+            await self._notify_run(run_id, ((HistoryEventType.RUN_RESUMED, {}),))
             self._wakeup.set()
         return resumed
 
@@ -1377,6 +1400,48 @@ class WorkflowKernel:
             events=tuple(events),
         )
 
+    async def _record(
+        self,
+        run: RunRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        now: float,
+    ) -> None:
+        """Append history events and tell the observer about them.
+
+        Args:
+            run: The run the transitions belong to.
+            events: The (type, data) pairs to record.
+            now: Current time in epoch seconds.
+        """
+        await self._store.append_events(run.run_id, events, now)
+        self._notify(run, events)
+
+    async def _notify_run(
+        self,
+        run_id: str,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+    ) -> None:
+        """Tell the observer about transitions a store operation recorded.
+
+        Some transitions are written by the store itself, inside the same
+        transaction as the state change they describe. The kernel knows which
+        ones those are from the operation's result, and reports them here so
+        the observer sees one stream rather than the subset the kernel happens
+        to construct itself.
+
+        The run is loaded only to correlate the events with their workflow, so
+        a deployment without an observer pays nothing for this.
+
+        Args:
+            run_id: The run the transitions belong to.
+            events: The (type, data) pairs the store recorded.
+        """
+        if self._observer is None:
+            return
+        run = await self._store.get_run(run_id)
+        if run is not None:
+            self._notify(run, events)
+
     def _notify(
         self,
         run: RunRecord,
@@ -1529,8 +1594,8 @@ class WorkflowKernel:
             handler: The handler that was executing.
             reason: Why the claim was lost.
         """
-        await self._store.append_events(
-            claim.run.run_id,
+        await self._record(
+            claim.run,
             (
                 (
                     HistoryEventType.ATTEMPT_ABANDONED,
@@ -1652,8 +1717,8 @@ class WorkflowKernel:
             if expired is not None:
                 handler = expired
         steps = await self._store.get_steps(claim.run.run_id)
-        await self._store.append_events(
-            claim.run.run_id,
+        await self._record(
+            claim.run,
             (
                 (
                     HistoryEventType.ATTEMPT_STARTED,
@@ -1692,17 +1757,19 @@ class WorkflowKernel:
                 await self._record_abandoned(claim, handler, "lease_lost")
                 return
             if await self._cancel_requested(claim.run.run_id):
+                cancelled = (
+                    (
+                        HistoryEventType.ATTEMPT_CANCELLED,
+                        {"ordinal": claim.step.ordinal},
+                    ),
+                )
                 await self._store.release_claim(
                     claim,
                     status=StepStatus.CANCELLED,
-                    events=(
-                        (
-                            HistoryEventType.ATTEMPT_CANCELLED,
-                            {"ordinal": claim.step.ordinal},
-                        ),
-                    ),
+                    events=cancelled,
                     now=self._clock(),
                 )
+                self._notify(claim.run, cancelled)
                 return
             current = asyncio.current_task()
             if self._closing or (current is not None and current.cancelling()):
@@ -1908,6 +1975,16 @@ class WorkflowKernel:
             run.run_id,
             self._clock(),
         )
+        if disposition in ("resolved", "counted"):
+            await self._notify_run(
+                run.parent_run_id,
+                (
+                    (
+                        HistoryEventType.CHILD_RESOLVED,
+                        {"ordinal": run.parent_ordinal, "child": run.run_id},
+                    ),
+                ),
+            )
         if disposition == "resolved":
             await self._cancel_losing_branches(run)
         self._wakeup.set()
@@ -1948,17 +2025,15 @@ class WorkflowKernel:
             cancelled = run.cancel_requested
             status = RunStatus.CANCELLED if cancelled else RunStatus.TIMED_OUT
             error = None if cancelled else {"reason": "run_timeout"}
+            event = (
+                HistoryEventType.RUN_CANCELLED
+                if cancelled
+                else HistoryEventType.RUN_TIMED_OUT
+            )
             if await self._store.finalize_run(
-                run.run_id,
-                status=status,
-                error=error,
-                event=(
-                    HistoryEventType.RUN_CANCELLED
-                    if cancelled
-                    else HistoryEventType.RUN_TIMED_OUT
-                ),
-                now=now,
+                run.run_id, status=status, error=error, event=event, now=now
             ):
+                self._notify(run, ((event, {} if error is None else dict(error)),))
                 await self._report_outcome(run, status, None, error)
                 finalized += 1
         return finalized

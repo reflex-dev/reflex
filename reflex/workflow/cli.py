@@ -9,7 +9,9 @@ running deployment or a stopped one.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
+import os
 from typing import TYPE_CHECKING, Any
 
 import click
@@ -18,7 +20,7 @@ from reflex_base.utils import console
 from reflex.workflow.records import RunStatus
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
 
     from reflex.workflow.store import RunStore
 
@@ -28,27 +30,59 @@ DEFAULT_DB_FILENAME = "workflow.db"
 def _open_store(database: str | None) -> RunStore:
     """Open the run store the app persists to.
 
+    A ``postgres://`` or ``postgresql://`` target opens the Postgres store;
+    anything else is a path to a SQLite file.
+
     Args:
-        database: Path to the SQLite database, or None for the default.
+        database: Connection URL or SQLite path, or None for the default.
 
     Returns:
         The store.
     """
+    target = database or os.environ.get("REFLEX_WORKFLOW_DATABASE")
+    if target is not None and target.startswith(("postgres://", "postgresql://")):
+        from reflex.workflow.postgres import PostgresRunStore
+
+        return PostgresRunStore(target)
+
     from reflex.workflow.store import SqliteRunStore
 
-    return SqliteRunStore(database or DEFAULT_DB_FILENAME)
+    return SqliteRunStore(target or DEFAULT_DB_FILENAME)
 
 
-def _run(coroutine: Awaitable[Any]) -> Any:
-    """Run one store coroutine to completion.
+def _with_store(database: str | None, work: Callable[[RunStore], Awaitable[Any]]):
+    """Open a store, run one unit of work against it, and close it.
+
+    Everything happens inside a single event loop. A pooled store binds its
+    connections to the loop that opened them, so a command that ran each query
+    in its own ``asyncio.run`` would fail on close, and the failure would only
+    appear against Postgres.
 
     Args:
-        coroutine: The coroutine to run.
+        database: Connection URL or SQLite path, or None for the default.
+        work: What to do with the open store.
 
     Returns:
-        Its result.
+        Whatever the work returned.
     """
-    return asyncio.run(coroutine)  # pyright: ignore[reportArgumentType]
+
+    async def session() -> Any:
+        """Open the store, do the work, and close it.
+
+        Returns:
+            The work's result.
+        """
+        store = _open_store(database)
+        try:
+            return await work(store)
+        finally:
+            closer = getattr(store, "close", None)
+            if closer is not None:
+                closed = closer()
+                if inspect.isawaitable(closed):
+                    await closed
+
+    return asyncio.run(session())
 
 
 def _age(seconds: float) -> str:
@@ -70,7 +104,10 @@ database_option = click.option(
     "--database",
     "-d",
     default=None,
-    help="Path to the workflow database. Defaults to ./workflow.db.",
+    help=(
+        "Workflow database: a Postgres URL, or a path to a SQLite file. "
+        "Defaults to $REFLEX_WORKFLOW_DATABASE, then ./workflow.db."
+    ),
 )
 
 
@@ -105,20 +142,13 @@ def list_runs(
     from reflex.workflow.records import RunQuery
 
     label_filter = dict(pair.split("=", 1) for pair in labels if "=" in pair)
-    store = _open_store(database)
-    try:
-        runs = _run(
-            store.list_runs(
-                RunQuery(
-                    workflow_id=workflow,
-                    statuses=tuple(RunStatus(value.upper()) for value in statuses),
-                    labels=label_filter or None,
-                    limit=limit,
-                )
-            )
-        )
-    finally:
-        _close(store)
+    query = RunQuery(
+        workflow_id=workflow,
+        statuses=tuple(RunStatus(value.upper()) for value in statuses),
+        labels=label_filter or None,
+        limit=limit,
+    )
+    runs = _with_store(database, lambda store: store.list_runs(query))
 
     if as_json:
         click.echo(
@@ -156,16 +186,26 @@ def list_runs(
 @click.option("--history", is_flag=True, help="Include the run's history.")
 def show(database: str | None, run_id: str, as_json: bool, history: bool):
     """Show one run's state, steps, and optionally its history."""
-    store = _open_store(database)
-    try:
-        run = _run(store.get_run(run_id))
-        if run is None:
-            console.error(f"No run {run_id!r} in this database.")
-            raise click.exceptions.Exit(1)
-        steps = _run(store.get_steps(run_id))
-        events = _run(store.get_history(run_id)) if history else ()
-    finally:
-        _close(store)
+
+    async def load(store: RunStore):
+        """Read the run, its slots, and optionally its history.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            The run, its steps, and its history events.
+        """
+        return (
+            await store.get_run(run_id),
+            await store.get_steps(run_id),
+            await store.get_history(run_id) if history else (),
+        )
+
+    run, steps, events = _with_store(database, load)
+    if run is None:
+        console.error(f"No run {run_id!r} in this database.")
+        raise click.exceptions.Exit(1)
 
     if as_json:
         click.echo(
@@ -232,11 +272,9 @@ def cancel(database: str | None, run_id: str):
     """
     import time
 
-    store = _open_store(database)
-    try:
-        recorded = _run(store.request_cancel(run_id, time.time()))
-    finally:
-        _close(store)
+    recorded = _with_store(
+        database, lambda store: store.request_cancel(run_id, time.time())
+    )
     if not recorded:
         console.error(f"Run {run_id!r} is unknown or already finished.")
         raise click.exceptions.Exit(1)
@@ -250,23 +288,8 @@ def resume(database: str | None, run_id: str):
     """Re-open a run suspended for operator attention."""
     import time
 
-    store = _open_store(database)
-    try:
-        resumed = _run(store.resume_run(run_id, time.time()))
-    finally:
-        _close(store)
+    resumed = _with_store(database, lambda store: store.resume_run(run_id, time.time()))
     if not resumed:
         console.error(f"Run {run_id!r} is not suspended.")
         raise click.exceptions.Exit(1)
     console.print(f"Resumed {run_id}; its next step will run.")
-
-
-def _close(store: RunStore) -> None:
-    """Close a store that holds a connection.
-
-    Args:
-        store: The store to close.
-    """
-    closer = getattr(store, "close", None)
-    if closer is not None:
-        closer()

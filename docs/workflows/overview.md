@@ -382,13 +382,30 @@ to a waiting run, and `harness.cancel(...)` and `harness.resume(...)` drive the 
 
 ## Deploying
 
-Runs persist to a SQLite file next to your app by default; pass `rx.App(workflow_store=...)` to
-choose another store.
+Runs persist to a SQLite file next to your app by default, which is the right choice for local
+development and for a single-process deployment. Run **one worker process per SQLite database
+file**: the store's calls are synchronous on the event loop that also serves your app, so two
+processes writing the same file contend for it. Contention is bounded to a short busy timeout and
+surfaces as a transient error the kernel retries, but throughput does not improve.
 
-Run **one worker process per SQLite database file**. The store's calls are synchronous on the event
-loop that also serves your app, so two processes writing the same file contend for it; contention is
-bounded to a short busy timeout and surfaces as a transient error the kernel retries, but throughput
-does not improve. Horizontal scale wants a store that supports concurrent writers.
+For more than one process, point the app at Postgres:
+
+```python
+from reflex.workflow.postgres import PostgresRunStore
+
+app = rx.App(workflow_store=PostgresRunStore("postgresql://user:pw@host/db"))
+```
+
+Every process that opens the same database is a worker. A claim locks one run's next step with
+`FOR UPDATE ... SKIP LOCKED`, so workers never queue behind each other and never take the same
+step; adding a process adds throughput. A worker that dies mid-step holds a lease, and the step is
+reclaimed by another worker once that lease lapses -- not before, so a slow step is never
+duplicated. Install it with `pip install 'psycopg[binary,pool]'`.
+
+Pass `schema=` to keep a deployment's tables in their own namespace inside a shared database.
+
+The `reflex workflows` commands take the same target: `--database postgresql://...`, or set
+`REFLEX_WORKFLOW_DATABASE` once.
 
 `RunStore` is a supported extension point, and the invariants a store must satisfy ship as runnable
 checks rather than prose:

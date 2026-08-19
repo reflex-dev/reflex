@@ -92,7 +92,7 @@ dev = [
   "plotly",
   "pre-commit",
   "psutil",
-  "psycopg[binary]",
+  "psycopg[binary,pool]",
   "pydantic",
   "pyright",
   "pytest-asyncio",

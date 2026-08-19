@@ -1,0 +1,283 @@
+"""Tests that need a real PostgreSQL server.
+
+The point of the Postgres store is the thing SQLite cannot do: several worker
+processes claiming from one mailbox at the same time. These tests run two
+kernels against one database and assert what a durable engine has to promise
+under that load -- every run executes, and no run executes twice.
+
+They are skipped unless ``REFLEX_TEST_POSTGRES`` names a server.
+"""
+
+import asyncio
+import json
+import os
+import time
+import uuid
+
+import pytest
+from reflex_base.workflow import WorkflowConfig, manual
+
+import reflex as rx
+from reflex.workflow.definition import compile_workflow
+from reflex.workflow.kernel import WorkflowKernel, WorkflowObserver
+from reflex.workflow.records import (
+    HistoryEventType,
+    RunRecord,
+    RunStatus,
+    StepRecord,
+    StepStatus,
+)
+
+POSTGRES_URL = os.environ.get("REFLEX_TEST_POSTGRES") or ""
+
+pytestmark = pytest.mark.skipif(
+    not POSTGRES_URL, reason="set REFLEX_TEST_POSTGRES to run Postgres tests"
+)
+
+EXECUTIONS: list[str] = []
+
+
+@pytest.fixture(autouse=True)
+def harness_store():
+    """Opt out of the shared store parameter.
+
+    These tests drive kernels against their own Postgres store, so running
+    them once per store kind would just repeat the same work.
+
+    Returns:
+        The store kind this module uses.
+    """
+    return "postgres"
+
+
+class Charge(rx.State):
+    """A workflow whose one step must never run twice."""
+
+    __workflow__ = WorkflowConfig(id="pg.charge")
+    invoice: str = ""
+
+    @rx.event(durable=True, trigger=manual(), effect="non_idempotent_write")
+    async def start(self, invoice: str):
+        """Charge the invoice exactly once.
+
+        Args:
+            invoice: The invoice identifier.
+
+        Returns:
+            Completion.
+        """
+        EXECUTIONS.append(invoice)
+        await asyncio.sleep(0.01)
+        self.invoice = invoice
+        return rx.complete(result={"charged": invoice})
+
+
+@pytest.fixture
+def store():
+    """Open a Postgres store in a throwaway schema.
+
+    Yields:
+        The store.
+    """
+    from reflex.workflow.postgres import PostgresRunStore
+
+    schema = f"wf_test_{uuid.uuid4().hex}"
+    opened = PostgresRunStore(POSTGRES_URL, schema=schema, min_size=0, max_size=6)
+    yield opened
+    opened.drop_schema()
+
+
+async def test_two_workers_share_one_mailbox_without_double_execution(store):
+    """Two kernels on one database run every step exactly once.
+
+    This is the claim SQLite cannot support and the reason the Postgres store
+    exists. A step marked non_idempotent_write running twice is a double
+    charge, so the assertion is exact, not statistical.
+    """
+    EXECUTIONS.clear()
+    definition = compile_workflow(Charge)
+    claimed: list[set[str]] = [set(), set()]
+
+    def watcher(index: int):
+        """Record which runs one worker started attempts on.
+
+        Args:
+            index: Which worker this observer belongs to.
+
+        Returns:
+            An observer for that worker.
+        """
+
+        class Watcher(WorkflowObserver):
+            def on_event(self, event_type, run_id, workflow_id, data):
+                """Note an attempt this worker started.
+
+                Args:
+                    event_type: The recorded transition.
+                    run_id: The run it happened on.
+                    workflow_id: The workflow identity.
+                    data: The event payload.
+                """
+                if event_type is HistoryEventType.ATTEMPT_STARTED:
+                    claimed[index].add(run_id)
+
+        return Watcher()
+
+    workers = [
+        WorkflowKernel(
+            [definition],
+            store,
+            poll_interval=0.01,
+            max_concurrency=4,
+            observer=watcher(index),
+        )
+        for index in range(2)
+    ]
+
+    invoices = [f"inv-{index}" for index in range(20)]
+    for invoice in invoices:
+        result = await workers[0].start(Charge.start(invoice))
+        assert result.disposition == "started"
+
+    for worker in workers:
+        await worker.start_worker()
+    try:
+        for _ in range(500):
+            runs = await workers[0].list_runs()
+            if all(run.status is RunStatus.COMPLETED for run in runs) and len(
+                runs
+            ) == len(invoices):
+                break
+            await asyncio.sleep(0.02)
+    finally:
+        for worker in workers:
+            await worker.aclose()
+
+    assert sorted(EXECUTIONS) == sorted(invoices)
+    runs = await workers[0].list_runs()
+    assert len(runs) == len(invoices)
+    assert {run.status for run in runs} == {RunStatus.COMPLETED}
+    # Both workers pulled from the queue, and never the same run twice, so the
+    # exactly-once result above is a real division of labour and not one
+    # worker quietly doing everything.
+    assert claimed[0]
+    assert claimed[1]
+    assert not claimed[0] & claimed[1]
+    assert claimed[0] | claimed[1] == {run.run_id for run in runs}
+
+
+async def test_a_second_worker_takes_over_an_abandoned_claim(store):
+    """A worker that dies mid-step does not strand its run.
+
+    The lease is what makes this safe: the survivor may only reclaim a step
+    whose lease has lapsed, so recovery cannot race a worker that is merely
+    slow.
+    """
+    EXECUTIONS.clear()
+    definition = compile_workflow(Charge)
+    dying = WorkflowKernel([definition], store, lease_duration=0.5)
+    survivor = WorkflowKernel([definition], store, poll_interval=0.01, lease_duration=5)
+
+    result = await dying.start(Charge.start("inv-orphan"))
+    assert result.run_id is not None
+
+    claim = await store.claim_next(time.time(), lease_duration=0.4)
+    assert claim is not None
+    assert claim.run.run_id == result.run_id
+
+    # Nobody renews that lease, so it lapses as if the worker had died.
+    await asyncio.sleep(0.6)
+    assert await survivor.recover() == 1
+
+    await survivor.start_worker()
+    try:
+        for _ in range(300):
+            snapshot = await survivor.get_run(result.run_id)
+            if snapshot is not None and snapshot.status is RunStatus.COMPLETED:
+                break
+            await asyncio.sleep(0.02)
+    finally:
+        await survivor.aclose()
+
+    snapshot = await survivor.get_run(result.run_id)
+    assert snapshot is not None
+    assert snapshot.status is RunStatus.COMPLETED
+    assert EXECUTIONS == ["inv-orphan"]
+
+
+async def test_concurrent_admissions_deduplicate_on_the_request_key(store):
+    """A request key admitted from many workers at once yields one run.
+
+    Postgres decides this with a unique index rather than a write lock, so it
+    is the one place the two stores reach the same answer by different means.
+    """
+    definition = compile_workflow(Charge)
+    workers = [
+        WorkflowKernel([definition], store, poll_interval=0.01) for _ in range(4)
+    ]
+    results = await asyncio.gather(
+        *(
+            worker.start(Charge.start("inv-dupe"), request_key="webhook-1")
+            for worker in workers
+        )
+    )
+    run_ids = {result.run_id for result in results}
+    assert len(run_ids) == 1
+    assert sum(result.disposition == "started" for result in results) == 1
+    assert sum(result.disposition == "deduplicated" for result in results) == 3
+
+
+def test_the_cli_operates_on_a_postgres_url(store):
+    """`reflex workflows` accepts a Postgres URL, not just a SQLite path.
+
+    The commands each ran their own ``asyncio.run`` before this, which works
+    for a file-backed store and fails for a pooled one: the pool's connections
+    belong to the loop that opened them, so closing from a second loop raised.
+    Only driving the real command surfaced it.
+    """
+    from click.testing import CliRunner
+
+    from reflex.workflow.cli import workflows
+
+    async def seed():
+        """Admit one run directly, so the CLI has something to find."""
+        now = time.time()
+        await store.admit(
+            RunRecord(
+                run_id="cli-run",
+                workflow_id="pg.charge",
+                definition_digest="digest",
+                status=RunStatus.RUNNING,
+                state={},
+                state_version=0,
+                next_ordinal=1,
+                labels={"team": "ops"},
+                created_at=now,
+                updated_at=now,
+            ),
+            StepRecord(
+                run_id="cli-run",
+                ordinal=0,
+                handler_id="start",
+                status=StepStatus.READY,
+                args={},
+                origin="root",
+                created_at=now,
+                updated_at=now,
+            ),
+            ((HistoryEventType.RUN_ADMITTED, {}),),
+        )
+
+    asyncio.run(seed())
+    url = f"{POSTGRES_URL}?options=-csearch_path%3D{store.schema}"
+
+    listed = CliRunner().invoke(workflows, ["list", "-d", url, "--json"])
+    assert listed.exit_code == 0, listed.output
+    assert [row["run_id"] for row in json.loads(listed.output)] == ["cli-run"]
+
+    shown = CliRunner().invoke(workflows, ["show", "cli-run", "-d", url])
+    assert shown.exit_code == 0, shown.output
+    assert "pg.charge" in shown.output
+
+    cancelled = CliRunner().invoke(workflows, ["cancel", "cli-run", "-d", url])
+    assert cancelled.exit_code == 0, cancelled.output
