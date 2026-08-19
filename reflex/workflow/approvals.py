@@ -130,9 +130,13 @@ def approval_link(
             empty for a path, which is what a relative link needs.
         expires_in: How long the link stays valid.
         key: Delivery identity. Two links sharing a key are the same decision,
-            so the second one spent is a no-op; distinct keys let one person
-            approve after another rejected. Defaults to a key derived from the
-            channel and payload, which makes a link single-use.
+            so the second one spent is a no-op. The default groups every link
+            minted by one handler attempt for one channel, which is what makes
+            approve and reject mutually exclusive: whichever is spent first
+            decides, and the other is refused rather than sitting buffered
+            waiting to answer some later question. Pass distinct keys
+            explicitly when a handler really does mint independent decisions
+            on the same channel.
 
     Returns:
         The URL.
@@ -143,8 +147,15 @@ def approval_link(
     # across a network boundary, and only plain data survives the round trip.
     payload = to_run_data({"value": delivery.payload})["value"]
     if key is None:
+        # The slot, not the payload: alternatives of one decision are minted
+        # by one handler attempt, so keying on the slot makes them one
+        # delivery identity and the inbox refuses the second. Keying on the
+        # payload made them distinct, which let a losing alternative outlive
+        # the decision it belonged to and resolve a later wait on the same
+        # channel. The ordinal is stable across retries of that slot, so a
+        # link handed out before a retry still works afterwards.
         material = json.dumps(
-            [context.run_id, delivery.channel, payload], sort_keys=True
+            [context.run_id, delivery.channel, context.ordinal], sort_keys=True
         )
         key = hashlib.sha256(material.encode()).hexdigest()[:32]
     claims = {

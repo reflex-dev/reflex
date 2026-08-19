@@ -476,3 +476,132 @@ def test_a_token_missing_a_claim_is_refused(monkeypatch):
         body = json.dumps(claims, separators=(",", ":"), sort_keys=True).encode()
         with pytest.raises(WorkflowRuntimeError, match="not valid"):
             decode_token(f"{_b64(body)}.{_sign(body)}")
+
+
+TWO_STAGE_LINKS: dict[str, str] = {}
+
+
+class TwoStage(rx.State):
+    """A decision that is asked twice on one channel."""
+
+    __workflow__ = WorkflowConfig(id="approval.two_stage")
+
+    decided = rx.Signal(dict)
+    first: str = ""
+    second: str = ""
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def submit(self):
+        """Ask the first question with both choices.
+
+        Returns:
+            The first wait.
+        """
+        TWO_STAGE_LINKS["one_approve"] = rx.approval_link(
+            TwoStage.decided({"ok": True})
+        )
+        TWO_STAGE_LINKS["one_reject"] = rx.approval_link(
+            TwoStage.decided({"ok": False})
+        )
+        return rx.wait_for(
+            TwoStage.decided,
+            then=TwoStage.stage_one,
+            timeout="7d",
+            on_timeout=TwoStage.lapse,
+        )
+
+    @rx.event(durable=True, effect="none")
+    def stage_one(self, decision: dict):
+        """Record the first answer and ask a second question.
+
+        Args:
+            decision: The delivered payload.
+
+        Returns:
+            The second wait.
+        """
+        self.first = "approved" if decision["ok"] else "rejected"
+        TWO_STAGE_LINKS["two_approve"] = rx.approval_link(
+            TwoStage.decided({"ok": True})
+        )
+        return rx.wait_for(
+            TwoStage.decided,
+            then=TwoStage.stage_two,
+            timeout="7d",
+            on_timeout=TwoStage.lapse,
+        )
+
+    @rx.event(durable=True, effect="none")
+    def stage_two(self, decision: dict):
+        """Record the second answer.
+
+        Args:
+            decision: The delivered payload.
+
+        Returns:
+            Completion.
+        """
+        self.second = "approved" if decision["ok"] else "rejected"
+        return rx.complete(result={"first": self.first, "second": self.second})
+
+    @rx.event(durable=True, effect="none")
+    def lapse(self):
+        """Nobody answered in time.
+
+        Returns:
+            Failure.
+        """
+        return rx.fail(reason="lapsed")
+
+
+async def test_a_losing_alternative_cannot_answer_the_next_question(
+    monkeypatch, forked_registration_context
+):
+    """A decision's discarded choice must not decide a later question.
+
+    Both links belong to one question. Spending approve decides it; the
+    reject link is then a spent decision, not a delivery in search of a wait.
+    Keying links by the payload made them distinct identities, so the reject
+    sat buffered and the second wait on the same channel swallowed it -- a
+    two-stage approval completing with a second answer nobody gave.
+
+    Args:
+        monkeypatch: Used to set the signing secret.
+        forked_registration_context: Isolates state registration.
+    """
+    monkeypatch.setenv(SECRET_ENV, SECRET)
+    TWO_STAGE_LINKS.clear()
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(TwoStage)
+    app = Starlette(
+        routes=[
+            Route(APPROVAL_ROUTE, approval_endpoint(runtime), methods=["GET", "POST"])
+        ]
+    )
+    await runtime.startup(start_worker=False)
+    started = await runtime.kernel.start(TwoStage.submit())
+    await runtime.kernel.run_until_idle()
+    assert started.run_id is not None
+
+    with TestClient(app) as client:
+        assert client.post(TWO_STAGE_LINKS["one_approve"]).status_code == 200
+        await runtime.kernel.run_until_idle()
+        # The second question is now open. The first question's discarded
+        # choice must not be able to answer it.
+        stale = client.post(TWO_STAGE_LINKS["one_reject"])
+        assert "already been used" in stale.text.lower(), stale.text
+        await runtime.kernel.run_until_idle()
+
+    snapshot = await runtime.kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.status is not RunStatus.COMPLETED, (
+        f"the second stage was answered by the first stage's reject: {snapshot.result}"
+    )
+
+    # The second question's own link still decides it.
+    with TestClient(app) as client:
+        assert client.post(TWO_STAGE_LINKS["two_approve"]).status_code == 200
+    await runtime.kernel.run_until_idle()
+    snapshot = await runtime.kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.result == {"first": "approved", "second": "approved"}

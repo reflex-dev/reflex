@@ -382,10 +382,13 @@ async def test_a_signal_is_refused_for_a_run_that_is_gone(
 @pytest.mark.xfail(
     strict=True,
     reason=(
-        "Known defect: a losing alternative of a decided approval is buffered "
-        "and then consumed by the next wait on the same channel. Fixing it "
-        "needs a durable decision-group identity shared by the alternatives "
-        "minted together, which is a store-shape change."
+        "Known gap, narrower than it was: rx.approval_link() now groups the "
+        "alternatives it mints so a losing one cannot answer a later wait "
+        "(see test_approvals). A raw signal sent with an explicitly distinct "
+        "key still buffers and can resolve the next wait on that channel. "
+        "Whether that is a defect is a question about what an explicit key "
+        "means -- it is also how a genuinely early signal is delivered -- so "
+        "this pins the behaviour rather than asserting it is wrong."
     ),
 )
 async def test_a_rejected_alternative_does_not_answer_the_next_wait(
