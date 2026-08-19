@@ -1596,6 +1596,37 @@ class PostgresRunStore:
             )
         return True
 
+    @staticmethod
+    async def _restore_tombstoned(conn: Any, run_id: str, now: float) -> list[int]:
+        """Re-open the slots the run's stopping failure tombstoned.
+
+        Within a run an operator can retry or skip, a CANCELLED slot can only
+        be that failure's casualty: run-level cancellation ends in a
+        CANCELLED run these actions refuse, and force-finalization leaves no
+        failed or suspended step for them to target.
+
+        Args:
+            conn: The open transaction's connection.
+            run_id: The run being re-opened.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The restored ordinals, in order.
+        """
+        cursor = await conn.execute(
+            "UPDATE workflow_steps SET status = %s, attempts = 0, due_at = %s,"
+            " lease_expires_at = 0, error = NULL, updated_at = %s"
+            " WHERE run_id = %s AND status = %s RETURNING ordinal",
+            (
+                StepStatus.READY.value,
+                now,
+                now,
+                run_id,
+                StepStatus.CANCELLED.value,
+            ),
+        )
+        return sorted(row["ordinal"] for row in await cursor.fetchall())
+
     async def retry_run(self, run_id: str, now: float) -> bool:
         """Re-open a failed run at the step that failed.
 
@@ -1628,10 +1659,17 @@ class PostgresRunStore:
                 " WHERE run_id = %s AND ordinal = %s",
                 (StepStatus.READY.value, now, now, run_id, row["ordinal"]),
             )
+            restored = await self._restore_tombstoned(conn, run_id, now)
             await self._append_events(
                 conn,
                 run_id,
-                ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),),
+                (
+                    (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                    *(
+                        (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                        for ordinal in restored
+                    ),
+                ),
                 now,
             )
         return True
@@ -1672,6 +1710,7 @@ class PostgresRunStore:
                 " updated_at = %s WHERE run_id = %s AND ordinal = %s",
                 (StepStatus.SKIPPED.value, now, run_id, row["ordinal"]),
             )
+            restored = await self._restore_tombstoned(conn, run_id, now)
             cursor = await conn.execute(
                 "SELECT 1 FROM workflow_steps WHERE run_id = %s"
                 " AND NOT (status = ANY(%s)) LIMIT 1",
@@ -1687,7 +1726,13 @@ class PostgresRunStore:
                     run_id,
                 ),
             )
-            events = [(HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]})]
+            events = [
+                (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]}),
+                *(
+                    (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                    for ordinal in restored
+                ),
+            ]
             if not open_left:
                 events.append((HistoryEventType.RUN_COMPLETED, {}))
             await self._append_events(conn, run_id, tuple(events), now)

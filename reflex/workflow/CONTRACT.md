@@ -339,6 +339,12 @@ no-op with a reason.
   step `SKIPPED` (terminal, recorded as a decision rather than an outcome)
   and lets the run continue at whatever comes next. With nothing left to run,
   the run completes with no result rather than sitting pending forever.
+- Both restore the successors the stopping failure tombstoned (`step_restored`
+  in history, fresh budgets), so a preallocated chain's remaining steps —
+  including its finalizer — still run. Only that failure's casualties come
+  back: a `CANCELLED` slot in a run these actions accept can have no other
+  source, because run-level cancellation ends in a `CANCELLED` run they
+  refuse and force-finalization leaves them no step to target.
 - `force_complete(run, result)` / `force_fail(run, reason)` — a nonterminal,
   drained run: finalizes immediately, tombstoning open slots, recording the
   operator origin and (for completion) the result to treat it as having

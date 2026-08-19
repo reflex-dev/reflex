@@ -6,7 +6,6 @@ succeeds from the wrong state is how an operator corrupts a run they were
 trying to rescue.
 """
 
-import pytest
 from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
 
 import reflex as rx
@@ -311,26 +310,15 @@ async def test_skip_is_refused_on_a_healthy_run(forked_registration_context):
         assert not await rx.workflows.skip("no-such-run")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known defect: a returned list preallocates a sequential chain, so a "
-        "step failing tombstones the rest of it. retry() reopens the failed "
-        "step but does not restore the successors that failure cancelled, so "
-        "the run completes having skipped them. Fixing it means restoring "
-        "steps tombstoned by that failure in retry_run/skip_step across all "
-        "three stores."
-    ),
-)
 async def test_retry_restores_the_chain_the_failure_tombstoned(
     forked_registration_context,
 ):
     """Retrying continues from the failed step, not past everything after it.
 
     A handler returning a list preallocates the whole chain, so a terminal
-    failure cancels the steps behind it. An operator retrying expects the run
-    to carry on from there -- including the finalizer that was already
-    allocated and is now cancelled.
+    failure tombstones the steps behind it. Retry restores exactly those --
+    a CANCELLED slot in a FAILED run can only be that failure's casualty --
+    so the finalizer the chain was written for still runs.
     """
     attempts: list[str] = []
 
@@ -384,4 +372,65 @@ async def test_retry_restores_the_chain_the_failure_tombstoned(
         assert snapshot.result == "finished", (
             "the retried run completed without running the finalizer the "
             f"chain preallocated: {[step.status.value for step in snapshot.steps]}"
+        )
+
+
+async def test_skip_restores_the_chain_the_failure_tombstoned(
+    forked_registration_context,
+):
+    """Skipping the failed step continues at what comes next, not at nothing.
+
+    Same chain, same failure; the operator gives up on the middle step
+    instead of retrying it. The preallocated finalizer must still run --
+    without restoration the run completes with the skip as its last word and
+    the finalizer silently cancelled.
+    """
+
+    class SkipChain(rx.State):
+        __workflow__ = WorkflowConfig(id="ops.skipchain")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Preallocate the rest of the chain.
+
+            Returns:
+                Two successors, run in order.
+            """
+            return [SkipChain.middle(), SkipChain.finish()]
+
+        @rx.event(durable=True, effect="none", retry=Retry(max_attempts=1))
+        def middle(self):
+            """Fail terminally.
+
+            Raises:
+                ValueError: Always.
+            """
+            msg = "a vendor that retired its endpoint"
+            raise ValueError(msg)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """The finalizer the chain exists for.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="finished")
+
+    async with WorkflowTestHarness(SkipChain) as harness:
+        started = await harness.start(SkipChain.begin())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+
+        assert await harness.kernel.skip(started.run_id)
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.result == "finished", (
+            "the skipped run completed without running the finalizer: "
+            f"{[step.status.value for step in snapshot.steps]}"
         )

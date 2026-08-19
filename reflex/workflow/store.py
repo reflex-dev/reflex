@@ -1728,6 +1728,7 @@ class MemoryRunStore:
                         lease_expires_at=0.0,
                         updated_at=now,
                     )
+                    restored = self._restore_tombstoned(steps, now)
                     # Skipping the last open slot leaves nothing to run, so
                     # the run is finished rather than pending forever -- being
                     # stuck in a new way is not a resolution.
@@ -1735,7 +1736,11 @@ class MemoryRunStore:
                         other.status not in TERMINAL_STEP_STATUSES for other in steps
                     )
                     events = [
-                        (HistoryEventType.STEP_SKIPPED, {"ordinal": step.ordinal})
+                        (HistoryEventType.STEP_SKIPPED, {"ordinal": step.ordinal}),
+                        *(
+                            (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                            for ordinal in restored
+                        ),
                     ]
                     if not open_left:
                         events.append((HistoryEventType.RUN_COMPLETED, {}))
@@ -1784,13 +1789,60 @@ class MemoryRunStore:
                     break
             if not reopened:
                 return False
+            restored = self._restore_tombstoned(steps, now)
             self._runs[run_id] = dataclasses.replace(
                 run, status=RunStatus.PENDING, error=None, updated_at=now
             )
             self._append_events(
-                run_id, ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),), now
+                run_id,
+                (
+                    (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                    *(
+                        (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                        for ordinal in restored
+                    ),
+                ),
+                now,
             )
             return True
+
+    @staticmethod
+    def _restore_tombstoned(steps: list[StepRecord], now: float) -> list[int]:
+        """Re-open the slots a run's stopping failure tombstoned.
+
+        A terminal failure cancels every open slot behind it, so a
+        preallocated chain's finalizer is CANCELLED the moment its
+        predecessor fails. Retrying or skipping that predecessor promises to
+        continue "from there" -- which is a lie unless the chain comes back.
+
+        Within a run an operator can retry or skip -- FAILED or
+        NEEDS_ATTENTION -- a CANCELLED slot can only be that failure's
+        casualty: run-level cancellation ends in a CANCELLED run these
+        actions refuse, and operator force-finalization leaves no failed or
+        suspended step for them to target. Nothing independently cancelled is
+        revived because nothing independently cancelled can be here.
+
+        Args:
+            steps: The run's mailbox, mutated in place.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The restored ordinals, in order.
+        """
+        restored: list[int] = []
+        for index, step in enumerate(steps):
+            if step.status is StepStatus.CANCELLED:
+                steps[index] = dataclasses.replace(
+                    step,
+                    status=StepStatus.READY,
+                    attempts=0,
+                    due_at=now,
+                    lease_expires_at=0.0,
+                    error=None,
+                    updated_at=now,
+                )
+                restored.append(step.ordinal)
+        return restored
 
     async def resume_run(self, run_id: str, now: float) -> bool:
         """Re-open a suspended run so its frontier step runs again.
@@ -3808,6 +3860,31 @@ class SqliteRunStore:
                         " updated_at = ? WHERE run_id = ? AND ordinal = ?",
                         (StepStatus.SKIPPED.value, now, run_id, row["ordinal"]),
                     )
+                    restored = [
+                        r["ordinal"]
+                        for r in self._db.execute(
+                            "SELECT ordinal FROM workflow_steps WHERE run_id = ?"
+                            " AND status = ? ORDER BY ordinal",
+                            (run_id, StepStatus.CANCELLED.value),
+                        ).fetchall()
+                    ]
+                    if restored:
+                        # The stopping failure tombstoned these; continuing
+                        # "from there" is a lie unless they come back. Nothing
+                        # independently cancelled can be in a run these
+                        # actions accept (see MemoryRunStore._restore_tombstoned).
+                        self._db.execute(
+                            "UPDATE workflow_steps SET status = ?, attempts = 0,"
+                            " due_at = ?, lease_expires_at = 0, error = NULL,"
+                            " updated_at = ? WHERE run_id = ? AND status = ?",
+                            (
+                                StepStatus.READY.value,
+                                now,
+                                now,
+                                run_id,
+                                StepStatus.CANCELLED.value,
+                            ),
+                        )
                     terminal = tuple(s.value for s in TERMINAL_STEP_STATUSES)
                     open_left = self._db.execute(
                         "SELECT 1 FROM workflow_steps WHERE run_id = ?"
@@ -3827,7 +3904,11 @@ class SqliteRunStore:
                         ),
                     )
                     events = [
-                        (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]})
+                        (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]}),
+                        *(
+                            (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                            for ordinal in restored
+                        ),
                     ]
                     if not open_left:
                         events.append((HistoryEventType.RUN_COMPLETED, {}))
@@ -3883,9 +3964,40 @@ class SqliteRunStore:
                         " updated_at = ? WHERE run_id = ? AND ordinal = ?",
                         (StepStatus.READY.value, now, now, run_id, row["ordinal"]),
                     )
+                    restored = [
+                        r["ordinal"]
+                        for r in self._db.execute(
+                            "SELECT ordinal FROM workflow_steps WHERE run_id = ?"
+                            " AND status = ? ORDER BY ordinal",
+                            (run_id, StepStatus.CANCELLED.value),
+                        ).fetchall()
+                    ]
+                    if restored:
+                        # The stopping failure tombstoned these; continuing
+                        # "from there" is a lie unless they come back. Nothing
+                        # independently cancelled can be in a run these
+                        # actions accept (see MemoryRunStore._restore_tombstoned).
+                        self._db.execute(
+                            "UPDATE workflow_steps SET status = ?, attempts = 0,"
+                            " due_at = ?, lease_expires_at = 0, error = NULL,"
+                            " updated_at = ? WHERE run_id = ? AND status = ?",
+                            (
+                                StepStatus.READY.value,
+                                now,
+                                now,
+                                run_id,
+                                StepStatus.CANCELLED.value,
+                            ),
+                        )
                     self._append_events(
                         run_id,
-                        ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),),
+                        (
+                            (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                            *(
+                                (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
+                                for ordinal in restored
+                            ),
+                        ),
                         now,
                     )
                     self._db.execute("COMMIT")

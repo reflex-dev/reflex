@@ -147,6 +147,7 @@ class HistoryEventType(str, enum.Enum):
     STEP_RETRY_SCHEDULED = "step_retry_scheduled"
     STEP_RECOVERED = "step_recovered"
     STEP_TOMBSTONED = "step_tombstoned"
+    STEP_RESTORED = "step_restored"
     RUN_COMPLETED = "run_completed"
     RUN_FAILED = "run_failed"
     RUN_TIMED_OUT = "run_timed_out"
