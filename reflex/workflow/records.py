@@ -258,7 +258,6 @@ class HistoryEvent:
 
 StartDisposition = Literal[
     "started",
-    "buffered",
     "coalesced",
     "skipped",
     "rejected",

@@ -12,6 +12,7 @@ import asyncio
 import inspect
 import json
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import click
@@ -259,6 +260,110 @@ def show(database: str | None, run_id: str, as_json: bool, history: bool):
         click.echo("")
         for event in events:
             click.echo(f"{event.seq:<4}{event.type.value}")
+
+
+@workflows.command()
+@click.argument("target")
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON instead of text.")
+def check(target: str, as_json: bool):
+    """Compile every workflow in a module without running anything.
+
+    TARGET is a path to a Python file or a dotted module name. Each workflow
+    class it defines is compiled through the same rules the app applies at
+    registration, so what passes here registers cleanly. Made for generation
+    loops: a tool that writes workflow code calls this, reads the errors --
+    which name the fix -- and repairs its output before anyone runs it.
+    """
+    from reflex_base.utils.exceptions import WorkflowDefinitionError
+
+    from reflex.workflow.definition import compile_workflow
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        if as_json:
+            click.echo(json.dumps({"ok": False, "error": str(err), "workflows": []}))
+        else:
+            console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+
+    classes = [
+        value
+        for value in vars(module).values()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    ]
+    reports: list[dict[str, Any]] = []
+    seen_ids: dict[str, str] = {}
+    for workflow_cls in classes:
+        report: dict[str, Any] = {"class": workflow_cls.__name__}
+        try:
+            definition = compile_workflow(workflow_cls)
+        except WorkflowDefinitionError as err:
+            report["ok"] = False
+            report["error"] = str(err)
+            reports.append(report)
+            continue
+        report["workflow_id"] = definition.workflow_id
+        owner = seen_ids.setdefault(definition.workflow_id, workflow_cls.__name__)
+        if owner != workflow_cls.__name__:
+            report["ok"] = False
+            report["error"] = (
+                f"workflow id {definition.workflow_id!r} is also declared by "
+                f"{owner}; ids must be unique."
+            )
+        else:
+            report["ok"] = True
+        reports.append(report)
+
+    ok = bool(reports) and all(report["ok"] for report in reports)
+    if as_json:
+        payload: dict[str, Any] = {"ok": ok, "workflows": reports}
+        if not reports:
+            payload["error"] = "no workflow classes found"
+        click.echo(json.dumps(payload, indent=2))
+    elif not reports:
+        console.error(
+            f"No workflow classes in {target!r}. A workflow is an rx.State "
+            "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
+        )
+    else:
+        for report in reports:
+            if report["ok"]:
+                click.echo(f"ok   {report['workflow_id']} ({report['class']})")
+            else:
+                click.echo(f"FAIL {report['class']}: {report['error']}")
+    if not ok:
+        raise click.exceptions.Exit(1)
+
+
+def _load_module(target: str):
+    """Import the module a check target names.
+
+    Args:
+        target: A ``.py`` path or a dotted module name.
+
+    Returns:
+        The imported module.
+
+    Raises:
+        FileNotFoundError: If a path target does not exist.
+        ImportError: If the module cannot be imported.
+    """
+    import importlib
+    import importlib.util
+
+    if target.endswith(".py"):
+        path = Path(target).resolve()
+        if not path.exists():
+            raise FileNotFoundError(path)
+        spec = importlib.util.spec_from_file_location(path.stem, path)
+        if spec is None or spec.loader is None:
+            msg = f"cannot build an import spec for {path}"
+            raise ImportError(msg)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    return importlib.import_module(target)
 
 
 @workflows.command()
