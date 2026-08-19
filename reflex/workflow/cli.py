@@ -150,9 +150,140 @@ database_option = click.option(
 )
 
 
+def _terminal_events() -> frozenset:
+    """The history events that mean a run has stopped for good.
+
+    Returns:
+        The terminal event types.
+    """
+    from reflex.workflow.records import HistoryEventType
+
+    return frozenset((
+        HistoryEventType.RUN_COMPLETED,
+        HistoryEventType.RUN_FAILED,
+        HistoryEventType.RUN_CANCELLED,
+        HistoryEventType.RUN_TIMED_OUT,
+        HistoryEventType.RUN_NEEDS_ATTENTION,
+    ))
+
+
 @click.group()
 def workflows():
     """Inspect and steer durable workflow runs."""
+
+
+@workflows.command()
+@database_option
+@click.argument("target")
+@click.argument("start", required=False)
+@click.option(
+    "--arg",
+    "args",
+    multiple=True,
+    help="Argument for the started handler, as name=value. Repeatable.",
+)
+def dev(database: str | None, target: str, start: str | None, args: tuple[str, ...]):
+    """Run TARGET's workflows in the foreground, printing every transition.
+
+    The loop for building a workflow: start one, watch each step, attempt,
+    retry and wait as it happens, and stop when the run ends. Pass START as
+    the handler to launch (`Workflow.handler`), with --arg name=value for its
+    payload; without it, this just serves and reports whatever arrives.
+
+    Timers are real here. Use WorkflowTestHarness to skip days instantly.
+    """
+    import asyncio
+
+    from reflex_base.utils.exceptions import WorkflowDefinitionError
+
+    from reflex.workflow.kernel import WorkflowObserver
+    from reflex.workflow.records import HistoryEventType
+    from reflex.workflow.runtime import WorkflowRuntime
+    from reflex.workflow.runtime import workflows as rx_workflows
+    from reflex.workflow.store import resolve_store
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+
+    classes = {
+        name: value
+        for name, value in vars(module).items()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    }
+    if not classes:
+        console.error(f"No workflow classes in {target!r}.")
+        raise click.exceptions.Exit(1)
+
+    finished = asyncio.Event()
+
+    class Narrator(WorkflowObserver):
+        """Prints every transition as it is recorded."""
+
+        def on_event(
+            self,
+            event_type: HistoryEventType,
+            run_id: str,
+            workflow_id: str,
+            data: dict[str, Any],
+        ) -> None:
+            """Print one transition.
+
+            Args:
+                event_type: What happened.
+                run_id: The run it happened to.
+                workflow_id: That run's workflow identity.
+                data: The event payload.
+            """
+            detail = " ".join(
+                f"{key}={value!r}"
+                for key, value in data.items()
+                if key not in ("error", "traceback")
+            )
+            click.echo(f"  {run_id[:8]} {event_type.value:<22}{detail}")
+            if "error" in data and isinstance(data["error"], dict):
+                click.echo(f"           {data['error'].get('message', data['error'])}")
+            if event_type in _terminal_events():
+                finished.set()
+
+    async def serve() -> None:
+        """Run the kernel until the started run ends, or forever."""
+        runtime = WorkflowRuntime(resolve_store(database), observer=Narrator())
+        try:
+            for workflow_cls in classes.values():
+                runtime.register(workflow_cls)
+        except WorkflowDefinitionError as err:
+            console.error(f"Cannot serve {target!r}: {err}")
+            raise click.exceptions.Exit(1) from None
+
+        async with runtime.running():
+            if start is None:
+                console.print("Serving; nothing started. Ctrl-C to stop.")
+                await asyncio.Event().wait()
+                return
+            class_name, _, handler_name = start.partition(".")
+            workflow_cls = classes.get(class_name)
+            if workflow_cls is None or not handler_name:
+                console.error(
+                    f"{start!r} is not Workflow.handler; available: "
+                    f"{', '.join(sorted(classes))}."
+                )
+                raise click.exceptions.Exit(1)
+            payload = dict(pair.split("=", 1) for pair in args if "=" in pair)
+            spec = getattr(workflow_cls, handler_name)
+            handle = await rx_workflows.submit(spec(**payload) if payload else spec)
+            console.print(f"Started {handle.run_id} ({handle.disposition}).")
+            await finished.wait()
+            snapshot = await handle.snapshot()
+            if snapshot is not None:
+                console.print(f"Run {snapshot.status.value}: {snapshot.result}")
+
+    try:
+        asyncio.run(serve())
+    except KeyboardInterrupt:
+        console.print("Stopped.")
 
 
 @workflows.command()

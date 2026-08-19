@@ -23,6 +23,7 @@ from reflex_base.workflow import (
 )
 
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
+from reflex.workflow.handle import RunHandle
 from reflex.workflow.kernel import (
     DEFAULT_MAX_CONCURRENCY,
     DEFAULT_POLL_INTERVAL,
@@ -269,6 +270,46 @@ class WorkflowsNamespace:
         return await get_runtime().kernel.start(
             target, request_key=request_key, labels=labels
         )
+
+    @staticmethod
+    async def submit(
+        target: Any,
+        *,
+        request_key: str | None = None,
+        labels: dict[str, str] | None = None,
+    ) -> RunHandle:
+        """Start a run and get a handle on it.
+
+        The same admission as ``start()``, returning the run rather than a
+        report about it: a handle carries the id together with the operations
+        that belong to it, so a caller waits, signals, or cancels without
+        threading the string back through a module.
+
+        Args:
+            target: The root event, e.g. ``MyWorkflow.begin(payload)``.
+            request_key: Idempotent admission key.
+            labels: Server-derived indexing labels.
+
+        Returns:
+            A handle on the admitted (or already existing) run.
+
+        Raises:
+            WorkflowRuntimeError: If admission identified no run, as when a
+                rate limit rejected the submission outright.
+        """
+        result = await workflows.start(target, request_key=request_key, labels=labels)
+        if result.run_id is None:
+            msg = (
+                f"Start was {result.disposition} and produced no run"
+                + (
+                    f"; retry after {result.retry_after:.0f}s"
+                    if result.retry_after
+                    else ""
+                )
+                + ". Use rx.workflows.start() to handle that case explicitly."
+            )
+            raise WorkflowRuntimeError(msg)
+        return RunHandle(result.run_id, result.disposition)
 
     @staticmethod
     async def cancel(run_id: str) -> bool:

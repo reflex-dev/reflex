@@ -48,6 +48,7 @@ from reflex.workflow.definition import (
     WorkflowDefinition,
     compile_workflow,
 )
+from reflex.workflow.handle import RunHandle
 from reflex.workflow.kernel import (
     LoggingObserver,
     MetricsObserver,
@@ -94,6 +95,7 @@ __all__ = [
     "RateLimit",
     "Retry",
     "RunContext",
+    "RunHandle",
     "RunQuery",
     "RunRecord",
     "RunSnapshot",
