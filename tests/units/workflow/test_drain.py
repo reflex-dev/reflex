@@ -11,12 +11,13 @@ handover.
 import asyncio
 from typing import Any
 
-from reflex_base.workflow import WorkflowConfig, manual
+from reflex_base.workflow import WorkflowConfig, manual, parse_duration
 
 import reflex as rx
 from reflex.workflow.definition import compile_workflow
 from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import RunQuery, RunStatus, StepStatus
+from reflex.workflow.runtime import DEFAULT_DRAIN, DRAIN_ENV, configured_drain
 from reflex.workflow.store import MemoryRunStore
 
 
@@ -120,3 +121,17 @@ async def test_an_attempt_slower_than_the_drain_is_cancelled(
     snapshot = await kernel.get_run((await store.list_runs(RunQuery()))[0].run_id)
     assert snapshot is not None
     assert snapshot.steps[0].status is StepStatus.CLAIMED
+
+
+def test_the_drain_budget_comes_from_the_environment(monkeypatch):
+    """A platform's grace period is deployment config, not a code constant."""
+    monkeypatch.setenv(DRAIN_ENV, "5s")
+    assert configured_drain() == 5.0
+    monkeypatch.delenv(DRAIN_ENV)
+    assert configured_drain() == parse_duration(DEFAULT_DRAIN)
+
+
+def test_an_unparseable_budget_does_not_stop_the_process_leaving(monkeypatch):
+    """A typo in a deployment variable must not wedge a shutdown."""
+    monkeypatch.setenv(DRAIN_ENV, "half an hour")
+    assert configured_drain() == 0.0

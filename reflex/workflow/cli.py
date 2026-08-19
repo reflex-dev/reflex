@@ -690,15 +690,18 @@ def dev(
 @click.option("--concurrency", default=None, type=int, help="Attempts to run at once.")
 @click.option(
     "--drain",
-    default="30s",
-    help="How long a stopping worker lets running attempts finish.",
+    default=None,
+    help=(
+        "How long a stopping worker lets running attempts finish. Defaults to "
+        "REFLEX_WORKFLOW_DRAIN, or 30s."
+    ),
 )
 def worker(
     database: str | None,
     target: str,
     queues: tuple[str, ...],
     concurrency: int | None,
-    drain: str,
+    drain: str | None,
 ):
     """Run workflows from TARGET with no frontend and no web server.
 
@@ -721,13 +724,16 @@ def worker(
     from reflex_base.utils.exceptions import WorkflowDefinitionError
     from reflex_base.workflow import parse_duration
 
-    from reflex.workflow.runtime import WorkflowRuntime
+    from reflex.workflow.runtime import WorkflowRuntime, configured_drain
 
-    try:
-        drain_seconds = parse_duration(drain)
-    except Exception as err:
-        console.error(f"--drain {drain!r} is not a duration: {err}")
-        raise click.exceptions.Exit(1) from None
+    if drain is None:
+        drain_seconds = configured_drain()
+    else:
+        try:
+            drain_seconds = parse_duration(drain)
+        except Exception as err:
+            console.error(f"--drain {drain!r} is not a duration: {err}")
+            raise click.exceptions.Exit(1) from None
 
     try:
         module = _load_module(target)
@@ -797,7 +803,7 @@ def worker(
             # The kernel's worker does the work; this task only waits for the
             # operator (or the platform) to stop the process.
             await stopping.wait()
-            console.print(f"Stopping; finishing running attempts ({drain}).")
+            console.print(f"Stopping; finishing running attempts ({drain_seconds:g}s).")
         console.print("Worker stopped.")
 
     try:

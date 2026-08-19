@@ -1028,7 +1028,9 @@ class App(MiddlewareMixin, LifespanMixin):
         if self._workflow_runtime is None:
             yield
             return
-        async with self._workflow_runtime.running():
+        from reflex.workflow.runtime import configured_drain
+
+        async with self._workflow_runtime.running(drain=configured_drain()):
             yield
 
     def add_page(

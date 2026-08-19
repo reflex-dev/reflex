@@ -8,13 +8,15 @@ start, cancel, and inspect runs without holding a kernel reference.
 
 from __future__ import annotations
 
+import os
 import random
 import time
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
@@ -236,6 +238,29 @@ class WorkflowRuntime:
         finally:
             _default_runtime = previous
             await self.shutdown(drain=drain)
+
+
+DRAIN_ENV: Final = "REFLEX_WORKFLOW_DRAIN"
+DEFAULT_DRAIN: Final = "30s"
+
+
+def configured_drain() -> float:
+    """Read how long a stopping process lets running attempts commit.
+
+    Deployment shape decides this, not code: a platform that sends SIGTERM
+    and waits ten seconds before SIGKILL wants a drain under ten seconds, and
+    the process cannot know that. It reads ``REFLEX_WORKFLOW_DRAIN`` the same
+    way it reads its store URL.
+
+    Returns:
+        The budget in seconds; zero when the value is not a duration.
+    """
+    raw = os.environ.get(DRAIN_ENV) or DEFAULT_DRAIN
+    try:
+        return parse_duration(raw)
+    except Exception:
+        console.warn(f"{DRAIN_ENV}={raw!r} is not a duration; not draining.")
+        return 0.0
 
 
 def get_runtime() -> WorkflowRuntime:

@@ -185,8 +185,7 @@ Checked in this order at start:
   the right one).
 - **Stopping** is not a decision about a run. A worker asked to stop (SIGTERM,
   Ctrl-C, or an app lifespan ending) stops claiming immediately and gives the
-  attempts it is already running a drain budget — `reflex workflows worker
-  --drain`, 30s by default — to commit their own outcome. Anything still
+  attempts it is already running a drain budget — `REFLEX_WORKFLOW_DRAIN` or `reflex workflows worker --drain`, 30s by default — to commit their own outcome. Anything still
   running when that budget expires is cancelled and *keeps its claim*: it is
   reclaimed after the lease lapses, exactly as if the process had been killed.
   A claim is never released early, because cancelling an attempt does not stop
