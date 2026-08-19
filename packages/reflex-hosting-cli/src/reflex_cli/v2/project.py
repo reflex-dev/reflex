@@ -9,6 +9,7 @@ from reflex_base.utils import log
 from reflex_cli import constants
 from reflex_cli.utils import console
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -27,20 +28,8 @@ def project_cli():
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def create_project(
     name: str,
     token: str | None,
@@ -65,7 +54,7 @@ def create_project(
         raise click.exceptions.Exit(1) from err
 
     if as_json:
-        console.print(json.dumps(project))
+        print_json(project)
         return
     if project:
         project = [project]
@@ -89,18 +78,14 @@ def create_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def invite_user_to_project(
     role: str,
     user: str,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Invite a user to a project."""
@@ -121,6 +106,9 @@ def invite_user_to_project(
     if "failed" in result:
         logger.error(f"Unable to invite user to project: {result}")
         raise click.exceptions.Exit(1)
+    if as_json:
+        print_json({"role_id": role, "user_id": user, "invited": True})
+        return
     logger.log(log.SUCCESS, "Successfully invited user to project.")
 
 
@@ -134,17 +122,14 @@ def invite_user_to_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def select_project(
     project_id: str | None,
     project_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Select a project."""
@@ -184,6 +169,9 @@ def select_project(
     if "failed" in result:
         logger.error(result)
         raise click.exceptions.Exit(1)
+    if as_json:
+        print_json({"project_id": project_id, "selected": True, "message": result})
+        return
     logger.log(log.SUCCESS, result)
 
 
@@ -195,16 +183,12 @@ def select_project(
     help="The log level to use.",
 )
 @click.option("--token", help="The authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def get_select_project(
     loglevel: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
 ):
     """Get the currently selected project."""
@@ -220,6 +204,9 @@ def get_select_project(
             project_details = hosting.get_project(
                 project_id=project, client=authenticated_client
             )
+            if as_json:
+                print_json({"project_id": project, "name": project_details["name"]})
+                return
             console.print_table(
                 [[project, project_details["name"]]],
                 headers=["Selected Project ID", "Project Name"],
@@ -231,6 +218,8 @@ def get_select_project(
             raise click.exceptions.Exit(1) from None
         except Exception as e:
             logger.error(f"Unable to get the currently selected project: {e}")
+    elif as_json:
+        print_json({"project_id": None, "name": None})
     else:
         logger.warning(
             "no selected project. run `reflex cloud project select` to set one."
@@ -245,20 +234,8 @@ def get_select_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def get_projects(
     token: str | None,
     loglevel: str,
@@ -276,7 +253,7 @@ def get_projects(
         )
         projects = hosting.get_projects(client=authenticated_client)
         if as_json:
-            console.print(json.dumps(projects))
+            print_json(projects)
             return
         if projects:
             headers = list(projects[0].keys())
@@ -314,19 +291,8 @@ def get_projects(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_roles(
     project_id: str | None,
     project_name: str | None,
@@ -362,7 +328,7 @@ def get_project_roles(
         )
 
         if as_json:
-            console.print(json.dumps(roles))
+            print_json(roles)
             return
         if roles:
             headers = list(roles[0].keys())
@@ -393,19 +359,8 @@ def get_project_roles(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_role_permissions(
     role_id: str,
     project_id: str | None,
@@ -441,7 +396,7 @@ def get_project_role_permissions(
         )
 
         if as_json:
-            console.print(json.dumps(permissions))
+            print_json(permissions)
             return
         if permissions:
             headers = list(permissions[0].keys())
@@ -474,19 +429,8 @@ def get_project_role_permissions(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_role_users(
     project_id: str | None,
     project_name: str | None,
@@ -522,7 +466,7 @@ def get_project_role_users(
         )
 
         if as_json:
-            console.print(json.dumps(users))
+            print_json(users)
             return
         if users:
             headers = list(users[0].keys())

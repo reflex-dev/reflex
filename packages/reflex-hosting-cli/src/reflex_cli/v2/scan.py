@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import json
 import logging
 import os
 import time
@@ -17,6 +16,7 @@ from reflex_base.utils import log
 from reflex_cli import constants
 from reflex_cli.utils import console
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -182,20 +182,8 @@ def _print_violations(result: dict[str, Any]) -> None:
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in JSON format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def scan_command(
     directory: Path,
     token: str | None,
@@ -252,7 +240,7 @@ def scan_command(
     result = payload.get("result") or {}
 
     if as_json:
-        console.print(json.dumps(result))
+        print_json(result)
     else:
         _print_violations(result)
 

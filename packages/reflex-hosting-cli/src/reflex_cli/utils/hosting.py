@@ -2762,12 +2762,15 @@ def read_config(
     return Config.from_yaml_or_toml_or_none()
 
 
-def generate_config(interactive: bool = True, token: str | None = None):
+def generate_config(interactive: bool = True, token: str | None = None) -> Path | None:
     """Generate the config file with app-based prefilling.
 
     Args:
         interactive: Whether to use interactive mode for authentication and app selection.
         token: An existing authentication token to use instead of interactive auth.
+
+    Returns:
+        The path of the config file written, or None if none was.
 
     Raises:
         click.exceptions.Exit: If authentication fails or user cancels operation.
@@ -2776,11 +2779,12 @@ def generate_config(interactive: bool = True, token: str | None = None):
         import yaml
     except ImportError:
         logger.error("Please install PyYAML to use this command: pip install pyyaml")
-        return
+        return None
 
-    if Path("cloud.yml").exists():
+    config_path = Path("cloud.yml")
+    if config_path.exists():
         logger.error("cloud.yml already exists.")
-        return
+        return None
 
     try:
         authenticated_client = get_authenticated_client(
@@ -2821,13 +2825,13 @@ def generate_config(interactive: bool = True, token: str | None = None):
         )
         default = {"name": current_dir_name}
 
-    with Path("cloud.yml").open("w") as config_file:
+    with config_path.open("w") as config_file:
         yaml.dump(default, config_file, default_flow_style=False, sort_keys=False)
     logger.log(log.SUCCESS, "cloud.yml created successfully.")
     logger.info(
         "For more configuration options, see: https://reflex.dev/docs/hosting/config-file/"
     )
-    return
+    return config_path
 
 
 def log_out_on_browser():

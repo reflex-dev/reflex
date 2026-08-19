@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -21,6 +20,7 @@ from reflex_cli.utils.exceptions import (
     ScaleParamError,
     ScaleTypeError,
 )
+from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -91,20 +91,8 @@ def _resolve_app_id(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def app_history(
     app_id: str | None,
     app_name: str | None,
@@ -148,7 +136,7 @@ def app_history(
         history = hosting.get_app_history(app_id=app_id, client=authenticated_client)
 
         if as_json:
-            console.print(json.dumps(history))
+            print_json(history)
             return
         if history:
             headers = list(history[0].keys())
@@ -174,19 +162,15 @@ def app_history(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def app_rollback(
     deployment_id: str,
     app_id: str | None,
     app_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Roll an app back to a previous deployment.
@@ -216,6 +200,13 @@ def app_rollback(
             != "y"
         ):
             logger.info("Rollback cancelled.")
+            if as_json:
+                print_json({
+                    "app_id": app_id,
+                    "deployment_id": deployment_id,
+                    "rolled_back": False,
+                    "cancelled": True,
+                })
             return
 
         result = hosting.rollback_deployment(
@@ -224,6 +215,14 @@ def app_rollback(
         if result:
             logger.error(result)
             raise click.exceptions.Exit(1)
+        if as_json:
+            print_json({
+                "app_id": app_id,
+                "deployment_id": deployment_id,
+                "rolled_back": True,
+                "cancelled": False,
+            })
+            return
         logger.log(log.SUCCESS, f"Rollback to deployment {deployment_id} started.")
         console.print(
             f"Track progress with `reflex cloud apps status {deployment_id} "
@@ -250,13 +249,8 @@ def app_rollback(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def app_describe(
     deployment_id: str,
     description: str,
@@ -264,6 +258,7 @@ def app_describe(
     app_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Set or clear the changelog note on a past deployment.
@@ -289,6 +284,13 @@ def app_describe(
         if result:
             logger.error(result)
             raise click.exceptions.Exit(1)
+        if as_json:
+            print_json({
+                "app_id": app_id,
+                "deployment_id": deployment_id,
+                "description": description,
+            })
+            return
         if description.strip():
             logger.log(
                 log.SUCCESS, f"Updated description for deployment {deployment_id}."
@@ -305,16 +307,12 @@ def app_describe(
 @apps_cli.command("build-logs")
 @click.argument("deployment_id", required=True)
 @click.option("--token", help="The authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def deployment_build_logs(
     deployment_id: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
 ):
     """Retrieve the build logs for a specific deployment."""
@@ -327,6 +325,9 @@ def deployment_build_logs(
         logs = hosting.get_deployment_build_logs(
             deployment_id=deployment_id, client=authenticated_client
         )
+        if as_json:
+            print_json({"deployment_id": deployment_id, "logs": logs})
+            return
         console.print(logs)
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
@@ -345,18 +346,14 @@ def deployment_build_logs(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def deployment_status(
     deployment_id: str,
     watch: bool,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Retrieve the status of a specific deployment."""
@@ -369,15 +366,33 @@ def deployment_status(
             token=token, interactive=interactive
         )
         if watch:
-            status = hosting.watch_deployment_status(
+            succeeded = hosting.watch_deployment_status(
                 deployment_id=deployment_id, client=authenticated_client
             )
-            if status is False:
+            if as_json:
+                # Re-read once the watch ends: the watch itself reports
+                # progress through the log stream and returns only whether it
+                # got there, which is not a status a caller can act on.
+                print_json({
+                    "deployment_id": deployment_id,
+                    "status": hosting.get_deployment_status(
+                        deployment_id=deployment_id, client=authenticated_client
+                    ),
+                    "success": succeeded,
+                })
+            if succeeded is False:
                 raise click.exceptions.Exit(1)
         else:
             status = hosting.get_deployment_status(
                 deployment_id=deployment_id, client=authenticated_client
             )
+            if as_json:
+                print_json({
+                    "deployment_id": deployment_id,
+                    "status": status,
+                    "success": "failed" not in status,
+                })
+                return
             logger.error(status) if "failed" in status else console.print(status)
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
@@ -394,18 +409,14 @@ def deployment_status(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def stop_app(
     app_id: str | None,
     app_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Stop a running application."""
@@ -442,10 +453,12 @@ def stop_app(
             raise click.exceptions.Exit(1)
 
         result = hosting.stop_app(app_id=app_id, client=authenticated_client)
+        failed = bool(result) and "failed" in result
+        if as_json:
+            print_json({"app_id": app_id, "stopped": not failed, "message": result})
+            return
         if result:
-            logger.error(result) if "failed" in result else logger.log(
-                log.SUCCESS, result
-            )
+            logger.error(result) if failed else logger.log(log.SUCCESS, result)
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
@@ -461,18 +474,14 @@ def stop_app(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def start_app(
     app_id: str | None,
     app_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Start a stopped application."""
@@ -508,10 +517,12 @@ def start_app(
             raise click.exceptions.Exit(1)
 
         result = hosting.start_app(app_id=app_id, client=authenticated_client)
+        failed = bool(result) and "failed" in result
+        if as_json:
+            print_json({"app_id": app_id, "started": not failed, "message": result})
+            return
         if result:
-            logger.error(result) if "failed" in result else logger.log(
-                log.SUCCESS, result
-            )
+            logger.error(result) if failed else logger.log(log.SUCCESS, result)
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
@@ -527,18 +538,14 @@ def start_app(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def delete_app(
     app_id: str | None,
     app_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Delete an application."""
@@ -582,6 +589,12 @@ def delete_app(
                 )
             except GetAppError:
                 logger.warning(f"No application found with ID '{app_id}'")
+                if as_json:
+                    print_json({
+                        "app_id": app_id,
+                        "deleted": False,
+                        "message": f"No application found with ID '{app_id}'",
+                    })
                 return
             if not app_result:
                 logger.warning(f"App with ID '{app_id}' not found.")
@@ -618,9 +631,26 @@ def delete_app(
                 != "y"
             ):
                 logger.info("Deletion cancelled.")
+                if as_json:
+                    print_json({
+                        "app_id": app_id,
+                        "deleted": False,
+                        "cancelled": True,
+                    })
                 return
 
         result = hosting.delete_app(app_id=app_id, client=authenticated_client)
+        if as_json:
+            # A refusal comes back as a message rather than as an exception, so
+            # the document has to read it too: reporting the call as a deletion
+            # is how a caller ends up believing an app is gone.
+            failed = result is None or (isinstance(result, str) and "failed" in result)
+            print_json({
+                "app_id": app_id,
+                "deleted": not failed,
+                "message": result,
+            })
+            return
         if result:
             logger.warning(result)
     except NotAuthenticatedError as err:
@@ -641,17 +671,17 @@ def delete_app(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 @click.option("--cursor", type=str, help="The cursor for pagination.")
 @click.option("--pretty", type=bool, help="Use pretty printing for logs.")
 @click.option(
-    "--follow", type=bool, default=True, help="Asks to continue to query logs."
+    "--follow",
+    type=bool,
+    default=False,
+    help="After printing a page, prompt to fetch the next one. Off by default: "
+    "the prompt never returns on its own, so a script or an agent that asked "
+    "for logs would hang instead of exiting.",
 )
 def app_logs(
     app_id: str | None,
@@ -661,10 +691,11 @@ def app_logs(
     start: int | None,
     end: int | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
     cursor: str | None = None,
     pretty: bool = False,
-    follow: bool = True,
+    follow: bool = False,
 ):
     """Retrieve logs for a given application."""
     import pprint
@@ -707,6 +738,11 @@ def app_logs(
             logger.error("must provide both start and end")
             raise click.exceptions.Exit(1)
 
+        # Following means prompting between pages, which never returns on its
+        # own, so it needs somebody at the terminal and a stream that is not
+        # carrying a JSON document.
+        following = follow and interactive and not as_json
+
         while True:
             logger.debug(f"fetching logs with cursor: {cursor}")
             result = hosting.get_app_logs(
@@ -719,6 +755,15 @@ def app_logs(
             )
             if not isinstance(result, list):
                 logger.warning("Unable to retrieve logs.")
+                if as_json:
+                    # Kept apart from an empty page: "we could not read them"
+                    # and "there are none" call for different next steps.
+                    print_json({
+                        "app_id": app_id,
+                        "entries": [],
+                        "cursor": None,
+                        "error": "Unable to retrieve logs.",
+                    })
                 return
             if len(result) == 2 and isinstance(result[1], str):
                 cursor = result[1]
@@ -727,13 +772,31 @@ def app_logs(
                 cursor = None
             if not result:
                 logger.warning("No logs found for the specified criteria.")
+                if as_json:
+                    print_json({
+                        "app_id": app_id,
+                        "entries": [],
+                        "cursor": cursor,
+                        "error": None,
+                    })
                 return
             result.reverse()
+            if as_json:
+                # One page per invocation, with the cursor to ask for the next:
+                # a document is only a document once it is complete, so paging
+                # is the caller's loop rather than ours.
+                print_json({
+                    "app_id": app_id,
+                    "entries": result,
+                    "cursor": cursor,
+                    "error": None,
+                })
+                return
             for log in result:
                 if pretty:
                     log = pprint.pformat(log, indent=2)
                 logger.info(log)
-            if not (interactive and follow):
+            if not following:
                 return
             from rich.prompt import Prompt
 
@@ -763,19 +826,8 @@ def app_logs(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in JSON format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def list_apps(
     project_id: str | None,
     project_name: str | None,
@@ -821,7 +873,7 @@ def list_apps(
         raise click.exceptions.Exit(1) from ex
 
     if as_json:
-        console.print(json.dumps(deployments))
+        print_json(deployments)
         return
     if deployments:
         headers = list(deployments[0].keys())
@@ -846,13 +898,8 @@ def list_apps(
     help="The log level to use.",
 )
 @click.option("--scale-type", help="The type of scaling.")
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def scale_app(
     app_id: str | None,
     app_name: str | None,
@@ -861,6 +908,7 @@ def scale_app(
     token: str | None,
     loglevel: str,
     scale_type: str | None,
+    as_json: bool,
     interactive: bool,
 ):
     """Scale an application by changing the VM type or adding/removing regions."""
@@ -921,6 +969,15 @@ def scale_app(
         hosting.scale_app(
             app_id=app_id, scale_params=scale_params, client=authenticated_client
         )
+        if as_json:
+            print_json({
+                "app_id": app_id,
+                "scaled": True,
+                "vmtype": scale_params.vm_type,
+                "regions": list(scale_params.regions),
+                "scale_type": scale_params.type,
+            })
+            return
         logger.log(log.SUCCESS, "Successfully scaled the app.")
 
     except NotAuthenticatedError as err:
@@ -946,20 +1003,8 @@ def scale_app(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in JSON format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def inspect_app(
     app_id: str | None,
     token: str | None,
@@ -995,7 +1040,7 @@ def inspect_app(
         app_info = hosting.get_app(app_id=app_id, client=authenticated_client)
 
         if as_json:
-            console.print(json.dumps(app_info))
+            print_json(app_info)
             return
 
         if app_info:
