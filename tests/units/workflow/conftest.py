@@ -90,10 +90,23 @@ def _install_teardown_watchdog() -> None:
     """
     import asyncio
     import asyncio.runners as runners
-    import sys
+    import io
     import traceback
 
     original = runners._cancel_all_tasks  # pyright: ignore[reportAttributeAccessIssue]
+
+    def emit(text: str) -> None:
+        """Write straight to the process's real stderr.
+
+        pytest captures sys.stderr during teardown and only reveals it when
+        the phase completes -- which a hang prevents, hiding exactly the
+        evidence this exists to surface. File descriptor 2 bypasses the
+        capture, the same way faulthandler's dumps do.
+
+        Args:
+            text: The line to write.
+        """
+        os.write(2, (text + "\n").encode())
 
     def patched(loop) -> None:
         to_cancel = asyncio.tasks.all_tasks(loop)
@@ -107,17 +120,16 @@ def _install_teardown_watchdog() -> None:
             try:
                 await asyncio.wait_for(asyncio.shield(gathered), timeout=20)
             except (TimeoutError, asyncio.CancelledError):
-                print(
-                    "\n=== TEARDOWN WATCHDOG: tasks alive 20s after cancel ===",
-                    file=sys.stderr,
-                )
+                emit("=== TEARDOWN WATCHDOG: tasks alive 20s after cancel ===")
                 for task in to_cancel:
                     if task.done():
                         continue
-                    print(f"--- {task!r}", file=sys.stderr)
+                    emit(f"--- {task!r}")
                     for frame in task.get_stack():
-                        traceback.print_stack(frame, limit=1, file=sys.stderr)
-                print("=== END WATCHDOG ===", file=sys.stderr, flush=True)
+                        buffer = io.StringIO()
+                        traceback.print_stack(frame, limit=1, file=buffer)
+                        emit(buffer.getvalue().rstrip())
+                emit("=== END WATCHDOG ===")
                 await gathered
 
         loop.run_until_complete(bounded_gather())

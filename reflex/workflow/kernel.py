@@ -1665,7 +1665,16 @@ class WorkflowKernel:
         try:
             await renewer
         except asyncio.CancelledError:
-            if not renewer.cancelled():
+            # The error may be the renewer's echo, or a cancellation aimed at
+            # THIS task landing while it waited here. Swallowing the latter
+            # consumes the caller's one cancellation -- a task shut down
+            # during this await would keep running, which is how a process
+            # gets a task that outlives teardown forever. Our own pending
+            # cancellation always re-raises.
+            current = asyncio.current_task()
+            if (current is not None and current.cancelling()) or (
+                not renewer.cancelled()
+            ):
                 raise
 
     async def _renew_leases(self) -> None:

@@ -1,6 +1,7 @@
 """Behavioral tests for the workflow kernel via the test harness."""
 
 import asyncio
+import contextlib
 
 import pytest
 from pydantic import BaseModel
@@ -19,8 +20,10 @@ from reflex_base.workflow import (
 )
 
 import reflex as rx
+from reflex.workflow.definition import compile_workflow
+from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import HistoryEventType, RunStatus, StepStatus
-from reflex.workflow.store import SqliteRunStore
+from reflex.workflow.store import MemoryRunStore, SqliteRunStore
 from reflex.workflow.testing import WorkflowTestHarness
 
 
@@ -700,3 +703,60 @@ async def test_policy_changes_do_not_strand_in_flight_runs(
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
     second_store.close()
+
+
+async def test_cancelling_a_task_inside_release_lease_sticks(
+    forked_registration_context,
+):
+    """A cancellation landing during lease release must end the task.
+
+    The release path cancels the renewer and awaits it; a CancelledError
+    raised there can be the renewer's echo or the releasing task's own
+    cancellation. Swallowing the latter leaves a task that consumed teardown's
+    single cancel and keeps running -- the immortal task a hanging
+    _cancel_all_tasks waits on forever.
+    """
+
+    class Flow(rx.State):
+        __workflow__ = WorkflowConfig(id="lease.cancelrace")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def go(self):
+            """Nothing."""
+
+    kernel = WorkflowKernel([compile_workflow(Flow)], MemoryRunStore())
+    result = await kernel.start(Flow.go)
+    assert result.run_id is not None
+    claim = await kernel.store.claim_next(kernel._clock())
+    assert claim is not None
+
+    lease = kernel._acquire_lease(claim)
+
+    # A renewer that takes a moment to process its cancellation, so the
+    # releasing task is reliably parked inside `await renewer` when its own
+    # cancellation arrives.
+    async def slow_to_die():
+        """Take a beat to process cancellation, like a real renewal would.
+
+        Raises:
+            asyncio.CancelledError: Always, once cleanup finishes.
+        """
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            await asyncio.sleep(0.2)
+            raise
+
+    assert lease.renewer is not None
+    lease.renewer.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await lease.renewer
+    lease.renewer = asyncio.ensure_future(slow_to_die())
+
+    releasing = asyncio.ensure_future(kernel._release_lease(lease))
+    await asyncio.sleep(0.05)  # parked inside `await renewer`
+    releasing.cancel()  # teardown's one and only cancel
+    with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+        await asyncio.wait_for(asyncio.shield(releasing), timeout=2)
+    assert releasing.done(), "the release task outlived its cancellation"
+    assert releasing.cancelled(), "the release task swallowed its own cancellation"
