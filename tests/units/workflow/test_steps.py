@@ -373,3 +373,82 @@ async def test_async_callable_in_a_sync_handler_is_refused(
         assert snapshot is not None
         steps = await harness.kernel.store.get_steps(result.run_id)
         assert "async" in str(steps[0].error)
+
+
+async def test_a_step_can_carry_the_decision_a_later_branch_uses(
+    forked_registration_context,
+):
+    """Recording a nondeterministic value first keeps the sequence stable.
+
+    rx.step lines calls up by occurrence, so a handler whose step sequence
+    can differ between attempts would replay one call's result into another.
+    The documented remedy is to record the deciding value as its own step:
+    once recorded it is identical on every attempt, so the branch built on it
+    is too. This exercises exactly that shape across a real retry.
+    """
+    CALLS.clear()
+    draws: list[int] = []
+
+    def draw() -> int:
+        """Produce a value that differs on every call.
+
+        Returns:
+            A fresh number each time.
+        """
+        draws.append(len(draws) + 1)
+        return draws[-1]
+
+    def paid(amount: int) -> dict:
+        """Record a payment.
+
+        Args:
+            amount: What was charged.
+
+        Returns:
+            The receipt.
+        """
+        CALLS.append("paid")
+        return {"amount": amount}
+
+    class Branching(rx.State):
+        __workflow__ = WorkflowConfig(id="steps.branching")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="idempotent_write",
+            retry=Retry(max_attempts=3, initial_delay="1s", jitter="none"),
+        )
+        async def go(self):
+            """Branch on a recorded draw, then fail once after it.
+
+            Returns:
+                Completion on the second attempt.
+
+            Raises:
+                TransientWorkflowError: On the first attempt.
+            """
+            # Recorded first: the branch below decides the same way on every
+            # attempt even though draw() itself never repeats a value.
+            roll = await rx.step("roll", draw)
+            if roll % 2 == 1:
+                await rx.step("charge", paid, 100)
+            CALLS.append("attempt")
+            if CALLS.count("attempt") == 1:
+                msg = "fails after the branch"
+                raise TransientWorkflowError(msg)
+            return rx.complete(result={"roll": roll})
+
+    async with WorkflowTestHarness(Branching) as harness:
+        result = await harness.start(Branching.go)
+        assert result.run_id is not None
+        await harness.advance("2s")
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == {"roll": 1}
+
+    # draw() ran once; the retry replayed it, so the branch held and the
+    # payment inside it did not repeat.
+    assert draws == [1]
+    assert CALLS.count("paid") == 1

@@ -62,6 +62,22 @@ that turn it into effectively-once for side effects are, in order of strength:
 - `rx.step(name, fn, ...)`: records the result durably at return; every later
   execution of the same handler replays the recorded value instead of calling
   `fn`. Fenced by claim epoch, so a zombie worker cannot write (§7).
+
+  Its one requirement on your code: **a handler's sequence of `rx.step` calls
+  must be the same on every attempt.** Keys are the step name plus its
+  occurrence (`send`, `send#2`, …), so a re-execution lines its calls up
+  against the journal positionally. Branching on the payload, on run state, or
+  on anything else already durable is fine — that decides the same way twice.
+  Branching on something that can differ between attempts (a clock reading, a
+  random draw, a live API's answer taken *outside* a step) can shift the
+  sequence, and a shifted sequence replays one call's recorded result into a
+  different call. Put anything nondeterministic that later steps depend on
+  inside its own `rx.step` first: recorded, it is the same on every attempt,
+  and the branch built on it is stable.
+
+  This is far narrower than a replay engine's determinism rule, which governs
+  the whole handler body. Here it governs only the order of `rx.step` calls,
+  and only within one handler.
 - `rx.current_run().idempotency_key()`: stable across retries and recoveries
   of one step, distinct across steps — hand it to providers that accept
   idempotency keys. This covers the one window `rx.step` cannot: a crash
