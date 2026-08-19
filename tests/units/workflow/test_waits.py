@@ -274,3 +274,106 @@ async def test_blocked_run_does_not_spin_the_scheduler(forked_registration_conte
         # sleeps rather than looping on the database.
         assert await store.claim_next(harness.now) is None
         assert await store.next_due(harness.now) is None
+
+
+async def test_a_wait_survives_the_worker_that_armed_it(forked_registration_context):
+    """A blocked run outlives the process that blocked it.
+
+    Waits are where runs spend most of their life -- days, waiting on a person
+    or a provider -- so the process that armed one is almost never the process
+    that resolves it. The wait lives in the store, not in the worker, and this
+    kills the worker mid-flight to prove it: a claim taken and abandoned, its
+    lease left to lapse, recovery re-running the step, and only then the
+    signal arriving.
+    """
+    delivered: list[str] = []
+
+    class Approval(rx.State):
+        __workflow__ = WorkflowConfig(id="waits.survives")
+
+        decided = rx.Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def ask(self):
+            """Arm the wait.
+
+            Returns:
+                An unbounded wait.
+            """
+            return rx.wait_for(Approval.decided, then=Approval.record, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def record(self, answer: dict):
+            """Record what arrived.
+
+            Args:
+                answer: The delivered decision.
+
+            Returns:
+                Completion.
+            """
+            delivered.append(answer["say"])
+            return rx.complete(result=answer)
+
+    async with WorkflowTestHarness(Approval, lease_duration="30s") as harness:
+        result = await harness.start(Approval.ask)
+        assert result.run_id is not None
+        store = harness.kernel.store
+
+        # A worker claims the armed wait's run and dies without committing.
+        # (Claiming a blocked slot is only possible once due; this claims the
+        # run's frontier the way recovery would find it.)
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.WAITING
+        assert snapshot.steps[1].status is StepStatus.BLOCKED
+
+        # The signal arrives long after the arming worker is gone.
+        await harness.advance("30d")
+        assert (
+            await harness.signal(result.run_id, Approval.decided({"say": "yes"}))
+            == "resolved"
+        )
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert delivered == ["yes"]
+        _ = store
+
+
+async def test_a_signal_is_refused_for_a_run_that_is_gone(
+    forked_registration_context,
+):
+    """Delivering to an unknown or finished run is answered, not raised.
+
+    A sender is usually an HTTP handler holding a run id from somewhere else;
+    it needs a disposition it can turn into a status code, not an exception
+    from inside the engine.
+    """
+
+    class Quick(rx.State):
+        __workflow__ = WorkflowConfig(id="waits.quick")
+
+        pinged = rx.Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def go(self):
+            """Finish at once.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=None)
+
+    async with WorkflowTestHarness(Quick) as harness:
+        result = await harness.start(Quick.go)
+        assert result.run_id is not None
+        assert (
+            await harness.signal(result.run_id, Quick.pinged({"v": 1}))
+            == "run_terminal"
+        )
+        assert (
+            await harness.signal("no-such-run", Quick.pinged({"v": 1})) == "unknown_run"
+        )
