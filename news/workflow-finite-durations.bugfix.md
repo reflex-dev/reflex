@@ -1,0 +1,1 @@
+Durations must be finite. `parse_duration(float("nan"))` passed the negativity check — NaN compares false against every bound — and then poisoned every due-time comparison downstream; infinity turned timers into never. Both are refused with a `WorkflowDefinitionError` now, at the single choke point every timeout, retry delay, debounce window, timer, and tolerance flows through.

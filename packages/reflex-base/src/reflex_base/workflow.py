@@ -79,6 +79,12 @@ def parse_duration(value: DurationLike, *, param: str = "duration") -> float:
     else:
         msg = f"Invalid {param} {value!r}: expected a str, number of seconds, or timedelta."
         raise WorkflowDefinitionError(msg)
+    if not math.isfinite(seconds):
+        # NaN compares false against every bound, so without this it would
+        # sail past the negativity check and poison every due-time
+        # comparison downstream; infinity turns timers into never.
+        msg = f"Invalid {param} {value!r}: duration must be finite."
+        raise WorkflowDefinitionError(msg)
     if seconds < 0:
         msg = f"Invalid {param} {value!r}: duration cannot be negative."
         raise WorkflowDefinitionError(msg)

@@ -336,3 +336,17 @@ def test_hmac_signature_no_longer_claims_stripe():
     doc = hmac_signature.__doc__ or ""
     assert "deliberately **not** a Stripe verifier" in doc
     assert "stripe_signature" in doc, "the fix must point at the real verifier"
+
+
+def test_durations_must_be_finite():
+    """NaN compares false against every bound and infinity means never.
+
+    Both would otherwise pass the negativity check and poison every due-time
+    comparison downstream -- the third NaN bug of this class in the engine,
+    after approval expiry and Stripe timestamps.
+    """
+    for poison in (float("nan"), float("inf"), -float("inf")):
+        with pytest.raises(WorkflowDefinitionError, match=r"finite|negative"):
+            parse_duration(poison)
+    assert parse_duration(0) == pytest.approx(0.0)
+    assert parse_duration("1.5h") == pytest.approx(5400.0)
