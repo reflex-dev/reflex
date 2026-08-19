@@ -484,6 +484,35 @@ async def check_list_runs_filters_and_orders(store: RunStore) -> None:
     assert await store.list_runs(RunQuery(workflow_id="other.flow", limit=10)) == ()
 
 
+async def check_runs_are_findable_by_definition_digest(store: RunStore) -> None:
+    """Runs can be narrowed to the compiled definition that admitted them.
+
+    "Is anything still running the release I am replacing" has to be one
+    query. Answering it by listing everything and filtering client-side
+    breaks the moment a deployment has more runs than a page.
+    """
+    await store.admit(
+        make_run("old", definition_digest="d-old"), make_step("old"), _ADMITTED
+    )
+    await store.admit(
+        make_run("new1", definition_digest="d-new"), make_step("new1"), _ADMITTED
+    )
+    await store.admit(
+        make_run("new2", definition_digest="d-new"), make_step("new2"), _ADMITTED
+    )
+    assert await store.count_runs(RunQuery(definition_digest="d-old")) == 1
+    assert await store.count_runs(RunQuery(definition_digest="d-new")) == 2
+    assert await store.count_runs(RunQuery(definition_digest="d-gone")) == 0
+    listed = await store.list_runs(RunQuery(definition_digest="d-new"))
+    assert {run.run_id for run in listed} == {"new1", "new2"}
+    assert (
+        await store.count_runs(
+            RunQuery(definition_digest="d-new", statuses=(RunStatus.PENDING,))
+        )
+        == 2
+    ), "the digest filter composes with the others rather than replacing them"
+
+
 async def check_count_runs_matches_the_listing(store: RunStore) -> None:
     """A count answers for the same set a listing would return.
 
@@ -1134,6 +1163,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_resume_only_reopens_a_suspended_run,
     check_list_runs_filters_and_orders,
     check_count_runs_matches_the_listing,
+    check_runs_are_findable_by_definition_digest,
     check_pagination_skips_nothing_on_tied_timestamps,
     check_label_filter_handles_awkward_keys,
     check_flow_control_queries,

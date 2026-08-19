@@ -820,11 +820,17 @@ def worker(
 @database_option
 @click.option("--workflow", "-w", default=None, help="Only this workflow id.")
 @click.option("--label", "-l", "labels", multiple=True, help="Filter as key=value.")
+@click.option(
+    "--digest",
+    default=None,
+    help="Only runs admitted against this definition digest.",
+)
 @click.option("--json", "as_json", is_flag=True, help="Emit JSON instead of a table.")
 def stats(
     database: str | None,
     workflow: str | None,
     labels: tuple[str, ...],
+    digest: str | None,
     as_json: bool,
 ):
     """Count runs by status: is this deployment healthy, in one screen.
@@ -833,6 +839,9 @@ def stats(
     stopped needing a person. Everything else is context. --json makes this a
     scrape for whatever collects metrics, so an alert on "runs needing
     attention" does not require reading the workflow database.
+
+    With --digest it answers the other operational question: is anything still
+    running the release I am about to replace.
     """
     from reflex.workflow.records import TERMINAL_RUN_STATUSES, RunQuery
 
@@ -851,6 +860,7 @@ def stats(
         for status in RunStatus:
             query = RunQuery(
                 workflow_id=workflow,
+                definition_digest=digest,
                 statuses=(status,),
                 labels=label_filter or None,
             )
@@ -872,6 +882,7 @@ def stats(
         click.echo(
             json.dumps({
                 "workflow": workflow,
+                "digest": digest,
                 "total": total,
                 "open": open_runs,
                 "needs_attention": attention,

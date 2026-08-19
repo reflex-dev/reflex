@@ -284,6 +284,9 @@ def _run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
     if query.workflow_id is not None:
         clauses.append("workflow_id = %s")
         params.append(query.workflow_id)
+    if query.definition_digest is not None:
+        clauses.append("definition_digest = %s")
+        params.append(query.definition_digest)
     if query.statuses:
         clauses.append("status = ANY(%s)")
         params.append([status.value for status in query.statuses])

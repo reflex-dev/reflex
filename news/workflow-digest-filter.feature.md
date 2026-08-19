@@ -1,0 +1,1 @@
+Run queries take a `definition_digest` filter, and `reflex workflows stats --digest ...` reports the runs admitted against one compiled definition — the query a deploy gate needs to answer "is anything still running the release I am replacing". Covered by the shared store conformance suite.

@@ -98,6 +98,15 @@ that turn it into effectively-once for side effects are, in order of strength:
 | `non_idempotent_write` | 1 attempt; no implicit retry | run `NEEDS_ATTENTION`; operator resumes or fails |
 
 - `TransientWorkflowError` is always retryable regardless of `retry_on`.
+- **Code bugs are never retried.** `TypeError`, `AttributeError`, `NameError`,
+  `ImportError`, `SyntaxError`, `IndentationError` and `NotImplementedError`
+  fail the step on the first attempt. A retry re-runs the handler against the
+  same committed state, so a deterministic failure fails identically every
+  time; retrying one spends the budget proving the code is still wrong and
+  delays the operator seeing it by the length of the backoff. A handler that
+  wants one of them retried names it in `retry_on`, and then it is honored.
+  `KeyError`, `IndexError` and `ValueError` stay retryable: they routinely
+  come from a dependency returning a body missing a field.
 - `timeout=` bounds one attempt; a timed-out attempt counts as a failed one
   and follows the same policy (`on_timeout` hook runs on final timeout).
   `timeout=` is a compile error on sync handlers: a thread cannot be

@@ -147,6 +147,56 @@ def test_explicit_retry_on_preserved(forked_registration_context):
     assert retry.retry_on == (ConnectionError,)
 
 
+def test_code_bugs_are_not_retried(forked_registration_context):
+    """A retry re-runs the handler against the same state, so a bug re-fails.
+
+    Retrying a TypeError spends the whole budget proving the code is still
+    wrong, and delays an operator seeing it by the length of the backoff.
+    """
+
+    class Buggy(rx.State):
+        __workflow__ = WorkflowConfig(id="billing.buggy")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="read",
+            retry=Retry(max_attempts=5),
+        )
+        def work(self):
+            pass
+
+    retry = compile_workflow(Buggy).handlers["work"].retry
+    assert not retry.is_retryable(TypeError("not callable"))
+    assert not retry.is_retryable(AttributeError("no such attribute"))
+    assert not retry.is_retryable(NameError("undefined"))
+    # A dependency returning a body without the field you wanted is bad luck,
+    # not a bug, and the next attempt may well get it right.
+    assert retry.is_retryable(KeyError("items"))
+    assert retry.is_retryable(ValueError("bad json"))
+    assert retry.is_retryable(ConnectionError("dropped"))
+
+
+def test_a_handler_may_ask_for_a_bug_class_to_be_retried(forked_registration_context):
+    """The exclusion is a default, not a rule the engine imposes."""
+
+    class Insists(rx.State):
+        __workflow__ = WorkflowConfig(id="billing.insists")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="read",
+            retry=Retry(max_attempts=3, retry_on=(TypeError,)),
+        )
+        def work(self):
+            pass
+
+    retry = compile_workflow(Insists).handlers["work"].retry
+    assert retry.is_retryable(TypeError("this one is transient, honestly"))
+    assert not retry.is_retryable(AttributeError("still a bug"))
+
+
 def test_missing_workflow_config(forked_registration_context):
     class NoConfig(rx.State):
         @rx.event(durable=True, trigger=manual(), effect="none")

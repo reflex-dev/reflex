@@ -177,6 +177,29 @@ class Retry:
         return isinstance(error, self.retry_on)
 
 
+BUG_EXCEPTIONS: Final[tuple[type[BaseException], ...]] = (
+    TypeError,
+    AttributeError,
+    NameError,
+    ImportError,
+    SyntaxError,
+    IndentationError,
+    NotImplementedError,
+)
+"""Exceptions that mean the code is wrong, not that the world was unlucky.
+
+A retry re-runs a handler against the same committed state, so a deterministic
+failure fails identically every time: retrying one of these spends the whole
+budget proving a bug is still a bug, and delays the run reaching an operator
+by the length of the backoff. They are excluded from every resolved policy
+unless a handler asks for them by name in ``retry_on``.
+
+Data-shaped errors -- ``KeyError``, ``IndexError``, ``ValueError`` -- are
+deliberately absent: they routinely come from a flaky dependency returning a
+body that is missing a field, which the next attempt may well get right.
+"""
+
+
 def default_retry_for_effect(effect: str) -> Retry:
     """Return the default retry policy for an effect class.
 

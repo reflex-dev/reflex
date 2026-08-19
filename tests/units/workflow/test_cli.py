@@ -210,6 +210,7 @@ def test_stats_filters_to_one_workflow(seeded):
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == {
         "workflow": "nope.nothing",
+        "digest": None,
         "total": 0,
         "open": 0,
         "needs_attention": 0,

@@ -764,6 +764,11 @@ def _matches_query(run: RunRecord, query: RunQuery) -> bool:
     """
     if query.workflow_id is not None and run.workflow_id != query.workflow_id:
         return False
+    if (
+        query.definition_digest is not None
+        and run.definition_digest != query.definition_digest
+    ):
+        return False
     if query.statuses and run.status not in query.statuses:
         return False
     if query.created_before is not None and (run.created_at, run.run_id) >= (
@@ -2216,6 +2221,9 @@ def _sqlite_run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
     if query.workflow_id is not None:
         clauses.append("workflow_id = ?")
         params.append(query.workflow_id)
+    if query.definition_digest is not None:
+        clauses.append("definition_digest = ?")
+        params.append(query.definition_digest)
     if query.statuses:
         placeholders = ",".join("?" * len(query.statuses))
         clauses.append(f"status IN ({placeholders})")

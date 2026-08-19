@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 
 from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
+    BUG_EXCEPTIONS,
     Debounce,
     DurableEventConfig,
     RateLimit,
@@ -250,6 +251,12 @@ def _resolve_retry(retry: Retry | None, effect: str) -> Retry:
     ``non_idempotent_write`` never retries: the runtime cannot prove the
     external effect did not already land.
 
+    Every policy also excludes ``BUG_EXCEPTIONS``, because a retry re-runs the
+    handler against the same committed state: a ``TypeError`` fails the same
+    way every attempt, so retrying one only delays the operator seeing it. A
+    handler that genuinely wants one retried names it in ``retry_on``, and
+    then it is left alone.
+
     Args:
         retry: The explicit policy, if the handler declared one.
         effect: The handler's effect class.
@@ -259,9 +266,17 @@ def _resolve_retry(retry: Retry | None, effect: str) -> Retry:
     """
     if retry is None:
         retry = default_retry_for_effect(effect)
-    if retry.retry_on or effect == "non_idempotent_write":
+    if not retry.retry_on and effect != "non_idempotent_write":
+        retry = dataclasses.replace(retry, retry_on=(Exception,))
+    bugs = tuple(
+        bug
+        for bug in BUG_EXCEPTIONS
+        if not any(issubclass(wanted, bug) for wanted in retry.retry_on)
+        and not any(issubclass(bug, known) for known in retry.do_not_retry_on)
+    )
+    if not bugs:
         return retry
-    return dataclasses.replace(retry, retry_on=(Exception,))
+    return dataclasses.replace(retry, do_not_retry_on=retry.do_not_retry_on + bugs)
 
 
 def _compile_handlers(

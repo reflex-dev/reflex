@@ -315,6 +315,10 @@ class RunQuery:
 
     Attributes:
         workflow_id: Restrict to one workflow identity.
+        definition_digest: Restrict to runs admitted against one compiled
+            definition. This is what answers "is anything still running the
+            release I am replacing", which a deploy gate and an operator
+            watching a rollout both need.
         statuses: Restrict to these run statuses; empty means any.
         labels: Require every one of these server-derived label values.
         created_before: Pagination cursor, as the ``(created_at, run_id)`` of
@@ -325,6 +329,7 @@ class RunQuery:
     """
 
     workflow_id: str | None = None
+    definition_digest: str | None = None
     statuses: tuple[RunStatus, ...] = ()
     labels: Mapping[str, str] | None = None
     created_before: tuple[float, str] | None = None
