@@ -117,6 +117,12 @@ class WorkflowRuntime:
         if self._kernel is not None:
             msg = "Cannot register workflows after the runtime has started."
             raise WorkflowRuntimeError(msg)
+        if not isinstance(workflow_cls, type):
+            msg = (
+                f"Expected a workflow class, got {type(workflow_cls).__name__}. "
+                "Pass the classes themselves, one argument each."
+            )
+            raise WorkflowDefinitionError(msg)
         existing_id = self._classes.get(workflow_cls)
         if existing_id is not None:
             return self._definitions[existing_id]

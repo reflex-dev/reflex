@@ -452,6 +452,24 @@ class RunStore(Protocol):
         """
         ...
 
+    async def list_children(
+        self, parent_run_id: str, parent_ordinal: int
+    ) -> tuple[RunRecord, ...]:
+        """List the child runs admitted for one join slot.
+
+        A decided race has to reach its losing branches, and an operator
+        inspecting a fan-out wants its children without paging the whole run
+        table, so this is a first-class lookup rather than a filtered listing.
+
+        Args:
+            parent_run_id: The run that fanned out.
+            parent_ordinal: The join slot the children report to.
+
+        Returns:
+            The child run records, oldest first.
+        """
+        ...
+
     async def find_by_request_key(
         self, workflow_id: str, request_key: str
     ) -> str | None:
@@ -1360,6 +1378,28 @@ class MemoryRunStore:
             matched.sort(key=lambda run: (run.created_at, run.run_id), reverse=True)
             return tuple(_detach_run(run) for run in matched[: query.limit])
 
+    async def list_children(
+        self, parent_run_id: str, parent_ordinal: int
+    ) -> tuple[RunRecord, ...]:
+        """List the child runs admitted for one join slot.
+
+        Args:
+            parent_run_id: The run that fanned out.
+            parent_ordinal: The join slot the children report to.
+
+        Returns:
+            The child run records, oldest first.
+        """
+        async with self._lock:
+            children = [
+                run
+                for run in self._runs.values()
+                if run.parent_run_id == parent_run_id
+                and run.parent_ordinal == parent_ordinal
+            ]
+            children.sort(key=lambda run: (run.created_at, run.run_id))
+            return tuple(_detach_run(run) for run in children)
+
     async def find_by_request_key(
         self, workflow_id: str, request_key: str
     ) -> str | None:
@@ -1661,6 +1701,10 @@ class SqliteRunStore:
             self._db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_workflow_steps_lease"
                 " ON workflow_steps (status, lease_expires_at)"
+            )
+            self._db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_runs_parent"
+                " ON workflow_runs (parent_run_id, parent_ordinal)"
             )
             self._db.execute("COMMIT")
         except BaseException:
@@ -2719,6 +2763,26 @@ class SqliteRunStore:
                 f"SELECT * FROM workflow_runs{where}"
                 " ORDER BY created_at DESC, run_id DESC LIMIT ?",
                 (*params, query.limit),
+            ).fetchall()
+            return tuple(_run_from_row(row) for row in rows)
+
+    async def list_children(
+        self, parent_run_id: str, parent_ordinal: int
+    ) -> tuple[RunRecord, ...]:
+        """List the child runs admitted for one join slot.
+
+        Args:
+            parent_run_id: The run that fanned out.
+            parent_ordinal: The join slot the children report to.
+
+        Returns:
+            The child run records, oldest first.
+        """
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT * FROM workflow_runs WHERE parent_run_id = ?"
+                " AND parent_ordinal = ? ORDER BY created_at, run_id",
+                (parent_run_id, parent_ordinal),
             ).fetchall()
             return tuple(_run_from_row(row) for row in rows)
 

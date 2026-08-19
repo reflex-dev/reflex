@@ -127,7 +127,7 @@ would run it inline and lose its retries and effect tracking, which the compiler
 | `[MyFlow.a, MyFlow.b]` | run both, in order |
 | `rx.after("2d", MyFlow.later)` | run it after a durable delay |
 | `rx.wait_for(...)` | block until a signal or a deadline |
-| `rx.parallel(a, b, then=...)` | run branches concurrently, then join |
+| `rx.parallel(a, b, then=...)` | run branches concurrently, then join (`mode="first"` races) |
 | `rx.complete(result=...)` | finish the run successfully |
 | `rx.fail("reason")` | finish the run as failed |
 | `rx.needs_attention("reason")` | suspend for a human |
@@ -210,6 +210,22 @@ class Router(rx.State):
 A branch that fails still reports, so the join handler decides what a partial success means rather
 than the engine guessing. Child runs are ordinary runs: they appear in `list_runs()` and can be
 inspected and cancelled on their own.
+
+Pass `mode="first"` to race the branches instead of waiting for all of them. The join handler runs
+as soon as one reports, receiving that single result, and the losing branches are cancelled.
+
+```python
+return rx.parallel(
+    PrimaryVendor.quote(order_id),
+    BackupVendor.quote(order_id),
+    then=Order.book,
+    mode="first",
+)
+```
+
+A cancelled loser stops at its next step boundary; a step already in flight finishes. Race only
+where a discarded branch is harmless, or give the losers an `on_failure` handler that undoes their
+work.
 
 ## Triggers
 

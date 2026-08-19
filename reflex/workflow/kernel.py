@@ -1241,14 +1241,18 @@ class WorkflowKernel:
                 status=StepStatus.BLOCKED,
                 args={"__results__": []},
                 wait_key=f"join:{claim.run.next_ordinal}",
-                join_expected=len(control.branches),
+                join_expected=1 if control.mode == "first" else len(control.branches),
                 origin="join",
                 created_at=now,
                 updated_at=now,
             )
             events.append((
                 HistoryEventType.CHILD_STARTED,
-                {"ordinal": join.ordinal, "branches": len(control.branches)},
+                {
+                    "ordinal": join.ordinal,
+                    "branches": len(control.branches),
+                    "mode": control.mode,
+                },
             ))
             return StepCompletion(
                 step_status=StepStatus.SUCCEEDED,
@@ -1890,7 +1894,7 @@ class WorkflowKernel:
         """
         if run.parent_run_id is None or run.parent_ordinal is None:
             return
-        await self._store.record_arrival(
+        disposition = await self._store.record_arrival(
             run.parent_run_id,
             run.parent_ordinal,
             {
@@ -1902,7 +1906,31 @@ class WorkflowKernel:
             run.run_id,
             self._clock(),
         )
+        if disposition == "resolved":
+            await self._cancel_losing_branches(run)
         self._wakeup.set()
+
+    async def _cancel_losing_branches(self, winner: RunRecord) -> None:
+        """Cancel the siblings a decided race left running.
+
+        A join satisfied before every branch reported means the rest can no
+        longer affect the outcome, so leaving them running would burn work and
+        keep making external calls nobody is waiting for.
+
+        Args:
+            winner: The child whose arrival satisfied the join.
+        """
+        if winner.parent_run_id is None or winner.parent_ordinal is None:
+            return
+        siblings = await self._store.list_children(
+            winner.parent_run_id, winner.parent_ordinal
+        )
+        for sibling in siblings:
+            if (
+                sibling.run_id != winner.run_id
+                and sibling.status not in TERMINAL_RUN_STATUSES
+            ):
+                await self.cancel(sibling.run_id)
 
     async def _finalize_control(self, now: float) -> int:
         """Finalize every drained run awaiting a control transition.

@@ -294,3 +294,160 @@ async def test_a_timed_out_child_reports_to_its_join(forked_registration_context
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
         assert snapshot.state["outcomes"] == ["COMPLETED", "TIMED_OUT"]
+
+
+class SlowVendor(rx.State):
+    """A branch that waits before answering."""
+
+    __workflow__ = WorkflowConfig(id="race.slow")
+    quote: int = 0
+
+    @rx.event(durable=True, trigger=manual(), effect="read")
+    def start(self, price: int):
+        """Quote after a delay.
+
+        Args:
+            price: The price to quote.
+
+        Returns:
+            A deferral, then completion.
+        """
+        RACE_CALLS.append("slow")
+        return rx.after("1h", SlowVendor.answer(price))
+
+    @rx.event(durable=True, effect="read")
+    def answer(self, price: int):
+        """Deliver the delayed quote.
+
+        Args:
+            price: The price to quote.
+
+        Returns:
+            Completion carrying the quote.
+        """
+        RACE_CALLS.append("slow-answer")
+        self.quote = price
+        return rx.complete(result={"price": price})
+
+
+class FastVendor(rx.State):
+    """A branch that answers immediately."""
+
+    __workflow__ = WorkflowConfig(id="race.fast")
+    quote: int = 0
+
+    @rx.event(durable=True, trigger=manual(), effect="read")
+    def start(self, price: int):
+        """Quote at once.
+
+        Args:
+            price: The price to quote.
+
+        Returns:
+            Completion carrying the quote.
+        """
+        RACE_CALLS.append("fast")
+        self.quote = price
+        return rx.complete(result={"price": price})
+
+
+class Shopper(rx.State):
+    """Takes the first quote back and abandons the rest."""
+
+    __workflow__ = WorkflowConfig(id="race.shopper")
+    winner: int = 0
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def start(self):
+        """Ask both vendors and take whoever answers first.
+
+        Returns:
+            A racing fan-out.
+        """
+        return rx.parallel(
+            SlowVendor.start(100),
+            FastVendor.start(90),
+            then=Shopper.book,
+            mode="first",
+        )
+
+    @rx.event(durable=True, effect="read")
+    def book(self, results: list):
+        """Book the quote that arrived first.
+
+        Args:
+            results: One entry, from the branch that won.
+
+        Returns:
+            Completion.
+        """
+        self.winner = results[0]["result"]["price"]
+        return rx.complete(result={"booked": self.winner})
+
+
+RACE_CALLS: list[str] = []
+
+
+async def _join_slot(harness: WorkflowTestHarness, run_id: str):
+    """Find the fan-out slot of a run.
+
+    Args:
+        harness: The running harness.
+        run_id: The parent run.
+
+    Returns:
+        The join step record.
+    """
+    steps = await harness.kernel.store.get_steps(run_id)
+    return next(step for step in steps if step.wait_key is not None)
+
+
+async def test_race_continues_on_the_first_branch_and_cancels_the_rest():
+    """mode="first" resumes as soon as one branch reports.
+
+    A quote race is worthless if it still waits for the slow vendor, and worse
+    than worthless if that vendor keeps working after the order is booked.
+    """
+    RACE_CALLS.clear()
+    async with WorkflowTestHarness(Shopper, SlowVendor, FastVendor) as harness:
+        result = await harness.start(Shopper.start())
+        assert result.run_id is not None
+
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == {"booked": 90}
+
+        join = await _join_slot(harness, result.run_id)
+        children = await harness.kernel.store.list_children(result.run_id, join.ordinal)
+        by_workflow = {child.workflow_id: child for child in children}
+        assert by_workflow["race.fast"].status is RunStatus.COMPLETED
+        assert by_workflow["race.slow"].status is RunStatus.CANCELLED
+
+        # The loser's deferred step never runs, even once its timer comes due.
+        await harness.advance("2h")
+        assert "slow-answer" not in RACE_CALLS
+
+
+async def test_race_mode_still_starts_every_branch():
+    """Racing is not a way to skip work: every branch starts."""
+    RACE_CALLS.clear()
+    async with WorkflowTestHarness(Shopper, SlowVendor, FastVendor) as harness:
+        result = await harness.start(Shopper.start())
+        assert result.run_id is not None
+        assert "slow" in RACE_CALLS
+        assert "fast" in RACE_CALLS
+        join = await _join_slot(harness, result.run_id)
+        children = await harness.kernel.store.list_children(result.run_id, join.ordinal)
+        assert len(children) == 2
+
+
+async def test_race_join_expects_one_arrival():
+    """The join slot itself carries the racing intent."""
+    RACE_CALLS.clear()
+    async with WorkflowTestHarness(Shopper, SlowVendor, FastVendor) as harness:
+        result = await harness.start(Shopper.start())
+        assert result.run_id is not None
+        join = await _join_slot(harness, result.run_id)
+        assert join.join_expected == 1
+        assert join.status is StepStatus.SUCCEEDED

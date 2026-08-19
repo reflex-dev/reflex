@@ -574,6 +574,47 @@ async def check_children_are_created_with_their_join(store: RunStore) -> None:
     assert len(await store.get_steps("child1")) == 1
 
 
+async def check_list_children_finds_a_joins_branches(store: RunStore) -> None:
+    """The children of one join slot are addressable without a full scan."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.WAITING,
+            state={},
+            new_steps=(
+                make_step(
+                    ordinal=1,
+                    status=StepStatus.BLOCKED,
+                    wait_key="join:1",
+                    join_expected=2,
+                    origin="join",
+                    due_at=0.0,
+                ),
+            ),
+            next_ordinal=2,
+            children=(
+                (
+                    make_run("childA", parent_run_id="run1", parent_ordinal=1),
+                    make_step("childA"),
+                ),
+                (
+                    make_run("childB", parent_run_id="run1", parent_ordinal=1),
+                    make_step("childB"),
+                ),
+            ),
+        ),
+        NOW,
+    )
+    children = await store.list_children("run1", 1)
+    assert {child.run_id for child in children} == {"childA", "childB"}
+    assert await store.list_children("run1", 2) == ()
+    assert await store.list_children("nobody", 1) == ()
+
+
 async def check_reads_do_not_alias_stored_state(store: RunStore) -> None:
     """Mutating a returned record must not change what the store holds."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -647,6 +688,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_an_early_delivery_is_buffered_then_consumed,
     check_early_deliveries_queue_in_order,
     check_children_are_created_with_their_join,
+    check_list_children_finds_a_joins_branches,
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,

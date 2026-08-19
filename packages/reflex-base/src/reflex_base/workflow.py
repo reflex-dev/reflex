@@ -960,16 +960,20 @@ class Parallel:
     Attributes:
         branches: The root events to run concurrently.
         then: Handler that receives the list of branch results.
+        mode: ``"all"`` continues once every branch has reported; ``"first"``
+            continues as soon as one has, and cancels the rest.
     """
 
     branches: tuple[Any, ...]
     then: Any
+    mode: Literal["all", "first"] = "all"
 
     def __post_init__(self):
         """Validate the fan-out.
 
         Raises:
-            WorkflowDefinitionError: If no branches were given.
+            WorkflowDefinitionError: If no branches were given, or the mode is
+                not recognised.
         """
         if not self.branches:
             msg = (
@@ -977,9 +981,14 @@ class Parallel:
                 "run concurrently."
             )
             raise WorkflowDefinitionError(msg)
+        if self.mode not in ("all", "first"):
+            msg = f'parallel() mode must be "all" or "first", got {self.mode!r}.'
+            raise WorkflowDefinitionError(msg)
 
 
-def parallel(*branches: Any, then: Any) -> Parallel:
+def parallel(
+    *branches: Any, then: Any, mode: Literal["all", "first"] = "all"
+) -> Parallel:
     """Run branches concurrently, then continue with all their results.
 
     Each branch runs as its own child run, so branches retry and fail
@@ -994,14 +1003,18 @@ def parallel(*branches: Any, then: Any) -> Parallel:
     The ``then`` handler receives one argument: the list of branch results, in
     the order the branches were given.
 
+    Pass ``mode="first"`` to race them instead: the run continues as soon as
+    one branch reports, and the others are cancelled.
+
     Args:
         branches: Root events to run concurrently.
-        then: Handler to run once every branch has finished.
+        then: Handler to run once the fan-out is satisfied.
+        mode: ``"all"`` to wait for every branch, ``"first"`` to race them.
 
     Returns:
         The control return value.
     """
-    return Parallel(branches=branches, then=then)
+    return Parallel(branches=branches, then=then, mode=mode)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

@@ -419,20 +419,48 @@ def _validate_handler_body(
     if node is None:
         return
     self_name = next(iter(inspect.signature(defn.fn).parameters), None)
-    for child in ast.walk(node):
+
+    def durable_self_reference(value: ast.expr) -> str | None:
+        """Name the durable handler an expression reaches through ``self``.
+
+        Args:
+            value: The expression to inspect.
+
+        Returns:
+            The handler name, or None if this is not such a reference.
+        """
         if (
-            isinstance(child, ast.Call)
-            and isinstance(child.func, ast.Attribute)
-            and isinstance(child.func.value, ast.Name)
-            and child.func.value.id == self_name
-            and child.func.attr in durable_names
+            isinstance(value, ast.Attribute)
+            and isinstance(value.value, ast.Name)
+            and value.value.id == self_name
+            and value.attr in durable_names
+        ):
+            return value.attr
+        return None
+
+    called: set[int] = set()
+    for child in ast.walk(node):
+        if isinstance(child, ast.Call) and durable_self_reference(child.func):
+            called.add(id(child.func))
+    for child in ast.walk(node):
+        if isinstance(child, ast.Call) and (name := durable_self_reference(child.func)):
+            raise _error(
+                workflow_cls,
+                f"handler {defn.name!r} calls {name!r} directly, which "
+                "runs it inline and loses its retries, timeout, and effect "
+                f"tracking. Return it as a transition instead: "
+                f"return {workflow_cls.__name__}.{name}(...)",
+            )
+        if (
+            isinstance(child, ast.Attribute)
+            and id(child) not in called
+            and (name := durable_self_reference(child))
         ):
             raise _error(
                 workflow_cls,
-                f"handler {defn.name!r} calls {child.func.attr!r} directly, which "
-                "runs it inline and loses its retries, timeout, and effect "
-                f"tracking. Return it as a transition instead: "
-                f"return {workflow_cls.__name__}.{child.func.attr}",
+                f"handler {defn.name!r} refers to {name!r} as self.{name}, which "
+                "is a bound method, not a transition the engine can route. "
+                f"Name the class instead: {workflow_cls.__name__}.{name}",
             )
         if (
             isinstance(child, ast.Return)
