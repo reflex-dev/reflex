@@ -2037,31 +2037,40 @@ class SqliteRunStore:
         Returns:
             Whether the run was created, and the authoritative run id.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                if run.request_key is not None:
-                    row = self._db.execute(
-                        "SELECT run_id FROM workflow_dedupe"
-                        " WHERE workflow_id = ? AND request_key = ?",
-                        (run.workflow_id, run.request_key),
-                    ).fetchone()
-                    if row is not None:
-                        self._db.execute("ROLLBACK")
-                        return False, row["run_id"]
-                    self._db.execute(
-                        "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
-                        " VALUES (?, ?, ?)",
-                        (run.workflow_id, run.request_key, run.run_id),
-                    )
-                self._insert_run(run)
-                self._insert_step(root_step)
-                self._append_events(run.run_id, events, run.created_at)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True, run.run_id
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    if run.request_key is not None:
+                        row = self._db.execute(
+                            "SELECT run_id FROM workflow_dedupe"
+                            " WHERE workflow_id = ? AND request_key = ?",
+                            (run.workflow_id, run.request_key),
+                        ).fetchone()
+                        if row is not None:
+                            self._db.execute("ROLLBACK")
+                            return False, row["run_id"]
+                        self._db.execute(
+                            "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
+                            " VALUES (?, ?, ?)",
+                            (run.workflow_id, run.request_key, run.run_id),
+                        )
+                    self._insert_run(run)
+                    self._insert_step(root_step)
+                    self._append_events(run.run_id, events, run.created_at)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return True, run.run_id
+
+        return await asyncio.to_thread(work)
 
     async def claim_next(
         self,
@@ -2083,61 +2092,70 @@ class SqliteRunStore:
         Returns:
             A fenced claim, or None when nothing is claimable right now.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            claim = None
-            try:
-                rows = self._db.execute(
-                    "SELECT * FROM workflow_runs WHERE status NOT IN"
-                    f" ({','.join('?' * len(terminal))})"
-                    " AND status != ? AND cancel_requested = 0"
-                    " AND (deadline IS NULL OR deadline > ?)"
-                    " ORDER BY created_at",
-                    (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
-                ).fetchall()
-                for row in rows:
-                    run = _run_from_row(row)
-                    frontier = _frontier(self._load_steps(run.run_id))
-                    if frontier is None or not step_claimable_at(frontier, now):
-                        continue
-                    if queues is not None and frontier.queue not in queues:
-                        continue
-                    claimed = dataclasses.replace(
-                        frontier,
-                        status=StepStatus.CLAIMED,
-                        epoch=frontier.epoch + 1,
-                        lease_expires_at=now + lease_duration,
-                        updated_at=now,
-                    )
-                    self._db.execute(
-                        "UPDATE workflow_steps SET status = ?, epoch = ?,"
-                        " lease_expires_at = ?, updated_at = ?"
-                        " WHERE run_id = ? AND ordinal = ?",
-                        (
-                            claimed.status.value,
-                            claimed.epoch,
-                            claimed.lease_expires_at,
-                            now,
-                            claimed.run_id,
-                            claimed.ordinal,
-                        ),
-                    )
-                    self._db.execute(
-                        "UPDATE workflow_runs SET status = ?, updated_at = ?"
-                        " WHERE run_id = ?",
-                        (RunStatus.RUNNING.value, now, run.run_id),
-                    )
-                    running = dataclasses.replace(
-                        run, status=RunStatus.RUNNING, updated_at=now
-                    )
-                    claim = Claim(run=running, step=claimed)
-                    break
-                self._db.execute("COMMIT" if claim is not None else "ROLLBACK")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return claim
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                claim = None
+                try:
+                    rows = self._db.execute(
+                        "SELECT * FROM workflow_runs WHERE status NOT IN"
+                        f" ({','.join('?' * len(terminal))})"
+                        " AND status != ? AND cancel_requested = 0"
+                        " AND (deadline IS NULL OR deadline > ?)"
+                        " ORDER BY created_at",
+                        (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
+                    ).fetchall()
+                    for row in rows:
+                        run = _run_from_row(row)
+                        frontier = _frontier(self._load_steps(run.run_id))
+                        if frontier is None or not step_claimable_at(frontier, now):
+                            continue
+                        if queues is not None and frontier.queue not in queues:
+                            continue
+                        claimed = dataclasses.replace(
+                            frontier,
+                            status=StepStatus.CLAIMED,
+                            epoch=frontier.epoch + 1,
+                            lease_expires_at=now + lease_duration,
+                            updated_at=now,
+                        )
+                        self._db.execute(
+                            "UPDATE workflow_steps SET status = ?, epoch = ?,"
+                            " lease_expires_at = ?, updated_at = ?"
+                            " WHERE run_id = ? AND ordinal = ?",
+                            (
+                                claimed.status.value,
+                                claimed.epoch,
+                                claimed.lease_expires_at,
+                                now,
+                                claimed.run_id,
+                                claimed.ordinal,
+                            ),
+                        )
+                        self._db.execute(
+                            "UPDATE workflow_runs SET status = ?, updated_at = ?"
+                            " WHERE run_id = ?",
+                            (RunStatus.RUNNING.value, now, run.run_id),
+                        )
+                        running = dataclasses.replace(
+                            run, status=RunStatus.RUNNING, updated_at=now
+                        )
+                        claim = Claim(run=running, step=claimed)
+                        break
+                    self._db.execute("COMMIT" if claim is not None else "ROLLBACK")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return claim
+
+        return await asyncio.to_thread(work)
 
     def _check_claim(self, claim: Claim) -> None:
         """Validate that a claim still owns its step and state version.
@@ -2183,24 +2201,33 @@ class SqliteRunStore:
         Returns:
             True if the claim still owns its step; False if it was fenced.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
                 try:
-                    self._check_claim(claim)
-                except StaleClaimError:
+                    try:
+                        self._check_claim(claim)
+                    except StaleClaimError:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    self._db.execute(
+                        "UPDATE workflow_steps SET lease_expires_at = ?"
+                        " WHERE run_id = ? AND ordinal = ?",
+                        (now + lease_duration, claim.run.run_id, claim.step.ordinal),
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
                     self._db.execute("ROLLBACK")
-                    return False
-                self._db.execute(
-                    "UPDATE workflow_steps SET lease_expires_at = ?"
-                    " WHERE run_id = ? AND ordinal = ?",
-                    (now + lease_duration, claim.run.run_id, claim.step.ordinal),
-                )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
 
     def _arm_sql(self, step: StepRecord, now: float) -> StepRecord:
         """Resolve a newly armed wait against a buffered delivery, in-transaction.
@@ -2245,68 +2272,73 @@ class SqliteRunStore:
             completion: The outcome to apply.
             now: Current time in epoch seconds.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                self._check_claim(claim)
-                self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, attempts = attempts + ?,"
-                    " due_at = ?, lease_expires_at = 0, error = ?, updated_at = ?"
-                    " WHERE run_id = ? AND ordinal = ?",
-                    (
-                        completion.step_status.value,
-                        1 if completion.consume_attempt else 0,
-                        completion.due_at if completion.due_at is not None else 0.0,
-                        _dump(completion.step_error),
-                        now,
-                        claim.run.run_id,
-                        claim.step.ordinal,
-                    ),
-                )
-                if completion.tombstones:
-                    terminal = tuple(s.value for s in TERMINAL_STEP_STATUSES)
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    self._check_claim(claim)
                     self._db.execute(
-                        "UPDATE workflow_steps SET status = ?, updated_at = ?"
-                        f" WHERE run_id = ? AND ordinal IN"
-                        f" ({','.join('?' * len(completion.tombstones))})"
-                        f" AND status NOT IN ({','.join('?' * len(terminal))})",
+                        "UPDATE workflow_steps SET status = ?, attempts = attempts + ?,"
+                        " due_at = ?, lease_expires_at = 0, error = ?, updated_at = ?"
+                        " WHERE run_id = ? AND ordinal = ?",
                         (
-                            StepStatus.CANCELLED.value,
+                            completion.step_status.value,
+                            1 if completion.consume_attempt else 0,
+                            completion.due_at if completion.due_at is not None else 0.0,
+                            _dump(completion.step_error),
                             now,
                             claim.run.run_id,
-                            *completion.tombstones,
-                            *terminal,
+                            claim.step.ordinal,
                         ),
                     )
-                for step in completion.new_steps:
-                    self._insert_step(self._arm_sql(step, now))
-                for child_run, child_step in completion.children:
-                    self._insert_run(child_run)
-                    self._insert_step(child_step)
-                self._db.execute(
-                    "UPDATE workflow_runs SET status = ?,"
-                    " state = CASE WHEN ? THEN ? ELSE state END,"
-                    " state_version = state_version + ?,"
-                    " next_ordinal = COALESCE(?, next_ordinal),"
-                    " result = COALESCE(?, result), error = ?, updated_at = ?"
-                    " WHERE run_id = ?",
-                    (
-                        completion.run_status.value,
-                        completion.state is not None,
-                        _dump(completion.state),
-                        1 if completion.state is not None else 0,
-                        completion.next_ordinal,
-                        _dump(completion.result),
-                        _dump(completion.run_error),
-                        now,
-                        claim.run.run_id,
-                    ),
-                )
-                self._append_events(claim.run.run_id, completion.events, now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
+                    if completion.tombstones:
+                        terminal = tuple(s.value for s in TERMINAL_STEP_STATUSES)
+                        self._db.execute(
+                            "UPDATE workflow_steps SET status = ?, updated_at = ?"
+                            f" WHERE run_id = ? AND ordinal IN"
+                            f" ({','.join('?' * len(completion.tombstones))})"
+                            f" AND status NOT IN ({','.join('?' * len(terminal))})",
+                            (
+                                StepStatus.CANCELLED.value,
+                                now,
+                                claim.run.run_id,
+                                *completion.tombstones,
+                                *terminal,
+                            ),
+                        )
+                    for step in completion.new_steps:
+                        self._insert_step(self._arm_sql(step, now))
+                    for child_run, child_step in completion.children:
+                        self._insert_run(child_run)
+                        self._insert_step(child_step)
+                    self._db.execute(
+                        "UPDATE workflow_runs SET status = ?,"
+                        " state = CASE WHEN ? THEN ? ELSE state END,"
+                        " state_version = state_version + ?,"
+                        " next_ordinal = COALESCE(?, next_ordinal),"
+                        " result = COALESCE(?, result), error = ?, updated_at = ?"
+                        " WHERE run_id = ?",
+                        (
+                            completion.run_status.value,
+                            completion.state is not None,
+                            _dump(completion.state),
+                            1 if completion.state is not None else 0,
+                            completion.next_ordinal,
+                            _dump(completion.result),
+                            _dump(completion.run_error),
+                            now,
+                            claim.run.run_id,
+                        ),
+                    )
+                    self._append_events(claim.run.run_id, completion.events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+
+        await asyncio.to_thread(work)
 
     async def release_claim(
         self,
@@ -2324,24 +2356,29 @@ class SqliteRunStore:
             events: History events to append.
             now: Current time in epoch seconds.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
                 try:
-                    self._check_claim(claim)
-                except StaleClaimError:
+                    try:
+                        self._check_claim(claim)
+                    except StaleClaimError:
+                        self._db.execute("ROLLBACK")
+                        return
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, lease_expires_at = 0,"
+                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        (status.value, now, claim.run.run_id, claim.step.ordinal),
+                    )
+                    self._append_events(claim.run.run_id, events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
                     self._db.execute("ROLLBACK")
-                    return
-                self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, lease_expires_at = 0,"
-                    " updated_at = ? WHERE run_id = ? AND ordinal = ?",
-                    (status.value, now, claim.run.run_id, claim.step.ordinal),
-                )
-                self._append_events(claim.run.run_id, events, now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
+                    raise
+
+        await asyncio.to_thread(work)
 
     async def append_events(
         self,
@@ -2356,14 +2393,19 @@ class SqliteRunStore:
             events: The (type, data) pairs to append.
             now: Current time in epoch seconds.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                self._append_events(run_id, events, now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    self._append_events(run_id, events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+
+        await asyncio.to_thread(work)
 
     async def deliver(
         self,
@@ -2385,85 +2427,99 @@ class SqliteRunStore:
         Returns:
             What the store did with the delivery.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                row = self._db.execute(
-                    "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
-                ).fetchone()
-                if row is None:
-                    self._db.execute("ROLLBACK")
-                    return "unknown_run"
-                if row["status"] in terminal:
-                    self._db.execute("ROLLBACK")
-                    return "run_terminal"
-                seen = self._db.execute(
-                    "SELECT 1 FROM workflow_inbox"
-                    " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
-                    (run_id, wait_key, dedupe_key),
-                ).fetchone()
-                if seen is not None:
-                    self._db.execute("ROLLBACK")
-                    return "duplicate"
-                frontier = _frontier(self._load_steps(run_id))
-                if frontier is not None and _wait_expired(frontier, now):
-                    self._db.execute("ROLLBACK")
-                    return "expired"
-                resolves = (
-                    frontier is not None
-                    and frontier.status is StepStatus.BLOCKED
-                    and frontier.wait_key == wait_key
-                )
-                self._db.execute(
-                    "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
-                    " payload, status, created_at)"
-                    " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
-                    " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
-                    (
-                        run_id,
-                        wait_key,
-                        dedupe_key,
-                        run_id,
-                        json.dumps(payload),
-                        "CONSUMED" if resolves else "PENDING",
-                        now,
-                    ),
-                )
-                if resolves and frontier is not None:
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    row = self._db.execute(
+                        "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                    ).fetchone()
+                    if row is None:
+                        self._db.execute("ROLLBACK")
+                        return "unknown_run"
+                    if row["status"] in terminal:
+                        self._db.execute("ROLLBACK")
+                        return "run_terminal"
+                    seen = self._db.execute(
+                        "SELECT 1 FROM workflow_inbox"
+                        " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+                        (run_id, wait_key, dedupe_key),
+                    ).fetchone()
+                    if seen is not None:
+                        self._db.execute("ROLLBACK")
+                        return "duplicate"
+                    frontier = _frontier(self._load_steps(run_id))
+                    if frontier is not None and _wait_expired(frontier, now):
+                        self._db.execute("ROLLBACK")
+                        return "expired"
+                    resolves = (
+                        frontier is not None
+                        and frontier.status is StepStatus.BLOCKED
+                        and frontier.wait_key == wait_key
+                    )
                     self._db.execute(
-                        "UPDATE workflow_steps SET status = ?, due_at = ?, args = ?,"
-                        " updated_at = ? WHERE run_id = ? AND ordinal = ?",
+                        "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+                        " payload, status, created_at)"
+                        " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
+                        " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
                         (
-                            StepStatus.READY.value,
-                            now,
-                            json.dumps({**frontier.args, "__payload__": payload}),
-                            now,
                             run_id,
-                            frontier.ordinal,
+                            wait_key,
+                            dedupe_key,
+                            run_id,
+                            json.dumps(payload),
+                            "CONSUMED" if resolves else "PENDING",
+                            now,
                         ),
                     )
-                    self._append_events(
-                        run_id,
-                        (
+                    if resolves and frontier is not None:
+                        self._db.execute(
+                            "UPDATE workflow_steps SET status = ?, due_at = ?, args = ?,"
+                            " updated_at = ? WHERE run_id = ? AND ordinal = ?",
                             (
-                                HistoryEventType.WAIT_RESOLVED,
-                                {"ordinal": frontier.ordinal, "wait_key": wait_key},
+                                StepStatus.READY.value,
+                                now,
+                                json.dumps({**frontier.args, "__payload__": payload}),
+                                now,
+                                run_id,
+                                frontier.ordinal,
                             ),
-                        ),
-                        now,
-                    )
-                else:
-                    self._append_events(
-                        run_id,
-                        ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
-                        now,
-                    )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return "resolved" if resolves else "buffered"
+                        )
+                        self._append_events(
+                            run_id,
+                            (
+                                (
+                                    HistoryEventType.WAIT_RESOLVED,
+                                    {"ordinal": frontier.ordinal, "wait_key": wait_key},
+                                ),
+                            ),
+                            now,
+                        )
+                    else:
+                        self._append_events(
+                            run_id,
+                            (
+                                (
+                                    HistoryEventType.SIGNAL_BUFFERED,
+                                    {"wait_key": wait_key},
+                                ),
+                            ),
+                            now,
+                        )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return "resolved" if resolves else "buffered"
+
+        return await asyncio.to_thread(work)
 
     async def admit_children(
         self,
@@ -2478,18 +2534,23 @@ class SqliteRunStore:
             events: History events to append to the parent.
             now: Current time in epoch seconds.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                for run, root_step in runs:
-                    self._insert_run(run)
-                    self._insert_step(root_step)
-                if runs and events:
-                    self._append_events(runs[0][0].parent_run_id or "", events, now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    for run, root_step in runs:
+                        self._insert_run(run)
+                        self._insert_step(root_step)
+                    if runs and events:
+                        self._append_events(runs[0][0].parent_run_id or "", events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+
+        await asyncio.to_thread(work)
 
     async def record_arrival(
         self,
@@ -2511,84 +2572,98 @@ class SqliteRunStore:
         Returns:
             What the store did with the arrival.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        wait_key = f"join:{ordinal}"
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                run_row = self._db.execute(
-                    "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
-                ).fetchone()
-                if run_row is None:
-                    self._db.execute("ROLLBACK")
-                    return "unknown_run"
-                if run_row["status"] in terminal:
-                    self._db.execute("ROLLBACK")
-                    return "run_terminal"
-                seen = self._db.execute(
-                    "SELECT 1 FROM workflow_inbox"
-                    " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
-                    (run_id, wait_key, dedupe_key),
-                ).fetchone()
-                if seen is not None:
-                    self._db.execute("ROLLBACK")
-                    return "duplicate"
-                step_row = self._db.execute(
-                    "SELECT * FROM workflow_steps WHERE run_id = ? AND ordinal = ?",
-                    (run_id, ordinal),
-                ).fetchone()
-                if step_row is None or step_row["status"] != StepStatus.BLOCKED.value:
-                    self._db.execute("ROLLBACK")
-                    return "run_terminal"
-                step = _step_from_row(step_row)
-                self._db.execute(
-                    "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
-                    " payload, status, created_at)"
-                    " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
-                    " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
-                    (
-                        run_id,
-                        wait_key,
-                        dedupe_key,
-                        run_id,
-                        json.dumps(payload),
-                        "CONSUMED",
-                        now,
-                    ),
-                )
-                arrived = step.join_arrived + 1
-                results = [*step.args.get("__results__", []), payload]
-                done = arrived >= step.join_expected
-                self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, join_arrived = ?,"
-                    " due_at = ?, args = ?, updated_at = ?"
-                    " WHERE run_id = ? AND ordinal = ? AND join_arrived = ?",
-                    (
-                        StepStatus.READY.value if done else StepStatus.BLOCKED.value,
-                        arrived,
-                        now if done else step.due_at,
-                        json.dumps({**step.args, "__results__": results}),
-                        now,
-                        run_id,
-                        ordinal,
-                        step.join_arrived,
-                    ),
-                )
-                self._append_events(
-                    run_id,
-                    (
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            wait_key = f"join:{ordinal}"
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    run_row = self._db.execute(
+                        "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                    ).fetchone()
+                    if run_row is None:
+                        self._db.execute("ROLLBACK")
+                        return "unknown_run"
+                    if run_row["status"] in terminal:
+                        self._db.execute("ROLLBACK")
+                        return "run_terminal"
+                    seen = self._db.execute(
+                        "SELECT 1 FROM workflow_inbox"
+                        " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
+                        (run_id, wait_key, dedupe_key),
+                    ).fetchone()
+                    if seen is not None:
+                        self._db.execute("ROLLBACK")
+                        return "duplicate"
+                    step_row = self._db.execute(
+                        "SELECT * FROM workflow_steps WHERE run_id = ? AND ordinal = ?",
+                        (run_id, ordinal),
+                    ).fetchone()
+                    if (
+                        step_row is None
+                        or step_row["status"] != StepStatus.BLOCKED.value
+                    ):
+                        self._db.execute("ROLLBACK")
+                        return "run_terminal"
+                    step = _step_from_row(step_row)
+                    self._db.execute(
+                        "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+                        " payload, status, created_at)"
+                        " VALUES (?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM"
+                        " workflow_inbox WHERE run_id = ?), ?, ?, ?)",
                         (
-                            HistoryEventType.CHILD_RESOLVED,
-                            {"ordinal": ordinal, "arrived": arrived},
+                            run_id,
+                            wait_key,
+                            dedupe_key,
+                            run_id,
+                            json.dumps(payload),
+                            "CONSUMED",
+                            now,
                         ),
-                    ),
-                    now,
-                )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return "resolved" if done else "counted"
+                    )
+                    arrived = step.join_arrived + 1
+                    results = [*step.args.get("__results__", []), payload]
+                    done = arrived >= step.join_expected
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, join_arrived = ?,"
+                        " due_at = ?, args = ?, updated_at = ?"
+                        " WHERE run_id = ? AND ordinal = ? AND join_arrived = ?",
+                        (
+                            StepStatus.READY.value
+                            if done
+                            else StepStatus.BLOCKED.value,
+                            arrived,
+                            now if done else step.due_at,
+                            json.dumps({**step.args, "__results__": results}),
+                            now,
+                            run_id,
+                            ordinal,
+                            step.join_arrived,
+                        ),
+                    )
+                    self._append_events(
+                        run_id,
+                        (
+                            (
+                                HistoryEventType.CHILD_RESOLVED,
+                                {"ordinal": ordinal, "arrived": arrived},
+                            ),
+                        ),
+                        now,
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return "resolved" if done else "counted"
+
+        return await asyncio.to_thread(work)
 
     async def count_active(self, workflow_id: str, flow_key: str) -> int:
         """Count runs of a root still in flight under a flow-control key.
@@ -2600,15 +2675,24 @@ class SqliteRunStore:
         Returns:
             How many non-terminal runs share the key.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            row = self._db.execute(
-                "SELECT COUNT(*) AS n FROM workflow_runs"
-                " WHERE workflow_id = ? AND flow_key = ?"
-                f" AND status NOT IN ({','.join('?' * len(terminal))})",
-                (workflow_id, flow_key, *terminal),
-            ).fetchone()
-            return row["n"]
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT COUNT(*) AS n FROM workflow_runs"
+                    " WHERE workflow_id = ? AND flow_key = ?"
+                    f" AND status NOT IN ({','.join('?' * len(terminal))})",
+                    (workflow_id, flow_key, *terminal),
+                ).fetchone()
+                return row["n"]
+
+        return await asyncio.to_thread(work)
 
     async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
         """Find the oldest run still in flight under a flow-control key.
@@ -2620,16 +2704,25 @@ class SqliteRunStore:
         Returns:
             The run, or None when the key has no active run.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            row = self._db.execute(
-                "SELECT * FROM workflow_runs"
-                " WHERE workflow_id = ? AND flow_key = ?"
-                f" AND status NOT IN ({','.join('?' * len(terminal))})"
-                " ORDER BY created_at LIMIT 1",
-                (workflow_id, flow_key, *terminal),
-            ).fetchone()
-            return None if row is None else _run_from_row(row)
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT * FROM workflow_runs"
+                    " WHERE workflow_id = ? AND flow_key = ?"
+                    f" AND status NOT IN ({','.join('?' * len(terminal))})"
+                    " ORDER BY created_at LIMIT 1",
+                    (workflow_id, flow_key, *terminal),
+                ).fetchone()
+                return None if row is None else _run_from_row(row)
+
+        return await asyncio.to_thread(work)
 
     async def count_started_since(
         self, workflow_id: str, flow_key: str, since: float
@@ -2644,13 +2737,22 @@ class SqliteRunStore:
         Returns:
             How many runs were admitted in the window.
         """
-        with self._lock:
-            row = self._db.execute(
-                "SELECT COUNT(*) AS n FROM workflow_runs"
-                " WHERE workflow_id = ? AND flow_key = ? AND created_at > ?",
-                (workflow_id, flow_key, since),
-            ).fetchone()
-            return row["n"]
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT COUNT(*) AS n FROM workflow_runs"
+                    " WHERE workflow_id = ? AND flow_key = ? AND created_at > ?",
+                    (workflow_id, flow_key, since),
+                ).fetchone()
+                return row["n"]
+
+        return await asyncio.to_thread(work)
 
     async def nth_recent_start(
         self, workflow_id: str, flow_key: str, n: int
@@ -2674,15 +2776,24 @@ class SqliteRunStore:
         Returns:
             The scheduled start, or None when fewer than n runs exist.
         """
-        with self._lock:
-            row = self._db.execute(
-                "SELECT MAX(s.due_at, r.created_at) AS start FROM workflow_runs r"
-                " JOIN workflow_steps s ON s.run_id = r.run_id AND s.ordinal = 0"
-                " WHERE r.workflow_id = ? AND r.flow_key = ?"
-                " ORDER BY start DESC LIMIT 1 OFFSET ?",
-                (workflow_id, flow_key, n - 1),
-            ).fetchone()
-            return None if row is None else row["start"]
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT MAX(s.due_at, r.created_at) AS start FROM workflow_runs r"
+                    " JOIN workflow_steps s ON s.run_id = r.run_id AND s.ordinal = 0"
+                    " WHERE r.workflow_id = ? AND r.flow_key = ?"
+                    " ORDER BY start DESC LIMIT 1 OFFSET ?",
+                    (workflow_id, flow_key, n - 1),
+                ).fetchone()
+                return None if row is None else row["start"]
+
+        return await asyncio.to_thread(work)
 
     async def defer_root(self, run_id: str, due_at: float, now: float) -> bool:
         """Push a not-yet-started run's root slot later, for debouncing.
@@ -2695,19 +2806,28 @@ class SqliteRunStore:
         Returns:
             True when the root had not started and was deferred.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                cursor = self._db.execute(
-                    "UPDATE workflow_steps SET due_at = ?, updated_at = ?"
-                    " WHERE run_id = ? AND ordinal = 0 AND status = ?",
-                    (due_at, now, run_id, StepStatus.READY.value),
-                )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return cursor.rowcount > 0
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    cursor = self._db.execute(
+                        "UPDATE workflow_steps SET due_at = ?, updated_at = ?"
+                        " WHERE run_id = ? AND ordinal = 0 AND status = ?",
+                        (due_at, now, run_id, StepStatus.READY.value),
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return cursor.rowcount > 0
+
+        return await asyncio.to_thread(work)
 
     async def request_cancel(self, run_id: str, now: float) -> bool:
         """Record cancellation intent on a run.
@@ -2719,27 +2839,36 @@ class SqliteRunStore:
         Returns:
             True if intent was recorded on a nonterminal run.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                cursor = self._db.execute(
-                    "UPDATE workflow_runs SET cancel_requested = 1, status = ?,"
-                    " updated_at = ? WHERE run_id = ? AND status NOT IN"
-                    f" ({','.join('?' * len(terminal))})",
-                    (RunStatus.CANCELLING.value, now, run_id, *terminal),
-                )
-                if cursor.rowcount == 0:
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    cursor = self._db.execute(
+                        "UPDATE workflow_runs SET cancel_requested = 1, status = ?,"
+                        " updated_at = ? WHERE run_id = ? AND status NOT IN"
+                        f" ({','.join('?' * len(terminal))})",
+                        (RunStatus.CANCELLING.value, now, run_id, *terminal),
+                    )
+                    if cursor.rowcount == 0:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    self._append_events(
+                        run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),), now
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
                     self._db.execute("ROLLBACK")
-                    return False
-                self._append_events(
-                    run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),), now
-                )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
 
     async def control_pending(self, now: float) -> tuple[RunRecord, ...]:
         """List drained runs awaiting a control transition.
@@ -2750,17 +2879,26 @@ class SqliteRunStore:
         Returns:
             The runs awaiting finalization.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT * FROM workflow_runs r WHERE status NOT IN"
-                f" ({','.join('?' * len(terminal))})"
-                " AND (cancel_requested = 1 OR (deadline IS NOT NULL AND deadline <= ?))"
-                " AND NOT EXISTS (SELECT 1 FROM workflow_steps s"
-                " WHERE s.run_id = r.run_id AND s.status = ?)",
-                (*terminal, now, StepStatus.CLAIMED.value),
-            ).fetchall()
-            return tuple(_run_from_row(row) for row in rows)
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT * FROM workflow_runs r WHERE status NOT IN"
+                    f" ({','.join('?' * len(terminal))})"
+                    " AND (cancel_requested = 1 OR (deadline IS NOT NULL AND deadline <= ?))"
+                    " AND NOT EXISTS (SELECT 1 FROM workflow_steps s"
+                    " WHERE s.run_id = r.run_id AND s.status = ?)",
+                    (*terminal, now, StepStatus.CLAIMED.value),
+                ).fetchall()
+                return tuple(_run_from_row(row) for row in rows)
+
+        return await asyncio.to_thread(work)
 
     async def finalize_run(
         self,
@@ -2783,52 +2921,61 @@ class SqliteRunStore:
         Returns:
             True if the run was finalized.
         """
-        terminal_run = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        terminal_step = tuple(s.value for s in TERMINAL_STEP_STATUSES)
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                row = self._db.execute(
-                    "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
-                ).fetchone()
-                if row is None or row["status"] in terminal_run:
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal_run = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            terminal_step = tuple(s.value for s in TERMINAL_STEP_STATUSES)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    row = self._db.execute(
+                        "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                    ).fetchone()
+                    if row is None or row["status"] in terminal_run:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    claimed = self._db.execute(
+                        "SELECT 1 FROM workflow_steps WHERE run_id = ? AND status = ?",
+                        (run_id, StepStatus.CLAIMED.value),
+                    ).fetchone()
+                    if claimed is not None:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    open_rows = self._db.execute(
+                        "SELECT ordinal FROM workflow_steps WHERE run_id = ?"
+                        f" AND status NOT IN ({','.join('?' * len(terminal_step))})"
+                        " ORDER BY ordinal",
+                        (run_id, *terminal_step),
+                    ).fetchall()
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, updated_at = ?"
+                        f" WHERE run_id = ? AND status NOT IN"
+                        f" ({','.join('?' * len(terminal_step))})",
+                        (StepStatus.CANCELLED.value, now, run_id, *terminal_step),
+                    )
+                    self._db.execute(
+                        "UPDATE workflow_runs SET status = ?, error = ?, updated_at = ?"
+                        " WHERE run_id = ?",
+                        (status.value, _dump(error), now, run_id),
+                    )
+                    events: list[tuple[HistoryEventType, dict[str, Any]]] = [
+                        (HistoryEventType.STEP_TOMBSTONED, {"ordinal": row["ordinal"]})
+                        for row in open_rows
+                    ]
+                    events.append((event, {} if error is None else dict(error)))
+                    self._append_events(run_id, events, now)
+                    self._db.execute("COMMIT")
+                except BaseException:
                     self._db.execute("ROLLBACK")
-                    return False
-                claimed = self._db.execute(
-                    "SELECT 1 FROM workflow_steps WHERE run_id = ? AND status = ?",
-                    (run_id, StepStatus.CLAIMED.value),
-                ).fetchone()
-                if claimed is not None:
-                    self._db.execute("ROLLBACK")
-                    return False
-                open_rows = self._db.execute(
-                    "SELECT ordinal FROM workflow_steps WHERE run_id = ?"
-                    f" AND status NOT IN ({','.join('?' * len(terminal_step))})"
-                    " ORDER BY ordinal",
-                    (run_id, *terminal_step),
-                ).fetchall()
-                self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, updated_at = ?"
-                    f" WHERE run_id = ? AND status NOT IN"
-                    f" ({','.join('?' * len(terminal_step))})",
-                    (StepStatus.CANCELLED.value, now, run_id, *terminal_step),
-                )
-                self._db.execute(
-                    "UPDATE workflow_runs SET status = ?, error = ?, updated_at = ?"
-                    " WHERE run_id = ?",
-                    (status.value, _dump(error), now, run_id),
-                )
-                events: list[tuple[HistoryEventType, dict[str, Any]]] = [
-                    (HistoryEventType.STEP_TOMBSTONED, {"ordinal": row["ordinal"]})
-                    for row in open_rows
-                ]
-                events.append((event, {} if error is None else dict(error)))
-                self._append_events(run_id, events, now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
 
     async def resume_run(self, run_id: str, now: float) -> bool:
         """Re-open a suspended run so its frontier step runs again.
@@ -2840,40 +2987,51 @@ class SqliteRunStore:
         Returns:
             True if a suspended run was re-opened.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                cursor = self._db.execute(
-                    "UPDATE workflow_runs SET status = ?, error = NULL,"
-                    " updated_at = ? WHERE run_id = ? AND status = ?",
-                    (
-                        RunStatus.PENDING.value,
-                        now,
-                        run_id,
-                        RunStatus.NEEDS_ATTENTION.value,
-                    ),
-                )
-                if cursor.rowcount == 0:
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    cursor = self._db.execute(
+                        "UPDATE workflow_runs SET status = ?, error = NULL,"
+                        " updated_at = ? WHERE run_id = ? AND status = ?",
+                        (
+                            RunStatus.PENDING.value,
+                            now,
+                            run_id,
+                            RunStatus.NEEDS_ATTENTION.value,
+                        ),
+                    )
+                    if cursor.rowcount == 0:
+                        self._db.execute("ROLLBACK")
+                        return False
+                    self._db.execute(
+                        "UPDATE workflow_steps SET status = ?, attempts = 0, due_at = ?,"
+                        " lease_expires_at = 0, error = NULL, updated_at = ?"
+                        " WHERE run_id = ? AND status = ?",
+                        (
+                            StepStatus.READY.value,
+                            now,
+                            now,
+                            run_id,
+                            StepStatus.NEEDS_ATTENTION.value,
+                        ),
+                    )
+                    self._append_events(
+                        run_id, ((HistoryEventType.RUN_RESUMED, {}),), now
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
                     self._db.execute("ROLLBACK")
-                    return False
-                self._db.execute(
-                    "UPDATE workflow_steps SET status = ?, attempts = 0, due_at = ?,"
-                    " lease_expires_at = 0, error = NULL, updated_at = ?"
-                    " WHERE run_id = ? AND status = ?",
-                    (
-                        StepStatus.READY.value,
-                        now,
-                        now,
-                        run_id,
-                        StepStatus.NEEDS_ATTENTION.value,
-                    ),
-                )
-                self._append_events(run_id, ((HistoryEventType.RUN_RESUMED, {}),), now)
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
 
     async def recover_orphans(
         self, now: float, max_recoveries: int
@@ -2887,86 +3045,95 @@ class SqliteRunStore:
         Returns:
             How many steps were transitioned, and the runs failed outright.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                rows = self._db.execute(
-                    "SELECT s.* FROM workflow_steps s"
-                    " JOIN workflow_runs r ON r.run_id = s.run_id"
-                    " WHERE s.status = ? AND s.lease_expires_at <= ?"
-                    f" AND r.status NOT IN ({','.join('?' * len(terminal))})",
-                    (StepStatus.CLAIMED.value, now, *terminal),
-                ).fetchall()
-                recovered = 0
-                failed: list[str] = []
-                for row in rows:
-                    step = _step_from_row(row)
-                    recovered += 1
-                    if step.recoveries + 1 > max_recoveries:
-                        self._db.execute(
-                            "UPDATE workflow_steps SET status = ?, recoveries = ?,"
-                            " lease_expires_at = 0, error = ?, updated_at = ?"
-                            " WHERE run_id = ? AND ordinal = ?",
-                            (
-                                StepStatus.FAILED.value,
-                                step.recoveries + 1,
-                                json.dumps({"reason": "recovery_budget_exhausted"}),
-                                now,
-                                step.run_id,
-                                step.ordinal,
-                            ),
-                        )
-                        self._db.execute(
-                            "UPDATE workflow_runs SET status = ?, error = ?,"
-                            " updated_at = ? WHERE run_id = ?",
-                            (
-                                RunStatus.FAILED.value,
-                                json.dumps({"reason": "recovery_budget_exhausted"}),
-                                now,
-                                step.run_id,
-                            ),
-                        )
-                        failed.append(step.run_id)
-                        self._append_events(
-                            step.run_id,
-                            (
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    rows = self._db.execute(
+                        "SELECT s.* FROM workflow_steps s"
+                        " JOIN workflow_runs r ON r.run_id = s.run_id"
+                        " WHERE s.status = ? AND s.lease_expires_at <= ?"
+                        f" AND r.status NOT IN ({','.join('?' * len(terminal))})",
+                        (StepStatus.CLAIMED.value, now, *terminal),
+                    ).fetchall()
+                    recovered = 0
+                    failed: list[str] = []
+                    for row in rows:
+                        step = _step_from_row(row)
+                        recovered += 1
+                        if step.recoveries + 1 > max_recoveries:
+                            self._db.execute(
+                                "UPDATE workflow_steps SET status = ?, recoveries = ?,"
+                                " lease_expires_at = 0, error = ?, updated_at = ?"
+                                " WHERE run_id = ? AND ordinal = ?",
                                 (
-                                    HistoryEventType.RUN_FAILED,
-                                    {"reason": "recovery_budget_exhausted"},
+                                    StepStatus.FAILED.value,
+                                    step.recoveries + 1,
+                                    json.dumps({"reason": "recovery_budget_exhausted"}),
+                                    now,
+                                    step.run_id,
+                                    step.ordinal,
                                 ),
-                            ),
-                            now,
-                        )
-                    else:
-                        self._db.execute(
-                            "UPDATE workflow_steps SET status = ?, recoveries = ?,"
-                            " due_at = ?, lease_expires_at = 0, updated_at = ?"
-                            " WHERE run_id = ? AND ordinal = ?",
-                            (
-                                StepStatus.RECOVERY_WAIT.value,
-                                step.recoveries + 1,
-                                now,
-                                now,
-                                step.run_id,
-                                step.ordinal,
-                            ),
-                        )
-                        self._append_events(
-                            step.run_id,
-                            (
+                            )
+                            self._db.execute(
+                                "UPDATE workflow_runs SET status = ?, error = ?,"
+                                " updated_at = ? WHERE run_id = ?",
                                 (
-                                    HistoryEventType.STEP_RECOVERED,
-                                    {"ordinal": step.ordinal},
+                                    RunStatus.FAILED.value,
+                                    json.dumps({"reason": "recovery_budget_exhausted"}),
+                                    now,
+                                    step.run_id,
                                 ),
-                            ),
-                            now,
-                        )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return recovered, tuple(failed)
+                            )
+                            failed.append(step.run_id)
+                            self._append_events(
+                                step.run_id,
+                                (
+                                    (
+                                        HistoryEventType.RUN_FAILED,
+                                        {"reason": "recovery_budget_exhausted"},
+                                    ),
+                                ),
+                                now,
+                            )
+                        else:
+                            self._db.execute(
+                                "UPDATE workflow_steps SET status = ?, recoveries = ?,"
+                                " due_at = ?, lease_expires_at = 0, updated_at = ?"
+                                " WHERE run_id = ? AND ordinal = ?",
+                                (
+                                    StepStatus.RECOVERY_WAIT.value,
+                                    step.recoveries + 1,
+                                    now,
+                                    now,
+                                    step.run_id,
+                                    step.ordinal,
+                                ),
+                            )
+                            self._append_events(
+                                step.run_id,
+                                (
+                                    (
+                                        HistoryEventType.STEP_RECOVERED,
+                                        {"ordinal": step.ordinal},
+                                    ),
+                                ),
+                                now,
+                            )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return recovered, tuple(failed)
+
+        return await asyncio.to_thread(work)
 
     async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
         """List runs matching a query, newest first.
@@ -2977,34 +3144,43 @@ class SqliteRunStore:
         Returns:
             The matching run records.
         """
-        clauses: list[str] = []
-        params: list[Any] = []
-        if query.workflow_id is not None:
-            clauses.append("workflow_id = ?")
-            params.append(query.workflow_id)
-        if query.statuses:
-            placeholders = ",".join("?" * len(query.statuses))
-            clauses.append(f"status IN ({placeholders})")
-            params.extend(status.value for status in query.statuses)
-        if query.created_before is not None:
-            clauses.append("(created_at, run_id) < (?, ?)")
-            params.extend(query.created_before)
-        for key, value in (query.labels or {}).items():
-            # The key comes from user data, so it is matched as a value rather
-            # than spliced into a JSON path expression.
-            clauses.append(
-                "EXISTS (SELECT 1 FROM json_each(labels)"
-                " WHERE json_each.key = ? AND json_each.value = ?)"
-            )
-            params.extend((key, value))
-        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        with self._lock:
-            rows = self._db.execute(
-                f"SELECT * FROM workflow_runs{where}"
-                " ORDER BY created_at DESC, run_id DESC LIMIT ?",
-                (*params, query.limit),
-            ).fetchall()
-            return tuple(_run_from_row(row) for row in rows)
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            clauses: list[str] = []
+            params: list[Any] = []
+            if query.workflow_id is not None:
+                clauses.append("workflow_id = ?")
+                params.append(query.workflow_id)
+            if query.statuses:
+                placeholders = ",".join("?" * len(query.statuses))
+                clauses.append(f"status IN ({placeholders})")
+                params.extend(status.value for status in query.statuses)
+            if query.created_before is not None:
+                clauses.append("(created_at, run_id) < (?, ?)")
+                params.extend(query.created_before)
+            for key, value in (query.labels or {}).items():
+                # The key comes from user data, so it is matched as a value rather
+                # than spliced into a JSON path expression.
+                clauses.append(
+                    "EXISTS (SELECT 1 FROM json_each(labels)"
+                    " WHERE json_each.key = ? AND json_each.value = ?)"
+                )
+                params.extend((key, value))
+            where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+            with self._lock:
+                rows = self._db.execute(
+                    f"SELECT * FROM workflow_runs{where}"
+                    " ORDER BY created_at DESC, run_id DESC LIMIT ?",
+                    (*params, query.limit),
+                ).fetchall()
+                return tuple(_run_from_row(row) for row in rows)
+
+        return await asyncio.to_thread(work)
 
     async def list_children(
         self, parent_run_id: str, parent_ordinal: int
@@ -3018,13 +3194,22 @@ class SqliteRunStore:
         Returns:
             The child run records, oldest first.
         """
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT * FROM workflow_runs WHERE parent_run_id = ?"
-                " AND parent_ordinal = ? ORDER BY created_at, run_id",
-                (parent_run_id, parent_ordinal),
-            ).fetchall()
-            return tuple(_run_from_row(row) for row in rows)
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT * FROM workflow_runs WHERE parent_run_id = ?"
+                    " AND parent_ordinal = ? ORDER BY created_at, run_id",
+                    (parent_run_id, parent_ordinal),
+                ).fetchall()
+                return tuple(_run_from_row(row) for row in rows)
+
+        return await asyncio.to_thread(work)
 
     async def find_by_request_key(
         self, workflow_id: str, request_key: str
@@ -3038,13 +3223,22 @@ class SqliteRunStore:
         Returns:
             The existing run id, or None when the key is unused.
         """
-        with self._lock:
-            row = self._db.execute(
-                "SELECT run_id FROM workflow_dedupe"
-                " WHERE workflow_id = ? AND request_key = ?",
-                (workflow_id, request_key),
-            ).fetchone()
-            return None if row is None else row["run_id"]
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT run_id FROM workflow_dedupe"
+                    " WHERE workflow_id = ? AND request_key = ?",
+                    (workflow_id, request_key),
+                ).fetchone()
+                return None if row is None else row["run_id"]
+
+        return await asyncio.to_thread(work)
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         """Load one run record.
@@ -3055,11 +3249,20 @@ class SqliteRunStore:
         Returns:
             The record, or None if unknown.
         """
-        with self._lock:
-            row = self._db.execute(
-                "SELECT * FROM workflow_runs WHERE run_id = ?", (run_id,)
-            ).fetchone()
-            return None if row is None else _run_from_row(row)
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                row = self._db.execute(
+                    "SELECT * FROM workflow_runs WHERE run_id = ?", (run_id,)
+                ).fetchone()
+                return None if row is None else _run_from_row(row)
+
+        return await asyncio.to_thread(work)
 
     async def get_steps(self, run_id: str) -> tuple[StepRecord, ...]:
         """Load a run's mailbox slots in ordinal order.
@@ -3070,8 +3273,17 @@ class SqliteRunStore:
         Returns:
             The step records.
         """
-        with self._lock:
-            return tuple(self._load_steps(run_id))
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                return tuple(self._load_steps(run_id))
+
+        return await asyncio.to_thread(work)
 
     async def record_substep(
         self, run_id: str, ordinal: int, epoch: int, key: str, payload: Any, now: float
@@ -3096,43 +3308,52 @@ class SqliteRunStore:
             True when recorded (or already recorded); False when the writer
             was fenced and must stop.
         """
-        with self._lock:
-            self._db.execute("BEGIN IMMEDIATE")
-            try:
-                row = self._db.execute(
-                    "SELECT status, epoch FROM workflow_steps"
-                    " WHERE run_id = ? AND ordinal = ?",
-                    (run_id, ordinal),
-                ).fetchone()
-                if (
-                    row is None
-                    or row["status"] != StepStatus.CLAIMED.value
-                    or row["epoch"] != epoch
-                ):
-                    self._db.execute("ROLLBACK")
-                    return False
-                cursor = self._db.execute(
-                    "INSERT OR IGNORE INTO workflow_substeps"
-                    " (run_id, ordinal, key, payload, created_at)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (run_id, ordinal, key, json.dumps(payload), now),
-                )
-                if cursor.rowcount:
-                    self._append_events(
-                        run_id,
-                        (
-                            (
-                                HistoryEventType.SUBSTEP_RECORDED,
-                                {"ordinal": ordinal, "key": key},
-                            ),
-                        ),
-                        now,
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    row = self._db.execute(
+                        "SELECT status, epoch FROM workflow_steps"
+                        " WHERE run_id = ? AND ordinal = ?",
+                        (run_id, ordinal),
+                    ).fetchone()
+                    if (
+                        row is None
+                        or row["status"] != StepStatus.CLAIMED.value
+                        or row["epoch"] != epoch
+                    ):
+                        self._db.execute("ROLLBACK")
+                        return False
+                    cursor = self._db.execute(
+                        "INSERT OR IGNORE INTO workflow_substeps"
+                        " (run_id, ordinal, key, payload, created_at)"
+                        " VALUES (?, ?, ?, ?, ?)",
+                        (run_id, ordinal, key, json.dumps(payload), now),
                     )
-                self._db.execute("COMMIT")
-            except BaseException:
-                self._db.execute("ROLLBACK")
-                raise
-            return True
+                    if cursor.rowcount:
+                        self._append_events(
+                            run_id,
+                            (
+                                (
+                                    HistoryEventType.SUBSTEP_RECORDED,
+                                    {"ordinal": ordinal, "key": key},
+                                ),
+                            ),
+                            now,
+                        )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return True
+
+        return await asyncio.to_thread(work)
 
     async def get_substeps(self, run_id: str, ordinal: int) -> dict[str, Any]:
         """Load the recorded substep results of one step.
@@ -3144,13 +3365,22 @@ class SqliteRunStore:
         Returns:
             Recorded payloads by key, in recording order.
         """
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT key, payload FROM workflow_substeps"
-                " WHERE run_id = ? AND ordinal = ? ORDER BY created_at, key",
-                (run_id, ordinal),
-            ).fetchall()
-            return {row["key"]: json.loads(row["payload"]) for row in rows}
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT key, payload FROM workflow_substeps"
+                    " WHERE run_id = ? AND ordinal = ? ORDER BY created_at, key",
+                    (run_id, ordinal),
+                ).fetchall()
+                return {row["key"]: json.loads(row["payload"]) for row in rows}
+
+        return await asyncio.to_thread(work)
 
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.
@@ -3161,21 +3391,30 @@ class SqliteRunStore:
         Returns:
             The history events.
         """
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT * FROM workflow_history WHERE run_id = ? ORDER BY seq",
-                (run_id,),
-            ).fetchall()
-            return tuple(
-                HistoryEvent(
-                    run_id=row["run_id"],
-                    seq=row["seq"],
-                    type=HistoryEventType(row["type"]),
-                    at=row["at"],
-                    data=json.loads(row["data"]),
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT * FROM workflow_history WHERE run_id = ? ORDER BY seq",
+                    (run_id,),
+                ).fetchall()
+                return tuple(
+                    HistoryEvent(
+                        run_id=row["run_id"],
+                        seq=row["seq"],
+                        type=HistoryEventType(row["type"]),
+                        at=row["at"],
+                        data=json.loads(row["data"]),
+                    )
+                    for row in rows
                 )
-                for row in rows
-            )
+
+        return await asyncio.to_thread(work)
 
     async def next_due(
         self, now: float, *, queues: tuple[str, ...] | None = None
@@ -3189,25 +3428,34 @@ class SqliteRunStore:
         Returns:
             The epoch time, or None when no future work is scheduled.
         """
-        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT run_id FROM workflow_runs WHERE status NOT IN"
-                f" ({','.join('?' * len(terminal))})"
-                " AND status != ? AND cancel_requested = 0"
-                " AND (deadline IS NULL OR deadline > ?)",
-                (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
-            ).fetchall()
-            due_times = []
-            for row in rows:
-                frontier = _frontier(self._load_steps(row["run_id"]))
-                if (
-                    frontier is not None
-                    and queues is not None
-                    and frontier.queue not in queues
-                ):
-                    continue
-                wake_at = None if frontier is None else step_wake_at(frontier)
-                if wake_at is not None:
-                    due_times.append(wake_at)
-            return min(due_times) if due_times else None
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT run_id FROM workflow_runs WHERE status NOT IN"
+                    f" ({','.join('?' * len(terminal))})"
+                    " AND status != ? AND cancel_requested = 0"
+                    " AND (deadline IS NULL OR deadline > ?)",
+                    (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
+                ).fetchall()
+                due_times = []
+                for row in rows:
+                    frontier = _frontier(self._load_steps(row["run_id"]))
+                    if (
+                        frontier is not None
+                        and queues is not None
+                        and frontier.queue not in queues
+                    ):
+                        continue
+                    wake_at = None if frontier is None else step_wake_at(frontier)
+                    if wake_at is not None:
+                        due_times.append(wake_at)
+                return min(due_times) if due_times else None
+
+        return await asyncio.to_thread(work)
