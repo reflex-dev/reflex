@@ -484,6 +484,39 @@ async def check_list_runs_filters_and_orders(store: RunStore) -> None:
     assert await store.list_runs(RunQuery(workflow_id="other.flow", limit=10)) == ()
 
 
+async def check_count_runs_matches_the_listing(store: RunStore) -> None:
+    """A count answers for the same set a listing would return.
+
+    An operator view reports totals next to a page of runs. If the two read
+    the filters differently, the page and the number above it describe
+    different things, and the number is the one nobody can check.
+    """
+    await store.admit(
+        make_run("a", labels={"customer": "acme"}, created_at=NOW),
+        make_step("a"),
+        _ADMITTED,
+    )
+    await store.admit(
+        make_run(
+            "b",
+            labels={"customer": "globex"},
+            status=RunStatus.COMPLETED,
+            created_at=NOW + 1,
+        ),
+        make_step("b"),
+        _ADMITTED,
+    )
+    assert await store.count_runs(RunQuery()) == 2
+    assert await store.count_runs(RunQuery(statuses=(RunStatus.COMPLETED,))) == 1
+    assert await store.count_runs(RunQuery(labels={"customer": "acme"})) == 1
+    assert await store.count_runs(RunQuery(workflow_id="other.flow")) == 0
+    # Paging bounds a listing; it must not bound an aggregate.
+    assert await store.count_runs(RunQuery(limit=1)) == 2
+    assert await store.count_runs(RunQuery(created_before=(NOW + 1, "b"))) == 2, (
+        "a cursor pages a listing and says nothing about how many exist"
+    )
+
+
 async def check_flow_control_queries(store: RunStore) -> None:
     """Start policies can see what is active and what started recently."""
     await store.admit(
@@ -1100,6 +1133,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_finalize_tombstones_open_slots,
     check_resume_only_reopens_a_suspended_run,
     check_list_runs_filters_and_orders,
+    check_count_runs_matches_the_listing,
     check_pagination_skips_nothing_on_tied_timestamps,
     check_label_filter_handles_awkward_keys,
     check_flow_control_queries,

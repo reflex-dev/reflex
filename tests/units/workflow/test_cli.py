@@ -178,3 +178,40 @@ def test_resume_reopens_only_suspended_runs(seeded):
     run = _load_run(database, suspended)
     assert run is not None
     assert run.status is RunStatus.PENDING
+
+
+def test_stats_counts_runs_by_status(seeded):
+    """The health screen: how many runs exist, and how many are still open."""
+    database, _, _ = seeded
+    result = _invoke("stats", "-d", database)
+    assert result.exit_code == 0, result.output
+    assert RunStatus.WAITING.value in result.output
+    assert "open" in result.output
+
+
+def test_stats_json_is_scrapeable(seeded):
+    """An alert on runs needing attention must not read the database."""
+    database, _, _ = seeded
+    result = _invoke("stats", "-d", database, "--json")
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["total"] == sum(payload["by_status"].values())
+    assert payload["open"] == payload["total"], "neither seeded run is terminal"
+    assert payload["needs_attention"] == payload["by_status"].get(
+        RunStatus.NEEDS_ATTENTION.value, 0
+    )
+    assert payload["needs_attention"] == 1, "the suspended run is the one to page on"
+
+
+def test_stats_filters_to_one_workflow(seeded):
+    """A shared store holds every workflow; an owner asks about theirs."""
+    database, _, _ = seeded
+    result = _invoke("stats", "-d", database, "-w", "nope.nothing", "--json")
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {
+        "workflow": "nope.nothing",
+        "total": 0,
+        "open": 0,
+        "needs_attention": 0,
+        "by_status": {},
+    }

@@ -535,6 +535,22 @@ class RunStore(Protocol):
         """
         ...
 
+    async def count_runs(self, query: RunQuery) -> int:
+        """Count runs matching a query.
+
+        The count ignores ``limit`` and ``created_before``: those page a
+        listing, and an aggregate is not a page. Everything else filters as
+        it does for ``list_runs``, so a count and a listing always describe
+        the same set.
+
+        Args:
+            query: The filters to apply.
+
+        Returns:
+            How many runs match.
+        """
+        ...
+
     async def list_children(
         self, parent_run_id: str, parent_ordinal: int
     ) -> tuple[RunRecord, ...]:
@@ -1742,6 +1758,24 @@ class MemoryRunStore:
             matched.sort(key=lambda run: (run.created_at, run.run_id), reverse=True)
             return tuple(_detach_run(run) for run in matched[: query.limit])
 
+    async def count_runs(self, query: RunQuery) -> int:
+        """Count runs matching a query.
+
+        The count ignores ``limit`` and ``created_before``: those page a
+        listing, and an aggregate is not a page. Everything else filters as
+        it does for ``list_runs``, so a count and a listing always describe
+        the same set.
+
+        Args:
+            query: The filters to apply.
+
+        Returns:
+            How many runs match.
+        """
+        counted = dataclasses.replace(query, created_before=None)
+        async with self._lock:
+            return sum(1 for run in self._runs.values() if _matches_query(run, counted))
+
     async def list_children(
         self, parent_run_id: str, parent_ordinal: int
     ) -> tuple[RunRecord, ...]:
@@ -2163,6 +2197,42 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
+
+
+def _sqlite_run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
+    """Build the WHERE clause a run query means, for SQLite.
+
+    Shared by listing and counting so the two can never disagree about what
+    matches.
+
+    Args:
+        query: The filters to apply; ``limit`` is not one of them.
+
+    Returns:
+        The clause (empty when nothing filters) and its parameters.
+    """
+    clauses: list[str] = []
+    params: list[Any] = []
+    if query.workflow_id is not None:
+        clauses.append("workflow_id = ?")
+        params.append(query.workflow_id)
+    if query.statuses:
+        placeholders = ",".join("?" * len(query.statuses))
+        clauses.append(f"status IN ({placeholders})")
+        params.extend(status.value for status in query.statuses)
+    if query.created_before is not None:
+        clauses.append("(created_at, run_id) < (?, ?)")
+        params.extend(query.created_before)
+    for key, value in (query.labels or {}).items():
+        # The key comes from user data, so it is matched as a value rather
+        # than spliced into a JSON path expression.
+        clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(labels)"
+            " WHERE json_each.key = ? AND json_each.value = ?)"
+        )
+        params.extend((key, value))
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    return where, tuple(params)
 
 
 class SqliteRunStore:
@@ -3741,27 +3811,7 @@ class SqliteRunStore:
             Returns:
                 The operation's result.
             """
-            clauses: list[str] = []
-            params: list[Any] = []
-            if query.workflow_id is not None:
-                clauses.append("workflow_id = ?")
-                params.append(query.workflow_id)
-            if query.statuses:
-                placeholders = ",".join("?" * len(query.statuses))
-                clauses.append(f"status IN ({placeholders})")
-                params.extend(status.value for status in query.statuses)
-            if query.created_before is not None:
-                clauses.append("(created_at, run_id) < (?, ?)")
-                params.extend(query.created_before)
-            for key, value in (query.labels or {}).items():
-                # The key comes from user data, so it is matched as a value rather
-                # than spliced into a JSON path expression.
-                clauses.append(
-                    "EXISTS (SELECT 1 FROM json_each(labels)"
-                    " WHERE json_each.key = ? AND json_each.value = ?)"
-                )
-                params.extend((key, value))
-            where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+            where, params = _sqlite_run_filters(query)
             with self._lock:
                 rows = self._db.execute(
                     f"SELECT * FROM workflow_runs{where}"
@@ -3769,6 +3819,38 @@ class SqliteRunStore:
                     (*params, query.limit),
                 ).fetchall()
                 return tuple(_run_from_row(row) for row in rows)
+
+        return await asyncio.to_thread(work)
+
+    async def count_runs(self, query: RunQuery) -> int:
+        """Count runs matching a query.
+
+        The count ignores ``limit`` and ``created_before``: those page a
+        listing, and an aggregate is not a page. Everything else filters as
+        it does for ``list_runs``, so a count and a listing always describe
+        the same set.
+
+        Args:
+            query: The filters to apply.
+
+        Returns:
+            How many runs match.
+        """
+
+        def work():
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            where, params = _sqlite_run_filters(
+                dataclasses.replace(query, created_before=None)
+            )
+            with self._lock:
+                row = self._db.execute(
+                    f"SELECT count(*) AS n FROM workflow_runs{where}", params
+                ).fetchone()
+                return int(row["n"])
 
         return await asyncio.to_thread(work)
 

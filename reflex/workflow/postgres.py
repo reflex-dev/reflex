@@ -267,6 +267,38 @@ def _step_from_row(row: Mapping[str, Any]) -> StepRecord:
     )
 
 
+def _run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
+    """Build the WHERE clause a run query means.
+
+    Shared by listing and counting so the two can never disagree about what
+    matches.
+
+    Args:
+        query: The filters to apply; ``limit`` is not one of them.
+
+    Returns:
+        The clause (empty when nothing filters) and its parameters.
+    """
+    clauses: list[str] = []
+    params: list[Any] = []
+    if query.workflow_id is not None:
+        clauses.append("workflow_id = %s")
+        params.append(query.workflow_id)
+    if query.statuses:
+        clauses.append("status = ANY(%s)")
+        params.append([status.value for status in query.statuses])
+    if query.created_before is not None:
+        clauses.append("(created_at, run_id) < (%s, %s)")
+        params.extend(query.created_before)
+    if query.labels:
+        # Containment matches the whole filter at once, and takes user keys
+        # as data rather than splicing them into a path expression.
+        clauses.append("labels @> %s")
+        params.append(_json(dict(query.labels)))
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    return where, tuple(params)
+
+
 class PostgresRunStore:
     """Run store backed by PostgreSQL, safe for many concurrent workers."""
 
@@ -1665,23 +1697,7 @@ class PostgresRunStore:
         Returns:
             The matching run records.
         """
-        clauses: list[str] = []
-        params: list[Any] = []
-        if query.workflow_id is not None:
-            clauses.append("workflow_id = %s")
-            params.append(query.workflow_id)
-        if query.statuses:
-            clauses.append("status = ANY(%s)")
-            params.append([status.value for status in query.statuses])
-        if query.created_before is not None:
-            clauses.append("(created_at, run_id) < (%s, %s)")
-            params.extend(query.created_before)
-        if query.labels:
-            # Containment matches the whole filter at once, and takes user keys
-            # as data rather than splicing them into a path expression.
-            clauses.append("labels @> %s")
-            params.append(_json(dict(query.labels)))
-        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        where, params = _run_filters(query)
         pool = await self._open()
         async with pool.connection() as conn:
             cursor = await conn.execute(
@@ -1690,6 +1706,29 @@ class PostgresRunStore:
                 (*params, query.limit),
             )
             return tuple(_run_from_row(row) for row in await cursor.fetchall())
+
+    async def count_runs(self, query: RunQuery) -> int:
+        """Count runs matching a query.
+
+        The count ignores ``limit`` and ``created_before``: those page a
+        listing, and an aggregate is not a page. Everything else filters as
+        it does for ``list_runs``, so a count and a listing always describe
+        the same set.
+
+        Args:
+            query: The filters to apply.
+
+        Returns:
+            How many runs match.
+        """
+        where, params = _run_filters(dataclasses.replace(query, created_before=None))
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                f"SELECT count(*) AS n FROM workflow_runs{where}", tuple(params)
+            )
+            row = await cursor.fetchone()
+            return 0 if row is None else int(row["n"])
 
     async def list_children(
         self, parent_run_id: str, parent_ordinal: int

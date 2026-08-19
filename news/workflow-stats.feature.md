@@ -1,0 +1,1 @@
+`reflex workflows stats` counts runs by status, with `--json` for whatever collects metrics, so "how many runs are open" and "how many need a person" are answerable — and alertable — without reading the workflow database. Stores gained a `count_runs()` query, covered by the shared conformance suite so a count and a listing always describe the same set.

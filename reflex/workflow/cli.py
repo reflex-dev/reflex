@@ -816,6 +816,82 @@ def worker(
         console.print("Worker stopped.")
 
 
+@workflows.command()
+@database_option
+@click.option("--workflow", "-w", default=None, help="Only this workflow id.")
+@click.option("--label", "-l", "labels", multiple=True, help="Filter as key=value.")
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON instead of a table.")
+def stats(
+    database: str | None,
+    workflow: str | None,
+    labels: tuple[str, ...],
+    as_json: bool,
+):
+    """Count runs by status: is this deployment healthy, in one screen.
+
+    The two numbers that matter are how many runs are still open and how many
+    stopped needing a person. Everything else is context. --json makes this a
+    scrape for whatever collects metrics, so an alert on "runs needing
+    attention" does not require reading the workflow database.
+    """
+    from reflex.workflow.records import TERMINAL_RUN_STATUSES, RunQuery
+
+    label_filter = dict(pair.split("=", 1) for pair in labels if "=" in pair)
+
+    async def counts(store: RunStore) -> dict[str, int]:
+        """Count runs per status.
+
+        Args:
+            store: The open store.
+
+        Returns:
+            The count for each status that has any runs.
+        """
+        found: dict[str, int] = {}
+        for status in RunStatus:
+            query = RunQuery(
+                workflow_id=workflow,
+                statuses=(status,),
+                labels=label_filter or None,
+            )
+            total = await store.count_runs(query)
+            if total:
+                found[status.value] = total
+        return found
+
+    found = _with_store(database, counts)
+    total = sum(found.values())
+    open_runs = sum(
+        count
+        for status, count in found.items()
+        if RunStatus(status) not in TERMINAL_RUN_STATUSES
+    )
+    attention = found.get(RunStatus.NEEDS_ATTENTION.value, 0)
+
+    if as_json:
+        click.echo(
+            json.dumps({
+                "workflow": workflow,
+                "total": total,
+                "open": open_runs,
+                "needs_attention": attention,
+                "by_status": found,
+            })
+        )
+        return
+
+    if not total:
+        console.print("No runs yet.")
+        return
+    click.echo(f"{'STATUS':<20}{'RUNS':>8}")
+    for status in RunStatus:
+        count = found.get(status.value)
+        if count:
+            click.echo(f"{status.value:<20}{count:>8}")
+    console.print("")
+    console.print(f"{total} run(s); {open_runs} open, {attention} needing attention.")
+
+
 @workflows.command("list")
 @database_option
 @click.option("--workflow", "-w", default=None, help="Only this workflow id.")
