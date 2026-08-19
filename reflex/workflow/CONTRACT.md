@@ -47,8 +47,10 @@ insert commit or roll back together. Two processes admitting concurrently
 under a limit of one therefore cannot both pass: nothing about policy
 enforcement assumes the admitters share a process. Concretely:
 
-- `Singleton(mode="skip")`: at most one active run per key, at every instant,
-  from any number of processes; the loser is told which run holds the key.
+- `Singleton(mode="skip")`: at most one *admitted* active run per key, at
+  every instant, from any number of processes; the loser is told which run
+  holds the key. Operator retry/skip may re-open a failed run alongside a
+  later admission — a human override, stated in §9.
 - `Singleton(mode="cancel")`: the replacement is admitted and every
   incumbent's cancellation intent is recorded in one transaction, so at most
   one *non-cancelling* run exists per key at every instant. Incumbents drain
@@ -355,3 +357,10 @@ no-op with a reason.
 All of these are store transactions under the same atomicity rules as §1, and
 every one of them is reachable without writing Python: `reflex workflows
 cancel | resume | retry | skip | complete | fail <run>`.
+
+Operator actions deliberately do not re-check start policies. Retrying a
+failed `Singleton` run while its replacement is already active puts two runs
+on one key — the singleton promise in §1 governs *admissions*, and an
+operator re-opening a run is a human override, not an admission. The operator
+can see what holds the key (`reflex workflows list -w <workflow>`) and decide;
+the engine does not silently refuse a repair because a policy would have.
