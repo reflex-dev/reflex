@@ -267,6 +267,24 @@ outcome.
 | store unreachable at commit | attempt abandoned (fence unverifiable); step recovered later; `rx.step` records already made stand |
 | everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule, remainder skipped with a history record |
 
+### Failures that are not crashes
+
+Nothing was killed; the engine refused to proceed. Each has one outcome and
+one stable `reason` on the run, so an operator (or an alert) matches on the
+reason rather than on message text.
+
+| what happened | `reason` | outcome |
+|---|---|---|
+| the run's workflow class is not registered in this process | `unknown_workflow` | step and run `NEEDS_ATTENTION`; re-register and `resume(run)`. Not a failure: a worker that does not serve a workflow must not decide that workflow's fate |
+| the next step's handler no longer exists | `unknown_handler` | step and run `NEEDS_ATTENTION`; restore the handler and `resume(run)`, or cancel |
+| a recorded payload carries arguments the handler no longer accepts | `incompatible_payload` | step and run `NEEDS_ATTENTION`, naming the arguments; restore the parameters or cancel |
+| a run allocated more steps than `WorkflowConfig.max_steps` | `max_steps_exceeded` | the committing step succeeds, every other open slot is tombstoned, run `FAILED`. The bound is on a runaway loop, so it fails rather than suspending for a person to approve more of the same |
+| a step's lease lapsed more times than `max_recoveries` | `recovery_budget_exhausted` | run `FAILED`. Infrastructure recoveries are free of the retry budget precisely so they can be bounded separately; the bound is what stops a poison step cycling forever |
+| an error's `details` cannot be serialized | — | the reason is preserved and the details are replaced by `{"unserializable": repr(...)}`. Losing the payload never turns a failure into a crash |
+
+Nothing on this table is silent: each writes its reason to the run's error and
+its own history event.
+
 ## 9. Operator actions
 
 Every action is legal only from the states listed; anything else is a refused
