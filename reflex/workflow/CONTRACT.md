@@ -147,9 +147,20 @@ Consequences, stated plainly:
   forever only on a child that is still genuinely running.
 - `rx.parallel(..., mode="first")`: the join resolves on the first arrival;
   the engine then requests cancellation of the losing branches. That request
-  is best-effort follow-up, not part of the winning transaction: if the
-  process dies first, losers run to completion and their arrivals are
-  refused as late (`counted`/`duplicate`/terminal), which is harmless.
+  is best-effort follow-up, not part of the winning transaction, and it is
+  sent by the one worker that saw the winner arrive. Three consequences,
+  stated plainly because only the first is obvious:
+  - If that worker dies before sending it, the losers run to completion.
+  - A loser already executing on another worker receives the intent but is
+    not fenced at commit, so it finishes its attempt.
+  - **A loser that runs on therefore performs its side effects.** Its arrival
+    is refused as late (`counted`/`duplicate`/terminal), so the parent's
+    result is unaffected — that part is harmless — but the charge, the email,
+    the provisioning call already happened. A branch that moves money or is
+    otherwise not safe to run twice must use `rx.step` with a provider
+    idempotency key, exactly as a retried step must; losing a race is not a
+    guarantee of not having acted. Racing branches whose effects cannot be
+    made idempotent is the wrong shape for `mode="first"`.
 - Child runs are ordinary runs; cancelling the parent does not implicitly
   cancel children (fan-out is delegation, not ownership). A cancelled
   parent's join tombstones; late child arrivals are refused.
