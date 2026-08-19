@@ -302,6 +302,9 @@ class RedisTokenManager(LocalTokenManager):
 
         Returns:
             New token if duplicate detected and new token generated, None otherwise.
+
+        Raises:
+            RuntimeError: If Redis keeps reporting the token as already claimed.
         """
         # Fast local check first (handles reconnections)
         if (
@@ -315,6 +318,7 @@ class RedisTokenManager(LocalTokenManager):
         socket_record = SocketRecord(instance_id=self.instance_id, sid=sid)
         socket_record_data = pickle.dumps(socket_record)
         new_token = None
+        claimed = False
 
         try:
             for _ in range(3):
@@ -324,16 +328,18 @@ class RedisTokenManager(LocalTokenManager):
                     ex=self.token_expiration,
                     nx=True,
                 ):
+                    claimed = True
                     break
                 token = new_token = _get_new_token()
-            else:
-                console.error("Redis failed to claim a unique token after 3 attempts")
-                fallback_token = await super().link_token_to_sid(token, sid)
-                return fallback_token or new_token
         except Exception as e:
             logger.error(f"Redis error claiming token: {e}")
             fallback_token = await super().link_token_to_sid(token, sid)
             return fallback_token or new_token
+
+        if not claimed:
+            msg = "Redis failed to claim a unique token after 3 attempts"
+            logger.error(msg)
+            raise RuntimeError(msg)
 
         # Store in local dicts
         self.token_to_socket[token] = socket_record

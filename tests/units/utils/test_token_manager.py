@@ -389,7 +389,7 @@ class TestRedisTokenManager:
         assert manager.sid_to_token[sid] == token
 
     async def test_link_token_to_sid_claims_token_atomically(self, mock_redis):
-        """Test concurrent managers cannot both claim the same token.
+        """Test SET NX lets only the first caller keep the original token.
 
         Args:
             mock_redis: Mock Redis client fixture.
@@ -421,7 +421,7 @@ class TestRedisTokenManager:
         assert len(claimed_tokens) == 2
 
     async def test_link_token_to_sid_limits_claim_attempts(self, manager, mock_redis):
-        """Test persistent failed claims fall back to local token storage.
+        """Test persistent NX misses fail the claim instead of using a local token.
 
         Args:
             manager: RedisTokenManager fixture instance.
@@ -429,11 +429,12 @@ class TestRedisTokenManager:
         """
         mock_redis.set.return_value = False
 
-        result = await manager.link_token_to_sid("token1", "sid1")
+        with pytest.raises(RuntimeError, match="failed to claim a unique token"):
+            await manager.link_token_to_sid("token1", "sid1")
 
         assert mock_redis.set.await_count == 3
-        assert result is not None
-        assert manager.sid_to_token["sid1"] == result
+        assert "sid1" not in manager.sid_to_token
+        assert "token1" not in manager.token_to_socket
 
     async def test_disconnect_token_owned_locally(self, manager, mock_redis):
         """Test disconnect cleans up both Redis and local mappings when owned locally.
