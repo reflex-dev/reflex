@@ -215,3 +215,40 @@ def test_stats_filters_to_one_workflow(seeded):
         "needs_attention": 0,
         "by_status": {},
     }
+
+
+def test_complete_ends_a_stuck_run_by_operator_decision(seeded):
+    """A wait nobody will answer is closed from the CLI, not the database."""
+    database, waiting, _ = seeded
+    result = _invoke("complete", "-d", database, waiting, "--result", '{"ok": true}')
+    assert result.exit_code == 0, result.output
+    shown = _invoke("show", "-d", database, waiting, "--json")
+    payload = json.loads(shown.output)
+    assert payload["status"] == RunStatus.COMPLETED.value
+    assert payload["result"] == {"ok": True}
+
+
+def test_fail_records_the_operator_s_reason(seeded):
+    """A run given up on says why, so history is not a silent failure."""
+    database, waiting, _ = seeded
+    result = _invoke("fail", "-d", database, waiting, "--reason", "provider retired")
+    assert result.exit_code == 0, result.output
+    payload = json.loads(_invoke("show", "-d", database, waiting, "--json").output)
+    assert payload["status"] == RunStatus.FAILED.value
+    assert "provider retired" in json.dumps(payload["error"])
+
+
+def test_finalizing_an_unknown_run_fails(seeded):
+    """Nothing to finalize is an error, not a silent success."""
+    database, _, _ = seeded
+    result = _invoke("complete", "-d", database, "no-such-run")
+    assert result.exit_code == 1
+    assert "unknown" in result.output
+
+
+def test_complete_refuses_a_result_that_is_not_json(seeded):
+    """A typo in --result must not be recorded as the string the operator typed."""
+    database, waiting, _ = seeded
+    result = _invoke("complete", "-d", database, waiting, "--result", "{oops")
+    assert result.exit_code == 1
+    assert "not JSON" in result.output

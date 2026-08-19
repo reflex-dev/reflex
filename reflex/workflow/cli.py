@@ -1192,6 +1192,85 @@ def skip(database: str | None, run_id: str):
     _operator_action(database, run_id, "skip_step")
 
 
+def _finalize(
+    database: str | None,
+    run_id: str,
+    status: RunStatus,
+    *,
+    result: Any = None,
+    error: dict[str, Any] | None = None,
+):
+    """End a run by operator decision.
+
+    Goes through the kernel rather than the store because finalizing a child
+    run has to deliver its arrival to the parent's join slot in the same
+    transaction -- otherwise a parent waits forever on a child an operator
+    already closed. No worker is started, so nothing executes here.
+
+    Args:
+        database: Connection URL or SQLite path, or None for the default.
+        run_id: The run to finalize.
+        status: The terminal status to record.
+        result: Result to record when completing.
+        error: Error payload to record when failing.
+
+    Raises:
+        Exit: When the run is unknown, already finished, or has a claimed step.
+    """
+    from reflex.workflow.kernel import WorkflowKernel
+
+    finalized = _with_store(
+        database,
+        lambda store: WorkflowKernel([], store).force_finalize(
+            run_id, status=status, result=result, error=error
+        ),
+    )
+    if not finalized:
+        console.error(
+            f"Run {run_id!r} is unknown, already finished, or has a step a "
+            "worker still holds. Cancel it first if a worker is on it."
+        )
+        raise click.exceptions.Exit(1)
+    console.print(f"Run {run_id} recorded as {status.value} by operator decision.")
+
+
+@workflows.command()
+@database_option
+@click.argument("run_id")
+@click.option(
+    "--result", "result_json", default=None, help="Result to record, as JSON."
+)
+def complete(database: str | None, run_id: str, result_json: str | None):
+    """End a run as completed by operator decision.
+
+    For a run no code path will finish: a wait nobody will answer, a branch
+    whose provider is gone. Refused while a worker holds a step -- cancel
+    first. If the run is a child, its parent hears about it in the same
+    transaction.
+    """
+    result = None
+    if result_json is not None:
+        try:
+            result = json.loads(result_json)
+        except json.JSONDecodeError as err:
+            console.error(f"--result is not JSON: {err}")
+            raise click.exceptions.Exit(1) from None
+    _finalize(database, run_id, RunStatus.COMPLETED, result=result)
+
+
+@workflows.command()
+@database_option
+@click.argument("run_id")
+@click.option("--reason", required=True, help="Why the run is being given up on.")
+def fail(database: str | None, run_id: str, reason: str):
+    """End a run as failed by operator decision.
+
+    The reason is recorded on the run, so the history says a person decided
+    this rather than leaving a failure with no explanation.
+    """
+    _finalize(database, run_id, RunStatus.FAILED, error={"reason": reason})
+
+
 @workflows.command()
 @database_option
 @click.argument("run_id")

@@ -280,4 +280,6 @@ no-op with a reason.
   while a step is claimed, so it never races a working attempt — cancel
   first if a worker still holds one.
 
-All of these are store transactions under the same atomicity rules as §1.
+All of these are store transactions under the same atomicity rules as §1, and
+every one of them is reachable without writing Python: `reflex workflows
+cancel | resume | retry | skip | complete | fail <run>`.
