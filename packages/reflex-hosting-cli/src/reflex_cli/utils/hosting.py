@@ -6,6 +6,7 @@ import contextlib
 import dataclasses
 import importlib.metadata
 import json
+import logging
 import platform
 import re
 import subprocess
@@ -21,6 +22,7 @@ from typing import Any, TypedDict
 from urllib.parse import urljoin
 
 import click
+from reflex_base.utils import log
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
@@ -35,6 +37,8 @@ from reflex_cli.utils.exceptions import (
     TokenAccessDeniedError,
     TokenValidationError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ScaleType(str, Enum):
@@ -188,7 +192,7 @@ class ScaleParams:
             )
 
         if scale_type is not None and cli_args.is_valid:
-            console.warn(
+            logger.warning(
                 "using --scale-type with --regions or --vmtype will have no effect"
             )
 
@@ -297,7 +301,7 @@ def get_authenticated_client(
     """
     env_token = get_existing_access_token() if not token else ""
     if not token and not env_token and not interactive:
-        console.error("Token is required for non-interactive mode.")
+        logger.error("Token is required for non-interactive mode.")
         raise click.exceptions.Exit(1)
 
     client = get_authentication_client(token)
@@ -354,21 +358,21 @@ def get_existing_access_token() -> str:
     """
     import os
 
-    console.debug("Fetching token from existing config...")
+    logger.debug("Fetching token from existing config...")
     access_token = ""
     try:
         with constants.Hosting.HOSTING_JSON.open() as config_file:
             hosting_config = json.load(config_file)
             access_token = hosting_config.get("access_token", "")
     except Exception as ex:
-        console.debug(
+        logger.debug(
             f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
 
     if not access_token:
         access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
         if access_token:
-            console.debug("Using REFLEX_ACCESS_TOKEN from environment")
+            logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
 
     return access_token
 
@@ -445,20 +449,20 @@ def validate_token(token: str) -> dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except httpx.RequestError as re:
-        console.debug(
+        logger.debug(
             f"Request to auth server failed due to {re} (request id: {request_id})"
         )
         raise TokenValidationError(str(re), request_id=request_id) from re
     except httpx.HTTPError as ex:
-        console.debug(
+        logger.debug(
             f"Unable to validate the token due to: {ex} (request id: {request_id})"
         )
         raise TokenValidationError("server error", request_id=request_id) from ex
     except ValueError as ve:
-        console.debug(f"Access denied (request id: {request_id})")
+        logger.debug(f"Access denied (request id: {request_id})")
         raise TokenAccessDeniedError("access denied", request_id=request_id) from ve
     except Exception as ex:
-        console.debug(f"Unexpected error: {ex} (request id: {request_id})")
+        logger.debug(f"Unexpected error: {ex} (request id: {request_id})")
         raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
@@ -473,7 +477,7 @@ def delete_token_from_config():
                 json.dump(hosting_config, config_file)
         except Exception as ex:
             # Best efforts removing invalid token is OK
-            console.debug(
+            logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
     # Delete the previous hosting service data if present.
@@ -502,7 +506,7 @@ def save_token_to_config(token: str):
         with constants.Hosting.HOSTING_JSON.open("w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
-        console.warn(
+        logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
 
@@ -556,7 +560,7 @@ def requires_access_token() -> str:
 
     access_token = get_existing_access_token()
     if not access_token:
-        console.debug("No access token found from the existing config.")
+        logger.debug("No access token found from the existing config.")
 
     return access_token
 
@@ -628,7 +632,7 @@ def interactive_resolve_project_or_app_name_conflicts(
         The selected item as a dictionary
 
     """
-    console.warn(conflict_warn_msg)
+    logger.warning(conflict_warn_msg)
     console.print_table(rows, headers=list(headers))
     option = console.ask(
         conflict_ask_msg,
@@ -684,7 +688,7 @@ def search_app(
     apps = response.json()
 
     if len(apps) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple apps with the name {app_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
@@ -747,7 +751,7 @@ def search_project(
     projects = response.json()
 
     if len(projects) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple projects with the name {project_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
@@ -847,7 +851,7 @@ def create_app(
         timeout=constants.Hosting.TIMEOUT,
     )
     if response.status_code == HTTPStatus.FORBIDDEN:
-        console.debug(f"Server responded with 403: {response.text}")
+        logger.debug(f"Server responded with 403: {response.text}")
         raise ValueError(f"{response.text}")
     response.raise_for_status()
     response_json = response.json()
@@ -984,7 +988,7 @@ def gcp_deploy_available(client: AuthenticatedClient) -> dict | None:
     try:
         status = get_gcp_provider_status(org_id, client)
     except Exception as ex:
-        console.debug(f"Unable to determine GCP availability: {ex}")
+        logger.debug(f"Unable to determine GCP availability: {ex}")
         return None
     if status.get("configured") and status.get("allowed"):
         return status
@@ -1557,10 +1561,10 @@ def create_project(name: str, client: AuthenticatedClient) -> dict:
     )
     response_json = response.json()
     if response.status_code == HTTPStatus.BAD_REQUEST:
-        console.debug(f"Server responded with 400: {response_json.get('detail')}")
+        logger.debug(f"Server responded with 400: {response_json.get('detail')}")
         raise ValueError(f"{response_json.get('detail', 'bad request')}")
     if response.status_code == HTTPStatus.CONFLICT:
-        console.debug(f"Duplicate project name: {response_json.get('detail')}")
+        logger.debug(f"Duplicate project name: {response_json.get('detail')}")
         raise ValueError(
             f"A project named '{name}' already exists. Please use a different name."
         )
@@ -1618,7 +1622,7 @@ def get_selected_project() -> str | None:
             hosting_config = json.load(config_file)
             return normalize_project_id(hosting_config.get("project"))
     except Exception as ex:
-        console.debug(
+        logger.debug(
             f"Unable to read selected project from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
     return None
@@ -2186,7 +2190,7 @@ def delete_app(app_id: str, client: AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
     app = get_app(app_id=app_id, client=client)
     if not app:
-        console.warn("no app with given id found")
+        logger.warning("no app with given id found")
         return None
     response = httpx.delete(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app['id']}/delete"),
@@ -2233,10 +2237,10 @@ def get_app_logs(
     try:
         app = get_app(app_id=app_id, client=client)
     except GetAppError:
-        console.warn(f"No application found with ID '{app_id}'")
+        logger.warning(f"No application found with ID '{app_id}'")
         return None
     if not app:
-        console.warn("no app with given id found")
+        logger.warning("no app with given id found")
         return None
     params: dict[str, str | int | None] = (
         {"offset": offset} if offset else {"start": start, "end": end}
@@ -2512,31 +2516,32 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 deployment_id=deployment_id, token=client.token
             )
             if "completed successfully" in status:
-                console.success(status)
+                logger.log(log.SUCCESS, status)
                 break
             if "AwaitingApproval" in status:
-                console.success(
-                    "build submitted for approval; it will deploy automatically once an approver approves it."
+                logger.log(
+                    log.SUCCESS,
+                    "build submitted for approval; it will deploy automatically once an approver approves it.",
                 )
                 break
             if "build error" in status:
-                console.warn(status)
-                console.warn(
+                logger.warning(status)
+                logger.warning(
                     f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
                 )
                 return False
             if "unable to find status for given id" in status:
-                console.error(status)
+                logger.error(status)
                 return False
             if "error" in status:
-                console.warn(status)
+                logger.warning(status)
                 return False
             if "bad response" in status:
-                console.warn(status)
+                logger.warning(status)
                 return True
             if status != current_status:
                 current_status = status
-                console.info(status)
+                logger.info(status)
             time.sleep(0.5)
     return True
 
@@ -2610,15 +2615,15 @@ def fetch_token(request_id: str) -> str:
         project_id = resp_json.get("user_id", "")
         select_project(project=project_id)
     except httpx.RequestError as re:
-        console.debug(f"Unable to fetch token due to request error: {re}")
+        logger.debug(f"Unable to fetch token due to request error: {re}")
     except httpx.HTTPError as he:
-        console.debug(f"Unable to fetch token due to {he}")
+        logger.debug(f"Unable to fetch token due to {he}")
     except json.JSONDecodeError as jde:
-        console.debug(f"Server did not respond with valid json: {jde}")
+        logger.debug(f"Server did not respond with valid json: {jde}")
     except KeyError as ke:
-        console.debug(f"Server response format unexpected: {ke}")
+        logger.debug(f"Server response format unexpected: {ke}")
     except Exception as ex:
-        console.debug(f"Unexpected errors: {ex}")
+        logger.debug(f"Unexpected errors: {ex}")
 
     return token
 
@@ -2639,7 +2644,7 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
     )
 
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
-        console.error(
+        logger.error(
             f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
         )
         raise click.exceptions.Exit(1)
@@ -2651,7 +2656,7 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
     )
 
     if not webbrowser.open(auth_url):
-        console.warn(
+        logger.warning(
             f"Unable to automatically open the browser. Please go to {auth_url} to authenticate."
         )
     validated_info = {}
@@ -2699,11 +2704,11 @@ def validate_token_with_retries(access_token: str) -> dict[str, Any]:
         except ValueError as ex:
             # getattr: mocks/foreign ValueErrors don't carry a request id.
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
-            console.error(f"Access denied (auth request id: {request_id})")
+            logger.error(f"Access denied (auth request id: {request_id})")
             delete_token_from_config()
         except Exception as ex:
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
-            console.warn(
+            logger.warning(
                 f"Unable to validate access token: {ex} (auth request id: {request_id})"
             )
     return {}
@@ -2770,11 +2775,11 @@ def generate_config(interactive: bool = True, token: str | None = None):
     try:
         import yaml
     except ImportError:
-        console.error("Please install PyYAML to use this command: pip install pyyaml")
+        logger.error("Please install PyYAML to use this command: pip install pyyaml")
         return
 
     if Path("cloud.yml").exists():
-        console.error("cloud.yml already exists.")
+        logger.error("cloud.yml already exists.")
         return
 
     try:
@@ -2782,7 +2787,7 @@ def generate_config(interactive: bool = True, token: str | None = None):
             token=token, interactive=interactive
         )
     except click.exceptions.Exit:
-        console.error("Authentication required to generate prefilled config.")
+        logger.error("Authentication required to generate prefilled config.")
         raise
 
     current_dir_name = Path.cwd().name
@@ -2797,11 +2802,11 @@ def generate_config(interactive: bool = True, token: str | None = None):
     except click.exceptions.Exit:
         raise
     except Exception as ex:
-        console.warn(f"Could not search for apps: {ex}")
+        logger.warning(f"Could not search for apps: {ex}")
         app = None
 
     if app:
-        console.info(f"Found app '{app['name']}' - prefilling config with app data.")
+        logger.info(f"Found app '{app['name']}' - prefilling config with app data.")
         default = {"name": app["name"]}
 
         if app.get("id"):
@@ -2811,15 +2816,15 @@ def generate_config(interactive: bool = True, token: str | None = None):
         if app.get("project_id"):
             default["project"] = app["project_id"]
     else:
-        console.info(
+        logger.info(
             f"No app found with name '{current_dir_name}' - creating config with minimal defaults."
         )
         default = {"name": current_dir_name}
 
     with Path("cloud.yml").open("w") as config_file:
         yaml.dump(default, config_file, default_flow_style=False, sort_keys=False)
-    console.success("cloud.yml created successfully.")
-    console.info(
+    logger.log(log.SUCCESS, "cloud.yml created successfully.")
+    logger.info(
         "For more configuration options, see: https://reflex.dev/docs/hosting/config-file/"
     )
     return
@@ -2831,7 +2836,7 @@ def log_out_on_browser():
         delete_token_from_config()
     console.print(f"Opening {constants.Hosting.HOSTING_SERVICE_UI} ...")
     if not webbrowser.open(constants.Hosting.HOSTING_SERVICE_UI):
-        console.warn(
+        logger.warning(
             f"Unable to open the browser automatically. Please go to {constants.Hosting.HOSTING_SERVICE_UI} to log out."
         )
 
@@ -2853,17 +2858,17 @@ def get_vm_types() -> list[dict]:
         response.raise_for_status()
         response_json = response.json()
         if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
+            logger.error("Expect server to return a list ")
             return []
         if (
             response_json
             and response_json[0] is not None
             and not isinstance(response_json[0], dict)
         ):
-            console.error("Expect return values are dict's")
+            logger.error("Expect return values are dict's")
             return []
     except Exception as ex:
-        console.error(f"Unable to get vmtypes due to {ex}.")
+        logger.error(f"Unable to get vmtypes due to {ex}.")
         return []
     else:
         return response_json
@@ -2886,18 +2891,18 @@ def get_regions() -> list[dict]:
         response.raise_for_status()
         response_json = response.json()
         if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
+            logger.error("Expect server to return a list ")
             return []
         if (
             response_json
             and response_json[0] is not None
             and not isinstance(response_json[0], dict)
         ):
-            console.error("Expect return values are dict's")
+            logger.error("Expect return values are dict's")
             return []
         return [
             {"name": region["name"], "code": region["code"]} for region in response_json
         ]
     except Exception as ex:
-        console.error(f"Unable to get regions due to {ex}.")
+        logger.error(f"Unable to get regions due to {ex}.")
         return []

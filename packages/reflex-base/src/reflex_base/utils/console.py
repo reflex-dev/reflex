@@ -12,8 +12,9 @@ import time
 from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType, ModuleType
+from typing import overload
 
-from rich.console import Console
+from rich.console import Console, OverflowMethod
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
 from rich.table import Table
@@ -388,6 +389,24 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
 
+@overload
+def ask(
+    question: str,
+    choices: list[str] | None = None,
+    *,
+    show_choices: bool = True,
+) -> str: ...
+
+
+@overload
+def ask(
+    question: str,
+    choices: list[str] | None = None,
+    default: str = ...,
+    show_choices: bool = True,
+) -> str: ...
+
+
 def ask(
     question: str,
     choices: list[str] | None = None,
@@ -414,12 +433,16 @@ def ask(
 def print_table(
     tabular_data: list[list[str]],
     headers: Sequence[str] = (),
+    overflow: OverflowMethod = "ellipsis",
 ) -> None:
     """Print a table to the console.
 
     Args:
         tabular_data: The data to print in tabular format.
         headers: The headers for the table.
+        overflow: What to do with a cell too wide for its column. The default
+            cuts it short; pass "fold" for values a user has to read in full,
+            such as an email or an identifier.
     """
     if _log.is_json_mode():
         # A table is requested output, not decoration: keep the rows in the
@@ -432,7 +455,7 @@ def print_table(
     table = Table()
 
     for column in headers:
-        table.add_column(column)
+        table.add_column(column, overflow=overflow)
 
     for row in tabular_data:
         table.add_row(*row)

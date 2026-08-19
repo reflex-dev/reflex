@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import importlib.metadata
+import logging
 from importlib.util import find_spec
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,6 @@ import click
 from packaging import version
 
 from reflex_cli import constants
-from reflex_cli.utils import console
 from reflex_cli.v2.apps import apps_cli
 from reflex_cli.v2.gcp import deploy_command as gcp_deploy_command
 from reflex_cli.v2.project import project_cli
@@ -19,6 +19,8 @@ from reflex_cli.v2.providers import providers_cli
 from reflex_cli.v2.scan import scan_command
 from reflex_cli.v2.secrets import secrets_cli
 from reflex_cli.v2.vmtypes_regions import vm_types_regions_cli
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import typer
@@ -41,7 +43,7 @@ def hosting_cli(ctx: click.Context) -> None:
             f"Please upgrade Reflex to at least version {constants.ReflexHostingCli.MINIMUM_REFLEX_VERSION}."
         )
     if _reflex_version < constants.ReflexHostingCli.RECOMMENDED_REFLEX_VERSION:
-        console.warn(
+        logger.warning(
             f"Support for Reflex version {_reflex_version} in reflex-hosting-cli is deprecated. "
             f"Please upgrade Reflex to at least version {constants.ReflexHostingCli.RECOMMENDED_REFLEX_VERSION}."
         )
@@ -157,7 +159,7 @@ def check_version():
         latest_version = response.json()["info"]["version"]
 
         if version.parse(installed_version) < version.parse(latest_version):
-            console.error(
+            logger.error(
                 f"Warning: You are using {package_name} version {installed_version}. "
                 f"A newer version {latest_version} is available. "
                 f"Upgrade using: pip install --upgrade {package_name}"

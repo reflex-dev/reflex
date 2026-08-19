@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from unittest.mock import mock_open
 
 import click
@@ -789,32 +790,46 @@ def test_validate_token_sends_request_id_header(mocker: MockerFixture):
     assert get_auth_request_id() != first_request_id
 
 
-def test_validate_token_with_retries_warns_with_request_id(mocker: MockerFixture):
-    """A failed validation surfaces the request id for support correlation."""
+def test_validate_token_with_retries_warns_with_request_id(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A failed validation surfaces the request id for support correlation.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mocker.patch("httpx.post", return_value=_error(mocker, 500, "boom"))
-    mock_warn = mocker.patch("reflex_cli.utils.hosting.console.warn")
 
     assert validate_token_with_retries("some-token") == {}
 
     request_id = get_auth_request_id()
     assert request_id
-    assert request_id in mock_warn.call_args.args[0]
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings
+    assert request_id in warnings[-1]
 
 
 def test_validate_token_with_retries_access_denied_reports_request_id(
-    mocker: MockerFixture,
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
 ):
-    """The access denied error message includes the auth request id."""
+    """The access denied error message includes the auth request id.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     response = mocker.Mock()
     response.raise_for_status.return_value = None
     response.json.side_effect = ValueError("bad json")
     mocker.patch("httpx.post", return_value=response)
-    mock_error = mocker.patch("reflex_cli.utils.hosting.console.error")
     mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
 
     assert validate_token_with_retries("some-token") == {}
 
-    assert get_auth_request_id() in mock_error.call_args.args[0]
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors
+    assert get_auth_request_id() in errors[-1]
 
 
 def test_validate_token_failure_carries_request_id_on_exception(mocker: MockerFixture):

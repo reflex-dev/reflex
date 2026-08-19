@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import json
+import logging
 import os
 import shutil
 import tempfile
@@ -14,10 +15,13 @@ from typing import Any
 
 import click
 from packaging import version
+from reflex_base.utils import log
 
 from reflex_cli import constants
 from reflex_cli.utils import console
 from reflex_cli.utils.dependency import extract_domain
+
+logger = logging.getLogger(__name__)
 
 
 def login(
@@ -50,7 +54,7 @@ def login(
     access_token, validated_info = hosting.authenticate_on_browser()
 
     if not access_token:
-        console.error("Unable to authenticate. Please try again or contact support.")
+        logger.error("Unable to authenticate. Please try again or contact support.")
         raise SystemExit(1)
 
     console.print("Successfully logged in.")
@@ -70,9 +74,9 @@ def logout(
 
     console.set_log_level(loglevel)
 
-    console.debug("Deleting access token from config locally")
+    logger.debug("Deleting access token from config locally")
     hosting.delete_token_from_config()
-    console.success("Successfully logged out.")
+    logger.log(log.SUCCESS, "Successfully logged out.")
 
 
 def _resolve_gcp_connection(
@@ -98,7 +102,7 @@ def _resolve_gcp_connection(
     if not gcp_connection:
         return None
     if target != hosting.PROVIDER_GCP:
-        console.error(
+        logger.error(
             "--gcp-connection only applies to Google Cloud deploys. Pass "
             "--provider gcp to deploy through a connected GCP account."
         )
@@ -109,17 +113,17 @@ def _resolve_gcp_connection(
     try:
         connections = hosting.list_gcp_connections(client)
     except Exception as ex:
-        console.error(f"Unable to read this organization's GCP connections: {ex}")
+        logger.error(f"Unable to read this organization's GCP connections: {ex}")
         raise click.exceptions.Exit(1) from ex
     match = hosting.find_gcp_connection(connections, gcp_connection)
     if match is None:
         known = ", ".join(
             sorted(str(c.get("name")) for c in connections if c.get("name"))
         )
-        console.error(
+        connected = f" Connected: {known}." if known else ""
+        logger.error(
             f"No GCP connection named {gcp_connection!r} in this organization."
-            + (f" Connected: {known}." if known else "")
-            + " Run `reflex cloud providers connections` to list them."
+            f"{connected} Run `reflex cloud providers connections` to list them."
         )
         raise click.exceptions.Exit(2)
     return match
@@ -149,7 +153,7 @@ def _pin_app_provider(
         provider_account_id=str(connection["id"]) if connection else None,
     )
     if isinstance(result, str) and result.startswith("set provider failed"):
-        console.error(result)
+        logger.error(result)
         raise click.exceptions.Exit(1)
 
 
@@ -226,19 +230,18 @@ def _resolve_deploy_provider(
         # when the provider it deploys to is not.
         if connection is not None:
             _pin_app_provider(app, hosting.PROVIDER_GCP, connection, client)
-            console.info(
-                f"Deploying through GCP connection '{connection.get('name')}'"
-                + (
-                    f" (project {connection['project_id']})"
-                    if connection.get("project_id")
-                    else ""
-                )
-                + "."
+            project = (
+                f" (project {connection['project_id']})"
+                if connection.get("project_id")
+                else ""
+            )
+            logger.info(
+                f"Deploying through GCP connection '{connection.get('name')}'{project}."
             )
         return target or current
 
     if not app_was_created and current is not None:
-        console.warn(
+        logger.warning(
             f"Switching '{app['name']}' from {hosting.provider_display_name(current)} "
             f"to {hosting.provider_display_name(target)} tears down its current "
             "deployment on the old provider; this deploy brings it back up on the "
@@ -248,15 +251,12 @@ def _resolve_deploy_provider(
             interactive
             and console.ask("Continue?", choices=["y", "n"], default="n") != "y"
         ):
-            console.info("Deployment cancelled.")
+            logger.info("Deployment cancelled.")
             raise click.exceptions.Exit(0)
 
     _pin_app_provider(app, target, connection, client)
-    console.info(
-        f"Deploying to {hosting.provider_display_name(target)}"
-        + (f" through connection '{connection.get('name')}'" if connection else "")
-        + "."
-    )
+    via = f" through connection '{connection.get('name')}'" if connection else ""
+    logger.info(f"Deploying to {hosting.provider_display_name(target)}{via}.")
     return target
 
 
@@ -291,13 +291,13 @@ def _restore_provider_on_failure(
             label = hosting.provider_display_name(switched_from)
             restore = hosting.set_app_provider(app["id"], switched_from, client=client)
             if isinstance(restore, str) and restore.startswith("set provider failed"):
-                console.warn(
+                logger.warning(
                     f"Deploy failed after switching '{app['name']}' provider, and "
                     f"restoring {label} also failed: {restore}. Check the app in "
                     "the Reflex Cloud dashboard."
                 )
             else:
-                console.warn(
+                logger.warning(
                     f"Deploy failed after switching provider; restored "
                     f"'{app['name']}' to {label}. Recover its previous deployment "
                     "with `reflex cloud apps rollback`."
@@ -327,7 +327,7 @@ def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[Non
         yield
     except BaseException:
         if applied:
-            console.warn(
+            logger.warning(
                 f"The new instance bounds were applied to '{app_name}' and will "
                 "be used by its next deployment, even though this deploy failed."
             )
@@ -367,7 +367,7 @@ def _apply_full_deploy(
         return False
     if provider != hosting.PROVIDER_GCP:
         if full_deploy:
-            console.error(
+            logger.error(
                 "--full-deploy serves the frontend from the provider's own "
                 "container, which only the Google Cloud target supports. Pass "
                 "--provider gcp, or drop --full-deploy."
@@ -386,7 +386,7 @@ def _apply_full_deploy(
         # change, and applying it stops a running app, so hedge rather than
         # re-raise into a failure path that reports nothing about the app being
         # down. The warning context below is not entered on this path.
-        console.warn(
+        logger.warning(
             f"Lost contact while changing the hosting mode of '{app['name']}'. "
             "The change stops a running app, and it may have been applied, so "
             "check the app in the Reflex Cloud dashboard before relying on it "
@@ -394,18 +394,18 @@ def _apply_full_deploy(
         )
         raise
     if isinstance(result, str):
-        console.error(result)
+        logger.error(result)
         raise click.exceptions.Exit(1)
 
     stopped = bool(result.get("stopped"))
     if stopped and not result.get("stop_confirmed", True):
-        console.warn(
+        logger.warning(
             f"'{app['name']}' was stopped to change its hosting mode, but the "
             "provider did not confirm the teardown. This deploy may be refused "
             "until that clears; check the app in the Reflex Cloud dashboard."
         )
     if result.get("full_deploy"):
-        console.info(
+        logger.info(
             "Full deploy: the frontend is served from the provider, on the same "
             "origin as the backend."
         )
@@ -436,7 +436,7 @@ def _warn_if_full_deploy_outlives_deploy(
         yield
     except BaseException:
         if stopped:
-            console.warn(
+            logger.warning(
                 f"'{app_name}' was stopped to change its hosting mode and this "
                 "deploy did not bring it back up, so it stays down until one "
                 "succeeds. Its earlier deployments are not rollback targets: "
@@ -554,7 +554,7 @@ def deploy(
         if not app_id:
             app_id = config.get("appid", None)
             if not isinstance(app_id, (str, type(None))):
-                console.error(
+                logger.error(
                     "app_id must be a string or None. Please check your config file."
                 )
                 raise SystemExit(1)
@@ -570,15 +570,13 @@ def deploy(
             full_deploy = config.get("full_deploy", None)
         app_name = config.get("name", app_name)
         if not isinstance(app_name, (str, type(None))):
-            console.error(
+            logger.error(
                 "app_name must be a string or None. Please check your config file."
             )
             raise SystemExit(1)
         if app_name == "default":
             # not sure if this is the best check?
-            console.error(
-                "Please set real config values in cloud.yml or pyproject.toml"
-            )
+            logger.error("Please set real config values in cloud.yml or pyproject.toml")
             raise SystemExit(1)
         if not description:
             description = config.get("description", None)
@@ -603,22 +601,20 @@ def deploy(
             )
     except httpx.HTTPStatusError as ex:
         try:
-            console.error(ex.response.json().get("detail"))
+            logger.error(ex.response.json().get("detail"))
         except json.JSONDecodeError:
-            console.error(ex.response.text)
+            logger.error(ex.response.text)
         raise click.exceptions.Exit(1) from ex
 
     envs = envs or []
 
     # Validate --provider up front so an obvious typo fails before any work.
     if provider is not None and hosting.normalize_provider(provider) is None:
-        console.error(f"Unknown provider {provider!r}. Use 'reflex-cloud' or 'gcp'.")
+        logger.error(f"Unknown provider {provider!r}. Use 'reflex-cloud' or 'gcp'.")
         raise click.exceptions.Exit(2)
 
     if not app_name and not app_id:
-        console.error(
-            "Please provide a valid app name or ID for the deployed instance."
-        )
+        logger.error("Please provide a valid app name or ID for the deployed instance.")
         raise click.exceptions.Exit(1)
 
     # Tracks whether the app is created during this deploy: a provider switch on
@@ -642,7 +638,7 @@ def deploy(
     except click.exceptions.Exit:
         raise
     except Exception as ex:
-        console.error(f"Deployment failed: {ex}")
+        logger.error(f"Deployment failed: {ex}")
         raise click.exceptions.Exit(1) from ex
 
     if app and interactive and not project and not app_id:
@@ -661,7 +657,7 @@ def deploy(
                 )
                 != "y"
             ):
-                console.info("Deployment cancelled.")
+                logger.info("Deployment cancelled.")
                 raise click.exceptions.Exit(0)
 
             project_id = app_project_id
@@ -714,7 +710,7 @@ def deploy(
                         )
                         != "y"
                     ):
-                        console.info("Deployment cancelled.")
+                        logger.info("Deployment cancelled.")
                         raise click.exceptions.Exit(0)
 
             if description is None:
@@ -728,9 +724,9 @@ def deploy(
                 client=authenticated_client,
             )
             app_was_created = True
-            console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
+            logger.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
         else:
-            console.error("Please create an app to deploy.")
+            logger.error("Please create an app to deploy.")
             raise click.exceptions.Exit(1)
     elif not app:
         app = hosting.create_app(
@@ -740,7 +736,7 @@ def deploy(
             client=authenticated_client,
         )
         app_was_created = True
-        console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
+        logger.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
 
     # Choose/confirm the hosting provider before reserving the hostname: the
     # reserved URL is baked into the exported frontend, and a GCP app resolves
@@ -768,7 +764,7 @@ def deploy(
         # so a requested region is dropped. VM types are honored: the server
         # maps them onto Cloud Run CPU/memory limits.
         if regions:
-            console.info(
+            logger.info(
                 "Ignoring --region for the Google Cloud target "
                 "(the region comes from the connected GCP account)."
             )
@@ -779,7 +775,7 @@ def deploy(
             _restore_provider_on_failure(app, switched_from, authenticated_client)
         )
         if not app_name:
-            console.error("Please set an app name.")
+            logger.error("Please set an app name.")
             raise click.exceptions.Exit(1)
 
         # at this point, if project_id is None, the App should have the correct project_id and
@@ -801,7 +797,7 @@ def deploy(
         )
 
         if validation_message != "success":
-            console.error(validation_message)
+            logger.error(validation_message)
             raise click.exceptions.Exit(1)
 
         # Inside the provider guard (a refused mode change must still restore the
@@ -822,7 +818,7 @@ def deploy(
             client=authenticated_client,
         )
         if "error" in urls:
-            console.error(urls["error"])
+            logger.error(urls["error"])
             raise click.exceptions.Exit(1)
         server_url = (
             os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]
@@ -840,7 +836,7 @@ def deploy(
 
                 processed_envs = dotenv_values(envfile)
             except ImportError:
-                console.error(
+                logger.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
                 raise click.exceptions.Exit(1) from None
@@ -876,7 +872,7 @@ def deploy(
                     True,  # pyright: ignore[reportCallIssue]
                 )
         except Exception as ex:
-            console.error(f"Unable to export due to: {ex}")
+            logger.error(f"Unable to export due to: {ex}")
             if temporary_dir_path.exists():
                 shutil.rmtree(temporary_dir_path)
             raise click.exceptions.Exit(1) from ex
@@ -899,14 +895,14 @@ def deploy(
                     True,  # pyright: ignore[reportCallIssue]
                 )
         except ImportError as ie:
-            console.error(
+            logger.error(
                 f"Encountered ImportError, did you install all the dependencies? {ie}"
             )
             if temporary_dir_path.exists():
                 shutil.rmtree(temporary_dir_path)
             raise click.exceptions.Exit(1) from ie
         except Exception as ex:
-            console.error(f"Unable to export due to: {ex}")
+            logger.error(f"Unable to export due to: {ex}")
             if temporary_dir_path.exists():
                 shutil.rmtree(temporary_dir_path)
             raise click.exceptions.Exit(1) from ex
@@ -929,7 +925,7 @@ def deploy(
                 # A dropped connection says nothing about whether the server
                 # applied the write, and the bounds are billable state, so hedge
                 # rather than report either outcome as fact.
-                console.warn(
+                logger.warning(
                     f"Lost contact while setting the instance bounds of "
                     f"'{app['name']}'; they may or may not have been applied. "
                     "Check the app in the Reflex Cloud dashboard before relying "
@@ -937,7 +933,7 @@ def deploy(
                 )
                 raise
             if bounds_error:
-                console.error(bounds_error)
+                logger.error(bounds_error)
                 raise click.exceptions.Exit(1)
 
         with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
@@ -956,7 +952,7 @@ def deploy(
                 description=deployment_description,
             )
             if "failed" in result:
-                console.error(result)
+                logger.error(result)
                 raise click.exceptions.Exit(1)
     hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
     console.print(
