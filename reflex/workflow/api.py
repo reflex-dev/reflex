@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Final
 from reflex_base.utils import console
 from starlette.responses import JSONResponse, PlainTextResponse
 
+from reflex.workflow.definition import unbound_params
 from reflex.workflow.records import attempts_made
 
 if TYPE_CHECKING:
@@ -118,14 +119,35 @@ def start_endpoint(
         )
         if definition is None:
             return JSONResponse({"error": "unknown workflow"}, status_code=404)
-        target = getattr(definition.state_cls, handler_name, None)
-        if target is None:
+        # The stable id is what the run records and what every read surface
+        # reports, so it has to be what the write surface accepts; a caller
+        # that read `handler: "accept_order"` back must be able to send it.
+        # The Python name stays valid so renaming neither breaks callers.
+        handler = next(
+            (
+                candidate
+                for candidate in definition.handlers.values()
+                if handler_name in (candidate.id, candidate.name)
+            ),
+            None,
+        )
+        if handler is None:
             return JSONResponse({"error": "unknown handler"}, status_code=404)
+        target = getattr(definition.state_cls, handler.name)
 
-        args = payload.get("args") or {}
-        if not isinstance(args, dict):
+        raw_args = payload.get("args")
+        if raw_args is not None and not isinstance(raw_args, dict):
             return JSONResponse(
                 {"error": "args must be a JSON object"}, status_code=400
+            )
+        args = raw_args or {}
+        missing = sorted(unbound_params(handler, set(args)))
+        if missing:
+            # Admitting this would create a run that cannot possibly run: the
+            # worker would raise TypeError on the first attempt and the caller
+            # would have a 202 and a poisoned run id.
+            return JSONResponse(
+                {"error": f"missing required arguments: {missing}"}, status_code=400
             )
         labels = payload.get("labels")
         try:

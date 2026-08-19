@@ -187,3 +187,100 @@ async def test_resume_only_applies_to_suspended_runs(forked_registration_context
         assert result.run_id is not None
         assert not await harness.resume(result.run_id)
         assert not await harness.resume("no-such-run")
+
+
+async def test_a_newly_required_parameter_suspends(forked_registration_context):
+    """Adding a parameter with no default is a redeploy problem, not a crash.
+
+    The pending step recorded no arguments, so the new signature cannot bind.
+    Failing the run buries a deploy mistake in a TypeError from inside the
+    handler; suspending names what to ship and leaves the run resumable.
+    """
+    store = MemoryRunStore()
+    first = _flow()
+    async with WorkflowTestHarness(first, store=store) as harness:
+        result = await harness.start(first.begin())
+        assert result.run_id is not None
+        run_id, resume_at = result.run_id, harness.now
+
+    class Widened(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.deployed")
+        status: str = "pending"
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Start the run.
+
+            Returns:
+                The next step.
+            """
+            self.status = "started"
+            return rx.after("1h", Widened.finish)
+
+        @rx.event(durable=True, effect="read")
+        async def finish(self, ticket: str):
+            """Finish, now demanding an argument nothing recorded.
+
+            Args:
+                ticket: The newly required argument.
+            """
+            self.status = ticket
+
+    async with WorkflowTestHarness(
+        Widened, store=store, start_time=resume_at + 3600
+    ) as harness:
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.NEEDS_ATTENTION
+        assert snapshot.error is not None
+        assert snapshot.error["reason"] == "incompatible_payload"
+        assert "ticket" in snapshot.error["detail"]
+
+
+async def test_a_new_parameter_with_a_default_is_compatible(
+    forked_registration_context,
+):
+    """The supported way to widen a handler still deploys without a suspension."""
+    store = MemoryRunStore()
+    first = _flow()
+    async with WorkflowTestHarness(first, store=store) as harness:
+        result = await harness.start(first.begin())
+        assert result.run_id is not None
+        run_id, resume_at = result.run_id, harness.now
+
+    class Defaulted(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.deployed")
+        status: str = "pending"
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Start the run.
+
+            Returns:
+                The next step.
+            """
+            self.status = "started"
+            return rx.after("1h", Defaulted.finish)
+
+        @rx.event(durable=True, effect="read")
+        async def finish(self, ticket: str = "unset"):
+            """Finish, with a default the recorded payload can leave alone.
+
+            Args:
+                ticket: Optional argument.
+
+            Returns:
+                Completion.
+            """
+            self.status = ticket
+            return rx.complete(result=ticket)
+
+    async with WorkflowTestHarness(
+        Defaulted, store=store, start_time=resume_at + 3600
+    ) as harness:
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == "unset"

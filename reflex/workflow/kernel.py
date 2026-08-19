@@ -42,6 +42,7 @@ from reflex_base.workflow import (
 from reflex.event import EventHandler, EventSpec
 from reflex.workflow.context import RunContext, bind_run, unbind_run
 from reflex.workflow.cron import CronSchedule
+from reflex.workflow.definition import unbound_params
 from reflex.workflow.records import (
     TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
@@ -1986,6 +1987,32 @@ class WorkflowKernel:
             }
         supplied = {key for key in claim.step.args if not key.startswith("__")}
         unexpected = sorted(supplied - set(handler.params))
+        if handler.params and (
+            # A wait's continuation, a join, and a child arrival are all
+            # handed their first argument at dispatch rather than carrying it
+            # in the recorded payload, so it is supplied even though the
+            # recorded args do not name it.
+            "__payload__" in claim.step.args
+            or "__results__" in claim.step.args
+            or "__wait__" in claim.step.args
+        ):
+            supplied.add(handler.params[0])
+        missing = sorted(unbound_params(handler, supplied))
+        if missing:
+            # A parameter added with no default is the mirror image of a
+            # deleted one, and just as much a redeploy problem: the recorded
+            # payload cannot fill it. Dispatching anyway fails the run with a
+            # TypeError from deep inside the handler, which tells the operator
+            # nothing about what to ship to fix it.
+            return {
+                "reason": "incompatible_payload",
+                "handler_id": handler.id,
+                "detail": (
+                    f"Handler {handler.id!r} now requires {missing}, which the "
+                    "recorded payload does not carry; give them defaults, or "
+                    "cancel the run."
+                ),
+            }
         if unexpected:
             return {
                 "reason": "incompatible_payload",

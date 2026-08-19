@@ -38,7 +38,7 @@ class Orders(rx.State):
     __workflow__ = WorkflowConfig(id="api.orders")
     order: str = ""
 
-    @rx.event(durable=True, trigger=manual(), effect="none")
+    @rx.event(durable=True, trigger=manual(), effect="none", id="accept_order")
     def place(self, order: str):
         """Record the order.
 
@@ -101,7 +101,10 @@ def test_a_service_can_start_and_read_a_run(client):
     read = client.get(f"/_workflow/api/runs/{run_id}", headers=_auth())
     assert read.status_code == 200
     assert read.json()["workflow"] == "api.orders"
-    assert read.json()["steps"][0]["handler"] == "place"
+    assert read.json()["steps"][0]["handler"] == "accept_order", (
+        "the read surface reports the stable id, which is why the write "
+        "surface has to accept it"
+    )
 
 
 def test_an_idempotency_key_returns_the_same_run(client):
@@ -196,3 +199,59 @@ def test_prometheus_rendering_escapes_label_values():
     })
     assert 'workflow="we\\"ird\\\\flow"' in text
     assert text.endswith("\n")
+
+
+def test_the_stable_handler_id_starts_a_run(client):
+    """What a run reads back as its handler must be what the API accepts.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({
+        "workflow": "api.orders",
+        "handler": "accept_order",
+        "args": {"order": "o-id"},
+    })
+    response = client.post(START_ROUTE, content=body, headers=_auth())
+    assert response.status_code == 202, response.text
+    run_id = response.json()["run_id"]
+    read = client.get(f"/_workflow/api/runs/{run_id}", headers=_auth())
+    assert read.json()["steps"][0]["handler"] == "accept_order"
+
+
+def test_the_python_name_still_works(client):
+    """Accepting the stable id must not break callers using the method name.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({
+        "workflow": "api.orders",
+        "handler": "place",
+        "args": {"order": "o-name"},
+    })
+    assert client.post(START_ROUTE, content=body, headers=_auth()).status_code == 202
+
+
+def test_missing_required_arguments_are_refused(client):
+    """A run that cannot possibly run is not admitted.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({"workflow": "api.orders", "handler": "place"})
+    response = client.post(START_ROUTE, content=body, headers=_auth())
+    assert response.status_code == 400, response.text
+    assert "order" in response.json()["error"]
+
+
+def test_a_falsey_non_object_args_is_refused(client):
+    """`args: []` is a caller mistake, not an empty payload.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({"workflow": "api.orders", "handler": "place", "args": []})
+    response = client.post(START_ROUTE, content=body, headers=_auth())
+    assert response.status_code == 400, response.text
+    assert "JSON object" in response.json()["error"]

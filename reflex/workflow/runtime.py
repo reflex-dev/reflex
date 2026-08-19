@@ -8,6 +8,7 @@ start, cancel, and inspect runs without holding a kernel reference.
 
 from __future__ import annotations
 
+import inspect
 import os
 import random
 import time
@@ -166,6 +167,15 @@ class WorkflowRuntime:
         return tuple(self._definitions.values())
 
     @property
+    def store(self) -> RunStore | None:
+        """The store this runtime reads and writes, once one is resolved.
+
+        Returns:
+            The store, or None before startup resolved one.
+        """
+        return self._store
+
+    @property
     def kernel(self) -> WorkflowKernel:
         """The running kernel.
 
@@ -275,6 +285,24 @@ def configured_drain() -> float:
         return 0.0
 
 
+async def _close_store(store: RunStore | None) -> None:
+    """Release a store's connections, whatever kind of close it has.
+
+    SQLite closes synchronously, Postgres closes a pool asynchronously, and
+    the memory store has nothing to close. A caller that opened a store per
+    request has to be able to hand it back without knowing which.
+
+    Args:
+        store: The store to close, if any.
+    """
+    closer = getattr(store, "close", None)
+    if closer is None:
+        return
+    result = closer()
+    if inspect.isawaitable(result):
+        await result
+
+
 def get_runtime() -> WorkflowRuntime:
     """Resolve the active workflow runtime.
 
@@ -334,21 +362,30 @@ class WorkflowsNamespace:
         Yields:
             The client runtime.
         """
-        global _default_runtime
-
+        owned = store is None
         runtime = WorkflowRuntime(
             store if store is not None else resolve_store(database)
         )
-        for workflow_cls in workflow_classes:
-            runtime.register(workflow_cls)
-        await runtime.startup(start_worker=False)
-        previous = _default_runtime
-        _default_runtime = runtime
+        token = None
         try:
+            for workflow_cls in workflow_classes:
+                runtime.register(workflow_cls)
+            await runtime.startup(start_worker=False)
+            # A context variable, not the process global: two clients open at
+            # once -- one per request, one per tenant -- must not be able to
+            # send each other's work to the wrong store, and the global is
+            # shared by every task in the process.
+            token = _context_runtime.set(runtime)
             yield runtime
         finally:
-            _default_runtime = previous
+            if token is not None:
+                _context_runtime.reset(token)
             await runtime.shutdown()
+            if owned:
+                # The store was opened here, so its connections are this
+                # block's to close. A caller-injected store belongs to the
+                # caller and is left alone.
+                await _close_store(runtime.store)
 
     @staticmethod
     async def start(

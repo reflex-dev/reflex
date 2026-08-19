@@ -675,6 +675,35 @@ def _compute_digest(
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+def unbound_params(handler: HandlerDefinition, supplied: set[str]) -> set[str]:
+    """Parameters a handler requires that a recorded payload cannot fill.
+
+    A parameter with a default binds without help, and ``*args``/``**kwargs``
+    absorb anything, so only names that must be passed and are not present
+    count. This is what makes "the code changed under an in-flight run" a
+    compatibility decision rather than a TypeError from inside the handler.
+
+    Args:
+        handler: The current definition of the handler.
+        supplied: Payload argument names the step recorded.
+
+    Returns:
+        The required parameter names that nothing would bind.
+    """
+    signature = inspect.signature(handler.fn)
+    required: set[str] = set()
+    for index, (name, param) in enumerate(signature.parameters.items()):
+        if index == 0 or param.default is not inspect.Parameter.empty:
+            continue
+        if param.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
+            continue
+        required.add(name)
+    return required - supplied
+
+
 def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     """Compile a workflow class into an immutable definition.
 
