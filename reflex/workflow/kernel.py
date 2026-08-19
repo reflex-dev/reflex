@@ -678,6 +678,19 @@ class WorkflowKernel:
             return None, now + window
         return None, now
 
+    async def _started_handler(self, run_id: str, handler_id: str) -> bool:
+        """Whether a run's root step is the handler a delivery would start.
+
+        Args:
+            run_id: The run to check.
+            handler_id: The root handler the caller wants to start.
+
+        Returns:
+            True when the run was started by that handler.
+        """
+        steps = await self._store.get_steps(run_id)
+        return bool(steps) and steps[0].handler_id == handler_id
+
     async def start(
         self,
         target: Any,
@@ -726,19 +739,31 @@ class WorkflowKernel:
                 f"starting through this path requires {expected}."
             )
             raise WorkflowRuntimeError(msg)
-        for candidate in (request_key, *superseded_keys):
-            if candidate is None:
-                continue
-            # Dedupe before any start policy: a redelivered event must return
-            # the run it already created, not be judged as a new start and
-            # cancel, throttle, or debounce that very run. Superseded keys are
-            # matched too but never written: a key format that changes must
-            # not make every event admitted under the old one arrive twice.
-            existing = await self._store.find_by_request_key(
-                defn.workflow_id, candidate
-            )
-            if existing is not None:
-                return StartResult(disposition="deduplicated", run_id=existing)
+        # Dedupe before any start policy: a redelivered event must return the
+        # run it already created, not be judged as a new start and cancel,
+        # throttle, or debounce that very run.
+        existing = (
+            None
+            if request_key is None
+            else await self._store.find_by_request_key(defn.workflow_id, request_key)
+        )
+        if existing is None:
+            for candidate in superseded_keys:
+                # A superseded key is matched but never written, so a key
+                # format can change without every event admitted under the old
+                # one arriving twice. The old spelling was less specific than
+                # the new one, though, so a match on it only means the same
+                # event if it started the same root -- otherwise the very
+                # collision the new format fixed comes back through the
+                # compatibility path.
+                found = await self._store.find_by_request_key(
+                    defn.workflow_id, candidate
+                )
+                if found is not None and await self._started_handler(found, handler.id):
+                    existing = found
+                    break
+        if existing is not None:
+            return StartResult(disposition="deduplicated", run_id=existing)
         flow_key = self._flow_key(handler, payload)
         if flow_key is None:
             return await self._admit(defn, handler, payload, request_key, labels, None)

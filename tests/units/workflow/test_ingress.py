@@ -464,3 +464,44 @@ async def test_a_redelivery_admitted_under_the_old_key_still_deduplicates(
     assert response.json()["disposition"] == "deduplicated"
     assert response.json()["run_id"] == legacy.run_id
     await runtime.shutdown()
+
+
+async def test_a_legacy_key_only_matches_the_root_that_wrote_it(
+    monkeypatch, forked_registration_context
+):
+    """The compatibility path must not undo the fix it exists to soften.
+
+    The old key format was the bare provider value, which is exactly what
+    collided across topics. Matching it without checking which root the
+    existing run started lets `invoice_paid` deduplicate against a legacy
+    `invoice_failed` run -- the same lost payment, arriving through the
+    upgrade path instead.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Invoices)
+    await runtime.startup(start_worker=False)
+
+    legacy = await runtime.kernel.start(
+        Invoices.on_failed("inv_3"),
+        request_key="inv_3",
+        trigger_kind="webhook",
+    )
+    assert legacy.disposition == "started"
+
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    with TestClient(app) as client:
+        body = json.dumps({"id": "inv_3"}).encode()
+        paid = client.post(
+            "/_workflow/webhook/invoice_paid",
+            content=body,
+            headers={"x-signature": _sign(body)},
+        )
+    assert paid.status_code == 202, paid.text
+    assert paid.json()["disposition"] == "started", (
+        "the payment deduplicated against a legacy failure run"
+    )
+    assert paid.json()["run_id"] != legacy.run_id
+    await runtime.shutdown()
