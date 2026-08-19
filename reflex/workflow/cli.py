@@ -12,6 +12,7 @@ import asyncio
 import inspect
 import json
 import operator
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -324,6 +325,86 @@ def triggers(target: str, as_json: bool):
                 row["next_fire"], tz=datetime.timezone.utc
             )
             click.echo(f"{'':54}next {when:%Y-%m-%d %H:%M} UTC")
+
+
+@workflows.command()
+@database_option
+@click.argument("target")
+def doctor(database: str | None, target: str):
+    """Check that TARGET's deployment is actually configured to run.
+
+    Preflight for the things whose absence is silent: a webhook secret that
+    is not set, an approval key that is missing, a store that cannot be
+    reached. Each of those turns into "why did nothing happen", answered
+    today by reading the database. Answer it here instead, before deploying.
+    """
+    from reflex_base.workflow import ScheduleTrigger, WebhookTrigger
+
+    from reflex.workflow.api import TOKEN_ENV, api_token
+    from reflex.workflow.approvals import SECRET_ENV
+    from reflex.workflow.definition import compile_workflow
+    from reflex.workflow.records import RunQuery
+    from reflex.workflow.store import DATABASE_ENV
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+
+    problems: list[str] = []
+    notes: list[str] = []
+
+    definitions = [
+        compile_workflow(value)
+        for value in vars(module).values()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    ]
+    if not definitions:
+        console.error(f"No workflow classes in {target!r}.")
+        raise click.exceptions.Exit(1)
+
+    for definition in definitions:
+        for handler in definition.handlers.values():
+            trigger = handler.trigger
+            if isinstance(trigger, WebhookTrigger) and trigger.verify is not None:
+                secret_env = getattr(trigger.verify, "secret_env", None)
+                if secret_env and not os.environ.get(secret_env):
+                    problems.append(
+                        f"{secret_env} is unset, so {definition.workflow_id}."
+                        f"{handler.name} will refuse every delivery."
+                    )
+            if isinstance(trigger, ScheduleTrigger):
+                notes.append(
+                    f"{definition.workflow_id}.{handler.name} runs on "
+                    f"'{trigger.cron}' -- a process must be serving it."
+                )
+    if not os.environ.get(SECRET_ENV):
+        notes.append(
+            f"{SECRET_ENV} is unset. Signals work without it; rx.approval_link() "
+            "raises until it is set."
+        )
+    if api_token() is None:
+        notes.append(
+            f"{TOKEN_ENV} is unset, so the HTTP API is not mounted. Runs start "
+            "from Python only."
+        )
+
+    where = database or os.environ.get(DATABASE_ENV) or "the default ./workflow.db"
+    try:
+        _with_store(database, lambda store: store.list_runs(RunQuery(limit=1)))
+    except Exception as err:
+        problems.append(f"Store unreachable ({where}): {err}")
+    else:
+        console.print(f"Store reachable: {where}.")
+
+    for note in notes:
+        console.print(f"note: {note}")
+    for problem in problems:
+        console.error(problem)
+    if problems:
+        raise click.exceptions.Exit(1)
+    console.print(f"{len(definitions)} workflow(s) ready to serve.")
 
 
 @workflows.command("init")

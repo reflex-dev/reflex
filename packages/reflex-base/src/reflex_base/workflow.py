@@ -339,13 +339,52 @@ def webhook(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class HmacVerifier:
+    """A webhook verifier that checks an HMAC digest of the raw body.
+
+    Built by ``rx.hmac_signature()``. It is an object rather than a closure so
+    that tooling -- ``reflex workflows doctor``, deployment checks -- can ask
+    which environment variable a deployment has to set, without running a
+    request through it.
+
+    Attributes:
+        secret_env: Name of the environment variable holding the shared secret.
+        header: Request header carrying the provider's signature.
+        algorithm: Hash algorithm name understood by ``hashlib``.
+        prefix: Fixed prefix the provider puts before the digest.
+    """
+
+    secret_env: str
+    header: str
+    algorithm: str = "sha256"
+    prefix: str = ""
+
+    def __call__(self, body: bytes, headers: Mapping[str, str]) -> bool:
+        """Check one delivery's signature.
+
+        Args:
+            body: The raw request body, exactly as received.
+            headers: The request headers.
+
+        Returns:
+            True when the presented digest matches one computed from the body.
+        """
+        secret = os.environ.get(self.secret_env)
+        presented = headers.get(self.header.lower()) or headers.get(self.header)
+        if not secret or not presented:
+            return False
+        expected = hmac.new(secret.encode(), body, self.algorithm).hexdigest()
+        return hmac.compare_digest(f"{self.prefix}{expected}", presented)
+
+
 def hmac_signature(
     *,
     secret_env: str,
     header: str,
     algorithm: str = "sha256",
     prefix: str = "",
-) -> WebhookVerifier:
+) -> HmacVerifier:
     """Build a verifier for providers that HMAC-sign the raw request body.
 
     This covers the common shape used by Stripe, GitHub, Shopify and others:
@@ -362,16 +401,9 @@ def hmac_signature(
     Returns:
         A verifier callable for ``rx.webhook(verify=...)``.
     """
-
-    def verify(body: bytes, headers: Mapping[str, str]) -> bool:
-        secret = os.environ.get(secret_env)
-        presented = headers.get(header.lower()) or headers.get(header)
-        if not secret or not presented:
-            return False
-        expected = hmac.new(secret.encode(), body, algorithm).hexdigest()
-        return hmac.compare_digest(f"{prefix}{expected}", presented)
-
-    return verify
+    return HmacVerifier(
+        secret_env=secret_env, header=header, algorithm=algorithm, prefix=prefix
+    )
 
 
 def schedule(cron: str) -> ScheduleTrigger:

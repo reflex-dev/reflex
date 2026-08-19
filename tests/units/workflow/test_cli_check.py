@@ -372,3 +372,85 @@ def test_triggers_flags_an_unverified_webhook(tmp_path, forked_registration_cont
     assert result.exit_code == 0
     assert "signature verified" in result.output
     assert "POST /_workflow/webhook/stripe.paid" in result.output
+
+
+HOOKED = '''
+import reflex as rx
+
+
+class Hooked(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="doctor.hooked")
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=rx.webhook(
+            "orders",
+            verify=rx.hmac_signature(secret_env="DOCTOR_SECRET", header="X-Sig"),
+        ),
+    )
+    def on_hook(self, payload: dict):
+        """Take a delivery.
+
+        Args:
+            payload: The delivered body.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result=payload)
+
+    @rx.event(durable=True, effect="none", trigger=rx.schedule("0 9 * * *"))
+    def nightly(self):
+        """Run nightly.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result=None)
+'''
+
+
+def test_doctor_reports_an_unset_webhook_secret(
+    tmp_path, monkeypatch, forked_registration_context
+):
+    """A verifier whose secret is missing refuses every delivery; say so first."""
+    monkeypatch.delenv("DOCTOR_SECRET", raising=False)
+    module = tmp_path / "flows_hooked.py"
+    module.write_text(HOOKED)
+    result = CliRunner().invoke(
+        workflows, ["doctor", str(module), "-d", str(tmp_path / "d.db")]
+    )
+    assert result.exit_code == 1, result.output
+    assert "DOCTOR_SECRET is unset" in result.output
+    assert "doctor.hooked.on_hook" in result.output
+
+
+def test_doctor_passes_once_the_secret_is_set(
+    tmp_path, monkeypatch, forked_registration_context
+):
+    """With every required secret present the deployment is ready to serve."""
+    monkeypatch.setenv("DOCTOR_SECRET", "shhh")
+    module = tmp_path / "flows_hooked_ok.py"
+    module.write_text(HOOKED)
+    result = CliRunner().invoke(
+        workflows, ["doctor", str(module), "-d", str(tmp_path / "d.db")]
+    )
+    assert result.exit_code == 0, result.output
+    assert "ready to serve" in result.output
+
+
+def test_doctor_notes_schedules_and_unmounted_surfaces(
+    tmp_path, monkeypatch, forked_registration_context
+):
+    """Notes name what a deployment still has to run or configure."""
+    monkeypatch.setenv("DOCTOR_SECRET", "shhh")
+    monkeypatch.delenv("REFLEX_WORKFLOW_API_TOKEN", raising=False)
+    module = tmp_path / "flows_hooked_notes.py"
+    module.write_text(HOOKED)
+    result = CliRunner().invoke(
+        workflows, ["doctor", str(module), "-d", str(tmp_path / "d.db")]
+    )
+    assert result.exit_code == 0, result.output
+    assert "0 9 * * *" in result.output
+    assert "REFLEX_WORKFLOW_API_TOKEN" in result.output
