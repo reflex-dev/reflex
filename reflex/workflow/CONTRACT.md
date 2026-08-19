@@ -186,9 +186,43 @@ Checked in this order at start:
 - Multiple workers share one Postgres store via `SKIP LOCKED` claims; SQLite
   is a one-process store (calls off-loop, contention bounded); memory is for
   tests. All three answer the same conformance suite.
-- Managed vs customer-hosted is a deployment split, not a semantic one: a
-  worker is any process with `REFLEX_WORKFLOW_DATABASE` pointed at the store
-  and (optionally) `workflow_queues` narrowed. The contract is identical.
+### Tenancy and who runs the workers
+
+Managed and customer-hosted are a deployment split, not a semantic one. A
+worker is any process with `REFLEX_WORKFLOW_DATABASE` pointed at the store and
+optionally `workflow_queues` narrowed; everything above holds identically
+whether that process runs on a platform or on a laptop. Nothing in the engine
+asks which it is, and no behaviour changes with the answer.
+
+Isolation between tenants is the store's boundary, and there are exactly three
+supported arrangements:
+
+1. **A store per tenant.** Separate databases, or `PostgresRunStore(schema=)`
+   inside a shared one. Nothing crosses, because nothing is shared: a query,
+   a claim, and a recovery sweep all see one tenant by construction. This is
+   the arrangement to pick when tenants must not be able to observe each
+   other even through a bug.
+2. **A shared store, isolated by workflow id.** One deployment's workflows are
+   its own; `list_runs(workflow_id=...)` and the CLI's filters are how an
+   operator stays inside them. Fine for one product's own workloads, not for
+   mutually distrusting tenants -- a caller that can reach the store can reach
+   every run in it.
+3. **A shared store, partitioned by queue.** Workers serve named queues, so
+   compute is separated even where data is not: a tenant's slow work cannot
+   starve another's, and a worker can be dedicated to one tenant's steps.
+   This partitions *execution*, never *visibility*.
+
+What the engine does not do: there is no tenant column, no per-tenant
+authorization inside the store, and no filter that a caller with store access
+cannot lift. Anything stronger than "shared store, separate workflow ids" must
+come from arrangement 1. Say so plainly rather than implying a boundary that
+is not enforced -- a tenancy story that overstates itself is worse than one
+that admits its edges.
+
+Credentials follow the same rule everywhere. Webhook secrets, approval-link
+signing keys, and the API token are read from the environment at use time, so
+they never enter run state, history, or a browser bundle, and rotating one is
+a restart rather than a migration.
 
 ## 8. The failure matrix
 
