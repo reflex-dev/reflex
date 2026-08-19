@@ -1,4 +1,11 @@
-"""Functions to communicate to the user via console."""
+"""Functions to communicate to the user via console.
+
+The logging-shaped helpers (``debug``/``info``/``success``/``log``/``warn``/
+``error``/``timing``) are deprecated and kept with their legacy behavior until
+removal; new code should use ``logging.getLogger(__name__)`` and the pipeline
+in :mod:`reflex_base.utils.log`. The interactive Rich features
+(``print``/``rule``/``status``/``ask``/``progress``) remain first-class.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +19,7 @@ import time
 from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import overload
+from typing import TYPE_CHECKING, overload
 
 from rich.console import Console, OverflowMethod
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
@@ -50,6 +57,21 @@ _EMITTED_LOGS = set()
 
 # Prints which have been printed.
 _EMITTED_PRINTS = set()
+
+
+def _shim_deprecation(name: str, replacement: str):
+    """Warn that a deprecated console logging helper was called.
+
+    Args:
+        name: The console function name.
+        replacement: The logging-API replacement to suggest.
+    """
+    deprecate(
+        feature_name=f"console.{name}",
+        reason=f"use {replacement} on logging.getLogger(__name__) instead",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+    )
 
 
 def set_log_level(log_level: LogLevel | None):
@@ -144,14 +166,8 @@ def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
     log_file_console().print(f"[{datetime.datetime.now()}] {msg}", **kwargs)
 
 
-def debug(msg: str, *, dedupe: bool = False, **kwargs):
-    """Print a debug message.
-
-    Args:
-        msg: The debug message.
-        dedupe: If True, suppress multiple console logs of debug message.
-        kwargs: Keyword arguments to pass to the print function.
-    """
+def _debug(msg: str, *, dedupe: bool = False, **kwargs):
+    """Render a debug message with the legacy behavior."""
     if is_debug():
         msg_ = f"[purple]Debug: {msg}[/purple]"
         if dedupe:
@@ -166,6 +182,18 @@ def debug(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
+def debug(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a debug message.
+
+    Args:
+        msg: The debug message.
+        dedupe: If True, suppress multiple console logs of debug message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    _shim_deprecation("debug", "logger.debug(msg)")
+    _debug(msg, dedupe=dedupe, **kwargs)
+
+
 def info(msg: str, *, dedupe: bool = False, **kwargs):
     """Print an info message.
 
@@ -174,6 +202,7 @@ def info(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of info message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    _shim_deprecation("info", "logger.info(msg)")
     if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_INFO:
@@ -192,6 +221,7 @@ def success(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of success message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    _shim_deprecation("success", "logger.log(log.SUCCESS, msg)")
     if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_SUCCESS:
@@ -210,6 +240,7 @@ def log(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of log message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    _shim_deprecation("log", "logger.info(msg)")
     if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_LOGS:
@@ -243,6 +274,7 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of warning message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    _shim_deprecation("warn", "logger.warning(msg)")
     if _log.get_log_level() <= LogLevel.WARNING:
         if dedupe:
             if msg in _EMITTED_WARNINGS:
@@ -379,6 +411,7 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of error message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    _shim_deprecation("error", "logger.error(msg)")
     if _log.get_log_level() <= LogLevel.ERROR:
         if dedupe:
             if msg in _EMITTED_ERRORS:
@@ -502,11 +535,12 @@ def timing(msg: str):
     Yields:
         None.
     """
+    _shim_deprecation("timing", "log.timing(logger, msg)")
     start = time.time()
     try:
         yield
     finally:
-        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+        _debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
 
 
 class PoorProgress:
@@ -565,3 +599,17 @@ class PoorProgress:
 
     def stop(self):
         """Stop the progress bar."""
+
+
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    debug = deprecated("Use logging.getLogger(__name__).debug(msg) instead")(debug)
+    info = deprecated("Use logging.getLogger(__name__).info(msg) instead")(info)
+    success = deprecated(
+        "Use logging.getLogger(__name__).log(log.SUCCESS, msg) instead"
+    )(success)
+    log = deprecated("Use logging.getLogger(__name__).info(msg) instead")(log)
+    warn = deprecated("Use logging.getLogger(__name__).warning(msg) instead")(warn)
+    error = deprecated("Use logging.getLogger(__name__).error(msg) instead")(error)
+    timing = deprecated("Use reflex_base.utils.log.timing(logger, msg) instead")(timing)
