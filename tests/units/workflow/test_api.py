@@ -16,10 +16,13 @@ from starlette.testclient import TestClient
 
 import reflex as rx
 from reflex.workflow.api import (
+    METRICS_ROUTE,
     RUN_ROUTE,
     START_ROUTE,
     TOKEN_ENV,
     api_token,
+    metrics_endpoint,
+    render_prometheus,
     run_endpoint,
     start_endpoint,
 )
@@ -63,6 +66,7 @@ async def client(forked_registration_context):
         routes=[
             Route(START_ROUTE, start_endpoint(runtime, TOKEN), methods=["POST"]),
             Route(RUN_ROUTE, run_endpoint(runtime, TOKEN), methods=["GET"]),
+            Route(METRICS_ROUTE, metrics_endpoint(runtime, TOKEN), methods=["GET"]),
         ]
     )
     with TestClient(app) as ready:
@@ -131,6 +135,7 @@ def test_every_route_requires_the_token(client, headers):
     assert (
         client.get("/_workflow/api/runs/whatever", headers=headers).status_code == 401
     )
+    assert client.get(METRICS_ROUTE, headers=headers).status_code == 401
 
 
 def test_unknown_targets_are_refused(client):
@@ -159,3 +164,35 @@ def test_the_api_is_absent_without_a_configured_token(monkeypatch):
     assert api_token() is None
     monkeypatch.setenv(TOKEN_ENV, TOKEN)
     assert api_token() == TOKEN
+
+
+def test_metrics_are_scrapeable_after_a_run(client):
+    """A collector reads what this process did, in the format it already speaks.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({
+        "workflow": "api.orders",
+        "handler": "place",
+        "args": {"order": "o-1"},
+    })
+    assert client.post(START_ROUTE, content=body, headers=_auth()).status_code == 202
+
+    response = client.get(METRICS_ROUTE, headers=_auth())
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    text = response.text
+    assert "# TYPE reflex_workflow_runs_started_total counter" in text
+    assert "reflex_workflow_runs_started_total 1" in text
+    assert 'reflex_workflow_runs_started_total{workflow="api.orders"} 1' in text
+
+
+def test_prometheus_rendering_escapes_label_values():
+    """A workflow id is developer data; the exposition format still has to hold."""
+    text = render_prometheus({
+        "totals": {"runs_started": 1},
+        "by_workflow": {'we"ird\\flow': {"runs_started": 1}},
+    })
+    assert 'workflow="we\\"ird\\\\flow"' in text
+    assert text.endswith("\n")

@@ -31,6 +31,8 @@ from reflex.workflow.handle import RunHandle
 from reflex.workflow.kernel import (
     DEFAULT_MAX_CONCURRENCY,
     DEFAULT_POLL_INTERVAL,
+    CompositeObserver,
+    MetricsObserver,
     WorkflowKernel,
     WorkflowObserver,
 )
@@ -96,7 +98,15 @@ class WorkflowRuntime:
         self._lease_duration = lease_duration
         self._lease_renew_interval = lease_renew_interval
         self._recovery_interval = recovery_interval
-        self._observer = observer
+        self.metrics = MetricsObserver()
+        # Always counting: a deployment that has to reconfigure and restart to
+        # find out how many runs failed learns it too late. The user's
+        # observer, when there is one, still sees every event.
+        self._observer = (
+            self.metrics
+            if observer is None
+            else CompositeObserver(self.metrics, observer)
+        )
         self._max_recoveries = max_recoveries
         self._max_concurrency = max_concurrency
         self._queues = tuple(queues) if queues is not None else None

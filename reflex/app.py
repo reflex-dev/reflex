@@ -851,9 +851,11 @@ class App(MiddlewareMixin, LifespanMixin):
     def _add_workflow_endpoints(self):
         """Add the workflow ingress endpoints: webhooks in, approvals back."""
         from reflex.workflow.api import (
+            METRICS_ROUTE,
             RUN_ROUTE,
             START_ROUTE,
             api_token,
+            metrics_endpoint,
             run_endpoint,
             start_endpoint,
         )
@@ -894,6 +896,11 @@ class App(MiddlewareMixin, LifespanMixin):
             self._api.add_route(
                 config.prepend_backend_path(RUN_ROUTE),
                 run_endpoint(self._workflow_runtime, token),
+                methods=["GET"],
+            )
+            self._api.add_route(
+                config.prepend_backend_path(METRICS_ROUTE),
+                metrics_endpoint(self._workflow_runtime, token),
                 methods=["GET"],
             )
 

@@ -21,7 +21,7 @@ import os
 from typing import TYPE_CHECKING, Any, Final
 
 from reflex_base.utils import console
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 
 from reflex.workflow.records import attempts_made
 
@@ -29,12 +29,14 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
 
     from starlette.requests import Request
+    from starlette.responses import Response
 
     from reflex.workflow.runtime import WorkflowRuntime
 
 TOKEN_ENV: Final = "REFLEX_WORKFLOW_API_TOKEN"
 START_ROUTE: Final = "/_workflow/api/runs"
 RUN_ROUTE: Final = "/_workflow/api/runs/{run_id}"
+METRICS_ROUTE: Final = "/_workflow/api/metrics"
 MAX_BODY_BYTES: Final = 1_048_576
 
 
@@ -190,5 +192,89 @@ def run_endpoint(
                 for step in snapshot.steps
             ],
         })
+
+    return endpoint
+
+
+def _label(value: str) -> str:
+    """Escape a value for a Prometheus label.
+
+    Args:
+        value: The raw label value.
+
+    Returns:
+        The escaped value, without its surrounding quotes.
+    """
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def render_prometheus(snapshot: dict[str, Any]) -> str:
+    """Render counter totals in the Prometheus text exposition format.
+
+    Plain text on purpose: it is what a Prometheus server scrapes, what the
+    OpenTelemetry collector's prometheus receiver reads, and what every
+    hosted metrics vendor accepts, with no client library and no dependency
+    of ours to keep current.
+
+    Args:
+        snapshot: A ``MetricsObserver.snapshot()`` result.
+
+    Returns:
+        The exposition text, ending in a newline.
+    """
+    totals: dict[str, int] = snapshot.get("totals", {})
+    by_workflow: dict[str, dict[str, int]] = snapshot.get("by_workflow", {})
+    names = sorted({
+        *totals,
+        *(key for counts in by_workflow.values() for key in counts),
+    })
+    lines: list[str] = []
+    for name in names:
+        metric = f"reflex_workflow_{name}_total"
+        lines.extend((
+            f"# TYPE {metric} counter",
+            f"{metric} {totals.get(name, 0)}",
+        ))
+        for workflow_id in sorted(by_workflow):
+            count = by_workflow[workflow_id].get(name)
+            if count:
+                lines.append(f'{metric}{{workflow="{_label(workflow_id)}"}} {count}')
+    return "\n".join(lines) + "\n"
+
+
+def metrics_endpoint(
+    runtime: WorkflowRuntime, token: str
+) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+    """Build the endpoint that exposes this process's counters.
+
+    The counters are per process: each worker reports what it did, and the
+    collector sums them. That is what makes a fleet's numbers addable rather
+    than a single process's guess about the whole system.
+
+    Args:
+        runtime: The runtime whose counters to report.
+        token: The bearer token every caller must present.
+
+    Returns:
+        The endpoint callable.
+    """
+
+    async def endpoint(request: Request) -> Response:  # noqa: RUF029
+        """Report the counters as Prometheus text.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The exposition text, or an error.
+        """
+        # Reading in-process counters needs no await; the signature is a
+        # Starlette endpoint's, not a claim that this does I/O.
+        if not _authorized(request, token):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        return PlainTextResponse(
+            render_prometheus(runtime.metrics.snapshot()),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
 
     return endpoint

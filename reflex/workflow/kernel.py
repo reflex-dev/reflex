@@ -140,6 +140,50 @@ class WorkflowObserver:
         """
 
 
+class CompositeObserver(WorkflowObserver):
+    """Fans one transition out to several observers.
+
+    Instrumentation is not exclusive: a deployment that exports metrics still
+    wants its own logging, and neither should have to know about the other.
+
+    Attributes:
+        observers: The observers to notify, in order.
+    """
+
+    __slots__ = ("observers",)
+
+    def __init__(self, *observers: WorkflowObserver):
+        """Bind the observers to fan out to.
+
+        Args:
+            observers: The observers to notify, in order.
+        """
+        self.observers = observers
+
+    def on_event(
+        self,
+        event_type: HistoryEventType,
+        run_id: str,
+        workflow_id: str,
+        data: dict[str, Any],
+    ) -> None:
+        """Pass one transition to every observer.
+
+        One observer raising must not cost the others their notification, and
+        the kernel already treats instrumentation errors as its own to
+        swallow.
+
+        Args:
+            event_type: What happened.
+            run_id: The run it happened to.
+            workflow_id: That run's workflow identity.
+            data: The event payload.
+        """
+        for observer in self.observers:
+            with contextlib.suppress(Exception):
+                observer.on_event(event_type, run_id, workflow_id, data)
+
+
 class MetricsObserver(WorkflowObserver):
     """Tallies the numbers a deployment alerts on.
 
