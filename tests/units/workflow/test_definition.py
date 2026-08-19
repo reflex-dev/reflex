@@ -14,6 +14,7 @@ from reflex_base.workflow import (
     WorkflowConfig,
     hmac_signature,
     manual,
+    schedule,
     webhook,
 )
 
@@ -405,3 +406,61 @@ class TransitionsFlow(rx.State):
     namespace = _load_module(source)
     definition = compile_workflow(namespace["TransitionsFlow"])
     assert set(definition.handlers) == {"begin", "charge", "finish"}
+
+
+def test_a_workflow_id_must_be_a_dotted_name(forked_registration_context):
+    """The id is a durable identity, so its shape is fixed at compile time.
+
+    Runs carry it forever and operators search by it; discovering a typo or an
+    empty string after runs exist means either living with it or migrating
+    rows.
+    """
+    with pytest.raises(WorkflowDefinitionError, match="lowercase dotted"):
+
+        class Empty(rx.State):
+            __workflow__ = WorkflowConfig(id="")
+
+            @rx.event(durable=True, trigger=manual(), effect="none")
+            def go(self):
+                """Go."""
+
+        compile_workflow(Empty)
+
+
+def test_an_invalid_cron_is_rejected_at_compile_time(forked_registration_context):
+    """A schedule that cannot be parsed must fail now, not at the first sweep.
+
+    A cron typo that surfaces at runtime is a job that silently never runs.
+    """
+    with pytest.raises(WorkflowDefinitionError, match="cron"):
+
+        class Bad(rx.State):
+            __workflow__ = WorkflowConfig(id="defn.badcron")
+
+            @rx.event(durable=True, trigger=schedule("not a cron"), effect="none")
+            def go(self):
+                """Go."""
+
+        compile_workflow(Bad)
+
+
+def test_a_webhook_without_a_verifier_is_rejected(forked_registration_context):
+    """An unverified public endpoint that starts runs is not a default.
+
+    Anyone who learns the URL could start work; the compiler makes that a
+    deliberate choice rather than an oversight.
+    """
+    with pytest.raises(WorkflowDefinitionError, match="no verifier"):
+
+        class Open(rx.State):
+            __workflow__ = WorkflowConfig(id="defn.openhook")
+
+            @rx.event(durable=True, trigger=webhook("topic"), effect="none")
+            def go(self, payload: dict):
+                """Go.
+
+                Args:
+                    payload: The delivered body.
+                """
+
+        compile_workflow(Open)
