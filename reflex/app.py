@@ -463,6 +463,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # How many workflow attempts run at once, across different runs.
     workflow_concurrency: int = DEFAULT_MAX_CONCURRENCY
 
+    # Worker queues this process serves; None serves every queue.
+    workflow_queues: tuple[str, ...] | None = None
+
     # The workflow runtime owning registered definitions and the kernel.
     _workflow_runtime: WorkflowRuntime | None = None
 
@@ -988,6 +991,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.workflow_store,
                 observer=self.workflow_observer,
                 max_concurrency=self.workflow_concurrency,
+                queues=self.workflow_queues,
             )
             self.register_lifespan_task(self._run_workflow_runtime)
         self._workflow_runtime.register(workflow_cls)

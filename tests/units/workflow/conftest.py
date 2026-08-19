@@ -77,3 +77,63 @@ def harness_store(request, tmp_path, monkeypatch):
         store.close()
     for store in postgres:
         store.drop_schema()
+
+
+def _install_teardown_watchdog() -> None:
+    """Name the task that outlives its cancellation, instead of hanging.
+
+    The suite intermittently hangs in ``Runner.close`` -> ``_cancel_all_tasks``
+    waiting on a task that did not exit after ``cancel()``. The stock loop
+    teardown waits forever and says nothing. This wraps it: after a bounded
+    wait it prints every still-pending task with its coroutine stack, which is
+    the exact evidence needed to fix the leak. Enabled by REFLEX_DEBUG_HANG=1.
+    """
+    import asyncio
+    import asyncio.runners as runners
+    import sys
+    import traceback
+
+    original = runners._cancel_all_tasks  # pyright: ignore[reportAttributeAccessIssue]
+
+    def patched(loop) -> None:
+        to_cancel = asyncio.tasks.all_tasks(loop)
+        if not to_cancel:
+            return
+        for task in to_cancel:
+            task.cancel()
+
+        async def bounded_gather():
+            gathered = asyncio.tasks.gather(*to_cancel, return_exceptions=True)
+            try:
+                await asyncio.wait_for(asyncio.shield(gathered), timeout=20)
+            except (TimeoutError, asyncio.CancelledError):
+                print(
+                    "\n=== TEARDOWN WATCHDOG: tasks alive 20s after cancel ===",
+                    file=sys.stderr,
+                )
+                for task in to_cancel:
+                    if task.done():
+                        continue
+                    print(f"--- {task!r}", file=sys.stderr)
+                    for frame in task.get_stack():
+                        traceback.print_stack(frame, limit=1, file=sys.stderr)
+                print("=== END WATCHDOG ===", file=sys.stderr, flush=True)
+                await gathered
+
+        loop.run_until_complete(bounded_gather())
+        for task in to_cancel:
+            if task.cancelled():
+                continue
+            if task.exception() is not None:
+                loop.call_exception_handler({
+                    "message": "unhandled exception during test shutdown",
+                    "exception": task.exception(),
+                    "task": task,
+                })
+
+    runners._cancel_all_tasks = patched  # pyright: ignore[reportAttributeAccessIssue]
+    globals()["_original_cancel_all_tasks"] = original
+
+
+if os.environ.get("REFLEX_DEBUG_HANG"):
+    _install_teardown_watchdog()

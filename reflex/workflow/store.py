@@ -134,7 +134,11 @@ class RunStore(Protocol):
         ...
 
     async def claim_next(
-        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+        self,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        queues: tuple[str, ...] | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -146,6 +150,9 @@ class RunStore(Protocol):
             now: Current time in epoch seconds.
             lease_duration: Seconds of renewal silence tolerated before the
                 claim is treated as orphaned.
+            queues: Queues this worker serves; None serves every queue. A run
+                whose frontier sits on an unserved queue is skipped whole,
+                because claiming a later slot would break its ordering.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -535,6 +542,43 @@ class RunStore(Protocol):
         """
         ...
 
+    async def record_substep(
+        self, run_id: str, ordinal: int, epoch: int, key: str, payload: Any, now: float
+    ) -> bool:
+        """Durably record one substep result inside a claimed attempt.
+
+        The write is fenced on the step's claim epoch: an attempt whose lease
+        was reclaimed must not pollute the journal a newer attempt is reading.
+        The first write for a key wins, so a duplicate is a no-op that still
+        reports success -- memoization reads before it writes, so a duplicate
+        only means two racing writers agreed.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot being executed.
+            epoch: The claim fence of the writing attempt.
+            key: The substep's memoization key, unique within the step.
+            payload: JSON-compatible result to record.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when recorded (or already recorded); False when the writer
+            was fenced and must stop.
+        """
+        ...
+
+    async def get_substeps(self, run_id: str, ordinal: int) -> dict[str, Any]:
+        """Load the recorded substep results of one step.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot.
+
+        Returns:
+            Recorded payloads by key, in recording order.
+        """
+        ...
+
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.
 
@@ -546,11 +590,14 @@ class RunStore(Protocol):
         """
         ...
 
-    async def next_due(self, now: float) -> float | None:
+    async def next_due(
+        self, now: float, *, queues: tuple[str, ...] | None = None
+    ) -> float | None:
         """Earliest future time any runnable run becomes claimable.
 
         Args:
             now: Current time in epoch seconds.
+            queues: Queues this worker serves; None serves every queue.
 
         Returns:
             The epoch time, or None when no future work is scheduled.
@@ -688,6 +735,7 @@ class MemoryRunStore:
         self._lock = asyncio.Lock()
         self._runs: dict[str, RunRecord] = {}
         self._steps: dict[str, list[StepRecord]] = {}
+        self._substeps: dict[tuple[str, int], dict[str, Any]] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
         self._inbox: dict[str, dict[tuple[str, str, str], bool]] = {}
@@ -747,7 +795,11 @@ class MemoryRunStore:
             return True, run.run_id
 
     async def claim_next(
-        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+        self,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        queues: tuple[str, ...] | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -755,6 +807,9 @@ class MemoryRunStore:
             now: Current time in epoch seconds.
             lease_duration: Seconds of renewal silence tolerated before the
                 claim is treated as orphaned.
+            queues: Queues this worker serves; None serves every queue. A run
+                whose frontier sits on an unserved queue is skipped whole,
+                because claiming a later slot would break its ordering.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -766,6 +821,8 @@ class MemoryRunStore:
                 steps = self._steps[run.run_id]
                 frontier = _frontier(steps)
                 if frontier is None or not step_claimable_at(frontier, now):
+                    continue
+                if queues is not None and frontier.queue not in queues:
                     continue
                 claimed = dataclasses.replace(
                     frontier,
@@ -1498,6 +1555,65 @@ class MemoryRunStore:
         async with self._lock:
             return tuple(_detach_step(step) for step in self._steps.get(run_id, ()))
 
+    async def record_substep(
+        self, run_id: str, ordinal: int, epoch: int, key: str, payload: Any, now: float
+    ) -> bool:
+        """Durably record one substep result inside a claimed attempt.
+
+        The write is fenced on the step's claim epoch: an attempt whose lease
+        was reclaimed must not pollute the journal a newer attempt is reading.
+        The first write for a key wins, so a duplicate is a no-op that still
+        reports success -- memoization reads before it writes, so a duplicate
+        only means two racing writers agreed.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot being executed.
+            epoch: The claim fence of the writing attempt.
+            key: The substep's memoization key, unique within the step.
+            payload: JSON-compatible result to record.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when recorded (or already recorded); False when the writer
+            was fenced and must stop.
+        """
+        async with self._lock:
+            steps = self._steps.get(run_id)
+            if steps is None or ordinal >= len(steps):
+                return False
+            step = steps[ordinal]
+            if step.status is not StepStatus.CLAIMED or step.epoch != epoch:
+                return False
+            journal = self._substeps.setdefault((run_id, ordinal), {})
+            if key not in journal:
+                journal[key] = copy.deepcopy(payload)
+                self._append_events(
+                    run_id,
+                    (
+                        (
+                            HistoryEventType.SUBSTEP_RECORDED,
+                            {"ordinal": ordinal, "key": key},
+                        ),
+                    ),
+                    now,
+                )
+            return True
+
+    async def get_substeps(self, run_id: str, ordinal: int) -> dict[str, Any]:
+        """Load the recorded substep results of one step.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot.
+
+        Returns:
+            Recorded payloads by key, in recording order.
+        """
+        async with self._lock:
+            journal = self._substeps.get((run_id, ordinal), {})
+            return {key: copy.deepcopy(value) for key, value in journal.items()}
+
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.
 
@@ -1510,11 +1626,14 @@ class MemoryRunStore:
         async with self._lock:
             return tuple(self._history.get(run_id, ()))
 
-    async def next_due(self, now: float) -> float | None:
+    async def next_due(
+        self, now: float, *, queues: tuple[str, ...] | None = None
+    ) -> float | None:
         """Earliest future time any runnable run becomes claimable.
 
         Args:
             now: Current time in epoch seconds.
+            queues: Queues this worker serves; None serves every queue.
 
         Returns:
             The epoch time, or None when no future work is scheduled.
@@ -1525,6 +1644,12 @@ class MemoryRunStore:
                 if not _run_is_runnable(run, now):
                     continue
                 frontier = _frontier(self._steps[run.run_id])
+                if (
+                    frontier is not None
+                    and queues is not None
+                    and frontier.queue not in queues
+                ):
+                    continue
                 wake_at = None if frontier is None else step_wake_at(frontier)
                 if wake_at is not None:
                     due_times.append(wake_at)
@@ -1570,6 +1695,7 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     join_arrived INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     origin TEXT NOT NULL,
+    queue TEXT NOT NULL DEFAULT 'default',
     created_at REAL NOT NULL,
     updated_at REAL NOT NULL,
     PRIMARY KEY (run_id, ordinal)
@@ -1587,6 +1713,14 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
     request_key TEXT NOT NULL,
     run_id TEXT NOT NULL,
     PRIMARY KEY (workflow_id, request_key)
+);
+CREATE TABLE IF NOT EXISTS workflow_substeps (
+    run_id TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    key TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (run_id, ordinal, key)
 );
 CREATE TABLE IF NOT EXISTS workflow_inbox (
     run_id TEXT NOT NULL,
@@ -1616,6 +1750,10 @@ _STEP_MIGRATIONS: Final = (
     (
         "join_arrived",
         "ALTER TABLE workflow_steps ADD COLUMN join_arrived INTEGER NOT NULL DEFAULT 0",
+    ),
+    (
+        "queue",
+        "ALTER TABLE workflow_steps ADD COLUMN queue TEXT NOT NULL DEFAULT 'default'",
     ),
 )
 
@@ -1706,6 +1844,7 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         join_arrived=row["join_arrived"],
         error=_load(row["error"]),
         origin=row["origin"],
+        queue=row["queue"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -1842,8 +1981,9 @@ class SqliteRunStore:
         self._db.execute(
             "INSERT INTO workflow_steps (run_id, ordinal, handler_id, status, args,"
             " attempts, recoveries, due_at, epoch, lease_expires_at, wait_key,"
-            " join_expected, join_arrived, error, origin, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " join_expected, join_arrived, error, origin, queue, created_at,"
+            " updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 step.run_id,
                 step.ordinal,
@@ -1860,6 +2000,7 @@ class SqliteRunStore:
                 step.join_arrived,
                 _dump(step.error),
                 step.origin,
+                step.queue,
                 step.created_at,
                 step.updated_at,
             ),
@@ -1923,7 +2064,11 @@ class SqliteRunStore:
             return True, run.run_id
 
     async def claim_next(
-        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+        self,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        queues: tuple[str, ...] | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -1931,6 +2076,9 @@ class SqliteRunStore:
             now: Current time in epoch seconds.
             lease_duration: Seconds of renewal silence tolerated before the
                 claim is treated as orphaned.
+            queues: Queues this worker serves; None serves every queue. A run
+                whose frontier sits on an unserved queue is skipped whole,
+                because claiming a later slot would break its ordering.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -1952,6 +2100,8 @@ class SqliteRunStore:
                     run = _run_from_row(row)
                     frontier = _frontier(self._load_steps(run.run_id))
                     if frontier is None or not step_claimable_at(frontier, now):
+                        continue
+                    if queues is not None and frontier.queue not in queues:
                         continue
                     claimed = dataclasses.replace(
                         frontier,
@@ -2923,6 +3073,85 @@ class SqliteRunStore:
         with self._lock:
             return tuple(self._load_steps(run_id))
 
+    async def record_substep(
+        self, run_id: str, ordinal: int, epoch: int, key: str, payload: Any, now: float
+    ) -> bool:
+        """Durably record one substep result inside a claimed attempt.
+
+        The write is fenced on the step's claim epoch: an attempt whose lease
+        was reclaimed must not pollute the journal a newer attempt is reading.
+        The first write for a key wins, so a duplicate is a no-op that still
+        reports success -- memoization reads before it writes, so a duplicate
+        only means two racing writers agreed.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot being executed.
+            epoch: The claim fence of the writing attempt.
+            key: The substep's memoization key, unique within the step.
+            payload: JSON-compatible result to record.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when recorded (or already recorded); False when the writer
+            was fenced and must stop.
+        """
+        with self._lock:
+            self._db.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._db.execute(
+                    "SELECT status, epoch FROM workflow_steps"
+                    " WHERE run_id = ? AND ordinal = ?",
+                    (run_id, ordinal),
+                ).fetchone()
+                if (
+                    row is None
+                    or row["status"] != StepStatus.CLAIMED.value
+                    or row["epoch"] != epoch
+                ):
+                    self._db.execute("ROLLBACK")
+                    return False
+                cursor = self._db.execute(
+                    "INSERT OR IGNORE INTO workflow_substeps"
+                    " (run_id, ordinal, key, payload, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (run_id, ordinal, key, json.dumps(payload), now),
+                )
+                if cursor.rowcount:
+                    self._append_events(
+                        run_id,
+                        (
+                            (
+                                HistoryEventType.SUBSTEP_RECORDED,
+                                {"ordinal": ordinal, "key": key},
+                            ),
+                        ),
+                        now,
+                    )
+                self._db.execute("COMMIT")
+            except BaseException:
+                self._db.execute("ROLLBACK")
+                raise
+            return True
+
+    async def get_substeps(self, run_id: str, ordinal: int) -> dict[str, Any]:
+        """Load the recorded substep results of one step.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot.
+
+        Returns:
+            Recorded payloads by key, in recording order.
+        """
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT key, payload FROM workflow_substeps"
+                " WHERE run_id = ? AND ordinal = ? ORDER BY created_at, key",
+                (run_id, ordinal),
+            ).fetchall()
+            return {row["key"]: json.loads(row["payload"]) for row in rows}
+
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.
 
@@ -2948,11 +3177,14 @@ class SqliteRunStore:
                 for row in rows
             )
 
-    async def next_due(self, now: float) -> float | None:
+    async def next_due(
+        self, now: float, *, queues: tuple[str, ...] | None = None
+    ) -> float | None:
         """Earliest future time any runnable run becomes claimable.
 
         Args:
             now: Current time in epoch seconds.
+            queues: Queues this worker serves; None serves every queue.
 
         Returns:
             The epoch time, or None when no future work is scheduled.
@@ -2969,6 +3201,12 @@ class SqliteRunStore:
             due_times = []
             for row in rows:
                 frontier = _frontier(self._load_steps(row["run_id"]))
+                if (
+                    frontier is not None
+                    and queues is not None
+                    and frontier.queue not in queues
+                ):
+                    continue
                 wake_at = None if frontier is None else step_wake_at(frontier)
                 if wake_at is not None:
                     due_times.append(wake_at)

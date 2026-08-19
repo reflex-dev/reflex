@@ -644,6 +644,49 @@ async def check_list_children_finds_a_joins_branches(store: RunStore) -> None:
     assert await store.list_children("nobody", 1) == ()
 
 
+async def check_claims_respect_queue_boundaries(store: RunStore) -> None:
+    """A worker claims only from queues it serves, and skips whole runs."""
+    await store.admit(make_run(), make_step(queue="video"), _ADMITTED)
+    assert await store.claim_next(NOW, lease_duration=LEASE, queues=("emails",)) is None
+    assert await store.next_due(NOW, queues=("emails",)) is None
+    claim = await store.claim_next(NOW, lease_duration=LEASE, queues=("video",))
+    assert claim is not None
+    assert claim.step.queue == "video"
+    await store.release_claim(claim, status=StepStatus.READY, events=(), now=NOW)
+    # None serves everything, and the queue survives the round trip.
+    fallback = await store.claim_next(NOW, lease_duration=LEASE)
+    assert fallback is not None
+    assert fallback.step.queue == "video"
+
+
+async def check_substeps_record_once_and_fence_stale_writers(
+    store: RunStore,
+) -> None:
+    """The substep journal memoizes by key and refuses fenced writers."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    epoch = claim.step.epoch
+
+    assert await store.record_substep("run1", 0, epoch, "charge", {"n": 1}, NOW)
+    assert await store.get_substeps("run1", 0) == {"charge": {"n": 1}}
+
+    # First write wins: a racing duplicate reports success without replacing.
+    assert await store.record_substep("run1", 0, epoch, "charge", {"n": 2}, NOW)
+    assert await store.get_substeps("run1", 0) == {"charge": {"n": 1}}
+
+    # A stale epoch is a zombie attempt; its write must be refused.
+    assert not await store.record_substep("run1", 0, epoch - 1, "late", {}, NOW)
+    # An unclaimed or unknown step accepts nothing either.
+    assert not await store.record_substep("run1", 7, epoch, "wild", {}, NOW)
+    assert not await store.record_substep("ghost", 0, epoch, "wild", {}, NOW)
+    assert await store.get_substeps("run1", 0) == {"charge": {"n": 1}}
+
+    # Several keys come back in recording order.
+    assert await store.record_substep("run1", 0, epoch, "label", {"n": 3}, NOW + 1)
+    assert list(await store.get_substeps("run1", 0)) == ["charge", "label"]
+
+
 async def check_reads_do_not_alias_stored_state(store: RunStore) -> None:
     """Mutating a returned record must not change what the store holds."""
     await store.admit(make_run(), make_step(), _ADMITTED)
@@ -718,6 +761,8 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_early_deliveries_queue_in_order,
     check_children_are_created_with_their_join,
     check_list_children_finds_a_joins_branches,
+    check_claims_respect_queue_boundaries,
+    check_substeps_record_once_and_fence_stale_writers,
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,

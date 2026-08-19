@@ -54,6 +54,7 @@ from reflex.workflow.records import (
     StepStatus,
 )
 from reflex.workflow.serde import to_run_data
+from reflex.workflow.steps import SubstepJournal, bind_journal, unbind_journal
 from reflex.workflow.store import (
     Claim,
     DeliveryDisposition,
@@ -242,6 +243,7 @@ class WorkflowKernel:
         recovery_interval: float | None = None,
         observer: WorkflowObserver | None = None,
         max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
+        queues: Iterable[str] | None = None,
     ):
         """Initialize the kernel.
 
@@ -262,6 +264,10 @@ class WorkflowKernel:
                 or tracing.
             max_concurrency: How many attempts this kernel runs at once. Each
                 belongs to a different run, so a run's own steps stay serial.
+            queues: Queues this kernel's worker serves; None serves them all.
+                Steps land on the queue their handler declared, "default"
+                otherwise, so a deployment can dedicate processes to slow or
+                sensitive work.
 
         Raises:
             WorkflowRuntimeError: If the store cannot renew leases, or the
@@ -324,6 +330,7 @@ class WorkflowKernel:
         self._next_recovery_at = 0.0
         self._worker_id = uuid.uuid4().hex
         self._observer = observer
+        self._queues = tuple(queues) if queues is not None else None
         self._wakeup = asyncio.Event()
         self._admission = asyncio.Lock()
         self._closing = False
@@ -619,6 +626,7 @@ class WorkflowKernel:
             args=payload,
             due_at=due_at,
             origin="root",
+            queue=handler.queue or "default",
             created_at=now,
             updated_at=now,
         )
@@ -924,6 +932,7 @@ class WorkflowKernel:
         instance: BaseState,
         args: dict[str, Any],
         context: RunContext,
+        journal: SubstepJournal,
     ) -> Any:
         """Invoke a handler attempt with its per-attempt timeout.
 
@@ -932,6 +941,7 @@ class WorkflowKernel:
             instance: The hydrated run-state instance.
             args: The step payload.
             context: Identity of this attempt, readable inside the handler.
+            journal: Recorded substeps of this step, for ``rx.step``.
 
         Returns:
             The handler return value.
@@ -948,6 +958,7 @@ class WorkflowKernel:
         except Exception:
             payload = dict(args)
         token = bind_run(context)
+        journal_token = bind_journal(journal)
         try:
             if handler.is_async:
                 coroutine = handler.fn(instance, **payload)
@@ -959,10 +970,63 @@ class WorkflowKernel:
                 return await asyncio.wait_for(coroutine, timeout=handler.timeout)
             return await coroutine
         finally:
+            unbind_journal(journal_token)
             unbind_run(token)
+
+    def _queue_of(self, defn: WorkflowDefinition, handler_id: str) -> str:
+        """Resolve the worker queue a handler's steps are served from.
+
+        Args:
+            defn: The workflow definition.
+            handler_id: The handler naming the step.
+
+        Returns:
+            The queue name.
+        """
+        return defn.handlers[handler_id].queue or "default"
+
+    async def _build_journal(self, claim: Claim) -> SubstepJournal:
+        """Load the substeps recorded for a step and bind them to this attempt.
+
+        Args:
+            claim: The fenced claim being executed.
+
+        Returns:
+            The journal ``rx.step`` reads and writes.
+        """
+        recorded = await self._store.get_substeps(claim.run.run_id, claim.step.ordinal)
+
+        def notify(key: str) -> None:
+            """Report one newly recorded substep to the observer.
+
+            Args:
+                key: The substep's memoization key.
+            """
+            self._notify(
+                claim.run,
+                (
+                    (
+                        HistoryEventType.SUBSTEP_RECORDED,
+                        {"ordinal": claim.step.ordinal, "key": key},
+                    ),
+                ),
+            )
+
+        return SubstepJournal(
+            store=self._store,
+            run_id=claim.run.run_id,
+            ordinal=claim.step.ordinal,
+            epoch=claim.step.epoch,
+            recorded=recorded,
+            clock=self._clock,
+            notify=notify,
+            loop=asyncio.get_running_loop(),
+            sync_timeout=max(self._lease_duration * 2.0, 30.0),
+        )
 
     def _build_new_steps(
         self,
+        defn: WorkflowDefinition,
         run: RunRecord,
         successors: list[_SuccessorSpec],
         now: float,
@@ -970,6 +1034,7 @@ class WorkflowKernel:
         """Allocate successor slots with preallocated ordinals.
 
         Args:
+            defn: The workflow definition, for per-handler queues.
             run: The run record as of the claim.
             successors: The resolved successor specs.
             now: Current time in epoch seconds.
@@ -986,6 +1051,7 @@ class WorkflowKernel:
                 args=spec.args,
                 due_at=(now + spec.delay) if spec.delay else 0.0,
                 origin=spec.origin,  # pyright: ignore[reportArgumentType]
+                queue=self._queue_of(defn, spec.handler_id),
                 created_at=now,
                 updated_at=now,
             )
@@ -1271,15 +1337,17 @@ class WorkflowKernel:
             children = self._child_records(
                 claim, control.branches, claim.run.next_ordinal, now
             )
+            then_id = self._resolve_successor(defn, control.then).handler_id
             join = StepRecord(
                 run_id=claim.run.run_id,
                 ordinal=claim.run.next_ordinal,
-                handler_id=self._resolve_successor(defn, control.then).handler_id,
+                handler_id=then_id,
                 status=StepStatus.BLOCKED,
                 args={"__results__": []},
                 wait_key=f"join:{claim.run.next_ordinal}",
                 join_expected=1 if control.mode == "first" else len(control.branches),
                 origin="join",
+                queue=self._queue_of(defn, then_id),
                 created_at=now,
                 updated_at=now,
             )
@@ -1328,6 +1396,7 @@ class WorkflowKernel:
                 due_at=deadline,
                 wait_key=wait_key,
                 origin="wait",
+                queue=self._queue_of(defn, resume.handler_id),
                 created_at=now,
                 updated_at=now,
             )
@@ -1382,7 +1451,7 @@ class WorkflowKernel:
                 tombstones=tombstones,
                 events=tuple(events),
             )
-        new_steps = self._build_new_steps(claim.run, successors, now)
+        new_steps = self._build_new_steps(defn, claim.run, successors, now)
         events.extend(
             (
                 HistoryEventType.STEP_SCHEDULED,
@@ -1762,6 +1831,7 @@ class WorkflowKernel:
                             attempt=claim.step.attempts + 1,
                             epoch=claim.step.epoch,
                         ),
+                        await self._build_journal(claim),
                     )
                 )
                 value = await lease.attempt
@@ -1925,6 +1995,7 @@ class WorkflowKernel:
                     status=StepStatus.READY,
                     args=payload,
                     origin="root",
+                    queue=handler.queue or "default",
                     created_at=now,
                     updated_at=now,
                 ),
@@ -2106,7 +2177,7 @@ class WorkflowKernel:
         started: list[asyncio.Task] = []
         while len(self._inflight) < self._max_concurrency:
             claim = await self._store.claim_next(
-                now, lease_duration=self._lease_duration
+                now, lease_duration=self._lease_duration, queues=self._queues
             )
             if claim is None:
                 break
@@ -2205,7 +2276,7 @@ class WorkflowKernel:
                     )
                     continue
                 now = self._clock()
-                due = await self._store.next_due(now)
+                due = await self._store.next_due(now, queues=self._queues)
                 delay = min(self._poll_interval, max(self._next_recovery_at - now, 0.0))
                 for upcoming in (due, self._next_schedule_due(now)):
                     if upcoming is not None:

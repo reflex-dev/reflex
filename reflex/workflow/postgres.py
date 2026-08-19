@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     join_arrived INTEGER NOT NULL DEFAULT 0,
     error JSONB,
     origin TEXT NOT NULL,
+    queue TEXT NOT NULL DEFAULT 'default',
     created_at DOUBLE PRECISION NOT NULL,
     updated_at DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (run_id, ordinal)
@@ -115,6 +116,14 @@ CREATE TABLE IF NOT EXISTS workflow_dedupe (
     run_id TEXT NOT NULL,
     PRIMARY KEY (workflow_id, request_key)
 );
+CREATE TABLE IF NOT EXISTS workflow_substeps (
+    run_id TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    key TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    created_at DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (run_id, ordinal, key)
+);
 CREATE TABLE IF NOT EXISTS workflow_inbox (
     run_id TEXT NOT NULL,
     wait_key TEXT NOT NULL,
@@ -125,6 +134,7 @@ CREATE TABLE IF NOT EXISTS workflow_inbox (
     created_at DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (run_id, wait_key, dedupe_key)
 );
+ALTER TABLE workflow_steps ADD COLUMN IF NOT EXISTS queue TEXT NOT NULL DEFAULT 'default';
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs (status);
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_flow
     ON workflow_runs (workflow_id, flow_key);
@@ -154,6 +164,8 @@ _FRONTIER_PREDICATE: Final = (
     "s.ordinal = (SELECT MIN(x.ordinal) FROM workflow_steps x"
     " WHERE x.run_id = s.run_id AND NOT (x.status = ANY(%(terminal_steps)s)))"
 )
+
+_QUEUE_PREDICATE: Final = "(%(queues)s::text[] IS NULL OR s.queue = ANY(%(queues)s))"
 
 _RUNNABLE_PREDICATE: Final = (
     "NOT (r.status = ANY(%(terminal_runs)s)) AND r.status <> 'NEEDS_ATTENTION'"
@@ -245,6 +257,7 @@ def _step_from_row(row: Mapping[str, Any]) -> StepRecord:
         join_arrived=row["join_arrived"],
         error=row["error"],
         origin=row["origin"],
+        queue=row["queue"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -468,9 +481,10 @@ class PostgresRunStore:
         await conn.execute(
             "INSERT INTO workflow_steps (run_id, ordinal, handler_id, status, args,"
             " attempts, recoveries, due_at, epoch, lease_expires_at, wait_key,"
-            " join_expected, join_arrived, error, origin, created_at, updated_at)"
+            " join_expected, join_arrived, error, origin, queue, created_at,"
+            " updated_at)"
             " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
-            " %s, %s)",
+            " %s, %s, %s)",
             (
                 step.run_id,
                 step.ordinal,
@@ -487,6 +501,7 @@ class PostgresRunStore:
                 step.join_arrived,
                 _json(step.error),
                 step.origin,
+                step.queue,
                 step.created_at,
                 step.updated_at,
             ),
@@ -594,7 +609,11 @@ class PostgresRunStore:
         return True, run.run_id
 
     async def claim_next(
-        self, now: float, *, lease_duration: float = DEFAULT_LEASE_DURATION
+        self,
+        now: float,
+        *,
+        lease_duration: float = DEFAULT_LEASE_DURATION,
+        queues: tuple[str, ...] | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -606,6 +625,7 @@ class PostgresRunStore:
             now: Current time in epoch seconds.
             lease_duration: Seconds of renewal silence tolerated before the
                 claim is treated as orphaned.
+            queues: Queues this worker serves; None serves every queue.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -616,13 +636,14 @@ class PostgresRunStore:
             "terminal_runs": _TERMINAL_RUNS,
             "terminal_steps": _TERMINAL_STEPS,
             "claimable": _CLAIMABLE_STEPS,
+            "queues": list(queues) if queues is not None else None,
         }
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
                 "SELECT s.run_id AS run_id, s.ordinal AS ordinal"
                 " FROM workflow_steps s JOIN workflow_runs r ON r.run_id = s.run_id"
                 f" WHERE {_RUNNABLE_PREDICATE} AND {_FRONTIER_PREDICATE}"
-                f" AND {_CLAIMABLE_PREDICATE}"
+                f" AND {_CLAIMABLE_PREDICATE} AND {_QUEUE_PREDICATE}"
                 " ORDER BY r.created_at, s.run_id"
                 " FOR UPDATE OF s SKIP LOCKED LIMIT 1",
                 params,
@@ -1503,6 +1524,77 @@ class PostgresRunStore:
         async with pool.connection() as conn:
             return tuple(await self._load_steps(conn, run_id))
 
+    async def record_substep(
+        self, run_id: str, ordinal: int, epoch: int, key: str, payload: Any, now: float
+    ) -> bool:
+        """Durably record one substep result inside a claimed attempt.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot being executed.
+            epoch: The claim fence of the writing attempt.
+            key: The substep's memoization key, unique within the step.
+            payload: JSON-compatible result to record.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True when recorded (or already recorded); False when the writer
+            was fenced and must stop.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await self._lock_run(conn, run_id)
+            cursor = await conn.execute(
+                "SELECT status, epoch FROM workflow_steps"
+                " WHERE run_id = %s AND ordinal = %s",
+                (run_id, ordinal),
+            )
+            row = await cursor.fetchone()
+            if (
+                row is None
+                or row["status"] != StepStatus.CLAIMED.value
+                or row["epoch"] != epoch
+            ):
+                return False
+            cursor = await conn.execute(
+                "INSERT INTO workflow_substeps"
+                " (run_id, ordinal, key, payload, created_at)"
+                " VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                (run_id, ordinal, key, _json(payload), now),
+            )
+            if cursor.rowcount:
+                await self._append_events(
+                    conn,
+                    run_id,
+                    (
+                        (
+                            HistoryEventType.SUBSTEP_RECORDED,
+                            {"ordinal": ordinal, "key": key},
+                        ),
+                    ),
+                    now,
+                )
+        return True
+
+    async def get_substeps(self, run_id: str, ordinal: int) -> dict[str, Any]:
+        """Load the recorded substep results of one step.
+
+        Args:
+            run_id: The owning run.
+            ordinal: The mailbox slot.
+
+        Returns:
+            Recorded payloads by key, in recording order.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "SELECT key, payload FROM workflow_substeps"
+                " WHERE run_id = %s AND ordinal = %s ORDER BY created_at, key",
+                (run_id, ordinal),
+            )
+            return {row["key"]: row["payload"] for row in await cursor.fetchall()}
+
     async def get_history(self, run_id: str) -> tuple[HistoryEvent, ...]:
         """Load a run's append-only history in sequence order.
 
@@ -1529,11 +1621,14 @@ class PostgresRunStore:
                 for row in await cursor.fetchall()
             )
 
-    async def next_due(self, now: float) -> float | None:
+    async def next_due(
+        self, now: float, *, queues: tuple[str, ...] | None = None
+    ) -> float | None:
         """Earliest future time any runnable run becomes claimable.
 
         Args:
             now: Current time in epoch seconds.
+            queues: Queues this worker serves; None serves every queue.
 
         Returns:
             The epoch time, or None when no future work is scheduled.
@@ -1544,12 +1639,14 @@ class PostgresRunStore:
             "terminal_runs": _TERMINAL_RUNS,
             "terminal_steps": _TERMINAL_STEPS,
             "claimable": _CLAIMABLE_STEPS,
+            "queues": list(queues) if queues is not None else None,
         }
         async with pool.connection() as conn:
             cursor = await conn.execute(
                 "SELECT MIN(s.due_at) AS due FROM workflow_steps s"
                 " JOIN workflow_runs r ON r.run_id = s.run_id"
                 f" WHERE {_RUNNABLE_PREDICATE} AND {_FRONTIER_PREDICATE}"
+                f" AND {_QUEUE_PREDICATE}"
                 " AND (s.status = ANY(%(claimable)s)"
                 " OR (s.status = 'BLOCKED' AND s.due_at > 0))",
                 params,

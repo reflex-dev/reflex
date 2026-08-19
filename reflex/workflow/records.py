@@ -136,6 +136,7 @@ class HistoryEventType(str, enum.Enum):
     WAIT_RESOLVED = "wait_resolved"
     WAIT_EXPIRED = "wait_expired"
     SIGNAL_DELIVERED = "signal_delivered"
+    SUBSTEP_RECORDED = "substep_recorded"
     SIGNAL_BUFFERED = "signal_buffered"
     SIGNAL_DUPLICATE = "signal_duplicate"
 
@@ -209,6 +210,9 @@ class StepRecord:
             compare-and-swap so a redelivered result cannot count twice.
         error: Last recorded attempt error payload.
         origin: How the slot was allocated.
+        queue: Worker queue this slot is served from. A worker claims only
+            steps on queues it serves, so per-run order can flow across
+            differently provisioned processes.
         created_at: Allocation time in epoch seconds.
         updated_at: Last transition time in epoch seconds.
     """
@@ -228,6 +232,7 @@ class StepRecord:
     join_arrived: int = 0
     error: dict[str, Any] | None = None
     origin: Literal["root", "chain", "delay", "hook", "wait", "join"] = "chain"
+    queue: str = "default"
     created_at: float = 0.0
     updated_at: float = 0.0
 

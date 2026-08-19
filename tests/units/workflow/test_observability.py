@@ -98,7 +98,7 @@ async def test_every_event_is_correlated(forked_registration_context):
     collector = _Collector()
     flow = _flow()
     async with WorkflowTestHarness(flow, observer=collector) as harness:
-        result = await harness.start(flow.go)
+        await harness.start(flow.go)
         await harness.advance("1s")
 
     assert {workflow_id for workflow_id, _, _ in collector.events} == {"obs.observed"}

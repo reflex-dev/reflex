@@ -61,6 +61,7 @@ from reflex.workflow.records import (
     StepStatus,
 )
 from reflex.workflow.runtime import WorkflowRuntime, get_runtime, workflows
+from reflex.workflow.steps import step, substep_results
 from reflex.workflow.store import (
     DeliveryDisposition,
     MemoryRunStore,
@@ -126,6 +127,8 @@ __all__ = [
     "parallel",
     "parse_duration",
     "schedule",
+    "step",
+    "substep_results",
     "wait_for",
     "webhook",
     "workflows",

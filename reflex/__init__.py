@@ -259,6 +259,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "workflows",
         "approval_link",
         "current_run",
+        "step",
     ],
 }
 

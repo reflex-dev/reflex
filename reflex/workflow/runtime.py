@@ -66,6 +66,7 @@ class WorkflowRuntime:
         observer: WorkflowObserver | None = None,
         max_recoveries: int = DEFAULT_MAX_RECOVERIES,
         max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
+        queues: Iterable[str] | None = None,
     ):
         """Initialize the runtime.
 
@@ -82,6 +83,7 @@ class WorkflowRuntime:
             observer: Receives every recorded run transition.
             max_recoveries: Infrastructure recovery budget per logical step.
             max_concurrency: How many attempts run at once.
+            queues: Queues this process's worker serves; None serves all.
         """
         self._store = store
         self._clock = clock
@@ -93,6 +95,7 @@ class WorkflowRuntime:
         self._observer = observer
         self._max_recoveries = max_recoveries
         self._max_concurrency = max_concurrency
+        self._queues = tuple(queues) if queues is not None else None
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -189,6 +192,7 @@ class WorkflowRuntime:
             observer=self._observer,
             max_recoveries=self._max_recoveries,
             max_concurrency=self._max_concurrency,
+            queues=self._queues,
         )
         if start_worker:
             await self._kernel.start_worker()

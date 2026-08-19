@@ -184,6 +184,29 @@ class WorkflowTestHarness:
         await self.kernel.run_until_idle()
         return result
 
+    async def start_only(
+        self,
+        target: Any,
+        *,
+        request_key: str | None = None,
+        labels: dict[str, str] | None = None,
+    ) -> StartResult:
+        """Admit a run without executing anything.
+
+        Crash and contention tests need the admitted-but-unclaimed state so
+        they can play the doomed worker themselves; ``start`` would run the
+        root step before returning.
+
+        Args:
+            target: The root event, e.g. ``MyWorkflow.begin(payload)``.
+            request_key: Idempotent admission key.
+            labels: Server-derived indexing labels.
+
+        Returns:
+            The admission result.
+        """
+        return await self.kernel.start(target, request_key=request_key, labels=labels)
+
     async def run_until_idle(self) -> None:
         """Process work until nothing is claimable at the current time."""
         await self.kernel.run_until_idle()
