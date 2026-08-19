@@ -37,6 +37,34 @@ Admission is likewise one transaction: run row, root slot, dedupe reservation,
 history. A webhook is acknowledged only after that transaction commits
 (admit-before-ack), so a `202` means the run exists durably.
 
+A start policy (`Singleton`/`RateLimit`/`Throttle`/`Debounce`) is part of that
+same transaction, serialized under a durable lock on the run's
+`(workflow_id, flow_key)` — a Postgres advisory transaction lock, SQLite's
+database write lock, the store lock in memory. Every policy read, any policy
+mutation (a debounce extending and re-payloading its pending run, a
+cancel-mode singleton requesting its incumbent's cancellation), and the
+insert commit or roll back together. Two processes admitting concurrently
+under a limit of one therefore cannot both pass: nothing about policy
+enforcement assumes the admitters share a process. Concretely:
+
+- `Singleton(mode="skip")`: at most one active run per key, at every instant,
+  from any number of processes; the loser is told which run holds the key.
+- `Singleton(mode="cancel")`: the replacement is admitted and every
+  incumbent's cancellation intent is recorded in one transaction, so at most
+  one *non-cancelling* run exists per key at every instant. Incumbents drain
+  to `CANCELLED` asynchronously, exactly as any cancelled run does.
+- `RateLimit`: the (limit+1)th start inside the window is `rejected` with a
+  `retry_after`, counted against committed admissions only.
+- `Throttle`: every start is admitted, each due one window after the limit-th
+  most recent scheduled start, so a racing burst is spaced, not replayed.
+- `Debounce`: a start that lands inside the quiet period is `coalesced` into
+  the pending run, which takes the **latest** payload and a fresh deadline; a
+  debounced burst starts once, with its final revision.
+
+Fan-out branches are written by the parent's committing transaction rather
+than through policy admission, so a branch root that declares a start policy
+is refused at fan-out time instead of having its policy silently bypassed.
+
 Substep results (`rx.step`) are the deliberate exception: each records in its
 **own** transaction the moment the callable returns, because their purpose is
 to survive a crash that prevents the attempt from ever committing.

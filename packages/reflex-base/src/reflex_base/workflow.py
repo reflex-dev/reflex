@@ -185,6 +185,7 @@ BUG_EXCEPTIONS: Final[tuple[type[BaseException], ...]] = (
     SyntaxError,
     IndentationError,
     NotImplementedError,
+    WorkflowDefinitionError,
 )
 """Exceptions that mean the code is wrong, not that the world was unlucky.
 

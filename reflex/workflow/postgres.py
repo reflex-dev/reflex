@@ -32,7 +32,7 @@ from reflex.workflow.records import (
     StepRecord,
     StepStatus,
 )
-from reflex.workflow.store import Claim, StaleClaimError
+from reflex.workflow.store import Claim, FlowAdmission, FlowGate, StaleClaimError
 
 try:
     import psycopg
@@ -614,18 +614,16 @@ class PostgresRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
-        *,
-        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
+
+        Roots with a start policy are admitted through ``admit_flow``, where
+        the whole policy decision shares the admitting transaction.
 
         Args:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
-            max_active: When set, admit only if fewer than this many runs are
-                already active under the run's flow key, decided inside this
-                transaction so concurrent starts cannot both pass.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -647,23 +645,129 @@ class PostgresRunStore:
                     existing = await cursor.fetchone()
                     if existing is not None:
                         return False, existing["run_id"]
-            if max_active is not None and run.flow_key is not None:
-                # FOR UPDATE serializes concurrent admissions under one key:
-                # the second waits, then sees the first and is refused.
-                cursor = await conn.execute(
-                    "SELECT run_id FROM workflow_runs"
-                    " WHERE workflow_id = %s AND flow_key = %s"
-                    " AND NOT (status = ANY(%s))"
-                    " ORDER BY created_at, run_id FOR UPDATE",
-                    (run.workflow_id, run.flow_key, _TERMINAL_RUNS),
-                )
-                active = await cursor.fetchall()
-                if len(active) >= max_active:
-                    return False, active[0]["run_id"]
             await self._insert_run(conn, run)
             await self._insert_step(conn, root_step)
             await self._append_events(conn, run.run_id, events, run.created_at)
         return True, run.run_id
+
+    async def admit_flow(
+        self,
+        run: RunRecord,
+        root_step: StepRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        gate: FlowGate,
+        now: float,
+    ) -> FlowAdmission:
+        """Admit a run under a start policy, atomically.
+
+        The transaction opens by taking an advisory lock on the flow key.
+        Row locks cannot serialize this decision -- when no run exists yet
+        there is no row to lock, and two transactions both count zero and
+        both insert -- but an advisory lock exists before any row does, so
+        the second admitter waits and then reads what the first committed.
+
+        Args:
+            run: The run record to create, carrying the flow key.
+            root_step: The preallocated root mailbox slot.
+            events: History events to append on creation.
+            gate: The policy to enforce.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What was done, decided inside the transaction.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                (f"{run.workflow_id}\x1f{run.flow_key}",),
+            )
+            if run.request_key is not None:
+                cursor = await conn.execute(
+                    "SELECT run_id FROM workflow_dedupe"
+                    " WHERE workflow_id = %s AND request_key = %s",
+                    (run.workflow_id, run.request_key),
+                )
+                row = await cursor.fetchone()
+                if row is not None:
+                    return FlowAdmission("deduplicated", row["run_id"])
+            cursor = await conn.execute(
+                "SELECT run_id FROM workflow_runs"
+                " WHERE workflow_id = %s AND flow_key = %s"
+                " AND NOT (status = ANY(%s))"
+                " ORDER BY created_at, run_id",
+                (run.workflow_id, run.flow_key, _TERMINAL_RUNS),
+            )
+            active = await cursor.fetchall()
+            if gate.singleton_skip and active:
+                return FlowAdmission("skipped", active[0]["run_id"])
+            cancelled: list[str] = []
+            if gate.singleton_cancel and active:
+                ids = [row["run_id"] for row in active]
+                await conn.execute(
+                    "UPDATE workflow_runs SET cancel_requested = TRUE,"
+                    " status = %s, updated_at = %s WHERE run_id = ANY(%s)",
+                    (RunStatus.CANCELLING.value, now, ids),
+                )
+                for run_id in ids:
+                    await self._append_events(
+                        conn,
+                        run_id,
+                        ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),),
+                        now,
+                    )
+                cancelled = ids
+            due_at = root_step.due_at
+            if gate.rate_limit is not None:
+                limit, window = gate.rate_limit
+                cursor = await conn.execute(
+                    "SELECT count(*) AS n FROM workflow_runs"
+                    " WHERE workflow_id = %s AND flow_key = %s AND created_at > %s",
+                    (run.workflow_id, run.flow_key, now - window),
+                )
+                row = await cursor.fetchone()
+                if row is not None and row["n"] >= limit:
+                    return FlowAdmission("rejected", retry_after=window)
+            if gate.throttle is not None:
+                limit, window = gate.throttle
+                cursor = await conn.execute(
+                    "SELECT GREATEST(s.due_at, r.created_at) AS start"
+                    " FROM workflow_runs r JOIN workflow_steps s"
+                    " ON s.run_id = r.run_id AND s.ordinal = 0"
+                    " WHERE r.workflow_id = %s AND r.flow_key = %s"
+                    " ORDER BY start DESC OFFSET %s LIMIT 1",
+                    (run.workflow_id, run.flow_key, limit - 1),
+                )
+                row = await cursor.fetchone()
+                if row is not None and row["start"] + window > now:
+                    due_at = row["start"] + window
+            if gate.debounce is not None:
+                if active:
+                    cursor = await conn.execute(
+                        "UPDATE workflow_steps SET args = %s, due_at = %s,"
+                        " updated_at = %s WHERE run_id = %s AND ordinal = 0"
+                        " AND status = %s",
+                        (
+                            _json(root_step.args),
+                            now + gate.debounce,
+                            now,
+                            active[0]["run_id"],
+                            StepStatus.READY.value,
+                        ),
+                    )
+                    if cursor.rowcount:
+                        return FlowAdmission("coalesced", active[0]["run_id"])
+                due_at = now + gate.debounce
+            if run.request_key is not None:
+                await conn.execute(
+                    "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
+                    " VALUES (%s, %s, %s)",
+                    (run.workflow_id, run.request_key, run.run_id),
+                )
+            await self._insert_run(conn, run)
+            await self._insert_step(conn, dataclasses.replace(root_step, due_at=due_at))
+            await self._append_events(conn, run.run_id, events, run.created_at)
+        return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
     async def claim_next(
         self,

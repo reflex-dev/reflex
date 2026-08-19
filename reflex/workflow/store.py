@@ -117,6 +117,54 @@ class StepCompletion:
     parent_arrival: tuple[str, int, dict[str, Any], str] | None = None
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class FlowGate:
+    """One root's start policy, evaluated inside the admitting transaction.
+
+    A start policy is a read followed by a write -- count the active runs,
+    then insert or refuse -- and any gap between the two is a race that
+    concurrent starts in different processes both win. The kernel used to
+    guard the gap with an asyncio lock, which serializes one process and
+    nothing else. The whole decision therefore belongs to the store, executed
+    under a durable per-key lock, and this value is the policy handed in.
+
+    Attributes:
+        singleton_skip: Refuse the start while any run is active on the key.
+        singleton_cancel: Request cancellation of every active run on the key
+            before admitting the replacement, in the same transaction.
+        rate_limit: ``(limit, window_seconds)``; refuse once the key has had
+            that many starts inside the window.
+        throttle: ``(limit, window_seconds)``; delay the root so each start
+            sits a window after the limit-th most recent one.
+        debounce: Quiet-period seconds; an existing pending root absorbs this
+            start, taking its payload and a fresh deadline.
+    """
+
+    singleton_skip: bool = False
+    singleton_cancel: bool = False
+    rate_limit: tuple[int, float] | None = None
+    throttle: tuple[int, float] | None = None
+    debounce: float | None = None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class FlowAdmission:
+    """What one gated admission did, decided atomically by the store.
+
+    Attributes:
+        disposition: How the submission was handled.
+        run_id: The created or prior run, when one identifies the outcome.
+        retry_after: Suggested resubmission delay for a rejected start.
+        cancelled: Runs whose cancellation this admission requested, for the
+            kernel to stop locally and finalize.
+    """
+
+    disposition: Literal["started", "skipped", "rejected", "coalesced", "deduplicated"]
+    run_id: str | None = None
+    retry_after: float | None = None
+    cancelled: tuple[str, ...] = ()
+
+
 class RunStore(Protocol):
     """Protocol implemented by workflow run stores."""
 
@@ -125,19 +173,16 @@ class RunStore(Protocol):
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
-        *,
-        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
+
+        Roots with a start policy are admitted through ``admit_flow``, where
+        the whole policy decision shares the admitting transaction.
 
         Args:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
-            max_active: When set, admit only if fewer than this many runs are
-                already active under the run's flow key. Checked inside the
-                admitting transaction, because a check made outside it is a
-                race that two concurrent starts both win.
 
         Returns:
             ``(True, run_id)`` when the run was created, or
@@ -328,6 +373,34 @@ class RunStore(Protocol):
 
         Returns:
             How many non-terminal runs share the key.
+        """
+        ...
+
+    async def admit_flow(
+        self,
+        run: RunRecord,
+        root_step: StepRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        gate: FlowGate,
+        now: float,
+    ) -> FlowAdmission:
+        """Admit a run under a start policy, atomically.
+
+        The dedupe check, every policy read, any policy mutation, and the
+        insert happen in one transaction under a durable lock on the run's
+        ``(workflow_id, flow_key)``, so two processes admitting concurrently
+        cannot both pass a limit of one. Policies apply in declaration order:
+        dedupe, singleton, rate limit, throttle, debounce.
+
+        Args:
+            run: The run record to create, carrying the flow key.
+            root_step: The preallocated root mailbox slot.
+            events: History events to append on creation.
+            gate: The policy to enforce.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What was done, decided inside the transaction.
         """
         ...
 
@@ -869,19 +942,16 @@ class MemoryRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
-        *,
-        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
+
+        Roots with a start policy are admitted through ``admit_flow``, where
+        the whole policy decision shares the admitting transaction.
 
         Args:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
-            max_active: When set, admit only if fewer than this many runs are
-                already active under the run's flow key. Checked inside the
-                admitting transaction, because a check made outside it is a
-                race that two concurrent starts both win.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -892,19 +962,6 @@ class MemoryRunStore:
                 existing = self._dedupe.get(dedupe_key)
                 if existing is not None:
                     return False, existing
-            if max_active is not None and run.flow_key is not None:
-                active = sorted(
-                    (
-                        other
-                        for other in self._runs.values()
-                        if other.workflow_id == run.workflow_id
-                        and other.flow_key == run.flow_key
-                        and other.status not in TERMINAL_RUN_STATUSES
-                    ),
-                    key=lambda other: (other.created_at, other.run_id),
-                )
-                if len(active) >= max_active:
-                    return False, active[0].run_id
             if run.request_key is not None:
                 self._dedupe[run.workflow_id, run.request_key] = run.run_id
             self._runs[run.run_id] = run
@@ -1326,6 +1383,109 @@ class MemoryRunStore:
                 and run.flow_key == flow_key
                 and run.status not in TERMINAL_RUN_STATUSES
             )
+
+    async def admit_flow(
+        self,
+        run: RunRecord,
+        root_step: StepRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        gate: FlowGate,
+        now: float,
+    ) -> FlowAdmission:
+        """Admit a run under a start policy, atomically.
+
+        Args:
+            run: The run record to create, carrying the flow key.
+            root_step: The preallocated root mailbox slot.
+            events: History events to append on creation.
+            gate: The policy to enforce.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What was done, decided under the store lock.
+        """
+        async with self._lock:
+            if run.request_key is not None:
+                existing = self._dedupe.get((run.workflow_id, run.request_key))
+                if existing is not None:
+                    return FlowAdmission("deduplicated", existing)
+            active = sorted(
+                (
+                    other
+                    for other in self._runs.values()
+                    if other.workflow_id == run.workflow_id
+                    and other.flow_key == run.flow_key
+                    and other.status not in TERMINAL_RUN_STATUSES
+                ),
+                key=lambda other: (other.created_at, other.run_id),
+            )
+            if gate.singleton_skip and active:
+                return FlowAdmission("skipped", active[0].run_id)
+            cancelled: list[str] = []
+            if gate.singleton_cancel:
+                for other in active:
+                    self._runs[other.run_id] = dataclasses.replace(
+                        other,
+                        cancel_requested=True,
+                        status=RunStatus.CANCELLING,
+                        updated_at=now,
+                    )
+                    self._append_events(
+                        other.run_id,
+                        ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),),
+                        now,
+                    )
+                    cancelled.append(other.run_id)
+            due_at = root_step.due_at
+            if gate.rate_limit is not None:
+                limit, window = gate.rate_limit
+                started = sum(
+                    1
+                    for other in self._runs.values()
+                    if other.workflow_id == run.workflow_id
+                    and other.flow_key == run.flow_key
+                    and other.created_at > now - window
+                )
+                if started >= limit:
+                    return FlowAdmission("rejected", retry_after=window)
+            if gate.throttle is not None:
+                limit, window = gate.throttle
+                starts = sorted(
+                    (
+                        max(steps[0].due_at, other.created_at)
+                        for other in self._runs.values()
+                        if other.workflow_id == run.workflow_id
+                        and other.flow_key == run.flow_key
+                        if (steps := self._steps.get(other.run_id))
+                    ),
+                    reverse=True,
+                )
+                previous = starts[limit - 1] if len(starts) >= limit else None
+                if previous is not None and previous + window > now:
+                    due_at = previous + window
+            if gate.debounce is not None:
+                pending = active[0] if active else None
+                if pending is not None:
+                    steps = self._steps.get(pending.run_id)
+                    if steps and steps[0].status is StepStatus.READY:
+                        # Latest wins: the burst's final payload is the one
+                        # the debounced run eventually starts with, and the
+                        # replacement rides the same transaction as the
+                        # deadline extension.
+                        steps[0] = dataclasses.replace(
+                            steps[0],
+                            args=root_step.args,
+                            due_at=now + gate.debounce,
+                            updated_at=now,
+                        )
+                        return FlowAdmission("coalesced", pending.run_id)
+                due_at = now + gate.debounce
+            if run.request_key is not None:
+                self._dedupe[run.workflow_id, run.request_key] = run.run_id
+            self._runs[run.run_id] = run
+            self._steps[run.run_id] = [dataclasses.replace(root_step, due_at=due_at)]
+            self._append_events(run.run_id, events, run.created_at)
+            return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
     async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
         """Find the oldest run still in flight under a flow-control key.
@@ -2419,19 +2579,16 @@ class SqliteRunStore:
         run: RunRecord,
         root_step: StepRecord,
         events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
-        *,
-        max_active: int | None = None,
     ) -> tuple[bool, str]:
         """Atomically admit a run, deduplicating on the request key.
+
+        Roots with a start policy are admitted through ``admit_flow``, where
+        the whole policy decision shares the admitting transaction.
 
         Args:
             run: The run record to create.
             root_step: The preallocated root mailbox slot.
             events: History events to append on creation.
-            max_active: When set, admit only if fewer than this many runs are
-                already active under the run's flow key. Checked inside the
-                admitting transaction, because a check made outside it is a
-                race that two concurrent starts both win.
 
         Returns:
             Whether the run was created, and the authoritative run id.
@@ -2460,18 +2617,6 @@ class SqliteRunStore:
                             " VALUES (?, ?, ?)",
                             (run.workflow_id, run.request_key, run.run_id),
                         )
-                    if max_active is not None and run.flow_key is not None:
-                        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
-                        rows = self._db.execute(
-                            "SELECT run_id FROM workflow_runs"
-                            " WHERE workflow_id = ? AND flow_key = ?"
-                            f" AND status NOT IN ({','.join('?' * len(terminal))})"
-                            " ORDER BY created_at, run_id",
-                            (run.workflow_id, run.flow_key, *terminal),
-                        ).fetchall()
-                        if len(rows) >= max_active:
-                            self._db.execute("ROLLBACK")
-                            return False, rows[0]["run_id"]
                     self._insert_run(run)
                     self._insert_step(root_step)
                     self._append_events(run.run_id, events, run.created_at)
@@ -2480,6 +2625,134 @@ class SqliteRunStore:
                     self._db.execute("ROLLBACK")
                     raise
                 return True, run.run_id
+
+        return await asyncio.to_thread(work)
+
+    async def admit_flow(
+        self,
+        run: RunRecord,
+        root_step: StepRecord,
+        events: tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+        gate: FlowGate,
+        now: float,
+    ) -> FlowAdmission:
+        """Admit a run under a start policy, atomically.
+
+        ``BEGIN IMMEDIATE`` takes the database write lock up front, so the
+        whole decision is atomic against every other connection -- including
+        one held by a different process sharing the file, which is exactly
+        where an in-process lock stops helping.
+
+        Args:
+            run: The run record to create, carrying the flow key.
+            root_step: The preallocated root mailbox slot.
+            events: History events to append on creation.
+            gate: The policy to enforce.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What was done, decided inside the transaction.
+        """
+
+        def work() -> FlowAdmission:
+            """Run the whole gated admission in one write transaction.
+
+            Returns:
+                The admission outcome.
+            """
+            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+            not_terminal = f"status NOT IN ({','.join('?' * len(terminal))})"
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    if run.request_key is not None:
+                        row = self._db.execute(
+                            "SELECT run_id FROM workflow_dedupe"
+                            " WHERE workflow_id = ? AND request_key = ?",
+                            (run.workflow_id, run.request_key),
+                        ).fetchone()
+                        if row is not None:
+                            self._db.execute("ROLLBACK")
+                            return FlowAdmission("deduplicated", row["run_id"])
+                    active = self._db.execute(
+                        "SELECT run_id FROM workflow_runs"
+                        f" WHERE workflow_id = ? AND flow_key = ? AND {not_terminal}"
+                        " ORDER BY created_at, run_id",
+                        (run.workflow_id, run.flow_key, *terminal),
+                    ).fetchall()
+                    if gate.singleton_skip and active:
+                        self._db.execute("ROLLBACK")
+                        return FlowAdmission("skipped", active[0]["run_id"])
+                    cancelled: list[str] = []
+                    if gate.singleton_cancel:
+                        for row in active:
+                            self._db.execute(
+                                "UPDATE workflow_runs SET cancel_requested = 1,"
+                                " status = ?, updated_at = ? WHERE run_id = ?",
+                                (RunStatus.CANCELLING.value, now, row["run_id"]),
+                            )
+                            self._append_events(
+                                row["run_id"],
+                                ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),),
+                                now,
+                            )
+                            cancelled.append(row["run_id"])
+                    due_at = root_step.due_at
+                    if gate.rate_limit is not None:
+                        limit, window = gate.rate_limit
+                        started = self._db.execute(
+                            "SELECT count(*) AS n FROM workflow_runs"
+                            " WHERE workflow_id = ? AND flow_key = ?"
+                            " AND created_at > ?",
+                            (run.workflow_id, run.flow_key, now - window),
+                        ).fetchone()["n"]
+                        if started >= limit:
+                            self._db.execute("ROLLBACK")
+                            return FlowAdmission("rejected", retry_after=window)
+                    if gate.throttle is not None:
+                        limit, window = gate.throttle
+                        row = self._db.execute(
+                            "SELECT MAX(s.due_at, r.created_at) AS start"
+                            " FROM workflow_runs r JOIN workflow_steps s"
+                            " ON s.run_id = r.run_id AND s.ordinal = 0"
+                            " WHERE r.workflow_id = ? AND r.flow_key = ?"
+                            " ORDER BY start DESC LIMIT 1 OFFSET ?",
+                            (run.workflow_id, run.flow_key, limit - 1),
+                        ).fetchone()
+                        if row is not None and row["start"] + window > now:
+                            due_at = row["start"] + window
+                    if gate.debounce is not None:
+                        if active:
+                            deferred = self._db.execute(
+                                "UPDATE workflow_steps SET args = ?, due_at = ?,"
+                                " updated_at = ? WHERE run_id = ? AND ordinal = 0"
+                                " AND status = ?",
+                                (
+                                    json.dumps(root_step.args),
+                                    now + gate.debounce,
+                                    now,
+                                    active[0]["run_id"],
+                                    StepStatus.READY.value,
+                                ),
+                            )
+                            if deferred.rowcount:
+                                self._db.execute("COMMIT")
+                                return FlowAdmission("coalesced", active[0]["run_id"])
+                        due_at = now + gate.debounce
+                    if run.request_key is not None:
+                        self._db.execute(
+                            "INSERT INTO workflow_dedupe"
+                            " (workflow_id, request_key, run_id) VALUES (?, ?, ?)",
+                            (run.workflow_id, run.request_key, run.run_id),
+                        )
+                    self._insert_run(run)
+                    self._insert_step(dataclasses.replace(root_step, due_at=due_at))
+                    self._append_events(run.run_id, events, run.created_at)
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+                return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
         return await asyncio.to_thread(work)
 

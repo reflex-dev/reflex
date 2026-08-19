@@ -774,3 +774,73 @@ async def test_cancelling_an_all_mode_parent_leaves_its_branches_alone(
             "cancelling the parent cancelled delegated children: "
             f"{[(c.run_id, c.status) for c in children]}"
         )
+
+
+async def test_a_policy_decorated_branch_is_refused(forked_registration_context):
+    """A policy fan-out would silently bypass is a policy refused loudly.
+
+    Fan-out writes its branches in the parent's committing transaction, not
+    through policy admission, so a throttle on a branch root would simply not
+    apply -- five branches under a throttle of two all start at once and
+    nothing says so. Until branches go through the same admission primitive,
+    declaring both is an error that names the way out.
+    """
+    from reflex_base.workflow import Throttle
+
+    class Limited(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.limited")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="none",
+            throttle=Throttle(limit=2, period="10s"),
+        )
+        def start(self, lead: str):
+            """A throttled root.
+
+            Args:
+                lead: The lead identifier.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=lead)
+
+    class FansOut(rx.State):
+        __workflow__ = WorkflowConfig(id="fan.bypasser")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out to a policy-decorated root.
+
+            Returns:
+                The refused fan-out.
+            """
+            return rx.parallel(
+                Limited.start("a"), Limited.start("b"), then=FansOut.done
+            )
+
+        @rx.event(durable=True, effect="none")
+        def done(self, results: list):
+            """Collect.
+
+            Args:
+                results: One entry per branch.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=len(results))
+
+    async with WorkflowTestHarness(FansOut, Limited) as harness:
+        started = await harness.start(FansOut.begin())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED, (
+            "a definition error fails on its first attempt rather than "
+            f"burning retries: {snapshot.status}"
+        )
+        assert "start policy" in str(snapshot.error)

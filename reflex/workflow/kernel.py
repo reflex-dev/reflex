@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Final
 from pydantic import TypeAdapter
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
 from reflex_base.utils import console
-from reflex_base.utils.exceptions import WorkflowRuntimeError
+from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
     DEFAULT_MAX_RECOVERIES,
@@ -61,6 +61,7 @@ from reflex.workflow.steps import SubstepJournal, bind_journal, unbind_journal
 from reflex.workflow.store import (
     Claim,
     DeliveryDisposition,
+    FlowGate,
     RunStore,
     StaleClaimError,
     StepCompletion,
@@ -500,7 +501,6 @@ class WorkflowKernel:
         self._observer = observer
         self._queues = tuple(queues) if queues is not None else None
         self._wakeup = asyncio.Event()
-        self._admission = asyncio.Lock()
         self._closing = False
         self._worker: asyncio.Task | None = None
 
@@ -611,73 +611,6 @@ class WorkflowKernel:
             return handler.id
         return f"{handler.id}:{_extract_key_field(payload, field)!r}"
 
-    async def _apply_start_policy(
-        self,
-        defn: WorkflowDefinition,
-        handler: HandlerDefinition,
-        flow_key: str,
-        now: float,
-    ) -> tuple[StartResult | None, float]:
-        """Decide whether and when a start may proceed.
-
-        Args:
-            defn: The workflow definition.
-            handler: The root handler being started.
-            flow_key: The computed grouping key.
-            now: Current time in epoch seconds.
-
-        Returns:
-            A result that ends admission, or None to proceed, together with the
-            time the root slot becomes due.
-        """
-        if handler.singleton is not None:
-            existing = await self._store.first_active(defn.workflow_id, flow_key)
-            if handler.singleton.mode == "skip":
-                # Deliberately not decided here: admission re-checks inside its
-                # own transaction (see _admit), because a decision made out
-                # here is one that two concurrent starts both win.
-                return None, now
-            if existing is not None:
-                # Drive the cancellation to a terminal state before admitting the
-                # replacement, so "one active run per key" holds at every instant
-                # rather than only once a worker happens to drain the old one.
-                await self.cancel(existing.run_id)
-                await self._finalize_control(now)
-        if handler.rate_limit is not None:
-            window = parse_duration(handler.rate_limit.period)
-            started = await self._store.count_started_since(
-                defn.workflow_id, flow_key, now - window
-            )
-            if started >= handler.rate_limit.limit:
-                return (
-                    StartResult(
-                        disposition="rejected", retryable=True, retry_after=window
-                    ),
-                    now,
-                )
-        if handler.throttle is not None:
-            window = parse_duration(handler.throttle.period)
-            previous = await self._store.nth_recent_start(
-                defn.workflow_id, flow_key, handler.throttle.limit
-            )
-            if previous is not None and previous + window > now:
-                # Delay rather than drop, and space the backlog: each start
-                # sits a window after the limit-th most recent one, so a held
-                # burst is released at the configured rate instead of at once.
-                return None, previous + window
-        if handler.debounce is not None:
-            window = parse_duration(handler.debounce.period)
-            pending = await self._store.first_active(defn.workflow_id, flow_key)
-            if pending is not None and await self._store.defer_root(
-                pending.run_id, now + window, now
-            ):
-                return (
-                    StartResult(disposition="coalesced", run_id=pending.run_id),
-                    now,
-                )
-            return None, now + window
-        return None, now
-
     async def _started_handler(self, run_id: str, handler_id: str) -> bool:
         """Whether a run's root step is the handler a delivery would start.
 
@@ -767,20 +700,60 @@ class WorkflowKernel:
         flow_key = self._flow_key(handler, payload)
         if flow_key is None:
             return await self._admit(defn, handler, payload, request_key, labels, None)
-        # A start policy is a check followed by an insert, so concurrent starts
-        # must not interleave between them or two runs slip past a singleton.
-        async with self._admission:
-            now = self._clock()
-            decided, due_at = await self._apply_start_policy(
-                defn, handler, flow_key, now
+        # A start policy is a read followed by a write, and only the store can
+        # make the pair atomic: an in-process lock serializes one process, and
+        # a fleet is not one process. The whole decision executes inside a
+        # single store transaction under a durable lock on the flow key.
+        now = self._clock()
+        singleton = handler.singleton
+        gate = FlowGate(
+            singleton_skip=singleton is not None and singleton.mode == "skip",
+            singleton_cancel=singleton is not None and singleton.mode == "cancel",
+            rate_limit=(
+                (handler.rate_limit.limit, parse_duration(handler.rate_limit.period))
+                if handler.rate_limit is not None
+                else None
+            ),
+            throttle=(
+                (handler.throttle.limit, parse_duration(handler.throttle.period))
+                if handler.throttle is not None
+                else None
+            ),
+            debounce=(
+                parse_duration(handler.debounce.period)
+                if handler.debounce is not None
+                else None
+            ),
+        )
+        run, root_step, admission = self._admission_records(
+            defn, handler, payload, request_key, labels, flow_key, now
+        )
+        outcome = await self._store.admit_flow(run, root_step, admission, gate, now)
+        for cancelled_id in outcome.cancelled:
+            # Durable intent was written in the admitting transaction; what is
+            # left is this process's share -- stop a local in-flight attempt
+            # and tell the observer.
+            await self._notify_run(
+                cancelled_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),)
             )
-            if decided is not None:
-                return decided
-            return await self._admit(
-                defn, handler, payload, request_key, labels, flow_key, due_at
+            task = self._inflight.get(cancelled_id)
+            if task is not None:
+                task.cancel()
+        if outcome.cancelled:
+            await self._finalize_control(self._clock())
+        if outcome.disposition == "started":
+            self._notify(run, admission)
+            self._wakeup.set()
+            return StartResult(disposition="started", run_id=outcome.run_id)
+        if outcome.disposition == "rejected":
+            return StartResult(
+                disposition="rejected",
+                retryable=True,
+                retry_after=outcome.retry_after,
             )
+        return StartResult(disposition=outcome.disposition, run_id=outcome.run_id)
 
-    async def _admit(
+    def _admission_records(
         self,
         defn: WorkflowDefinition,
         handler: HandlerDefinition,
@@ -788,9 +761,14 @@ class WorkflowKernel:
         request_key: str | None,
         labels: dict[str, str] | None,
         flow_key: str | None,
+        now: float,
         due_at: float | None = None,
-    ) -> StartResult:
-        """Create the run and its root slot.
+    ) -> tuple[
+        RunRecord,
+        StepRecord,
+        tuple[tuple[HistoryEventType, dict[str, Any]], ...],
+    ]:
+        """Build the records one admission writes.
 
         Args:
             defn: The workflow definition.
@@ -799,13 +777,12 @@ class WorkflowKernel:
             request_key: Idempotent admission key.
             labels: Server-derived indexing labels.
             flow_key: Start-policy grouping key, if the root declares one.
+            now: Current time in epoch seconds.
             due_at: Earliest start time, when a policy delayed it.
 
         Returns:
-            The admission result.
+            The run record, its root slot, and the admission history events.
         """
-        now = self._clock()
-        due_at = now if due_at is None else due_at
         run_id = uuid.uuid4().hex
         run = RunRecord(
             run_id=run_id,
@@ -828,7 +805,7 @@ class WorkflowKernel:
             handler_id=handler.id,
             status=StepStatus.READY,
             args=payload,
-            due_at=due_at,
+            due_at=now if due_at is None else due_at,
             origin="root",
             queue=handler.queue or "default",
             created_at=now,
@@ -844,29 +821,44 @@ class WorkflowKernel:
                 {"ordinal": 0, "handler_id": handler.id},
             ),
         )
-        # A singleton's "at most one active run per key" is enforced by the
-        # store inside the admitting transaction. Deciding it beforehand is a
-        # check-then-act race that two concurrent starts both pass, which for
-        # a singleton means exactly the duplicate it exists to prevent.
-        singleton = handler.singleton
-        max_active = 1 if singleton is not None and singleton.mode == "skip" else None
+        return run, root_step, admission
+
+    async def _admit(
+        self,
+        defn: WorkflowDefinition,
+        handler: HandlerDefinition,
+        payload: dict[str, Any],
+        request_key: str | None,
+        labels: dict[str, str] | None,
+        flow_key: str | None,
+        due_at: float | None = None,
+    ) -> StartResult:
+        """Create the run and its root slot for a policy-free root.
+
+        Roots that declare a start policy go through ``admit_flow`` instead,
+        where the whole decision is one store transaction.
+
+        Args:
+            defn: The workflow definition.
+            handler: The root handler.
+            payload: The decoded start payload.
+            request_key: Idempotent admission key.
+            labels: Server-derived indexing labels.
+            flow_key: Start-policy grouping key, if the root declares one.
+            due_at: Earliest start time, when a policy delayed it.
+
+        Returns:
+            The admission result.
+        """
+        now = self._clock()
+        run, root_step, admission = self._admission_records(
+            defn, handler, payload, request_key, labels, flow_key, now, due_at
+        )
         created, authoritative_run_id = await self._store.admit(
-            run, root_step, admission, max_active=max_active
+            run, root_step, admission
         )
         if not created:
-            disposition = "skipped" if max_active is not None else "deduplicated"
-            if run.request_key is not None and disposition == "skipped":
-                # A redelivery that also hits the limit is still a dedupe:
-                # the caller is asking about a run it already started.
-                existing = await self._store.find_by_request_key(
-                    defn.workflow_id, run.request_key
-                )
-                if existing == authoritative_run_id:
-                    disposition = "deduplicated"
-            return StartResult(
-                disposition=disposition,  # pyright: ignore[reportArgumentType]
-                run_id=authoritative_run_id,
-            )
+            return StartResult(disposition="deduplicated", run_id=authoritative_run_id)
         self._notify(run, admission)
         self._wakeup.set()
         return StartResult(disposition="started", run_id=authoritative_run_id)
@@ -2357,6 +2349,27 @@ class WorkflowKernel:
                     "and a branch must be a manual root just like a direct start."
                 )
                 raise WorkflowRuntimeError(msg)
+            if (
+                handler.singleton is not None
+                or handler.rate_limit is not None
+                or handler.throttle is not None
+                or handler.debounce is not None
+            ):
+                # Fan-out writes its children in the parent's committing
+                # transaction rather than through policy admission, so a
+                # policy on a branch root would be silently bypassed -- five
+                # branches under a throttle of two all start at once, and
+                # nothing says so. Refusing is honest until branches go
+                # through the same admission primitive as a direct start.
+                msg = (
+                    f"Cannot fan out to {handler.id!r} of {defn.workflow_id!r}: "
+                    "it declares a start policy (singleton, rate_limit, "
+                    "throttle, or debounce), and fan-out admits branches "
+                    "directly, bypassing policies. Remove the policy from "
+                    "this root, or start it as its own run with "
+                    "rx.workflows.start()."
+                )
+                raise WorkflowDefinitionError(msg)
             child_id = uuid.uuid4().hex
             records.append((
                 RunRecord(

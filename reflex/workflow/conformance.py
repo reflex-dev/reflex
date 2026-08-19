@@ -940,26 +940,41 @@ async def check_the_crash_matrix_holds_at_every_boundary(store: RunStore) -> Non
     assert steps[1].status is StepStatus.READY
 
 
-async def check_admission_enforces_the_active_limit(store: RunStore) -> None:
-    """A singleton's limit is decided by the admitting transaction itself."""
-    first = make_run("a", flow_key="k1")
-    assert await store.admit(first, make_step("a"), _ADMITTED, max_active=1) == (
-        True,
-        "a",
+async def check_flow_gate_enforces_every_policy(store: RunStore) -> None:
+    """The whole policy decision is one atomic store transaction.
+
+    Deciding outside the store is a check-then-act race two processes both
+    win, which is how every advertised start policy was violated 50 out of 50
+    times across two OS processes. These pin the store-side semantics; the
+    cross-instance atomicity itself is pinned by tests that open two stores
+    on one database.
+    """
+    from reflex.workflow.store import FlowGate
+
+    skip = FlowGate(singleton_skip=True)
+    first = await store.admit_flow(
+        make_run("a", flow_key="k1"), make_step("a"), _ADMITTED, skip, NOW
     )
-    # A second start under the same key is refused, and told which run holds it.
-    second = make_run("b", flow_key="k1", created_at=NOW + 1)
-    assert await store.admit(second, make_step("b"), _ADMITTED, max_active=1) == (
-        False,
-        "a",
+    assert (first.disposition, first.run_id) == ("started", "a")
+    # A second start under the key is refused and told which run holds it.
+    second = await store.admit_flow(
+        make_run("b", flow_key="k1", created_at=NOW + 1),
+        make_step("b"),
+        _ADMITTED,
+        skip,
+        NOW + 1,
     )
+    assert (second.disposition, second.run_id) == ("skipped", "a")
     assert await store.get_run("b") is None
     # A different key is unaffected.
-    other = make_run("c", flow_key="k2", created_at=NOW + 2)
-    assert await store.admit(other, make_step("c"), _ADMITTED, max_active=1) == (
-        True,
-        "c",
+    other = await store.admit_flow(
+        make_run("c", flow_key="k2", created_at=NOW + 2),
+        make_step("c"),
+        _ADMITTED,
+        skip,
+        NOW + 2,
     )
+    assert other.disposition == "started"
     # Once the holder is terminal the key is free again.
     assert await store.finalize_run(
         "a",
@@ -968,10 +983,131 @@ async def check_admission_enforces_the_active_limit(store: RunStore) -> None:
         event=HistoryEventType.RUN_COMPLETED,
         now=NOW + 3,
     )
-    third = make_run("d", flow_key="k1", created_at=NOW + 4)
-    assert await store.admit(third, make_step("d"), _ADMITTED, max_active=1) == (
-        True,
-        "d",
+    third = await store.admit_flow(
+        make_run("d", flow_key="k1", created_at=NOW + 4),
+        make_step("d"),
+        _ADMITTED,
+        skip,
+        NOW + 4,
+    )
+    assert third.disposition == "started"
+
+
+async def check_flow_gate_rate_throttle_and_debounce(store: RunStore) -> None:
+    """Rate limits refuse, throttles delay, debounces coalesce latest-wins."""
+    from reflex.workflow.store import FlowGate
+
+    rate = FlowGate(rate_limit=(1, 60.0))
+    first = await store.admit_flow(
+        make_run("r1", flow_key="rk"), make_step("r1"), _ADMITTED, rate, NOW
+    )
+    assert first.disposition == "started"
+    refused = await store.admit_flow(
+        make_run("r2", flow_key="rk", created_at=NOW + 1),
+        make_step("r2"),
+        _ADMITTED,
+        rate,
+        NOW + 1,
+    )
+    assert refused.disposition == "rejected"
+    assert refused.retry_after is not None
+    assert abs(refused.retry_after - 60.0) < 1e-9
+    assert await store.get_run("r2") is None
+
+    throttle = FlowGate(throttle=(1, 60.0))
+    held = await store.admit_flow(
+        make_run("t1", flow_key="tk", created_at=NOW + 1),
+        make_step("t1", due_at=NOW + 1),
+        _ADMITTED,
+        throttle,
+        NOW + 1,
+    )
+    assert held.disposition == "started"
+    spaced = await store.admit_flow(
+        make_run("t2", flow_key="tk", created_at=NOW + 2),
+        make_step("t2", due_at=NOW + 2),
+        _ADMITTED,
+        throttle,
+        NOW + 2,
+    )
+    assert spaced.disposition == "started"
+    steps = await store.get_steps("t2")
+    assert abs(steps[0].due_at - (NOW + 1 + 60.0)) < 1e-9, (
+        "the second start sits one window after the first, not at its own time"
+    )
+
+    debounce = FlowGate(debounce=30.0)
+    pending = await store.admit_flow(
+        make_run("d1", flow_key="dk", created_at=NOW + 2),
+        make_step("d1", args={"revision": 1}, due_at=NOW + 2),
+        _ADMITTED,
+        debounce,
+        NOW + 2,
+    )
+    assert pending.disposition == "started"
+    coalesced = await store.admit_flow(
+        make_run("d2", flow_key="dk", created_at=NOW + 3),
+        make_step("d2", args={"revision": 2}, due_at=NOW + 3),
+        _ADMITTED,
+        debounce,
+        NOW + 3,
+    )
+    assert (coalesced.disposition, coalesced.run_id) == ("coalesced", "d1")
+    assert await store.get_run("d2") is None
+    steps = await store.get_steps("d1")
+    assert abs(steps[0].due_at - (NOW + 3 + 30.0)) < 1e-9, "the quiet period extends"
+    assert steps[0].args == {"revision": 2}, (
+        "a debounced burst starts with its last payload, not its first"
+    )
+
+
+async def check_flow_gate_singleton_cancel_replaces(store: RunStore) -> None:
+    """Cancel-mode admits the replacement and cancels the incumbent atomically."""
+    from reflex.workflow.store import FlowGate
+
+    cancel = FlowGate(singleton_cancel=True)
+    first = await store.admit_flow(
+        make_run("old", flow_key="ck"), make_step("old"), _ADMITTED, cancel, NOW
+    )
+    assert first.disposition == "started"
+    replaced = await store.admit_flow(
+        make_run("new", flow_key="ck", created_at=NOW + 1),
+        make_step("new"),
+        _ADMITTED,
+        cancel,
+        NOW + 1,
+    )
+    assert replaced.disposition == "started"
+    assert replaced.cancelled == ("old",)
+    old = await store.get_run("old")
+    assert old is not None
+    assert old.cancel_requested, (
+        "the incumbent's cancellation intent rides the admitting transaction"
+    )
+
+
+async def check_flow_gate_dedupes_before_policy(store: RunStore) -> None:
+    """A redelivered event is its prior run, not a new start to be policed."""
+    from reflex.workflow.store import FlowGate
+
+    gate = FlowGate(rate_limit=(1, 60.0))
+    first = await store.admit_flow(
+        make_run("g1", flow_key="gk", request_key="evt-1"),
+        make_step("g1"),
+        _ADMITTED,
+        gate,
+        NOW,
+    )
+    assert first.disposition == "started"
+    redelivered = await store.admit_flow(
+        make_run("g2", flow_key="gk", request_key="evt-1", created_at=NOW + 1),
+        make_step("g2"),
+        _ADMITTED,
+        gate,
+        NOW + 1,
+    )
+    assert (redelivered.disposition, redelivered.run_id) == ("deduplicated", "g1"), (
+        "hitting the rate limit must not turn a redelivery into a rejection"
     )
 
 
@@ -1152,7 +1288,10 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,
     check_the_crash_matrix_holds_at_every_boundary,
-    check_admission_enforces_the_active_limit,
+    check_flow_gate_enforces_every_policy,
+    check_flow_gate_rate_throttle_and_debounce,
+    check_flow_gate_singleton_cancel_replaces,
+    check_flow_gate_dedupes_before_policy,
     check_skip_unsticks_a_stopped_run,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,
