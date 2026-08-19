@@ -783,6 +783,101 @@ async def check_finalize_delivers_a_childs_arrival(store: RunStore) -> None:
     assert steps[1].status is StepStatus.READY
 
 
+async def check_the_crash_matrix_holds_at_every_boundary(store: RunStore) -> None:
+    """Walk CONTRACT.md section 8: kill at each boundary, check the outcome.
+
+    A worker dies without cleanup at an arbitrary instant. What the store
+    holds afterwards is the only evidence, and the contract names exactly one
+    permitted outcome per boundary. This walks them in order rather than
+    trusting that each is covered somewhere.
+    """
+    # Killed before admission commits: nothing exists, and the retry admits.
+    assert await store.get_run("run1") is None
+    await store.admit(make_run(), make_step(), _ADMITTED)
+
+    # Killed after claim, before the handler ran: the lease lapses and
+    # recovery re-offers the step. It costs a recovery, not an attempt.
+    claim = await store.claim_next(NOW, lease_duration=1.0)
+    assert claim is not None
+    recovered, failed = await store.recover_orphans(NOW + 2, 10)
+    assert (recovered, failed) == (1, ())
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.RECOVERY_WAIT
+    assert steps[0].attempts == 0, "a crash consumed a business attempt"
+    assert steps[0].recoveries == 1
+
+    # Killed mid-handler after a substep recorded: the record survives, so a
+    # re-execution replays it instead of repeating the work.
+    claim = await store.claim_next(NOW + 3, lease_duration=1.0)
+    assert claim is not None
+    assert await store.record_substep(
+        "run1", 0, claim.step.epoch, "charged", {"id": "ch_1"}, NOW + 3
+    )
+    await store.recover_orphans(NOW + 5, 10)
+    assert await store.get_substeps("run1", 0) == {"charged": {"id": "ch_1"}}
+
+    # Killed during a recovery sweep: sweeping again is idempotent, not a
+    # second recovery of the same step.
+    before = (await store.get_steps("run1"))[0].recoveries
+    assert await store.recover_orphans(NOW + 6, 10) == (0, ())
+    assert (await store.get_steps("run1"))[0].recoveries == before
+
+    # Killed after a commit: everything the transition promised is durable,
+    # including a child's arrival at its parent's join.
+    claim = await store.claim_next(NOW + 7, lease_duration=LEASE)
+    assert claim is not None
+    child = make_run("child1", parent_run_id="run1", parent_ordinal=1)
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.WAITING,
+            state={"n": 1},
+            new_steps=(
+                make_step(
+                    ordinal=1,
+                    status=StepStatus.BLOCKED,
+                    wait_key="join:1",
+                    join_expected=1,
+                    origin="join",
+                    due_at=0.0,
+                ),
+            ),
+            next_ordinal=2,
+            children=((child, make_step("child1")),),
+        ),
+        NOW + 7,
+    )
+    run = await store.get_run("run1")
+    assert run is not None
+    assert run.state == {"n": 1}
+    assert await store.get_run("child1") is not None
+
+    # The child dies for good: its arrival lands with its terminal
+    # transition, so the join is never left waiting on a finished child.
+    child_claim = await store.claim_next(NOW + 8, lease_duration=LEASE)
+    assert child_claim is not None
+    assert child_claim.run.run_id == "child1"
+    await store.commit(
+        child_claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.COMPLETED,
+            state={},
+            parent_arrival=(
+                "run1",
+                1,
+                {"run_id": "child1", "status": "COMPLETED", "result": None},
+                "child1",
+            ),
+        ),
+        NOW + 9,
+    )
+    steps = await store.get_steps("run1")
+    assert steps[1].join_arrived == 1
+    assert steps[1].status is StepStatus.READY
+
+
 async def check_admission_enforces_the_active_limit(store: RunStore) -> None:
     """A singleton's limit is decided by the admitting transaction itself."""
     first = make_run("a", flow_key="k1")
@@ -994,6 +1089,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_recovery_respects_a_live_lease,
     check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,
+    check_the_crash_matrix_holds_at_every_boundary,
     check_admission_enforces_the_active_limit,
     check_skip_unsticks_a_stopped_run,
     check_retry_reopens_only_failed_runs,
