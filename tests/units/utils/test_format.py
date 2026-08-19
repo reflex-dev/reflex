@@ -866,8 +866,8 @@ def test_sanitize_client_log_value_escapes_markup(payload: str):
     """
     from reflex_base.utils import console
 
-    # Must not raise MarkupError.
-    console.error(f"[Frontend Error] {format.sanitize_client_log_value(payload)}")
+    # Must not raise MarkupError when parsed by rich.
+    console.print(f"[Frontend Error] {format.sanitize_client_log_value(payload)}")
 
 
 def test_sanitize_client_log_value_bounds_work_before_scanning():

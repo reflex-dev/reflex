@@ -1,3 +1,4 @@
+import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
@@ -534,20 +535,20 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
     )
 
 
-def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker):
+def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker, caplog):
     """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
     import httpx
 
     agents_file = tmp_path / "AGENTS.md"
     claude_file = tmp_path / "CLAUDE.md"
     mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
-    warn = mocker.patch("reflex.utils.console.warn")
 
     frontend_skeleton.initialize_agents_md(
         agents_file=agents_file, claude_file=claude_file
     )
 
-    warn.assert_called_once()
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
     assert not agents_file.exists()
     assert not claude_file.exists()
 
