@@ -172,6 +172,9 @@ class WorkflowTestHarness:
     ) -> StartResult:
         """Start a run and process work until idle.
 
+        Any root can be started here, whatever trigger it declares: in a test
+        the author is the webhook provider and the scheduler.
+
         Args:
             target: The root event, e.g. ``MyWorkflow.begin(payload)``.
             request_key: Idempotent admission key.
@@ -180,7 +183,9 @@ class WorkflowTestHarness:
         Returns:
             The admission result.
         """
-        result = await self.kernel.start(target, request_key=request_key, labels=labels)
+        result = await self.kernel.start(
+            target, request_key=request_key, labels=labels, trigger_kind=None
+        )
         await self.kernel.run_until_idle()
         return result
 
@@ -205,7 +210,9 @@ class WorkflowTestHarness:
         Returns:
             The admission result.
         """
-        return await self.kernel.start(target, request_key=request_key, labels=labels)
+        return await self.kernel.start(
+            target, request_key=request_key, labels=labels, trigger_kind=None
+        )
 
     async def run_until_idle(self) -> None:
         """Process work until nothing is claimable at the current time."""

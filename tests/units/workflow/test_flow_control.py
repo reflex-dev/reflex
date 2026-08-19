@@ -1,6 +1,7 @@
 """Tests for start policies: singleton, debounce, rate limit, and throttle."""
 
 import pytest
+from pydantic import BaseModel
 from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import (
     Debounce,
@@ -222,7 +223,7 @@ def test_start_policy_key_must_name_a_parameter(forked_registration_context):
                 cid: The customer identifier.
             """
 
-    with pytest.raises(WorkflowDefinitionError, match="not one of its parameters"):
+    with pytest.raises(WorkflowDefinitionError, match="neither a parameter"):
         compile_workflow(BadKey)
 
 
@@ -320,3 +321,111 @@ async def test_throttle_spaces_a_backlog_instead_of_bunching_it(
         assert len(calls) == 4
         await harness.advance("10s")
         assert len(calls) == 6
+
+
+async def test_singleton_can_key_on_a_model_field(forked_registration_context):
+    """A webhook root's key lives inside its one typed parameter.
+
+    ``dedupe_by=`` already reaches into the payload; a grouping key that could
+    not was an inconsistency every generated workflow would trip over, because
+    a webhook root's whole payload is a single model argument.
+    """
+
+    class Order(BaseModel):
+        order_id: str
+        amount: int
+
+    class PerOrder(rx.State):
+        __workflow__ = WorkflowConfig(id="flow.perorder")
+
+        @rx.event(
+            durable=True,
+            trigger=manual(),
+            effect="none",
+            singleton=Singleton(key="order_id", mode="skip"),
+        )
+        def start(self, evt: Order):
+            """Hold the run open so a duplicate can be judged.
+
+            Args:
+                evt: The order payload.
+
+            Returns:
+                A long deferral.
+            """
+            return after("1h", PerOrder.finish)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """Complete."""
+
+    async with WorkflowTestHarness(PerOrder) as harness:
+        first = await harness.start(PerOrder.start(Order(order_id="A", amount=1)))
+        duplicate = await harness.start(PerOrder.start(Order(order_id="A", amount=2)))
+        other = await harness.start(PerOrder.start(Order(order_id="B", amount=3)))
+
+    assert first.disposition == "started"
+    assert duplicate.disposition == "skipped"
+    assert other.disposition == "started"
+
+
+def test_a_key_matching_nothing_is_a_compile_error(forked_registration_context):
+    """A key that is neither parameter nor model field is named at compile."""
+
+    class Payload(BaseModel):
+        order_id: str
+
+    with pytest.raises(WorkflowDefinitionError, match="neither a parameter"):
+
+        class Mistyped(rx.State):
+            __workflow__ = WorkflowConfig(id="flow.mistyped")
+
+            @rx.event(
+                durable=True,
+                trigger=manual(),
+                effect="none",
+                singleton=Singleton(key="order_number"),
+            )
+            def start(self, evt: Payload):
+                """Never compiles.
+
+                Args:
+                    evt: The payload.
+                """
+
+        from reflex.workflow.definition import compile_workflow
+
+        compile_workflow(Mistyped)
+
+
+def test_an_ambiguous_key_is_a_compile_error(forked_registration_context):
+    """Two model parameters carrying the field cannot silently pick one."""
+
+    class Left(BaseModel):
+        order_id: str
+
+    class Right(BaseModel):
+        order_id: str
+
+    with pytest.raises(WorkflowDefinitionError, match="ambiguous"):
+
+        class TwoSources(rx.State):
+            __workflow__ = WorkflowConfig(id="flow.twosources")
+
+            @rx.event(
+                durable=True,
+                trigger=manual(),
+                effect="none",
+                singleton=Singleton(key="order_id"),
+            )
+            def start(self, a: Left, b: Right):
+                """Never compiles.
+
+                Args:
+                    a: One source.
+                    b: The other.
+                """
+
+        from reflex.workflow.definition import compile_workflow
+
+        compile_workflow(TwoSources)

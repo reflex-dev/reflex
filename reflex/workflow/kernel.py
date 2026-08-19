@@ -226,6 +226,32 @@ class _Lease:
         self.lost = False
 
 
+def _extract_key_field(payload: dict[str, Any], field: str) -> Any:
+    """Pull a grouping value out of a start payload.
+
+    A key may name a handler parameter directly, or a field inside a model or
+    mapping parameter -- a webhook payload is one typed argument, and the
+    natural key lives inside it. Compilation guarantees the name resolves
+    unambiguously, so the first match here is the only one.
+
+    Args:
+        payload: The decoded start payload, by parameter name.
+        field: The declared key.
+
+    Returns:
+        The value to group by, or None when the field is absent.
+    """
+    if field in payload:
+        return payload[field]
+    for value in payload.values():
+        if isinstance(value, dict) and field in value:
+            return value[field]
+        fields = getattr(type(value), "model_fields", None)
+        if fields is not None and field in fields:
+            return getattr(value, field)
+    return None
+
+
 class WorkflowKernel:
     """Executes durable workflow runs against a run store."""
 
@@ -441,7 +467,7 @@ class WorkflowKernel:
         field = getattr(policy, "key", None)
         if field is None:
             return handler.id
-        return f"{handler.id}:{payload.get(field)!r}"
+        return f"{handler.id}:{_extract_key_field(payload, field)!r}"
 
     async def _apply_start_policy(
         self,
@@ -516,7 +542,7 @@ class WorkflowKernel:
         *,
         request_key: str | None = None,
         labels: dict[str, str] | None = None,
-        trigger_kind: str = "manual",
+        trigger_kind: str | None = "manual",
     ) -> StartResult:
         """Admit a new run from a root event.
 
@@ -525,10 +551,10 @@ class WorkflowKernel:
             request_key: Idempotent admission key; a repeated key returns the
                 prior run with disposition ``"deduplicated"``.
             labels: Server-derived indexing labels to record on the run.
-            trigger_kind: The ingress path admitting this run. It must match the
-                root's declared trigger, so a webhook root cannot be started by
-                application code and a manual root cannot be started by a
-                provider request.
+            trigger_kind: Which ingress is starting this run; the root must
+                declare the same kind, so a webhook-only root stays
+                unreachable from the browser. None skips the gate -- the test
+                harness's privilege, where the test author is the trigger.
 
         Returns:
             The admission result.
@@ -539,7 +565,9 @@ class WorkflowKernel:
         """
         defn, handler, payload = self._resolve_target(target)
         declared = getattr(handler.trigger, "kind", None)
-        if declared != trigger_kind:
+        # A handler without a trigger is a mid-flow step, not a root; no
+        # ingress -- and no test privilege -- makes it startable.
+        if declared is None or (trigger_kind is not None and declared != trigger_kind):
             expected = (
                 f"trigger=rx.{trigger_kind}(...)"
                 if trigger_kind == "manual"

@@ -570,8 +570,14 @@ async def test_start_rejects_non_manual_roots(forked_registration_context):
             pass
 
     async with WorkflowTestHarness(StartRules) as harness:
+        # The production path is gated: a webhook-only root is not reachable
+        # through the default (browser-facing) start.
         with pytest.raises(WorkflowRuntimeError, match="cannot be started here"):
-            await harness.start(StartRules.on_webhook())
+            await harness.kernel.start(StartRules.on_webhook())
+        # The harness itself is privileged: in a test, the author is the
+        # provider, so any root can be started directly.
+        result = await harness.start(StartRules.on_webhook())
+        assert result.disposition == "started"
         with pytest.raises(WorkflowRuntimeError, match="cannot be started here"):
             await harness.start(StartRules.internal())
         with pytest.raises(WorkflowRuntimeError, match="workflow"):

@@ -21,6 +21,7 @@ from reflex.workflow.ingress import (
 from reflex.workflow.records import RunStatus
 from reflex.workflow.runtime import WorkflowRuntime
 from reflex.workflow.store import MemoryRunStore
+from reflex.workflow.testing import WorkflowTestHarness
 
 SECRET = "whsec_test"
 
@@ -246,3 +247,21 @@ def test_manual_root_is_not_reachable_over_http(
             pass
 
     assert collect_webhook_routes((compile_workflow(ManualOnly),)) == {}
+
+
+async def test_the_harness_starts_a_webhook_root_directly(paid_workflow):
+    """In a test, the author is the provider; no HTTP required.
+
+    The trigger gate exists so a webhook-only root is unreachable from the
+    browser. Applying it to the harness made webhook workflows untestable
+    except by crafting signed requests, which is not what a unit test wants.
+    """
+    async with WorkflowTestHarness(paid_workflow) as harness:
+        result = await harness.start(
+            paid_workflow.on_paid(Payment(id="pi_9", amount=700))
+        )
+        assert result.disposition == "started"
+        assert result.run_id is not None
+        snapshot = await harness.get_run(result.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED

@@ -399,6 +399,51 @@ def _validate_branches(
                 )
 
 
+def _validate_flow_key(
+    workflow_cls: type[BaseState], defn: HandlerDefinition, key: str
+) -> None:
+    """Check that a start policy's grouping key is resolvable and unambiguous.
+
+    A key may name a parameter, or a field inside a parameter typed as a
+    model -- the common case for webhook roots, whose whole payload is one
+    typed argument. Two parameters exposing the same field would make the
+    grouping silently depend on iteration order, so that is rejected here
+    rather than discovered in production.
+
+    Args:
+        workflow_cls: The workflow class being compiled.
+        defn: The root handler declaring the policy.
+        key: The declared grouping key.
+
+    Raises:
+        WorkflowDefinitionError: If the key resolves to nothing, or to more
+            than one place.
+    """
+    if key in defn.params:
+        return
+    sources = []
+    for param in defn.params:
+        hint = defn.type_hints.get(param)
+        fields = getattr(hint, "model_fields", None)
+        if fields is not None and key in fields:
+            sources.append(f"{param}.{key}")
+    if len(sources) == 1:
+        return
+    if not sources:
+        raise _error(
+            workflow_cls,
+            f"handler {defn.name!r} groups runs by {key!r}, which is neither a "
+            f"parameter ({', '.join(defn.params) or 'none'}) nor a field of a "
+            "model parameter.",
+        )
+    raise _error(
+        workflow_cls,
+        f"handler {defn.name!r} groups runs by {key!r}, which is ambiguous: "
+        f"{' and '.join(sources)} both carry it. Rename one field, or key on "
+        "a parameter directly.",
+    )
+
+
 def _validate_handler_body(
     workflow_cls: type[BaseState],
     defn: HandlerDefinition,
@@ -635,12 +680,8 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
         _validate_branches(workflow_cls, defn, handlers)
         policy = defn.singleton or defn.rate_limit or defn.throttle or defn.debounce
         key = getattr(policy, "key", None)
-        if key is not None and key not in defn.params:
-            raise _error(
-                workflow_cls,
-                f"handler {defn.name!r} groups runs by {key!r}, which is not one "
-                f"of its parameters ({', '.join(defn.params) or 'none'}).",
-            )
+        if key is not None:
+            _validate_flow_key(workflow_cls, defn, key)
         if isinstance(defn.trigger, ScheduleTrigger):
             CronSchedule(defn.trigger.cron)
     durable_names = frozenset(defn.name for defn in handlers.values())

@@ -1,0 +1,1 @@
+Start-policy keys (`Singleton`, `Debounce`, `RateLimit`, `Throttle`) can now name a field inside a model parameter, and the workflow test harness can start webhook- and schedule-triggered roots directly.
