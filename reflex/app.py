@@ -850,6 +850,13 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_workflow_endpoints(self):
         """Add the workflow ingress endpoints: webhooks in, approvals back."""
+        from reflex.workflow.api import (
+            RUN_ROUTE,
+            START_ROUTE,
+            api_token,
+            run_endpoint,
+            start_endpoint,
+        )
         from reflex.workflow.approvals import APPROVAL_ROUTE, approval_endpoint
         from reflex.workflow.ingress import (
             WEBHOOK_ROUTE,
@@ -874,6 +881,21 @@ class App(MiddlewareMixin, LifespanMixin):
             approval_endpoint(self._workflow_runtime),
             methods=["GET", "POST"],
         )
+        token = api_token()
+        if token is not None:
+            # Mounted only when a token is configured: an unauthenticated
+            # endpoint that starts arbitrary workflows is not something to
+            # leave on by accident.
+            self._api.add_route(
+                config.prepend_backend_path(START_ROUTE),
+                start_endpoint(self._workflow_runtime, token),
+                methods=["POST"],
+            )
+            self._api.add_route(
+                config.prepend_backend_path(RUN_ROUTE),
+                run_endpoint(self._workflow_runtime, token),
+                methods=["GET"],
+            )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
