@@ -30,6 +30,7 @@ from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import DEFAULT_LEASE_DURATION
 
 from reflex.workflow.records import (
+    CLAIMABLE_STEP_STATUSES,
     TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
     HistoryEvent,
@@ -2299,6 +2300,8 @@ CREATE TABLE IF NOT EXISTS workflow_inbox (
     PRIMARY KEY (run_id, wait_key, dedupe_key)
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs (status);
+CREATE INDEX IF NOT EXISTS idx_workflow_steps_wake
+    ON workflow_steps (status, due_at, queue);
 CREATE INDEX IF NOT EXISTS idx_workflow_inbox_pending
     ON workflow_inbox (run_id, wait_key, status, seq);
 """
@@ -2414,6 +2417,77 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
+
+
+def _sqlite_frontier_query(
+    select: str,
+    now: float,
+    queues: tuple[str, ...] | None,
+    *,
+    due_only: bool,
+    order: str,
+    limit: int,
+) -> tuple[str, tuple[Any, ...]]:
+    """Build the query for claimable-or-waking frontier steps.
+
+    The shape both the claimer and the sleep bound need: steps whose status
+    can wake, on runnable runs, that are their run's frontier -- the lowest
+    unresolved ordinal -- filtered and ordered so the wake index does the
+    work and a LIMIT stops the scan. Loading every run and walking its steps
+    in Python made an idle worker's poll linear in the number of sleeping
+    runs, which at ten thousand of them was ~114ms per poll and half a core
+    doing nothing.
+
+    Args:
+        select: The select list, over alias ``s``.
+        now: Current time in epoch seconds.
+        queues: Queues served; None serves every queue.
+        due_only: Restrict to steps claimable right now; otherwise any step a
+            clock event alone can make claimable, however far out.
+        order: ORDER BY expression.
+        limit: Maximum rows.
+
+    Returns:
+        The SQL and its parameters.
+    """
+    claimable = tuple(s.value for s in CLAIMABLE_STEP_STATUSES)
+    terminal_steps = tuple(s.value for s in TERMINAL_STEP_STATUSES)
+    terminal_runs = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+    marks = lambda values: ",".join("?" * len(values))  # noqa: E731
+    if due_only:
+        waking = (
+            f"((s.status IN ({marks(claimable)}) AND s.due_at <= ?)"
+            " OR (s.status = ? AND s.due_at > 0 AND s.due_at <= ?))"
+        )
+        waking_params = (*claimable, now, StepStatus.BLOCKED.value, now)
+    else:
+        waking = (
+            f"(s.status IN ({marks(claimable)}) OR (s.status = ? AND s.due_at > 0))"
+        )
+        waking_params = (*claimable, StepStatus.BLOCKED.value)
+    queue_sql = f" AND s.queue IN ({marks(queues)})" if queues is not None else ""
+    queue_params = tuple(queues) if queues is not None else ()
+    sql = (
+        f"SELECT {select} FROM workflow_steps s"
+        " JOIN workflow_runs r ON r.run_id = s.run_id"
+        f" WHERE {waking}"
+        f" AND r.status NOT IN ({marks(terminal_runs)})"
+        " AND r.status != ? AND r.cancel_requested = 0"
+        " AND (r.deadline IS NULL OR r.deadline > ?)"
+        " AND NOT EXISTS (SELECT 1 FROM workflow_steps x"
+        " WHERE x.run_id = s.run_id AND x.ordinal < s.ordinal"
+        f" AND x.status NOT IN ({marks(terminal_steps)}))"
+        f"{queue_sql} ORDER BY {order} LIMIT {int(limit)}"
+    )
+    params = (
+        *waking_params,
+        *terminal_runs,
+        RunStatus.NEEDS_ATTENTION.value,
+        now,
+        *terminal_steps,
+        *queue_params,
+    )
+    return sql, params
 
 
 def _sqlite_run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
@@ -2835,26 +2909,31 @@ class SqliteRunStore:
             Returns:
                 The operation's result.
             """
-            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
             with self._lock:
                 self._db.execute("BEGIN IMMEDIATE")
                 claim = None
                 try:
-                    rows = self._db.execute(
-                        "SELECT * FROM workflow_runs WHERE status NOT IN"
-                        f" ({','.join('?' * len(terminal))})"
-                        " AND status != ? AND cancel_requested = 0"
-                        " AND (deadline IS NULL OR deadline > ?)"
-                        " ORDER BY created_at",
-                        (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
-                    ).fetchall()
-                    for row in rows:
-                        run = _run_from_row(row)
-                        frontier = _frontier(self._load_steps(run.run_id))
-                        if frontier is None or not step_claimable_at(frontier, now):
-                            continue
-                        if queues is not None and frontier.queue not in queues:
-                            continue
+                    # Due-ness filters first, through the wake index, so a
+                    # store full of sleeping runs answers from the index
+                    # instead of loading every run and its steps into Python;
+                    # only due candidates pay the frontier check, and LIMIT
+                    # stops the scan at the first winner.
+                    sql, params = _sqlite_frontier_query(
+                        "s.*",
+                        now,
+                        queues,
+                        due_only=True,
+                        order="s.due_at, s.run_id",
+                        limit=1,
+                    )
+                    row = self._db.execute(sql, params).fetchone()
+                    if row is not None:
+                        frontier = _step_from_row(row)
+                        run_row = self._db.execute(
+                            "SELECT * FROM workflow_runs WHERE run_id = ?",
+                            (frontier.run_id,),
+                        ).fetchone()
+                        run = _run_from_row(run_row)
                         claimed = dataclasses.replace(
                             frontier,
                             status=StepStatus.CLAIMED,
@@ -2884,7 +2963,6 @@ class SqliteRunStore:
                             run, status=RunStatus.RUNNING, updated_at=now
                         )
                         claim = Claim(run=running, step=claimed)
-                        break
                     self._db.execute("COMMIT" if claim is not None else "ROLLBACK")
                 except BaseException:
                     self._db.execute("ROLLBACK")
@@ -4554,27 +4632,19 @@ class SqliteRunStore:
             Returns:
                 The operation's result.
             """
-            terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
             with self._lock:
-                rows = self._db.execute(
-                    "SELECT run_id FROM workflow_runs WHERE status NOT IN"
-                    f" ({','.join('?' * len(terminal))})"
-                    " AND status != ? AND cancel_requested = 0"
-                    " AND (deadline IS NULL OR deadline > ?)",
-                    (*terminal, RunStatus.NEEDS_ATTENTION.value, now),
-                ).fetchall()
-                due_times = []
-                for row in rows:
-                    frontier = _frontier(self._load_steps(row["run_id"]))
-                    if (
-                        frontier is not None
-                        and queues is not None
-                        and frontier.queue not in queues
-                    ):
-                        continue
-                    wake_at = None if frontier is None else step_wake_at(frontier)
-                    if wake_at is not None:
-                        due_times.append(wake_at)
-                return min(due_times) if due_times else None
+                # Wake times are due_at in every waking status, so the first
+                # row of a due_at-ordered index walk that survives the
+                # frontier check is the minimum -- no per-run Python loop.
+                sql, params = _sqlite_frontier_query(
+                    "s.due_at AS wake",
+                    now,
+                    queues,
+                    due_only=False,
+                    order="s.due_at",
+                    limit=1,
+                )
+                row = self._db.execute(sql, params).fetchone()
+                return None if row is None else row["wake"]
 
         return await asyncio.to_thread(work)
