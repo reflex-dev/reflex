@@ -10,6 +10,10 @@ concurrency:
 on:
   pull_request:
     branches: ["main"]
+    # labeled/unlabeled: the skip-changelog and changelog-version-edit gates
+    # read labels from the event payload, so toggling a label must start a
+    # fresh run (re-running an old run replays the stale payload).
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   changelog:
