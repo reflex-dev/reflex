@@ -48,7 +48,12 @@ from reflex.workflow.definition import (
     WorkflowDefinition,
     compile_workflow,
 )
-from reflex.workflow.kernel import LoggingObserver, WorkflowKernel, WorkflowObserver
+from reflex.workflow.kernel import (
+    LoggingObserver,
+    MetricsObserver,
+    WorkflowKernel,
+    WorkflowObserver,
+)
 from reflex.workflow.records import (
     HistoryEvent,
     HistoryEventType,
@@ -84,6 +89,7 @@ __all__ = [
     "LoggingObserver",
     "ManualTrigger",
     "MemoryRunStore",
+    "MetricsObserver",
     "Parallel",
     "RateLimit",
     "Retry",

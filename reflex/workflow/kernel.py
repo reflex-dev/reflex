@@ -17,7 +17,7 @@ import random
 import time
 import traceback
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from pydantic import TypeAdapter
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
@@ -138,6 +138,80 @@ class WorkflowObserver:
             workflow_id: That run's workflow identity.
             data: Event payload, such as ordinal, handler, attempt, or error.
         """
+
+
+class MetricsObserver(WorkflowObserver):
+    """Tallies the numbers a deployment alerts on.
+
+    The observer stream is the raw material for monitoring, but every exporter
+    wants counters rather than events. This keeps the counts an operator
+    actually pages on -- runs started and how they ended, attempts and how
+    many were retries or recoveries -- both in total and per workflow, so a
+    metrics endpoint or an OpenTelemetry exporter is a few lines over
+    ``snapshot()`` rather than an event-stream parser.
+
+    Counters only ever increase, which is what a scrape-and-diff collector
+    expects. It is safe to install alongside another observer by composing
+    them; a raising observer never affects a run.
+    """
+
+    _COUNTED: Final = {
+        HistoryEventType.RUN_ADMITTED: "runs_started",
+        HistoryEventType.RUN_COMPLETED: "runs_completed",
+        HistoryEventType.RUN_FAILED: "runs_failed",
+        HistoryEventType.RUN_CANCELLED: "runs_cancelled",
+        HistoryEventType.RUN_TIMED_OUT: "runs_timed_out",
+        HistoryEventType.RUN_NEEDS_ATTENTION: "runs_needing_attention",
+        HistoryEventType.ATTEMPT_STARTED: "attempts",
+        HistoryEventType.ATTEMPT_FAILED: "attempts_failed",
+        HistoryEventType.ATTEMPT_TIMED_OUT: "attempts_timed_out",
+        HistoryEventType.ATTEMPT_ABANDONED: "attempts_abandoned",
+        HistoryEventType.STEP_RETRY_SCHEDULED: "retries_scheduled",
+        HistoryEventType.STEP_RECOVERED: "steps_recovered",
+        HistoryEventType.SUBSTEP_RECORDED: "substeps_recorded",
+    }
+
+    def __init__(self):
+        """Start every counter at zero."""
+        self.totals: dict[str, int] = {}
+        self.by_workflow: dict[str, dict[str, int]] = {}
+
+    def on_event(
+        self,
+        event_type: HistoryEventType,
+        run_id: str,
+        workflow_id: str,
+        data: dict[str, Any],
+    ) -> None:
+        """Count one transition.
+
+        Args:
+            event_type: What happened.
+            run_id: The run it happened to.
+            workflow_id: That run's workflow identity.
+            data: Event payload.
+        """
+        metric = self._COUNTED.get(event_type)
+        if metric is None:
+            return
+        self.totals[metric] = self.totals.get(metric, 0) + 1
+        if workflow_id:
+            counts = self.by_workflow.setdefault(workflow_id, {})
+            counts[metric] = counts.get(metric, 0) + 1
+
+    def snapshot(self) -> dict[str, Any]:
+        """Read the counters as plain data.
+
+        Returns:
+            The totals, and the same counters broken down by workflow.
+        """
+        return {
+            "totals": dict(self.totals),
+            "by_workflow": {
+                workflow_id: dict(counts)
+                for workflow_id, counts in self.by_workflow.items()
+            },
+        }
 
 
 class LoggingObserver(WorkflowObserver):
