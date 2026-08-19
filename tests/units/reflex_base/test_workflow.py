@@ -1,6 +1,8 @@
 """Tests for the workflow authoring value types."""
 
 import datetime
+import hmac
+import time
 
 import pytest
 from reflex_base.utils.exceptions import WorkflowDefinitionError
@@ -16,6 +18,7 @@ from reflex_base.workflow import (
     manual,
     parse_duration,
     schedule,
+    stripe_signature,
     webhook,
 )
 
@@ -261,3 +264,75 @@ def test_webhook_requires_authentication():
             allow_unverified=True,
             unverified_reason="mixed",
         )
+
+
+def _stripe_header(secret: str, body: bytes, timestamp: float) -> str:
+    """Sign a body the way Stripe does.
+
+    Args:
+        secret: The signing secret.
+        body: The raw request body.
+        timestamp: The signing time in epoch seconds.
+
+    Returns:
+        The Stripe-Signature header value.
+    """
+    signed = f"{int(timestamp)}.".encode() + body
+    digest = hmac.new(secret.encode(), signed, "sha256").hexdigest()
+    return f"t={int(timestamp)},v1={digest}"
+
+
+def test_stripe_signature_accepts_a_fresh_correctly_signed_delivery(monkeypatch):
+    """The documented scheme: HMAC over timestamp-dot-body, inside tolerance."""
+    monkeypatch.setenv("WH", "whsec_test")
+    verify = stripe_signature(secret_env="WH", tolerance="5m")
+    body = b'{"type": "invoice.paid"}'
+    header = _stripe_header("whsec_test", body, time.time())
+    assert verify(body, {"stripe-signature": header})
+
+
+def test_stripe_signature_rejects_a_replayed_delivery(monkeypatch):
+    """A signature is only as good as its window; an old one is a replay."""
+    monkeypatch.setenv("WH", "whsec_test")
+    verify = stripe_signature(secret_env="WH", tolerance="5m")
+    body = b"{}"
+    stale = _stripe_header("whsec_test", body, time.time() - 3600)
+    assert not verify(body, {"stripe-signature": stale})
+    future = _stripe_header("whsec_test", body, time.time() + 3600)
+    assert not verify(body, {"stripe-signature": future})
+
+
+def test_stripe_signature_rejects_tampering_and_garbage(monkeypatch):
+    """Wrong secret, edited body, malformed header: all refused."""
+    monkeypatch.setenv("WH", "whsec_test")
+    verify = stripe_signature(secret_env="WH")
+    body = b'{"amount": 100}'
+    header = _stripe_header("whsec_other", body, time.time())
+    assert not verify(body, {"stripe-signature": header})
+    good = _stripe_header("whsec_test", body, time.time())
+    assert not verify(b'{"amount": 999}', {"stripe-signature": good})
+    assert not verify(body, {"stripe-signature": "t=abc,v1=zzz"})
+    assert not verify(body, {"stripe-signature": "v1=deadbeef"})
+    assert not verify(body, {})
+
+
+def test_stripe_signature_accepts_any_matching_v1_during_rotation(monkeypatch):
+    """Stripe sends multiple v1 digests while a secret rotates."""
+    monkeypatch.setenv("WH", "whsec_new")
+    verify = stripe_signature(secret_env="WH")
+    body = b"{}"
+    timestamp = int(time.time())
+    old = hmac.new(b"whsec_old", f"{timestamp}.".encode() + body, "sha256").hexdigest()
+    new = hmac.new(b"whsec_new", f"{timestamp}.".encode() + body, "sha256").hexdigest()
+    assert verify(body, {"stripe-signature": f"t={timestamp},v1={old},v1={new}"})
+
+
+def test_hmac_signature_no_longer_claims_stripe():
+    """The raw-body helper must not present itself as a Stripe verifier.
+
+    It cannot verify Stripe's timestamped scheme, and the docstring saying it
+    covered Stripe was an invitation to ship replayable payment webhooks.
+    """
+    doc = hmac_signature.__doc__ or ""
+    assert "deliberately **not** a Stripe verifier" in doc
+    assert "stripe_signature" in doc, "the fix must point at the real verifier"

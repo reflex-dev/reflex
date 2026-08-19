@@ -12,6 +12,7 @@ import dataclasses
 import hmac
 import os
 import re
+import time
 from collections.abc import Callable, Mapping
 from datetime import timedelta
 from typing import Any, ClassVar, Final, Literal, get_args
@@ -402,6 +403,85 @@ class HmacVerifier:
         return hmac.compare_digest(f"{self.prefix}{expected}", presented)
 
 
+@dataclasses.dataclass(frozen=True)
+class StripeVerifier:
+    """A webhook verifier implementing Stripe's signature scheme.
+
+    Stripe does not sign the raw body: it signs ``"{timestamp}.{body}"`` and
+    sends ``Stripe-Signature: t=<ts>,v1=<hex>[,v1=<hex>...]``, and its
+    documentation requires rejecting timestamps outside a tolerance window so
+    a captured delivery cannot be replayed later. A raw-body HMAC verifier
+    accepts none of this, which is why this exists as its own type.
+
+    Attributes:
+        secret_env: Name of the environment variable holding the signing
+            secret (``whsec_...``).
+        tolerance: Replay window in seconds; deliveries whose signed
+            timestamp is further than this from now are refused.
+        header: Request header carrying the signature.
+    """
+
+    secret_env: str
+    tolerance: float = 300.0
+    header: str = "Stripe-Signature"
+
+    def __call__(self, body: bytes, headers: Mapping[str, str]) -> bool:
+        """Check one delivery's signature and replay window.
+
+        Args:
+            body: The raw request body, exactly as received.
+            headers: The request headers.
+
+        Returns:
+            True when a presented ``v1`` digest matches the timestamped
+            payload and the timestamp is inside the tolerance window.
+        """
+        secret = os.environ.get(self.secret_env)
+        presented = headers.get(self.header.lower()) or headers.get(self.header)
+        if not secret or not presented:
+            return False
+        timestamp: str | None = None
+        digests: list[str] = []
+        for part in presented.split(","):
+            name, _, value = part.strip().partition("=")
+            if name == "t":
+                timestamp = value
+            elif name == "v1":
+                digests.append(value)
+        if timestamp is None or not digests:
+            return False
+        try:
+            signed_at = float(timestamp)
+        except ValueError:
+            return False
+        if abs(time.time() - signed_at) > self.tolerance:
+            return False
+        expected = hmac.new(
+            secret.encode(), f"{timestamp}.".encode() + body, "sha256"
+        ).hexdigest()
+        return any(hmac.compare_digest(expected, digest) for digest in digests)
+
+
+def stripe_signature(
+    *, secret_env: str, tolerance: DurationLike = "5m"
+) -> StripeVerifier:
+    """Build a verifier for Stripe's timestamped webhook signatures.
+
+    Args:
+        secret_env: Name of the environment variable holding the signing
+            secret (``whsec_...``).
+        tolerance: Replay window; Stripe's documentation recommends five
+            minutes.
+
+    Returns:
+        A verifier callable for ``rx.webhook(verify=...)``.
+    """
+    return StripeVerifier(
+        secret_env=secret_env,
+        tolerance=parse_duration(tolerance, param="tolerance"),
+    )
+
+
 def hmac_signature(
     *,
     secret_env: str,
@@ -411,10 +491,12 @@ def hmac_signature(
 ) -> HmacVerifier:
     """Build a verifier for providers that HMAC-sign the raw request body.
 
-    This covers the common shape used by Stripe, GitHub, Shopify and others:
-    the provider sends a hex digest of the body keyed by a shared secret. The
-    secret is read from the environment at request time, so it never enters
-    workflow state, history, or a browser bundle.
+    This covers GitHub (``prefix="sha256="``), Shopify, and every provider
+    that sends a hex digest of the exact body keyed by a shared secret. It is
+    deliberately **not** a Stripe verifier: Stripe signs a timestamped payload
+    and requires a replay window -- use ``rx.stripe_signature()`` for that.
+    The secret is read from the environment at request time, so it never
+    enters workflow state, history, or a browser bundle.
 
     Args:
         secret_env: Name of the environment variable holding the shared secret.

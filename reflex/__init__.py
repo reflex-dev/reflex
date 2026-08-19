@@ -243,6 +243,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "manual",
         "webhook",
         "hmac_signature",
+        "stripe_signature",
         "schedule",
         "Signal",
         "wait_for",

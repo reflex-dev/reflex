@@ -97,8 +97,40 @@ def collect_webhook_routes(
     return routes
 
 
+def _identity_value(
+    trigger: WebhookTrigger, payload: Any, headers: Mapping[str, str]
+) -> str | None:
+    """Extract the provider's delivery identity for one request.
+
+    ``dedupe_by`` names a payload field, or a header when written as
+    ``"header:Name"`` -- GitHub's canonical identity, for example, is the
+    ``X-GitHub-Delivery`` header and appears nowhere in the body.
+
+    Args:
+        trigger: The webhook trigger declaring the identity source.
+        payload: The decoded request payload.
+        headers: The request headers.
+
+    Returns:
+        The identity, or None when the declared source is absent.
+    """
+    assert trigger.dedupe_by is not None
+    source = trigger.dedupe_by
+    if source.startswith("header:"):
+        name = source[len("header:") :]
+        value = headers.get(name.lower()) or headers.get(name)
+        return None if value is None else str(value)
+    if not isinstance(payload, dict):
+        return None
+    value = payload.get(source)
+    return None if value is None else str(value)
+
+
 def _dedupe_key(
-    handler: HandlerDefinition, trigger: WebhookTrigger, payload: Any
+    handler: HandlerDefinition,
+    trigger: WebhookTrigger,
+    payload: Any,
+    headers: Mapping[str, str],
 ) -> str | None:
     """Extract the deduplication key a provider redelivery would repeat.
 
@@ -111,16 +143,17 @@ def _dedupe_key(
 
     Args:
         handler: The root handler this delivery starts.
-        trigger: The webhook trigger declaring the key field.
+        trigger: The webhook trigger declaring the key source.
         payload: The decoded request payload.
+        headers: The request headers.
 
     Returns:
         The key as a string, or None when the trigger declares none or the
-        field is absent.
+        source is absent.
     """
-    if trigger.dedupe_by is None or not isinstance(payload, dict):
+    if trigger.dedupe_by is None:
         return None
-    value = payload.get(trigger.dedupe_by)
+    value = _identity_value(trigger, payload, headers)
     return None if value is None else f"webhook:{handler.id}:{value}"
 
 
@@ -138,7 +171,12 @@ def _legacy_dedupe_keys(trigger: WebhookTrigger, payload: Any) -> tuple[str, ...
     Returns:
         The older keys to match, newest spelling first.
     """
-    if trigger.dedupe_by is None or not isinstance(payload, dict):
+    if (
+        trigger.dedupe_by is None
+        or trigger.dedupe_by.startswith("header:")
+        or not isinstance(payload, dict)
+    ):
+        # Header identities are new; no release ever wrote them unqualified.
         return ()
     value = payload.get(trigger.dedupe_by)
     return () if value is None else (str(value),)
@@ -217,10 +255,25 @@ def webhook_endpoint(
             return JSONResponse(
                 {"error": "payload must be a JSON object"}, status_code=400
             )
+        request_key = _dedupe_key(route.handler, route.trigger, payload, headers)
+        if route.trigger.dedupe_by is not None and request_key is None:
+            # A configured identity that cannot be extracted must not
+            # silently disable deduplication: every redelivery of this event
+            # would then execute again. The provider is told what is missing
+            # so its operator sees a config problem, not a duplicate charge.
+            return JSONResponse(
+                {
+                    "error": (
+                        f"delivery carries no {route.trigger.dedupe_by!r}, "
+                        "which this webhook deduplicates by"
+                    )
+                },
+                status_code=400,
+            )
         args = _root_args(route.handler, payload)
         result = await runtime.kernel.start(
             spec(**args) if args else spec,
-            request_key=_dedupe_key(route.handler, route.trigger, payload),
+            request_key=request_key,
             superseded_keys=_legacy_dedupe_keys(route.trigger, payload),
             trigger_kind="webhook",
         )

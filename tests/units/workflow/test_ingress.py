@@ -505,3 +505,113 @@ async def test_a_legacy_key_only_matches_the_root_that_wrote_it(
     )
     assert paid.json()["run_id"] != legacy.run_id
     await runtime.shutdown()
+
+
+class Ships(rx.State):
+    """A workflow whose provider identifies deliveries by header."""
+
+    __workflow__ = WorkflowConfig(id="ingress.ships")
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=webhook(
+            "shipped",
+            dedupe_by="header:X-GitHub-Delivery",
+            verify=hmac_signature(
+                secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+            ),
+        ),
+    )
+    def on_shipped(self, sha: str):
+        """Record a shipment.
+
+        Args:
+            sha: The commit that shipped.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result=sha)
+
+
+async def test_header_identity_separates_deliveries_the_payload_cannot(
+    monkeypatch, forked_registration_context
+):
+    """GitHub's identity is the delivery GUID header, not any payload field.
+
+    Two pushes of the same commit are two events with two GUIDs; keyed on a
+    payload field they collapsed into one run and the second delivery was
+    silently dropped. Keyed on the header, distinct GUIDs are distinct runs
+    and a true redelivery -- same GUID -- still deduplicates.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Ships)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    body = json.dumps({"sha": "abc123"}).encode()
+
+    with TestClient(app) as client:
+        first = client.post(
+            "/_workflow/webhook/shipped",
+            content=body,
+            headers={"x-signature": _sign(body), "x-github-delivery": "guid-1"},
+        )
+        second = client.post(
+            "/_workflow/webhook/shipped",
+            content=body,
+            headers={"x-signature": _sign(body), "x-github-delivery": "guid-2"},
+        )
+        redelivered = client.post(
+            "/_workflow/webhook/shipped",
+            content=body,
+            headers={"x-signature": _sign(body), "x-github-delivery": "guid-1"},
+        )
+    assert first.json()["disposition"] == "started"
+    assert second.json()["disposition"] == "started", (
+        "a distinct delivery GUID is a distinct event"
+    )
+    assert redelivered.json()["disposition"] == "deduplicated"
+    assert redelivered.json()["run_id"] == first.json()["run_id"]
+    await runtime.shutdown()
+
+
+async def test_a_delivery_missing_its_configured_identity_is_refused(
+    monkeypatch, forked_registration_context
+):
+    """Configured dedupe that cannot be extracted must not silently vanish.
+
+    Admitting anyway means every redelivery of this event executes again --
+    the exact thing dedupe_by was configured to prevent -- and nobody is
+    told. A 400 naming the missing field is a config problem someone sees.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Ships)
+    runtime.register(Invoices)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    with TestClient(app) as client:
+        body = json.dumps({"sha": "abc123"}).encode()
+        no_header = client.post(
+            "/_workflow/webhook/shipped",
+            content=body,
+            headers={"x-signature": _sign(body)},
+        )
+        assert no_header.status_code == 400, no_header.text
+        assert "X-GitHub-Delivery" in no_header.json()["error"]
+
+        body = json.dumps({"amount": 5}).encode()
+        no_field = client.post(
+            "/_workflow/webhook/invoice_paid",
+            content=body,
+            headers={"x-signature": _sign(body)},
+        )
+        assert no_field.status_code == 400, no_field.text
+        assert "'id'" in no_field.json()["error"]
+    await runtime.shutdown()
