@@ -92,22 +92,26 @@ def WorkflowApp():
 
 @pytest.fixture(scope="module")
 def workflow_app(
+    app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Run WorkflowApp with the store resolved from the environment.
+    """Run WorkflowApp in dev or prod mode, store resolved from the environment.
 
     Args:
+        app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: pytest fixture for creating temporary directories.
 
     Yields:
         Running AppHarness instance.
     """
     db_dir = tmp_path_factory.mktemp("workflow_store")
+    name = f"workflow_app_{app_harness_env.__name__.lower()}"
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("REFLEX_WORKFLOW_DATABASE", str(db_dir / "runs.db"))
         mp.setenv("ORDERS_WEBHOOK_SECRET", WEBHOOK_SECRET)
-        with AppHarness.create(
-            root=tmp_path_factory.mktemp("workflow_app"),
+        with app_harness_env.create(
+            root=tmp_path_factory.mktemp(name),
+            app_name=name,
             app_source=WorkflowApp,
         ) as harness:
             assert harness.app_instance is not None, "app is not running"
