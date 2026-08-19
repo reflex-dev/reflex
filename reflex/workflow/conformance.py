@@ -687,6 +687,51 @@ async def check_substeps_record_once_and_fence_stale_writers(
     assert list(await store.get_substeps("run1", 0)) == ["charge", "label"]
 
 
+async def check_recovery_respects_a_live_lease(store: RunStore) -> None:
+    """Recovery reclaims lapsed leases only: a slow worker is never raced."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=30.0)
+    assert claim is not None
+    recovered, failed = await store.recover_orphans(NOW + 5, 10)
+    assert recovered == 0, "a live lease was reclaimed"
+    assert failed == ()
+    recovered, _ = await store.recover_orphans(NOW + 31, 10)
+    assert recovered == 1, "a lapsed lease was not reclaimed"
+
+
+async def check_a_terminal_run_refuses_further_control(store: RunStore) -> None:
+    """Finalizing waits for the run to drain, and ends it for good."""
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    # A claimed step means an attempt may still be running: refuse.
+    assert not await store.finalize_run(
+        "run1",
+        status=RunStatus.CANCELLED,
+        error=None,
+        event=HistoryEventType.RUN_CANCELLED,
+        now=NOW + 1,
+    )
+    await store.release_claim(claim, status=StepStatus.READY, events=(), now=NOW + 1)
+    assert await store.finalize_run(
+        "run1",
+        status=RunStatus.CANCELLED,
+        error=None,
+        event=HistoryEventType.RUN_CANCELLED,
+        now=NOW + 2,
+    )
+    # Terminal is terminal: no further control lands.
+    assert not await store.request_cancel("run1", NOW + 3)
+    assert not await store.resume_run("run1", NOW + 3)
+    assert not await store.finalize_run(
+        "run1",
+        status=RunStatus.COMPLETED,
+        error=None,
+        event=HistoryEventType.RUN_COMPLETED,
+        now=NOW + 4,
+    )
+
+
 async def check_finalize_delivers_a_childs_arrival(store: RunStore) -> None:
     """Ending a child by cancellation or timeout tells its parent, atomically.
 
@@ -879,6 +924,8 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_list_children_finds_a_joins_branches,
     check_claims_respect_queue_boundaries,
     check_substeps_record_once_and_fence_stale_writers,
+    check_recovery_respects_a_live_lease,
+    check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,
     check_retry_reopens_only_failed_runs,
     check_force_finalize_records_a_result,
