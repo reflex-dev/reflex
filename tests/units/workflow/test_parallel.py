@@ -11,6 +11,62 @@ from reflex.workflow.testing import WorkflowTestHarness
 BRANCH_CALLS: list[str] = []
 
 
+class Slower(rx.State):
+    """A branch that answers well after its sibling."""
+
+    __workflow__ = WorkflowConfig(id="fan.slower")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def start(self, lead: str):
+        """Answer much later.
+
+        Args:
+            lead: The lead identifier.
+
+        Returns:
+            A deferral.
+        """
+        return rx.after("5h", Slower.finish)
+
+    @rx.event(durable=True, effect="none")
+    def finish(self):
+        """Answer.
+
+        Returns:
+            Completion.
+        """
+        BRANCH_CALLS.append("slower")
+        return rx.complete(result="slower")
+
+
+class Slowish(rx.State):
+    """A branch that answers after a delay."""
+
+    __workflow__ = WorkflowConfig(id="fan.slowish")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def start(self, lead: str):
+        """Answer later.
+
+        Args:
+            lead: The lead identifier.
+
+        Returns:
+            A deferral.
+        """
+        return rx.after("1h", Slowish.finish)
+
+    @rx.event(durable=True, effect="none")
+    def finish(self):
+        """Answer.
+
+        Returns:
+            Completion.
+        """
+        BRANCH_CALLS.append("slowish")
+        return rx.complete(result="slowish")
+
+
 class Enrich(rx.State):
     """A branch that succeeds."""
 
@@ -675,3 +731,46 @@ async def test_unidentifiable_arrivals_keep_their_position(
     entries = [{"result": "a"}, {"result": "b"}, {"result": "c"}]
     ordered = await kernel._in_declaration_order(entries)  # pyright: ignore[reportPrivateUsage]
     assert [entry["result"] for entry in ordered] == ["a", "b", "c"]
+
+
+async def test_cancelling_an_all_mode_parent_leaves_its_branches_alone(
+    forked_registration_context,
+):
+    """Delegation is not ownership, so a cancelled parent cancels no children.
+
+    Section 5 says cancelling a parent does not implicitly cancel children.
+    Cancelling one tombstones its join, and when a branch later finishes its
+    arrival finds a slot that is no longer blocked -- which is not the same
+    thing as a race having been decided. Reading it as one made the engine
+    cancel the sibling of a branch it never raced.
+    """
+    BRANCH_CALLS.clear()
+    router = _router(Slowish, Slower)
+    async with WorkflowTestHarness(router, Slowish, Slower) as harness:
+        started = await harness.start(router.begin("acme"))
+        assert started.run_id is not None
+        await harness.run_until_idle()
+
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        join_ordinal = next(
+            step.ordinal for step in snapshot.steps if step.origin == "join"
+        )
+        store = harness.kernel._store  # pyright: ignore[reportPrivateUsage]
+        assert await store.list_children(started.run_id, join_ordinal), (
+            "the fan-out should have admitted branches"
+        )
+
+        assert await harness.cancel(started.run_id)
+        await harness.run_until_idle()
+
+        # The delayed branch finishes after the parent is gone.
+        await harness.advance("2h")
+        children = await store.list_children(started.run_id, join_ordinal)
+        cancelled = [
+            child.run_id for child in children if child.status is RunStatus.CANCELLED
+        ]
+        assert not cancelled, (
+            "cancelling the parent cancelled delegated children: "
+            f"{[(c.run_id, c.status) for c in children]}"
+        )

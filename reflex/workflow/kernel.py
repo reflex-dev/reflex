@@ -2546,6 +2546,24 @@ class WorkflowKernel:
         """
         if winner.parent_run_id is None or winner.parent_ordinal is None:
             return
+        join = next(
+            (
+                step
+                for step in await self._store.get_steps(winner.parent_run_id)
+                if step.ordinal == winner.parent_ordinal
+            ),
+            None,
+        )
+        if join is None or join.join_expected != 1:
+            # Only a race has losers. An all-mode join wants every branch, and
+            # a join that stopped being blocked for some other reason -- a
+            # cancelled or force-finalized parent tombstones it -- has not
+            # decided anything. Cancelling siblings on either would be this
+            # engine reaching into runs it does not own, which §5 says
+            # delegation does not do.
+            return
+        if join.status is StepStatus.CANCELLED:
+            return
         siblings = await self._store.list_children(
             winner.parent_run_id, winner.parent_ordinal
         )
