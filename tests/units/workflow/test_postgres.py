@@ -73,8 +73,13 @@ class Charge(rx.State):
 
 
 @pytest.fixture
-def store():
+async def store():
     """Open a Postgres store in a throwaway schema.
+
+    The pool is closed on the test's own loop before the schema drops: a pool
+    left open leaks worker tasks into loop teardown, where a task that
+    catches its cancellation to clean up a connection is never cancelled a
+    second time and can wait forever.
 
     Yields:
         The store.
@@ -84,6 +89,7 @@ def store():
     schema = f"wf_test_{uuid.uuid4().hex}"
     opened = PostgresRunStore(POSTGRES_URL, schema=schema, min_size=0, max_size=6)
     yield opened
+    await opened.close()
     opened.drop_schema()
 
 
@@ -268,7 +274,16 @@ def test_the_cli_operates_on_a_postgres_url(store):
             ((HistoryEventType.RUN_ADMITTED, {}),),
         )
 
-    asyncio.run(seed())
+    async def seed_and_close():
+        """Seed on one loop and close the pool on that same loop.
+
+        The fixture's teardown runs on a different loop, and a pool can only
+        be closed from the loop that opened it.
+        """
+        await seed()
+        await store.close()
+
+    asyncio.run(seed_and_close())
     url = f"{POSTGRES_URL}?options=-csearch_path%3D{store.schema}"
 
     listed = CliRunner().invoke(workflows, ["list", "-d", url, "--json"])
