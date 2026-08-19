@@ -11,7 +11,10 @@ from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import WorkflowConfig, manual
 
 import reflex as rx
-from reflex.workflow.runtime import WorkflowRuntime
+from reflex.workflow.definition import compile_workflow
+from reflex.workflow.kernel import WorkflowKernel
+from reflex.workflow.records import RunStatus
+from reflex.workflow.runtime import WorkflowRuntime, workflows
 from reflex.workflow.store import MemoryRunStore
 
 
@@ -134,3 +137,65 @@ def test_definitions_are_reported_once_per_class(forked_registration_context):
     assert [definition.workflow_id for definition in runtime.definitions] == [
         "runtime.simple"
     ]
+
+
+async def test_connect_starts_runs_without_becoming_a_worker(
+    forked_registration_context,
+):
+    """A client process admits work and executes none of it.
+
+    The process holding the business event -- a Django view, a script -- must
+    be able to start a run without quietly turning into a worker, which would
+    make a web request execute a workflow step and a script exit mid-attempt.
+    """
+
+    class ClientFlow(rx.State):
+        __workflow__ = WorkflowConfig(id="runtime.client")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Complete immediately.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="ran")
+
+    store = MemoryRunStore()
+    async with workflows.connect(ClientFlow, store=store) as runtime:
+        handle = await workflows.submit(ClientFlow.start())
+        assert handle.started
+        snapshot = await handle.snapshot()
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.PENDING
+        assert runtime.kernel is not None
+
+    served = WorkflowKernel([compile_workflow(ClientFlow)], store)
+    await served.run_until_idle()
+    after = await served.get_run(handle.run_id)
+    assert after is not None
+    assert after.status is RunStatus.COMPLETED
+    assert after.result == "ran"
+
+
+async def test_connect_restores_whatever_runtime_was_active(
+    forked_registration_context,
+):
+    """A client is a scope, not a process-wide switch."""
+
+    class ScopedFlow(rx.State):
+        __workflow__ = WorkflowConfig(id="runtime.scoped")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Complete immediately.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=None)
+
+    async with workflows.connect(ScopedFlow, store=MemoryRunStore()):
+        pass
+    with pytest.raises(WorkflowRuntimeError):
+        await workflows.submit(ScopedFlow.start())

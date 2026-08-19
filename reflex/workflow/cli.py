@@ -492,6 +492,10 @@ def init_workflow(name: str):
     console.print("")
     console.print("Or serve it as a worker and start runs from your own code:")
     click.echo(f"    reflex workflows worker {module}")
+    console.print("")
+    console.print("  From a script, a FastAPI route, or a Django view:")
+    click.echo(f"    async with rx.workflows.connect({klass}):")
+    click.echo(f"        await rx.workflows.submit({klass}.start(order='ord-1'))")
 
 
 @workflows.command()

@@ -11,6 +11,7 @@ handover.
 import asyncio
 from typing import Any
 
+import pytest
 from reflex_base.workflow import WorkflowConfig, manual, parse_duration
 
 import reflex as rx
@@ -126,12 +127,12 @@ async def test_an_attempt_slower_than_the_drain_is_cancelled(
 def test_the_drain_budget_comes_from_the_environment(monkeypatch):
     """A platform's grace period is deployment config, not a code constant."""
     monkeypatch.setenv(DRAIN_ENV, "5s")
-    assert configured_drain() == 5.0
+    assert configured_drain() == pytest.approx(5.0)
     monkeypatch.delenv(DRAIN_ENV)
-    assert configured_drain() == parse_duration(DEFAULT_DRAIN)
+    assert configured_drain() == pytest.approx(parse_duration(DEFAULT_DRAIN))
 
 
 def test_an_unparseable_budget_does_not_stop_the_process_leaving(monkeypatch):
     """A typo in a deployment variable must not wedge a shutdown."""
     monkeypatch.setenv(DRAIN_ENV, "half an hour")
-    assert configured_drain() == 0.0
+    assert configured_drain() == pytest.approx(0.0)

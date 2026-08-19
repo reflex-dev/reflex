@@ -191,6 +191,12 @@ Checked in this order at start:
   A claim is never released early, because cancelling an attempt does not stop
   work it handed to a thread, and the lease is what keeps a peer off it. A
   drained attempt costs nothing; a cancelled one costs one recovery.
+- **Clients are not workers.** A process that opens
+  `rx.workflows.connect(...)` can admit runs, read them, signal and cancel
+  them, and executes nothing: it claims no step and runs no handler. Only a
+  process that starts the kernel's worker (an app serving workflows, or
+  `reflex workflows worker`) executes. This is what lets a web request start a
+  run without running it.
 - Multiple workers share one Postgres store via `SKIP LOCKED` claims; SQLite
   is a one-process store (calls off-loop, contention bounded); memory is for
   tests. All three answer the same conformance suite.

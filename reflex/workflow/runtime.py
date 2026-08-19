@@ -167,8 +167,10 @@ class WorkflowRuntime:
         """
         if self._kernel is None:
             msg = (
-                "The workflow runtime has not started; start the app or use "
-                "WorkflowTestHarness in tests."
+                "The workflow runtime has not started. Run the app, or open a "
+                "client with `async with rx.workflows.connect(MyWorkflow): "
+                "...` to start and read runs from a script or another "
+                "framework, or use WorkflowTestHarness in tests."
             )
             raise WorkflowRuntimeError(msg)
         return self._kernel
@@ -286,6 +288,57 @@ def get_runtime() -> WorkflowRuntime:
 
 class WorkflowsNamespace:
     """The public ``rx.workflows`` API surface."""
+
+    @staticmethod
+    @asynccontextmanager
+    async def connect(
+        *workflow_classes: type[BaseState],
+        database: str | None = None,
+        store: RunStore | None = None,
+    ) -> AsyncIterator[WorkflowRuntime]:
+        """Open a client on a store without serving any work.
+
+        The process that has the business event is often not the process that
+        runs the workflow: a Django view, a FastAPI route, a cron box, a
+        one-off script. Those want to start runs and read them, and must not
+        quietly become workers by importing the engine -- a web process that
+        starts executing steps is a surprise, and a script that exits mid-step
+        would leave a claim behind.
+
+        Inside this block every ``rx.workflows`` call and every ``RunHandle``
+        works and goes to the shared store, and nothing is claimed or
+        executed here. Workers are separate processes
+        (``reflex workflows worker``).
+
+        Usage::
+
+            async with rx.workflows.connect(Checkout):
+                handle = await rx.workflows.submit(Checkout.start(order="o1"))
+
+        Args:
+            workflow_classes: The workflows this client may start.
+            database: Connection URL or SQLite path; defaults to
+                ``REFLEX_WORKFLOW_DATABASE``, then ``./workflow.db``.
+            store: An already-open store, which takes precedence.
+
+        Yields:
+            The client runtime.
+        """
+        global _default_runtime
+
+        runtime = WorkflowRuntime(
+            store if store is not None else resolve_store(database)
+        )
+        for workflow_cls in workflow_classes:
+            runtime.register(workflow_cls)
+        await runtime.startup(start_worker=False)
+        previous = _default_runtime
+        _default_runtime = runtime
+        try:
+            yield runtime
+        finally:
+            _default_runtime = previous
+            await runtime.shutdown()
 
     @staticmethod
     async def start(
