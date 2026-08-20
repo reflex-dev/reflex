@@ -8,6 +8,7 @@ import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
+from reflex_cli import constants
 from reflex_cli.utils.exceptions import NotAuthenticatedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     AuthenticatedClient,
@@ -105,52 +106,108 @@ def test_get_existing_access_token_with_no_token_anywhere(
 
 
 @pytest.mark.parametrize(
-    "file_exists, config_content",
+    "config_content, expected",
     [
-        (True, '{"access_token": "valid_token"}'),
-        (True, '{"another_key": "value"}'),
-        (False, ""),
+        ('{"access_token": "valid_token"}', {}),
+        ('{"access_token": "valid_token", "project": "p1"}', {"project": "p1"}),
+        ('{"another_key": "value"}', {"another_key": "value"}),
     ],
 )
-def test_delete_token_from_config(
-    mocker: MockerFixture,
-    file_exists: bool,
-    config_content: str,
-):
-    mocker.patch("pathlib.Path.exists", return_value=file_exists)
-    mock_os_remove = mocker.patch("pathlib.Path.unlink")
+def test_delete_token_from_config(config_content: str, expected: dict):
+    """Only the token is removed; everything else in the config survives.
 
-    mocked_open = mock_open(read_data=config_content)
-    mocker.patch("pathlib.Path.open", mocked_open)
-    mock_json_load = mocker.patch(
-        "json.load", return_value=json.loads(config_content or "{}")
-    )
-    mock_json_dump = mocker.patch("json.dump")
+    Args:
+        config_content: The starting contents of the config file.
+        expected: The config expected to remain afterwards.
+    """
+    constants.Hosting.HOSTING_JSON.write_text(config_content)
 
     delete_token_from_config()
 
-    if file_exists:
-        assert mocked_open.call_count == 2
-        mock_json_load.assert_called_once()
-        mock_json_dump.assert_called_once()
-        assert "access_token" not in mock_json_dump.call_args.args[0]
-        mock_os_remove.assert_called_once()
-    else:
-        mocked_open.assert_not_called()
-        mock_os_remove.assert_not_called()
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == expected
 
 
-def test_save_token_to_config(mocker: MockFixture):
-    mocker.patch("pathlib.Path.exists", return_value=False)
-    mock_makedirs = mocker.patch("pathlib.Path.mkdir")
+def test_delete_token_from_config_without_a_config_file():
+    """Deleting when no config exists is a no-op rather than an error."""
+    assert not constants.Hosting.HOSTING_JSON.exists()
+
+    delete_token_from_config()
+
+    assert not constants.Hosting.HOSTING_JSON.exists()
+
+
+def test_delete_token_from_config_keeps_the_config_when_the_write_fails(
+    mocker: MockerFixture,
+):
+    """A failed delete must leave the existing config readable, not truncated.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    original = '{"access_token": "good_token", "project": "p1"}'
+    constants.Hosting.HOSTING_JSON.write_text(original)
+    mocker.patch("json.dump", side_effect=OSError("disk full"))
+
+    delete_token_from_config()
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == original
+    assert list(constants.Hosting.HOSTING_JSON.parent.iterdir()) == [
+        constants.Hosting.HOSTING_JSON
+    ]
+
+
+def test_delete_token_from_config_removes_the_legacy_file():
+    """The pre-v1 hosting file is removed alongside the token."""
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "valid_token"}')
+    constants.Hosting.HOSTING_JSON_V0.write_text("{}")
+
+    delete_token_from_config()
+
+    assert not constants.Hosting.HOSTING_JSON_V0.exists()
+
+
+def test_save_token_to_config_creates_the_config():
+    """Saving works when neither the directory nor the file exists yet."""
     save_token_to_config("test_token")
-    mock_makedirs.assert_called_once()
 
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mock_json_dump = mocker.patch("json.dump")
-    mocker.patch("pathlib.Path.open", mock_open())
-    save_token_to_config("test_token")
-    mock_json_dump.assert_called_once()
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "test_token"
+    }
+
+
+def test_save_token_to_config_preserves_other_keys():
+    """Saving a token leaves unrelated config entries untouched."""
+    constants.Hosting.HOSTING_JSON.write_text(
+        '{"access_token": "old_token", "project": "p1"}'
+    )
+
+    save_token_to_config("new_token")
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "new_token",
+        "project": "p1",
+    }
+
+
+def test_save_token_to_config_keeps_the_old_token_when_the_write_fails(
+    mocker: MockerFixture,
+):
+    """A failed write must not truncate the credentials already on disk.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    original = '{"access_token": "good_token", "project": "p1"}'
+    constants.Hosting.HOSTING_JSON.write_text(original)
+    mocker.patch("json.dump", side_effect=OSError("disk full"))
+
+    save_token_to_config("new_token")
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == original
+    # The temporary file used for the atomic replace is cleaned up.
+    assert list(constants.Hosting.HOSTING_JSON.parent.iterdir()) == [
+        constants.Hosting.HOSTING_JSON
+    ]
 
 
 def test_authenticated_token_found_and_valid(mocker: MockFixture):

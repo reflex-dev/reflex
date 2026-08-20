@@ -161,6 +161,19 @@ def test_token_print_writes_the_raw_token_to_stdout(mocker: MockFixture):
     assert result.output == long_token + "\n"
 
 
+def test_token_print_keeps_stdout_free_of_diagnostics(mocker: MockFixture):
+    """Debug logging must not land inside `$(reflex cloud token --print)`."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("quiet_token", hosting.TokenSource.CONFIG),
+    )
+
+    result = runner.invoke(hosting_cli, ["token", "--print", "--loglevel", "debug"])
+
+    assert result.exit_code == 0
+    assert result.output == "quiet_token\n"
+
+
 def test_token_print_without_a_token_fails(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):
@@ -241,6 +254,10 @@ def test_token_clear_removes_the_token(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):
     delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("", hosting.TokenSource.NONE),
+    )
 
     result = runner.invoke(hosting_cli, ["token", "--clear"])
 
@@ -264,6 +281,27 @@ def test_token_clear_warns_when_the_env_var_still_applies(
         "REFLEX_ACCESS_TOKEN is still set" in message
         for message in _messages(caplog, logging.INFO)
     )
+
+
+def test_token_clear_reports_a_failed_removal(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A swallowed delete failure must not be reported as success."""
+    # delete_token_from_config swallows filesystem errors, so the token can
+    # still be in the config file when it returns.
+    mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("still_here", hosting.TokenSource.CONFIG),
+    )
+
+    result = runner.invoke(hosting_cli, ["token", "--clear"])
+
+    assert result.exit_code == 1
+    assert any(
+        "Unable to remove" in message for message in _messages(caplog, logging.ERROR)
+    )
+    assert not _messages(caplog, SUCCESS)
 
 
 @pytest.mark.parametrize(

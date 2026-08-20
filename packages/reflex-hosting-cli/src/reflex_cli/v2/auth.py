@@ -123,11 +123,9 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
 
     Exactly one of --print, --set or --clear must be given. --print writes the
     raw token to stdout so it can be captured, e.g.
-    `export REFLEX_ACCESS_TOKEN=$(reflex cloud token --print)`.
-
-    Raises:
-        UsageError: If the requested operations are not exactly one.
-
+    `export REFLEX_ACCESS_TOKEN=$(reflex cloud token --print)`; stdout carries
+    the token or nothing at all, so use `reflex cloud whoami` to inspect where
+    the token came from.
     """
     from reflex_cli.utils import hosting
 
@@ -148,11 +146,14 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
         )
 
     if print_token:
-        access_token, source = hosting.get_existing_access_token_with_source()
+        # The shared console writes everything below ERROR to stdout, which
+        # would land inside `$(reflex cloud token --print)` alongside the
+        # token. Errors still go to stderr, so stdout stays exact either way.
+        console.set_log_level(constants.LogLevel.ERROR)
+        access_token, _ = hosting.get_existing_access_token_with_source()
         if not access_token:
             logger.error("No access token stored. Run `reflex login` to authenticate.")
             raise click.exceptions.Exit(1)
-        logger.debug(f"Access token loaded from the {source.value}.")
         # Bypass the console so the token is never wrapped or styled.
         click.echo(access_token)
         return
@@ -183,6 +184,15 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
         return
 
     hosting.delete_token_from_config()
+    # delete_token_from_config swallows filesystem errors, so confirm the
+    # token is really gone rather than reporting an unverified success.
+    _, stored_source = hosting.get_existing_access_token_with_source()
+    if stored_source is hosting.TokenSource.CONFIG:
+        logger.error(
+            f"Unable to remove the access token from {constants.Hosting.HOSTING_JSON}."
+        )
+        raise click.exceptions.Exit(1)
+
     logger.log(log.SUCCESS, "Cleared the stored access token.")
     if os.environ.get("REFLEX_ACCESS_TOKEN"):
         logger.info(

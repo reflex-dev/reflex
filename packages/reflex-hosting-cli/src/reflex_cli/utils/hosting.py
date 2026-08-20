@@ -12,6 +12,7 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 import webbrowser
@@ -491,15 +492,55 @@ def validate_token(token: str) -> dict[str, Any]:
         raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
+def _read_hosting_config() -> dict[str, Any]:
+    """Read the hosting config file.
+
+    Returns:
+        The stored config, or an empty dict if it is missing or unreadable.
+
+    """
+    try:
+        with constants.Hosting.HOSTING_JSON.open() as config_file:
+            return json.load(config_file)
+    except (OSError, ValueError) as ex:
+        logger.debug(f"Unable to read {constants.Hosting.HOSTING_JSON} due to: {ex}")
+        return {}
+
+
+def _write_hosting_config(hosting_config: dict[str, Any]):
+    """Write the hosting config file atomically.
+
+    The config is written to a temporary file alongside the target and moved
+    into place, so a failed or interrupted write leaves the previous
+    credentials intact rather than truncating them.
+
+    Args:
+        hosting_config: The config to persist.
+
+    """
+    target = constants.Hosting.HOSTING_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Close the handle before replacing: Windows cannot rename an open file.
+    temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(temp_fd, "w") as config_file:
+            json.dump(hosting_config, config_file)
+            config_file.flush()
+            os.fsync(config_file.fileno())
+        temp_path.replace(target)
+    except BaseException:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
 def delete_token_from_config():
     """Delete the invalid token from the config file if applicable."""
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                hosting_config = json.load(config_file)
+            hosting_config = _read_hosting_config()
             hosting_config.pop("access_token", None)
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-                json.dump(hosting_config, config_file)
+            _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
             logger.debug(
@@ -518,18 +559,9 @@ def save_token_to_config(token: str):
 
     """
     try:
-        if not Path(constants.Reflex.DIR).exists():
-            Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
-        hosting_config: dict[str, str] = {}
-        if constants.Hosting.HOSTING_JSON.exists():
-            try:
-                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                    hosting_config = json.load(config_file)
-            except (OSError, ValueError):
-                hosting_config = {}
+        hosting_config = _read_hosting_config()
         hosting_config["access_token"] = token
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            json.dump(hosting_config, config_file)
+        _write_hosting_config(hosting_config)
     except Exception as ex:
         logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
