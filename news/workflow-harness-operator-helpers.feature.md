@@ -1,0 +1,1 @@
+`WorkflowTestHarness` gained `retry`, `skip`, `force_complete`, and `force_fail`, matching the operator actions the CLI exposes. Rehearsing repair is most of what a workflow test needs to do, and reaching through `harness.kernel` for it read as private API.

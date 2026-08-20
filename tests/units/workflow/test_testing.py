@@ -11,7 +11,7 @@ import time
 
 import pytest
 from reflex_base.utils.exceptions import WorkflowDefinitionError
-from reflex_base.workflow import WorkflowConfig, manual
+from reflex_base.workflow import Retry, TransientWorkflowError, WorkflowConfig, manual
 
 import reflex as rx
 from reflex.workflow.records import RunStatus
@@ -123,3 +123,121 @@ async def test_an_injected_store_is_left_to_its_owner(forked_registration_contex
 
     # Still usable afterwards: the run is there for the next harness.
     assert await store.get_run(result.run_id) is not None
+
+
+STUCK_ATTEMPTS: list[int] = []
+
+
+class Stuck(rx.State):
+    """A two-step chain whose middle step always fails."""
+
+    __workflow__ = WorkflowConfig(id="harness.stuck")
+    ran_after: bool = False
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def start(self):
+        """Preallocate the chain.
+
+        Returns:
+            The work, then the step that must survive its failure.
+        """
+        return [Stuck.work, Stuck.after]
+
+    @rx.event(
+        durable=True, trigger=manual(), effect="none", retry=Retry(max_attempts=1)
+    )
+    def work(self):
+        """Fail, however many times an operator retries.
+
+        Raises:
+            TransientWorkflowError: Always.
+        """
+        STUCK_ATTEMPTS.append(1)
+        msg = "vendor down"
+        raise TransientWorkflowError(msg)
+
+    @rx.event(durable=True, effect="none")
+    def after(self):
+        """Run once the blocking step is past.
+
+        Returns:
+            Completion.
+        """
+        self.ran_after = True
+        return rx.complete(result={"ok": True})
+
+
+class Waiting(rx.State):
+    """A run that sits on a long timer, nonterminal and drained."""
+
+    __workflow__ = WorkflowConfig(id="harness.waiting")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def start(self):
+        """Wait a month.
+
+        Returns:
+            A deferral no test will wait out.
+        """
+        return rx.after("30d", Waiting.later)
+
+    @rx.event(durable=True, effect="none")
+    def later(self):
+        """Finish, eventually.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result={"waited": True})
+
+
+async def test_the_harness_drives_retry_skip_and_force(forked_registration_context):
+    """Operator repair is most of what a workflow test needs to rehearse.
+
+    Reaching through ``harness.kernel`` for it worked but read as private
+    API, and a test that reaches for a helper that is not there fails with
+    AttributeError -- which an xfail will happily swallow as a pass.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    STUCK_ATTEMPTS.clear()
+    async with WorkflowTestHarness(Stuck) as harness:
+        failed = await harness.start(Stuck.start())
+        assert failed.run_id is not None
+        snapshot = await harness.get_run(failed.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+
+        assert await harness.retry(failed.run_id)
+        snapshot = await harness.get_run(failed.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED, "attempt two fails too"
+        assert len(STUCK_ATTEMPTS) == 2, "retry re-ran the step"
+
+        assert await harness.skip(failed.run_id)
+        snapshot = await harness.get_run(failed.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.state["ran_after"] is True, (
+            "skipping restores the successor the failure tombstoned"
+        )
+
+    async with WorkflowTestHarness(Waiting) as harness:
+        run = await harness.start(Waiting.start())
+        assert run.run_id is not None
+        assert await harness.force_complete(run.run_id, {"decided": "by hand"})
+        snapshot = await harness.get_run(run.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == {"decided": "by hand"}
+
+    async with WorkflowTestHarness(Waiting) as harness:
+        run = await harness.start(Waiting.start())
+        assert run.run_id is not None
+        assert await harness.force_fail(run.run_id, "not worth repairing")
+        snapshot = await harness.get_run(run.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.FAILED
+        assert snapshot.error is not None
+        assert snapshot.error["message"] == "not worth repairing"

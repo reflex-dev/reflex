@@ -22,6 +22,7 @@ from reflex_base.workflow import (
 )
 
 from reflex.workflow.kernel import WorkflowObserver
+from reflex.workflow.records import RunStatus
 from reflex.workflow.runtime import WorkflowRuntime, _context_runtime
 from reflex.workflow.store import MemoryRunStore
 
@@ -280,3 +281,78 @@ class WorkflowTestHarness:
         cancelled = await self.kernel.cancel(run_id)
         await self.kernel.run_until_idle()
         return cancelled
+
+    async def retry(self, run_id: str) -> bool:
+        """Re-open a failed run at the step that failed, and drain.
+
+        Args:
+            run_id: The failed run to retry.
+
+        Returns:
+            True if a failed run was re-opened.
+        """
+        retried = await self.kernel.retry(run_id)
+        await self.kernel.run_until_idle()
+        return retried
+
+    async def skip(self, run_id: str) -> bool:
+        """Give up on a blocking step and let the run carry on, then drain.
+
+        Args:
+            run_id: The stuck run to unstick.
+
+        Returns:
+            True if a blocking step was skipped.
+        """
+        skipped = await self.kernel.skip(run_id)
+        await self.kernel.run_until_idle()
+        return skipped
+
+    async def force_complete(self, run_id: str, result: Any = None) -> bool:
+        """Finish a drained run by operator decision, then drain.
+
+        Args:
+            run_id: The run to complete.
+            result: The result to record as what it produced.
+
+        Returns:
+            True if the run was finalized.
+        """
+        return await self._force(run_id, RunStatus.COMPLETED, result=result)
+
+    async def force_fail(self, run_id: str, reason: str) -> bool:
+        """Fail a drained run by operator decision, then drain.
+
+        Args:
+            run_id: The run to fail.
+            reason: The message to record as the failure.
+
+        Returns:
+            True if the run was finalized.
+        """
+        return await self._force(run_id, RunStatus.FAILED, error={"message": reason})
+
+    async def _force(
+        self,
+        run_id: str,
+        status: RunStatus,
+        *,
+        result: Any = None,
+        error: dict[str, Any] | None = None,
+    ) -> bool:
+        """Force-finalize a run and process what its close unblocks.
+
+        Args:
+            run_id: The run to finalize.
+            status: The terminal status to record.
+            result: Result to record when completing.
+            error: Error payload to record when failing.
+
+        Returns:
+            True if the run was finalized.
+        """
+        finalized = await self.kernel.force_finalize(
+            run_id, status=status, result=result, error=error
+        )
+        await self.kernel.run_until_idle()
+        return finalized

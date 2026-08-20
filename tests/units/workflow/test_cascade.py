@@ -278,11 +278,7 @@ async def test_a_failed_parent_closes_its_branches(forked_registration_context):
     async with WorkflowTestHarness(rollout, Region) as harness:
         result = await harness.start(rollout.begin())
         assert result.run_id is not None
-        assert await harness.kernel.force_finalize(
-            result.run_id,
-            status=RunStatus.FAILED,
-            error={"message": "operator gave up"},
-        )
+        assert await harness.force_fail(result.run_id, "operator gave up")
         await harness.advance("2h")
 
         assert DEPLOYED == [], f"a failed rollout kept deploying: {DEPLOYED}"
