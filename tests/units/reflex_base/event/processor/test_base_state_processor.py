@@ -338,8 +338,6 @@ async def test_background_yield_inside_context_flushes_delta_before_event(
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         token: The client token.
     """
-    import asyncio
-
     timeline: list[tuple[str, Any]] = []
     root_ctx = real_base_state_processor._root_context
     assert root_ctx is not None
