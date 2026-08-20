@@ -13,6 +13,7 @@ from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
+from reflex.istate.manager import LockedRoot, mint_locked_root
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -196,7 +197,7 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
 async def chain_updates(
     events: Any,
     handler_name: str,
-    root_state: BaseState | None = None,
+    root_state: LockedRoot | None = None,
 ) -> None:
     """Chain yielded events and emit a delta to the frontend.
 
@@ -208,8 +209,19 @@ async def chain_updates(
             for anything that is not an Event, EventHandler, EventSpec, a sequence
             of those, or None.
         handler_name: The name of the handler that yielded the events, used for error messages.
-        root_state: The root state of the app, no delta emitted if omitted.
+        root_state: Lock-ownership proof for the root to flush, no delta
+            emitted if omitted. A bare BaseState is refused: flushing without
+            the token lock discards concurrent writers' dirty vars.
+
+    Raises:
+        TypeError: If root_state is a bare BaseState instead of a LockedRoot.
     """
+    if root_state is not None and not isinstance(root_state, LockedRoot):
+        msg = (
+            "chain_updates requires a LockedRoot (see mint_locked_root); "
+            "flushing an unlocked root races concurrent events."
+        )
+        raise TypeError(msg)
     from reflex.event import Event
 
     ctx = EventContext.get()
@@ -221,12 +233,13 @@ async def chain_updates(
         # resolving the delta is what re-marks linked vars through the patch
         # machinery, so cleaning earlier would fan out a stale set (see
         # tests/integration/test_linked_state.py).
+        root = root_state.root
         try:
-            delta = await root_state._get_resolved_delta()
+            delta = await root._get_resolved_delta()
             if delta:
                 await ctx.emit_delta(delta)
         finally:
-            root_state._clean()
+            root._clean()
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
@@ -236,29 +249,31 @@ async def chain_updates(
 
 
 def ensure_locked(
-    state: BaseState | StateProxy, root_state: BaseState | None
-) -> BaseState | None:
+    state: BaseState | StateProxy, root_state: LockedRoot | None
+) -> LockedRoot | None:
     """The root to flush deltas from, only while the state lock is held.
 
-    Foreground handlers pass the locked root in. A background handler
+    Foreground handlers pass lock-ownership proof in. A background handler
     yielding from inside ``async with self`` is suspended while its proxy
-    still holds the lock, so flushing through the proxy's root keeps the
-    documented ordering: deltas reach the frontend before the yielded event.
-    Outside the proxy context there is no lock, and flushing there is the
-    unlocked snapshot/clean that discards concurrent writes. Evaluated per
-    yield: a generator can move between inside and outside the context.
+    still holds the lock, so minting for the proxy's root here is the audited
+    claim of that precondition, and flushing it keeps the documented ordering:
+    deltas reach the frontend before the yielded event. Outside the proxy
+    context there is no lock, and flushing there is the unlocked
+    snapshot/clean that discards concurrent writes. Evaluated per yield: a
+    generator can move between inside and outside the context.
 
     Args:
         state: The state the handler runs against, possibly a StateProxy.
-        root_state: The locked root passed by foreground callers, if any.
+        root_state: Lock-ownership proof passed by foreground callers, if any.
 
     Returns:
-        The root state to flush, or None when the lock is not held.
+        Lock-ownership proof for the root to flush, or None when the lock is
+        not held.
     """
     if root_state is not None:
         return root_state
     if isinstance(state, StateProxy) and state._is_mutable():
-        return state.__wrapped__._get_root_state()
+        return mint_locked_root(state.__wrapped__._get_root_state())
     return None
 
 
@@ -266,7 +281,7 @@ async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
-    root_state: BaseState | None,
+    root_state: LockedRoot | None,
 ):
     """Process event.
 
@@ -274,12 +289,12 @@ async def process_event(
         handler: EventHandler to process.
         payload: The event payload.
         state: State to process the handler.
-        root_state: The root state of the app, used for emitting deltas. Pass
-            None when the caller does not hold the state lock (background
-            tasks): computing and cleaning a delta on an unlocked root races
-            concurrent events on a shared state tree, and background state
-            changes are emitted by the ``async with self`` context exits
-            instead.
+        root_state: Lock-ownership proof for the root to flush deltas from.
+            Pass None when the caller does not hold the state lock
+            (background tasks): computing and cleaning a delta on an unlocked
+            root races concurrent events on a shared state tree, and
+            background state changes are emitted by the ``async with self``
+            context exits instead.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -370,17 +385,18 @@ class BaseStateEventProcessor(EventProcessor):
         ):
             return
 
+        locked = mint_locked_root(root_state)
         await process_event(
             handler=State.event_handlers["hydrate"],
             payload={},
             state=root_state,
-            root_state=root_state,
+            root_state=locked,
         )
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
             state=await root_state.get_state(OnLoadInternalState),
-            root_state=root_state,
+            root_state=locked,
         )
 
     async def _execute_event(
@@ -447,7 +463,7 @@ class BaseStateEventProcessor(EventProcessor):
                     handler=registered_handler.handler,
                     payload=event.payload,
                     state=substate,
-                    root_state=root_state,
+                    root_state=mint_locked_root(root_state),
                 )
                 return
         # Otherwise drop the state lock and start processing the background task
@@ -488,7 +504,7 @@ class BaseStateEventProcessor(EventProcessor):
                     ) as flush_state:
                         await chain_updates(
                             None,
-                            root_state=flush_state._get_root_state(),
+                            root_state=mint_locked_root(flush_state._get_root_state()),
                             handler_name=registered_handler.handler.fn.__qualname__,
                         )
                 except Exception:

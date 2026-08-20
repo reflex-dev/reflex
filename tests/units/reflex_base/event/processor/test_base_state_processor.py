@@ -673,10 +673,11 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     real_base_state_processor: BaseStateEventProcessor,
     token: str,
 ):
-    """ensure_locked passes a locked root through and refuses everything else.
+    """ensure_locked passes lock-ownership proof through and refuses the rest.
 
-    Foreground callers hand in the root they locked; a plain substate or an
-    un-entered proxy holds no lock, so there is nothing safe to flush.
+    Foreground callers hand in the proof they minted under the lock; a plain
+    substate or an un-entered proxy holds no lock, so there is nothing safe
+    to flush.
 
     Args:
         wired_app: The App wired to the processor's state manager.
@@ -685,6 +686,7 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     """
     from reflex_base.event.processor.base_state_processor import ensure_locked
 
+    from reflex.istate.manager import mint_locked_root
     from reflex.istate.proxy import StateProxy
 
     root_ctx = real_base_state_processor._root_context
@@ -695,9 +697,46 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     )
     substate = await root.get_state(OnLoadInternalState)
 
-    assert ensure_locked(substate, root) is root
+    minted = mint_locked_root(root)
+    assert ensure_locked(substate, minted) is minted
     assert ensure_locked(substate, None) is None
     assert ensure_locked(StateProxy(substate), None) is None
+
+
+async def test_chain_updates_refuses_a_bare_root_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Flushing requires lock-ownership proof, not a bare state.
+
+    An unlocked flush discards concurrent writers' dirty vars; requiring a
+    ``LockedRoot`` makes that mistake a TypeError at the call site instead of
+    a silent lost update.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.event.processor.base_state_processor import chain_updates
+
+    from reflex.istate.manager import LockedRoot, mint_locked_root
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    EventContext.set(root_ctx.fork(token=token))
+    root = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+
+    with pytest.raises(TypeError, match="LockedRoot"):
+        await chain_updates(None, root_state=root, handler_name="bare")  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(TypeError, match="mint_locked_root"):
+        LockedRoot(root=root)
+
+    await chain_updates(None, root_state=mint_locked_root(root), handler_name="minted")
 
 
 async def test_failed_context_enter_does_not_mark_the_proxy_entered(
