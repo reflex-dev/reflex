@@ -245,7 +245,6 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         token: The client token.
     """
     import asyncio
-    import contextlib
 
     bg_started = asyncio.Event()
     bg_resolving = asyncio.Event()
@@ -273,9 +272,12 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         @event
         async def fg(self):
             # Bounded: with the fix, the background task does no trailing
-            # delta work, so nothing ever sets bg_resolving.
-            with contextlib.suppress(TimeoutError):
-                await asyncio.wait_for(bg_resolving.wait(), timeout=0.5)
+            # delta work, so nothing ever sets bg_resolving. asyncio.wait
+            # instead of wait_for: on py3.10 the latter raises
+            # asyncio.TimeoutError, which is not yet the builtin.
+            waiter = asyncio.ensure_future(bg_resolving.wait())
+            await asyncio.wait([waiter], timeout=0.5)
+            waiter.cancel()
             self.victim = "written"
             fg_wrote.set()
             # Yield so the background task's (pre-fix) clean can land while
@@ -315,4 +317,84 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         "The foreground handler's write never reached any delta; it was "
         "cleaned by the background task's unlocked trailing update. Deltas: "
         f"{emitted_deltas}"
+    )
+
+
+async def test_background_yield_inside_context_flushes_delta_before_event(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A yield inside ``async with self`` emits the delta before the event.
+
+    A background generator suspended at a yield inside its proxy context
+    still holds the state lock, so flushing the delta there is safe and
+    preserves the documented ordering: frontend events are processed with
+    the latest state. Only yields outside the context (no lock) must skip
+    the flush.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    import asyncio
+
+    timeline: list[tuple[str, Any]] = []
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+
+    async def record_delta(tok: str, delta: Mapping[str, Mapping[str, Any]]) -> None:  # noqa: RUF029
+        timeline.append(("delta", delta))
+
+    async def record_event(tok: str, *events: Event) -> None:  # noqa: RUF029
+        timeline.append(("event", tuple(ev.name for ev in events)))
+
+    object.__setattr__(root_ctx, "emit_delta_impl", record_delta)
+    object.__setattr__(root_ctx, "emit_event_impl", record_event)
+
+    class BgYieldOrderState(State):
+        marker: str = ""
+
+        @event(background=True)
+        async def bg_yield(self):
+            async with self:
+                self.marker = "set"
+                yield rx.call_script("void 0")
+
+    state_manager = root_ctx.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token, Event.from_event_type(BgYieldOrderState.bg_yield())[0]
+        )
+        await processor.join(5)
+
+    state_name = BgYieldOrderState.get_full_name()
+    marker_key = "marker" + FIELD_MARKER
+    delta_index = next(
+        (
+            index
+            for index, (kind, payload) in enumerate(timeline)
+            if kind == "delta" and payload.get(state_name, {}).get(marker_key) == "set"
+        ),
+        None,
+    )
+    event_index = next(
+        (
+            index
+            for index, (kind, payload) in enumerate(timeline)
+            if kind == "event" and "_call_script" in payload
+        ),
+        None,
+    )
+    assert delta_index is not None, f"marker delta never emitted: {timeline}"
+    assert event_index is not None, f"yielded event never emitted: {timeline}"
+    assert delta_index < event_index, (
+        "The yielded frontend event was emitted before the delta for the "
+        f"mutation made in the same proxy context: {timeline}"
     )
