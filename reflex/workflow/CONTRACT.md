@@ -169,6 +169,14 @@ Consequences, stated plainly:
   steps of one run with different code. Steps are the consistency boundary;
   the contract makes no promise that one run sees one release.
 
+The engine deliberately does not pin runs to releases, and nothing here
+should be read as planning to. Pinning is a *deployment* concern: a hosting
+layer that wants one run to see one release does it by routing — admitting
+new runs to the new release while old runs finish on the old one — not by
+asking the engine to keep old code alive. That routing is not built yet; when
+it is, it constrains which workers exist, and every rule above still holds
+underneath it.
+
 ## 5. Cancellation, deadlines, and children
 
 - `cancel(run_id)` records intent and cancels any in-flight attempt
