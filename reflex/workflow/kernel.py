@@ -60,6 +60,7 @@ from reflex.workflow.serde import to_run_data
 from reflex.workflow.steps import SubstepJournal, bind_journal, unbind_journal
 from reflex.workflow.store import (
     Claim,
+    DeadlinePassedError,
     DeliveryDisposition,
     FlowGate,
     RunStore,
@@ -2429,6 +2430,34 @@ class WorkflowKernel:
             await self._store.commit(claim, completion, self._clock())
         except StaleClaimError:
             await self._record_abandoned(claim, handler, "fenced_at_commit")
+            return
+        except DeadlinePassedError:
+            # The run passed its deadline while this attempt ran. The only
+            # permitted outcome now is the sweep's TIMED_OUT, so the attempt
+            # is abandoned -- its recorded substeps stand, crash-equivalent --
+            # and its slot is released so the run drains immediately instead
+            # of waiting out a lease.
+            abandoned = (
+                (
+                    HistoryEventType.ATTEMPT_ABANDONED,
+                    {
+                        "ordinal": claim.step.ordinal,
+                        "epoch": claim.step.epoch,
+                        "worker": self._worker_id,
+                        "effect": handler.effect,
+                        "reason": "deadline_passed",
+                    },
+                ),
+            )
+            with contextlib.suppress(StaleClaimError):
+                await self._store.release_claim(
+                    claim,
+                    status=StepStatus.CANCELLED,
+                    events=abandoned,
+                    now=self._clock(),
+                )
+            self._notify(claim.run, abandoned)
+            self._wakeup.set()
             return
         self._notify(claim.run, completion.events)
         for child_run, child_step in completion.children:

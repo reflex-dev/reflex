@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import (
     Retry,
+    Signal,
     TransientWorkflowError,
     WorkflowConfig,
     after,
@@ -16,6 +17,7 @@ from reflex_base.workflow import (
     hmac_signature,
     manual,
     needs_attention,
+    wait_for,
     webhook,
 )
 
@@ -25,6 +27,26 @@ from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import HistoryEventType, RunStatus, StepStatus
 from reflex.workflow.store import MemoryRunStore, SqliteRunStore
 from reflex.workflow.testing import WorkflowTestHarness
+
+
+class _Clock:
+    """A manually advanced epoch-seconds clock."""
+
+    def __init__(self, now: float):
+        """Start the clock.
+
+        Args:
+            now: The starting time in epoch seconds.
+        """
+        self.now = now
+
+    def __call__(self) -> float:
+        """Read the clock.
+
+        Returns:
+            The current time in epoch seconds.
+        """
+        return self.now
 
 
 class Payment(BaseModel):
@@ -802,4 +824,106 @@ async def test_run_until_idle_drains_every_attempt_it_started(
     statuses = sorted(run.status.value for run in runs)
     assert statuses == ["COMPLETED"] * 8, (
         f"run_until_idle returned with live attempts: {statuses}"
+    )
+
+
+async def test_work_cannot_commit_after_its_deadline(forked_registration_context):
+    """A run past its deadline has one outcome, and it is not COMPLETED.
+
+    The handler starts before the deadline, outruns cooperative cancellation,
+    and tries to commit after it. Without the fence the commit lands and the
+    caller -- who may already have been told the run timed out -- sees a run
+    that completed after its own deadline.
+    """
+    release = asyncio.Event()
+
+    class Deadlined(rx.State):
+        __workflow__ = WorkflowConfig(id="kernel.deadline_fence", run_timeout="10s")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        async def start(self):
+            """Block until the test has moved the clock past the deadline.
+
+            Returns:
+                Completion that must never land.
+            """
+            await release.wait()
+            return rx.complete(result="beat the sweep")
+
+    clock = _Clock(1_000_000.0)
+    store = MemoryRunStore()
+    definition = compile_workflow(Deadlined)
+    kernel = WorkflowKernel([definition], store, clock=clock)
+    started = await kernel.start(Deadlined.start())
+    assert started.run_id is not None
+    pump = asyncio.create_task(kernel.run_until_idle())
+    await asyncio.sleep(0.05)
+
+    # The deadline passes while the attempt is still running.
+    clock.now += 60
+    release.set()
+    await asyncio.wait_for(pump, timeout=10)
+    await kernel.run_until_idle()
+
+    snapshot = await kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.status is RunStatus.TIMED_OUT, (
+        f"a past-deadline run completed anyway: {snapshot.status}"
+    )
+    assert snapshot.result != "beat the sweep"
+
+
+async def test_a_delivery_to_a_past_deadline_run_is_refused(
+    forked_registration_context,
+):
+    """The answer resolved must not describe a decision the sweep discards."""
+
+    class Waits(rx.State):
+        __workflow__ = WorkflowConfig(id="kernel.deadline_wait", run_timeout="10s")
+
+        decided = Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Wait for a decision.
+
+            Returns:
+                The wait.
+            """
+            return wait_for(
+                Waits.decided, then=Waits.done, timeout="1h", on_timeout=Waits.lapse
+            )
+
+        @rx.event(durable=True, effect="none")
+        def done(self, decision: dict):
+            """Record the decision.
+
+            Args:
+                decision: The delivered payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=decision)
+
+        @rx.event(durable=True, effect="none")
+        def lapse(self):
+            """Nobody answered.
+
+            Returns:
+                Failure.
+            """
+            return rx.fail(reason="lapsed")
+
+    clock = _Clock(1_000_000.0)
+    store = MemoryRunStore()
+    kernel = WorkflowKernel([compile_workflow(Waits)], store, clock=clock)
+    started = await kernel.start(Waits.start())
+    assert started.run_id is not None
+    await kernel.run_until_idle()
+
+    clock.now += 60  # past the run deadline, before the wait's own timeout
+    disposition = await kernel.signal(started.run_id, Waits.decided({"ok": True}))
+    assert disposition == "expired", (
+        f"a doomed run's wait answered {disposition!r} instead of refusing"
     )

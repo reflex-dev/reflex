@@ -59,6 +59,17 @@ DeliveryDisposition = Literal[
 ]
 
 
+class DeadlinePassedError(WorkflowRuntimeError):
+    """A commit arrived after its run's deadline.
+
+    The contract promises a run past its deadline finalizes TIMED_OUT, which
+    is only unambiguous if nothing can commit afterwards: an attempt that
+    beats the timeout sweep would otherwise record COMPLETED on a run the
+    caller was told had timed out. The attempt's recorded substeps stand --
+    this is crash-equivalent, not an undo.
+    """
+
+
 class StaleClaimError(WorkflowRuntimeError):
     """Raised when a commit no longer owns its claim and must be discarded."""
 
@@ -1174,6 +1185,9 @@ class MemoryRunStore:
         """
         async with self._lock:
             run, steps = self._check_claim(claim)
+            # Past the deadline the only permitted outcome is TIMED_OUT,
+            # and that is the sweep's transition, not this attempt's.
+            _fence_deadline(run.run_id, run.deadline, now)
             step = steps[claim.step.ordinal]
             steps[step.ordinal] = dataclasses.replace(
                 step,
@@ -1291,6 +1305,12 @@ class MemoryRunStore:
                 return "unknown_run"
             if run.status in TERMINAL_RUN_STATUSES:
                 return "run_terminal"
+            if run.deadline is not None and run.deadline <= now:
+                # The run can never execute a continuation: claims exclude
+                # past-deadline runs and the sweep will finalize TIMED_OUT.
+                # Answering "resolved" here would tell the sender their
+                # decision was recorded when it is about to be discarded.
+                return "expired"
             inbox = self._inbox.setdefault(run_id, {})
             if (run_id, wait_key, dedupe_key) in inbox:
                 return "duplicate"
@@ -2526,6 +2546,22 @@ def _step_from_row(row: sqlite3.Row) -> StepRecord:
     )
 
 
+def _fence_deadline(run_id: str, deadline: float | None, now: float) -> None:
+    """Refuse a commit for a run already past its deadline.
+
+    Args:
+        run_id: The committing run.
+        deadline: Its deadline, when it has one.
+        now: Current time in epoch seconds.
+
+    Raises:
+        DeadlinePassedError: When the deadline has passed.
+    """
+    if deadline is not None and deadline <= now:
+        msg = f"Run {run_id} passed its deadline before commit."
+        raise DeadlinePassedError(msg)
+
+
 def _child_admission_events(
     child_run: RunRecord, child_step: StepRecord
 ) -> tuple[tuple[HistoryEventType, dict[str, Any]], ...]:
@@ -3187,18 +3223,21 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    def _check_claim(self, claim: Claim) -> None:
+    def _check_claim(self, claim: Claim) -> float | None:
         """Validate that a claim still owns its step and state version.
 
         Args:
             claim: The claim to validate.
+
+        Returns:
+            The run's deadline, when it has one.
 
         Raises:
             StaleClaimError: If the claim was fenced.
         """
         row = self._db.execute(
             "SELECT s.status AS step_status, s.epoch AS epoch,"
-            " r.state_version AS state_version"
+            " r.state_version AS state_version, r.deadline AS deadline"
             " FROM workflow_steps s JOIN workflow_runs r ON r.run_id = s.run_id"
             " WHERE s.run_id = ? AND s.ordinal = ?",
             (claim.run.run_id, claim.step.ordinal),
@@ -3213,6 +3252,7 @@ class SqliteRunStore:
                 f"Claim on run {claim.run.run_id} step {claim.step.ordinal} was fenced."
             )
             raise StaleClaimError(msg)
+        return row["deadline"]
 
     async def renew_lease(
         self,
@@ -3308,7 +3348,10 @@ class SqliteRunStore:
             with self._lock:
                 self._db.execute("BEGIN IMMEDIATE")
                 try:
-                    self._check_claim(claim)
+                    deadline = self._check_claim(claim)
+                    # Past the deadline the only permitted outcome is
+                    # TIMED_OUT, and that is the sweep's, not this one's.
+                    _fence_deadline(claim.run.run_id, deadline, now)
                     self._db.execute(
                         "UPDATE workflow_steps SET status = ?, attempts = attempts + ?,"
                         " due_at = ?, lease_expires_at = 0, error = ?, updated_at = ?"
@@ -3476,7 +3519,8 @@ class SqliteRunStore:
                 self._db.execute("BEGIN IMMEDIATE")
                 try:
                     row = self._db.execute(
-                        "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                        "SELECT status, deadline FROM workflow_runs WHERE run_id = ?",
+                        (run_id,),
                     ).fetchone()
                     if row is None:
                         self._db.execute("ROLLBACK")
@@ -3484,6 +3528,11 @@ class SqliteRunStore:
                     if row["status"] in terminal:
                         self._db.execute("ROLLBACK")
                         return "run_terminal"
+                    if row["deadline"] is not None and row["deadline"] <= now:
+                        # A past-deadline run can never execute the
+                        # continuation; saying "resolved" would be a lie.
+                        self._db.execute("ROLLBACK")
+                        return "expired"
                     seen = self._db.execute(
                         "SELECT 1 FROM workflow_inbox"
                         " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",

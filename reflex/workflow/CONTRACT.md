@@ -144,6 +144,11 @@ that turn it into effectively-once for side effects are, in order of strength:
   retry would be a lie.
 - Run-level `timeout` (`WorkflowConfig.run_timeout`) finalizes the run
   `TIMED_OUT` once drained; the in-flight attempt is cancelled cooperatively.
+  The deadline is fenced at commit: an attempt that outruns cooperative
+  cancellation and tries to commit after the deadline is refused and
+  abandoned, so "drained" is guaranteed and TIMED_OUT is the *only* outcome a
+  past-deadline run can reach. Deliveries to a past-deadline run are refused
+  as `expired` for the same reason.
 
 ## 4. Releases and versions
 
@@ -315,6 +320,8 @@ outcome.
 | during recovery sweep | idempotent; re-run by the next sweep |
 | worker dies holding N claims | each lease lapses independently; each step recovered independently |
 | worker asked to stop mid-attempt | attempt gets the drain budget to commit; if it commits, nothing is lost and nothing is spent; if it does not, it is cancelled and the step stays claimed until its lease lapses |
+| attempt finishes after the run's deadline passed | the commit is refused (`deadline_passed`, `attempt_abandoned` in history), the slot is released, and the sweep finalizes the run `TIMED_OUT` — a run past its deadline has exactly one outcome, never COMPLETED-after-the-fact. Recorded substeps stand: this is crash-equivalent, not an undo |
+| signal or approval arrives for a run past its deadline | refused as `expired` — the continuation can never execute (claims exclude past-deadline runs), so answering "resolved" would record a decision the timeout sweep is about to discard |
 | store unreachable at commit | attempt abandoned (fence unverifiable); step recovered later; `rx.step` records already made stand |
 | everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule, remainder skipped with a history record |
 

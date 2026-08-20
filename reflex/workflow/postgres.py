@@ -38,6 +38,7 @@ from reflex.workflow.store import (
     FlowGate,
     StaleClaimError,
     _child_admission_events,
+    _fence_deadline,
 )
 
 try:
@@ -586,19 +587,22 @@ class PostgresRunStore:
         row = await cursor.fetchone()
         return None if row is None else _step_from_row(row)
 
-    async def _check_claim(self, conn: Connection, claim: Claim) -> None:
+    async def _check_claim(self, conn: Connection, claim: Claim) -> float | None:
         """Validate that a claim still owns its step and state version.
 
         Args:
             conn: The connection inside an open transaction.
             claim: The claim to validate.
 
+        Returns:
+            The run's deadline, when it has one.
+
         Raises:
             StaleClaimError: If the claim was fenced.
         """
         cursor = await conn.execute(
             "SELECT s.status AS step_status, s.epoch AS epoch,"
-            " r.state_version AS state_version"
+            " r.state_version AS state_version, r.deadline AS deadline"
             " FROM workflow_steps s JOIN workflow_runs r ON r.run_id = s.run_id"
             " WHERE s.run_id = %s AND s.ordinal = %s",
             (claim.run.run_id, claim.step.ordinal),
@@ -614,6 +618,7 @@ class PostgresRunStore:
                 f"Claim on run {claim.run.run_id} step {claim.step.ordinal} was fenced."
             )
             raise StaleClaimError(msg)
+        return row["deadline"]
 
     async def admit(
         self,
@@ -994,7 +999,10 @@ class PostgresRunStore:
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
             await self._lock_run(conn, claim.run.run_id)
-            await self._check_claim(conn, claim)
+            deadline = await self._check_claim(conn, claim)
+            # Past the deadline the only permitted outcome is TIMED_OUT, and
+            # that is the sweep's transition, not this attempt's.
+            _fence_deadline(claim.run.run_id, deadline, now)
             await conn.execute(
                 "UPDATE workflow_steps SET status = %s, attempts = attempts + %s,"
                 " due_at = %s, lease_expires_at = 0, error = %s, updated_at = %s"
@@ -1265,7 +1273,7 @@ class PostgresRunStore:
         """
         wait_key = f"join:{ordinal}"
         cursor = await conn.execute(
-            "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
+            "SELECT status, deadline FROM workflow_runs WHERE run_id = %s FOR UPDATE",
             (run_id,),
         )
         run_row = await cursor.fetchone()
@@ -1273,6 +1281,10 @@ class PostgresRunStore:
             return "unknown_run"
         if run_row["status"] in _TERMINAL_RUNS:
             return "run_terminal"
+        if run_row["deadline"] is not None and run_row["deadline"] <= now:
+            # A past-deadline run can never execute the continuation;
+            # saying "resolved" would be a lie the sweep then discards.
+            return "expired"
         cursor = await conn.execute(
             "SELECT 1 FROM workflow_inbox"
             " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
