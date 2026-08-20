@@ -21,6 +21,7 @@ import pytest
 import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base.components.component import Component
+from reflex_base.constants import RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
@@ -584,6 +585,122 @@ async def test_dynamic_var_event(
     assert emitted_deltas == [
         (token, {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}})
     ]
+
+
+@pytest.mark.asyncio
+async def test_router_delta_partial_only_when_connection_scope_unchanged(
+    test_state: type[ATestState],
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+    token: str,
+    clean_registration_context: RegistrationContext,
+    router_data: dict[str, str | dict],
+):
+    """The processor must elide session/headers only while they are unchanged.
+
+    Drives the real comparison in the event processor rather than setting the
+    internal flag directly, so arming a partial payload after the session
+    actually changed would fail here.
+
+    Args:
+        test_state: State Fixture.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        mock_root_event_context: The mock event context (for direct state access).
+        emitted_deltas: List to store emitted deltas.
+        token: a Token.
+        clean_registration_context: The registration context fixture.
+        router_data: The router data fixture.
+    """
+    clean_registration_context.register_base_state(test_state)
+    router_field = constants.ROUTER + FIELD_MARKER
+
+    state = test_state()  # pyright: ignore [reportCallIssue]
+    state.add_var("nav_val", int, 0)
+
+    def set_nav_val(self, value: int):
+        self.nav_val = value
+
+    state._add_event_handler("set_nav_val", set_nav_val)
+
+    def _event(rd: dict) -> Event:
+        return Event(
+            name=f"{test_state.get_name()}.set_nav_val",
+            payload={"value": 1},
+            router_data=rd,
+        )
+
+    async def _router_delta(rd: dict):
+        emitted_deltas.clear()
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(token, _event(rd))
+            await processor.join()
+        for _tok, delta in emitted_deltas:
+            for substate in delta.values():
+                if router_field in substate:
+                    return substate[router_field]
+        return None
+
+    # Before the connect handler has verified the client version, deltas are
+    # always full — even across repeated navigations with an unchanged
+    # session. This is what a cached pre-upgrade frontend receives during a
+    # rolling deployment.
+    legacy_first = await _router_delta(router_data)
+    assert isinstance(legacy_first, RouterData)
+    legacy_second = await _router_delta({**router_data, RouteVar.PATH: "/legacy"})
+    assert isinstance(legacy_second, RouterData)
+
+    # The connect handler verified an exact version match: partial deltas
+    # allowed from here on.
+    root = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=test_state)
+    )
+    root._partial_router_capable = True
+
+    # First navigation after capability: session/headers changed relative to
+    # nothing? No — they were already sent above; unchanged, so partial.
+    first = await _router_delta({**router_data, RouteVar.PATH: "/armed"})
+    assert not isinstance(first, RouterData)
+
+    # Same session and headers, different page: connection-scoped fields are
+    # elided.
+    same_connection = await _router_delta({**router_data, RouteVar.PATH: "/second"})
+    assert same_connection is not None
+    assert not isinstance(same_connection, RouterData)
+    assert set(same_connection) == {"page", "url", "route_id"}
+
+    # A new session id must fall back to the full payload, otherwise the
+    # client would keep serving the old token forever.
+    reconnected_sid = "a-different-session-id"
+    new_session = await _router_delta({
+        **router_data,
+        RouteVar.PATH: "/third",
+        RouteVar.SESSION_ID: reconnected_sid,
+    })
+    assert isinstance(new_session, RouterData), (
+        "session changed but the delta omitted it; the client would keep the stale value"
+    )
+
+    # Changed headers with an unchanged session must also fall back to the
+    # full payload — headers are the other half of the connection scope. The
+    # state now holds `reconnected_sid` (assigned by the previous event), so
+    # reusing it here means the session compares equal and ONLY the headers
+    # differ; the mutation check for this leg is dropping "headers" from
+    # CONNECTION_SCOPED_ROUTER_FIELDS, which makes this assertion fail.
+    original_headers = router_data[RouteVar.HEADERS]
+    assert isinstance(original_headers, dict)
+    new_headers = await _router_delta({
+        **router_data,
+        RouteVar.PATH: "/fourth",
+        RouteVar.SESSION_ID: reconnected_sid,
+        RouteVar.HEADERS: {
+            **original_headers,
+            "user-agent": "A Different Agent",
+        },
+    })
+    assert isinstance(new_headers, RouterData), (
+        "headers changed but the delta omitted them; the client would keep stale headers"
+    )
 
 
 @pytest.fixture
@@ -1919,6 +2036,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
+        # This client never advertises partial-router capability (no connect
+        # handshake in this flow), so deltas always carry the full router.
         exp_router = RouterData.from_router_data(on_load_internal.router_data)
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
