@@ -7,6 +7,7 @@ import dataclasses
 import decimal
 import functools
 import inspect
+import logging
 import uuid
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -18,7 +19,9 @@ from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
-from reflex_base.utils import console, types
+from reflex_base.utils import types
+
+logger = logging.getLogger(__name__)
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -117,7 +120,7 @@ def serializer(
                 if caller_frame
                 else ""
             )
-            console.warn(
+            logger.warning(
                 f"{message} Call rx.serializer with `overwrite=True` if this is intentional. {file_info}"
             )
 

@@ -119,7 +119,6 @@ def wired_app(
     Returns:
         The wired App instance.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App()
     assert real_base_state_processor._root_context is not None
     app._state_manager = real_base_state_processor._root_context.state_manager

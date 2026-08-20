@@ -10,6 +10,7 @@ from reflex_site_shared.components.marketing_button import button as marketing_b
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
+    GITHUB_ORG_URL,
     GITHUB_STARS,
     GITHUB_URL,
     REFLEX_ASSETS_CDN,
@@ -37,7 +38,7 @@ def github() -> rx.Component:
             size="sm",
             variant="ghost",
         ),
-        href=GITHUB_URL,
+        href=GITHUB_ORG_URL,
         custom_attrs={
             "aria-label": f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
         },
@@ -584,7 +585,7 @@ def resources_menu_footer() -> rx.Component:
                     class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
                 ),
                 "GitHub",
-                href=GITHUB_URL,
+                href=GITHUB_ORG_URL,
                 target="_blank",
                 class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
             ),
