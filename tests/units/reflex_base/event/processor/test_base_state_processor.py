@@ -17,6 +17,7 @@ from reflex import event
 from reflex.app import App
 from reflex.event import Event
 from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import OnLoadInternalState, State, StateUpdate
 
@@ -214,3 +215,104 @@ async def test_preprocess_update_routes_frontend_events_to_client(
     client_event_names = {e.name for _, events in emitted_events for e in events}
     assert "_call_function" in client_event_names
     assert "_redirect" in client_event_names
+
+
+async def test_background_event_does_not_discard_concurrent_foreground_write(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A foreground write racing a background task's completion reaches a delta.
+
+    Regression: after dropping the state lock, the background branch passed
+    ``root_state`` into ``process_event``, whose trailing ``chain_updates``
+    snapshotted dirty vars, suspended (delta resolution / emit), and then ran
+    ``_clean()`` -- all unlocked. On a shared state tree (opportunistic
+    locking, or the in-memory manager used here) a foreground handler's write
+    landing inside that snapshot->clean window was cleaned before any delta
+    harvested it: the value never reached the frontend.
+
+    The gates below force exactly that interleaving: the background task's
+    trailing delta resolution (via the uncached async computed var) signals
+    the foreground handler to write, then resumes -- pre-fix its ``_clean()``
+    discarded the write mid-foreground-handler.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    import asyncio
+    import contextlib
+
+    bg_started = asyncio.Event()
+    bg_resolving = asyncio.Event()
+    fg_wrote = asyncio.Event()
+    hold_resolution = [False]
+
+    class BgRaceState(State):
+        victim: str = ""
+
+        @rx.var(cache=False)
+        async def window(self) -> int:
+            # Uncached: recomputed in every delta. Once armed, the background
+            # task's trailing delta resolution parks here until the foreground
+            # handler has written -- holding the snapshot->clean window open.
+            if hold_resolution[0]:
+                bg_resolving.set()
+                await fg_wrote.wait()
+            return 0
+
+        @event(background=True)
+        async def bg(self):
+            hold_resolution[0] = True
+            bg_started.set()
+
+        @event
+        async def fg(self):
+            # Bounded: with the fix, the background task does no trailing
+            # delta work, so nothing ever sets bg_resolving.
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(bg_resolving.wait(), timeout=0.5)
+            self.victim = "written"
+            fg_wrote.set()
+            # Yield so the background task's (pre-fix) clean can land while
+            # this handler is still mid-flight, as a real await would allow.
+            for _ in range(20):
+                await asyncio.sleep(0)
+
+    # Seed router_data up front so no event triggers _rehydrate (whose
+    # full-dict resolution would park on the armed gate before the foreground
+    # handler could run) and no event needs to carry router_data of its own.
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(token, Event.from_event_type(BgRaceState.bg())[0])
+            await asyncio.wait_for(bg_started.wait(), timeout=2)
+            await processor.enqueue(token, Event.from_event_type(BgRaceState.fg())[0])
+            await processor.join(5)
+    finally:
+        # The uncached computed var registered BgRaceState as an always-dirty
+        # substate on the shared State class; later tests' state trees don't
+        # contain it and would KeyError in get_delta (see reload_state_module).
+        State._always_dirty_substates.discard(BgRaceState.get_name())
+
+    state_name = BgRaceState.get_full_name()
+    victim_key = "victim" + FIELD_MARKER
+    delivered = [
+        d[state_name][victim_key]
+        for _, d in emitted_deltas
+        if state_name in d and d[state_name].get(victim_key) == "written"
+    ]
+    assert delivered, (
+        "The foreground handler's write never reached any delta; it was "
+        "cleaned by the background task's unlocked trailing update. Deltas: "
+        f"{emitted_deltas}"
+    )

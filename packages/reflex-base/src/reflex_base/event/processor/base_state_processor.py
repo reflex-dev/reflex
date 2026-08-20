@@ -232,7 +232,7 @@ async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
-    root_state: BaseState,
+    root_state: BaseState | None,
 ):
     """Process event.
 
@@ -240,7 +240,12 @@ async def process_event(
         handler: EventHandler to process.
         payload: The event payload.
         state: State to process the handler.
-        root_state: The root state of the app, used for emitting deltas.
+        root_state: The root state of the app, used for emitting deltas. Pass
+            None when the caller does not hold the state lock (background
+            tasks): computing and cleaning a delta on an unlocked root races
+            concurrent events on a shared state tree, and background state
+            changes are emitted by the ``async with self`` context exits
+            instead.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -393,12 +398,19 @@ class BaseStateEventProcessor(EventProcessor):
                     root_state=root_state,
                 )
                 return
-        # Otherwise drop the state lock and start processing the background task with a proxy state.
+        # Otherwise drop the state lock and start processing the background task
+        # with a proxy state. No root_state: the lock is no longer held, and
+        # under a shared state tree (opportunistic locking, in-memory manager)
+        # computing a delta here races whatever event holds the lock now -- a
+        # foreground write landing between this task's dirty-var snapshot and
+        # its _clean() would be discarded before any delta carries it. A
+        # background task's own state changes are emitted (and cleaned) by its
+        # `async with self` context exits, which re-acquire the lock.
         await process_event(
             handler=registered_handler.handler,
             state=StateProxy(substate),
             payload=event.payload,
-            root_state=root_state,
+            root_state=None,
         )
 
     async def _handle_backend_exception(
