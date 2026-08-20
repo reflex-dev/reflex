@@ -209,17 +209,22 @@ async def chain_updates(
         root_state: The root state of the app, no delta emitted if omitted.
     """
     from reflex.event import Event
+    from reflex.state import _resolve_delta
 
     ctx = EventContext.get()
 
     if root_state is not None:
-        # Emit deltas first, so any frontend events are processed with the latest state.
+        # Snapshot and clean in one step, with no suspension between them: a
+        # concurrent write landing while the delta is being resolved or
+        # emitted must stay dirty for the next harvest, not be discarded by a
+        # clean that never snapshotted it. The delta is still emitted before
+        # the events below, so frontend events observe the latest state.
         try:
-            delta = await root_state._get_resolved_delta()
-            if delta:
-                await ctx.emit_delta(delta)
+            delta = root_state.get_delta()
         finally:
             root_state._clean()
+        if delta and (delta := await _resolve_delta(delta)):
+            await ctx.emit_delta(delta)
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
@@ -325,6 +330,29 @@ async def process_event(
         await chain_updates(
             events, root_state=_flush_root_state(), handler_name=handler_name
         )
+
+
+class _EnterTrackingStateProxy(StateProxy):
+    """A StateProxy recording whether the handler ever entered ``async with self``."""
+
+    def __init__(self, *args, **kwargs):
+        """Create the proxy with the entered flag unset.
+
+        Args:
+            *args: Positional arguments for StateProxy.
+            **kwargs: Keyword arguments for StateProxy.
+        """
+        super().__init__(*args, **kwargs)
+        self._self_entered_context = False
+
+    async def __aenter__(self):
+        """Enter the mutability context, recording that it was entered.
+
+        Returns:
+            This proxy in mutable mode.
+        """
+        self._self_entered_context = True
+        return await super().__aenter__()
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -435,12 +463,30 @@ class BaseStateEventProcessor(EventProcessor):
         # its _clean() would be discarded before any delta carries it. A
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
+        proxy = _EnterTrackingStateProxy(substate)
         await process_event(
             handler=registered_handler.handler,
-            state=StateProxy(substate),
+            state=proxy,
             payload=event.payload,
             root_state=None,
         )
+        if not proxy._self_entered_context:
+            # A handler that never entered `async with self` emitted nothing,
+            # but every background event used to flush a delta (refreshing
+            # uncached computed vars, and any dirty vars the preamble left,
+            # like router_data). Preserve that, under the lock this time.
+            async with ctx.state_manager.modify_state_with_links(
+                BaseStateToken(
+                    ident=ctx.token,
+                    cls=registered_handler.states[0],
+                ),
+                event=event,
+            ) as flush_state:
+                await chain_updates(
+                    None,
+                    root_state=flush_state._get_root_state(),
+                    handler_name=registered_handler.handler.fn.__qualname__,
+                )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None

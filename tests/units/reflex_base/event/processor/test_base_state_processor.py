@@ -1,5 +1,6 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
+import asyncio
 import traceback
 from collections.abc import Mapping
 from typing import Any
@@ -246,8 +247,6 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         emitted_deltas: List to capture emitted deltas.
         token: The client token.
     """
-    import asyncio
-
     bg_started = asyncio.Event()
     bg_resolving = asyncio.Event()
     fg_wrote = asyncio.Event()
@@ -269,6 +268,11 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
 
         @event(background=True)
         async def bg(self):
+            # Enter the context once so the never-entered compatibility flush
+            # (which runs under the lock) stays out of this choreography; arm
+            # the gate only afterwards so the context exit resolves unparked.
+            async with self:
+                pass
             hold_resolution[0] = True
             bg_started.set()
 
@@ -408,3 +412,124 @@ async def test_background_yield_inside_context_flushes_delta_before_event(
         "The yielded frontend event was emitted before the delta for the "
         f"mutation made in the same proxy context: {timeline}"
     )
+
+
+async def test_background_event_without_context_still_flushes_a_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A background handler with no ``async with self`` still flushes a delta.
+
+    Backward compatibility: before the unlocked trailing flush was removed,
+    every background event emitted a delta, which is what refreshed uncached
+    computed vars for apps driving re-renders off a bare background tick.
+    That flush now runs under the state lock instead of disappearing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class NoContextBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            return 7
+
+        @event(background=True)
+        async def bg(self):
+            pass
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(NoContextBgState.bg())[0]
+            )
+            await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(NoContextBgState.get_name())
+
+    state_name = NoContextBgState.get_full_name()
+    beat_key = "beat" + FIELD_MARKER
+    assert any(d.get(state_name, {}).get(beat_key) == 7 for _, d in emitted_deltas), (
+        f"no delta refreshed the uncached var: {emitted_deltas}"
+    )
+
+
+async def test_chain_updates_keeps_writes_made_during_delta_resolution(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """chain_updates must not clean a write it never snapshotted.
+
+    The snapshot and the clean happen in one step, before the resolved delta
+    is awaited or emitted, so a concurrent write landing during resolution
+    stays dirty for the next harvest even if a caller ever runs chain_updates
+    without holding the state lock.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    from reflex_base.event.processor.base_state_processor import chain_updates
+
+    resolving = asyncio.Event()
+    release = asyncio.Event()
+    hold_resolution = [False]
+
+    class MidResolveState(State):
+        victim: str = ""
+
+        @rx.var(cache=False)
+        async def window(self) -> int:
+            if hold_resolution[0]:
+                resolving.set()
+                await release.wait()
+            return 0
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    EventContext.set(root_ctx.fork(token=token))
+    state_manager = root_ctx.state_manager
+
+    try:
+        root = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
+        substate = await root.get_state(MidResolveState)
+        root._clean()
+
+        hold_resolution[0] = True
+        flush = asyncio.ensure_future(
+            chain_updates(None, root_state=root, handler_name="unlocked_flush")
+        )
+        await resolving.wait()
+        substate.victim = "written"
+        hold_resolution[0] = False
+        release.set()
+        await flush
+
+        assert "victim" in substate.dirty_vars, (
+            "the write made during delta resolution was cleaned away"
+        )
+        await chain_updates(None, root_state=root, handler_name="second_flush")
+    finally:
+        State._always_dirty_substates.discard(MidResolveState.get_name())
+
+    state_name = MidResolveState.get_full_name()
+    victim_key = "victim" + FIELD_MARKER
+    assert any(
+        d.get(state_name, {}).get(victim_key) == "written" for _, d in emitted_deltas
+    ), f"the surviving write never reached a delta: {emitted_deltas}"
