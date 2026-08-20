@@ -593,10 +593,12 @@ def update_package_json_overrides() -> bool:
         # full file upstream, so this only happens for a hand-damaged .web.
         return False
 
-    overrides = package_json.get("overrides", {})
+    # A null is what the package managers themselves read as "no overrides", so
+    # treat it as absent; framework entries (security pins) must still land.
+    overrides = package_json.get("overrides") or {}
     if not isinstance(overrides, dict):
-        # Leave a hand-damaged section alone: merging into it would replace
-        # whatever the user locked before they get a chance to fix it.
+        # Anything else cannot be merged into without discarding what the user
+        # wrote, so leave it for them to fix before dependency resolution.
         logger.warning(
             f"Expected an object for `overrides` in {package_json_path}, got "
             f"{type(overrides).__name__}; not applying framework overrides."
@@ -644,7 +646,9 @@ def _compile_vite_config(config: Config):
 def initialize_vite_config():
     """Render and write in .web the vite.config.js file using Reflex config."""
     vite_config_file_path = get_web_dir() / constants.ReactRouter.VITE_CONFIG_FILE
-    vite_config_file_path.write_text(_compile_vite_config(get_config()))
+    vite_config_file_path.write_text(
+        _compile_vite_config(get_config()), encoding="utf-8"
+    )
 
 
 def initialize_bun_config():

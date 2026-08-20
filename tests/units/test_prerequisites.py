@@ -238,6 +238,38 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_initialize_vite_config_writes_utf8(tmp_path, monkeypatch):
+    """vite.config.js must be written with an explicit encoding.
+
+    ``orjson_dumps`` emits non-ASCII verbatim where ``json.dumps`` escaped it to
+    a unicode escape, so a non-ASCII ``vite_allowed_hosts`` entry now reaches
+    the writer as-is and would raise on a non-UTF-8 default locale. Asserting
+    the keyword rather than the round trip keeps the check locale-independent.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(
+        frontend_skeleton,
+        "get_config",
+        lambda: Config(app_name="test", vite_allowed_hosts=["königsallee.example"]),
+    )
+
+    original = Path.write_text
+
+    def strict_write_text(self, data, encoding=None, *args, **kwargs):
+        assert encoding is not None, f"{self.name} written with the locale encoding"
+        return original(self, data, encoding, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", strict_write_text)
+
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_vite_config()
+
+    written = web_dir / constants.ReactRouter.VITE_CONFIG_FILE
+    assert "königsallee.example" in written.read_text(encoding="utf-8")
+
+
 @pytest.mark.usefixtures("_stub_skeleton_initializers")
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     template_dir = tmp_path / "template"
@@ -1295,8 +1327,9 @@ def test_update_package_json_overrides_skips_unusable_file(
         assert web_pkg.read_text() == content
 
 
-def test_update_package_json_overrides_preserves_malformed_overrides(
-    tmp_path, monkeypatch
+@pytest.mark.parametrize("overrides", ["a-string", [1, 2], 7])
+def test_update_package_json_overrides_preserves_unmergeable_overrides(
+    tmp_path, monkeypatch, overrides
 ):
     """A non-mapping ``overrides`` is left for the user to fix, not overwritten.
 
@@ -1307,7 +1340,7 @@ def test_update_package_json_overrides_preserves_malformed_overrides(
     web_dir.mkdir()
     _patch_web_dir(monkeypatch, web_dir)
     web_pkg = web_dir / constants.PackageJson.PATH
-    content = json.dumps({"name": "reflex", "overrides": None})
+    content = json.dumps({"name": "reflex", "overrides": overrides})
     web_pkg.write_text(content)
     monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
 
@@ -1315,6 +1348,25 @@ def test_update_package_json_overrides_preserves_malformed_overrides(
         assert frontend_skeleton.update_package_json_overrides() is False
 
     assert web_pkg.read_text() == content
+
+
+def test_update_package_json_overrides_treats_null_as_absent(tmp_path, monkeypatch):
+    """A null ``overrides`` still receives the framework entries.
+
+    npm and bun both read ``null`` as "no overrides", so there is nothing to
+    preserve; refusing would silently drop framework security pins.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(json.dumps({"name": "reflex", "overrides": None}))
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    assert json.loads(web_pkg.read_text())["overrides"] == {"cookie": "1.1.1"}
 
 
 def test_compile_package_json_preserves_additional_fields(tmp_path):
