@@ -86,6 +86,8 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "opentelemetry-api",
+  "opentelemetry-sdk",
   "pandas",
   "pillow",
   "playwright",
