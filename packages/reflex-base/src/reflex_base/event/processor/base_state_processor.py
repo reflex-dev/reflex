@@ -209,22 +209,22 @@ async def chain_updates(
         root_state: The root state of the app, no delta emitted if omitted.
     """
     from reflex.event import Event
-    from reflex.state import _resolve_delta
 
     ctx = EventContext.get()
 
     if root_state is not None:
-        # Snapshot and clean in one step, with no suspension between them: a
-        # concurrent write landing while the delta is being resolved or
-        # emitted must stay dirty for the next harvest, not be discarded by a
-        # clean that never snapshotted it. The delta is still emitted before
-        # the events below, so frontend events observe the latest state.
+        # Emit deltas first, so any frontend events are processed with the
+        # latest state. The clean deliberately runs after resolution: the
+        # SharedState fan-out captures its dirty vars at clean time, and
+        # resolving the delta is what re-marks linked vars through the patch
+        # machinery, so cleaning earlier would fan out a stale set (see
+        # tests/integration/test_linked_state.py).
         try:
-            delta = root_state.get_delta()
+            delta = await root_state._get_resolved_delta()
+            if delta:
+                await ctx.emit_delta(delta)
         finally:
             root_state._clean()
-        if delta and (delta := await _resolve_delta(delta)):
-            await ctx.emit_delta(delta)
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
