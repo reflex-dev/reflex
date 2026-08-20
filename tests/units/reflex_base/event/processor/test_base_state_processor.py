@@ -1,6 +1,7 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
 import asyncio
+import dataclasses
 import traceback
 from collections.abc import Mapping
 from typing import Any
@@ -533,3 +534,74 @@ async def test_chain_updates_keeps_writes_made_during_delta_resolution(
     assert any(
         d.get(state_name, {}).get(victim_key) == "written" for _, d in emitted_deltas
     ), f"the surviving write never reached a delta: {emitted_deltas}"
+
+
+async def test_chained_event_keeps_originating_router_data(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A yielded event resolves route args against the view that produced it.
+
+    Regression: chained events were created with no ``router_data``, and the
+    processor only refreshes ``state.router`` when an event carries some. A
+    chained event therefore read whichever router the last client-sent event
+    happened to leave on the root state. A loader that yields the real loader
+    (a common on_load shape) could see another page's route, and a route arg
+    would read as "" on a page whose URL clearly names one.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    item_view = {
+        "pathname": "/item/[item_id]",
+        "asPath": "/item/abc",
+        "query": {"item_id": "abc"},
+    }
+    other_view = {"pathname": "/other", "asPath": "/other", "query": {}}
+
+    # Ordered by a barrier, not sleeps: were `touch` to land second, `note`
+    # would read the view it wanted anyway and the test would prove nothing.
+    router_moved = asyncio.Event()
+
+    class RouterState(State):
+        seen: list[str] = []
+
+        @event
+        def note(self):
+            item_id = self.router._page.params.get("item_id", "")
+            self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
+
+        @event
+        def touch(self):
+            """A client-sent event on another page; it moves the shared router.
+
+            The processor assigns `state.router` before the handler body runs,
+            so by here the move has happened.
+            """
+            router_moved.set()
+
+        @event(background=True)
+        async def outer(self):
+            # wait_for rather than asyncio.timeout: this package supports 3.10.
+            await asyncio.wait_for(router_moved.wait(), timeout=5)
+            yield RouterState.note
+
+    def client_event(spec, router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(spec)[0], router_data=router_data
+        )
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(RouterState.outer(), item_view))
+        await processor.enqueue(token, client_event(RouterState.touch(), other_view))
+        await processor.join(10)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(RouterState)).seen == ["/item/abc|abc"]

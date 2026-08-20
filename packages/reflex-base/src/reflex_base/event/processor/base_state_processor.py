@@ -404,7 +404,9 @@ class BaseStateEventProcessor(EventProcessor):
         """
         ctx = entry.ctx
         event = entry.event
-        router_data = event.router_data or {}
+        # The context, not the event: a chained event carries none of its own
+        # and inherits the producing view's through fork().
+        router_data = ctx.router_data
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
