@@ -274,6 +274,10 @@ def _get_type_hint(
         return f"[{', '.join(res)}]"
     elif (visible_name := _get_visible_type_name(value, type_hint_globals)) is not None:
         res = visible_name
+    elif value.__module__ in ("builtins", "__builtins__"):
+        # Builtins are always in scope, and generated stubs never import `builtins`,
+        # so they must stay unqualified even when a source module imports it.
+        res = value.__name__
     else:
         # Best effort to find a submodule path in the globals.
         for ix, part in enumerate(value.__module__.split(".")):

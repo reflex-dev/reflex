@@ -45,13 +45,23 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     paths = {route.path for route in routes_fixture if route.path}
 
     assert "/ai/overview/best-practices/" in paths
-    assert "/ai/integrations/ai-onboarding/" in paths
+    assert "/ai/integrations/agent-toolkit/" in paths
     assert "/ai/integrations/mcp-overview/" in paths
     assert "/ai/integrations/skills/" in paths
+    assert "/ai/integrations/ai-onboarding/" not in paths
     assert "/ai-builder/overview/best-practices/" not in paths
     assert "/ai-builder/integrations/ai-onboarding/" not in paths
+    assert "/ai-builder/integrations/agent-toolkit/" not in paths
     assert "/ai-builder/integrations/mcp-overview/" not in paths
     assert "/ai-builder/integrations/skills/" not in paths
+
+
+def test_authentication_overview_moved_to_enterprise(routes_fixture):
+    """The old authentication overview route is freed for its redirect to enterprise auth."""
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert "/authentication/authentication-overview/" not in paths
+    assert "/enterprise/auth/overview/" in paths
 
 
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):

@@ -1,11 +1,11 @@
 """Benchmarks for reading state vars through ``MutableProxy``.
 
-Reading a *mutable* var (list/dict/dataclass) returns a ``MutableProxy`` whose
-element reads go through ``_wrap_recursive``, which on every element checks
-whether the read originates from ``dataclasses`` internals. Reading a
-*non-mutable* var (a scalar) returns the value directly with no proxy. These
-benchmarks exercise both paths so the per-element proxy read overhead is
-measurable.
+Reading a *mutable* var (list/dict/dataclass) returns a ``MutableProxy``.
+Mutable element reads are wrapped in child proxies via ``_wrap_mutable``,
+while non-mutable element reads skip the wrapping machinery through a
+fast-path mutability check. Reading a *non-mutable* var (a scalar) returns
+the value directly with no proxy. These benchmarks exercise both paths so
+the per-element proxy read overhead is measurable.
 """
 
 import dataclasses

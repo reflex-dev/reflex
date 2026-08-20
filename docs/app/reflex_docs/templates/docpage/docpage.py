@@ -242,6 +242,7 @@ def docpage(
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
     description: str | None = None,
+    image: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -256,6 +257,7 @@ def docpage(
         description: The meta description for the page. If None, a descriptive
             fallback derived from the page title is used so the page always has
             a non-empty, page-specific meta description.
+        image: Social-preview image (relative path or absolute URL).
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -465,6 +467,7 @@ def docpage(
             path=path,
             title=seo_title,
             description=seo_description,
+            image=image,
             component=wrapper,
         )
 

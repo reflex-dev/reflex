@@ -664,9 +664,6 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
-    # Whether to use the turbopack bundler.
-    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
-
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
@@ -719,6 +716,12 @@ class EnvironmentVariables:
 
     # Whether to generate sourcemaps for the frontend.
     VITE_SOURCEMAP: EnvVar[Literal[False, True, "inline", "hidden"]] = env_var(False)  # noqa: RUF038
+
+    # Whether to minify the frontend build output. Disabled by preview mode for readable bundles.
+    VITE_MINIFY: EnvVar[bool] = env_var(True)
+
+    # Read by the generated postcss.config.js to skip autoprefixer in preview mode.
+    REFLEX_NO_AUTOPREFIXER: EnvVar[bool] = env_var(False)
 
     # Whether to enable SSR for the frontend.
     REFLEX_SSR: EnvVar[bool] = env_var(True)

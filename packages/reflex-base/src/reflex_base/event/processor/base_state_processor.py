@@ -24,6 +24,13 @@ if TYPE_CHECKING:
     from reflex.event import Event, EventHandler, EventSpec
     from reflex.state import BaseState
 
+# Resolved once at import: find_spec on a missing package scans sys.path (~90us),
+# far too slow for the per-event-argument path below.
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+else:
+    BaseModelV2 = None
+
 
 @functools.lru_cache(maxsize=1)
 def _hydrate_event_name():
@@ -113,11 +120,8 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)
-        if find_spec("pydantic"):
-            from pydantic import BaseModel as BaseModelV2
-
-            if issubclass(hinted_args, BaseModelV2):
-                return hinted_args.model_validate(value)
+        if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
+            return hinted_args.model_validate(value)
     if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
         return set(value)
     if isinstance(value, list) and hinted_args is tuple:

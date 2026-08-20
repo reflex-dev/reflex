@@ -80,7 +80,8 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
                 cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
-            output = processes.execute_command_and_return_output("lscpu")
+            # Force the C locale so the field names below aren't translated.
+            output = processes.execute_command_and_return_output("LC_ALL=C lscpu")
             if output:
                 lines = output.split("\n")
                 for line in lines:

@@ -832,3 +832,55 @@ def test_format_library_name(input: str, output: str):
 )
 def test_json_dumps(input, output):
     assert format.json_dumps(input) == output
+
+
+def test_sanitize_client_log_value_respects_max_length():
+    """The sanitized value never exceeds max_length, even when truncated."""
+    out = format.sanitize_client_log_value("A" * 5000, max_length=500)
+    assert len(out) <= 500
+    assert out.endswith("... (truncated)")
+
+
+def test_sanitize_client_log_value_strips_control_characters():
+    """Control characters cannot be used to forge extra backend log lines."""
+    out = format.sanitize_client_log_value("\x1b[31mred\x1b[0m\nFAKE LOG LINE\tx")
+    assert "\x1b" not in out
+    assert "\n" not in out
+    assert "\t" not in out
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "x[/bold]y",
+        "x[/]y",
+        "[blink bold red]FAKE",
+        "[link=https://evil.example]z[/link]",
+    ],
+)
+def test_sanitize_client_log_value_escapes_markup(payload: str):
+    """Client-supplied rich markup is escaped so printing it cannot raise.
+
+    Args:
+        payload: The markup payload a client could send.
+    """
+    from reflex_base.utils import console
+
+    # Must not raise MarkupError.
+    console.error(f"[Frontend Error] {format.sanitize_client_log_value(payload)}")
+
+
+def test_sanitize_client_log_value_bounds_work_before_scanning():
+    """Only max_length characters are scanned, however long the input is."""
+    scanned = 0
+
+    class CountingStr(str):
+        def __getitem__(self, item: Any):
+            nonlocal scanned
+            result = super().__getitem__(item)
+            if isinstance(item, slice):
+                scanned = len(result)
+            return result
+
+    format.sanitize_client_log_value(CountingStr("A" * 100_000), max_length=500)
+    assert scanned == 500

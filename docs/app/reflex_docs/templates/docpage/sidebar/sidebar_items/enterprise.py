@@ -54,12 +54,41 @@ def get_sidebar_items_enterprise_usage():
                     link=enterprise.auth.custom_pages.path,
                 ),
                 SideBarItem(
+                    names="Auditing Auth Actions",
+                    link=enterprise.auth.audit.path,
+                ),
+                SideBarItem(
                     names="Testing Guarded Code",
                     link=enterprise.auth.testing.path,
                 ),
                 SideBarItem(
                     names="Deploying to Production",
                     link=enterprise.auth.deployment.path,
+                ),
+            ],
+        ),
+        SideBarItem(
+            names="Auto MCP",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.mcp.index.path,
+                ),
+                SideBarItem(
+                    names="Authentication",
+                    link=enterprise.mcp.authentication.path,
+                ),
+                SideBarItem(
+                    names="Custom Resources",
+                    link=enterprise.mcp.custom_resources.path,
+                ),
+                SideBarItem(
+                    names="Extending the Server",
+                    link=enterprise.mcp.extending.path,
+                ),
+                SideBarItem(
+                    names="Deploying to Production",
+                    link=enterprise.mcp.deployment.path,
                 ),
             ],
         ),
@@ -102,6 +131,14 @@ def get_sidebar_items_enterprise_components():
                 SideBarItem(
                     names="Pivot Mode",
                     link=enterprise.ag_grid.pivot_mode.path,
+                ),
+                SideBarItem(
+                    names="Tree Data",
+                    link=enterprise.ag_grid.tree_data.path,
+                ),
+                SideBarItem(
+                    names="Master Detail",
+                    link=enterprise.ag_grid.master_detail.path,
                 ),
                 SideBarItem(
                     names="Theme",

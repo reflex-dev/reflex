@@ -31,6 +31,7 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import callable_name, to_title_case
@@ -142,10 +143,9 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
-
     window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
+        (_normalize_library_name(name), name)
+        for name in RegistrationContext.ensure_context().bundled_libraries
     ]
 
     window_libraries_deduped = list(dict.fromkeys(window_libraries))
@@ -398,7 +398,11 @@ def _compile_root_stylesheet(
             except ImportError:
                 failed_to_import_sass = True
 
-        str_target_path = "./" + str(target_path)
+        # Use POSIX separators: this string is emitted verbatim into a CSS
+        # `@import url(...)`, where a backslash is an escape introducer, not a
+        # path separator, so `str(target_path)` would break nested stylesheets
+        # on Windows.
+        str_target_path = "./" + target_path.as_posix()
         sheets.append(str_target_path) if str_target_path not in sheets else None
 
     if failed_to_import_sass:
@@ -1116,6 +1120,19 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
+    """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
+
+    Fires after app-defined pages are collected and before any page is
+    evaluated. The staging and atomic-commit machinery lives on ``App``.
+
+    Args:
+        app: The app being compiled.
+        plugins: The active plugins, in configuration order.
+    """
+    app._register_plugin_pages(plugins)
+
+
 def compile_app(
     app: App,
     *,
@@ -1133,6 +1150,8 @@ def compile_app(
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
+    config = get_config()
+    _register_plugin_routes(app, config.plugins)
     app._pages = {}
 
     should_compile = app._should_compile()
@@ -1152,7 +1171,6 @@ def compile_app(
         app.add_page(route=constants.Page404.SLUG)
 
     app.style = evaluate_style_namespaces(app.style)
-    config = get_config()
 
     if not should_compile and not dry_run:
         with console.timing("Evaluate Pages (Backend)"):

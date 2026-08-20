@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import json
 import os
 import shutil
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +75,163 @@ def logout(
     console.success("Successfully logged out.")
 
 
+def _resolve_deploy_provider(
+    app: dict[str, Any],
+    provider_arg: str | None,
+    interactive: bool,
+    app_was_created: bool,
+    client: Any,
+) -> str | None:
+    """Resolve and pin the hosting provider for this deploy.
+
+    Decides whether the deploy targets Reflex Cloud or a connected GCP account,
+    prompting interactively when GCP is available and no ``--provider`` was
+    given, then pins the app to the chosen provider (switching, with a teardown
+    warning, when it differs from the app's current provider).
+
+    Args:
+        app: The resolved app dict (must contain "id" and "name").
+        provider_arg: The ``--provider`` value, if the user passed one.
+        interactive: Whether to prompt.
+        app_was_created: Whether the app was just created in this deploy (a
+            switch then has nothing to tear down).
+        client: The authenticated client.
+
+    Returns:
+        The backend provider value in effect (Reflex Cloud's default or GCP), or
+        None if left at the app's existing default.
+
+    Raises:
+        Exit: If ``--provider`` is invalid or a required switch fails.
+
+    """
+    from reflex_cli.utils import hosting
+
+    current = app.get("provider")
+
+    if provider_arg is not None:
+        # Explicit --provider always wins; validated by the caller already.
+        target = hosting.normalize_provider(provider_arg)
+    else:
+        gcp_status = hosting.gcp_deploy_available(client)
+        if not gcp_status or not interactive:
+            # No GCP connected, or non-interactive with no explicit choice: keep
+            # whatever the app already targets.
+            return current
+        region = gcp_status.get("region")
+        console.print(
+            "This organization has Google Cloud connected"
+            + (f" (region {region})" if region else "")
+            + "."
+        )
+        default_choice = "gcp" if current == hosting.PROVIDER_GCP else "reflex-cloud"
+        choice = console.ask(
+            "Where would you like to deploy?",
+            choices=["reflex-cloud", "gcp"],
+            default=default_choice,
+        )
+        target = hosting.normalize_provider(choice)
+
+    if target is None or target == (current or hosting.PROVIDER_REFLEX_CLOUD):
+        # Nothing to change; the app already targets this provider.
+        return target or current
+
+    if not app_was_created and current is not None:
+        console.warn(
+            f"Switching '{app['name']}' from {hosting.provider_display_name(current)} "
+            f"to {hosting.provider_display_name(target)} tears down its current "
+            "deployment on the old provider; this deploy brings it back up on the "
+            "new one."
+        )
+        if (
+            interactive
+            and console.ask("Continue?", choices=["y", "n"], default="n") != "y"
+        ):
+            console.info("Deployment cancelled.")
+            raise click.exceptions.Exit(0)
+
+    result = hosting.set_app_provider(app["id"], target, client=client)
+    if isinstance(result, str) and result.startswith("set provider failed"):
+        console.error(result)
+        raise click.exceptions.Exit(1)
+    console.info(f"Deploying to {hosting.provider_display_name(target)}.")
+    return target
+
+
+@contextlib.contextmanager
+def _restore_provider_on_failure(
+    app: dict[str, Any], switched_from: str | None, client: Any
+) -> Iterator[None]:
+    """Re-pin the previous provider if the deploy fails after a switch.
+
+    Switching a deployed app to a new provider tears down its old resources up
+    front, so a failure in a later step (hostname, export, deploy creation)
+    would strand the app on the new provider. On failure, best-effort restore
+    the previous provider so its last deployment stays a valid
+    ``reflex cloud apps rollback`` target for recovery.
+
+    Args:
+        app: The resolved app dict (must contain "id" and "name").
+        switched_from: The provider to restore to, or None if no destructive
+            switch happened (nothing to undo).
+        client: The authenticated client.
+
+    Yields:
+        None.
+
+    """
+    from reflex_cli.utils import hosting
+
+    try:
+        yield
+    except BaseException:
+        if switched_from is not None:
+            label = hosting.provider_display_name(switched_from)
+            restore = hosting.set_app_provider(app["id"], switched_from, client=client)
+            if isinstance(restore, str) and restore.startswith("set provider failed"):
+                console.warn(
+                    f"Deploy failed after switching '{app['name']}' provider, and "
+                    f"restoring {label} also failed: {restore}. Check the app in "
+                    "the Reflex Cloud dashboard."
+                )
+            else:
+                console.warn(
+                    f"Deploy failed after switching provider; restored "
+                    f"'{app['name']}' to {label}. Recover its previous deployment "
+                    "with `reflex cloud apps rollback`."
+                )
+        raise
+
+
+@contextlib.contextmanager
+def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[None]:
+    """Report instance bounds that stuck when the deploy they were for failed.
+
+    Bounds are app state, not deployment state: there is no deployment-scoped
+    rollback to undo them, and the CLI has no way to read what they were before
+    to restore them. So when the submit they were applied for does not produce a
+    deployment -- rejected, raised, or interrupted -- say so, rather than let the
+    app's next deployment pick them up unannounced.
+
+    Args:
+        app_name: The name of the app whose bounds were changed.
+        applied: Whether bounds were actually applied; a no-op when False.
+
+    Yields:
+        None.
+
+    """
+    try:
+        yield
+    except BaseException:
+        if applied:
+            console.warn(
+                f"The new instance bounds were applied to '{app_name}' and will "
+                "be used by its next deployment, even though this deploy failed."
+            )
+        raise
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -92,6 +250,12 @@ def deploy(
     env: str | None = None,
     project_name: str | None = None,
     app_id: str | None = None,
+    provider: str | None = None,
+    deployment_description: str | None = None,
+    # Appended rather than grouped next to `vmtype` so existing positional
+    # callers keep binding to the same parameters.
+    min_instances: int | None = None,
+    max_instances: int | None = None,
     **kwargs,
 ):
     """Deploy the app to the Reflex hosting service.
@@ -113,6 +277,15 @@ def deploy(
         env: The environment to use for deployment.
         project_name: The name of the project.
         app_id: The ID of the app.
+        provider: The hosting provider to deploy to ("reflex-cloud" or "gcp").
+            When omitted and the org has GCP connected, the CLI prompts in
+            interactive mode.
+        deployment_description: An optional changelog note recorded on this
+            deployment and shown in ``reflex cloud apps history``.
+        min_instances: The minimum number of instances to keep running. Left at
+            the app's current value when omitted.
+        max_instances: The maximum number of instances to scale out to. Left at
+            the app's current value when omitted.
         **kwargs: Additional keyword arguments.
 
     Raises:
@@ -152,6 +325,8 @@ def deploy(
             project_id = config.get("project", None)
         if not project_name:
             project_name = config.get("projectname", None)
+        if not provider:
+            provider = config.get("provider", None)
         if not app_id:
             app_id = config.get("appid", None)
             if not isinstance(app_id, (str, type(None))):
@@ -207,11 +382,20 @@ def deploy(
 
     envs = envs or []
 
+    # Validate --provider up front so an obvious typo fails before any work.
+    if provider is not None and hosting.normalize_provider(provider) is None:
+        console.error(f"Unknown provider {provider!r}. Use 'reflex-cloud' or 'gcp'.")
+        raise click.exceptions.Exit(2)
+
     if not app_name and not app_id:
         console.error(
             "Please provide a valid app name or ID for the deployed instance."
         )
         raise click.exceptions.Exit(1)
+
+    # Tracks whether the app is created during this deploy: a provider switch on
+    # a brand-new app has nothing to tear down, so we skip the switch warning.
+    app_was_created = False
     try:
         if app_name and not app_id:
             search_project_id = project_id
@@ -315,6 +499,7 @@ def deploy(
                 project_id=project_id,
                 client=authenticated_client,
             )
+            app_was_created = True
             console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
         else:
             console.error("Please create an app to deploy.")
@@ -326,134 +511,204 @@ def deploy(
             project_id=project_id,
             client=authenticated_client,
         )
+        app_was_created = True
         console.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
 
-    urls = hosting.get_hostname(
-        app_id=app["id"],
-        app_name=app["name"],
-        hostname=hostname,
+    # Choose/confirm the hosting provider before reserving the hostname: the
+    # reserved URL is baked into the exported frontend, and a GCP app resolves
+    # to a *.run.app backend URL, so the provider must be pinned first.
+    previous_provider = app.get("provider")
+    effective_provider = _resolve_deploy_provider(
+        app=app,
+        provider_arg=provider,
+        interactive=interactive,
+        app_was_created=app_was_created,
         client=authenticated_client,
     )
-    if "error" in urls:
-        console.error(urls["error"])
-        raise click.exceptions.Exit(1)
-    server_url = os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]  # backend
-    host_url = os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]  # frontend
-    processed_envs = hosting.process_envs(envs) if envs else None
-
-    if not app_name:
-        console.error("Please set an app name.")
-        raise click.exceptions.Exit(1)
-
-    # at this point, if project_id is None, the App should have the correct project_id and
-    # we should use that going forward to pass validation checks.
-    project_id = project_id or app.get("project_id")
-
-    validation_message = hosting.validate_deployment_args(
-        app_name=app_name,
-        app_id=app.get("id"),
-        project_id=project_id,
-        regions=regions,
-        vmtype=vmtype,
-        hostname=hostname,
-        client=authenticated_client,
+    # A destructive provider switch on an already-deployed app tears its old
+    # resources down; remember what to restore to if a later step fails.
+    switched_from = (
+        previous_provider
+        if not app_was_created
+        and previous_provider is not None
+        and effective_provider != previous_provider
+        else None
     )
-
-    if validation_message != "success":
-        console.error(validation_message)
-        raise click.exceptions.Exit(1)
-
-    if envfile:
-        try:
-            from dotenv import dotenv_values
-
-            processed_envs = dotenv_values(envfile)
-        except ImportError:
-            console.error(
-                """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+    if effective_provider == hosting.PROVIDER_GCP:
+        # GCP Cloud Run takes its region from the org's connected GCP account,
+        # so a requested region is dropped. VM types are honored: the server
+        # maps them onto Cloud Run CPU/memory limits.
+        if regions:
+            console.info(
+                "Ignoring --region for the Google Cloud target "
+                "(the region comes from the connected GCP account)."
             )
-            raise click.exceptions.Exit(1) from None
+        regions = None
 
-    # Compile the app in production mode: backend first then frontend.
-    temporary_dir = tempfile.TemporaryDirectory()
-    temporary_dir_path = Path(temporary_dir.name)
-
-    import importlib.metadata
-
-    rx_version = version.parse(importlib.metadata.version("reflex"))
-    breaking_version = version.parse("0.7.6")
-    # Try zipping backend first
-    try:
-        # Check if the reflex version is >= 0.7.6
-        if rx_version <= breaking_version:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                False,
-                True,
-                True,
-            )  # ty:ignore[missing-argument]
-        else:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                False,
-                True,
-                include_db,
-                True,  # ty:ignore[too-many-positional-arguments]
-            )
-    except Exception as ex:
-        console.error(f"Unable to export due to: {ex}")
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ex
-
-    # Zip frontend
-    try:
-        # Check if the reflex version is >= 0.7.6
-        if rx_version <= breaking_version:
-            export_fn(str(temporary_dir_path), server_url, host_url, True, False, True)  # ty:ignore[missing-argument]
-        else:
-            export_fn(
-                str(temporary_dir_path),
-                server_url,
-                host_url,
-                True,
-                False,
-                include_db,
-                True,  # ty:ignore[too-many-positional-arguments]
-            )
-    except ImportError as ie:
-        console.error(
-            f"Encountered ImportError, did you install all the dependencies? {ie}"
+    with _restore_provider_on_failure(app, switched_from, authenticated_client):
+        urls = hosting.get_hostname(
+            app_id=app["id"],
+            app_name=app["name"],
+            hostname=hostname,
+            client=authenticated_client,
         )
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ie
-    except Exception as ex:
-        console.error(f"Unable to export due to: {ex}")
-        if temporary_dir_path.exists():
-            shutil.rmtree(temporary_dir_path)
-        raise click.exceptions.Exit(1) from ex
+        if "error" in urls:
+            console.error(urls["error"])
+            raise click.exceptions.Exit(1)
+        server_url = (
+            os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]
+        )  # backend
+        host_url = (
+            os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]
+        )  # frontend
+        processed_envs = hosting.process_envs(envs) if envs else None
 
-    result = hosting.create_deployment(
-        app_id=app.get("id"),
-        app_name=app_name,
-        project_id=project_id,
-        regions=regions,
-        zip_dir=Path(temporary_dir_path),
-        hostname=extract_domain(host_url) if hostname else None,
-        vmtype=vmtype,
-        secrets=processed_envs,
-        client=authenticated_client,
-        packages=packages,
-        strategy=strategy,
-    )
-    if "failed" in result:
-        console.error(result)
-        raise click.exceptions.Exit(1)
+        if not app_name:
+            console.error("Please set an app name.")
+            raise click.exceptions.Exit(1)
+
+        # at this point, if project_id is None, the App should have the correct project_id and
+        # we should use that going forward to pass validation checks.
+        project_id = project_id or app.get("project_id")
+
+        validation_message = hosting.validate_deployment_args(
+            app_name=app_name,
+            app_id=app.get("id"),
+            project_id=project_id,
+            regions=regions,
+            vmtype=vmtype,
+            hostname=hostname,
+            client=authenticated_client,
+        )
+
+        if validation_message != "success":
+            console.error(validation_message)
+            raise click.exceptions.Exit(1)
+
+        if envfile:
+            try:
+                from dotenv import dotenv_values
+
+                processed_envs = dotenv_values(envfile)
+            except ImportError:
+                console.error(
+                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+                )
+                raise click.exceptions.Exit(1) from None
+
+        # Compile the app in production mode: backend first then frontend.
+        temporary_dir = tempfile.TemporaryDirectory()
+        temporary_dir_path = Path(temporary_dir.name)
+
+        import importlib.metadata
+
+        rx_version = version.parse(importlib.metadata.version("reflex"))
+        breaking_version = version.parse("0.7.6")
+        # Try zipping backend first
+        try:
+            # Check if the reflex version is >= 0.7.6
+            if rx_version <= breaking_version:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    False,
+                    True,
+                    True,
+                )  # ty:ignore[missing-argument]
+            else:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    False,
+                    True,
+                    include_db,
+                    True,  # ty:ignore[too-many-positional-arguments]
+                )
+        except Exception as ex:
+            console.error(f"Unable to export due to: {ex}")
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ex
+
+        # Zip frontend
+        try:
+            # Check if the reflex version is >= 0.7.6
+            if rx_version <= breaking_version:
+                export_fn(
+                    str(temporary_dir_path), server_url, host_url, True, False, True
+                )  # ty:ignore[missing-argument]
+            else:
+                export_fn(
+                    str(temporary_dir_path),
+                    server_url,
+                    host_url,
+                    True,
+                    False,
+                    include_db,
+                    True,  # ty:ignore[too-many-positional-arguments]
+                )
+        except ImportError as ie:
+            console.error(
+                f"Encountered ImportError, did you install all the dependencies? {ie}"
+            )
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ie
+        except Exception as ex:
+            console.error(f"Unable to export due to: {ex}")
+            if temporary_dir_path.exists():
+                shutil.rmtree(temporary_dir_path)
+            raise click.exceptions.Exit(1) from ex
+
+        # Instance bounds are app state that the deployment reads when it is
+        # created, so they have to land before the submit below. Keep the two
+        # calls adjacent: a bound applied earlier would outlive an export that
+        # then fails, silently changing what the app's *next* deployment scales
+        # to (and, for a non-zero minimum, what it costs to run).
+        bounds_applied = min_instances is not None or max_instances is not None
+        if bounds_applied:
+            try:
+                bounds_error = hosting.set_instance_bounds(
+                    app_id=app["id"],
+                    min_instances=min_instances,
+                    max_instances=max_instances,
+                    client=authenticated_client,
+                )
+            except BaseException:
+                # A dropped connection says nothing about whether the server
+                # applied the write, and the bounds are billable state, so hedge
+                # rather than report either outcome as fact.
+                console.warn(
+                    f"Lost contact while setting the instance bounds of "
+                    f"'{app['name']}'; they may or may not have been applied. "
+                    "Check the app in the Reflex Cloud dashboard before relying "
+                    "on its scaling."
+                )
+                raise
+            if bounds_error:
+                console.error(bounds_error)
+                raise click.exceptions.Exit(1)
+
+        with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
+            result = hosting.create_deployment(
+                app_id=app.get("id"),
+                app_name=app_name,
+                project_id=project_id,
+                regions=regions,
+                zip_dir=Path(temporary_dir_path),
+                hostname=extract_domain(host_url) if hostname else None,
+                vmtype=vmtype,
+                secrets=processed_envs,
+                client=authenticated_client,
+                packages=packages,
+                strategy=strategy,
+                description=deployment_description,
+            )
+            if "failed" in result:
+                console.error(result)
+                raise click.exceptions.Exit(1)
     hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
     console.print(
         f"deployment progress can now be viewed on the website: {hosting_ui_url}"

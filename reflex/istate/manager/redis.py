@@ -154,7 +154,7 @@ class StateManagerRedis(StateManager):
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(
-        default=asyncio.Lock(), init=False
+        default_factory=asyncio.Lock, init=False
     )
 
     # Whether to opportunistically hold locks for fast in-memory access.

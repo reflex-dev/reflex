@@ -37,6 +37,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
@@ -76,7 +77,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
@@ -540,7 +541,6 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex_base.registry import RegistrationContext
         from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
@@ -1058,8 +1058,6 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        from reflex_base.registry import RegistrationContext
-
         return RegistrationContext.get().get_substates(cls)
 
     @classmethod
@@ -1243,8 +1241,6 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        from reflex_base.registry import RegistrationContext
-
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
@@ -1349,6 +1345,23 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
+    def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
+        """Map installed dynamic route argument names to their route arg type.
+
+        Returns:
+            A mapping of dynamic route argument name to ``RouteArgType`` value.
+        """
+        return {
+            name: (
+                constants.RouteArgType.LIST
+                if computed_var._var_type == list[str]
+                else constants.RouteArgType.SINGLE
+            )
+            for name, computed_var in cls.computed_vars.items()
+            if isinstance(computed_var, DynamicRouteVar)
+        }
+
+    @classmethod
     def setup_dynamic_args(cls, args: builtins.dict[str, str]):
         """Set up args for easy access in renderer.
 
@@ -1356,14 +1369,8 @@ class BaseState(EvenMoreBasicBaseState):
             args: a dict of args
         """
         # Skip dynamic args that have already been registered by a previous route.
-        args = {
-            k: v
-            for k, v in args.items()
-            if not (
-                (computed_var := cls.computed_vars.get(k)) is not None
-                and isinstance(computed_var, DynamicRouteVar)
-            )
-        }
+        installed = cls._dynamic_route_arg_types()
+        args = {k: v for k, v in args.items() if k not in installed}
         if not args:
             return
 
@@ -2408,8 +2415,13 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
+        # Escape rich markup so a JS error message containing square brackets
+        # (e.g. "x[/bold]y is not a function") cannot style backend logs or
+        # raise MarkupError when printed through the console helpers. The text
+        # is not otherwise sanitized: stack traces are multi-line by nature and
+        # truncating them would lose the information this handler exists for.
+        RegistrationContext.get().app.frontend_exception_handler(
+            Exception(escape(info))
         )
 
 
@@ -2443,30 +2455,15 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # Cannot properly annotate this as `App` due to circular import issues.
-    _app_ref: ClassVar[Any] = None
-
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
             The list of events to queue for on load handling.
-
-        Raises:
-            TypeError: If the app reference is not of type App.
         """
-        from reflex.app import App
-
-        app = type(self)._app_ref or prerequisites.get_and_validate_app().app
-        if not isinstance(app, App):
-            msg = (
-                f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
-            )
-            raise TypeError(msg)
-        # Cache the app reference for subsequent calls.
-        if type(self)._app_ref is None:
-            type(self)._app_ref = app
-        load_events = app.get_load_events(self.router.url.path)
+        load_events = RegistrationContext.get().app.get_load_events(
+            self.router.url.path
+        )
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
@@ -2596,7 +2593,13 @@ class ComponentState(State, mixin=True):
     frozen=True,
 )
 class StateUpdate:
-    """A state update sent to the frontend."""
+    """A state update sent to the frontend.
+
+    Each substate key in the delta must have a dispatch function registered in
+    the frontend; otherwise the frontend reports a fatal ``client_error`` back
+    to the backend (see ``EventNamespace.on_client_error``), since this
+    indicates mismatched frontend and backend state definitions.
+    """
 
     # The state delta.
     delta: DeltaMapping = dataclasses.field(default_factory=dict)
@@ -2656,11 +2659,6 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
-    from reflex_base.registry import RegistrationContext
-
-    # Reset the _app_ref of OnLoadInternalState to avoid stale references.
-    if state is OnLoadInternalState:
-        state._app_ref = None
     # Clean out all potentially dirty states of reloaded modules.
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):

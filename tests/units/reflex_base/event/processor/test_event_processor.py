@@ -5,6 +5,7 @@ import contextlib
 from typing import Any
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -226,6 +227,36 @@ async def test_stop_idempotent(processor: EventProcessor):
     await processor.stop()
 
 
+@pytest.mark.skipif(
+    not hasattr(asyncio, "QueueShutDown"),
+    reason="asyncio.Queue.shutdown() requires Python 3.13+",
+)
+async def test_native_queue_shutdown_is_suppressed(
+    processor: EventProcessor, mocker: MockerFixture
+):
+    """Native queue shutdown exceptions do not surface as processor errors.
+
+    Args:
+        processor: The event processor fixture.
+        mocker: The pytest mock fixture.
+    """
+    send_error = mocker.patch("reflex.utils.telemetry.send_error")
+    console_error = mocker.patch("reflex.utils.console.error")
+    queue: asyncio.Queue = asyncio.Queue()
+    queue.shutdown()  # ty:ignore[unresolved-attribute]
+
+    processor._queue = queue
+    await processor._process_queue()
+
+    processor._queue = None
+    processor._queue_task = asyncio.create_task(queue.get())
+    await asyncio.sleep(0)
+    await processor.stop()
+
+    send_error.assert_not_called()
+    console_error.assert_not_called()
+
+
 async def test_async_context_manager(processor: EventProcessor):
     """Entering/exiting via ``async with`` starts and stops the processor.
 
@@ -353,6 +384,32 @@ async def test_multiple_futures_cancelled_on_stop(processor: EventProcessor):
         f2 = await ep.enqueue("t2", Event.from_event_type(slow_event(10.0))[0])
     for f in (f1, f2):
         assert f.done()
+    assert ep._futures == {}
+
+
+async def test_stop_drains_same_token_sequential_backlog(
+    processor: EventProcessor,
+    token: str,
+):
+    """Graceful stop drains queued same-token events within the shutdown budget.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        futures = [
+            await ep.enqueue(
+                token, Event.from_event_type(slow_logging_event(str(i)))[0]
+            )
+            for i in range(10)
+        ]
+
+    assert [entry["value"] for entry in _CALL_LOG] == [str(i) for i in range(10)]
+    assert all(future.done() and not future.cancelled() for future in futures)
+    assert ep._tasks == {}
+    assert ep._token_queues == {}
     assert ep._futures == {}
 
 

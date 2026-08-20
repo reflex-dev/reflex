@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import date, datetime
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.vars.number import BooleanVar
 
 from .base import (
     CustomVarOperationReturn,
+    ImportVar,
     LiteralVar,
     Var,
     VarData,
@@ -21,6 +22,12 @@ from .base import (
 DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 
 datetime_types = datetime | date
+
+_COMPARE_DATETIME_IMPORT = {
+    "$/utils/helpers/datetime.js": [
+        ImportVar(tag="compareDatetime", is_default=True, install=False)
+    ],
+}
 
 
 def raise_var_type_error():
@@ -35,6 +42,34 @@ def raise_var_type_error():
 
 class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     """A variable that holds a datetime or date object."""
+
+    __hash__ = Var.__hash__
+
+    def __eq__(self, other: Any) -> BooleanVar:
+        """Equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            return super().__eq__(other)
+        return date_eq_operation(self, other)
+
+    def __ne__(self, other: Any) -> BooleanVar:
+        """Not equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            return super().__ne__(other)
+        return date_ne_operation(self, other)
 
     def __lt__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
         """Less than comparison.
@@ -90,6 +125,34 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
 
 
 @var_operation
+def date_eq_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "===")
+
+
+@var_operation
+def date_ne_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Not equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "!==")
+
+
+@var_operation
 def date_gt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     """Greater than comparison.
 
@@ -100,7 +163,7 @@ def date_gt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     Returns:
         The result of the operation.
     """
-    return date_compare_operation(rhs, lhs, strict=True)
+    return date_compare_operation(lhs, rhs, ">")
 
 
 @var_operation
@@ -114,7 +177,7 @@ def date_lt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     Returns:
         The result of the operation.
     """
-    return date_compare_operation(lhs, rhs, strict=True)
+    return date_compare_operation(lhs, rhs, "<")
 
 
 @var_operation
@@ -128,7 +191,7 @@ def date_le_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     Returns:
         The result of the operation.
     """
-    return date_compare_operation(lhs, rhs)
+    return date_compare_operation(lhs, rhs, "<=")
 
 
 @var_operation
@@ -142,27 +205,28 @@ def date_ge_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     Returns:
         The result of the operation.
     """
-    return date_compare_operation(rhs, lhs)
+    return date_compare_operation(lhs, rhs, ">=")
 
 
 def date_compare_operation(
     lhs: DateTimeVar[DATETIME_T] | Any,
     rhs: DateTimeVar[DATETIME_T] | Any,
-    strict: bool = False,
+    operator: Literal["===", "!==", "<", "<=", ">", ">="],
 ) -> CustomVarOperationReturn[bool]:
-    """Check if the value is less than the other value.
+    """Compare datetime values by their timestamps.
 
     Args:
         lhs: The left-hand side of the operation.
         rhs: The right-hand side of the operation.
-        strict: Whether to use strict comparison.
+        operator: The comparison operator.
 
     Returns:
         The result of the operation.
     """
     return var_operation_return(
-        f"({lhs} {'<' if strict else '<='} {rhs})",
+        f"(compareDatetime({lhs}, {rhs}) {operator} 0)",
         bool,
+        VarData(imports=_COMPARE_DATETIME_IMPORT),
     )
 
 

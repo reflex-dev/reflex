@@ -203,6 +203,49 @@ def test_private_marker_in_doc():
     assert "hidden" not in field_names
 
 
+@dataclasses.dataclass
+class _SubclassOfSampleDataclass(_SampleDataclass):
+    """A subclass whose docstring documents only its own field.
+
+    Attributes:
+        extra: A field defined on the subclass.
+        name: Overridden description for name.
+    """
+
+    extra: int = 0
+
+
+def test_inherited_fields_get_base_docstring_descriptions():
+    """Fields inherited from a base class keep the base docstring descriptions.
+
+    Regression: only the class's own docstring was consulted, so inherited fields
+    had no description; the docs site worked around it by appending the base
+    class's fields, listing every field twice on the Config API reference page.
+    """
+    doc = generate_class_documentation(_SubclassOfSampleDataclass)
+    fields_by_name = {f.name: f for f in doc.fields}
+
+    # Each field appears exactly once.
+    assert len(doc.fields) == len(fields_by_name)
+    # Inherited field: description comes from the base class docstring.
+    assert fields_by_name["items"].description == "A list of items."
+    # The subclass docstring wins for fields it re-documents.
+    assert fields_by_name["name"].description == "Overridden description for name."
+    # Field defined and documented on the subclass itself.
+    assert fields_by_name["extra"].description == "A field defined on the subclass."
+
+
+def test_config_fields_documented_once_with_descriptions():
+    """Every rx.Config field is listed once and carries its BaseConfig description."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.Config)
+    names = [f.name for f in doc.fields]
+    assert len(names) == len(set(names))
+    undocumented = [f.name for f in doc.fields if not f.description]
+    assert not undocumented, f"Config fields missing descriptions: {undocumented}"
+
+
 def test_dataclass_methods():
     """Methods: name, signature, and truncated description are correct."""
     doc = generate_class_documentation(_SampleDataclass)
