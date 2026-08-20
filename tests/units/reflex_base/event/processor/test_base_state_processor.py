@@ -1,5 +1,7 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
+import asyncio
+import dataclasses
 import traceback
 from collections.abc import Mapping
 from typing import Any
@@ -17,6 +19,7 @@ from reflex import event
 from reflex.app import App
 from reflex.event import Event
 from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import OnLoadInternalState, State, StateUpdate
 
@@ -214,3 +217,70 @@ async def test_preprocess_update_routes_frontend_events_to_client(
     client_event_names = {e.name for _, events in emitted_events for e in events}
     assert "_call_function" in client_event_names
     assert "_redirect" in client_event_names
+
+
+async def test_chained_event_keeps_originating_router_data(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A yielded event resolves route args against the view that produced it.
+
+    Regression: chained events were created with no ``router_data``, and the
+    processor only refreshes ``state.router`` when an event carries some. A
+    chained event therefore read whichever router the last client-sent event
+    happened to leave on the root state. A loader that yields the real loader
+    (a common on_load shape) could see another page's route, and a route arg
+    would read as "" on a page whose URL clearly names one.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    item_view = {
+        "pathname": "/item/[item_id]",
+        "asPath": "/item/abc",
+        "query": {"item_id": "abc"},
+    }
+    other_view = {"pathname": "/other", "asPath": "/other", "query": {}}
+
+    class RouterState(State):
+        seen: list[str] = []
+
+        @event
+        def note(self):
+            item_id = self.router._page.params.get("item_id", "")
+            self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
+
+        @event
+        def touch(self):
+            """A client-sent event on another page, only here to move the router."""
+
+        @event(background=True)
+        async def outer(self):
+            await asyncio.sleep(0.2)
+            yield RouterState.note
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token,
+            dataclasses.replace(
+                Event.from_event_type(RouterState.outer())[0], router_data=item_view
+            ),
+        )
+        await asyncio.sleep(0.05)
+        await processor.enqueue(
+            token,
+            dataclasses.replace(
+                Event.from_event_type(RouterState.touch())[0], router_data=other_view
+            ),
+        )
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(RouterState)).seen == ["/item/abc|abc"]

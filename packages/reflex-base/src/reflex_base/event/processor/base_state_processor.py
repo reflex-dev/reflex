@@ -170,21 +170,36 @@ def _transform_event_payload(
     return transformed
 
 
-async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
+async def _route_events(
+    ctx: EventContext,
+    events: Sequence[Event],
+    router_data: dict[str, Any] | None = None,
+) -> None:
     """Emit frontend events to the client and queue backend events.
 
     Events whose name starts with ``_`` are frontend-only specs (e.g.
     ``_redirect``, ``_call_function``) with no registered backend handler.
 
+    A backend event that carries no routing data of its own inherits
+    ``router_data``, so it resolves ``router`` and dynamic route args against
+    the view that produced it rather than against whichever view the last
+    client-sent event left on the root state. Frontend events are deliberately
+    left alone: the client stamps them with its live location when it sends
+    them back, and ``router_data`` holds request headers that have no business
+    on the wire.
+
     Args:
         ctx: The event context to emit/enqueue through.
         events: The events to route.
+        router_data: Routing data of the event being processed, if any.
     """
     frontend_events: list[Event] = []
     backend_events: list[Event] = []
     for ev in events:
         if ev.name.startswith("_"):
             frontend_events.append(ev)
+        elif router_data and not ev.router_data:
+            backend_events.append(dataclasses.replace(ev, router_data=router_data))
         else:
             backend_events.append(ev)
     if frontend_events:
@@ -197,6 +212,7 @@ async def chain_updates(
     events: EventSpec | list[EventSpec] | None,
     handler_name: str,
     root_state: BaseState | None = None,
+    router_data: dict[str, Any] | None = None,
 ) -> None:
     """Chain yielded events and emit a delta to the frontend.
 
@@ -207,6 +223,7 @@ async def chain_updates(
         events: The events to queue with the update.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
+        router_data: Routing data of the event whose handler yielded these events.
     """
     from reflex.event import Event
 
@@ -225,7 +242,7 @@ async def chain_updates(
     if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
     ):
-        await _route_events(ctx, fixed_events)
+        await _route_events(ctx, fixed_events, router_data)
 
 
 async def process_event(
@@ -233,6 +250,7 @@ async def process_event(
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState,
+    router_data: dict[str, Any] | None = None,
 ):
     """Process event.
 
@@ -241,6 +259,7 @@ async def process_event(
         payload: The event payload.
         state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas.
+        router_data: Routing data of the event, inherited by any events it yields.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -269,28 +288,54 @@ async def process_event(
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
-            await chain_updates(event, root_state=root_state, handler_name=handler_name)
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+            await chain_updates(
+                event,
+                root_state=root_state,
+                handler_name=handler_name,
+                router_data=router_data,
+            )
+        await chain_updates(
+            None,
+            root_state=root_state,
+            handler_name=handler_name,
+            router_data=router_data,
+        )
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
         try:
             while True:
                 await chain_updates(
-                    next(events), root_state=root_state, handler_name=handler_name
+                    next(events),
+                    root_state=root_state,
+                    handler_name=handler_name,
+                    router_data=router_data,
                 )
         except StopIteration as si:
             # the "return" value of the generator is not available
             # in the loop, we must catch StopIteration to access it
             if si.value is not None:
                 await chain_updates(
-                    si.value, root_state=root_state, handler_name=handler_name
+                    si.value,
+                    root_state=root_state,
+                    handler_name=handler_name,
+                    router_data=router_data,
                 )
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            None,
+            root_state=root_state,
+            handler_name=handler_name,
+            router_data=router_data,
+        )
 
     # Handle regular event chains.
     else:
-        await chain_updates(events, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            events,
+            root_state=root_state,
+            handler_name=handler_name,
+            router_data=router_data,
+        )
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -301,11 +346,14 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
+    async def _rehydrate(
+        self, root_state: BaseState, router_data: dict[str, Any] | None = None
+    ):
         """Rehydrate the state by calling the hydrate event handler.
 
         Args:
             root_state: The root state to rehydrate.
+            router_data: Routing data of the event that triggered the rehydrate.
         """
         from reflex.state import OnLoadInternalState, State
 
@@ -320,12 +368,14 @@ class BaseStateEventProcessor(EventProcessor):
             payload={},
             state=root_state,
             root_state=root_state,
+            router_data=router_data,
         )
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
             state=await root_state.get_state(OnLoadInternalState),
             root_state=root_state,
+            router_data=router_data,
         )
 
     async def _execute_event(
@@ -374,7 +424,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if update.delta:
                     await ctx.emit_delta(update.delta)
                 if update.events:
-                    await _route_events(ctx, update.events)
+                    await _route_events(ctx, update.events, router_data)
                 return
 
             # Get the event's substate.
@@ -382,7 +432,7 @@ class BaseStateEventProcessor(EventProcessor):
             root_state = state._get_root_state()
 
             if needs_to_rehydrate:
-                await self._rehydrate(root_state)
+                await self._rehydrate(root_state, router_data)
 
             # Process non-background events while holding the lock.
             if not registered_handler.handler.is_background:
@@ -391,6 +441,7 @@ class BaseStateEventProcessor(EventProcessor):
                     payload=event.payload,
                     state=substate,
                     root_state=root_state,
+                    router_data=router_data,
                 )
                 return
         # Otherwise drop the state lock and start processing the background task with a proxy state.
@@ -399,6 +450,7 @@ class BaseStateEventProcessor(EventProcessor):
             state=StateProxy(substate),
             payload=event.payload,
             root_state=root_state,
+            router_data=router_data,
         )
 
     async def _handle_backend_exception(
