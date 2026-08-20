@@ -233,10 +233,12 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
     landing inside that snapshot->clean window was cleaned before any delta
     harvested it: the value never reached the frontend.
 
-    The gates below force exactly that interleaving: the background task's
-    trailing delta resolution (via the uncached async computed var) signals
-    the foreground handler to write, then resumes -- pre-fix its ``_clean()``
-    discarded the write mid-foreground-handler.
+    Every step is gate-driven, in both worlds: pre-fix, the background
+    task's trailing delta resolution (via the uncached async computed var)
+    parks until the foreground handler has written, and the background
+    event's future completes strictly after its trailing ``_clean()``; on
+    fixed code that future completes without any trailing resolution and
+    the foreground handler proceeds immediately.
 
     Args:
         wired_app: The App wired to the processor's state manager.
@@ -250,6 +252,7 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
     bg_resolving = asyncio.Event()
     fg_wrote = asyncio.Event()
     hold_resolution = [False]
+    bg_future_box: list = []
 
     class BgRaceState(State):
         victim: str = ""
@@ -271,19 +274,21 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
 
         @event
         async def fg(self):
-            # Bounded: with the fix, the background task does no trailing
-            # delta work, so nothing ever sets bg_resolving. asyncio.wait
-            # instead of wait_for: on py3.10 the latter raises
-            # asyncio.TimeoutError, which is not yet the builtin.
+            # Proceed once the background trailing resolution has taken its
+            # snapshot (pre-fix code parks it on fg_wrote), or once the
+            # background event has fully completed without one (fixed code).
             waiter = asyncio.ensure_future(bg_resolving.wait())
-            await asyncio.wait([waiter], timeout=0.5)
+            await asyncio.wait(
+                [waiter, *bg_future_box], return_when=asyncio.FIRST_COMPLETED
+            )
             waiter.cancel()
             self.victim = "written"
             fg_wrote.set()
-            # Yield so the background task's (pre-fix) clean can land while
-            # this handler is still mid-flight, as a real await would allow.
-            for _ in range(20):
-                await asyncio.sleep(0)
+            # Pre-fix, the parked resolution now resumes, emits, and cleans;
+            # the background event's future completes strictly after that
+            # clean, so awaiting it guarantees the clean landed before this
+            # handler's own delta snapshot. On fixed code it is already done.
+            await asyncio.wait(bg_future_box)
 
     # Seed router_data up front so no event triggers _rehydrate (whose
     # full-dict resolution would park on the armed gate before the foreground
@@ -296,8 +301,15 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         seed_root.router_data = {"pathname": "/", "query": {}}
     try:
         async with real_base_state_processor as processor:
-            await processor.enqueue(token, Event.from_event_type(BgRaceState.bg())[0])
-            await asyncio.wait_for(bg_started.wait(), timeout=2)
+            bg_future_box.append(
+                await processor.enqueue(
+                    token, Event.from_event_type(BgRaceState.bg())[0]
+                )
+            )
+            started = asyncio.ensure_future(bg_started.wait())
+            await asyncio.wait([started], timeout=2)
+            started.cancel()
+            assert bg_started.is_set(), "background handler never started"
             await processor.enqueue(token, Event.from_event_type(BgRaceState.fg())[0])
             await processor.join(5)
     finally:
