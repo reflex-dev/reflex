@@ -256,6 +256,12 @@ Checked in this order at start:
   A claim is never released early, because cancelling an attempt does not stop
   work it handed to a thread, and the lease is what keeps a peer off it. A
   drained attempt costs nothing; a cancelled one costs one recovery.
+  A **synchronous** handler cannot be cancelled at all — a thread cannot be
+  interrupted, which is the same reason `timeout=` is a compile error on sync
+  handlers — so a stopping worker holds until the sync call in flight
+  returns, however short the drain budget: the budget bounds how long
+  *cancellable* work is waited for, never how fast a thread can be made to
+  stop. Sync handlers doing long work should be async around `rx.step`.
 - **Clients are not workers.** A process that opens
   `rx.workflows.connect(...)` can admit runs, read them, signal and cancel
   them, and executes nothing: it claims no step and runs no handler. Only a
@@ -323,7 +329,7 @@ outcome.
 | attempt finishes after the run's deadline passed | the commit is refused (`deadline_passed`, `attempt_abandoned` in history), the slot is released, and the sweep finalizes the run `TIMED_OUT` — a run past its deadline has exactly one outcome, never COMPLETED-after-the-fact. Recorded substeps stand: this is crash-equivalent, not an undo |
 | signal or approval arrives for a run past its deadline | refused as `expired` — the continuation can never execute (claims exclude past-deadline runs), so answering "resolved" would record a decision the timeout sweep is about to discard |
 | store unreachable at commit | attempt abandoned (fence unverifiable); step recovered later; `rx.step` records already made stand |
-| everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule, remainder skipped with a history record |
+| everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule; a remainder beyond the cap is skipped with a **warning naming the count and window** (there is no run to attach history to), and can be started by hand |
 
 ### Failures that are not crashes
 

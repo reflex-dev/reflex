@@ -350,3 +350,14 @@ def test_durations_must_be_finite():
             parse_duration(poison)
     assert parse_duration(0) == pytest.approx(0.0)
     assert parse_duration("1.5h") == pytest.approx(5400.0)
+
+
+def test_backoff_saturates_instead_of_overflowing():
+    """Attempt five hundred is 'the cap', not an OverflowError in the kernel.
+
+    delay_for_attempt runs inside the kernel's completion path, so an
+    exception here breaks the worker, not the run.
+    """
+    policy = Retry(max_attempts=10_000, initial_delay="1s", max_delay="1h")
+    assert policy.delay_for_attempt(500) == pytest.approx(3600.0)
+    assert policy.delay_for_attempt(9_999) == pytest.approx(3600.0)

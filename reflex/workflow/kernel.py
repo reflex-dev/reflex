@@ -2300,9 +2300,22 @@ class WorkflowKernel:
                 stored = await self._store.read_schedule_cursor(key)
                 cursor = stored if stored is not None else self._started_at
                 self._schedule_cursor[key] = cursor
-            for occurrence in schedule.occurrences_between(
-                cursor, now, limit=MAX_SCHEDULE_CATCHUP
-            ):
+            occurrences = schedule.occurrences_between(
+                cursor, now, limit=MAX_SCHEDULE_CATCHUP + 1
+            )
+            if len(occurrences) > MAX_SCHEDULE_CATCHUP:
+                # The cursor is about to jump over these. Silently losing
+                # scheduled work reads as "covered" when it was not; the
+                # operator gets the count and the window, and can start the
+                # missed occurrences by hand if they matter.
+                occurrences = occurrences[:MAX_SCHEDULE_CATCHUP]
+                console.warn(
+                    f"Schedule {key} missed more than {MAX_SCHEDULE_CATCHUP} "
+                    f"occurrences between {cursor:.0f} and {now:.0f}; catching "
+                    f"up the first {MAX_SCHEDULE_CATCHUP} and skipping the "
+                    "rest. Start any that matter with rx.workflows.start()."
+                )
+            for occurrence in occurrences:
                 result = await self.start(
                     getattr(defn.state_cls, handler.name),
                     request_key=f"schedule:{key}:{int(occurrence)}",

@@ -13,6 +13,27 @@ from reflex.workflow.records import RunStatus
 from reflex.workflow.store import MemoryRunStore
 from reflex.workflow.testing import WorkflowTestHarness
 
+
+class _Clock:
+    """A manually advanced epoch-seconds clock."""
+
+    def __init__(self, now: float):
+        """Start the clock.
+
+        Args:
+            now: The starting time in epoch seconds.
+        """
+        self.now = now
+
+    def __call__(self) -> float:
+        """Read the clock.
+
+        Returns:
+            The current time in epoch seconds.
+        """
+        return self.now
+
+
 # A Tuesday at 12:00 UTC, chosen so quarter-hour schedules are 15 minutes away.
 START = dt.datetime(2026, 8, 18, 12, 0, tzinfo=dt.UTC).timestamp()
 
@@ -197,3 +218,39 @@ async def test_a_restart_resumes_the_schedule_cursor(forked_registration_context
         await resumed.advance("1m")
 
     assert len(fired) > first_count, "the restarted worker skipped the downtime"
+
+
+async def test_skipped_catchup_is_counted_out_loud(forked_registration_context, capsys):
+    """Occurrences the cap drops are named, never silently lost.
+
+    A worker down for a week comes back to hundreds of missed quarter-hour
+    occurrences; it catches up the cap's worth and jumps the cursor. Without
+    the warning, the jump reads as "covered" and the missing runs are only
+    discovered by whoever needed their output.
+    """
+    from reflex.workflow.kernel import MAX_SCHEDULE_CATCHUP, WorkflowKernel
+
+    class Nightly(rx.State):
+        __workflow__ = WorkflowConfig(id="sched.lossy")
+
+        @rx.event(durable=True, effect="none", trigger=schedule("*/15 * * * *"))
+        def tick(self):
+            """Fire on the quarter hour.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=None)
+
+    clock = _Clock(1_000_000.0)
+    store = MemoryRunStore()
+    kernel = WorkflowKernel([compile_workflow(Nightly)], store, clock=clock)
+    await kernel.run_until_idle()
+
+    clock.now += 7 * 24 * 3600  # a week of downtime
+    admitted = await kernel._admit_due_schedules(clock.now)  # pyright: ignore[reportPrivateUsage]
+    assert admitted == MAX_SCHEDULE_CATCHUP
+    err = capsys.readouterr()
+    assert "missed more than" in err.out + err.err, (
+        "the skipped remainder must be named, not silently jumped over"
+    )

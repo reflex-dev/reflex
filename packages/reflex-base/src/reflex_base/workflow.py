@@ -169,7 +169,14 @@ class Retry:
         """
         initial = parse_duration(self.initial_delay, param="Retry.initial_delay")
         maximum = parse_duration(self.max_delay, param="Retry.max_delay")
-        return min(initial * self.multiplier ** (failed_attempts - 1), maximum)
+        try:
+            return min(initial * self.multiplier ** (failed_attempts - 1), maximum)
+        except OverflowError:
+            # Around attempt ~500 with the default multiplier the power
+            # overflows a float. A delay astronomically past the cap is the
+            # cap -- and this raises inside the kernel's completion path, not
+            # the handler, so letting it escape breaks the worker, not the run.
+            return maximum
 
     def is_retryable(self, error: BaseException) -> bool:
         """Whether an exception consumes a business attempt and may retry.
