@@ -245,10 +245,8 @@ async def test_chained_event_keeps_originating_router_data(
     }
     other_view = {"pathname": "/other", "asPath": "/other", "query": {}}
 
-    # The regression needs the other view's event to reach the root state
-    # before the chained event does. Ordered by a barrier rather than by
-    # sleeps: were `touch` to land second, `note` would read the view it
-    # wanted anyway and the test would pass without exercising anything.
+    # Ordered by a barrier, not sleeps: were `touch` to land second, `note`
+    # would read the view it wanted anyway and the test would prove nothing.
     router_moved = asyncio.Event()
 
     class RouterState(State):

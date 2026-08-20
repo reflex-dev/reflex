@@ -100,9 +100,7 @@ class EventContext(BaseContext):
     )
 
     # Routing data of the event being processed. Inherited by fork(), so an
-    # event a handler yields resolves `router` and dynamic route args against
-    # the view that produced it rather than against whichever view the last
-    # client-sent event left on the root state.
+    # event a handler yields resolves against the view that produced it.
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
     def fork(self, token: str | None = None) -> EventContext:
