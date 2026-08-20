@@ -1,6 +1,12 @@
 """Tests for deploying new workflow code while runs are in flight."""
 
-from reflex_base.workflow import WorkflowConfig, manual, needs_attention
+from reflex_base.workflow import (
+    Signal,
+    WorkflowConfig,
+    manual,
+    needs_attention,
+    wait_for,
+)
 
 import reflex as rx
 from reflex.workflow.records import RunStatus, StepStatus
@@ -284,3 +290,198 @@ async def test_a_new_parameter_with_a_default_is_compatible(
         assert snapshot is not None
         assert snapshot.status is RunStatus.COMPLETED
         assert snapshot.result == "unset"
+
+
+async def test_a_waiting_run_whose_continuation_is_gone_suspends(
+    forked_registration_context,
+):
+    """A wait reaches its handler by a different path, and it is gated too.
+
+    The compatibility gate is easy to reason about for a plain successor: the
+    slot names a handler and the claim checks it. A wait's continuation is
+    reached with an injected payload, and a join's with injected results, so
+    "the gate applies here as well" is a separate fact rather than the same
+    one. A worker that crashed on a resolved wait instead of suspending the
+    run would take out the process for every other run it was serving.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    store = MemoryRunStore()
+
+    class Reviewed(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.reviewed")
+
+        review = Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Wait for a review.
+
+            Returns:
+                The wait.
+            """
+            return wait_for(
+                Reviewed.review,
+                then=Reviewed.decide,
+                timeout="3d",
+                on_timeout=Reviewed.expire,
+            )
+
+        @rx.event(durable=True, effect="none")
+        def decide(self, decision: dict):
+            """Record the decision.
+
+            Args:
+                decision: The delivered payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=decision)
+
+        @rx.event(durable=True, effect="none")
+        def expire(self):
+            """Give up.
+
+            Returns:
+                Failure.
+            """
+            return rx.fail("no_decision")
+
+    async with WorkflowTestHarness(Reviewed, store=store) as harness:
+        started = await harness.start(Reviewed.begin())
+        assert started.run_id is not None
+        run_id, resume_at = started.run_id, harness.now
+
+    class Truncated(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.reviewed")
+
+        review = Signal(dict)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Wait for a review.
+
+            Returns:
+                The wait.
+            """
+            return wait_for(
+                Truncated.review,
+                then=Truncated.expire,
+                timeout="3d",
+                on_timeout=Truncated.expire,
+            )
+
+        @rx.event(durable=True, effect="none")
+        def expire(self):
+            """Give up.
+
+            Returns:
+                Failure.
+            """
+            return rx.fail("no_decision")
+
+    async with WorkflowTestHarness(
+        Truncated, store=store, start_time=resume_at + 60
+    ) as harness:
+        assert (
+            await harness.signal(run_id, Truncated.review({"ok": True})) == "resolved"
+        )
+        snapshot = await harness.get_run(run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.NEEDS_ATTENTION, snapshot.status
+        assert snapshot.error is not None
+        assert snapshot.error["reason"] == "unknown_handler"
+        assert "decide" in snapshot.error["detail"]
+
+
+async def test_a_join_whose_continuation_is_gone_suspends(
+    forked_registration_context,
+):
+    """The same fact for a fan-out's results slot.
+
+    The branch soaks so the join is still open across the redeploy; a branch
+    that finished immediately would resolve the join under the old code and
+    prove nothing about the new.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    store = MemoryRunStore()
+
+    class Branch(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.branch")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def go(self):
+            """Soak, then finish.
+
+            Returns:
+                A deferral.
+            """
+            return rx.after("1h", Branch.done)
+
+        @rx.event(durable=True, effect="none")
+        def done(self):
+            """Finish.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result={"done": True})
+
+    class Fanned(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.fanned")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out to one branch.
+
+            Returns:
+                The fan-out.
+            """
+            return rx.parallel(Branch.go(), then=Fanned.gather)
+
+        @rx.event(durable=True, effect="none")
+        def gather(self, results: list):
+            """Collect the branch results.
+
+            Args:
+                results: One entry per branch.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result={"branches": len(results)})
+
+    async with WorkflowTestHarness(Fanned, Branch, store=store) as harness:
+        started = await harness.start(Fanned.begin())
+        assert started.run_id is not None
+        run_id, resume_at = started.run_id, harness.now
+        snapshot = await harness.get_run(run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.WAITING, "the join is open on the branch"
+
+    class Truncated(rx.State):
+        __workflow__ = WorkflowConfig(id="versioning.fanned")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out to one branch.
+
+            Returns:
+                The fan-out.
+            """
+            return rx.parallel(Branch.go(), then=Truncated.begin)
+
+    async with WorkflowTestHarness(
+        Truncated, Branch, store=store, start_time=resume_at
+    ) as harness:
+        await harness.advance("2h")
+        snapshot = await harness.get_run(run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.NEEDS_ATTENTION, snapshot.status
+        assert snapshot.error is not None
+        assert snapshot.error["reason"] == "unknown_handler"
+        assert "gather" in snapshot.error["detail"]

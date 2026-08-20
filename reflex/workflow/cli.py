@@ -482,6 +482,17 @@ def doctor(database: str | None, target: str):
                         f"{secret_env} is unset, so {definition.workflow_id}."
                         f"{handler.name} will refuse every delivery."
                     )
+            if isinstance(trigger, WebhookTrigger) and trigger.verify is None:
+                # Compiling already refused this unless someone opted in, but
+                # that protects whoever wrote it. Whoever deploys it, possibly
+                # a year later, is a different person and this is the preflight
+                # they read.
+                notes.append(
+                    f"{definition.workflow_id}.{handler.name} accepts unverified "
+                    f"deliveries on topic '{trigger.topic}' -- anyone who knows "
+                    f"the URL can start it. Declared reason: "
+                    f"{trigger.unverified_reason or 'none given'}."
+                )
             if isinstance(trigger, ScheduleTrigger):
                 notes.append(
                     f"{definition.workflow_id}.{handler.name} runs on "

@@ -454,3 +454,60 @@ def test_doctor_notes_schedules_and_unmounted_surfaces(
     assert result.exit_code == 0, result.output
     assert "0 9 * * *" in result.output
     assert "REFLEX_WORKFLOW_API_TOKEN" in result.output
+
+
+UNVERIFIED = '''
+import reflex as rx
+
+
+class Open(rx.State):
+    __workflow__ = rx.WorkflowConfig(id="doctor.open")
+
+    @rx.event(
+        durable=True,
+        effect="none",
+        trigger=rx.webhook(
+            "payout",
+            allow_unverified=True,
+            unverified_reason="behind an internal load balancer",
+        ),
+    )
+    def on_hook(self, payload: dict):
+        """Take an unverified delivery.
+
+        Args:
+            payload: The delivered body.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result=payload)
+'''
+
+
+def test_doctor_names_a_webhook_that_takes_anonymous_deliveries(
+    tmp_path, forked_registration_context
+):
+    """Opting in protects the author; deploying is done by someone else.
+
+    Compiling already refuses an unverified webhook unless someone passed
+    allow_unverified with a reason. That is a decision made once, by whoever
+    wrote it. The person deploying a year later reads this preflight instead,
+    and an endpoint anyone can post runs into is exactly what it is for.
+
+    Args:
+        tmp_path: Temporary directory for the module and database.
+        forked_registration_context: Isolates state registration.
+    """
+    module = tmp_path / "flows_open.py"
+    module.write_text(UNVERIFIED)
+    result = CliRunner().invoke(
+        workflows, ["doctor", str(module), "-d", str(tmp_path / "d.db")]
+    )
+    assert result.exit_code == 0, result.output
+    # Rich wraps at the terminal width, so the note arrives split across
+    # lines; the reader sees one sentence and the test should too.
+    flattened = " ".join(result.output.split())
+    assert "unverified deliveries" in flattened
+    assert "doctor.open.on_hook" in flattened
+    assert "behind an internal load balancer" in flattened
