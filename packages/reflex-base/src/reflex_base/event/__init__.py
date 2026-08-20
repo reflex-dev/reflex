@@ -3,6 +3,7 @@
 import copy
 import dataclasses
 import inspect
+import logging
 import sys
 import types
 import warnings
@@ -37,6 +38,7 @@ from typing_extensions import (
 from reflex_base import constants
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Imports
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -64,6 +66,8 @@ from reflex_base.vars.function import (
 )
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -93,8 +97,6 @@ class Event:
     @property
     def state_cls(self) -> "type[BaseState]":
         """The state class for the event."""
-        from reflex_base.registry import RegistrationContext
-
         substate_name = self.name.rpartition(".")[0]
         return RegistrationContext.get().base_states[substate_name]
 
@@ -1939,8 +1941,6 @@ def _check_event_args_subclass_of_callback(
     # noqa: DAR401 delayed_exceptions[]
     # noqa: DAR402 EventHandlerArgTypeMismatchError
     """
-    from reflex_base.utils import console
-
     type_match_found: dict[str, bool] = {}
     delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
 
@@ -2007,7 +2007,7 @@ def _check_event_args_subclass_of_callback(
                     f" as annotated in {callback_name}" if callback_name else ""
                 )
 
-                console.warn(
+                logger.warning(
                     f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> (){as_annotated_in} instead. "
                     f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                 )
@@ -2719,6 +2719,13 @@ V5 = TypeVar("V5")
 
 class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
+
+    if TYPE_CHECKING:
+        # EventCallback is never instantiated: `event()` returns the undecorated
+        # function, which the state metaclass turns into an EventHandler. This
+        # class is only the static stand-in for it, so declare the EventHandler
+        # attribute that `SomeState.handler` actually exposes at runtime.
+        fn: Callable[[Any, Unpack[P]], Any]
 
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.

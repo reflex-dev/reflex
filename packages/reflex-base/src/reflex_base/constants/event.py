@@ -52,6 +52,7 @@ class SocketEvent(SimpleNamespace):
 
     PING = "ping"
     EVENT = "event"
+    CLIENT_ERROR = "client_error"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.
@@ -60,6 +61,16 @@ class SocketEvent(SimpleNamespace):
             The event name string.
         """
         return str(self.value)
+
+
+class ClientErrorType(SimpleNamespace):
+    """Error types reported by the frontend via the client_error socket event.
+
+    Must match the ERROR_TYPE_* constants in .templates/web/utils/state.js.
+    """
+
+    DISPATCH_MISSING = "dispatch_function_missing"
+    STATE_UPDATE = "state_update_processing_error"
 
 
 class EventTriggers(SimpleNamespace):

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
 import enum
 import functools
+import logging
 import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
@@ -35,7 +37,7 @@ from reflex_base.event import (
     pointer_event_spec,
 )
 from reflex_base.style import Style, format_as_emotion
-from reflex_base.utils import console, format, imports, types
+from reflex_base.utils import format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -50,6 +52,8 @@ from reflex_base.vars.function import ArgsFunctionOperation, FunctionStringVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import reflex.state
@@ -493,7 +497,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> builtins.set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -579,7 +583,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
             if not isinstance(obj, Var)
             else (obj._var_value if isinstance(obj, LiteralVar) else obj)
         )
-        console.warn(
+        logger.warning(
             "Passing None to a Var that is not explicitly marked as Optional (| None) is deprecated. "
             f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}."
         )
@@ -961,7 +965,7 @@ class Component(BaseComponent, ABC):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
-        console.error(
+        logger.error(
             "Instantiating components directly is not supported."
             f" Use `{self.__class__.__name__}.create` method instead."
         )

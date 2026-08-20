@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
+from typing import Any
 
 import click
+from reflex_base.utils import log
 
 from reflex_cli import constants
 from reflex_cli.core.config import Config
@@ -19,10 +22,63 @@ from reflex_cli.utils.exceptions import (
     ScaleTypeError,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @click.group()
 def apps_cli():
     """Commands for managing apps."""
+
+
+def _resolve_app_id(
+    app_id: str | None,
+    app_name: str | None,
+    client: Any,
+    interactive: bool,
+) -> str:
+    """Resolve an app id from --app-id, --app-name, or the cloud config.
+
+    Args:
+        app_id: The explicit app id, if given.
+        app_name: The app name to look up, if given.
+        client: The authenticated client.
+        interactive: Whether to interactively resolve name conflicts.
+
+    Returns:
+        The resolved app id.
+
+    Raises:
+        Exit: If no app id can be resolved.
+
+    """
+    from reflex_cli.utils import hosting
+
+    # Explicit --app-id wins, then an explicit --app-name lookup, and only then
+    # the cloud.yml/pyproject appid — so passing --app-name always overrides a
+    # configured appid rather than being silently ignored.
+    if not app_id and app_name is not None:
+        result = hosting.search_app(
+            app_name=app_name,
+            project_id=None,
+            client=client,
+            interactive=interactive,
+        )
+        app_id = result.get("id") if result else None
+
+    if not app_id and app_name is None:
+        config = hosting.read_config()
+        if config:
+            app_id = config.appid
+            if not isinstance(app_id, (str, type(None))):
+                logger.error(
+                    "app_id must be a string or None. Please check your config file."
+                )
+                raise click.exceptions.Exit(1)
+
+    if not app_id:
+        logger.error("No valid app_id or app_name provided.")
+        raise click.exceptions.Exit(1)
+    return app_id
 
 
 @apps_cli.command(name="history")
@@ -71,7 +127,7 @@ def app_history(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -86,7 +142,7 @@ def app_history(
             app_id = result.get("id") if result else None
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         history = hosting.get_app_history(app_id=app_id, client=authenticated_client)
@@ -103,7 +159,146 @@ def app_history(
         else:
             console.print(str(history))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
+
+
+@apps_cli.command(name="rollback")
+@click.argument("deployment_id", required=True)
+@click.option("--app-id", help="The ID of the application.")
+@click.option("--app-name", help="The name of the application.")
+@click.option("--token", help="The authentication token.")
+@click.option(
+    "--loglevel",
+    type=click.Choice([level.value for level in constants.LogLevel]),
+    default=constants.LogLevel.INFO.value,
+    help="The log level to use.",
+)
+@click.option(
+    "--interactive/--no-interactive",
+    "-i",
+    is_flag=True,
+    default=True,
+    help="Whether to use interactive mode.",
+)
+def app_rollback(
+    deployment_id: str,
+    app_id: str | None,
+    app_name: str | None,
+    token: str | None,
+    loglevel: str,
+    interactive: bool,
+):
+    """Roll an app back to a previous deployment.
+
+    Redeploys the target deployment's already-built image and makes it current
+    again, without rebuilding from source. DEPLOYMENT_ID is a past deployment
+    from `reflex cloud apps history` whose "can rollback" is True. Identify the
+    app with --app-id/--app-name or a cloud.yml/pyproject.toml appid.
+    """
+    from reflex_cli.utils import hosting
+
+    console.set_log_level(loglevel)
+    try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
+        app_id = _resolve_app_id(app_id, app_name, authenticated_client, interactive)
+
+        if (
+            interactive
+            and console.ask(
+                f"Roll back to deployment {deployment_id}? The current deployment "
+                "will be replaced.",
+                choices=["y", "n"],
+                default="n",
+            )
+            != "y"
+        ):
+            logger.info("Rollback cancelled.")
+            return
+
+        result = hosting.rollback_deployment(
+            app_id=app_id, deployment_id=deployment_id, client=authenticated_client
+        )
+        if result:
+            logger.error(result)
+            raise click.exceptions.Exit(1)
+        logger.log(log.SUCCESS, f"Rollback to deployment {deployment_id} started.")
+        console.print(
+            f"Track progress with `reflex cloud apps status {deployment_id} "
+            "--watch` or the Reflex Cloud dashboard."
+        )
+    except NotAuthenticatedError as err:
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
+
+
+@apps_cli.command(name="describe")
+@click.argument("deployment_id", required=True)
+@click.option(
+    "--description",
+    required=True,
+    help='The changelog note to set. Pass --description "" to clear it.',
+)
+@click.option("--app-id", help="The ID of the application.")
+@click.option("--app-name", help="The name of the application.")
+@click.option("--token", help="The authentication token.")
+@click.option(
+    "--loglevel",
+    type=click.Choice([level.value for level in constants.LogLevel]),
+    default=constants.LogLevel.INFO.value,
+    help="The log level to use.",
+)
+@click.option(
+    "--interactive/--no-interactive",
+    "-i",
+    is_flag=True,
+    default=True,
+    help="Whether to use interactive mode.",
+)
+def app_describe(
+    deployment_id: str,
+    description: str,
+    app_id: str | None,
+    app_name: str | None,
+    token: str | None,
+    loglevel: str,
+    interactive: bool,
+):
+    """Set or clear the changelog note on a past deployment.
+
+    The note is shown in `reflex cloud apps history`. Identify the app with
+    --app-id/--app-name or a cloud.yml/pyproject.toml appid.
+    """
+    from reflex_cli.utils import hosting
+
+    console.set_log_level(loglevel)
+    try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
+        app_id = _resolve_app_id(app_id, app_name, authenticated_client, interactive)
+
+        result = hosting.update_deployment_description(
+            app_id=app_id,
+            deployment_id=deployment_id,
+            description=description,
+            client=authenticated_client,
+        )
+        if result:
+            logger.error(result)
+            raise click.exceptions.Exit(1)
+        if description.strip():
+            logger.log(
+                log.SUCCESS, f"Updated description for deployment {deployment_id}."
+            )
+        else:
+            logger.log(
+                log.SUCCESS, f"Cleared description for deployment {deployment_id}."
+            )
+    except NotAuthenticatedError as err:
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -134,7 +329,7 @@ def deployment_build_logs(
         )
         console.print(logs)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -183,9 +378,9 @@ def deployment_status(
             status = hosting.get_deployment_status(
                 deployment_id=deployment_id, client=authenticated_client
             )
-            console.error(status) if "failed" in status else console.print(status)
+            logger.error(status) if "failed" in status else console.print(status)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -228,7 +423,7 @@ def stop_app(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -243,14 +438,16 @@ def stop_app(
             app_id = app_result.get("id") if app_result else None
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         result = hosting.stop_app(app_id=app_id, client=authenticated_client)
         if result:
-            console.error(result) if "failed" in result else console.success(result)
+            logger.error(result) if "failed" in result else logger.log(
+                log.SUCCESS, result
+            )
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -292,7 +489,7 @@ def start_app(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -307,14 +504,16 @@ def start_app(
             app_id = app_result.get("id") if app_result else None
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         result = hosting.start_app(app_id=app_id, client=authenticated_client)
         if result:
-            console.error(result) if "failed" in result else console.success(result)
+            logger.error(result) if "failed" in result else logger.log(
+                log.SUCCESS, result
+            )
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -356,7 +555,7 @@ def delete_app(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -370,7 +569,7 @@ def delete_app(
                 interactive=interactive,
             )
             if not app_result:
-                console.warn(f"App '{app_name}' not found.")
+                logger.warning(f"App '{app_name}' not found.")
                 raise click.exceptions.Exit(1)
             app_id = app_result.get("id") if app_result else None
             app_name_from_search = app_result.get("name") if app_result else app_name
@@ -382,14 +581,14 @@ def delete_app(
                     app_id=app_id,
                 )
             except GetAppError:
-                console.warn(f"No application found with ID '{app_id}'")
+                logger.warning(f"No application found with ID '{app_id}'")
                 return
             if not app_result:
-                console.warn(f"App with ID '{app_id}' not found.")
+                logger.warning(f"App with ID '{app_id}' not found.")
                 raise click.exceptions.Exit(0)
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         if interactive:
@@ -418,14 +617,14 @@ def delete_app(
                 )
                 != "y"
             ):
-                console.info("Deletion cancelled.")
+                logger.info("Deletion cancelled.")
                 return
 
         result = hosting.delete_app(app_id=app_id, client=authenticated_client)
         if result:
-            console.warn(result)
+            logger.warning(result)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -484,7 +683,7 @@ def app_logs(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -499,17 +698,17 @@ def app_logs(
             app_id = app_result.get("id") if app_result else None
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         if offset is None and start is None and end is None:
             offset = 3600
         if not offset and not (start and end):
-            console.error("must provide both start and end")
+            logger.error("must provide both start and end")
             raise click.exceptions.Exit(1)
 
         while True:
-            console.debug(f"fetching logs with cursor: {cursor}")
+            logger.debug(f"fetching logs with cursor: {cursor}")
             result = hosting.get_app_logs(
                 app_id=app_id,
                 offset=offset,
@@ -519,7 +718,7 @@ def app_logs(
                 cursor=cursor,
             )
             if not isinstance(result, list):
-                console.warn("Unable to retrieve logs.")
+                logger.warning("Unable to retrieve logs.")
                 return
             if len(result) == 2 and isinstance(result[1], str):
                 cursor = result[1]
@@ -527,13 +726,13 @@ def app_logs(
             else:
                 cursor = None
             if not result:
-                console.warn("No logs found for the specified criteria.")
+                logger.warning("No logs found for the specified criteria.")
                 return
             result.reverse()
             for log in result:
                 if pretty:
                     log = pprint.pformat(log, indent=2)
-                console.info(log)
+                logger.info(log)
             if not (interactive and follow):
                 return
             from rich.prompt import Prompt
@@ -544,13 +743,13 @@ def app_logs(
                 show_default=False,
             )
             if prompt.lower() == "exit":
-                console.info("Exiting log retrieval.")
+                logger.info("Exiting log retrieval.")
                 return
     except ResponseError as err:
-        console.error(f"Error retrieving logs: {err}")
+        logger.error(f"Error retrieving logs: {err}")
         raise click.exceptions.Exit(1) from err
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -607,7 +806,7 @@ def list_apps(
         if project_id is not None and not as_json:
             try:
                 project = hosting.get_project(project_id, client=authenticated_client)
-                console.info(
+                logger.info(
                     f"Listing apps for project '{project['name']}' ({project_id})"
                 )
             except Exception:
@@ -615,10 +814,10 @@ def list_apps(
 
         deployments = hosting.list_apps(project=project_id, client=authenticated_client)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except Exception as ex:
-        console.error("Unable to list deployments")
+        logger.error("Unable to list deployments")
         raise click.exceptions.Exit(1) from ex
 
     if as_json:
@@ -678,7 +877,7 @@ def scale_app(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
@@ -692,13 +891,13 @@ def scale_app(
         )
 
         if not config.exists() and not cli_args.is_valid:
-            console.error(
+            logger.error(
                 "specify either --vmtype or --regions or add them to the cloud.yml or pyproject.toml file"
             )
             raise click.exceptions.Exit(1)
 
         if config.exists() and cli_args.is_valid:
-            console.warn(
+            logger.warning(
                 "CLI arguments will override the values in the cloud.yml or pyproject.toml file."
             )
         scale_params = hosting.ScaleParams.from_config(config).set_type_from_cli_args(
@@ -716,16 +915,16 @@ def scale_app(
             app_id = app_result.get("id") if app_result else None
 
         if not app_id:
-            console.error("No valid app_id or app_name provided.")
+            logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
         hosting.scale_app(
             app_id=app_id, scale_params=scale_params, client=authenticated_client
         )
-        console.success("Successfully scaled the app.")
+        logger.log(log.SUCCESS, "Successfully scaled the app.")
 
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except (
         ScaleAppError,
@@ -734,7 +933,7 @@ def scale_app(
         ScaleTypeError,
         ScaleParamError,
     ) as err:
-        console.error(err.args[0])
+        logger.error(err.args[0])
         raise click.exceptions.Exit(1) from err
 
 
@@ -782,13 +981,13 @@ def inspect_app(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
 
         if not app_id:
-            console.error(
+            logger.error(
                 "No valid app_id provided or found in cloud.yml or pyproject.toml."
             )
             raise click.exceptions.Exit(1)
@@ -809,5 +1008,5 @@ def inspect_app(
         else:
             console.print("No app information found.")
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err

@@ -15,13 +15,13 @@ Reflex lets you move work as your team's structure changes: transfer a project t
 
 You can transfer a whole project, including its apps and settings, from one organization to another. This is useful when a project outgrows a personal organization or moves between teams.
 
-Open the project's **Settings → General** and find the **Move project** card. Choose the destination organization and confirm.
+Open **Settings** in the project sidebar and find the **Move Project** card. Choose the destination organization and confirm.
 
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/moving/move_project.webp",
     alt="The Move project dialog with a dropdown to select a destination organization and a warning about members losing access",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
 )
 ```
 
@@ -51,7 +51,7 @@ In Reflex Build, open the app's options menu (the **⋯** menu on the app), choo
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/moving/move_app.webp",
     alt="The Move app dialog listing other projects in the same organization to move the app into",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
 )
 ```
 

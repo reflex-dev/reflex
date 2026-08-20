@@ -6,6 +6,7 @@ import contextvars
 import functools
 import io
 import json
+import logging
 import re
 import unittest.mock
 import uuid
@@ -17,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
@@ -26,7 +28,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console, exceptions, format, memo_paths
+from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
@@ -42,7 +44,7 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, default_overlay_component
+from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -306,6 +308,32 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+def test_apply_decorated_pages_uses_app_context(
+    forked_registration_context: RegistrationContext,
+    app: App,
+    index_page: ComponentCallable,
+):
+    """_apply_decorated_pages reads the App's captured registration context.
+
+    The compiler calls it outside a request, where the ambient context may
+    differ from the one the App was created in; pages registered on the App's
+    own context must still be applied.
+
+    Args:
+        forked_registration_context: The forked registration context.
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app._registration_context is forked_registration_context
+    forked_registration_context.decorated_pages.append((
+        index_page,
+        {"route": "decorated"},
+    ))
+    with RegistrationContext():
+        app._apply_decorated_pages()
+    assert "decorated" in app._unevaluated_pages
+
+
 def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 
@@ -343,17 +371,16 @@ def index():
     ],
 )
 def test_add_the_same_page(
-    mocker: MockerFixture, app: App, first_page, second_page, route
+    caplog: pytest.LogCaptureFixture, app: App, first_page, second_page, route
 ):
     app.add_page(first_page, route=route)
-    mock_object = mocker.Mock()
-    mocker.patch.object(
-        console,
-        "warn",
-        mock_object,
-    )
     app.add_page(second_page, route="/" + route.strip("/") if route else None)
-    assert mock_object.call_count == 1
+    warnings = [
+        r
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(warnings) == 1
 
 
 @pytest.mark.parametrize(
@@ -1846,7 +1873,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         emitted_deltas: List to store emitted deltas.
         emitted_events: List to store emitted events.
     """
-    OnLoadInternalState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
     app = app_module_mock.app = App()
@@ -2157,6 +2183,7 @@ def test_app_wrap_compile_theme(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -2164,6 +2191,8 @@ def test_app_wrap_compile_theme(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -2302,8 +2331,16 @@ def _example_hydrate_fallback() -> rx.Component:
 def test_compile_hydrate_fallback_from_config(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
@@ -2406,33 +2443,49 @@ def test_component_from_import_path_resolves_nested_module():
     assert isinstance(component.children[0], Button)
 
 
-def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_invalid_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """An unresolvable path should be logged and return None instead of raising."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     component = _component_from_import_path(
         "nonexistent_module.does_not_exist", "hydrate_fallback"
     )
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
-def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_non_callable_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """A path resolving to a non-callable attribute should return None."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     # ``reflex.constants`` is a module, not a callable returning a component.
     component = _component_from_import_path("reflex.constants", "hydrate_fallback")
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
 def test_compile_with_radix_component_auto_enables_radix_plugin(
@@ -2499,11 +2552,19 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
 
-def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+def test_legacy_app_theme_wins_over_explicit_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    """Deprecated App.theme keeps working (and winning) until its removal.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
@@ -2522,8 +2583,37 @@ def test_explicit_radix_plugin_wins_over_legacy_app_theme(
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
 
-    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
-    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"green"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_default_explicit_radix_plugin_adopts_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A bare RadixThemesPlugin() (default theme) should adopt deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin()],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"blue"' not in app_root
     mock_deprecate.assert_called_once()
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
 
@@ -2893,6 +2983,7 @@ def test_app_wrap_priority(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 
@@ -2900,6 +2991,8 @@ def test_app_wrap_priority(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -3044,7 +3137,8 @@ def test_app_state_determination():
     a1 = App()
     assert a1._state is not None
 
-    a2 = App(enable_state=False)
+    with RegistrationContext.get().fork():
+        a2 = App(enable_state=False)
     assert a2._state is None
 
 
@@ -3647,8 +3741,16 @@ def test_compile_sends_telemetry_when_enabled(
 def test_compile_skips_telemetry_when_disabled(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(app_name="testing", telemetry_enabled=False)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -3883,8 +3985,16 @@ def test_add_page_invalidates_router_cache():
 def test_compile_registers_plugin_routes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Compilation includes pages contributed by configured plugins."""
+    """Compilation includes pages contributed by configured plugins.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
 
     class RoutePlugin(Plugin):
         """Plugin contributing one page for the compile test."""
@@ -3910,3 +4020,266 @@ def test_compile_registers_plugin_routes(
     assert "from-plugin" in app._unevaluated_pages
     assert "from-plugin" in app._pages
     assert app._plugin_routes_registered
+
+
+@pytest.fixture
+def event_namespace() -> EventNamespace:
+    """An EventNamespace with a mock app and one linked client session.
+
+    Returns:
+        The event namespace.
+    """
+    namespace = EventNamespace(namespace="/_event", app=Mock())
+    namespace.sid_to_token["known_sid"] = "some_token"
+    return namespace
+
+
+@pytest.fixture
+def frontend_errors(event_namespace: EventNamespace) -> list[str]:
+    """Capture exceptions routed to the app's frontend exception handler.
+
+    Args:
+        event_namespace: The event namespace.
+
+    Returns:
+        The captured exception messages.
+    """
+    errors: list[str] = []
+    event_namespace.app.frontend_exception_handler = lambda exc: errors.append(str(exc))
+    return errors
+
+
+@pytest.fixture
+def client_error_console() -> Generator[dict[str, list[str]], None, None]:
+    """Capture messages logged through the app's logger, keyed by level.
+
+    Yields:
+        Captured messages keyed by log level.
+    """
+    captured: dict[str, list[str]] = {"error": [], "warn": [], "debug": []}
+    level_keys = {
+        logging.ERROR: "error",
+        logging.WARNING: "warn",
+        logging.DEBUG: "debug",
+    }
+
+    class _CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord):
+            key = level_keys.get(record.levelno)
+            if key is not None:
+                captured[key].append(record.getMessage())
+
+    app_logger = logging.getLogger("reflex.app")
+    handler = _CaptureHandler(level=logging.DEBUG)
+    previous_level = app_logger.level
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.DEBUG)
+    yield captured
+    app_logger.removeHandler(handler)
+    app_logger.setLevel(previous_level)
+
+
+@pytest.mark.asyncio
+async def test_client_error_dispatch_missing_reports_actionable_error(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A dispatch_function_missing error reports the substate and remediation steps.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    await event_namespace.on_client_error(
+        "known_sid",
+        {
+            "error_type": constants.ClientErrorType.DISPATCH_MISSING,
+            "message": "Cannot process state update",
+            "substate": "reflex___state____state.my___state____my_state",
+        },
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert "reflex___state____state.my___state____my_state" in message
+    assert "rebuild" in message.lower()
+
+
+@pytest.mark.asyncio
+async def test_client_error_generic_reports_type_and_message(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A generic client error reports the error type and message.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    await event_namespace.on_client_error(
+        "known_sid",
+        {
+            "error_type": constants.ClientErrorType.STATE_UPDATE,
+            "message": "boom",
+        },
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert constants.ClientErrorType.STATE_UPDATE in message
+    assert "boom" in message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("payload", ["not a dict", None, ["list"], 42])
+async def test_client_error_malformed_payload_is_ignored(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    payload: Any,
+):
+    """Non-dict payloads are dropped without raising or reporting errors.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        payload: The malformed payload to send.
+    """
+    await event_namespace.on_client_error("known_sid", payload)
+    assert not frontend_errors
+
+
+@pytest.mark.asyncio
+async def test_client_error_unknown_sid_does_not_report_error(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+):
+    """Errors from sockets without a linked token are not reported.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+    """
+    await event_namespace.on_client_error(
+        "unknown_sid",
+        {
+            "error_type": constants.ClientErrorType.STATE_UPDATE,
+            "message": "spam from unauthenticated socket",
+        },
+    )
+    assert not frontend_errors
+    assert not client_error_console["error"]
+
+
+@pytest.mark.asyncio
+async def test_client_error_values_are_sanitized_and_truncated(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """Control characters are stripped and long messages truncated before reporting.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    evil = "\x1b[31mINJECT\x1b[0m\nFAKE LOG LINE\t" + "A" * 5000
+    await event_namespace.on_client_error(
+        "known_sid",
+        {"error_type": "custom_type", "message": evil},
+    )
+    assert len(frontend_errors) == 1
+    message = frontend_errors[0]
+    assert "\x1b" not in message
+    assert "\n" not in message
+    assert "\t" not in message
+    assert len(message) < 700
+
+
+@pytest.mark.asyncio
+async def test_client_error_reporting_is_rate_limited_per_sid(
+    event_namespace: EventNamespace, frontend_errors: list[str]
+):
+    """A single session cannot flood the backend logs with error reports.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+    """
+    for _ in range(20):
+        await event_namespace.on_client_error(
+            "known_sid",
+            {"error_type": "custom_type", "message": "spam"},
+        )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_SID
+    # Disconnecting removes the counter so the mapping cannot grow unboundedly.
+    task = event_namespace.on_disconnect("known_sid")
+    if task is not None:
+        await task
+    assert "known_sid" not in event_namespace._client_error_counts
+
+
+@pytest.mark.asyncio
+async def test_client_error_reporting_bounded_across_reconnects(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+):
+    """Reconnecting with fresh SIDs does not grant an unlimited report budget.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+    """
+    for reconnect in range(50):
+        sid = f"sid_{reconnect}"
+        event_namespace.sid_to_token[sid] = f"token_{reconnect}"
+        for _ in range(5):
+            await event_namespace.on_client_error(
+                sid, {"error_type": "custom_type", "message": "spam"}
+            )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW
+    # Suppression is not silent: one warning is logged when the cap trips, so
+    # a flooding client cannot invisibly starve reports from other sessions.
+    assert (
+        len([
+            msg for msg in client_error_console["warn"] if "suppressing" in msg.lower()
+        ])
+        == 1
+    )
+    # Once the window elapses, errors are reported again (not silenced forever).
+    event_namespace._client_error_window_start -= (
+        EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
+    )
+    event_namespace.sid_to_token["sid_fresh"] = "token_fresh"
+    await event_namespace.on_client_error(
+        "sid_fresh", {"error_type": "custom_type", "message": "after window"}
+    )
+    assert len(frontend_errors) == EventNamespace._MAX_CLIENT_ERRORS_PER_WINDOW + 1
+
+
+def test_client_error_event_name_matches_handler():
+    """python-socketio dispatches events to on_<event> methods by naming
+    convention; this pins the handler to SocketEvent.CLIENT_ERROR.
+    """
+    assert (
+        f"on_{constants.SocketEvent.CLIENT_ERROR}"
+        == EventNamespace.on_client_error.__name__
+    )
+
+
+def test_client_error_constants_match_frontend():
+    """The socket event and error types are duplicated as literals in state.js.
+
+    Nothing at runtime keeps the two definitions in sync, so pin them here.
+    """
+    state_js = (
+        Path(reflex_base.__file__).parent / ".templates/web/utils/state.js"
+    ).read_text()
+    assert (
+        f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_DISPATCH_MISSING = "{constants.ClientErrorType.DISPATCH_MISSING}"'
+        in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
+        in state_js
+    )

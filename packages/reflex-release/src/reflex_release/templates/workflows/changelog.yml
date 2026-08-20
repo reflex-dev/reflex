@@ -1,0 +1,72 @@
+@@HEADER@@
+name: changelog
+
+# Two guards on every pull request:
+#
+# 1. New CHANGELOG.md version headings are rejected. A merged version heading
+#    without a git tag is a real publish trigger (see
+#    release_from_changelog.yml), so headings must come from the Dispatch
+#    release workflow's @@RELEASE_PREFIX@@* branches — not from hand edits.
+#    The guard uses the same parser the release pipeline publishes from, so the
+#    two cannot disagree. Escape hatch for deliberate restructuring of
+#    already-published sections: the 'changelog-version-edit' label.
+#
+# 2. Every package whose source the PR touches must add a news fragment under
+#    its news/ directory. Waive with the 'skip-changelog' label for changes
+#    that are genuinely not user-facing.
+#
+# 3. The generated release workflows must match what the pinned reflex-release
+#    version produces from [tool.reflex-release] — adding a package or editing
+#    the configuration without re-running `@@CLI@@ sync` fails here rather than
+#    at release time.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+# The branches are the ones release_from_changelog publishes from: a merged
+# version heading is a publish trigger wherever it lands, and @@HOTFIX_PREFIX@@**
+# publishes final versions without going through @@MAIN_BRANCH@@ at all.
+on:
+  pull_request:
+    branches:
+      ["@@MAIN_BRANCH@@", "@@PRERELEASE_PREFIX@@**", "@@HOTFIX_PREFIX@@**"]
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      # The heading guard runs even for skip-changelog PRs: that label only
+      # waives the news-fragment requirement, not the publish-trigger guard.
+      #
+      # The exemption for release branches also requires the pull request to be
+      # authored by github-actions[bot], which is how the Dispatch release
+      # workflow opens it. A branch name is attacker-selectable; the author is
+      # not, so a contributor cannot skip the guard by naming their branch
+      # @@RELEASE_PREFIX@@something and hand-writing a version heading. The
+      # 'changelog-version-edit' label needs triage rights to apply, so it is a
+      # sound escape hatch on its own.
+      - name: Reject manual changelog version headings
+        if: >-
+          ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit')
+          && !(startsWith(github.head_ref, '@@RELEASE_PREFIX@@')
+          && github.event.pull_request.user.login == 'github-actions[bot]') }}
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: @@CLI@@ check-headings
+      - name: Check for news fragments
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: @@CLI@@ changelog-check
+      - name: Check the release workflows are up to date
+        run: @@CLI@@ sync --check
