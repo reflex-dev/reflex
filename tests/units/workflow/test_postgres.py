@@ -296,3 +296,130 @@ def test_the_cli_operates_on_a_postgres_url(store):
 
     cancelled = CliRunner().invoke(workflows, ["cancel", "cli-run", "-d", url])
     assert cancelled.exit_code == 0, cancelled.output
+
+
+async def test_closing_a_parent_never_deadlocks_against_its_children(store):
+    """Cancel a fan-out while its branches report home, repeatedly.
+
+    Closing a parent touches the parent and then its children; a child
+    reporting home touches itself and then its parent. Same two rows,
+    opposite orders -- Postgres detects the cycle and aborts one side, and
+    before the lock ordering was fixed this produced deadlocks on most
+    rounds. Recovery did eventually converge, but sometimes only after a
+    lease lapsed, which is half a minute of a cancelled rollout still
+    running.
+
+    Args:
+        store: The Postgres store.
+    """
+    rounds, branches = 12, 6
+    failures: list[str] = []
+    for index in range(rounds):
+        parent = f"dlp{index}"
+        kids = [f"dlk{index}_{n}" for n in range(branches)]
+        await store.admit(
+            _pg_run(parent, next_ordinal=2),
+            _pg_step(parent, 1, status=StepStatus.BLOCKED, wait_key="join:1"),
+            _PG_ADMITTED,
+        )
+        for kid in kids:
+            await store.admit(
+                _pg_run(kid, parent_run_id=parent, parent_ordinal=1),
+                _pg_step(kid),
+                _PG_ADMITTED,
+            )
+
+        async def close_parent(parent=parent):
+            """Cancel the parent, closing its branches.
+
+            Args:
+                parent: The parent run.
+            """
+            await store.request_cancel(parent, _PG_NOW)
+            await store.finalize_run(
+                parent,
+                status=RunStatus.CANCELLED,
+                error=None,
+                event=HistoryEventType.RUN_CANCELLED,
+                now=_PG_NOW,
+            )
+
+        async def report(kid: str, parent=parent):
+            """Finish a branch, delivering its arrival.
+
+            Args:
+                kid: The branch run.
+                parent: The parent run.
+            """
+            await store.finalize_run(
+                kid,
+                status=RunStatus.COMPLETED,
+                error=None,
+                event=HistoryEventType.RUN_COMPLETED,
+                now=_PG_NOW,
+                parent_arrival=(parent, 1, {"status": "completed"}, kid),
+            )
+
+        outcomes = await asyncio.gather(
+            close_parent(), *(report(kid) for kid in kids), return_exceptions=True
+        )
+        failures.extend(
+            type(outcome).__name__
+            for outcome in outcomes
+            if isinstance(outcome, BaseException)
+        )
+    assert not failures, f"{len(failures)} transaction(s) aborted: {set(failures)}"
+
+
+_PG_NOW = 1_000_000.0
+_PG_ADMITTED = ((HistoryEventType.RUN_ADMITTED, {}),)
+
+
+def _pg_run(run_id: str, **over) -> RunRecord:
+    """Build a run record for the deadlock probe.
+
+    Args:
+        run_id: The run identity.
+        over: Field overrides.
+
+    Returns:
+        The record.
+    """
+    fields: dict = {
+        "run_id": run_id,
+        "workflow_id": "pg.deadlock",
+        "definition_digest": "d",
+        "status": RunStatus.PENDING,
+        "state": {},
+        "state_version": 0,
+        "next_ordinal": 2,
+        "created_at": _PG_NOW,
+        "updated_at": _PG_NOW,
+    }
+    fields.update(over)
+    return RunRecord(**fields)
+
+
+def _pg_step(run_id: str, ordinal: int = 0, **over) -> StepRecord:
+    """Build a step record for the deadlock probe.
+
+    Args:
+        run_id: The owning run.
+        ordinal: The mailbox position.
+        over: Field overrides.
+
+    Returns:
+        The record.
+    """
+    fields: dict = {
+        "run_id": run_id,
+        "ordinal": ordinal,
+        "handler_id": "go",
+        "status": StepStatus.READY,
+        "args": {},
+        "origin": "root",
+        "created_at": _PG_NOW,
+        "updated_at": _PG_NOW,
+    }
+    fields.update(over)
+    return StepRecord(**fields)

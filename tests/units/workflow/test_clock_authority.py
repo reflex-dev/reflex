@@ -11,6 +11,7 @@ injected clock (tests, the dev CLI's fast-forward) is authoritative as given
 and never synced.
 """
 
+import asyncio
 import time
 
 import pytest
@@ -121,3 +122,74 @@ async def test_a_store_with_no_clock_of_its_own_stops_being_asked():
     await kernel.recover()
     assert kernel._sync_clock_with_store is False  # pyright: ignore[reportPrivateUsage]
     assert kernel._clock() == pytest.approx(time.time(), abs=1.0)  # pyright: ignore[reportPrivateUsage]
+
+
+class _IndependentClockStore(MemoryRunStore):
+    """A store whose clock is its own, like a database on another machine.
+
+    Deriving it from ``time.time`` would make it jump whenever the worker's
+    wall clock jumps, which is exactly the thing under test.
+    """
+
+    def __init__(self):
+        """Anchor the store's clock to real elapsed time."""
+        super().__init__()
+        self._base = 1_700_000_000.0
+        self._start = time.monotonic()
+
+    async def epoch_time(self) -> float | None:
+        """Answer with the store's own clock.
+
+        Returns:
+            Epoch seconds, unaffected by the caller's wall clock.
+        """
+        return self._base + (time.monotonic() - self._start)
+
+
+async def test_a_backward_wall_clock_jump_does_not_move_store_time(monkeypatch):
+    """Time must not go backwards between syncs, whatever the machine does.
+
+    NTP steps, a hypervisor resuming a snapshot, an operator correcting a
+    drifted host: all move the wall clock without warning. A worker that
+    derives store time by adding a fixed offset to that clock moves with it,
+    and renews its lease to a moment that has, from the store's point of
+    view, already passed. Its claim lapses while it is still working and a
+    peer reclaims the step -- two workers on one attempt, which is the one
+    thing leases exist to prevent.
+
+    Args:
+        monkeypatch: Used to move the process wall clock.
+    """
+    wall = [1_600_000_000.0]
+    monkeypatch.setattr(time, "time", lambda: wall[0])
+
+    # Passed explicitly because the kernel decides whether to sync by identity
+    # against time.time, and monkeypatching replaces the object the default
+    # argument was bound to. Without this the sync path silently turns off and
+    # the test passes while measuring nothing.
+    kernel = WorkflowKernel([], _IndependentClockStore(), clock=time.time)
+    assert kernel._sync_clock_with_store is True  # pyright: ignore[reportPrivateUsage]
+    await kernel.recover()
+    before = kernel._clock()  # pyright: ignore[reportPrivateUsage]
+
+    wall[0] -= 45.0
+    after = kernel._clock()  # pyright: ignore[reportPrivateUsage]
+    assert after >= before, (
+        f"store time went backwards by {before - after:.1f}s when the wall "
+        "clock did; a lease renewed against it would lapse early"
+    )
+
+
+async def test_store_time_still_advances_with_real_elapsed_time():
+    """Immunity to jumps must not mean the clock stops.
+
+    A clock that never moved would be just as wrong: leases would never
+    expire and a crashed worker's step would never be recovered.
+    """
+    kernel = WorkflowKernel([], _IndependentClockStore())
+    await kernel.recover()
+    first = kernel._clock()  # pyright: ignore[reportPrivateUsage]
+    await asyncio.sleep(0.05)
+    second = kernel._clock()  # pyright: ignore[reportPrivateUsage]
+    assert second > first
+    assert second - first < 5.0, "advancing far faster than real time is also wrong"

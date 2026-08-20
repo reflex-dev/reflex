@@ -459,7 +459,7 @@ class WorkflowKernel:
         # skew is bounded by one round trip plus local drift per recovery
         # interval. An explicitly injected clock (tests, the dev CLI's
         # fast-forward) stays authoritative as given and is never synced.
-        self._store_clock_offset = 0.0
+        self._clock_anchor: tuple[float, float] | None = None
         self._sync_clock_with_store = clock is time.time
         self._clock = self._store_time if self._sync_clock_with_store else clock
         self._rng = rng
@@ -2848,12 +2848,24 @@ class WorkflowKernel:
         self._prune()
 
     def _store_time(self) -> float:
-        """The process clock corrected onto the store's time base.
+        """The store's clock, carried forward by monotonic elapsed time.
+
+        The wall clock is read once per sync and never between them. NTP
+        steps, a resumed snapshot, or an operator correcting a drifted host
+        all move ``time.time`` without warning, and a worker that added a
+        fixed offset to it moved with it -- renewing its lease to a moment
+        the store considers past, so its claim lapsed mid-attempt and a peer
+        reclaimed the step. ``time.monotonic`` cannot jump, so the only error
+        left is real drift since the last sync, which the next recovery pass
+        corrects.
 
         Returns:
             Epoch seconds by the store's clock, to within one sync error.
         """
-        return time.time() + self._store_clock_offset
+        if self._clock_anchor is None:
+            return time.time()
+        store_at_sync, monotonic_at_sync = self._clock_anchor
+        return store_at_sync + (time.monotonic() - monotonic_at_sync)
 
     async def _sync_store_clock(self) -> None:
         """Re-measure the offset between this process and the store's clock.
@@ -2863,15 +2875,17 @@ class WorkflowKernel:
         """
         if not self._sync_clock_with_store:
             return
-        before = time.time()
+        before = time.monotonic()
         store_now = await self._store.epoch_time()
-        after = time.time()
+        after = time.monotonic()
         if store_now is None:
             # The process clock is the authority for this store; stop asking.
             self._sync_clock_with_store = False
-            self._store_clock_offset = 0.0
+            self._clock_anchor = None
             return
-        self._store_clock_offset = store_now - (before + after) / 2
+        # The store answered somewhere inside the round trip, so credit it to
+        # the midpoint: the anchor is then off by at most half of one.
+        self._clock_anchor = (store_now, (before + after) / 2)
 
     async def recover(self) -> int:
         """Renew this kernel's live claims, then reclaim expired ones.

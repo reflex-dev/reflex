@@ -1003,6 +1003,8 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
+            if completion.run_status in TERMINAL_RUN_STATUSES:
+                await self._lock_children(conn, claim.run.run_id)
             await self._lock_run(conn, claim.run.run_id)
             deadline = await self._check_claim(conn, claim)
             # Past the deadline the only permitted outcome is TIMED_OUT, and
@@ -1160,7 +1162,8 @@ class PostgresRunStore:
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
-                "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
+                "SELECT status, deadline FROM workflow_runs WHERE run_id = %s"
+                " FOR UPDATE",
                 (run_id,),
             )
             row = await cursor.fetchone()
@@ -1168,6 +1171,12 @@ class PostgresRunStore:
                 return "unknown_run"
             if row["status"] in _TERMINAL_RUNS:
                 return "run_terminal"
+            if row["deadline"] is not None and row["deadline"] <= now:
+                # Claims exclude past-deadline runs and the sweep is about to
+                # finalize this one TIMED_OUT, so "resolved" would tell the
+                # sender -- often a person clicking approve -- that their
+                # decision landed, moments before it is discarded.
+                return "expired"
             cursor = await conn.execute(
                 "SELECT 1 FROM workflow_inbox"
                 " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
@@ -1261,6 +1270,31 @@ class PostgresRunStore:
                 parent = runs[0][0].parent_run_id or ""
                 await self._lock_run(conn, parent)
                 await self._append_events(conn, parent, events, now)
+
+    async def _lock_children(self, conn: Any, run_id: str) -> None:
+        """Take the branch rows this transaction will close, before its own.
+
+        Closing a parent locks the parent and then its children; a child
+        reporting home locks itself and then its parent. Those are the same
+        two rows in opposite orders, which is an ABBA deadlock -- Postgres
+        detects it and aborts one side, and under a fan-out being cancelled
+        that happened constantly.
+
+        Taking the branches first makes every transaction acquire in one
+        order: children, then self, then parent. Deeper rows are always taken
+        before shallower ones, so no cycle can form. The ORDER BY matters for
+        the same reason within one level.
+
+        Args:
+            conn: The connection inside an open transaction.
+            run_id: The run whose branches may be closed.
+        """
+        await conn.execute(
+            "SELECT run_id FROM workflow_runs WHERE parent_run_id = %s"
+            " AND parent_close <> 'abandon' AND NOT (status = ANY(%s))"
+            " ORDER BY run_id FOR UPDATE",
+            (run_id, [s.value for s in TERMINAL_RUN_STATUSES]),
+        )
 
     async def _close_children(self, conn: Any, run_id: str, now: float) -> None:
         """Request cancellation of branches the closing run fanned out to.
@@ -1669,6 +1703,7 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
+            await self._lock_children(conn, run_id)
             cursor = await conn.execute(
                 "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
                 (run_id,),

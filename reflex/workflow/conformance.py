@@ -1382,6 +1382,22 @@ async def check_a_duplicate_delivery_is_recorded_in_history(store: RunStore) -> 
     assert kinds.count(HistoryEventType.SIGNAL_DUPLICATE) == 1, kinds
 
 
+async def check_a_delivery_to_a_past_deadline_run_is_refused(store: RunStore) -> None:
+    """A run that can never execute the continuation must not say "resolved".
+
+    Claims exclude past-deadline runs and the sweep is about to finalize this
+    one TIMED_OUT, so answering "resolved" tells the sender their decision
+    landed when it is about to be discarded -- and the sender is often a
+    person clicking approve.
+    """
+    await store.admit(
+        make_run(deadline=NOW - 1),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:ping", due_at=0.0),
+        _ADMITTED,
+    )
+    assert await store.deliver("run1", "sig:ping", "d1", {"v": 1}, NOW) == "expired"
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1399,6 +1415,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_delivery_resolves_a_matching_wait,
     check_delivery_never_touches_run_state,
     check_duplicate_deliveries_are_ignored,
+    check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,
     check_early_deliveries_queue_in_order,
