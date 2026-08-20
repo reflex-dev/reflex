@@ -132,8 +132,11 @@ class Retry:
         if self.max_attempts < 1:
             msg = f"Retry.max_attempts must be >= 1, got {self.max_attempts}."
             raise WorkflowDefinitionError(msg)
-        if self.multiplier < 1.0:
-            msg = f"Retry.multiplier must be >= 1.0, got {self.multiplier}."
+        if not math.isfinite(self.multiplier) or self.multiplier < 1.0:
+            # Every comparison against nan is False, so "< 1.0" let nan and
+            # inf straight through, and the backoff they produce is nan or
+            # inf -- a step scheduled for a time that never arrives.
+            msg = f"Retry.multiplier must be a finite number >= 1.0, got {self.multiplier}."
             raise WorkflowDefinitionError(msg)
         if self.jitter not in ("full", "none"):
             msg = f'Retry.jitter must be "full" or "none", got {self.jitter!r}.'

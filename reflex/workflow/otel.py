@@ -93,9 +93,10 @@ class OpenTelemetryObserver(WorkflowObserver):
         self._status_code = status_code
         self._tracer = (tracer_provider or trace).get_tracer(INSTRUMENTATION_NAME)
         meter = (meter_provider or metrics).get_meter(INSTRUMENTATION_NAME)
+        names = set(MetricsObserver._COUNTED.values())  # pyright: ignore[reportPrivateUsage]
+        names.add("schedule_occurrences_skipped")
         self._counters = {
-            name: meter.create_counter(f"reflex.workflow.{name}")
-            for name in set(MetricsObserver._COUNTED.values())  # pyright: ignore[reportPrivateUsage]
+            name: meter.create_counter(f"reflex.workflow.{name}") for name in names
         }
         self._open: dict[tuple[str, Any], Any] = {}
 
@@ -121,6 +122,17 @@ class OpenTelemetryObserver(WorkflowObserver):
         ending = _ATTEMPT_ENDINGS.get(event_type)
         if ending is not None:
             self._close_span(run_id, data, ending)
+
+    def on_schedule_skip(self, schedule_key: str, skipped: int) -> None:
+        """Count scheduled occurrences that were dropped rather than run.
+
+        Args:
+            schedule_key: The schedule that lost occurrences.
+            skipped: How many were dropped.
+        """
+        self._counters["schedule_occurrences_skipped"].add(
+            skipped, {"workflow.schedule_key": schedule_key}
+        )
 
     def _count(self, event_type: HistoryEventType, workflow_id: str) -> None:
         """Add one to the counter this event feeds, if any.

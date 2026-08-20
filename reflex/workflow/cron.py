@@ -21,7 +21,12 @@ _FIELD_RANGES: Final = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 6))
 
 _FIELD_NAMES: Final = ("minute", "hour", "day of month", "month", "day of week")
 
-MAX_SEARCH_DAYS: Final = 1500
+# The rarest satisfiable date is February 29 across a skipped leap century:
+# 2096 to 2104 is eight years, because 2100 is not a leap year. A shorter
+# horizon reported "no occurrence" for a schedule that was simply far off.
+MAX_SEARCH_DAYS: Final = 3000
+
+_LONGEST_MONTH: Final = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 
 def _parse_field(spec: str, index: int) -> frozenset[int]:
@@ -115,6 +120,7 @@ class CronSchedule:
         self._days_of_week = _parse_field(fields[4], 4)
         self._dom_restricted = fields[2] != "*"
         self._dow_restricted = fields[4] != "*"
+        self._assert_reachable()
 
     def _matches_date(self, day: dt.date) -> bool:
         """Whether a date satisfies the month and day fields.
@@ -134,6 +140,32 @@ class CronSchedule:
         if self._dom_restricted and self._dow_restricted:
             return dom_hit or dow_hit
         return dom_hit and dow_hit
+
+    def _assert_reachable(self) -> None:
+        """Refuse a month and day-of-month pairing that no year can satisfy.
+
+        ``0 0 30 2 *`` parses -- every field is in range -- and then never
+        fires, which looks exactly like a schedule that is merely waiting.
+        A weekday restriction gives the date a second way to match, so this
+        only applies when day-of-month is the only selector.
+
+        Raises:
+            WorkflowDefinitionError: If no date can ever match.
+        """
+        if self._dow_restricted or not self._dom_restricted:
+            return
+        if any(
+            day <= _LONGEST_MONTH[month]
+            for month in self._months
+            for day in self._days_of_month
+        ):
+            return
+        msg = (
+            f"Cron expression {self.expression!r} can never occur: no day in "
+            f"{sorted(self._days_of_month)} exists in "
+            f"{sorted(self._months)}."
+        )
+        raise WorkflowDefinitionError(msg)
 
     def next_after(self, after: float) -> float | None:
         """Find the first occurrence strictly after a point in time.

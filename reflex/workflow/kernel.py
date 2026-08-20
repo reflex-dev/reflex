@@ -144,6 +144,19 @@ class WorkflowObserver:
             data: Event payload, such as ordinal, handler, attempt, or error.
         """
 
+    def on_schedule_skip(self, schedule_key: str, skipped: int) -> None:
+        """Handle scheduled occurrences that were dropped rather than run.
+
+        These have no run to carry history, so without this the only trace
+        of dropped work is a log line. A counter survives the process and can
+        be alerted on, which is what "we silently stopped doing the nightly
+        job for a week" needs.
+
+        Args:
+            schedule_key: The schedule that lost occurrences.
+            skipped: How many were dropped.
+        """
+
 
 class CompositeObserver(WorkflowObserver):
     """Fans one transition out to several observers.
@@ -187,6 +200,17 @@ class CompositeObserver(WorkflowObserver):
         for observer in self.observers:
             with contextlib.suppress(Exception):
                 observer.on_event(event_type, run_id, workflow_id, data)
+
+    def on_schedule_skip(self, schedule_key: str, skipped: int) -> None:
+        """Pass dropped occurrences to every observer.
+
+        Args:
+            schedule_key: The schedule that lost occurrences.
+            skipped: How many were dropped.
+        """
+        for observer in self.observers:
+            with contextlib.suppress(Exception):
+                observer.on_schedule_skip(schedule_key, skipped)
 
 
 def _branch_index(request_key: str | None) -> int | None:
@@ -245,6 +269,21 @@ class MetricsObserver(WorkflowObserver):
         """Start every counter at zero."""
         self.totals: dict[str, int] = {}
         self.by_workflow: dict[str, dict[str, int]] = {}
+
+    def on_schedule_skip(self, schedule_key: str, skipped: int) -> None:
+        """Count scheduled occurrences that were dropped rather than run.
+
+        Args:
+            schedule_key: The schedule that lost occurrences.
+            skipped: How many were dropped.
+        """
+        self.totals["schedule_occurrences_skipped"] = (
+            self.totals.get("schedule_occurrences_skipped", 0) + skipped
+        )
+        by_key = self.by_workflow.setdefault(schedule_key, {})
+        by_key["schedule_occurrences_skipped"] = (
+            by_key.get("schedule_occurrences_skipped", 0) + skipped
+        )
 
     def on_event(
         self,
@@ -1034,6 +1073,12 @@ class WorkflowKernel:
         run = await self._store.get_run(run_id)
         if run is None:
             return False
+        # An operator's result is run data like any other. Passing it through
+        # unchecked let Memory keep a live Decimal that no other store could
+        # hold, while SQLite raised a bare "not JSON serializable" from inside
+        # json.dumps -- the same input, three behaviours, none of them saying
+        # what to do about it.
+        result = to_run_data({"value": result})["value"] if result is not None else None
         event = (
             HistoryEventType.RUN_COMPLETED
             if status is RunStatus.COMPLETED
@@ -2339,7 +2384,18 @@ class WorkflowKernel:
                 # scheduled work reads as "covered" when it was not; the
                 # operator gets the count and the window, and can start the
                 # missed occurrences by hand if they matter.
+                dropped = (
+                    len(schedule.occurrences_between(cursor, now, limit=10_000))
+                    - MAX_SCHEDULE_CATCHUP
+                )
                 occurrences = occurrences[:MAX_SCHEDULE_CATCHUP]
+                # A log line is the only trace these otherwise leave, and they
+                # have no run to carry history. A counter survives the process
+                # and can be alerted on, which is what noticing "the nightly
+                # job silently stopped for a week" actually needs.
+                if self._observer is not None:
+                    with contextlib.suppress(Exception):
+                        self._observer.on_schedule_skip(key, max(dropped, 1))
                 console.warn(
                     f"Schedule {key} missed more than {MAX_SCHEDULE_CATCHUP} "
                     f"occurrences between {cursor:.0f} and {now:.0f}; catching "

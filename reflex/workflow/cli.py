@@ -124,11 +124,19 @@ async def _resolve_run_id(store: RunStore, run_id: str) -> str:
     """
     if await store.get_run(run_id) is not None:
         return run_id
-    matches = [
-        run.run_id
-        for run in await store.list_runs(RunQuery(limit=_PREFIX_SCAN_LIMIT))
-        if run.run_id.startswith(run_id)
-    ]
+    scanned = await store.list_runs(RunQuery(limit=_PREFIX_SCAN_LIMIT))
+    matches = [run.run_id for run in scanned if run.run_id.startswith(run_id)]
+    if len(scanned) >= _PREFIX_SCAN_LIMIT:
+        # The newest N runs, not all of them: a prefix that looks unique here
+        # may match another run just outside the window, and resolving it
+        # would cancel or complete the wrong one. There is no prefix query in
+        # the store protocol to do better, so say what is true.
+        console.error(
+            f"This database holds more than {_PREFIX_SCAN_LIMIT:,} runs, so "
+            f"{run_id!r} cannot be shown to match only one. Pass the full run "
+            "id (reflex workflows list prints them), or purge finished runs."
+        )
+        raise click.exceptions.Exit(1)
     if len(matches) == 1:
         return matches[0]
     if not matches:
