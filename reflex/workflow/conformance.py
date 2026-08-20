@@ -1398,6 +1398,26 @@ async def check_a_delivery_to_a_past_deadline_run_is_refused(store: RunStore) ->
     assert await store.deliver("run1", "sig:ping", "d1", {"v": 1}, NOW) == "expired"
 
 
+async def check_an_arrival_to_a_past_deadline_parent_is_refused(
+    store: RunStore,
+) -> None:
+    """A join that can never run must not be resolved by a late branch.
+
+    The parent is about to finalize TIMED_OUT and its join slot will be
+    tombstoned, so counting the arrival records a continuation that cannot
+    happen -- and the stores disagreed about it, which is worse than either
+    answer: the same fan-out resolved on one store and refused on another.
+    """
+    await store.admit(
+        make_run(next_ordinal=2, deadline=NOW - 1),
+        make_step(status=StepStatus.BLOCKED, wait_key="join:0", due_at=0.0),
+        _ADMITTED,
+    )
+    assert await store.record_arrival(
+        "run1", 0, {"status": "completed"}, "kid1", NOW
+    ) == ("expired")
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1437,6 +1457,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_force_finalize_records_a_result,
     check_schedule_cursors_persist,
     check_join_arrivals_count_once,
+    check_an_arrival_to_a_past_deadline_parent_is_refused,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,
     check_finalizing_a_parent_closes_its_branches,

@@ -201,6 +201,30 @@ class CronSchedule:
                     return occurrence.timestamp()
         return None
 
+    def count_between(self, after: float, until: float) -> int:
+        """Count occurrences in a half-open interval, without a ceiling.
+
+        ``occurrences_between`` bounds what it returns so a catch-up cannot
+        run away. Counting how many were missed is a different question, and
+        answering it with a bounded list undercounts a long outage exactly
+        when the number matters most.
+
+        Args:
+            after: Exclusive lower bound in epoch seconds.
+            until: Inclusive upper bound in epoch seconds.
+
+        Returns:
+            How many occurrences fall in the interval.
+        """
+        total = 0
+        moment = after
+        while True:
+            nxt = self.next_after(moment)
+            if nxt is None or nxt > until:
+                return total
+            total += 1
+            moment = nxt
+
     def occurrences_between(
         self, after: float, until: float, *, limit: int
     ) -> list[float]:

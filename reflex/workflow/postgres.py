@@ -1452,7 +1452,8 @@ class PostgresRunStore:
         wait_key = f"join:{ordinal}"
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
-                "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
+                "SELECT status, deadline FROM workflow_runs WHERE run_id = %s"
+                " FOR UPDATE",
                 (run_id,),
             )
             run_row = await cursor.fetchone()
@@ -1460,6 +1461,10 @@ class PostgresRunStore:
                 return "unknown_run"
             if run_row["status"] in _TERMINAL_RUNS:
                 return "run_terminal"
+            if run_row["deadline"] is not None and run_row["deadline"] <= now:
+                # The join can never run its continuation: the sweep is about
+                # to finalize this parent TIMED_OUT and tombstone the slot.
+                return "expired"
             cursor = await conn.execute(
                 "SELECT 1 FROM workflow_inbox"
                 " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
@@ -1939,11 +1944,17 @@ class PostgresRunStore:
         exhausted = {"reason": "recovery_budget_exhausted"}
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
+                # Lock the run rows, not the step rows. Every other write
+                # path takes the run first and the step second -- commit()
+                # does, through _lock_run -- so locking steps here inverted
+                # the order and deadlocked against any attempt committing
+                # late. Holding the run serializes its writers just as well,
+                # because that is the invariant those writers already obey.
                 "SELECT s.* FROM workflow_steps s"
                 " JOIN workflow_runs r ON r.run_id = s.run_id"
                 " WHERE s.status = %s AND s.lease_expires_at <= %s"
                 " AND NOT (r.status = ANY(%s))"
-                " ORDER BY s.run_id FOR UPDATE OF s SKIP LOCKED",
+                " ORDER BY s.run_id FOR UPDATE OF r SKIP LOCKED",
                 (StepStatus.CLAIMED.value, now, _TERMINAL_RUNS),
             )
             rows = await cursor.fetchall()

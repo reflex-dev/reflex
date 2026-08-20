@@ -1427,6 +1427,11 @@ class MemoryRunStore:
             return "unknown_run"
         if run.status in TERMINAL_RUN_STATUSES:
             return "run_terminal"
+        if run.deadline is not None and run.deadline <= now:
+            # The join can never run its continuation: the sweep is about to
+            # finalize this parent TIMED_OUT and tombstone the slot. Counting
+            # the arrival would record a step that cannot happen.
+            return "expired"
         seen = self._inbox.setdefault(run_id, {})
         key = (run_id, f"join:{ordinal}", dedupe_key)
         if key in seen:
@@ -3754,12 +3759,16 @@ class SqliteRunStore:
         terminal = tuple(status.value for status in TERMINAL_RUN_STATUSES)
         wait_key = f"join:{ordinal}"
         run_row = self._db.execute(
-            "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+            "SELECT status, deadline FROM workflow_runs WHERE run_id = ?", (run_id,)
         ).fetchone()
         if run_row is None:
             return "unknown_run"
         if run_row["status"] in terminal:
             return "run_terminal"
+        if run_row["deadline"] is not None and run_row["deadline"] <= now:
+            # The join can never run its continuation: the sweep is about to
+            # finalize this parent TIMED_OUT and tombstone the slot.
+            return "expired"
         seen = self._db.execute(
             "SELECT 1 FROM workflow_inbox"
             " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",
@@ -3852,7 +3861,8 @@ class SqliteRunStore:
                 self._db.execute("BEGIN IMMEDIATE")
                 try:
                     run_row = self._db.execute(
-                        "SELECT status FROM workflow_runs WHERE run_id = ?", (run_id,)
+                        "SELECT status, deadline FROM workflow_runs WHERE run_id = ?",
+                        (run_id,),
                     ).fetchone()
                     if run_row is None:
                         self._db.execute("ROLLBACK")
@@ -3860,6 +3870,11 @@ class SqliteRunStore:
                     if run_row["status"] in terminal:
                         self._db.execute("ROLLBACK")
                         return "run_terminal"
+                    if run_row["deadline"] is not None and run_row["deadline"] <= now:
+                        # The join can never run its continuation: the sweep
+                        # is about to finalize this parent TIMED_OUT.
+                        self._db.execute("ROLLBACK")
+                        return "expired"
                     seen = self._db.execute(
                         "SELECT 1 FROM workflow_inbox"
                         " WHERE run_id = ? AND wait_key = ? AND dedupe_key = ?",

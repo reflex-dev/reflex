@@ -193,3 +193,24 @@ async def test_store_time_still_advances_with_real_elapsed_time():
     second = kernel._clock()  # pyright: ignore[reportPrivateUsage]
     assert second > first
     assert second - first < 5.0, "advancing far faster than real time is also wrong"
+
+
+async def test_a_new_schedule_is_seeded_from_store_time_not_worker_time():
+    """A slow worker must not backfill a schedule from before the deploy.
+
+    The seed for a schedule this deployment has never seen is "now". Taken
+    from the worker's own clock at construction -- before the first sync --
+    "now" on a machine running two minutes slow is two minutes of history,
+    and the first sweep admits occurrences that were never meant to run.
+    """
+    store = _IndependentClockStore()
+    kernel = WorkflowKernel([], store)
+    assert kernel._started_at is None, "the seed must not be taken before syncing"  # pyright: ignore[reportPrivateUsage]
+
+    await kernel.recover()
+    assert kernel._started_at is not None  # pyright: ignore[reportPrivateUsage]
+    store_now = await store.epoch_time()
+    assert store_now is not None
+    assert abs(kernel._started_at - store_now) < 1.0, (  # pyright: ignore[reportPrivateUsage]
+        "the seed must sit on the store's clock, not the worker's"
+    )

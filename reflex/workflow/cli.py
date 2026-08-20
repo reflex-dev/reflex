@@ -122,11 +122,20 @@ async def _resolve_run_id(store: RunStore, run_id: str) -> str:
     Raises:
         Exit: If the prefix matches no run, or more than one.
     """
+    if not run_id.strip():
+        # `reflex workflows cancel "$RUN_ID"` with RUN_ID unset arrives here as
+        # an empty string, which prefixes every run. With exactly one run in
+        # the database that resolved and cancelled it, reporting success.
+        console.error("No run id given. Pass the run to act on.")
+        raise click.exceptions.Exit(1)
     if await store.get_run(run_id) is not None:
         return run_id
-    scanned = await store.list_runs(RunQuery(limit=_PREFIX_SCAN_LIMIT))
+    # One more than the cap: a page that comes back full means there may be
+    # further runs, while exactly the cap would otherwise read as truncated
+    # and disable prefixes for a database holding precisely that many.
+    scanned = await store.list_runs(RunQuery(limit=_PREFIX_SCAN_LIMIT + 1))
     matches = [run.run_id for run in scanned if run.run_id.startswith(run_id)]
-    if len(scanned) >= _PREFIX_SCAN_LIMIT:
+    if len(scanned) > _PREFIX_SCAN_LIMIT:
         # The newest N runs, not all of them: a prefix that looks unique here
         # may match another run just outside the window, and resolving it
         # would cancel or complete the wrong one. There is no prefix query in

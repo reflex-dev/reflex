@@ -161,3 +161,88 @@ def test_the_default_observer_ignores_dropped_occurrences_quietly():
     from reflex.workflow.kernel import WorkflowObserver
 
     assert WorkflowObserver().on_schedule_skip("nightly", 1) is None
+
+
+@pytest.mark.parametrize("empty", ["", "   "])
+def test_an_empty_run_id_is_refused_before_it_matches_everything(empty, tmp_path):
+    """`cancel "$RUN_ID"` with the variable unset must not cancel anything.
+
+    An empty string is a prefix of every run. With exactly one run in the
+    database it resolved to that run, cancelled it, and reported success --
+    the failure mode of an unset shell variable should not be "cancels
+    production".
+
+    Args:
+        empty: The blank argument a shell expands to.
+        tmp_path: Temporary directory for the database.
+    """
+    import asyncio
+
+    from click.exceptions import Exit
+
+    from reflex.workflow.cli import _resolve_run_id
+
+    store = SqliteRunStore(tmp_path / "solo.db")
+
+    async def check() -> None:
+        """Admit one run, then resolve a blank id against it.
+
+        Raises:
+            AssertionError: If the blank id resolved to the run.
+        """
+        await store.admit(
+            _run("only1"), _step("only1"), ((HistoryEventType.RUN_ADMITTED, {}),)
+        )
+        try:
+            resolved = await _resolve_run_id(store, empty)
+        except Exit:
+            return
+        msg = f"blank id resolved to {resolved!r}"
+        raise AssertionError(msg)
+
+    asyncio.run(check())
+    store.close()
+
+
+async def test_a_forced_failure_reason_faces_strict_serialization(tmp_path):
+    """The error payload is stored beside the result and read back the same.
+
+    Args:
+        tmp_path: Temporary directory for the database.
+    """
+    store = SqliteRunStore(tmp_path / "fail.db")
+    await store.admit(_run(), _step(), ((HistoryEventType.RUN_ADMITTED, {}),))
+    kernel = WorkflowKernel([], store)
+    with pytest.raises(TypeError, match="Decimal is not valid run data"):
+        await kernel.force_finalize(
+            "r1",
+            status=RunStatus.FAILED,
+            error={"reason": "manual", "amount": decimal.Decimal("1.10")},
+        )
+    store.close()
+
+
+def test_missed_occurrences_are_counted_without_a_ceiling():
+    """A long outage must not be undercounted by a sampling limit.
+
+    The number is what an alert fires on, and "10,000" for an outage that
+    dropped far more is the kind of wrong that reads as precise.
+    """
+    import datetime as dt
+
+    schedule = CronSchedule("* * * * *")
+    start = dt.datetime(2026, 1, 1, tzinfo=dt.UTC).timestamp()
+    # Eleven days of minutes is more than any bounded query returned.
+    end = start + 11 * 24 * 3600
+    assert schedule.count_between(start, end) == 11 * 24 * 60
+
+
+def test_counting_agrees_with_listing_on_a_small_window():
+    """The unbounded count and the bounded list must not disagree."""
+    import datetime as dt
+
+    schedule = CronSchedule("0 * * * *")
+    start = dt.datetime(2026, 1, 1, tzinfo=dt.UTC).timestamp()
+    end = start + 5 * 3600
+    listed = schedule.occurrences_between(start, end, limit=100)
+    assert schedule.count_between(start, end) == len(listed)

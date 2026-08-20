@@ -542,7 +542,11 @@ class WorkflowKernel:
         # previous worker's cursor, and only a schedule this deployment has
         # never seen starts from now (never backfilling its whole history).
         self._schedule_cursor: dict[str, float] = {}
-        self._started_at = clock()
+        # Filled on first use rather than here: the clock is not synced with
+        # the store until the first recovery pass, and a worker whose machine
+        # runs slow would otherwise seed every new schedule behind store time
+        # and backfill occurrences from before this deployment existed.
+        self._started_at: float | None = None
         self._field_adapters: dict[tuple[str, str], TypeAdapter] = {}
         self._inflight: dict[str, asyncio.Task] = {}
         self._draining = False
@@ -1079,6 +1083,11 @@ class WorkflowKernel:
         # json.dumps -- the same input, three behaviours, none of them saying
         # what to do about it.
         result = to_run_data({"value": result})["value"] if result is not None else None
+        # The error payload is stored beside the result and read back the same
+        # way, so it faces the same rules: an operator reason carrying a
+        # Decimal or bytes would fail at the store, or worse, only on some
+        # stores.
+        error = to_run_data(error) if error is not None else None
         event = (
             HistoryEventType.RUN_COMPLETED
             if status is RunStatus.COMPLETED
@@ -2374,6 +2383,12 @@ class WorkflowKernel:
                 # skip the downtime: an in-memory cursor seeded at startup
                 # treats every missed occurrence as already fired.
                 stored = await self._store.read_schedule_cursor(key)
+                if self._started_at is None:
+                    # Recovery sets this at startup, right after the clock is
+                    # synced, which is the value that matters. Reaching here
+                    # means a kernel that swept without ever recovering; "now"
+                    # is still the right seed, just an unsynced one.
+                    self._started_at = self._clock()
                 cursor = stored if stored is not None else self._started_at
                 self._schedule_cursor[key] = cursor
             occurrences = schedule.occurrences_between(
@@ -2384,10 +2399,10 @@ class WorkflowKernel:
                 # scheduled work reads as "covered" when it was not; the
                 # operator gets the count and the window, and can start the
                 # missed occurrences by hand if they matter.
-                dropped = (
-                    len(schedule.occurrences_between(cursor, now, limit=10_000))
-                    - MAX_SCHEDULE_CATCHUP
-                )
+                # Counted rather than sampled: a second bounded query would
+                # undercount a long outage exactly when the number matters
+                # most, and the count is what an alert fires on.
+                dropped = schedule.count_between(cursor, now) - MAX_SCHEDULE_CATCHUP
                 occurrences = occurrences[:MAX_SCHEDULE_CATCHUP]
                 # A log line is the only trace these otherwise leave, and they
                 # have no run to carry history. A counter survives the process
@@ -2954,6 +2969,13 @@ class WorkflowKernel:
             The number of steps recovered.
         """
         await self._sync_store_clock()
+        if self._started_at is None:
+            # Now, and not a moment before: this is the seed for a schedule
+            # this deployment has never seen, and taking it from an unsynced
+            # clock on a slow machine backfills occurrences from before the
+            # deployment existed. Recovery runs before the first sweep, so
+            # the seed is still "when this worker started".
+            self._started_at = self._clock()
         await self._renew_leases()
         now = self._clock()
         self._next_recovery_at = now + self._recovery_interval
