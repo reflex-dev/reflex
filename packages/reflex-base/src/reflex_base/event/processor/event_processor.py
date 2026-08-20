@@ -393,6 +393,12 @@ class EventProcessor:
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
+        if event.router_data:
+            # The view this event was sent from, bound before the entry exists
+            # so every reader of entry.ctx agrees: the handler, the task
+            # metadata the exception path reads on 3.10/3.11, and any event the
+            # handler yields, since those fork this context.
+            ev_ctx = dataclasses.replace(ev_ctx, router_data=event.router_data)
         queue = self._ensure_queue_task()
         txid = ev_ctx.txid
         parent_future = (
@@ -571,14 +577,8 @@ class EventProcessor:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
         """
-        # Set up the event context for this task. A client-sent event carries
-        # the view it was sent from; bind it here, before the handler runs, so
-        # every event the handler yields inherits it through fork() rather than
-        # resolving against whatever the root state happens to hold by then.
-        ctx = entry.ctx
-        if entry.event.router_data:
-            ctx = dataclasses.replace(ctx, router_data=entry.event.router_data)
-        EventContext.set(ctx)
+        # Set up the event context for this task.
+        EventContext.set(entry.ctx)
         await self._execute_event(entry=entry, registered_handler=registered_handler)
 
     def _create_event_task(

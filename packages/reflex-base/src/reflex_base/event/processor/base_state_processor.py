@@ -340,12 +340,12 @@ class BaseStateEventProcessor(EventProcessor):
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
         """
-        # The context, not the event: a chained event carries no routing data
-        # of its own and inherits the producing view's through fork(), so the
-        # context is the only place that knows which view this handler is
-        # running under.
-        ctx = EventContext.get()
+        ctx = entry.ctx
         event = entry.event
+        # The context, not the event: a chained event carries no routing data of
+        # its own and inherits the producing view's through fork(), so the
+        # context is the only place that knows which view this handler runs
+        # under.
         router_data = ctx.router_data
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
