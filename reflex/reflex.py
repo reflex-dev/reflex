@@ -997,6 +997,7 @@ def deploy(
     if interactive:
         dependency.check_requirements()
 
+    _refuse_workflow_only_deploy()
     prerequisites.assert_in_reflex_dir()
 
     # Check if we are set up.
@@ -1042,6 +1043,43 @@ def deploy(
         deployment_description=description,
         **({"config_path": config_path} if config_path is not None else {}),
     )
+
+
+def _refuse_workflow_only_deploy() -> None:
+    """Say something true when a workflow-only project reaches deploy.
+
+    ``reflex workflows init`` writes one module and no ``rxconfig.py`` on
+    purpose -- there is no frontend to configure. Deploy's generic complaint
+    for a missing config tells the reader to run ``reflex init`` and start a
+    new project, which for this reader means scaffolding the web app they
+    deliberately did not ask for. Hosting cannot yet deploy a project with no
+    frontend, and saying so is better than sending someone down that path.
+
+    Raises:
+        Exit: When the directory holds workflows but no Reflex app.
+    """
+    from reflex.constants import Config
+
+    if Path(Config.FILE).exists():
+        return
+    holding = [
+        candidate.name
+        for candidate in sorted(Path.cwd().glob("*.py"))
+        if "__workflow__" in candidate.read_text(errors="ignore")
+    ]
+    if not holding:
+        return
+    console.error(
+        f"{', '.join(holding)} define workflows, but this is not a Reflex app "
+        f"({Config.FILE} is absent) and hosting cannot deploy a project with "
+        "no frontend yet. Run the workers yourself against your own "
+        "infrastructure:\n"
+        "    reflex workflows worker <module>\n"
+        "pointing REFLEX_WORKFLOW_DATABASE at a Postgres you control. To "
+        "deploy this as a full Reflex app instead, add an app and an "
+        f"{Config.FILE}."
+    )
+    raise click.exceptions.Exit(1)
 
 
 @cli.command()
