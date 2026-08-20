@@ -495,16 +495,40 @@ def validate_token(token: str) -> dict[str, Any]:
 def _read_hosting_config() -> dict[str, Any]:
     """Read the hosting config file.
 
+    A config that exists but cannot be read is reported rather than treated as
+    empty, so callers do not overwrite entries they were unable to see.
+
     Returns:
-        The stored config, or an empty dict if it is missing or unreadable.
+        The stored config, or an empty dict if the file does not exist.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
 
     """
     try:
         with constants.Hosting.HOSTING_JSON.open() as config_file:
             return json.load(config_file)
-    except (OSError, ValueError) as ex:
-        logger.debug(f"Unable to read {constants.Hosting.HOSTING_JSON} due to: {ex}")
+    except FileNotFoundError:
         return {}
+
+
+def stored_access_token() -> str:
+    """Read the access token held in the config file.
+
+    Unlike ``get_existing_access_token`` this ignores ``REFLEX_ACCESS_TOKEN``
+    and reports read failures, so callers can tell "no token stored" apart from
+    "cannot tell what is stored".
+
+    Returns:
+        The stored token, or an empty string if the config holds none.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
+
+    """
+    return _read_hosting_config().get("access_token", "")
 
 
 def _write_hosting_config(hosting_config: dict[str, Any]):
@@ -559,7 +583,15 @@ def save_token_to_config(token: str):
 
     """
     try:
-        hosting_config = _read_hosting_config()
+        try:
+            hosting_config = _read_hosting_config()
+        except (OSError, ValueError) as ex:
+            # An unreadable config must not block re-authenticating; the token
+            # is what makes the file useful, so start over from an empty one.
+            logger.debug(
+                f"Discarding unreadable {constants.Hosting.HOSTING_JSON}: {ex}"
+            )
+            hosting_config = {}
         hosting_config["access_token"] = token
         _write_hosting_config(hosting_config)
     except Exception as ex:

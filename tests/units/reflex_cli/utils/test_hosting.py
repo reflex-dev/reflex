@@ -42,6 +42,7 @@ from reflex_cli.utils.hosting import (
     set_app_full_deploy,
     set_app_provider,
     set_instance_bounds,
+    stored_access_token,
     submit_security_review,
     update_deployment_description,
     validate_token,
@@ -154,6 +155,48 @@ def test_delete_token_from_config_keeps_the_config_when_the_write_fails(
     assert list(constants.Hosting.HOSTING_JSON.parent.iterdir()) == [
         constants.Hosting.HOSTING_JSON
     ]
+
+
+def test_delete_token_from_config_keeps_an_unreadable_config(
+    mocker: MockerFixture,
+):
+    """A config that cannot be parsed is left alone rather than replaced.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    malformed = '{"access_token": "good_token", "project": "p1"'
+    constants.Hosting.HOSTING_JSON.write_text(malformed)
+
+    delete_token_from_config()
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == malformed
+
+
+def test_save_token_to_config_recovers_from_an_unreadable_config():
+    """Re-authenticating still works when the config is malformed."""
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "good_token"')
+
+    save_token_to_config("new_token")
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "new_token"
+    }
+
+
+def test_stored_access_token_distinguishes_absent_from_unreadable():
+    """A missing config reads as no token; a malformed one is an error."""
+    assert stored_access_token() == ""
+
+    constants.Hosting.HOSTING_JSON.write_text('{"project": "p1"}')
+    assert stored_access_token() == ""
+
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "tok"}')
+    assert stored_access_token() == "tok"
+
+    constants.Hosting.HOSTING_JSON.write_text("{not json")
+    with pytest.raises(ValueError):
+        stored_access_token()
 
 
 def test_delete_token_from_config_removes_the_legacy_file():

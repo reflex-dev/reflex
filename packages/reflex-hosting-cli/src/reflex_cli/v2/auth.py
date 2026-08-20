@@ -184,10 +184,18 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
         return
 
     hosting.delete_token_from_config()
-    # delete_token_from_config swallows filesystem errors, so confirm the
-    # token is really gone rather than reporting an unverified success.
-    _, stored_source = hosting.get_existing_access_token_with_source()
-    if stored_source is hosting.TokenSource.CONFIG:
+    # delete_token_from_config swallows filesystem errors, so confirm the token
+    # is really gone rather than reporting an unverified success. A config that
+    # cannot be read is not evidence of removal either.
+    try:
+        remaining = hosting.stored_access_token()
+    except (OSError, ValueError) as err:
+        logger.error(
+            f"Unable to confirm the token was removed from "
+            f"{constants.Hosting.HOSTING_JSON}: {err}"
+        )
+        raise click.exceptions.Exit(1) from err
+    if remaining:
         logger.error(
             f"Unable to remove the access token from {constants.Hosting.HOSTING_JSON}."
         )

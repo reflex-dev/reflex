@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
 from reflex_base.utils.log import SUCCESS
+from reflex_cli import constants
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.v2.auth import token_fingerprint
@@ -161,12 +162,14 @@ def test_token_print_writes_the_raw_token_to_stdout(mocker: MockFixture):
     assert result.output == long_token + "\n"
 
 
-def test_token_print_keeps_stdout_free_of_diagnostics(mocker: MockFixture):
-    """Debug logging must not land inside `$(reflex cloud token --print)`."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("quiet_token", hosting.TokenSource.CONFIG),
-    )
+def test_token_print_keeps_stdout_free_of_diagnostics():
+    """Debug logging must not land inside `$(reflex cloud token --print)`.
+
+    The real lookup is exercised rather than mocked: the debug records that
+    would contaminate stdout come from inside the lookup helper, so a mock
+    would emit nothing and the test would pass even without the fix.
+    """
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "quiet_token"}')
 
     result = runner.invoke(hosting_cli, ["token", "--print", "--loglevel", "debug"])
 
@@ -254,10 +257,7 @@ def test_token_clear_removes_the_token(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):
     delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("", hosting.TokenSource.NONE),
-    )
+    mocker.patch("reflex_cli.utils.hosting.stored_access_token", return_value="")
 
     result = runner.invoke(hosting_cli, ["token", "--clear"])
 
@@ -283,6 +283,25 @@ def test_token_clear_warns_when_the_env_var_still_applies(
     )
 
 
+def test_token_clear_reports_an_unreadable_config(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A config that cannot be read is not evidence the token was removed."""
+    mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    mocker.patch(
+        "reflex_cli.utils.hosting.stored_access_token",
+        side_effect=OSError("permission denied"),
+    )
+
+    result = runner.invoke(hosting_cli, ["token", "--clear"])
+
+    assert result.exit_code == 1
+    assert any(
+        "Unable to confirm" in message for message in _messages(caplog, logging.ERROR)
+    )
+    assert not _messages(caplog, SUCCESS)
+
+
 def test_token_clear_reports_a_failed_removal(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):
@@ -291,8 +310,7 @@ def test_token_clear_reports_a_failed_removal(
     # still be in the config file when it returns.
     mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("still_here", hosting.TokenSource.CONFIG),
+        "reflex_cli.utils.hosting.stored_access_token", return_value="still_here"
     )
 
     result = runner.invoke(hosting_cli, ["token", "--clear"])
