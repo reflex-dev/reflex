@@ -67,6 +67,35 @@ def _authorized(request: Request, token: str) -> bool:
     return hmac.compare_digest(presented, token)
 
 
+def _mistyped_args(handler: Any, args: dict[str, Any]) -> list[str]:
+    """Check supplied arguments against the handler's declared types.
+
+    Args:
+        handler: The resolved handler definition.
+        args: The caller-supplied arguments.
+
+    Returns:
+        One message per argument that cannot validate, empty when all fit.
+    """
+    from pydantic import TypeAdapter, ValidationError
+
+    problems: list[str] = []
+    for name, value in args.items():
+        hint = handler.type_hints.get(name)
+        if hint is None:
+            continue
+        try:
+            TypeAdapter(hint).validate_python(value)
+        except ValidationError:
+            problems.append(
+                f"{name!r} does not validate as {getattr(hint, '__name__', hint)}"
+            )
+        except Exception:
+            # An exotic hint pydantic cannot adapt is not the caller's fault.
+            pass
+    return problems
+
+
 def start_endpoint(
     runtime: WorkflowRuntime, token: str
 ) -> Callable[[Request], Coroutine[Any, Any, JSONResponse]]:
@@ -141,6 +170,15 @@ def start_endpoint(
                 {"error": "args must be a JSON object"}, status_code=400
             )
         args = raw_args or {}
+        mistyped = _mistyped_args(handler, args)
+        if mistyped:
+            # Admitting a payload the handler's signature refuses creates a
+            # run whose first attempt can only raise; the caller gets a 202
+            # and a poison run instead of the 400 that names their bug.
+            return JSONResponse(
+                {"error": f"arguments do not match the handler: {mistyped}"},
+                status_code=400,
+            )
         missing = sorted(unbound_params(handler, set(args)))
         if missing:
             # Admitting this would create a run that cannot possibly run: the

@@ -8,6 +8,7 @@ the workflow runtime uses this strict variant that raises instead.
 
 from __future__ import annotations
 
+import decimal
 import json
 from typing import Any
 
@@ -26,6 +27,26 @@ def _strict_default(value: Any) -> Any:
     Raises:
         TypeError: If no serializer is registered for the value's type.
     """
+    if isinstance(value, decimal.Decimal):
+        # The serializer registry would hand back a float, silently losing
+        # precision on exactly the type people reach for to avoid losing
+        # precision -- Decimal("10.10") replaying as 10.1 in a refund handler
+        # is a money bug with no error anywhere. Refusing names the fix.
+        msg = (
+            "Decimal is not valid run data: it would be stored as a float and "
+            "lose precision silently. Store str(value) and reconstruct with "
+            "Decimal(...), or keep integer minor units (cents)."
+        )
+        raise TypeError(msg)
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        # The registry turns these into a list of ints, which nothing ever
+        # turns back.
+        msg = (
+            f"{type(value).__name__} is not valid run data: it would be "
+            "stored as a list of integers. Encode explicitly, e.g. "
+            "base64.b64encode(value).decode()."
+        )
+        raise TypeError(msg)
     serialized = serializers.serialize(value)
     if serialized is None:
         msg = (

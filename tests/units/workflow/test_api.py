@@ -255,3 +255,19 @@ def test_a_falsey_non_object_args_is_refused(client):
     response = client.post(START_ROUTE, content=body, headers=_auth())
     assert response.status_code == 400, response.text
     assert "JSON object" in response.json()["error"]
+
+
+def test_a_mistyped_argument_is_refused_at_the_boundary(client):
+    """A payload the signature refuses is the caller's 400, not a poison run.
+
+    Args:
+        client: The test client.
+    """
+    body = json.dumps({
+        "workflow": "api.orders",
+        "handler": "place",
+        "args": {"order": {"nested": "object"}},
+    })
+    response = client.post(START_ROUTE, content=body, headers=_auth())
+    assert response.status_code == 400, response.text
+    assert "'order'" in response.json()["error"]

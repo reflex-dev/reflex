@@ -69,3 +69,24 @@ def test_an_unserializable_object_is_refused():
     """A value no serializer handles fails here, not at the store."""
     with pytest.raises(TypeError):
         to_run_data({"handle": object()})
+
+
+def test_decimal_is_refused_rather_than_silently_truncated():
+    """Decimal("10.10") must never replay as 10.1.
+
+    The serializer registry hands back a float, losing precision on exactly
+    the type people reach for to avoid losing precision -- a silent money bug.
+    Refusing at record time names the fix.
+    """
+    from decimal import Decimal
+
+    with pytest.raises(TypeError, match="Decimal"):
+        to_run_data({"amount": Decimal("10.10")})
+
+
+def test_bytes_are_refused_rather_than_becoming_integer_lists():
+    """Raw bytes stored as [114, 97, 119] never come back as bytes."""
+    with pytest.raises(TypeError, match="base64"):
+        to_run_data({"blob": b"raw"})
+    with pytest.raises(TypeError, match="bytearray"):
+        to_run_data({"blob": bytearray(b"raw")})
