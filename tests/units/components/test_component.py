@@ -2370,6 +2370,23 @@ class _HashDefaults:
     a: int = 1
 
 
+@pytest.fixture
+def encoding_caches():
+    """Isolate the module-level encoder tables from the rest of the suite.
+
+    Yields:
+        None, once the encoding caches are empty.
+    """
+    encoders = component._ENCODERS.copy()
+    encoded = component._ENCODED_DATACLASSES.copy()
+    component._ENCODED_DATACLASSES.clear()
+    yield
+    component._ENCODERS.clear()
+    component._ENCODERS.update(encoders)
+    component._ENCODED_DATACLASSES.clear()
+    component._ENCODED_DATACLASSES.update(encoded)
+
+
 def test_deterministic_hash_distinguishes_values():
     """Structurally different values must not collide."""
     values = [
@@ -2427,14 +2444,41 @@ def test_deterministic_hash_vars_include_var_data():
     assert _deterministic_hash(plain) != _deterministic_hash(with_data)
 
 
-def test_deterministic_hash_rejects_unsupported_values():
+def test_deterministic_hash_rejects_unsupported_values(encoding_caches):
     """Unsupported values raise, and the failure is not cached for other types."""
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="Cannot hash value"):
         _deterministic_hash(object())
-    # Dataclass types are supported (their fields are read off the class).
+    # Dataclass types are supported (their fields are read off the class), and
+    # must not install an encoder under their shared metaclass.
     assert _deterministic_hash(_HashDefaults) == _deterministic_hash(_HashDefaults)
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="Cannot hash value"):
         _deterministic_hash(_HashStr)
+
+
+def test_deterministic_hash_encodes_dataclass_components_as_components():
+    """Components inheriting a dataclass encode their render, not their fields."""
+    # rx.text inherits MarkdownComponentMap, a dataclass with no encodable
+    # fields, so a dataclass-first branch order collapses every instance to the
+    # same bytes.
+    assert _deterministic_hash(rx.text("a")) != _deterministic_hash(rx.text("b"))
+
+
+def test_deterministic_hash_handles_dataclasses_without_params(encoding_caches):
+    """Runtime-synthesized dataclass subclasses hash like the class they copy."""
+    # MutableProxy builds classes exactly this way: dataclasses.is_dataclass is
+    # true, but __dataclass_params__ never gets copied along.
+    synthesized = type(
+        "_HashSynthesized",
+        (),
+        {
+            "__dataclass_fields__": _HashFrozenScalars.__dataclass_fields__,
+            "a": 1,
+            "b": "x",
+        },
+    )
+    assert _deterministic_hash(synthesized()) == _deterministic_hash(
+        _HashFrozenScalars(a=1)
+    )
 
 
 def test_component_hash_includes_lifecycle_hooks():
@@ -2465,10 +2509,11 @@ class _HashMutable:
     a: int
 
 
-def test_deterministic_hash_reuses_frozen_dataclass_encoding(monkeypatch):
+def test_deterministic_hash_reuses_frozen_dataclass_encoding(
+    monkeypatch, encoding_caches
+):
     """A frozen scalar dataclass is encoded once and then reused by identity."""
     shared = ImportVar(tag="Shared")
-    component._ENCODED_DATACLASSES.clear()
 
     digest = _deterministic_hash(shared)
     assert id(shared) in component._ENCODED_DATACLASSES
@@ -2489,10 +2534,9 @@ def test_deterministic_hash_matches_uncached_encoding():
     assert _deterministic_hash([equal, shared]) == _deterministic_hash([shared, shared])
 
 
-def test_encoding_cache_evicts_only_the_oldest_entry(monkeypatch):
+def test_encoding_cache_evicts_only_the_oldest_entry(monkeypatch, encoding_caches):
     """Passing the cap drops the oldest entry, not the whole working set."""
     monkeypatch.setattr(component, "_MAX_ENCODED_DATACLASSES", 2)
-    component._ENCODED_DATACLASSES.clear()
     values = [ImportVar(tag=f"Evict{index}") for index in range(3)]
     digests = [_deterministic_hash(value) for value in values]
 
@@ -2503,9 +2547,8 @@ def test_encoding_cache_evicts_only_the_oldest_entry(monkeypatch):
     assert [_deterministic_hash(value) for value in values] == digests
 
 
-def test_encoding_cache_skips_oversized_encodings():
+def test_encoding_cache_skips_oversized_encodings(encoding_caches):
     """Outsized encodings are not retained, keeping the cache's memory bounded."""
-    component._ENCODED_DATACLASSES.clear()
     oversized = ImportVar(tag="x" * (component._MAX_ENCODED_DATACLASS_SIZE + 1))
 
     digest = _deterministic_hash(oversized)
@@ -2534,7 +2577,9 @@ def test_deterministic_hash_tracks_mutation_of_uncacheable_dataclasses():
     assert _deterministic_hash(container) != before
 
 
-def test_deterministic_hash_survives_encoding_cache_eviction(monkeypatch):
+def test_deterministic_hash_survives_encoding_cache_eviction(
+    monkeypatch, encoding_caches
+):
     """Evicting the encoding cache must not change any digest."""
     values = [ImportVar(tag=f"Evict{index}") for index in range(32)]
     expected = [_deterministic_hash(value) for value in values]

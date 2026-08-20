@@ -717,8 +717,10 @@ _ENCODERS: dict[type, Callable[[bytearray, Any], None]] = {
 
 
 def _resolve_encoder(value: object) -> Callable[[bytearray, Any], None] | None:
-    # Branch order decides the encoding of values matching several branches
-    # (e.g. an IntEnum encodes as a number, not as a dataclass).
+    # Branch order decides the encoding of values matching several branches: an
+    # IntEnum encodes as a number rather than a dataclass, and a component that
+    # also inherits a dataclass (MarkdownComponentMap) encodes as a component
+    # rather than as its own, usually empty, field list.
     if isinstance(value, (int, float, enum.Enum)):
         return _encode_number
     if isinstance(value, str):
@@ -729,12 +731,17 @@ def _resolve_encoder(value: object) -> Callable[[bytearray, Any], None] | None:
         return _encode_sequence
     if isinstance(value, Var):
         return _encode_var
-    if dataclasses.is_dataclass(value):
-        if not isinstance(value, type) and type(value).__dataclass_params__.frozen:  # pyright: ignore[reportAttributeAccessIssue]
-            return _encode_frozen_dataclass
-        return _encode_dataclass
     if isinstance(value, BaseComponent):
         return _encode_component
+    if dataclasses.is_dataclass(value):
+        if not isinstance(value, type):
+            # is_dataclass only tests for __dataclass_fields__, which classes
+            # synthesized at runtime (MutableProxy) copy over without the
+            # decorator's params.
+            params = getattr(type(value), "__dataclass_params__", None)
+            if params is not None and params.frozen:
+                return _encode_frozen_dataclass
+        return _encode_dataclass
     return None
 
 
@@ -778,7 +785,10 @@ def _encode_deterministic(buf: bytearray, value: object) -> None:
                 "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
             )
             raise TypeError(msg)
-        _ENCODERS[value_type] = encoder
+        if not isinstance(value, type):
+            # value_type is the metaclass when the value is itself a class, so
+            # memoizing would route every other class through this encoder.
+            _ENCODERS[value_type] = encoder
     encoder(buf, value)
 
 
