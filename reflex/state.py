@@ -1926,10 +1926,16 @@ class BaseState(EvenMoreBasicBaseState):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
-        # Recursively find the substate deltas.
+        # Recursively find the substate deltas. A dirty name without an
+        # attached substate is legitimate under selective cleaning: a prior
+        # flush preserved another writer's dirt, the tree was then fetched
+        # partially (redis fetches the handler's slice), and the dirt lives in
+        # the unfetched substate's own record until an event fetches it. It
+        # cannot contribute to this delta, so skip it, as _clean always has.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
-            delta.update(substates[substate].get_delta())
+            if (substate_instance := substates.get(substate)) is not None:
+                delta.update(substate_instance.get_delta())
 
         # Return the delta.
         return delta
