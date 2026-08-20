@@ -393,6 +393,21 @@ class ModeComp(Component):
     assert "mode: str =" not in result
 
 
+def test_stub_class_field_default_kept_as_ellipsis():
+    source = """
+from reflex_base.components.props import NoExtrasAllowedProps
+
+class SomeProps(NoExtrasAllowedProps):
+    required: str
+    optional: str | None = None
+"""
+    result = _generate_stub_from_source(source)
+    # A class field's default decides whether it is required in the synthesized
+    # __init__, so its presence has to survive into the stub as `...`.
+    assert "required: str\n" in result
+    assert "optional: str | None = ..." in result
+
+
 def test_stub_classvar_preserved():
     source = """
 from typing import ClassVar

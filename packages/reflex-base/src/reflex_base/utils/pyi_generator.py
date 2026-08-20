@@ -1388,8 +1388,13 @@ class StubGenerator(ast.NodeTransformer):
         if self._current_class_is_component():
             # Remove annotated assignments in Component classes (props)
             return None
-        # Blank out assignments in type stubs.
-        node.value = None
+        # Blank out assignments in type stubs. In a class body keep `...` when there
+        # was one: for dataclass-like classes (e.g. PropsBase) a default is what
+        # makes the field optional in the synthesized __init__.
+        if self.current_class is not None and node.value is not None:
+            node.value = ast.Constant(value=...)
+        else:
+            node.value = None
         return node
 
 

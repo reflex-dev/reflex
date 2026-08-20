@@ -81,28 +81,28 @@ class ToastProps(NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
-    title: str | Var | None
+    title: str | Var | None = None
 
     # Toast's description, renders underneath the title.
-    description: str | Var | None
+    description: str | Var | None = None
 
     # Whether to show the close button.
-    close_button: bool | None
+    close_button: bool | None = None
 
     # Dark toast in light mode and vice versa.
-    invert: bool | None
+    invert: bool | None = None
 
     # Control the sensitivity of the toast for screen readers
-    important: bool | None
+    important: bool | None = None
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: int | None
+    duration: int | None = None
 
     # Position of the toast.
-    position: LiteralPosition | None
+    position: LiteralPosition | None = None
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: bool | None
+    dismissible: bool | None = None
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
@@ -110,34 +110,34 @@ class ToastProps(NoExtrasAllowedProps):
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    action: ToastAction | None
+    action: ToastAction | None = None
 
     # Renders a secondary button, clicking it will close the toast.
-    cancel: ToastAction | None
+    cancel: ToastAction | None = None
 
     # Custom id for the toast.
-    id: str | Var | None
+    id: str | Var | None = None
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: bool | None
+    unstyled: bool | None = None
 
     # Custom style for the toast.
-    style: Style | None
+    style: Style | None = None
 
     # Class name for the toast.
-    class_name: str | None
+    class_name: str | None = None
 
     # XXX: These still do not seem to work Custom style for the toast primary button.
-    action_button_styles: Style | None
+    action_button_styles: Style | None = None
 
     # Custom style for the toast secondary button.
-    cancel_button_styles: Style | None
+    cancel_button_styles: Style | None = None
 
     # The function gets called when either the close button is clicked, or the toast is swiped.
-    on_dismiss: Any | None
+    on_dismiss: Any | None = None
 
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
-    on_auto_close: Any | None
+    on_auto_close: Any | None = None
 
     def dict(self, *args: Any, **kwargs: Any) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.

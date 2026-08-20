@@ -1111,7 +1111,7 @@ class App(MiddlewareMixin, LifespanMixin):
             state = self._state or State
             state.setup_dynamic_args(prepared.route_args)
 
-        self._load_events[page.route] = (
+        self._load_events[page.route] = (  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/1824
             (page.on_load if isinstance(page.on_load, list) else [page.on_load])
             if page.on_load is not None
             else []

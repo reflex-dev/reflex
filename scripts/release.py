@@ -69,7 +69,7 @@ from typing import NoReturn
 from packaging.version import InvalidVersion, Version
 
 try:
-    import tomllib
+    import tomllib  # ty:ignore[unresolved-import]
 except ImportError:
     import tomli as tomllib  # ty:ignore[unresolved-import]
 
