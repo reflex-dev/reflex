@@ -1353,7 +1353,9 @@ def minify_list(output_json: bool):
 def minify_lookup(output_json: bool, minified_path: str):
     """Lookup a state by its minified path (e.g., 'a.bU').
 
-    Walks the state tree from the root to resolve each segment.
+    Walks the state tree from the root to resolve each segment. The root
+    state's own name is optional, so both 'a.bU' and the full name seen in
+    the frontend ('reflex___state____state.a.bU') resolve to the same state.
     """
     from reflex.minify import collect_all_states, get_state_full_path
     from reflex.state import State
@@ -1368,15 +1370,23 @@ def minify_lookup(output_json: bool, minified_path: str):
         path_to_id[path] = entry["id"] if entry is not None else None
 
     parts = minified_path.split(".")
+    # The framework root state is never minified, so it never contributes a
+    # minified segment. Accept a path copied verbatim from the frontend, which
+    # still carries the root's default name as its first segment.
+    if parts[0] == State.get_name():
+        parts = parts[1:]
+
     result_parts = []
     current = State
 
-    for i, part in enumerate(parts):
-        # Find the state whose minified id matches ``part``: the root state
-        # for the first segment, otherwise a child of the previous match.
-        candidates = [current] if i == 0 else current.get_substates()
+    for part in parts:
+        # Find the child of the previous match whose minified id is ``part``.
         found = next(
-            (c for c in candidates if path_to_id.get(get_state_full_path(c)) == part),
+            (
+                c
+                for c in current.get_substates()
+                if path_to_id.get(get_state_full_path(c)) == part
+            ),
             None,
         )
         if found is None:

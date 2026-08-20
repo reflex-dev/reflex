@@ -1127,12 +1127,49 @@ class TestMinifyLookupCLI:
             include_state_root=True,
         )
 
-        result = cli_runner.invoke(cli, ["minify", "lookup", "a.b.c"])
+        result = cli_runner.invoke(cli, ["minify", "lookup", "b.c"])
 
         assert result.exit_code == 0, result.output
-        assert "State" in result.output
         assert "AppState" in result.output
         assert "ChildState" in result.output
+
+    def test_lookup_accepts_full_wire_path(self, temp_minify_json, cli_runner):
+        """A path copied verbatim from the frontend keeps the root state prefix."""
+        from reflex.reflex import cli
+
+        class WirePathState(State):
+            pass
+
+        _install_config(
+            states={get_state_full_path(WirePathState): "b"},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(
+            cli, ["minify", "lookup", "--json", f"{State.get_name()}.b"]
+        )
+
+        assert result.exit_code == 0, result.output
+        output_data = json.loads(result.output)
+        assert [info["class"] for info in output_data] == ["WirePathState"]
+
+    def test_lookup_does_not_match_root_state_id(self, temp_minify_json, cli_runner):
+        """The root state is never minified, so its config id is not a path segment."""
+        from reflex.reflex import cli
+
+        class RootIdState(State):
+            pass
+
+        # "a" is the root's config id; the only real segment is RootIdState's "b".
+        _install_config(
+            states={get_state_full_path(RootIdState): "b"},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
+
+        assert result.exit_code == 1
+        assert "No state found for minified segment 'a'" in result.output
 
     def test_lookup_fails_without_minify_json(self, temp_minify_json, cli_runner):
         """Test that lookup fails gracefully when minify.json is missing."""
@@ -1163,8 +1200,14 @@ class TestMinifyLookupCLI:
         """Test that lookup fails for non-existent minified path."""
         from reflex.reflex import cli
 
-        _install_config(include_state_root=True)
-        result = cli_runner.invoke(cli, ["minify", "lookup", "a.xyz"])
+        class InvalidPathState(State):
+            pass
+
+        _install_config(
+            states={get_state_full_path(InvalidPathState): "b"},
+            include_state_root=True,
+        )
+        result = cli_runner.invoke(cli, ["minify", "lookup", "b.xyz"])
 
         assert result.exit_code == 1
         assert "No state found" in result.output
@@ -1181,15 +1224,14 @@ class TestMinifyLookupCLI:
             include_state_root=True,
         )
 
-        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "a.b"])
+        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b"])
 
         assert result.exit_code == 0, result.output
         output_data = json.loads(result.output)
         assert isinstance(output_data, list)
-        assert len(output_data) == 2  # Root state + JsonTestState
-        assert output_data[0]["class"] == "State"
-        assert output_data[1]["class"] == "JsonTestState"
-        assert output_data[1]["state_id"] == "b"
+        assert len(output_data) == 1
+        assert output_data[0]["class"] == "JsonTestState"
+        assert output_data[0]["state_id"] == "b"
 
 
 class TestNameResolverProtocol:
