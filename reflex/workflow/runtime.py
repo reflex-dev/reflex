@@ -414,7 +414,7 @@ class WorkflowsNamespace:
         *,
         request_key: str | None = None,
         labels: dict[str, str] | None = None,
-    ) -> RunHandle:
+    ) -> RunHandle[Any]:
         """Start a run and get a handle on it.
 
         The same admission as ``start()``, returning the run rather than a

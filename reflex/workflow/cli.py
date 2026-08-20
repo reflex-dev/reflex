@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 import click
 from reflex_base.utils import console
 
-from reflex.workflow.records import RunStatus, attempts_made
+from reflex.workflow.records import RunQuery, RunStatus, attempts_made
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable
@@ -64,16 +64,28 @@ def _operator_action(database: str | None, run_id: str, action: str, **extra):
     """
     import time
 
-    applied = _with_store(
-        database,
-        lambda store: getattr(store, action)(run_id, time.time(), **extra),
-    )
+    async def apply(store: RunStore) -> Any:
+        """Resolve the run, then apply the action to it.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            Whether the action applied.
+        """
+        resolved = await _resolve_run_id(store, run_id)
+        return await getattr(store, action)(resolved, time.time(), **extra)
+
+    applied = _with_store(database, apply)
     if not applied:
         console.error(
             f"Run {run_id!r} is not in a state that allows {action.split('_')[0]!r}."
         )
         raise click.exceptions.Exit(1)
     console.print(f"Applied {action.split('_')[0]} to {run_id}.")
+
+
+_PREFIX_SCAN_LIMIT = 10_000
 
 
 def _open_store(database: str | None) -> RunStore:
@@ -90,6 +102,42 @@ def _open_store(database: str | None) -> RunStore:
     from reflex.workflow.store import resolve_store
 
     return resolve_store(database)
+
+
+async def _resolve_run_id(store: RunStore, run_id: str) -> str:
+    """Accept an unambiguous id prefix wherever a run id is taken.
+
+    ``list`` prints full ids but ``dev`` prints eight-character prefixes, and
+    a person who has been reading the second naturally types one. An exact id
+    is looked up directly and costs nothing extra; only a prefix pays for a
+    scan.
+
+    Args:
+        store: The open run store.
+        run_id: A full run id or a prefix of one.
+
+    Returns:
+        The full run id.
+
+    Raises:
+        Exit: If the prefix matches no run, or more than one.
+    """
+    if await store.get_run(run_id) is not None:
+        return run_id
+    matches = [
+        run.run_id
+        for run in await store.list_runs(RunQuery(limit=_PREFIX_SCAN_LIMIT))
+        if run.run_id.startswith(run_id)
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        console.error(f"No run {run_id!r} in this database.")
+        raise click.exceptions.Exit(1)
+    listed = ", ".join(match[:12] for match in matches[:5])
+    more = f" and {len(matches) - 5} more" if len(matches) > 5 else ""
+    console.error(f"{run_id!r} matches several runs: {listed}{more}.")
+    raise click.exceptions.Exit(1)
 
 
 def _with_store(database: str | None, work: Callable[[RunStore], Awaitable[Any]]):
@@ -1033,10 +1081,11 @@ def show(database: str | None, run_id: str, as_json: bool, history: bool):
         Returns:
             The run, its steps, and its history events.
         """
+        resolved = await _resolve_run_id(store, run_id)
         return (
-            await store.get_run(run_id),
-            await store.get_steps(run_id),
-            await store.get_history(run_id) if history else (),
+            await store.get_run(resolved),
+            await store.get_steps(resolved),
+            await store.get_history(resolved) if history else (),
         )
 
     run, steps, events = _with_store(database, load)
@@ -1220,9 +1269,20 @@ def cancel(database: str | None, run_id: str):
     """
     import time
 
-    recorded = _with_store(
-        database, lambda store: store.request_cancel(run_id, time.time())
-    )
+    async def request(store: RunStore) -> bool:
+        """Record the intent against the resolved run.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            Whether intent was recorded.
+        """
+        return await store.request_cancel(
+            await _resolve_run_id(store, run_id), time.time()
+        )
+
+    recorded = _with_store(database, request)
     if not recorded:
         console.error(f"Run {run_id!r} is unknown or already finished.")
         raise click.exceptions.Exit(1)
@@ -1280,12 +1340,23 @@ def _finalize(
     """
     from reflex.workflow.kernel import WorkflowKernel
 
-    finalized = _with_store(
-        database,
-        lambda store: WorkflowKernel([], store).force_finalize(
-            run_id, status=status, result=result, error=error
-        ),
-    )
+    async def finish(store: RunStore) -> bool:
+        """Resolve the run, then finalize it through a kernel.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            Whether the run was finalized.
+        """
+        return await WorkflowKernel([], store).force_finalize(
+            await _resolve_run_id(store, run_id),
+            status=status,
+            result=result,
+            error=error,
+        )
+
+    finalized = _with_store(database, finish)
     if not finalized:
         console.error(
             f"Run {run_id!r} is unknown, already finished, or has a step a "
@@ -1339,7 +1410,18 @@ def resume(database: str | None, run_id: str):
     """Re-open a run suspended for operator attention."""
     import time
 
-    resumed = _with_store(database, lambda store: store.resume_run(run_id, time.time()))
+    async def reopen(store: RunStore) -> bool:
+        """Resolve the run, then re-open it.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            Whether a suspended run was re-opened.
+        """
+        return await store.resume_run(await _resolve_run_id(store, run_id), time.time())
+
+    resumed = _with_store(database, reopen)
     if not resumed:
         console.error(f"Run {run_id!r} is not suspended.")
         raise click.exceptions.Exit(1)

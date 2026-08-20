@@ -7,6 +7,7 @@ waiting to surface later.
 """
 
 import pytest
+from pydantic import BaseModel
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import RateLimit, WorkflowConfig, manual
 
@@ -186,3 +187,74 @@ async def test_a_rejected_submission_refuses_to_hand_back_a_handle(
         with pytest.raises(WorkflowRuntimeError, match="rejected"):
             await rx.workflows.submit(Limited.go)
         _ = harness
+
+
+class Receipt(BaseModel):
+    """What a completed order produces."""
+
+    order: str
+    total: int
+
+
+class Ordering(rx.State):
+    """A workflow that completes with a structured result."""
+
+    __workflow__ = WorkflowConfig(id="handle.ordering")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def place(self, order: str):
+        """Complete with a receipt.
+
+        Args:
+            order: The order identifier.
+
+        Returns:
+            Completion carrying the receipt.
+        """
+        return rx.complete(result={"order": order, "total": 250})
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def wrong(self):
+        """Complete with something that is not a receipt.
+
+        Returns:
+            Completion carrying the wrong shape.
+        """
+        return rx.complete(result={"order": "ord_1"})
+
+
+async def test_a_typed_result_comes_back_as_the_declared_shape(
+    forked_registration_context,
+):
+    """A result crosses the store as JSON; ``as_type`` restores the shape.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    async with WorkflowTestHarness(Ordering) as harness:
+        handle = await rx.workflows.submit(Ordering.place("ord_1"))
+        await harness.run_until_idle()
+        assert await handle.result() == {"order": "ord_1", "total": 250}
+
+        receipt = await handle.result(as_type=Receipt)
+        assert isinstance(receipt, Receipt)
+        assert receipt.total == 250
+        assert receipt.order == "ord_1"
+
+
+async def test_a_result_that_does_not_fit_names_the_run(forked_registration_context):
+    """Validation is real, and its error points at the run that produced it.
+
+    A cast would hand the caller a dict that fails with AttributeError
+    somewhere else entirely, long after the information needed to explain it
+    has gone.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    async with WorkflowTestHarness(Ordering) as harness:
+        handle = await rx.workflows.submit(Ordering.wrong())
+        await harness.run_until_idle()
+        with pytest.raises(WorkflowRuntimeError, match="does not fit Receipt"):
+            await handle.result(as_type=Receipt)
+        assert await handle.result() == {"order": "ord_1"}

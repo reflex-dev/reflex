@@ -240,11 +240,33 @@ def test_fail_records_the_operator_s_reason(seeded):
 
 
 def test_finalizing_an_unknown_run_fails(seeded):
-    """Nothing to finalize is an error, not a silent success."""
+    """Nothing to finalize is an error, not a silent success.
+
+    A run that does not exist now says exactly that. The older message
+    offered three possibilities at once -- unknown, already finished, or
+    held by a worker -- which is still right for a run that does exist, and
+    unhelpfully vague for one that does not.
+
+    Args:
+        seeded: The database and its run ids.
+    """
     database, _, _ = seeded
     result = _invoke("complete", "-d", database, "no-such-run")
     assert result.exit_code == 1
-    assert "unknown" in result.output
+    assert "No run" in result.output
+
+
+def test_finalizing_a_finished_run_says_why(seeded):
+    """A run that exists but cannot be finalized keeps the fuller message.
+
+    Args:
+        seeded: The database and its run ids.
+    """
+    database, waiting, _ = seeded
+    assert _invoke("complete", "-d", database, waiting).exit_code == 0
+    again = _invoke("complete", "-d", database, waiting)
+    assert again.exit_code == 1
+    assert "already finished" in again.output
 
 
 def test_complete_refuses_a_result_that_is_not_json(seeded):
@@ -268,3 +290,66 @@ def test_purge_deletes_only_stale_terminal_runs(seeded):
     assert purged.exit_code == 0, purged.output
     assert "Purged 1 run(s)" in purged.output
     assert _invoke("show", "-d", database, waiting).exit_code == 1
+
+
+def test_a_run_id_prefix_is_enough(seeded):
+    """`dev` prints eight-character prefixes, so the CLI has to take them.
+
+    Reading one surface and typing into another is the normal way an operator
+    uses these commands, and "No run 'ca40d354'" for an id the tool itself
+    printed is a dead end.
+
+    Args:
+        seeded: The database and its run ids.
+    """
+    database, waiting_id, _ = seeded
+    full = _invoke("show", "-d", database, waiting_id, "--json")
+    assert full.exit_code == 0, full.output
+    short = _invoke("show", "-d", database, waiting_id[:8], "--json")
+    assert short.exit_code == 0, short.output
+    assert json.loads(short.output)["run_id"] == waiting_id
+
+
+def test_an_ambiguous_prefix_refuses_and_names_the_candidates(seeded):
+    """Acting on the wrong run is worse than being asked to be specific.
+
+    Args:
+        seeded: The database and its run ids.
+    """
+    database, waiting_id, suspended_id = seeded
+    shared = ""
+    for index in range(1, 33):
+        if waiting_id[:index] != suspended_id[:index]:
+            break
+        shared = waiting_id[:index]
+    if not shared:
+        pytest.skip("the two seeded run ids share no prefix this time")
+    result = _invoke("show", "-d", database, shared)
+    assert result.exit_code == 1
+    assert "matches several runs" in result.output
+
+
+def test_an_unknown_prefix_still_says_so(seeded):
+    """The no-match message must not be lost to the new prefix path.
+
+    Args:
+        seeded: The database and its run ids.
+    """
+    database, _, _ = seeded
+    result = _invoke("show", "-d", database, "nosuchrun")
+    assert result.exit_code == 1
+    assert "No run" in result.output
+
+
+def test_operator_actions_take_a_prefix_too(seeded):
+    """Every command that takes a run id resolves the same way.
+
+    Args:
+        seeded: The database and its run ids.
+    """
+    database, _, suspended_id = seeded
+    result = _invoke("resume", "-d", database, suspended_id[:8])
+    assert result.exit_code == 0, result.output
+    run = _load_run(database, suspended_id)
+    assert run is not None
+    assert run.status is not RunStatus.NEEDS_ATTENTION

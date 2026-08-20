@@ -14,7 +14,7 @@ code reads as one object rather than a string plus a namespace.
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import DurationLike, parse_duration
@@ -28,8 +28,11 @@ if TYPE_CHECKING:
 
 DEFAULT_POLL_INTERVAL: float = 0.05
 
+ResultT = TypeVar("ResultT")
+T = TypeVar("T")
 
-class RunHandle:
+
+class RunHandle(Generic[ResultT]):
     """One run, and the things a caller does with it.
 
     Attributes:
@@ -85,9 +88,28 @@ class RunHandle:
         snapshot = await self.snapshot()
         return None if snapshot is None else snapshot.status
 
+    @overload
     async def result(
         self,
         *,
+        as_type: type[T],
+        timeout: DurationLike = "30s",
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+    ) -> T: ...
+
+    @overload
+    async def result(
+        self,
+        *,
+        as_type: None = None,
+        timeout: DurationLike = "30s",
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+    ) -> ResultT: ...
+
+    async def result(
+        self,
+        *,
+        as_type: type[Any] | None = None,
         timeout: DurationLike = "30s",
         poll_interval: float = DEFAULT_POLL_INTERVAL,
     ) -> Any:
@@ -99,16 +121,29 @@ class RunHandle:
         takes. Compose with ``rx.parallel`` instead, which is what child runs
         and joins are for.
 
+        A result crosses the store as plain JSON data, so it comes back as
+        dicts and lists whatever the handler passed to ``rx.complete``. Pass
+        ``as_type`` to get the shape back::
+
+            receipt = await handle.result(as_type=Receipt)
+            receipt.total
+
+        That is a real validation, not a cast: a result that does not fit the
+        declared type raises here, naming the run, rather than becoming an
+        ``AttributeError`` further along in the caller.
+
         Args:
+            as_type: Type to validate and coerce the result into.
             timeout: How long to wait before giving up.
             poll_interval: Seconds between checks.
 
         Returns:
-            The run's result.
+            The run's result, coerced to ``as_type`` when one was given.
 
         Raises:
             WorkflowRuntimeError: If the run is unknown, does not finish in
-                time, or finishes in any state other than completed.
+                time, finishes in any state other than completed, or produced
+                a result that does not fit ``as_type``.
         """
         snapshot = await self.wait(timeout=timeout, poll_interval=poll_interval)
         if snapshot.status is not RunStatus.COMPLETED:
@@ -118,7 +153,18 @@ class RunHandle:
                 f"COMPLETED{detail}"
             )
             raise WorkflowRuntimeError(msg)
-        return snapshot.result
+        if as_type is None:
+            return snapshot.result
+        from pydantic import TypeAdapter, ValidationError
+
+        try:
+            return TypeAdapter(as_type).validate_python(snapshot.result)
+        except ValidationError as error:
+            msg = (
+                f"Run {self.run_id} completed with a result that does not fit "
+                f"{getattr(as_type, '__name__', as_type)}: {error}"
+            )
+            raise WorkflowRuntimeError(msg) from error
 
     async def wait(
         self,
