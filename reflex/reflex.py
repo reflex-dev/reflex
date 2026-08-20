@@ -12,6 +12,7 @@ from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log
+from reflex_cli.utils.output import interactive_option
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex.custom_components.custom_components import custom_components_cli
@@ -888,12 +889,7 @@ def makemigrations(message: str | None):
     help="An optional note recorded on this deployment and shown in "
     "`reflex cloud apps history`.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@interactive_option
 @click.option(
     "--envfile",
     help="The path to an env file to use. Will override any envs set manually.",
