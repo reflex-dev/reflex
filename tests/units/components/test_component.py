@@ -2372,13 +2372,10 @@ class _HashDefaults:
 
 @pytest.fixture
 def encoding_caches():
-    """Isolate the module-level encoder tables from the rest of the suite.
-
-    Yields:
-        None, once the encoding caches are empty.
-    """
+    # Isolate the module-level encoder tables from the rest of the suite.
     encoders = component._ENCODERS.copy()
     encoded = component._ENCODED_DATACLASSES.copy()
+    component._ENCODERS.clear()
     component._ENCODED_DATACLASSES.clear()
     yield
     component._ENCODERS.clear()
