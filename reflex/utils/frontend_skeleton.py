@@ -593,7 +593,16 @@ def update_package_json_overrides() -> bool:
         # full file upstream, so this only happens for a hand-damaged .web.
         return False
 
-    overrides = package_json.get("overrides") or {}
+    overrides = package_json.get("overrides", {})
+    if not isinstance(overrides, dict):
+        # Leave a hand-damaged section alone: merging into it would replace
+        # whatever the user locked before they get a chance to fix it.
+        logger.warning(
+            f"Expected an object for `overrides` in {package_json_path}, got "
+            f"{type(overrides).__name__}; not applying framework overrides."
+        )
+        return False
+
     if all(
         overrides.get(name) == version
         for name, version in constants.PackageJson.OVERRIDES.items()

@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import json
 import logging
 import operator
 import sys
@@ -120,10 +121,13 @@ else:
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 # Socket.IO codec: encodes non-finite floats as sentinel strings that the
-# frontend reviver restores, escaping user strings that would collide.
+# frontend reviver restores, escaping user strings that would collide. Decoding
+# stays on the stdlib because orjson rounds integers outside the signed 64-bit
+# range, and inbound payloads carry client-supplied ids (snowflakes, database
+# keys) that must survive exactly.
 _SOCKET_JSON_CODEC = SimpleNamespace(
     dumps=staticmethod(format.orjson_dumps_socket),
-    loads=staticmethod(format.orjson_loads),
+    loads=staticmethod(json.loads),
 )
 
 
@@ -596,12 +600,20 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             # A custom server that kept socket.io's default codec does not
             # escape user strings colliding with the non-finite float sentinels
-            # the frontend revives, so install ours as passing `json=` would
-            # have; a codec the user chose deliberately is left alone.
+            # the frontend revives, so install ours; a codec the user chose
+            # deliberately is left alone.
             # socket.io types this attribute as the json module it defaults to.
             packet_class: Any = self.sio.packet_class
             if packet_class.json is engineio_json:
-                packet_class.json = _SOCKET_JSON_CODEC
+                # Subclass instead of assigning onto packet_class itself: that
+                # is the shared socketio.packet.Packet class, so writing to it
+                # would reconfigure every other socket.io server and client in
+                # the process (which is what passing `json=` does).
+                self.sio.packet_class = type(
+                    packet_class.__name__,
+                    (packet_class,),
+                    {"json": _SOCKET_JSON_CODEC},
+                )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")

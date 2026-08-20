@@ -346,7 +346,7 @@ class EmbedPlugin(Plugin):
         hashed_url = f"{base}/assets/{matches[0].name}"
         shim_path = static_dir / constants.Embed.ENTRY_PATH
         shim_path.parent.mkdir(parents=True, exist_ok=True)
-        shim_path.write_text(f"import {orjson_dumps(hashed_url)};\n")
+        shim_path.write_text(f"import {orjson_dumps(hashed_url)};\n", encoding="utf-8")
 
 
 def get_embed_plugin() -> EmbedPlugin | None:

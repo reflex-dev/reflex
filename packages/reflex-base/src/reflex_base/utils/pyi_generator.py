@@ -1775,6 +1775,7 @@ class PyiGenerator:
                             sort_keys=True,
                         )
                         + "\n",
+                        encoding="utf-8",
                     )
             else:
                 pyi_hashes_parent = file_paths[0].parent
@@ -1796,7 +1797,8 @@ class PyiGenerator:
                         pyi_hashes[formatted_path] = hashed_content
 
                     pyi_hashes_file.write_text(
-                        orjson_dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
+                        orjson_dumps(pyi_hashes, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
                     )
 
 

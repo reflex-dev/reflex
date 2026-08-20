@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import json
 import os
@@ -760,6 +761,73 @@ def _orjson_default(o: Any) -> Any:
     return serializers.serialize(o)
 
 
+def _serialize_or_raise(o: Any) -> Any:
+    """Serialize a custom type, raising when nothing can serialize it.
+
+    ``serializers.serialize`` returns None for an unregistered type, which
+    ``json`` then writes as ``null``. Every ``orjson_dumps`` call site replaced
+    a bare ``json.dumps`` that raised instead, and a silent ``null`` in a
+    generated artifact is a dropped tailwind entry or package.json field.
+
+    Args:
+        o: The value to serialize.
+
+    Returns:
+        A JSON-representable value.
+
+    Raises:
+        TypeError: If no serializer applies to the value.
+    """
+    from reflex_base.utils import serializers
+
+    if serializers.get_serializer(type(o)) is None and not (
+        dataclasses.is_dataclass(o) and not isinstance(o, type)
+    ):
+        msg = f"Object of type {type(o).__name__} is not JSON serializable"
+        raise TypeError(msg)
+    return serializers.serialize(o)
+
+
+def _orjson_default_strict(o: Any) -> Any:
+    """Serialize a value orjson does not handle, rejecting unregistered types.
+
+    Args:
+        o: The value orjson could not serialize.
+
+    Returns:
+        A value orjson can serialize.
+    """
+    # orjson hands float subclasses to default (unlike str/int/list/dict ones);
+    # the stdlib serializes them as plain numbers, so coerce to match.
+    if isinstance(o, float):
+        return float(o)
+    return _serialize_or_raise(o)
+
+
+def _utf8_safe(out: str, obj: Any, **kwargs: Any) -> str:
+    """Re-escape output that a UTF-8 writer would reject.
+
+    ``ensure_ascii=False`` leaves lone surrogates (e.g. a path decoded with
+    ``surrogateescape``) raw, and every caller writes the result to a UTF-8
+    file. ``isascii`` keeps the check off the common path.
+
+    Args:
+        out: The serialized output.
+        obj: The object that produced it, for a re-dump.
+        kwargs: The keyword arguments used for the original dump.
+
+    Returns:
+        A JSON string that encodes as UTF-8.
+    """
+    if out.isascii():
+        return out
+    try:
+        out.encode("utf-8")
+    except UnicodeEncodeError:
+        return json_dumps(obj, **{**kwargs, "ensure_ascii": True})
+    return out
+
+
 def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
     """Serialize with the stdlib, matching orjson's output byte for byte.
 
@@ -777,16 +845,24 @@ def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
     """
     if kwargs.get("indent") is None:
         kwargs["separators"] = (",", ":")
-    return json_dumps(obj, **kwargs)
+    kwargs.setdefault("default", _serialize_or_raise)
+    return _utf8_safe(json_dumps(obj, **kwargs), obj, **kwargs)
 
 
 def orjson_dumps(obj: Any, **kwargs) -> str:
     """Serialize obj to a JSON string, using orjson when available.
 
-    Custom types go through ``serializers.serialize``, matching ``json_dumps``.
+    Custom types go through ``serializers.serialize``, and an unregistered one
+    raises ``TypeError`` as the bare ``json.dumps`` these calls replaced did.
     Supports orjson's two-space indentation and key sorting, falling back to
-    the stdlib for unsupported arguments or values. Output is byte-identical
-    with and without orjson installed.
+    the stdlib for unsupported arguments or values.
+
+    Output is byte-identical with and without orjson installed, except for
+    floats below 1e-4: orjson renders those with its own shortest
+    representation (``0.00001``, ``1e-7``) where the stdlib emits ``1e-05`` and
+    ``1e-07``. Artifact hashes do not depend on this -- ``get_package_json_and_hash``
+    serializes with the stdlib -- but a byte comparison against a file rendered
+    by the other backend can report a spurious change.
 
     Use ``orjson_dumps_socket`` for socket payloads: it also escapes user
     strings that collide with the sentinels the frontend reviver strips.
@@ -806,9 +882,10 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
             try:
                 return orjson.dumps(obj).decode()
             except TypeError:
-                # orjson rejects strings that are not valid UTF-8.
-                pass
-        return json.dumps(obj, ensure_ascii=False)
+                # orjson rejects strings that are not valid UTF-8. Escaping is
+                # the only output a UTF-8 writer downstream can accept.
+                return json.dumps(obj)
+        return _utf8_safe(json.dumps(obj, ensure_ascii=False), obj)
 
     indent = None
     if kwargs:
@@ -819,6 +896,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
             or kwargs.get("ensure_ascii")
             or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
         ):
+            kwargs.setdefault("default", _serialize_or_raise)
             return json_dumps(obj, **kwargs)
 
     if orjson is None or _orjson_registry_shadowed:
@@ -831,9 +909,10 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         option |= orjson.OPT_SORT_KEYS
 
     try:
-        out = orjson.dumps(obj, default=_orjson_default, option=option)
+        out = orjson.dumps(obj, default=_orjson_default_strict, option=option)
     except TypeError:
-        # The stdlib handles values orjson rejects, such as large integers.
+        # The stdlib handles values orjson rejects, such as large integers, and
+        # re-raises for a genuinely unserializable one.
         return _json_dumps_like_orjson(obj, **kwargs)
 
     if b"null" in out:

@@ -415,6 +415,28 @@ def test_custom_enum_serializer_wins_over_orjson(isolated_serializer_registry):
     assert orjson_dumps_socket(value) == '{"v":"CUSTOM"}'
 
 
+def test_union_annotated_enum_serializer_wins_over_orjson(
+    isolated_serializer_registry,
+):
+    """A serializer annotated with a union still shadows orjson's native output.
+
+    ``get_serializer`` resolves the union's Enum member, so the stdlib path uses
+    the custom serializer; the orjson path must not disagree.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer
+    def serialize_status(status: _EnumForSerializer | None) -> str:
+        return "CUSTOM"
+
+    value = {"v": _EnumForSerializer.ACTIVE}
+    assert isolated_serializer_registry._orjson_registry_shadowed is True
+    assert orjson_dumps(value) == json_dumps(value, separators=(",", ":"))
+    assert orjson_dumps_socket(value) == '{"v":"CUSTOM"}'
+
+
 def test_uuid_serializer_override_wins_over_orjson(isolated_serializer_registry):
     """A UUID is emitted natively by orjson, which would bypass an override.
 
@@ -605,8 +627,12 @@ def test_orjson_dumps_bare_string_fallback_matches_stdlib(no_orjson):
 
 
 def test_orjson_dumps_lone_surrogate_falls_back_to_stdlib():
-    """Strings that are not valid UTF-8 are rejected by orjson, not the stdlib."""
-    assert orjson_dumps("\ud800") == json_dumps("\ud800")
+    """Orjson rejects strings that are not valid UTF-8, so the stdlib takes over.
+
+    It must escape the surrogate rather than pass it through: every caller
+    writes the result to a UTF-8 file, which a raw surrogate cannot encode.
+    """
+    assert orjson_dumps("\ud800") == '"\\ud800"'
 
 
 def test_orjson_dumps_str_subclass_uses_general_path():
@@ -791,6 +817,32 @@ def test_orjson_dumps_output_is_backend_independent(
     assert orjson_dumps(payload, **kwargs) == with_orjson
 
 
+@pytest.mark.parametrize("value", [1e-5, 1e-7, 1.5e-8])
+def test_orjson_dumps_small_floats_are_backend_dependent(
+    value: float, monkeypatch: pytest.MonkeyPatch
+):
+    """Pin the one documented gap in ``orjson_dumps``' byte-identity.
+
+    Below 1e-4 the two backends pick different float representations and
+    neither exposes a hook to change it. Artifact hashes are unaffected --
+    ``get_package_json_and_hash`` serializes with the stdlib -- but a byte
+    comparison against a file the other backend wrote can report a change.
+
+    Args:
+        value: A float small enough to trigger the divergence.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.utils import format as format_module
+
+    with_orjson = orjson_dumps({"a": value})
+
+    monkeypatch.setattr(format_module, "orjson", None)
+    without_orjson = orjson_dumps({"a": value})
+
+    assert with_orjson != without_orjson
+    assert json.loads(with_orjson) == json.loads(without_orjson) == {"a": value}
+
+
 def test_orjson_dumps_keeps_non_finite_floats_as_bare_tokens():
     """Orjson would emit null for these; the stdlib tokens are valid literals
     in the JS files ``orjson_dumps`` renders, so it takes over instead.
@@ -804,3 +856,62 @@ def test_orjson_dumps_large_int_fallback_stays_compact():
     number in an artifact cannot reformat the whole file.
     """
     assert orjson_dumps({"a": 2**70, "b": 1}) == f'{{"a":{2**70},"b":1}}'
+
+
+class _Unserializable:
+    """A type with no registered serializer."""
+
+
+def test_orjson_dumps_rejects_unserializable_type():
+    """An unregistered type must raise, not become ``null``.
+
+    Every ``orjson_dumps`` call site replaced a bare ``json.dumps``, which
+    raised ``TypeError``. Emitting ``null`` instead would silently drop a
+    tailwind theme entry or a package.json field.
+    """
+    with pytest.raises(TypeError, match="not JSON serializable"):
+        orjson_dumps({"theme": {"colors": {"brand": _Unserializable()}}})
+
+
+def test_orjson_dumps_rejects_unserializable_type_without_orjson(no_orjson):
+    """The stdlib path must reject the same payload the orjson path rejects.
+
+    Args:
+        no_orjson: Fixture simulating orjson not being installed.
+    """
+    with pytest.raises(TypeError, match="not JSON serializable"):
+        orjson_dumps({"theme": {"colors": {"brand": _Unserializable()}}})
+
+
+def test_orjson_dumps_socket_keeps_unserializable_lenient():
+    """Socket payloads keep the pre-existing ``json_dumps`` leniency.
+
+    The socket codec replaced ``format.json_dumps``, which serialized an
+    unregistered value as ``null`` rather than dropping the state update.
+    """
+    assert orjson_dumps_socket({"a": _Unserializable()}) == '{"a":null}'
+
+
+def test_orjson_dumps_escapes_lone_surrogate():
+    """A lone surrogate must not reach a UTF-8 encoder as a raw character.
+
+    orjson rejects such strings, and the stdlib fallback used
+    ``ensure_ascii=False``, leaving a raw surrogate that ``write_file`` then
+    could not encode.
+    """
+    out = orjson_dumps("bad\ud800end")
+
+    assert out.encode("utf-8")
+
+
+@pytest.mark.parametrize(
+    "kwargs", [{}, {"indent": 2}, {"indent": 4}, {"ensure_ascii": True}]
+)
+def test_orjson_dumps_rejects_unserializable_type_for_every_kwarg_path(kwargs: dict):
+    """Strictness must not depend on which backend path the kwargs select.
+
+    Args:
+        kwargs: Keyword arguments steering orjson_dumps to a different path.
+    """
+    with pytest.raises(TypeError, match="not JSON serializable"):
+        orjson_dumps({"a": _Unserializable()}, **kwargs)

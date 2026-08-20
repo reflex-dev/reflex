@@ -1295,6 +1295,28 @@ def test_update_package_json_overrides_skips_unusable_file(
         assert web_pkg.read_text() == content
 
 
+def test_update_package_json_overrides_preserves_malformed_overrides(
+    tmp_path, monkeypatch
+):
+    """A non-mapping ``overrides`` is left for the user to fix, not overwritten.
+
+    Reading it as ``{}`` and merging would silently replace whatever the user
+    locked before dependency resolution ever sees the file.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    content = json.dumps({"name": "reflex", "overrides": None})
+    web_pkg.write_text(content)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    assert web_pkg.read_text() == content
+
+
 def test_compile_package_json_preserves_additional_fields(tmp_path):
     """Persisted fields beyond the framework-managed ones pass through as-is."""
     root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH

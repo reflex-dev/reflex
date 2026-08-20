@@ -15,7 +15,17 @@ from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Literal, TypeVar, get_type_hints, overload
+from types import UnionType
+from typing import (
+    Any,
+    Literal,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
@@ -50,6 +60,20 @@ deserializers = {
 # orjson serializes these without consulting ``default``. Datetimes and
 # dataclasses are absent because ``format`` passes those through explicitly.
 _ORJSON_NATIVE_TYPES = (Enum, UUID)
+
+
+def _union_members(type_: Any) -> tuple[Any, ...]:
+    """Return the members of a union annotation, or empty for anything else.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        The union's members, or an empty tuple.
+    """
+    if get_origin(type_) in (Union, UnionType):
+        return get_args(type_)
+    return ()
 
 
 @overload
@@ -136,10 +160,11 @@ def serializer(
         get_serializer.cache_clear()
 
         # ``type_`` comes from an annotation, so it is not necessarily a class.
-        if (
-            not _orjson_native_equivalent
-            and isinstance(type_, type)
-            and issubclass(type_, _ORJSON_NATIVE_TYPES)
+        # A union registers under the union itself, and ``get_serializer``
+        # resolves a member through ``issubclass``, so its members count too.
+        if not _orjson_native_equivalent and any(
+            isinstance(candidate, type) and issubclass(candidate, _ORJSON_NATIVE_TYPES)
+            for candidate in (type_, *_union_members(type_))
         ):
             from reflex_base.utils.format import _mark_orjson_registry_shadowed
 
