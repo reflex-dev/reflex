@@ -1364,6 +1364,24 @@ async def check_closing_a_branch_never_revives_a_finished_one(
     assert child.status is RunStatus.COMPLETED
 
 
+async def check_a_duplicate_delivery_is_recorded_in_history(store: RunStore) -> None:
+    """A no-op delivery still has to be visible to whoever sent it.
+
+    A repeated sender key is correctly ignored, and an ignored delivery that
+    leaves no record is indistinguishable from one that never arrived --
+    which is the question the history exists to answer.
+    """
+    await store.admit(
+        make_run(),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:ping", due_at=0.0),
+        _ADMITTED,
+    )
+    assert await store.deliver("run1", "sig:ping", "d1", {"v": 1}, NOW) == "resolved"
+    assert await store.deliver("run1", "sig:ping", "d1", {"v": 1}, NOW) == "duplicate"
+    kinds = [event.type for event in await store.get_history("run1")]
+    assert kinds.count(HistoryEventType.SIGNAL_DUPLICATE) == 1, kinds
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1381,6 +1399,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_delivery_resolves_a_matching_wait,
     check_delivery_never_touches_run_state,
     check_duplicate_deliveries_are_ignored,
+    check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,
     check_early_deliveries_queue_in_order,
     check_children_are_created_with_their_join,

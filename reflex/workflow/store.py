@@ -1315,6 +1315,11 @@ class MemoryRunStore:
                 return "expired"
             inbox = self._inbox.setdefault(run_id, {})
             if (run_id, wait_key, dedupe_key) in inbox:
+                self._append_events(
+                    run_id,
+                    ((HistoryEventType.SIGNAL_DUPLICATE, {"wait_key": wait_key}),),
+                    now,
+                )
                 return "duplicate"
             inbox[run_id, wait_key, dedupe_key] = True
             steps = self._steps[run_id]
@@ -3617,7 +3622,17 @@ class SqliteRunStore:
                         (run_id, wait_key, dedupe_key),
                     ).fetchone()
                     if seen is not None:
-                        self._db.execute("ROLLBACK")
+                        self._append_events(
+                            run_id,
+                            (
+                                (
+                                    HistoryEventType.SIGNAL_DUPLICATE,
+                                    {"wait_key": wait_key},
+                                ),
+                            ),
+                            now,
+                        )
+                        self._db.execute("COMMIT")
                         return "duplicate"
                     frontier = _frontier(self._load_steps(run_id))
                     if frontier is not None and _wait_expired(frontier, now):

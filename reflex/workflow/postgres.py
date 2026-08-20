@@ -1174,6 +1174,12 @@ class PostgresRunStore:
                 (run_id, wait_key, dedupe_key),
             )
             if await cursor.fetchone() is not None:
+                await self._append_events(
+                    conn,
+                    run_id,
+                    ((HistoryEventType.SIGNAL_DUPLICATE, {"wait_key": wait_key}),),
+                    now,
+                )
                 return "duplicate"
             frontier = await self._frontier(conn, run_id)
             if (

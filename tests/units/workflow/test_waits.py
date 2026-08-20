@@ -6,7 +6,7 @@ from reflex_base.utils.exceptions import WorkflowDefinitionError
 from reflex_base.workflow import Signal, WorkflowConfig, manual, never, wait_for
 
 import reflex as rx
-from reflex.workflow.records import RunStatus, StepStatus
+from reflex.workflow.records import HistoryEventType, RunStatus, StepStatus
 from reflex.workflow.store import MemoryRunStore, SqliteRunStore
 from reflex.workflow.testing import WorkflowTestHarness
 
@@ -487,4 +487,136 @@ async def test_a_rejected_alternative_does_not_answer_the_next_wait(
         assert snapshot.status is not RunStatus.COMPLETED, (
             "the second stage was answered by the first stage's losing "
             f"alternative: {snapshot.result}"
+        )
+
+
+async def test_an_expired_wait_says_so_in_history(forked_registration_context):
+    """History has to distinguish "nobody answered" from "somebody did".
+
+    A resolved wait records ``wait_resolved``. An expired one recorded
+    nothing at all, so the only trace of the deadline was that the timeout
+    branch happened to be the handler that ran next -- an operator asking
+    "did the approval come through, or did it time out?" had to infer it
+    from which handler appears, which is exactly what history exists to stop.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    flow = _review_flow()
+    async with WorkflowTestHarness(flow) as harness:
+        started = await harness.start(flow.start())
+        assert started.run_id is not None
+        await harness.advance("4d")
+
+        history = await harness.kernel.store.get_history(started.run_id)
+        kinds = [event.type for event in history]
+        assert HistoryEventType.WAIT_ARMED in kinds
+        assert HistoryEventType.WAIT_EXPIRED in kinds, (
+            f"an expired wait left no trace: {[k.value for k in kinds]}"
+        )
+        assert HistoryEventType.WAIT_RESOLVED not in kinds, (
+            "nobody answered, so nothing was resolved"
+        )
+        expiry = next(
+            event for event in history if event.type is HistoryEventType.WAIT_EXPIRED
+        )
+        assert expiry.data["wait_key"] == "sig:review"
+
+
+async def test_a_resolved_wait_is_not_reported_as_expired(
+    forked_registration_context,
+):
+    """The other half of the same distinction.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+    flow = _review_flow()
+    async with WorkflowTestHarness(flow) as harness:
+        started = await harness.start(flow.start())
+        assert started.run_id is not None
+        await harness.signal(
+            started.run_id, flow.review({"approved": True, "by": "ada"})
+        )
+
+        kinds = [
+            event.type
+            for event in await harness.kernel.store.get_history(started.run_id)
+        ]
+        assert HistoryEventType.WAIT_RESOLVED in kinds
+        assert HistoryEventType.WAIT_EXPIRED not in kinds
+
+
+async def test_a_deduplicated_signal_leaves_a_trace(forked_registration_context):
+    """A sender's retry that changed nothing still has to be visible.
+
+    "The provider says it delivered, so why didn't the run move?" is answered
+    by the run's history or by nothing at all. A repeated sender key is
+    correctly a no-op, and a no-op that leaves no record is indistinguishable
+    from a delivery that never arrived. The run has to still be alive for the
+    second delivery to be *duplicate* rather than *run_terminal*, which is
+    why this flow keeps going after it decides.
+
+    Args:
+        forked_registration_context: Isolates workflow registration.
+    """
+
+    class LiveReview(rx.State):
+        __workflow__ = WorkflowConfig(id="waits.live_review")
+        decided_by: str = ""
+
+        review = Signal(Decision)
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def start(self):
+            """Wait for a decision.
+
+            Returns:
+                The wait.
+            """
+            return wait_for(
+                LiveReview.review,
+                then=LiveReview.decide,
+                timeout="3d",
+                on_timeout=LiveReview.expire,
+            )
+
+        @rx.event(durable=True, effect="none")
+        def decide(self, decision: Decision):
+            """Record the decision and stay alive.
+
+            Args:
+                decision: The delivered decision.
+
+            Returns:
+                A long deferral, so the run is still nonterminal.
+            """
+            self.decided_by = decision.by
+            return rx.after("30d", LiveReview.expire)
+
+        @rx.event(durable=True, effect="none")
+        def expire(self):
+            """Finish.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result={"done": True})
+
+    async with WorkflowTestHarness(LiveReview) as harness:
+        started = await harness.start(LiveReview.start())
+        assert started.run_id is not None
+        payload = LiveReview.review({"approved": True, "by": "ada"})
+        assert await harness.signal(started.run_id, payload, key="hook-1") == "resolved"
+        assert (
+            await harness.signal(started.run_id, payload, key="hook-1") == "duplicate"
+        )
+
+        kinds = [
+            event.type
+            for event in await harness.kernel.store.get_history(started.run_id)
+        ]
+        assert kinds.count(HistoryEventType.WAIT_RESOLVED) == 1
+        assert kinds.count(HistoryEventType.SIGNAL_DUPLICATE) == 1, (
+            f"the deduplicated redelivery left no trace: {[k.value for k in kinds]}"
         )

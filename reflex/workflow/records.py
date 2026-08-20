@@ -161,7 +161,6 @@ class HistoryEventType(str, enum.Enum):
     WAIT_ARMED = "wait_armed"
     WAIT_RESOLVED = "wait_resolved"
     WAIT_EXPIRED = "wait_expired"
-    SIGNAL_DELIVERED = "signal_delivered"
     SUBSTEP_RECORDED = "substep_recorded"
     SIGNAL_BUFFERED = "signal_buffered"
     SIGNAL_DUPLICATE = "signal_duplicate"

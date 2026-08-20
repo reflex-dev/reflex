@@ -943,6 +943,18 @@ class WorkflowKernel:
                     ),
                 ),
             )
+        elif disposition == "duplicate":
+            # Correctly a no-op, but a no-op nobody can see is
+            # indistinguishable from a delivery that never arrived.
+            await self._notify_run(
+                run_id,
+                (
+                    (
+                        HistoryEventType.SIGNAL_DUPLICATE,
+                        {"wait_key": f"sig:{delivery.channel}"},
+                    ),
+                ),
+            )
         return disposition
 
     async def resume(self, run_id: str) -> bool:
@@ -2181,14 +2193,29 @@ class WorkflowKernel:
             )
             return
         handler = defn.handlers[claim.step.handler_id]
+        wait_events: tuple[tuple[HistoryEventType, dict[str, Any]], ...] = ()
         if claim.step.status is StepStatus.CLAIMED and claim.step.wait_key is not None:
             expired = self._expired_wait_handler(defn, claim)
             if expired is not None:
                 handler = expired
+                # A resolved wait records WAIT_RESOLVED at delivery; without
+                # this, an expired one recorded nothing, and the only trace of
+                # the deadline was which handler happened to run next.
+                wait_events = (
+                    (
+                        HistoryEventType.WAIT_EXPIRED,
+                        {
+                            "wait_key": claim.step.wait_key,
+                            "ordinal": claim.step.ordinal,
+                            "on_timeout": expired.id,
+                        },
+                    ),
+                )
         steps = await self._store.get_steps(claim.run.run_id)
         await self._record(
             claim.run,
             (
+                *wait_events,
                 (
                     HistoryEventType.ATTEMPT_STARTED,
                     {

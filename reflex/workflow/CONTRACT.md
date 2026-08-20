@@ -434,3 +434,68 @@ on one key — the singleton promise in §1 governs *admissions*, and an
 operator re-opening a run is a human override, not an admission. The operator
 can see what holds the key (`reflex workflows list -w <workflow>`) and decide;
 the engine does not silently refuse a repair because a policy would have.
+
+## 10. The observable vocabulary
+
+Everything above describes behaviour; this is the complete list of words the
+engine uses to describe it. An operator reading a run sees exactly these
+values and nothing else, and a value that appears here but is never produced
+(or is produced but never appears here) is a defect — `test_contract_vocabulary.py`
+fails on either.
+
+**Run status.** Nonterminal: `PENDING` (admitted, nothing claimed yet),
+`RUNNING` (an attempt holds a claim), `RETRYING` (an attempt failed and the
+next is scheduled with backoff), `WAITING` (blocked on a signal, a timer, or
+a join), `CANCELLING` (cancellation recorded, draining), `NEEDS_ATTENTION`
+(suspended for a person; §8 names every reason). Terminal: `COMPLETED`,
+`FAILED`, `CANCELLED`, `TIMED_OUT`.
+
+**Step status.** In flight: `READY` (claimable once it is the frontier),
+`BLOCKED` (a wait or join slot not yet satisfied), `CLAIMED` (a worker holds
+it under a lease), `RETRY_WAIT` (business retry scheduled), `RECOVERY_WAIT`
+(lease lapsed, awaiting re-execution). Terminal: `SUCCEEDED`, `FAILED`,
+`TIMED_OUT`, `CANCELLED`, `NEEDS_ATTENTION`, `SKIPPED`.
+
+**Start disposition** — what admission did with a submission: `started`,
+`deduplicated` (§6 request key), `coalesced` (debounce), `skipped`
+(singleton), `rejected` (rate limit, with `retry_after`).
+
+**Delivery disposition** — what the store did with a signal or arrival:
+`resolved`, `buffered` (arrived before its wait was armed), `counted` (a join
+arrival that is not the last), `duplicate` (repeated sender key),
+`expired` (run past its deadline), `unknown_run`, `run_terminal`.
+
+**History events.** Append-only, one run's whole story:
+
+| event | means |
+|---|---|
+| `run_admitted` | the run exists; admission committed |
+| `step_scheduled` | a slot was preallocated for future work |
+| `attempt_started` | a claimed attempt began executing |
+| `attempt_succeeded` | the attempt committed its transition |
+| `attempt_failed` | the attempt raised |
+| `attempt_timed_out` | the attempt exceeded its `timeout=` |
+| `attempt_cancelled` | the attempt was cancelled cooperatively |
+| `attempt_abandoned` | the attempt's work was discarded: fenced claim, lost lease, or a commit refused past the run deadline |
+| `step_retry_scheduled` | the next business attempt was scheduled with backoff |
+| `step_recovered` | a lapsed lease was reclaimed; costs one recovery, not an attempt |
+| `step_tombstoned` | a terminal transition closed a slot that will now never run |
+| `step_restored` | `retry`/`skip` brought back a slot a failure had tombstoned |
+| `step_skipped` | an operator marked a blocking step `SKIPPED` |
+| `run_completed`, `run_failed`, `run_timed_out`, `run_cancelled` | the run reached that terminal state |
+| `run_cancel_requested` | cancellation intent recorded; `cause: parent_close` when a closing parent did it (§5) |
+| `run_needs_attention` | suspended, carrying the `reason` from §8 |
+| `run_resumed` | reopened; `origin` distinguishes `resume` from `retry` |
+| `child_started` | a fan-out admitted a branch |
+| `child_resolved` | a branch's arrival reached its parent's join |
+| `wait_armed` | a wait or timer slot was armed |
+| `wait_resolved` | a delivery satisfied a wait |
+| `wait_expired` | a wait reached its deadline; the `on_timeout` branch runs |
+| `signal_buffered` | a signal arrived before its wait was armed |
+| `signal_duplicate` | a repeated sender key was ignored |
+| `substep_recorded` | an `rx.step` result was journalled |
+
+Both wait outcomes are recorded, deliberately: "the approval came through" and
+"nobody answered in time" lead to different handlers and different
+conversations, and a history that showed only which handler ran next would
+make an operator infer the difference instead of read it.
