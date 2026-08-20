@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from reflex_base.utils import console
+import logging
 
 from reflex_components_core import el as elements
 from reflex_components_core.core.helmet import helmet
+
+logger = logging.getLogger(__name__)
 
 
 class Script(elements.Script):
@@ -45,7 +47,7 @@ class Script(elements.Script):
         on_unmount = props.pop("on_unmount", None)
 
         if props:
-            console.warn(
+            logger.warning(
                 f"rx.script does not support the following properties: {list(props.keys())}"
             )
 

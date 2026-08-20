@@ -18,8 +18,12 @@ dependencies = [
     "httpx >=0.25.1,<1.0",
     "packaging >=24.2",
     "platformdirs >=3.10.0,<5.0",
+    "reflex-base >= 0.9.8.post19.dev0",
     "rich >=13,<16",
 ]
+
+[tool.uv.sources]
+reflex-base = { workspace = true }
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

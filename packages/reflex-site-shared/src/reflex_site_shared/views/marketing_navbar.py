@@ -10,11 +10,14 @@ from reflex_site_shared.components.marketing_button import button as marketing_b
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
+    GITHUB_ORG_URL,
     GITHUB_STARS,
     GITHUB_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
+    XY_GITHUB_STARS,
+    XY_GITHUB_URL,
 )
 from reflex_site_shared.views.sidebar import navbar_sidebar_button
 
@@ -35,7 +38,7 @@ def github() -> rx.Component:
             size="sm",
             variant="ghost",
         ),
-        href=GITHUB_URL,
+        href=GITHUB_ORG_URL,
         custom_attrs={
             "aria-label": f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
         },
@@ -171,6 +174,18 @@ def gold_star() -> rx.Component:
     )
 
 
+def stars_label(stars: int) -> str:
+    """Abbreviate a star count in thousands, keeping a tenth when non-zero.
+
+    Args:
+        stars: The exact star count.
+
+    Returns:
+        The abbreviated count, e.g. "28K" or "1.4K".
+    """
+    return f"{round(stars / 1000, 1):g}K"
+
+
 def open_source_row(
     name: str,
     repo: str,
@@ -235,13 +250,13 @@ def open_source_column() -> rx.Component:
             open_source_row(
                 "Reflex",
                 GITHUB_URL,
-                f"{GITHUB_STARS // 1000}K",
+                stars_label(GITHUB_STARS),
                 tagline="Web apps in pure Python",
             ),
             open_source_row(
                 "XY",
-                "https://github.com/reflex-dev/xy",
-                "6",
+                XY_GITHUB_URL,
+                stars_label(XY_GITHUB_STARS),
                 tagline="Fast and composable charts",
             ),
             class_name="flex flex-col",
@@ -570,7 +585,7 @@ def resources_menu_footer() -> rx.Component:
                     class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
                 ),
                 "GitHub",
-                href=GITHUB_URL,
+                href=GITHUB_ORG_URL,
                 target="_blank",
                 class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
             ),

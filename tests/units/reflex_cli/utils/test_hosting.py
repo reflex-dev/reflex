@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from unittest.mock import mock_open
 
 import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
-from reflex_cli.utils.exceptions import TokenValidationError
+from reflex_cli.utils.exceptions import NotAuthenticatedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     AuthenticatedClient,
     ScaleParams,
@@ -17,6 +18,7 @@ from reflex_cli.utils.hosting import (
     create_app,
     create_deployment,
     delete_token_from_config,
+    find_gcp_connection,
     gcp_deploy_available,
     get_app_history,
     get_auth_request_id,
@@ -27,13 +29,16 @@ from reflex_cli.utils.hosting import (
     get_selected_project,
     get_token_org_id,
     get_token_tier,
+    list_gcp_connections,
     list_provider_accounts,
     normalize_project_id,
     normalize_provider,
     provider_display_name,
     rollback_deployment,
     save_token_to_config,
+    set_app_full_deploy,
     set_app_provider,
+    set_instance_bounds,
     submit_security_review,
     update_deployment_description,
     validate_token,
@@ -479,12 +484,153 @@ def test_set_app_provider_success(mocker: MockerFixture):
     assert mock_post.call_args.kwargs["json"] == {"provider": "gcp"}
 
 
+def test_set_app_provider_forwards_connection(mocker: MockerFixture):
+    """A named connection rides along as provider_account_id."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"provider": "gcp"})
+    )
+    assert set_app_provider("app-1", "gcp", _CLIENT, provider_account_id="conn-1") == (
+        "gcp"
+    )
+    assert mock_post.call_args.kwargs["json"] == {
+        "provider": "gcp",
+        "provider_account_id": "conn-1",
+    }
+
+
+def test_set_app_full_deploy_success(mocker: MockerFixture):
+    """The mode change posts to the app's full_deploy endpoint."""
+    mock_post = mocker.patch(
+        "httpx.post",
+        return_value=_ok(
+            mocker, {"full_deploy": True, "stopped": True, "stop_confirmed": True}
+        ),
+    )
+    result = set_app_full_deploy("app-1", True, _CLIENT)
+    assert result == {"full_deploy": True, "stopped": True, "stop_confirmed": True}
+    assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/full_deploy")
+    assert mock_post.call_args.kwargs["json"] == {"full_deploy": True}
+
+
+def test_set_app_full_deploy_error(mocker: MockerFixture):
+    """A refused mode change surfaces the server detail as an error string."""
+    mocker.patch(
+        "httpx.post", return_value=_error(mocker, 400, "full deploy requires GCP")
+    )
+    result = set_app_full_deploy("app-1", True, _CLIENT)
+    assert isinstance(result, str)
+    assert result.startswith("set full deploy failed")
+    assert "full deploy requires GCP" in result
+
+
+def test_list_gcp_connections_reads_the_status(mocker: MockerFixture):
+    """Connections come from the member-visible GCP status."""
+    mocker.patch(
+        "httpx.get",
+        return_value=_ok(
+            mocker,
+            {"configured": True, "connections": [{"id": "c1", "name": "prod"}, "junk"]},
+        ),
+    )
+    assert list_gcp_connections(_client(org_id="org-1")) == [
+        {"id": "c1", "name": "prod"}
+    ]
+
+
+def test_list_gcp_connections_refuses_an_unauthenticated_client():
+    """The docstring promises NotAuthenticatedError, not an AttributeError."""
+    with pytest.raises(NotAuthenticatedError):
+        list_gcp_connections(None)  # pyright: ignore[reportArgumentType]
+
+
+def test_list_gcp_connections_without_org():
+    """No resolvable org id means there is nothing to list."""
+    assert list_gcp_connections(_client()) == []
+
+
+def test_list_gcp_connections_explicit_org(mocker: MockerFixture):
+    """An explicit org id wins over the token's own."""
+    mock_get = mocker.patch("httpx.get", return_value=_ok(mocker, {"connections": []}))
+    assert list_gcp_connections(_client(org_id="token-org"), org_id="other-org") == []
+    assert "other-org" in mock_get.call_args.args[0]
+
+
+@pytest.mark.parametrize(
+    ("wanted", "expected"),
+    [
+        ("prod", "c1"),
+        ("PROD", "c1"),
+        ("  prod  ", "c1"),
+        ("c2", "c2"),
+        ("staging", "c2"),
+        ("nope", None),
+    ],
+)
+def test_find_gcp_connection(wanted: str, expected: str | None):
+    """Connections match on id first, then on name, case-insensitively."""
+    connections = [
+        {"id": "c1", "name": "prod"},
+        {"id": "c2", "name": "Staging"},
+    ]
+    match = find_gcp_connection(connections, wanted)
+    assert (match or {}).get("id") == expected
+
+
 def test_set_app_provider_error(mocker: MockerFixture):
     """A rejected switch surfaces the server detail as an error string."""
     mocker.patch("httpx.post", return_value=_error(mocker, 403, "Enterprise required"))
     result = set_app_provider("app-1", "gcp", _CLIENT)
     assert result.startswith("set provider failed")
     assert "Enterprise required" in result
+
+
+@pytest.mark.parametrize(
+    ("min_instances", "max_instances", "expected_body"),
+    [
+        (0, 5, {"min_instances": 0, "max_instances": 5}),
+        (2, None, {"min_instances": 2}),
+        (None, 10, {"max_instances": 10}),
+    ],
+)
+def test_set_instance_bounds_sends_only_given_bounds(
+    mocker: MockerFixture,
+    min_instances: int | None,
+    max_instances: int | None,
+    expected_body: dict[str, int],
+):
+    """Only the bounds the caller passed are sent; the rest keep their value."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok(mocker))
+    assert (
+        set_instance_bounds(
+            "app-1",
+            _CLIENT,
+            min_instances=min_instances,
+            max_instances=max_instances,
+        )
+        is None
+    )
+    assert mock_post.call_args.args[0].endswith("/api/v1/apps/app-1/instance_bounds")
+    assert mock_post.call_args.kwargs["json"] == expected_body
+    assert mock_post.call_args.kwargs["headers"]["X-API-TOKEN"] == "fake-token"
+
+
+@pytest.mark.parametrize(
+    ("status_code", "detail"),
+    [
+        (400, "min_instances must be less than or equal to max_instances"),
+        (400, "platform does not support instance bounds"),
+        (409, "a scale operation is already running for this app"),
+    ],
+)
+def test_set_instance_bounds_error(
+    mocker: MockerFixture, status_code: int, detail: str
+):
+    """Validation, unsupported-platform and conflict details reach the caller."""
+    mocker.patch("httpx.post", return_value=_error(mocker, status_code, detail))
+    result = set_instance_bounds("app-1", _CLIENT, min_instances=1, max_instances=0)
+    assert result is not None
+    assert result.startswith("set instance bounds failed")
+    assert detail in result
 
 
 def test_rollback_deployment_success(mocker: MockerFixture):
@@ -566,6 +712,35 @@ def test_create_deployment_forwards_description(mocker: MockerFixture):
     assert mock_post.call_args.kwargs["data"]["description"] == "my note"
 
 
+@pytest.mark.parametrize("vmtype", ["c2m2", None])
+def test_create_deployment_forwards_vmtype(mocker: MockerFixture, vmtype: str | None):
+    """A requested VM type reaches the submit body; nothing is sent otherwise."""
+    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+    mocker.patch("importlib.metadata.version", return_value="0.1.99")
+    mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
+    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
+    from pathlib import Path
+
+    create_deployment(
+        zip_dir=Path("/tmp"),
+        client=_CLIENT,
+        app_name="n",
+        project_id=None,
+        regions=None,
+        hostname=None,
+        vmtype=vmtype,
+        secrets=None,
+        packages=None,
+        strategy=None,
+        app_id="app-1",
+    )
+    data = mock_post.call_args.kwargs["data"]
+    if vmtype is None:
+        assert "vm_type" not in data
+    else:
+        assert data["vm_type"] == vmtype
+
+
 def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
     """History rows carry the deployment note and rollback eligibility."""
     payload = [
@@ -615,32 +790,46 @@ def test_validate_token_sends_request_id_header(mocker: MockerFixture):
     assert get_auth_request_id() != first_request_id
 
 
-def test_validate_token_with_retries_warns_with_request_id(mocker: MockerFixture):
-    """A failed validation surfaces the request id for support correlation."""
+def test_validate_token_with_retries_warns_with_request_id(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A failed validation surfaces the request id for support correlation.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mocker.patch("httpx.post", return_value=_error(mocker, 500, "boom"))
-    mock_warn = mocker.patch("reflex_cli.utils.hosting.console.warn")
 
     assert validate_token_with_retries("some-token") == {}
 
     request_id = get_auth_request_id()
     assert request_id
-    assert request_id in mock_warn.call_args.args[0]
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings
+    assert request_id in warnings[-1]
 
 
 def test_validate_token_with_retries_access_denied_reports_request_id(
-    mocker: MockerFixture,
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
 ):
-    """The access denied error message includes the auth request id."""
+    """The access denied error message includes the auth request id.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     response = mocker.Mock()
     response.raise_for_status.return_value = None
     response.json.side_effect = ValueError("bad json")
     mocker.patch("httpx.post", return_value=response)
-    mock_error = mocker.patch("reflex_cli.utils.hosting.console.error")
     mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
 
     assert validate_token_with_retries("some-token") == {}
 
-    assert get_auth_request_id() in mock_error.call_args.args[0]
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors
+    assert get_auth_request_id() in errors[-1]
 
 
 def test_validate_token_failure_carries_request_id_on_exception(mocker: MockerFixture):

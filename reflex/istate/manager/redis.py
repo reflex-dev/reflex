@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import inspect
+import logging
 import os
 import sys
 import time
@@ -15,7 +16,6 @@ from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
 from reflex_base.environment import environment
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
@@ -31,6 +31,8 @@ from reflex.istate.manager import (
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils.tasks import ensure_task
+
+logger = logging.getLogger(__name__)
 
 NOTIFY_KEYSPACE_EVENTS = (
     "K"  # Enable keyspace notifications (target a particular key)
@@ -154,7 +156,7 @@ class StateManagerRedis(StateManager):
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(
-        default=asyncio.Lock(), init=False
+        default_factory=asyncio.Lock, init=False
     )
 
     # Whether to opportunistically hold locks for fast in-memory access.
@@ -430,15 +432,16 @@ class StateManagerRedis(StateManager):
                 self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
             ) / 1000
             if time_taken > self.lock_warning_threshold / 1000:
-                console.warn(
+                event_suffix = (
+                    f" Happened in event: {event.name}"
+                    if (event := context.get("event")) is not None
+                    else ""
+                )
+                logger.warning(
                     f"Lock for token {token} was held too long {time_taken=}s, "
-                    f"use `@rx.event(background=True)` decorator for long-running tasks."
-                    + (
-                        f" Happened in event: {event.name}"
-                        if (event := context.get("event")) is not None
-                        else ""
-                    ),
-                    dedupe=True,
+                    "use `@rx.event(background=True)` decorator for long-running "
+                    f"tasks.{event_suffix}",
+                    extra={"dedupe": True},
                 )
 
         # Recursively set_state on all known substates.
@@ -514,7 +517,7 @@ class StateManagerRedis(StateManager):
                 and await self._n_lock_contenders(self._lock_key(token)) > 0
             ):
                 if self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} has contention, not leasing"
                     )
                 async with lock_held_ctx:
@@ -532,7 +535,7 @@ class StateManagerRedis(StateManager):
                 current_lease_task := await self._get_local_lease(lock_key)
             ) and new_lease_task is not None:
                 if self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} obtained lock {lock_id.decode()}."
                     )
             elif current_lease_task is None:
@@ -540,7 +543,7 @@ class StateManagerRedis(StateManager):
                 await self._try_extend_lock(self._lock_key(token))
                 if await self.redis.get(self._lock_key(token)) == lock_id:
                     if self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} holding lock {lock_id.decode()}, {new_lease_task=} already exited, doing single update..."
                         )
                     async with lock_held_ctx:
@@ -549,7 +552,7 @@ class StateManagerRedis(StateManager):
                         await self.set_state(token, state, lock_id=lock_id, **context)
                     return
                 elif self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lock {lock_id.decode()} expired while waiting for lease task to exit..."
                     )
         # Have to retry getting the state, but now it's probably cached.
@@ -616,11 +619,11 @@ class StateManagerRedis(StateManager):
                         yield cast(TOKEN_TYPE, cached_state)
                         return
                     elif self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease task found, lock held, but no cached state"
                         )
                 elif self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} no active lease task found"
                     )
         yield None
@@ -636,7 +639,7 @@ class StateManagerRedis(StateManager):
             if not event.is_set():
                 event.set()
                 if self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {key.decode()} NOTIFY 1 / {len(self._lock_waiters[key])} waiters {event=}"
                     )
                 break
@@ -666,7 +669,7 @@ class StateManagerRedis(StateManager):
         async def do_flush() -> None:
             if (state_lock := self._cached_states_locks.get(lock_key)) is None:
                 # If we lost the lock, we can't write the state, something went wrong.
-                console.warn(
+                logger.warning(
                     f"State lock for {lock_key} missing while finalizing lease."
                 )
                 return
@@ -676,7 +679,7 @@ class StateManagerRedis(StateManager):
                 try:
                     if state:
                         if self._debug_enabled:
-                            console.debug(
+                            logger.debug(
                                 f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} flushing state"
                             )
                         await self.set_state(token, state, lock_id=lock_id, **context)
@@ -685,7 +688,7 @@ class StateManagerRedis(StateManager):
                         self._local_leases.pop(lock_key, None)
                         # TODO: clean up the cached states locks periodically
                     elif self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
                         )
 
@@ -694,7 +697,7 @@ class StateManagerRedis(StateManager):
             async with cleanup_ctx:
                 lease_break_time = self.oplock_hold_time_ms / 1000
                 if self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} started, sleeping for {lease_break_time}s"
                     )
                 try:
@@ -824,7 +827,7 @@ class StateManagerRedis(StateManager):
                 if (lease_task := await self._get_local_lease(token)) is not None:
                     lease_task.cancel()
                     if self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {token} OPLOCK CONTEND - lease break task cancelled {lease_task=}"
                         )
 
@@ -1026,7 +1029,7 @@ class StateManagerRedis(StateManager):
             and await self._try_get_lock(lock_key, lock_id)
         ):
             if self._debug_enabled:
-                console.debug(
+                logger.debug(
                     f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} instaque by {lock_id.decode()}"
                 )
             return
@@ -1047,7 +1050,7 @@ class StateManagerRedis(StateManager):
                 # Check if this process got a lease, then we can abandon waiting on the redis lock.
                 await self._get_local_lease(token, raise_when_found=True)
                 if self._debug_enabled:
-                    console.debug(
+                    logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} waiting for {lock_id.decode()}"
                     )
                 try:
@@ -1057,12 +1060,12 @@ class StateManagerRedis(StateManager):
                     )
                 except (TimeoutError, asyncio.TimeoutError):
                     if self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"
                         )
                     lock_released_event.set()  # to re-check the lock
             if self._debug_enabled:
-                console.debug(
+                logger.debug(
                     f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} acquired by {lock_id.decode()} event={lock_released_event}"
                 )
 
@@ -1101,12 +1104,12 @@ class StateManagerRedis(StateManager):
                 deleted_lock_id = await self.redis.getdel(lock_key)
                 if deleted_lock_id == lock_id:
                     if self._debug_enabled:
-                        console.debug(
+                        logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} released by {lock_id.decode()}"
                         )
                 elif deleted_lock_id is not None:
                     # This can happen if the caller never tried to `set_state` before the lock expired and is a pretty bad bug.
-                    console.warn(
+                    logger.warning(
                         f"{lock_key.decode()} was released by {lock_id.decode()}, but it belonged to {deleted_lock_id.decode()}. This is a bug."
                     )
                 # To avoid race when a waiter is registered after the del message is processed.

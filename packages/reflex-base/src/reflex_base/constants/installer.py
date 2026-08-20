@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
 from .utils import classproperty
+
+logger = logging.getLogger(__name__)
 
 
 # Bun config.
@@ -71,7 +74,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "22.12.0"
+    MIN_VERSION = "22.22.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -86,12 +89,11 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    # Pinned within 7.x (8.x not yet adopted); 7.18.2 carries a security fix.
-    default_version = "7.18.2"
+    # Requires Node >= 22.22.0 and React >= 19.2.7; keep Node.MIN_VERSION and
+    # _determine_react_version in step when bumping.
+    default_version = "8.3.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
-        from reflex_base.utils import console
-
-        console.warn(
+        logger.warning(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
@@ -101,9 +103,7 @@ def _determine_react_router_version() -> str:
 def _determine_react_version() -> str:
     default_version = "19.2.8"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
-        from reflex_base.utils import console
-
-        console.warn(
+        logger.warning(
             f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
@@ -135,7 +135,6 @@ class PackageJson(SimpleNamespace):
         """
         return {
             "react-router": cls._react_router_version,
-            "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
             "react": cls._react_version,
             "react-helmet": "6.1.0",
@@ -152,16 +151,12 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        # Held at 8.0.16: vite 8.2.0 breaks memoized-component re-rendering under
-        # the full integration suite — stateful memo components render their
-        # initial value but never update on subsequent state changes (bisected:
-        # 8.0.16 green, 8.2.0 red, all other deps identical). Root-cause pending;
-        # only bump once the regression is understood.
-        "vite": "8.0.16",
+        "vite": "8.2.0",
     }
-    # Force specific transitive npm deps to a single resolved version when needed.
-    OVERRIDES: dict[str, str] = {
-        # postcss < 8.5.18 carries a security advisory; force transitive
-        # resolutions up to a patched release.
-        "postcss": "8.5.23",
-    }
+    # Force specific transitive npm deps to a single resolved version when
+    # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is
+    # one we depend on directly: a top-level pin already satisfies and dedupes
+    # every transitive requirer, and unlike an override it is not persisted into
+    # a project's `reflex.lock/package.json` (where a later removal here cannot
+    # clean it up again). Reserve overrides for packages we do not declare.
+    OVERRIDES: dict[str, str] = {}

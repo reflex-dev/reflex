@@ -62,6 +62,7 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.organization.sso,
                 ai_builder.organization.provisioning,
                 ai_builder.organization.service_accounts,
+                ai_builder.organization.automated_provisioning,
                 ai_builder.organization.usage,
                 ai_builder.organization.deployment_approvals,
                 ai_builder.organization.audit_logs,
