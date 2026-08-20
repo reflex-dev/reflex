@@ -302,6 +302,23 @@ def test_token_clear_reports_an_unreadable_config(
     assert not _messages(caplog, SUCCESS)
 
 
+def test_token_clear_reports_a_non_object_config(caplog: pytest.LogCaptureFixture):
+    """Valid JSON that is not an object is reported, not raised as a traceback.
+
+    Args:
+        caplog: The pytest log capture fixture.
+    """
+    constants.Hosting.HOSTING_JSON.write_text('["not", "an", "object"]')
+
+    result = runner.invoke(hosting_cli, ["token", "--clear"])
+
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert any(
+        "Unable to confirm" in message for message in _messages(caplog, logging.ERROR)
+    )
+
+
 def test_token_clear_reports_a_failed_removal(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):

@@ -503,14 +503,19 @@ def _read_hosting_config() -> dict[str, Any]:
 
     Raises:
         OSError: If the config exists but cannot be read.
-        ValueError: If the config exists but does not hold valid JSON.
+        ValueError: If the config exists but does not hold a JSON object.
 
     """
     try:
         with constants.Hosting.HOSTING_JSON.open() as config_file:
-            return json.load(config_file)
+            hosting_config = json.load(config_file)
     except FileNotFoundError:
         return {}
+    # Valid JSON is not necessarily the object every caller indexes into.
+    if not isinstance(hosting_config, dict):
+        msg = f"{constants.Hosting.HOSTING_JSON} does not hold a JSON object"
+        raise ValueError(msg)
+    return hosting_config
 
 
 def stored_access_token() -> str:
@@ -570,9 +575,12 @@ def delete_token_from_config():
             logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
-    # Delete the previous hosting service data if present.
-    if constants.Hosting.HOSTING_JSON_V0.exists():
-        constants.Hosting.HOSTING_JSON_V0.unlink()
+    # Delete the previous hosting service data if present. Best efforts, like
+    # the rest of this function: the legacy file holds no token the CLI reads.
+    try:
+        constants.Hosting.HOSTING_JSON_V0.unlink(missing_ok=True)
+    except OSError as ex:
+        logger.debug(f"Unable to remove {constants.Hosting.HOSTING_JSON_V0}: {ex}")
 
 
 def save_token_to_config(token: str):

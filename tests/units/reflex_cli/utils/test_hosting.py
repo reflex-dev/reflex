@@ -198,6 +198,28 @@ def test_stored_access_token_distinguishes_absent_from_unreadable():
     with pytest.raises(ValueError):
         stored_access_token()
 
+    # Valid JSON that is not an object is still unusable, not empty.
+    constants.Hosting.HOSTING_JSON.write_text('["not", "an", "object"]')
+    with pytest.raises(ValueError):
+        stored_access_token()
+
+
+def test_delete_token_from_config_tolerates_an_unremovable_legacy_file(
+    mocker: MockerFixture,
+):
+    """The legacy cleanup must not abort the token removal it follows.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "valid_token"}')
+    constants.Hosting.HOSTING_JSON_V0.write_text("{}")
+    mocker.patch("pathlib.Path.unlink", side_effect=PermissionError("denied"))
+
+    delete_token_from_config()
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {}
+
 
 def test_delete_token_from_config_removes_the_legacy_file():
     """The pre-v1 hosting file is removed alongside the token."""
