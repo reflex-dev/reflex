@@ -7,6 +7,7 @@ import dataclasses
 import importlib.metadata
 import json
 import logging
+import os
 import platform
 import re
 import subprocess
@@ -348,16 +349,26 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
 webbrowser.BackgroundBrowser = SilentBackgroundBrowser
 
 
-def get_existing_access_token() -> str:
-    """Fetch the access token from the existing config if applicable.
+class TokenSource(str, Enum):
+    """Where an access token was loaded from."""
+
+    CONFIG = "config file"
+    ENVIRONMENT = "REFLEX_ACCESS_TOKEN environment variable"
+    OPTION = "--token option"
+    NONE = "none"
+
+
+def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
+    """Fetch the access token from the existing config if applicable, and say where it came from.
+
+    The config file takes precedence: ``REFLEX_ACCESS_TOKEN`` is consulted only
+    when the config file holds no token.
 
     Returns:
-        The access token.
-        If not found, return empty string for it instead.
+        The access token and the source it was loaded from.
+        If not found, return empty string and ``TokenSource.NONE`` instead.
 
     """
-    import os
-
     logger.debug("Fetching token from existing config...")
     access_token = ""
     try:
@@ -369,12 +380,26 @@ def get_existing_access_token() -> str:
             f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
 
-    if not access_token:
-        access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-        if access_token:
-            logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+    if access_token:
+        return access_token, TokenSource.CONFIG
 
-    return access_token
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
+    return "", TokenSource.NONE
+
+
+def get_existing_access_token() -> str:
+    """Fetch the access token from the existing config if applicable.
+
+    Returns:
+        The access token.
+        If not found, return empty string for it instead.
+
+    """
+    return get_existing_access_token_with_source()[0]
 
 
 def is_reflex_enterprise_installed() -> bool:

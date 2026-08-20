@@ -14,6 +14,7 @@ from reflex_cli.utils.hosting import (
     ScaleParams,
     ScaleType,
     SecurityReviewError,
+    TokenSource,
     authenticated_token,
     create_app,
     create_deployment,
@@ -24,6 +25,7 @@ from reflex_cli.utils.hosting import (
     get_auth_request_id,
     get_authenticated_client,
     get_existing_access_token,
+    get_existing_access_token_with_source,
     get_gcp_provider_status,
     get_security_review,
     get_selected_project,
@@ -65,6 +67,41 @@ def test_get_existing_access_token(
 
     mocker.patch("pathlib.Path.open", side_effect=FileNotFoundError("Test exception"))
     assert get_existing_access_token() == ""
+
+
+def test_get_existing_access_token_prefers_the_config_file(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
+    mocker.patch(
+        "pathlib.Path.open", mock_open(read_data='{"access_token": "config_token"}')
+    )
+
+    assert get_existing_access_token_with_source() == (
+        "config_token",
+        TokenSource.CONFIG,
+    )
+
+
+def test_get_existing_access_token_falls_back_to_the_environment(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
+    mocker.patch("pathlib.Path.open", mock_open(read_data='{"another_key": "value"}'))
+
+    assert get_existing_access_token_with_source() == (
+        "env_token",
+        TokenSource.ENVIRONMENT,
+    )
+
+
+def test_get_existing_access_token_with_no_token_anywhere(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    mocker.patch("pathlib.Path.open", side_effect=FileNotFoundError("Test exception"))
+
+    assert get_existing_access_token_with_source() == ("", TokenSource.NONE)
 
 
 @pytest.mark.parametrize(
