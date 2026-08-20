@@ -450,7 +450,17 @@ class WorkflowKernel:
             defn.state_cls: defn for defn in self._definitions.values()
         }
         self._store = store
-        self._clock = clock
+        # A worker on the default clock derives time from the store instead:
+        # wall clocks skew across a fleet, and a fast worker comparing its own
+        # time against a peer's lease expiry reclaims a live claim -- the
+        # duplicate execution leases exist to prevent. The offset is synced
+        # against the store's clock at startup and on every recovery pass, so
+        # skew is bounded by one round trip plus local drift per recovery
+        # interval. An explicitly injected clock (tests, the dev CLI's
+        # fast-forward) stays authoritative as given and is never synced.
+        self._store_clock_offset = 0.0
+        self._sync_clock_with_store = clock is time.time
+        self._clock = self._store_time if self._sync_clock_with_store else clock
         self._rng = rng
         self._poll_interval = poll_interval
         self._max_recoveries = max_recoveries
@@ -2760,6 +2770,32 @@ class WorkflowKernel:
             await asyncio.gather(*tasks, return_exceptions=True)
         self._prune()
 
+    def _store_time(self) -> float:
+        """The process clock corrected onto the store's time base.
+
+        Returns:
+            Epoch seconds by the store's clock, to within one sync error.
+        """
+        return time.time() + self._store_clock_offset
+
+    async def _sync_store_clock(self) -> None:
+        """Re-measure the offset between this process and the store's clock.
+
+        The store's answer is taken against the midpoint of the request, so
+        the measured offset is off by at most half the round trip.
+        """
+        if not self._sync_clock_with_store:
+            return
+        before = time.time()
+        store_now = await self._store.epoch_time()
+        after = time.time()
+        if store_now is None:
+            # The process clock is the authority for this store; stop asking.
+            self._sync_clock_with_store = False
+            self._store_clock_offset = 0.0
+            return
+        self._store_clock_offset = store_now - (before + after) / 2
+
     async def recover(self) -> int:
         """Renew this kernel's live claims, then reclaim expired ones.
 
@@ -2770,6 +2806,7 @@ class WorkflowKernel:
         Returns:
             The number of steps recovered.
         """
+        await self._sync_store_clock()
         await self._renew_leases()
         now = self._clock()
         self._next_recovery_at = now + self._recovery_interval

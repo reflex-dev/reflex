@@ -835,6 +835,21 @@ class PostgresRunStore:
             )
         return len(doomed)
 
+    async def epoch_time(self) -> float | None:
+        """The database clock, the one time source every worker shares.
+
+        Returns:
+            Epoch seconds by the database's clock.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "SELECT EXTRACT(EPOCH FROM clock_timestamp())::float8 AS now"
+            )
+            row = await cursor.fetchone()
+            assert row is not None
+            return float(row["now"])
+
     async def claim_next(
         self,
         now: float,

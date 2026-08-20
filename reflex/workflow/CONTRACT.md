@@ -233,6 +233,16 @@ Checked in this order at start:
   queues — a run whose frontier is on an unserved queue waits. Recovery is
   queue-agnostic (any worker recovers; the reclaimed step is then claimed by
   the right one).
+- **Time authority.** A worker on the default clock derives time from the
+  store: its offset against the store's clock is measured at startup and on
+  every recovery pass, so every scheduling comparison — lease expiry, due
+  times, schedule occurrence keys — uses one time base across the fleet, and
+  a machine with a fast wall clock can no longer reclaim a peer's live lease
+  or admit a schedule occurrence early. Skew among synced workers is bounded
+  by half a round trip plus local drift per recovery interval. Stores that
+  never leave one host (SQLite, memory) answer that the process clock is the
+  authority. An explicitly injected clock — the test harness, the dev CLI's
+  fast-forward — is authoritative as given and never synced.
 - **Stopping** is not a decision about a run. A worker asked to stop (SIGTERM,
   Ctrl-C, or an app lifespan ending) stops claiming immediately and gives the
   attempts it is already running a drain budget — `REFLEX_WORKFLOW_DRAIN` or `reflex workflows worker --drain`, 30s by default — to commit their own outcome. Anything still

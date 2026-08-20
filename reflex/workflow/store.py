@@ -433,6 +433,22 @@ class RunStore(Protocol):
         """
         ...
 
+    async def epoch_time(self) -> float | None:
+        """The store's own current time, when it has one all workers share.
+
+        Worker wall clocks skew, and every scheduling comparison -- lease
+        expiry, due times, schedule occurrence keys -- is only safe when the
+        comparands come from one clock. A store shared by many machines
+        (Postgres) answers with its database clock so every worker can derive
+        time from the same authority; a store that never leaves one host
+        answers None, because the host clock already is that authority.
+
+        Returns:
+            Epoch seconds by the store's clock, or None when the process
+            clock is the right authority.
+        """
+        ...
+
     async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
         """Delete terminal runs not updated since a cutoff, and all their data.
 
@@ -1567,6 +1583,14 @@ class MemoryRunStore:
                 if run.request_key is not None:
                     self._dedupe.pop((run.workflow_id, run.request_key), None)
             return len(doomed)
+
+    async def epoch_time(self) -> float | None:
+        """This store never leaves one host, whose clock is the authority.
+
+        Returns:
+            None: the process clock is correct here.
+        """
+        return None
 
     async def first_active(self, workflow_id: str, flow_key: str) -> RunRecord | None:
         """Find the oldest run still in flight under a flow-control key.
@@ -3065,6 +3089,14 @@ class SqliteRunStore:
                 return len(doomed)
 
         return await asyncio.to_thread(work)
+
+    async def epoch_time(self) -> float | None:
+        """This store never leaves one host, whose clock is the authority.
+
+        Returns:
+            None: the process clock is correct here.
+        """
+        return None
 
     async def claim_next(
         self,
