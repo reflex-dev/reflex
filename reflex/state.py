@@ -284,6 +284,10 @@ _RESOLUTION_DIRT: contextvars.ContextVar[dict[str, set[str]] | None] = (
     contextvars.ContextVar("reflex_resolution_dirt", default=None)
 )
 
+# Count of open recording contexts, so the per-dirty-mark fast path is a plain
+# global check instead of a contextvar lookup while no flush is resolving.
+_RESOLUTION_RECORDING_DEPTH = 0
+
 
 @contextlib.contextmanager
 def _recording_resolution_dirt(ledger: dict[str, set[str]]) -> Iterator[None]:
@@ -303,10 +307,13 @@ def _recording_resolution_dirt(ledger: dict[str, set[str]]) -> Iterator[None]:
     Yields:
         None.
     """
+    global _RESOLUTION_RECORDING_DEPTH
     token = _RESOLUTION_DIRT.set(ledger)
+    _RESOLUTION_RECORDING_DEPTH += 1
     try:
         yield
     finally:
+        _RESOLUTION_RECORDING_DEPTH -= 1
         _RESOLUTION_DIRT.reset(token)
 
 
@@ -1939,13 +1946,21 @@ class BaseState(EvenMoreBasicBaseState):
         """Mark one var dirty, recording it when delta resolution is active.
 
         The single choke point for "a var became dirty", so a flush can tell
-        its own resolution-created dirt apart from concurrent writers.
+        its own resolution-created dirt apart from concurrent writers. Known
+        boundary: dirt is name-only, so a concurrent rewrite of a var already
+        in a flush's snapshot, landing during that flush's resolution, is
+        still cleaned with it; distinguishing that needs per-var write
+        versions. Unreachable while every flush holds the token lock, which
+        all current callers do.
 
         Args:
             name: The var name to mark dirty on this state.
         """
         self.dirty_vars.add(name)
-        if (ledger := _RESOLUTION_DIRT.get()) is not None:
+        if (
+            _RESOLUTION_RECORDING_DEPTH
+            and (ledger := _RESOLUTION_DIRT.get()) is not None
+        ):
             ledger.setdefault(self.get_full_name(), set()).add(name)
 
     def _snapshot_dirty_vars(self) -> dict[str, set[str]]:
