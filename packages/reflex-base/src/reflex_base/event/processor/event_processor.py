@@ -571,8 +571,14 @@ class EventProcessor:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
         """
-        # Set up the event context for this task.
-        EventContext.set(entry.ctx)
+        # Set up the event context for this task. A client-sent event carries
+        # the view it was sent from; bind it here, before the handler runs, so
+        # every event the handler yields inherits it through fork() rather than
+        # resolving against whatever the root state happens to hold by then.
+        ctx = entry.ctx
+        if entry.event.router_data:
+            ctx = dataclasses.replace(ctx, router_data=entry.event.router_data)
+        EventContext.set(ctx)
         await self._execute_event(entry=entry, registered_handler=registered_handler)
 
     def _create_event_task(
