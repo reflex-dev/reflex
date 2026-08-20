@@ -5188,3 +5188,18 @@ async def test_resolve_delta_pops_subdict_when_all_keys_drop():
     }
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+def test_get_delta_skips_dirty_names_without_attached_substates() -> None:
+    """A dirty substate name with no attached instance is skipped, not a KeyError.
+
+    Under selective cleaning a prior flush can preserve another writer's dirt,
+    and a later redis fetch of the handler's slice restores the parent's
+    dirty_substates naming a substate that was not fetched. The dirt lives in
+    the unfetched substate's own record; the partial tree's delta walk must
+    pass over it the way _clean always has.
+    """
+    root = State(_reflex_internal_init=True)
+    root._clean()
+    root.dirty_substates.add("not___an___attached____substate")
+    assert root.get_delta() == {}
