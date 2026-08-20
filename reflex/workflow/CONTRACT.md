@@ -371,6 +371,30 @@ reason rather than on message text.
 Nothing on this table is silent: each writes its reason to the run's error and
 its own history event.
 
+### How this section is held to
+
+Every rule above is asserted somewhere, but two kinds of test back different
+claims and only one of them is evidence about crashes.
+
+- **In-process simulation** (most of the suite) abandons a claim, expires a
+  lease, or commits behind a fence. It is a fair test of store logic and no
+  test at all of what reached the disk, because the process that was supposed
+  to have died is still there to tidy up.
+- **Real kills** (`tests/units/workflow/test_crash_boundaries.py`) SIGKILL a
+  worker in a separate process at a named boundary and make a fresh process
+  produce the documented outcome. Effects are recorded in an fsynced ledger,
+  so an effect that really happened cannot be lost in a way that flatters the
+  result, and each scenario asserts the worker died by signal rather than
+  exiting — a scenario whose worker exits cleanly proves nothing while
+  passing everything.
+
+Boundaries covered by real kills: between claim and handler (work simply
+undone); after an unguarded effect (repeats, §2, which is the cost `rx.step`
+exists to remove); after a substep journal write (replays, never repeats);
+and immediately after a parent's finalize transaction (branches are already
+marked on disk, §5 — the case that distinguishes an in-transaction close from
+follow-up).
+
 ## 9. Operator actions
 
 Every action is legal only from the states listed; anything else is a refused
