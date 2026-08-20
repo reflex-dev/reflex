@@ -245,6 +245,12 @@ async def test_chained_event_keeps_originating_router_data(
     }
     other_view = {"pathname": "/other", "asPath": "/other", "query": {}}
 
+    # The regression needs the other view's event to reach the root state
+    # before the chained event does. Ordered by a barrier rather than by
+    # sleeps: were `touch` to land second, `note` would read the view it
+    # wanted anyway and the test would pass without exercising anything.
+    router_moved = asyncio.Event()
+
     class RouterState(State):
         seen: list[str] = []
 
@@ -255,28 +261,28 @@ async def test_chained_event_keeps_originating_router_data(
 
         @event
         def touch(self):
-            """A client-sent event on another page, only here to move the router."""
+            """A client-sent event on another page; it moves the shared router.
+
+            The processor assigns `state.router` before the handler body runs,
+            so by here the move has happened.
+            """
+            router_moved.set()
 
         @event(background=True)
         async def outer(self):
-            await asyncio.sleep(0.2)
+            # wait_for rather than asyncio.timeout: this package supports 3.10.
+            await asyncio.wait_for(router_moved.wait(), timeout=5)
             yield RouterState.note
 
+    def client_event(spec, router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(spec)[0], router_data=router_data
+        )
+
     async with real_base_state_processor as processor:
-        await processor.enqueue(
-            token,
-            dataclasses.replace(
-                Event.from_event_type(RouterState.outer())[0], router_data=item_view
-            ),
-        )
-        await asyncio.sleep(0.05)
-        await processor.enqueue(
-            token,
-            dataclasses.replace(
-                Event.from_event_type(RouterState.touch())[0], router_data=other_view
-            ),
-        )
-        await processor.join(5)
+        await processor.enqueue(token, client_event(RouterState.outer(), item_view))
+        await processor.enqueue(token, client_event(RouterState.touch(), other_view))
+        await processor.join(10)
 
     root_ctx = real_base_state_processor._root_context
     assert root_ctx is not None
