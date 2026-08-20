@@ -160,6 +160,7 @@ class DependencyTracker:
                 does not reference a BaseState.
         """
         from .base import ComputedVar
+        from .hybrid_property import HybridProperty
 
         if instruction.argval in self.INVALID_NAMES:
             msg = f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
@@ -193,7 +194,9 @@ class DependencyTracker:
         except AttributeError:
             static_obj = None
 
-        if isinstance(static_obj, property) and not isinstance(static_obj, ComputedVar):
+        if isinstance(static_obj, (property, HybridProperty)) and not isinstance(
+            static_obj, ComputedVar
+        ):
             # recurse into property fget functions
             ref_obj = static_obj.fget
         else:

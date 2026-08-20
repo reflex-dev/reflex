@@ -3729,6 +3729,20 @@ def field(
     )
 
 
+@once
+def _hybrid_property_cls() -> type:
+    """Get the HybridProperty class.
+
+    Imported lazily because `hybrid_property` imports this module.
+
+    Returns:
+        The HybridProperty class.
+    """
+    from .hybrid_property import HybridProperty
+
+    return HybridProperty
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
@@ -3804,7 +3818,10 @@ class BaseStateMeta(ABCMeta):
             elif (
                 not key.startswith("__")
                 and not callable(value)
-                and not isinstance(value, (staticmethod, classmethod, property, Var))
+                and not isinstance(
+                    value,
+                    (staticmethod, classmethod, property, _hybrid_property_cls(), Var),
+                )
             ):
                 if types.is_immutable(value):
                     new_value = Field(
