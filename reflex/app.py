@@ -122,9 +122,9 @@ Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 # Socket.IO codec: encodes non-finite floats as sentinel strings that the
 # frontend reviver restores, escaping user strings that would collide. Decoding
-# stays on the stdlib because orjson rounds integers outside the signed 64-bit
-# range, and inbound payloads carry client-supplied ids (snowflakes, database
-# keys) that must survive exactly.
+# stays on the stdlib because orjson rounds integers outside -2**63..2**64-1
+# to floats, and inbound payloads carry client-supplied ids (snowflakes,
+# database keys) that must survive exactly.
 _SOCKET_JSON_CODEC = SimpleNamespace(
     dumps=staticmethod(format.orjson_dumps_socket),
     loads=staticmethod(json.loads),
@@ -2110,7 +2110,9 @@ class EventNamespace(AsyncNamespace):
                 f" Event data: {fields}"
             )
             try:
-                fields = format.orjson_loads(fields)
+                # stdlib, matching _SOCKET_JSON_CODEC: this is client-supplied
+                # data and orjson rounds integers outside -2**63..2**64-1.
+                fields = json.loads(fields)
             except ValueError as ex:
                 msg = f"Failed to deserialize event data: {fields}."
                 raise exceptions.EventDeserializationError(msg) from ex

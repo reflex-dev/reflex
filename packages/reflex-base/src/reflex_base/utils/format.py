@@ -929,9 +929,10 @@ def orjson_loads(data: str | bytes) -> Any:
 
     Falls back to stdlib json.loads if orjson is not installed.
 
-    orjson rounds integers outside the signed 64-bit range to floats, so use
-    stdlib ``json.loads`` for payloads that may carry arbitrary-precision
-    integers (e.g. the 128-bit ``project_hash`` in ``reflex.json``).
+    orjson keeps integers in ``-2**63..2**64-1`` exact and silently rounds
+    anything outside that to a float, so use stdlib ``json.loads`` for payloads
+    that may carry arbitrary-precision integers (the 128-bit ``project_hash``
+    in ``reflex.json``) or client-supplied ones (socket events, upload args).
 
     Args:
         data: JSON string or bytes to deserialize.

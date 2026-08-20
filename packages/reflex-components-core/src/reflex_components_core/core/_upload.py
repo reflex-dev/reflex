@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import json
 from collections import deque
 from collections.abc import (
     AsyncGenerator,
@@ -19,7 +20,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions
-from reflex_base.utils.format import orjson_dumps_socket, orjson_loads
+from reflex_base.utils.format import orjson_dumps_socket
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -545,7 +546,10 @@ def _decode_event_args(encoded: str | None) -> dict[str, Any]:
     if not encoded:
         return {}
     try:
-        decoded = orjson_loads(encoded)
+        # stdlib, not orjson: this is a client-supplied payload unpacked
+        # straight into the handler event, and orjson rounds integers outside
+        # -2**63..2**64-1 (snowflakes, large database keys).
+        decoded = json.loads(encoded)
     except ValueError as exc:
         raise HTTPException(
             status_code=400, detail="Malformed upload event args."
