@@ -1118,11 +1118,15 @@ class Parallel:
         then: Handler that receives the list of branch results.
         mode: ``"all"`` continues once every branch has reported; ``"first"``
             continues as soon as one has, and cancels the rest.
+        parent_close: What becomes of branches still running when the parent
+            reaches a terminal state -- ``"cancel"`` stops them, ``"abandon"``
+            lets them run on.
     """
 
     branches: tuple[Any, ...]
     then: Any
     mode: Literal["all", "first"] = "all"
+    parent_close: Literal["cancel", "abandon"] = "cancel"
 
     def __post_init__(self):
         """Validate the fan-out.
@@ -1140,10 +1144,19 @@ class Parallel:
         if self.mode not in ("all", "first"):
             msg = f'parallel() mode must be "all" or "first", got {self.mode!r}.'
             raise WorkflowDefinitionError(msg)
+        if self.parent_close not in ("cancel", "abandon"):
+            msg = (
+                'parallel() parent_close must be "cancel" or "abandon", got '
+                f"{self.parent_close!r}."
+            )
+            raise WorkflowDefinitionError(msg)
 
 
 def parallel(
-    *branches: Any, then: Any, mode: Literal["all", "first"] = "all"
+    *branches: Any,
+    then: Any,
+    mode: Literal["all", "first"] = "all",
+    parent_close: Literal["cancel", "abandon"] = "cancel",
 ) -> Parallel:
     """Run branches concurrently, then continue with all their results.
 
@@ -1162,15 +1175,23 @@ def parallel(
     Pass ``mode="first"`` to race them instead: the run continues as soon as
     one branch reports, and the others are cancelled.
 
+    Branches stop when the parent does. If the parent is cancelled, fails, or
+    times out with branches still running, those branches are cancelled too --
+    an operator stopping a rollout stops the regional deploys it started. Pass
+    ``parent_close="abandon"`` when a branch really is delegated work that
+    should outlive its starter.
+
     Args:
         branches: Root events to run concurrently.
         then: Handler to run once the fan-out is satisfied.
         mode: ``"all"`` to wait for every branch, ``"first"`` to race them.
+        parent_close: ``"cancel"`` stops branches still running when the
+            parent finishes; ``"abandon"`` lets them run on.
 
     Returns:
         The control return value.
     """
-    return Parallel(branches=branches, then=then, mode=mode)
+    return Parallel(branches=branches, then=then, mode=mode, parent_close=parent_close)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

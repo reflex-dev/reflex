@@ -1679,7 +1679,11 @@ class WorkflowKernel:
             )
         if isinstance(control, Parallel):
             children = self._child_records(
-                claim, control.branches, claim.run.next_ordinal, now
+                claim,
+                control.branches,
+                claim.run.next_ordinal,
+                now,
+                control.parent_close,
             )
             then_id = self._resolve_successor(defn, control.then).handler_id
             join = StepRecord(
@@ -2348,6 +2352,7 @@ class WorkflowKernel:
         branches: tuple[Any, ...],
         join_ordinal: int,
         now: float,
+        parent_close: str,
     ) -> tuple[tuple[RunRecord, StepRecord], ...]:
         """Build the child runs a fan-out will create.
 
@@ -2360,6 +2365,8 @@ class WorkflowKernel:
             branches: The root events to run concurrently.
             join_ordinal: The join slot the children report to.
             now: Current time in epoch seconds.
+            parent_close: What happens to a branch still running when the
+                parent reaches a terminal state.
 
         Returns:
             Each child run paired with its root slot.
@@ -2407,6 +2414,7 @@ class WorkflowKernel:
                     next_ordinal=1,
                     parent_run_id=claim.run.run_id,
                     parent_ordinal=join_ordinal,
+                    parent_close=parent_close,
                     request_key=f"child:{claim.run.run_id}:{join_ordinal}:{index}",
                     deadline=(
                         now + defn.run_timeout if defn.run_timeout is not None else None

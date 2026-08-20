@@ -1299,6 +1299,71 @@ async def check_label_filter_handles_awkward_keys(store: RunStore) -> None:
     assert [run.run_id for run in quoted] == ["a"]
 
 
+async def check_finalizing_a_parent_closes_its_branches(store: RunStore) -> None:
+    """Closing a run marks its branches for cancellation in the same write.
+
+    Best-effort follow-up from the worker that finalized is not enough: an
+    operator cancels a rollout to stop the regional deploys, and a worker that
+    dies mid-follow-up would leave them deploying.
+    """
+    await store.admit(make_run(next_ordinal=2), make_step(), _ADMITTED)
+    for run_id, close in (("kid1", "cancel"), ("kid2", "abandon")):
+        await store.admit(
+            make_run(
+                run_id, parent_run_id="run1", parent_ordinal=1, parent_close=close
+            ),
+            make_step(run_id),
+            _ADMITTED,
+        )
+    assert await store.request_cancel("run1", NOW)
+    assert await store.finalize_run(
+        "run1",
+        status=RunStatus.CANCELLED,
+        error=None,
+        event=HistoryEventType.RUN_CANCELLED,
+        now=NOW,
+    )
+    closed = await store.get_run("kid1")
+    spared = await store.get_run("kid2")
+    assert closed is not None
+    assert spared is not None
+    assert closed.cancel_requested
+    assert closed.status is RunStatus.CANCELLING
+    assert not spared.cancel_requested, "abandon must survive its parent"
+    assert spared.status is RunStatus.PENDING
+
+
+async def check_closing_a_branch_never_revives_a_finished_one(
+    store: RunStore,
+) -> None:
+    """A branch that already finished is left exactly as it finished."""
+    await store.admit(make_run(next_ordinal=2), make_step(), _ADMITTED)
+    await store.admit(
+        make_run("kid1", parent_run_id="run1", parent_ordinal=1),
+        make_step("kid1"),
+        _ADMITTED,
+    )
+    assert await store.request_cancel("kid1", NOW)
+    assert await store.finalize_run(
+        "kid1",
+        status=RunStatus.COMPLETED,
+        error=None,
+        event=HistoryEventType.RUN_COMPLETED,
+        now=NOW,
+    )
+    assert await store.request_cancel("run1", NOW)
+    assert await store.finalize_run(
+        "run1",
+        status=RunStatus.FAILED,
+        error={"message": "boom"},
+        event=HistoryEventType.RUN_FAILED,
+        now=NOW,
+    )
+    child = await store.get_run("kid1")
+    assert child is not None
+    assert child.status is RunStatus.COMPLETED
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1338,6 +1403,8 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_join_arrivals_count_once,
     check_finalize_refuses_while_a_step_is_claimed,
     check_finalize_tombstones_open_slots,
+    check_finalizing_a_parent_closes_its_branches,
+    check_closing_a_branch_never_revives_a_finished_one,
     check_resume_only_reopens_a_suspended_run,
     check_list_runs_filters_and_orders,
     check_count_runs_matches_the_listing,

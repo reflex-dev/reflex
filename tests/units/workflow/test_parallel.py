@@ -136,11 +136,12 @@ class Doomed(rx.State):
         raise TransientWorkflowError(msg)
 
 
-def _router(*branches):
+def _router(*branches, **fan_out_kwargs):
     """Build a parent workflow fanning out to the given branches.
 
     Args:
         branches: The branch classes to fan out to.
+        fan_out_kwargs: Passed through to ``rx.parallel``.
 
     Returns:
         The parent workflow class.
@@ -161,7 +162,9 @@ def _router(*branches):
                 The parallel fan-out.
             """
             return rx.parallel(
-                *[branch.start(lead) for branch in branches], then=Router.route
+                *[branch.start(lead) for branch in branches],
+                then=Router.route,
+                **fan_out_kwargs,
             )
 
         @rx.event(durable=True, effect="none")
@@ -733,19 +736,20 @@ async def test_unidentifiable_arrivals_keep_their_position(
     assert [entry["result"] for entry in ordered] == ["a", "b", "c"]
 
 
-async def test_cancelling_an_all_mode_parent_leaves_its_branches_alone(
+async def test_an_abandoned_branch_never_cancels_its_sibling(
     forked_registration_context,
 ):
-    """Delegation is not ownership, so a cancelled parent cancels no children.
+    """A tombstoned join is not a decided race, even when nobody cancels.
 
-    Section 5 says cancelling a parent does not implicitly cancel children.
-    Cancelling one tombstones its join, and when a branch later finishes its
-    arrival finds a slot that is no longer blocked -- which is not the same
-    thing as a race having been decided. Reading it as one made the engine
-    cancel the sibling of a branch it never raced.
+    Cancelling a parent tombstones its join, and when a branch later finishes
+    its arrival finds a slot that is no longer blocked -- which is not the
+    same thing as a race having been decided. Reading it as one made the
+    engine cancel the sibling of a branch it never raced. Under the default
+    ``parent_close="cancel"`` both branches stop anyway and that misreading
+    would hide; ``abandon`` is where it still shows.
     """
     BRANCH_CALLS.clear()
-    router = _router(Slowish, Slower)
+    router = _router(Slowish, Slower, parent_close="abandon")
     async with WorkflowTestHarness(router, Slowish, Slower) as harness:
         started = await harness.start(router.begin("acme"))
         assert started.run_id is not None

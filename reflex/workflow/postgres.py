@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     flow_key TEXT,
     parent_run_id TEXT,
     parent_ordinal INTEGER,
+    parent_close TEXT NOT NULL DEFAULT 'cancel',
     request_key TEXT,
     labels JSONB,
     deadline DOUBLE PRECISION,
@@ -146,6 +147,7 @@ CREATE TABLE IF NOT EXISTS workflow_inbox (
     PRIMARY KEY (run_id, wait_key, dedupe_key)
 );
 ALTER TABLE workflow_steps ADD COLUMN IF NOT EXISTS queue TEXT NOT NULL DEFAULT 'default';
+ALTER TABLE workflow_runs ADD COLUMN IF NOT EXISTS parent_close TEXT NOT NULL DEFAULT 'cancel';
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs (status);
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_flow
     ON workflow_runs (workflow_id, flow_key);
@@ -234,6 +236,7 @@ def _run_from_row(row: Mapping[str, Any]) -> RunRecord:
         flow_key=row["flow_key"],
         parent_run_id=row["parent_run_id"],
         parent_ordinal=row["parent_ordinal"],
+        parent_close=row["parent_close"] or "cancel",
         request_key=row["request_key"],
         labels=row["labels"],
         deadline=row["deadline"],
@@ -491,10 +494,11 @@ class PostgresRunStore:
         await conn.execute(
             "INSERT INTO workflow_runs (run_id, workflow_id, definition_digest,"
             " status, state, state_version, next_ordinal, result, error,"
-            " flow_key, parent_run_id, parent_ordinal, request_key, labels,"
+            " flow_key, parent_run_id, parent_ordinal, parent_close,"
+            " request_key, labels,"
             " deadline, cancel_requested, created_at, updated_at)"
             " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
-            " %s, %s, %s, %s)",
+            " %s, %s, %s, %s, %s)",
             (
                 run.run_id,
                 run.workflow_id,
@@ -508,6 +512,7 @@ class PostgresRunStore:
                 run.flow_key,
                 run.parent_run_id,
                 run.parent_ordinal,
+                run.parent_close,
                 run.request_key,
                 _json(run.labels),
                 run.deadline,
@@ -1061,6 +1066,8 @@ class PostgresRunStore:
                 ),
             )
             await self._append_events(conn, claim.run.run_id, completion.events, now)
+            if completion.run_status in TERMINAL_RUN_STATUSES:
+                await self._close_children(conn, claim.run.run_id, now)
             if completion.parent_arrival is not None:
                 await self._apply_arrival(conn, *completion.parent_arrival, now)
 
@@ -1248,6 +1255,43 @@ class PostgresRunStore:
                 parent = runs[0][0].parent_run_id or ""
                 await self._lock_run(conn, parent)
                 await self._append_events(conn, parent, events, now)
+
+    async def _close_children(self, conn: Any, run_id: str, now: float) -> None:
+        """Request cancellation of branches the closing run fanned out to.
+
+        Called inside the transaction that takes a run terminal, so an
+        operator cancelling a rollout durably stops the regional deploys it
+        started -- not best-effort follow-up that dies with the worker.
+        Grandchildren are not walked here: a marked child is control-pending
+        the moment it drains (a run blocked on its own join holds no claim),
+        so it finalizes and closes its own branches in turn.
+
+        Args:
+            conn: The connection inside an open transaction.
+            run_id: The run reaching a terminal state.
+            now: Current time in epoch seconds.
+        """
+        closing = await (
+            await conn.execute(
+                "UPDATE workflow_runs SET cancel_requested = TRUE, status = %s,"
+                " updated_at = %s WHERE parent_run_id = %s"
+                " AND parent_close <> 'abandon' AND NOT (status = ANY(%s))"
+                " RETURNING run_id",
+                (
+                    RunStatus.CANCELLING.value,
+                    now,
+                    run_id,
+                    [s.value for s in TERMINAL_RUN_STATUSES],
+                ),
+            )
+        ).fetchall()
+        for row in closing:
+            await self._append_events(
+                conn,
+                row["run_id"],
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, {"cause": "parent_close"}),),
+                now,
+            )
 
     async def _apply_arrival(
         self,
@@ -1655,6 +1699,7 @@ class PostgresRunStore:
             ]
             events.append((event, {} if error is None else dict(error)))
             await self._append_events(conn, run_id, events, now)
+            await self._close_children(conn, run_id, now)
             if parent_arrival is not None:
                 await self._apply_arrival(conn, *parent_arrival, now)
         return True

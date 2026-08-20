@@ -1232,6 +1232,8 @@ class MemoryRunStore:
                 updated_at=now,
             )
             self._append_events(run.run_id, completion.events, now)
+            if completion.run_status in TERMINAL_RUN_STATUSES:
+                self._close_children(run.run_id, now)
             if completion.parent_arrival is not None:
                 parent_id, ordinal, payload, dedupe_key = completion.parent_arrival
                 self._apply_arrival(parent_id, ordinal, payload, dedupe_key, now)
@@ -1760,6 +1762,39 @@ class MemoryRunStore:
                 pending.append(run)
             return tuple(pending)
 
+    def _close_children(self, run_id: str, now: float) -> None:
+        """Request cancellation of branches the closing run fanned out to.
+
+        Called inside the transaction that takes a run terminal, so an
+        operator cancelling a rollout durably stops the regional deploys it
+        started -- not best-effort follow-up that dies with the worker.
+        Grandchildren are not walked here: a marked child is control-pending
+        the moment it drains (a run blocked on its own join holds no claim),
+        so it finalizes and closes its own branches in turn.
+
+        Args:
+            run_id: The run reaching a terminal state.
+            now: Current time in epoch seconds.
+        """
+        for child in self._runs.values():
+            if (
+                child.parent_run_id != run_id
+                or child.parent_close == "abandon"
+                or child.status in TERMINAL_RUN_STATUSES
+            ):
+                continue
+            self._runs[child.run_id] = dataclasses.replace(
+                child,
+                cancel_requested=True,
+                status=RunStatus.CANCELLING,
+                updated_at=now,
+            )
+            self._append_events(
+                child.run_id,
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, {"cause": "parent_close"}),),
+                now,
+            )
+
     async def finalize_run(
         self,
         run_id: str,
@@ -1812,6 +1847,7 @@ class MemoryRunStore:
             )
             events.append((event, {} if error is None else dict(error)))
             self._append_events(run_id, events, now)
+            self._close_children(run_id, now)
             if parent_arrival is not None:
                 self._apply_arrival(*parent_arrival, now)
             return True
@@ -2312,7 +2348,7 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
-SCHEMA_VERSION: Final = 2
+SCHEMA_VERSION: Final = 3
 """Stamped into PRAGMA user_version; bump when _SCHEMA or migrations change."""
 
 DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
@@ -2362,6 +2398,7 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     flow_key TEXT,
     parent_run_id TEXT,
     parent_ordinal INTEGER,
+    parent_close TEXT NOT NULL DEFAULT 'cancel',
     request_key TEXT,
     labels TEXT,
     deadline REAL,
@@ -2457,6 +2494,13 @@ _RUN_MIGRATIONS: Final = (
     ("flow_key", "ALTER TABLE workflow_runs ADD COLUMN flow_key TEXT"),
     ("parent_run_id", "ALTER TABLE workflow_runs ADD COLUMN parent_run_id TEXT"),
     ("parent_ordinal", "ALTER TABLE workflow_runs ADD COLUMN parent_ordinal INTEGER"),
+    (
+        "parent_close",
+        (
+            "ALTER TABLE workflow_runs ADD COLUMN parent_close TEXT NOT NULL"
+            " DEFAULT 'cancel'"
+        ),
+    ),
 )
 
 
@@ -2505,6 +2549,7 @@ def _run_from_row(row: sqlite3.Row) -> RunRecord:
         error=_load(row["error"]),
         flow_key=row["flow_key"],
         parent_run_id=row["parent_run_id"],
+        parent_close=row["parent_close"] or "cancel",
         parent_ordinal=row["parent_ordinal"],
         request_key=row["request_key"],
         labels=_load(row["labels"]),
@@ -2813,9 +2858,10 @@ class SqliteRunStore:
         self._db.execute(
             "INSERT INTO workflow_runs (run_id, workflow_id, definition_digest,"
             " status, state, state_version, next_ordinal, result, error,"
-            " flow_key, parent_run_id, parent_ordinal, request_key, labels,"
-            " deadline, cancel_requested, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " flow_key, parent_run_id, parent_ordinal, parent_close,"
+            " request_key, labels, deadline, cancel_requested, created_at,"
+            " updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 run.run_id,
                 run.workflow_id,
@@ -2829,6 +2875,7 @@ class SqliteRunStore:
                 run.flow_key,
                 run.parent_run_id,
                 run.parent_ordinal,
+                run.parent_close,
                 run.request_key,
                 _dump(run.labels),
                 run.deadline,
@@ -2837,6 +2884,35 @@ class SqliteRunStore:
                 run.updated_at,
             ),
         )
+
+    def _close_children_sql(self, run_id: str, now: float) -> None:
+        """Request cancellation of branches the closing run fanned out to.
+
+        Called inside the transaction that takes a run terminal, so an
+        operator cancelling a rollout durably stops the regional deploys it
+        started -- not best-effort follow-up that dies with the worker.
+        Grandchildren are not walked here: a marked child is control-pending
+        the moment it drains (a run blocked on its own join holds no claim),
+        so it finalizes and closes its own branches in turn.
+
+        Args:
+            run_id: The run reaching a terminal state.
+            now: Current time in epoch seconds.
+        """
+        terminal = tuple(s.value for s in TERMINAL_RUN_STATUSES)
+        closing = self._db.execute(
+            "UPDATE workflow_runs SET cancel_requested = 1, status = ?,"
+            " updated_at = ? WHERE parent_run_id = ? AND parent_close <> 'abandon'"
+            f" AND status NOT IN ({','.join('?' * len(terminal))})"
+            " RETURNING run_id",
+            (RunStatus.CANCELLING.value, now, run_id, *terminal),
+        ).fetchall()
+        for row in closing:
+            self._append_events(
+                row["run_id"],
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, {"cause": "parent_close"}),),
+                now,
+            )
 
     def _insert_step(self, step: StepRecord) -> None:
         """Insert a step row inside the current transaction.
@@ -3411,6 +3487,8 @@ class SqliteRunStore:
                         ),
                     )
                     self._append_events(claim.run.run_id, completion.events, now)
+                    if completion.run_status in TERMINAL_RUN_STATUSES:
+                        self._close_children_sql(claim.run.run_id, now)
                     if completion.parent_arrival is not None:
                         self._apply_arrival_sql(*completion.parent_arrival, now)
                     self._db.execute("COMMIT")
@@ -4149,6 +4227,7 @@ class SqliteRunStore:
                     ]
                     events.append((event, {} if error is None else dict(error)))
                     self._append_events(run_id, events, now)
+                    self._close_children_sql(run_id, now)
                     if parent_arrival is not None:
                         self._apply_arrival_sql(*parent_arrival, now)
                     self._db.execute("COMMIT")

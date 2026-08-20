@@ -180,12 +180,28 @@ Consequences, stated plainly:
   recovery-budget exhaustion — delivers exactly one arrival to its parent's
   join slot, atomically with the terminal transition (§1). A join can wait
   forever only on a child that is still genuinely running.
+- **Branches close with their parent.** When a run reaches a terminal state
+  — cancelled, failed, timed out, force-finalized, or completed — every
+  branch it fanned out that is still running has cancellation requested *in
+  the same store transaction as the terminal transition*. Not follow-up: an
+  operator cancels a rollout to stop the regional deploys, and a worker that
+  died mid-follow-up would leave them deploying.
+  - Each level closes only its own branches. A branch blocked on its own join
+    holds no claim, so it is control-pending the moment it is marked,
+    finalizes `CANCELLED`, and closes the level beneath it in turn. Depth is
+    not a loophole and there is no waiting-for-grandchildren deadlock.
+  - A branch that already finished is left exactly as it finished.
+  - `rx.parallel(..., parent_close="abandon")` opts a fan-out out, for
+    delegated work that should genuinely outlive its starter. An operator who
+    wants an abandoned branch stopped anyway cancels it directly; it is an
+    ordinary run.
 - `rx.parallel(..., mode="first")`: the join resolves on the first arrival;
   the engine then requests cancellation of the losing branches. That request
   is best-effort follow-up, not part of the winning transaction, and it is
-  sent by the one worker that saw the winner arrive. Three consequences,
-  stated plainly because only the first is obvious:
-  - If that worker dies before sending it, the losers run to completion.
+  sent by the one worker that saw the winner arrive. Losers are also closed
+  durably when the parent itself goes terminal (above), which backstops a
+  worker that died — but only from that moment, so for a parent that runs on
+  for hours after the race, this remains true meanwhile:
   - A loser already executing on another worker receives the intent but is
     not fenced at commit, so it finishes its attempt.
   - **A loser that runs on therefore performs its side effects.** Its arrival
@@ -196,9 +212,7 @@ Consequences, stated plainly:
     idempotency key, exactly as a retried step must; losing a race is not a
     guarantee of not having acted. Racing branches whose effects cannot be
     made idempotent is the wrong shape for `mode="first"`.
-- Child runs are ordinary runs; cancelling the parent does not implicitly
-  cancel children (fan-out is delegation, not ownership). A cancelled
-  parent's join tombstones; late child arrivals are refused.
+- A closed parent's join tombstones; late child arrivals are refused.
 
 ## 6. Identity: who is "the same" as whom
 
@@ -354,7 +368,8 @@ its own history event.
 Every action is legal only from the states listed; anything else is a refused
 no-op with a reason.
 
-- `cancel(run)` — any nonterminal run.
+- `cancel(run)` — any nonterminal run. Closes the branches it fanned out,
+  per §5.
 - `resume(run)` — `NEEDS_ATTENTION` only; re-opens the suspended step with a
   fresh attempt budget.
 - `retry(run)` — a `FAILED` run: re-opens its failed step with a fresh

@@ -184,6 +184,8 @@ class RunRecord:
         flow_key: Grouping key for start policies such as singleton, if any.
         parent_run_id: The run that spawned this one, if any.
         parent_ordinal: The join slot in the parent this run reports to.
+        parent_close: What happens to this run when its parent reaches a
+            terminal state: ``"cancel"`` or ``"abandon"``.
         request_key: Idempotent admission key, if one was supplied.
         labels: Server-derived indexing labels.
         deadline: Absolute run deadline in epoch seconds, if configured.
@@ -204,6 +206,7 @@ class RunRecord:
     flow_key: str | None = None
     parent_run_id: str | None = None
     parent_ordinal: int | None = None
+    parent_close: str = "cancel"
     request_key: str | None = None
     labels: dict[str, str] | None = None
     deadline: float | None = None
