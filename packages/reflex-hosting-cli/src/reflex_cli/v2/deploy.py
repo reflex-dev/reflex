@@ -1,9 +1,14 @@
 """The `reflex deploy` command.
 
-This module hosts the managed-platform deploy command that the `reflex` CLI
-registers as `reflex deploy`. It is only ever invoked through that CLI, so it
-may import the `reflex` package (which is not a declared dependency of
-reflex-hosting-cli) at runtime.
+This module hosts the managed-platform deploy command. The `reflex` CLI picks it
+up through the `reflex.cli_commands` entry point and registers it as
+`reflex deploy`; the framework itself does not import this package.
+
+The command body needs the reflex framework to compile and export the app, but
+`reflex` is deliberately not a dependency of reflex-hosting-cli. Those imports
+therefore stay inside the command body, which only ever runs under the reflex
+CLI. Nothing at module scope may import `reflex`, so that this package stays
+importable on its own.
 """
 
 from __future__ import annotations
@@ -14,8 +19,7 @@ import click
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
-
-from reflex.utils.cli_options import log_options
+from reflex_base.utils.cli_options import log_options
 
 
 @click.command(name="deploy")

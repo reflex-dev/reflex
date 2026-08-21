@@ -5,18 +5,16 @@ from __future__ import annotations
 import logging
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 import click
 from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log
-from reflex_cli.v2.deploy import deploy
-from reflex_cli.v2.deployments import hosting_cli
+from reflex_base.utils.cli_options import log_options
 
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils.cli_options import log_options
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +31,49 @@ def cli():
     # The CLI owns log rendering: attach the reflex sinks here and in every
     # worker subprocess (they inherit the marker through the environment).
     log.enable_managed_logging()
+
+
+def raise_missing_package(name: str) -> NoReturn:
+    """Report that the hosting CLI is not installed.
+
+    Args:
+        name: The `reflex` subcommand the user ran.
+
+    Raises:
+        Exit: Always, after reporting what to install.
+    """
+    package = constants.ReflexHostingCLI.MODULE_NAME
+    logger.error(
+        f"`reflex {name}` requires the {package} package, which is not "
+        f"installed.\nInstall it with: pip install {package}"
+    )
+    raise click.exceptions.Exit(1)
+
+
+def _missing_command(name: str) -> click.Command:
+    """Build a stand-in for a cloud command whose package is unusable.
+
+    The stand-in accepts any flags, so the user sees what to install rather than
+    a usage error about an option the real command would have understood.
+
+    Args:
+        name: The command name to register.
+
+    Returns:
+        A command that reports how to install the hosting CLI.
+    """
+    package = constants.ReflexHostingCLI.MODULE_NAME
+
+    @click.command(
+        name=name,
+        context_settings={"ignore_unknown_options": True},
+        help=f"Requires the {package} package.",
+    )
+    @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+    def placeholder(args: tuple[str, ...]):
+        raise_missing_package(name)
+
+    return placeholder
 
 
 def _init(
@@ -655,8 +696,11 @@ def export(
 @log_options
 def login():
     """Authenticate with experimental Reflex hosting service."""
-    from reflex_cli.v2 import cli as hosting_cli
-    from reflex_cli.v2.deployments import check_version
+    try:
+        from reflex_cli.v2 import cli as hosting_cli
+        from reflex_cli.v2.deployments import check_version
+    except ImportError:
+        raise_missing_package("login")
 
     check_version()
 
@@ -684,8 +728,11 @@ def login():
 @log_options
 def logout():
     """Log out of access to Reflex hosting service."""
-    from reflex_cli.v2.cli import logout
-    from reflex_cli.v2.deployments import check_version
+    try:
+        from reflex_cli.v2.cli import logout
+        from reflex_cli.v2.deployments import check_version
+    except ImportError:
+        raise_missing_package("logout")
 
     check_version()
 
@@ -827,18 +874,24 @@ def rename(new_name: str):
     rename_app(new_name, get_config().loglevel)
 
 
-if find_spec("typer") and find_spec("typer.main"):
-    import typer  # pyright: ignore[reportMissingImports]
-
-    if isinstance(hosting_cli, typer.Typer):
-        hosting_cli_command = typer.main.get_command(hosting_cli)
-    else:
-        hosting_cli_command = hosting_cli
+try:
+    from reflex_cli.v2.deploy import deploy
+    from reflex_cli.v2.deployments import hosting_cli
+except ImportError:
+    # The cloud commands still answer, so the failure names the package to
+    # install instead of looking like a typo in the command name.
+    cli.add_command(_missing_command("deploy"), name="deploy")
+    cli.add_command(_missing_command("cloud"), name="cloud")
 else:
-    hosting_cli_command = hosting_cli
+    if find_spec("typer") and find_spec("typer.main"):
+        import typer  # pyright: ignore[reportMissingImports]
 
-cli.add_command(deploy, name="deploy")
-cli.add_command(hosting_cli_command, name="cloud")
+        if isinstance(hosting_cli, typer.Typer):
+            hosting_cli = typer.main.get_command(hosting_cli)
+
+    cli.add_command(deploy, name="deploy")
+    cli.add_command(hosting_cli, name="cloud")
+
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
 cli.add_command(custom_components_cli, name="component")
