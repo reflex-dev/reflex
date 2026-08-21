@@ -371,15 +371,13 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
 
     """
     logger.debug("Fetching token from existing config...")
-    access_token = ""
     try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            access_token = hosting_config.get("access_token", "")
-    except Exception as ex:
+        access_token = stored_access_token()
+    except (OSError, ValueError) as ex:
         logger.debug(
             f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
+        access_token = ""
 
     if access_token:
         return access_token, TokenSource.CONFIG
@@ -507,7 +505,7 @@ def _read_hosting_config() -> dict[str, Any]:
 
     """
     try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
+        with constants.Hosting.HOSTING_JSON.open(encoding="utf-8") as config_file:
             hosting_config = json.load(config_file)
     except FileNotFoundError:
         return {}
@@ -553,7 +551,7 @@ def _write_hosting_config(hosting_config: dict[str, Any]):
     temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
     temp_path = Path(temp_name)
     try:
-        with os.fdopen(temp_fd, "w") as config_file:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as config_file:
             json.dump(hosting_config, config_file)
             config_file.flush()
             os.fsync(config_file.fileno())

@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import sys
 
 import click
 from reflex_base.utils import log
@@ -36,6 +37,40 @@ def token_fingerprint(token: str) -> str:
     if not token:
         return ""
     return f"sha256:{hashlib.sha256(token.encode()).hexdigest()[:16]}"
+
+
+# Sentinel --set value meaning "read the token from stdin".
+_STDIN = "-"
+
+
+def _resolve_set_token(value: str) -> str:
+    """Resolve the `--set` value, reading from stdin when asked to.
+
+    A token passed on the command line lands in shell history and is readable
+    from the process list, so `-` (or a bare `--set`) takes it from stdin, or
+    prompts without echo when stdin is a terminal.
+
+    Args:
+        value: The raw value given to `--set`.
+
+    Returns:
+        The token to validate and store.
+
+    Raises:
+        UsageError: If the resolved token is empty.
+
+    """
+    if value == _STDIN:
+        value = (
+            # err=True keeps the prompt off stdout.
+            click.prompt("Access token", hide_input=True, err=True)
+            if sys.stdin.isatty()
+            else sys.stdin.readline()
+        )
+    token = value.strip()
+    if not token:
+        raise click.UsageError("--set was given an empty token.")
+    return token
 
 
 _loglevel_option = click.option(
@@ -93,14 +128,16 @@ def whoami_command(token: str | None, loglevel: str, as_json: bool):
     identity["token_source"] = source.value
     identity["token_fingerprint"] = token_fingerprint(access_token)
 
+    # Both paths bypass the console: it applies rich markup and wraps at the
+    # terminal width, which corrupts JSON and truncates the identifiers this
+    # command exists to hand back.
     if as_json:
-        console.print(json.dumps(identity))
+        click.echo(json.dumps(identity))
         return
 
-    console.print_table(
-        [[field, str(value)] for field, value in identity.items()],
-        headers=["field", "value"],
-    )
+    width = max(map(len, identity))
+    for field, value in identity.items():
+        click.echo(f"{field:<{width}}  {value}")
 
 
 @click.command()
@@ -108,13 +145,19 @@ def whoami_command(token: str | None, loglevel: str, as_json: bool):
     "--print",
     "print_token",
     is_flag=True,
-    help="Print the stored access token to stdout.",
+    help="Print the active access token to stdout.",
 )
 @click.option(
     "--set",
     "set_token",
     metavar="TOKEN",
-    help="Validate TOKEN and store it as the access token.",
+    is_flag=False,
+    flag_value=_STDIN,
+    default=None,
+    help=(
+        "Validate TOKEN and store it as the access token. Pass `-`, or omit "
+        "the value, to read the token from stdin instead of the command line."
+    ),
 )
 @click.option("--clear", is_flag=True, help="Remove the stored access token.")
 @_loglevel_option
@@ -135,7 +178,8 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
         name
         for name, chosen in (
             ("--print", print_token),
-            ("--set", set_token),
+            # `--set ""` is a malformed --set, not an absent one.
+            ("--set", set_token is not None),
             ("--clear", clear),
         )
         if chosen
@@ -158,7 +202,8 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
         click.echo(access_token)
         return
 
-    if set_token:
+    if set_token is not None:
+        set_token = _resolve_set_token(set_token)
         try:
             validated_info = hosting.validate_token(set_token)
         except TokenValidationError as err:

@@ -75,7 +75,8 @@ def test_whoami_reports_identity_and_token_source(mocker: MockFixture):
     assert "valid_token" not in result.output
 
 
-def test_whoami_table_output_hides_the_token(mocker: MockFixture):
+def test_whoami_table_output_is_complete_and_hides_the_token(mocker: MockFixture):
+    """Identifiers print in full: they are the reason to run the command."""
     mocker.patch(
         "reflex_cli.utils.hosting.get_existing_access_token_with_source",
         return_value=("valid_token", hosting.TokenSource.CONFIG),
@@ -83,15 +84,32 @@ def test_whoami_table_output_hides_the_token(mocker: MockFixture):
     mocker.patch(
         "reflex_cli.utils.hosting.validate_token", return_value=dict(VALIDATED_INFO)
     )
-    print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
-    result = runner.invoke(hosting_cli, ["whoami"])
+    result = runner.invoke(hosting_cli, ["whoami"], terminal_width=40)
 
     assert result.exit_code == 0
-    rows = print_table.call_args.args[0]
-    assert ["email", "user@example.com"] in rows
-    assert ["token_source", "config file"] in rows
-    assert all("valid_token" not in cell for row in rows for cell in row)
+    fields = dict(line.split(maxsplit=1) for line in result.output.splitlines())
+    # A rich table would have truncated these to fit the 40-column terminal.
+    assert fields["user_id"] == VALIDATED_INFO["user_id"]
+    assert fields["email"] == "user@example.com"
+    assert fields["token_source"] == "config file"
+    assert "valid_token" not in result.output
+
+
+def test_whoami_json_output_is_exact(mocker: MockFixture):
+    """`--json` must survive piping: one line, no markup, no wrapping."""
+    wide = dict(VALIDATED_INFO, email="a-very-long-address@a-long-example-domain.com")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("valid_token", hosting.TokenSource.CONFIG),
+    )
+    mocker.patch("reflex_cli.utils.hosting.validate_token", return_value=wide)
+
+    result = runner.invoke(hosting_cli, ["whoami", "--json"], terminal_width=40)
+
+    assert result.exit_code == 0
+    assert len(result.output.splitlines()) == 1
+    assert json.loads(result.output)["email"] == wide["email"]
 
 
 def test_whoami_prefers_the_token_option(mocker: MockFixture):
@@ -211,6 +229,49 @@ def test_token_set_validates_before_saving(
     assert result.exit_code == 0
     save.assert_called_once_with("new_token")
     assert any("user@example.com" in message for message in _messages(caplog, SUCCESS))
+
+
+@pytest.mark.parametrize("args", [["--set", "-"], ["--set"]])
+def test_token_set_reads_the_token_from_stdin(args: list[str], mocker: MockFixture):
+    """A token on the command line leaks into shell history and the process list.
+
+    Args:
+        args: The invocation form under test.
+        mocker: Pytest mocker fixture.
+    """
+    validate = mocker.patch(
+        "reflex_cli.utils.hosting.validate_token", return_value=dict(VALIDATED_INFO)
+    )
+    save = mocker.patch("reflex_cli.utils.hosting.save_token_to_config")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("piped_token", hosting.TokenSource.CONFIG),
+    )
+
+    result = runner.invoke(hosting_cli, ["token", *args], input="piped_token\n")
+
+    assert result.exit_code == 0
+    validate.assert_called_once_with("piped_token")
+    save.assert_called_once_with("piped_token")
+
+
+@pytest.mark.parametrize("value", ["", "   ", "\n"])
+def test_token_set_rejects_an_empty_token(value: str, mocker: MockFixture):
+    """An empty --set is a malformed --set, not a missing one.
+
+    Args:
+        value: The empty value under test.
+        mocker: Pytest mocker fixture.
+    """
+    validate = mocker.patch("reflex_cli.utils.hosting.validate_token")
+
+    result = runner.invoke(hosting_cli, ["token", "--set", value])
+
+    assert result.exit_code == 2
+    assert "empty token" in result.output
+    # Not reported as "specify exactly one", which reads as though --set was absent.
+    assert "exactly one" not in result.output
+    validate.assert_not_called()
 
 
 def test_token_set_keeps_the_old_token_when_the_new_one_is_rejected(
