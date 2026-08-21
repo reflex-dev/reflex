@@ -1,8 +1,7 @@
 """The `reflex deploy` command.
 
-This module hosts the managed-platform deploy command. The `reflex` CLI picks it
-up through the `reflex.cli_commands` entry point and registers it as
-`reflex deploy`; the framework itself does not import this package.
+This module hosts the managed-platform deploy command. The `reflex` CLI imports
+it and registers it as `reflex deploy`.
 
 The command body needs the reflex framework to compile and export the app, but
 `reflex` is deliberately not a dependency of reflex-hosting-cli. Those imports
