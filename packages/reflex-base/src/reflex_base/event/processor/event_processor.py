@@ -7,9 +7,9 @@ import collections
 import contextlib
 import dataclasses
 import inspect
+import logging
 import sys
 import time
-import traceback
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -19,11 +19,12 @@ from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
-from reflex.utils import console
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
@@ -317,11 +318,7 @@ class EventProcessor:
                 pass
             except Exception as ex:
                 telemetry.send_error(ex, context="backend")
-                console.error(
-                    rich.markup.escape(
-                        f"Error in event processor queue task during shutdown:\n{traceback.format_exc()}"
-                    )
-                )
+                logger.exception("Error in event processor queue task during shutdown:")
             self._queue_task = None
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
@@ -396,6 +393,10 @@ class EventProcessor:
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
+        if event.router_data:
+            # Bound before the entry exists, so entry.ctx is what the handler,
+            # the task metadata, and every event it yields all read.
+            ev_ctx = dataclasses.replace(ev_ctx, router_data=event.router_data)
         queue = self._ensure_queue_task()
         txid = ev_ctx.txid
         parent_future = (
@@ -687,9 +688,9 @@ class EventProcessor:
                         )
                 except Exception:
                     # Log the error and continue processing the next events.
-                    console.error(
+                    logger.exception(
                         rich.markup.escape(
-                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:\n{traceback.format_exc()}"
+                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                         )
                     )
                 queue.task_done()
@@ -763,9 +764,9 @@ class EventProcessor:
                         t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
                     t.add_done_callback(self._finish_task)
                     return
-                console.error(
+                logger.exception(
                     rich.markup.escape(
-                        f"Error in {task.get_name()} [txid={task_ctx.txid}]:\n{traceback.format_exc()}"
+                        f"Error in {task.get_name()} [txid={task_ctx.txid}]:"
                     )
                 )
             else:

@@ -10,6 +10,7 @@ import datetime
 import functools
 import inspect
 import json
+import logging
 import re
 import string
 import uuid
@@ -43,7 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -71,6 +72,8 @@ from reflex_base.utils.types import (
     safe_issubclass,
     unionize,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1157,7 +1160,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     value = self._var_type(value)
                     setattr(state, name, value)
                 except ValueError:
-                    console.debug(
+                    logger.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
@@ -2604,7 +2607,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
-            console.error(
+            logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
@@ -2653,7 +2656,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 func=obj, state_cls=objclass, dependencies=d
             ).dependencies
         except Exception as e:
-            console.warn(
+            logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
@@ -3711,7 +3714,7 @@ def field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     if default is not MISSING and not types.is_immutable(default):
-        console.warn(
+        logger.warning(
             "Mutable default values are not recommended. "
             "Use default_factory instead to avoid unexpected behavior."
         )

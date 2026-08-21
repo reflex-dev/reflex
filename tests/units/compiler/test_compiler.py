@@ -10,6 +10,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
@@ -1189,12 +1190,15 @@ def test_register_plugin_routes_rejects_stale_dynamic_arg_type_from_prior_app():
     first_app = rx.App(_state=RouteState)
     compiler._register_plugin_routes(first_app, [ScalarPlugin()])
 
-    second_app = rx.App(_state=RouteState)
-    with pytest.raises(
-        RouteValueError,
-        match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
-    ):
-        compiler._register_plugin_routes(second_app, [ListPlugin()])
+    # A context only allows one App; fork (as an app reload does) to create the
+    # second one while preserving the shared RouteState registration.
+    with RegistrationContext.get().fork():
+        second_app = rx.App(_state=RouteState)
+        with pytest.raises(
+            RouteValueError,
+            match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
+        ):
+            compiler._register_plugin_routes(second_app, [ListPlugin()])
 
     assert second_app._unevaluated_pages == {}
     assert not second_app._plugin_routes_registered

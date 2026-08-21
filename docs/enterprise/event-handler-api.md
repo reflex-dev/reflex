@@ -6,16 +6,26 @@ _New in reflex-enterprise v0.7.1._
 
 # Event Handler API Plugin
 
-`rxe.EventHandlerAPIPlugin` exposes every registered event handler on your
-Reflex state as an HTTP `POST` endpoint and auto-generates an OpenAPI 3
-specification for them. This turns any Reflex app into a machine-driveable
-API without writing a single route by hand — great for LLM agents, CLI
-scripts, end-to-end tests, or external integrations that need to drive the
-same logic the frontend uses.
+`rxe.EventHandlerAPIPlugin` exposes your app's registered event handlers as
+HTTP `POST` endpoints and auto-generates an OpenAPI 3 specification for them.
+This turns any Reflex app into a machine-driveable API without writing a single
+route by hand — great for CLI scripts, end-to-end tests, or external
+integrations that need to drive the same logic the frontend uses.
 
 ```md alert info
 # Requires `reflex >= 0.9.0` and `reflex-enterprise`. The plugin only works with `rxe.App`.
 ```
+
+```md alert warning
+# Authentication changed in reflex-enterprise v0.9.4.
+Endpoints now require a token the **app issued** — a caller-invented UUID is no longer accepted. Fetch one from `POST /_reflex/auth/token` (see [Authentication](#authentication)). Calls are also rate limited per token, and framework/auth event handlers are no longer exposed.
+```
+
+For driving the app from an LLM agent, [Auto MCP](/docs/enterprise/mcp/)
+publishes the same handlers over the Model Context Protocol instead of REST.
+The two plugins share one implementation — the same handler filtering, naming,
+authentication, and rate limits — so they can be enabled together and will
+agree.
 
 ## Endpoints
 
@@ -23,8 +33,9 @@ When the plugin is enabled, the following routes are added to the backend:
 
 | Path | Purpose |
 | --- | --- |
-| `POST /_reflex/event/<state_full_name>/<handler_name>` | One endpoint per `@rx.event` handler on every state class. Streams state deltas as newline-delimited JSON. |
-| `POST /_reflex/retrieve_state` | Returns the full root state `.dict()` for the session token without re-hydrating client storage. |
+| `POST /_reflex/auth/token` | Issues a bearer token bound to a fresh, server-generated session. Rate limited per client IP. |
+| `POST /_reflex/event/<state_name>/<handler_name>` | One endpoint per `@rx.event` handler on every application state class. Streams state deltas as newline-delimited JSON. |
+| `POST /_reflex/retrieve_state` | Returns the full root state `.dict()` for the token's session without re-hydrating client storage. |
 | `GET /_reflex/events/openapi.yaml` | Auto-generated OpenAPI 3 specification describing every endpoint above. |
 | `GET,HEAD /.well-known/api-catalog` | RFC 9727 API catalog pointing at the OpenAPI spec (RFC 9264 Linkset). |
 
@@ -46,7 +57,7 @@ config = rxe.Config(
     app_name="my_app",
     plugins=[
         rxe.EventHandlerAPIPlugin(
-            # All three arguments are optional.
+            # Every argument is optional.
             api_version="1.0.0",
             contact={"name": "Ops", "email": "ops@example.com"},
             license_info={
@@ -66,30 +77,121 @@ import reflex_enterprise as rxe
 app = rxe.App()
 ```
 
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `api_version` | `"1.0.0"` | `info.version` in the generated spec. |
+| `contact` / `license_info` | `None` | `info.contact` / `info.license` objects. |
+| `call_rate_limit` / `call_rate_window` | `60` / `60.0` | Per-session-token cap on API calls across all endpoints. Per-handler override via `rxe.event(rate_limit=...)`. |
+| `token_rate_limit` / `token_rate_window` | `10` / `60.0` | Per-client-IP cap on `POST /_reflex/auth/token` grants. |
+| `anonymous_sessions` | `True` | Whether this plugin wires the anonymous token endpoint. |
+| `anonymous_session_ttl` | `3600` | Anonymous token lifetime in seconds. There is no refresh — an expired token means a fresh session. |
+| `trusted_proxy_hops` | `0` | Number of trusted reverse proxies, used to resolve the real client IP for the token endpoint's per-IP limit. `0` ignores `X-Forwarded-For`. |
+| `token_store` | auto | Token storage. Defaults to Redis when the app is configured for Redis, otherwise in-process. |
+
+Setting a rate limit to `0` disables it, which is not recommended in
+production.
+
 ```md alert warning
 # The backend serves the API on the Reflex backend port (default `http://localhost:8000` in dev, or the `deploy_url` in production). If you're running production with `--single-port`, the API is instead reachable on the frontend port (default `http://localhost:3000`).
 ```
 
 ## Authentication
 
-Every endpoint requires a Bearer token in the `Authorization` header. The
-token is a random UUID that identifies a **client session**:
+Every endpoint requires an **app-issued** bearer token in the `Authorization`
+header:
 
 ```
-Authorization: Bearer <random-uuid>
+Authorization: Bearer <access_token>
 ```
 
-All calls using the same token share state — the token plays the same role
-as the per-tab session cookie the browser uses. Generate one with any UUID
-library:
+The token identifies a **client session**, and that session is generated by the
+server — a caller can neither pick nor see the underlying Reflex client token,
+so a credential can only ever address its own session, never a browser
+session or another client's.
+
+### Anonymous session tokens
+
+`POST /_reflex/auth/token` mints one, bound to a fresh, empty session:
 
 ```bash
-TOKEN=$(python -c 'import uuid; print(uuid.uuid4())')
+curl -X POST http://localhost:8000/_reflex/auth/token
 ```
 
-Reuse `$TOKEN` across calls if you want subsequent requests to see the
-effects of earlier ones (e.g. create a ticket, then list tickets). Pick a
-new UUID to get a fresh, independent session.
+```json
+{
+  "access_token": "…",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "session": "anonymous"
+}
+```
+
+Reuse the same token across calls if you want subsequent requests to see the
+effects of earlier ones (e.g. create a ticket, then list tickets). Request a
+new one to get a fresh, independent session — anonymous tokens have no refresh,
+so an expired token simply means a new session.
+
+The endpoint is rate limited per client IP (`token_rate_limit`, default 10 per
+minute), because every grant seeds a server-side session that consumes memory.
+Set `anonymous_sessions=False` so this plugin does not wire it.
+
+```md alert info
+# The token endpoint is shared with `MCPPlugin`.
+Whichever plugin wires it first decides its settings (TTL, rate limit), and the route is served if *either* plugin enables it. `anonymous_sessions=False` here only stops *this* plugin from wiring it: any token the endpoint mints is still accepted on these REST endpoints, so set it on both plugins to stop issuing them at all. With no token source configured at all, the REST API is only reachable with an OAuth token — and unreachable if MCP OAuth is off too.
+```
+
+### Authenticated tokens
+
+An anonymous session carries no user identity, so with an
+[`AuthPlugin`](/docs/enterprise/auth/overview/) configured only `auth=False`
+handlers and vars are reachable through one.
+
+To act as a signed-in user, add [`rxe.MCPPlugin`](/docs/enterprise/mcp/) and
+complete its [OAuth 2.1 flow](/docs/enterprise/mcp/authentication/). The access
+token it issues works on these REST endpoints as well, and the session it is
+bound to gets the full enforcement stack: the per-event gate, callable `auth=`
+checks, delta filtering, and `AuthUserState.current()`.
+
+Auth checks can tell the surfaces apart — `ctx.surface` is `"event_api"` for a
+request that arrived here — and inspect the token's granted scopes through
+`ctx.token_scopes`. See
+[surface-aware auth checks](/docs/enterprise/mcp/authentication/#surface-aware-auth-checks).
+
+## Rate limiting
+
+Every call is counted against the presenting session token: `call_rate_limit`
+per `call_rate_window` (default 60 per minute), tracked per process. Exceeding
+it returns `429` with a `Retry-After` header. Browser (websocket) events are
+never rate limited by this mechanism.
+
+Individual handlers can override their own budget:
+
+```python
+class ReportState(rx.State):
+    @rxe.event(rate_limit=2, rate_limit_window=60.0)
+    def generate_expensive_report(self): ...
+
+    @rxe.event(rate_limit=0)  # exempt from per-token limiting
+    def cheap_ping(self): ...
+```
+
+An overridden handler is counted in its own per-token bucket; everything else
+shares the token's default bucket.
+
+## What is exposed
+
+Only your application's own event handlers get endpoints. Framework and auth
+handlers — every OIDC provider (including your own `OIDCAuthState`
+subclasses), the login/logout/callback dispatchers, the page guard,
+`AuthUserState`, and other `reflex` / `reflex_enterprise` internals — are
+withheld, along with generated set-var handlers. API clients authenticate
+through the token endpoint or the OAuth flow instead of by posting to the login
+handlers.
+
+The same goes for the `Pages` section of the generated spec: it lists your
+app's pages, not the auth machinery's (`/login`, `/callback`, `/logout`,
+`/forbidden`, the OIDC popup pages, and the MCP consent page are all omitted,
+along with their dynamic route variables).
 
 ## Discovering the API
 
@@ -125,7 +227,9 @@ curl http://localhost:8000/_reflex/events/openapi.yaml
 ```
 
 Browse it with any OpenAPI viewer (Swagger UI, Redoc, Scalar, the JetBrains
-HTTP client, etc.) pointed at that URL.
+HTTP client, etc.) pointed at that URL. Its `info.description` documents the
+token endpoint, a document-level `BearerToken` security requirement covers every
+operation, and each operation documents its `401` and `429` responses.
 
 ## Response shape
 
@@ -134,12 +238,16 @@ Event handler endpoints return the state deltas produced by the handler as
 delta; the stream ends when the handler finishes:
 
 ```
-{"state.TicketState": {"tickets": [...], "total_count": 3}}
-{"state.TicketState": {"open_count": 2}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"tickets": [], "total_count": 3}}
+{"reflex___state____state.tickets___tickets____ticket_state": {"open_count": 2}}
 ```
 
-For one-shot clients that just want the final state, simply consume the
-stream to completion and then (optionally) fetch the full state:
+Var names come back clean: the framework's internal `_rx_state_` field-marker
+suffix is stripped from the streamed deltas, from `/_reflex/retrieve_state`, and
+from the [Auto MCP](/docs/enterprise/mcp/) surfaces alike.
+
+For one-shot clients that just want the final state, consume the stream to
+completion and then fetch the full state:
 
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
@@ -149,6 +257,10 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 ```md alert info
 # Unlike the built-in `hydrate` event, `/_reflex/retrieve_state` does **not** reset client-storage vars (`rx.Cookie`, `rx.LocalStorage`, `rx.SessionStorage`). Use it whenever you want to read state without modifying it.
 ```
+
+State reads redact the session's server-side `client_token` / `session_id` from
+the returned `router` var, so the session token never reaches the client, and
+framework/auth states are dropped from the returned dict.
 
 ## The tickets demo app
 
@@ -230,17 +342,17 @@ generated handler routes live at:
 POST /_reflex/event/tickets___tickets____ticket_state/<handler_name>
 ```
 
-The state full name is built from the Python module path (dot separators
-become `___`) followed by the class name — inspect the generated
-`openapi.yaml` if you are unsure of the exact path for a given handler.
+The state name is built from the Python module path (dot separators become
+`___`) followed by the class name — inspect the generated `openapi.yaml` if you
+are unsure of the exact path for a given handler.
 
 ### curl examples
 
-Assume a dev server running on `http://localhost:8000` and a token in
-`$TOKEN`:
+Assume a dev server running on `http://localhost:8000`:
 
 ```bash
-TOKEN=$(python -c 'import uuid; print(uuid.uuid4())')
+TOKEN=$(curl -s -X POST http://localhost:8000/_reflex/auth/token \
+        | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
 BASE=http://localhost:8000
 TICKET_STATE=$BASE/_reflex/event/tickets___tickets____ticket_state
 ```
@@ -351,14 +463,15 @@ state class name. Here's the entry for `create_ticket`:
     responses:
       "200": {$ref: "#/components/responses/StreamedDelta"}
       "401": {$ref: "#/components/responses/Unauthorized"}
+      "429": {$ref: "#/components/responses/RateLimited"}
 ```
 
 ## Driving the app from an LLM
 
 Because the OpenAPI spec is self-describing (summaries, parameter types,
-defaults, on-load references), most LLM agents with HTTP tool access can
-drive a Reflex app end-to-end without any extra glue code. Give them the
-spec URL and a natural-language task:
+defaults, on-load references, and how to obtain a token), most LLM agents with
+HTTP tool access can drive a Reflex app end-to-end without any extra glue code.
+Give them the spec URL and a natural-language task:
 
 > Use the API exposed at `http://localhost:8000/_reflex/events/openapi.yaml` to drive the application.
 >
@@ -367,7 +480,7 @@ spec URL and a natural-language task:
 A well-equipped agent will:
 
 1. `GET /_reflex/events/openapi.yaml` and parse the operations.
-2. Generate a session token (`uuid4`) to use as the Bearer credential.
+2. `POST /_reflex/auth/token` for a session bearer credential.
 3. Call `POST /_reflex/event/.../create_ticket` with a body like
    `{"title": "Investigate RegistrationContext issues in Reflex CI", "assignee": "Masen", "priority": "medium"}`.
 4. Optionally call `/_reflex/retrieve_state` to confirm the ticket landed.
@@ -381,7 +494,8 @@ Other prompts that work well with the tickets demo:
 > Using the Reflex API at `http://localhost:8000`, create three high-priority tickets for the following issues, then show me the resulting state: <list of issues>
 
 ```md alert info
-# For agents that can't follow `api-catalog` automatically, point them directly at `/_reflex/events/openapi.yaml`. A single URL is enough context for most tool-using models to take it from there.
+# For MCP-capable agents, [Auto MCP](/docs/enterprise/mcp/) is the better fit.
+It publishes the same handlers as MCP tools with a searchable catalog, live state resources, and an OAuth flow the client can complete on its own — no spec-reading or token plumbing in the prompt.
 ```
 
 ## Dynamic route variables
@@ -399,15 +513,33 @@ and are referenced from every operation's `parameters` list.
 
 ## Security considerations
 
-- **The Bearer token is just a session id, not an auth credential.** Anyone
-  who can reach the backend and generate UUIDs can drive the app. Put the
-  API behind your normal auth layer (reverse-proxy, OIDC, VPN, etc.) before
-  exposing it outside trusted networks.
-- **Every event handler on every state is exposed by default.** If you have
-  privileged handlers, either split them onto a state class you don't want
-  to expose, or run the plugin only in environments where API access is
-  appropriate.
+- **The bearer token is a session credential, not a user identity.** An
+  anonymous token means "some client, its own session" — nothing more. Anyone
+  who can reach the token endpoint can obtain one, so put the API behind your
+  normal perimeter (reverse proxy, VPN, IP allowlist) before exposing it
+  outside trusted networks, and serve it over HTTPS so tokens aren't readable
+  in transit.
+- **Every application event handler is exposed by default.** Framework and auth
+  handlers are withheld, but yours are not. Gate privileged handlers with
+  [`rxe.event(auth=...)`](/docs/enterprise/auth/secure-by-default/) checks —
+  which can also require an OAuth scope or reject the `"event_api"` surface
+  outright — or run the plugin only where API access is appropriate.
+- **Rate limits are per process.** In a multi-worker deployment each worker
+  enforces its own budget; size `call_rate_limit` and `token_rate_limit`
+  accordingly.
+- **Configure Redis for multi-worker deployments.** The default in-process
+  token store does not survive a restart and is not shared across workers, so
+  clients would have to re-authenticate whenever they land on a different one.
 - **Handlers that return `rx.redirect(...)` work over the API**, but the
   redirect is emitted as a state delta rather than an HTTP 3xx — the client
   sees the URL change, not a browser redirect. This is usually what you
   want for programmatic clients.
+
+## Related
+
+- [Auto MCP](/docs/enterprise/mcp/): the same handler surface over the Model
+  Context Protocol.
+- [MCP authentication](/docs/enterprise/mcp/authentication/): the OAuth 2.1
+  flow that issues authenticated tokens for both surfaces.
+- [Authentication overview](/docs/enterprise/auth/overview/): the `AuthPlugin`
+  and its secure-by-default enforcement.
