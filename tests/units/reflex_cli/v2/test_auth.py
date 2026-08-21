@@ -220,8 +220,7 @@ def test_token_set_validates_before_saving(
     )
     save = mocker.patch("reflex_cli.utils.hosting.save_token_to_config")
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("new_token", hosting.TokenSource.CONFIG),
+        "reflex_cli.utils.hosting.stored_access_token", return_value="new_token"
     )
 
     result = runner.invoke(hosting_cli, ["token", "--set", "new_token"])
@@ -244,8 +243,7 @@ def test_token_set_reads_the_token_from_stdin(args: list[str], mocker: MockFixtu
     )
     save = mocker.patch("reflex_cli.utils.hosting.save_token_to_config")
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("piped_token", hosting.TokenSource.CONFIG),
+        "reflex_cli.utils.hosting.stored_access_token", return_value="piped_token"
     )
 
     result = runner.invoke(hosting_cli, ["token", *args], input="piped_token\n")
@@ -272,6 +270,55 @@ def test_token_set_rejects_an_empty_token(value: str, mocker: MockFixture):
     # Not reported as "specify exactly one", which reads as though --set was absent.
     assert "exactly one" not in result.output
     validate.assert_not_called()
+
+
+def test_token_set_succeeds_while_the_environment_variable_is_set(
+    mocker: MockFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """The write is confirmed against the config, which the environment shadows.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_token", return_value=dict(VALIDATED_INFO)
+    )
+
+    result = runner.invoke(hosting_cli, ["token", "--set", "new_token"])
+
+    assert result.exit_code == 0
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "new_token"
+    }
+
+
+def test_token_set_reports_an_unconfirmable_write(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A config that cannot be read back is not evidence the token was saved.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: The pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_token", return_value=dict(VALIDATED_INFO)
+    )
+    mocker.patch("reflex_cli.utils.hosting.save_token_to_config")
+    mocker.patch(
+        "reflex_cli.utils.hosting.stored_access_token",
+        side_effect=OSError("permission denied"),
+    )
+
+    result = runner.invoke(hosting_cli, ["token", "--set", "new_token"])
+
+    assert result.exit_code == 1
+    assert any(
+        "Unable to confirm" in message for message in _messages(caplog, logging.ERROR)
+    )
+    assert not _messages(caplog, SUCCESS)
 
 
 def test_token_set_keeps_the_old_token_when_the_new_one_is_rejected(
@@ -301,10 +348,7 @@ def test_token_set_reports_a_failed_write(
     )
     # save_token_to_config swallows write errors, so the command reads back.
     mocker.patch("reflex_cli.utils.hosting.save_token_to_config")
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
-        return_value=("new_token", hosting.TokenSource.ENVIRONMENT),
-    )
+    mocker.patch("reflex_cli.utils.hosting.stored_access_token", return_value="")
 
     result = runner.invoke(hosting_cli, ["token", "--set", "new_token"])
 

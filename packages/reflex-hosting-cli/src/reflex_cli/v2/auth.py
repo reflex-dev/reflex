@@ -214,8 +214,17 @@ def token_command(print_token: bool, set_token: str | None, clear: bool, logleve
             raise click.exceptions.Exit(1) from err
 
         hosting.save_token_to_config(set_token)
-        stored, stored_source = hosting.get_existing_access_token_with_source()
-        if stored != set_token or stored_source is not hosting.TokenSource.CONFIG:
+        # Verify against the config alone: the resolution order prefers
+        # REFLEX_ACCESS_TOKEN, which would mask the write we are confirming.
+        try:
+            stored = hosting.stored_access_token()
+        except (OSError, ValueError) as err:
+            logger.error(
+                f"Unable to confirm the token was written to "
+                f"{constants.Hosting.HOSTING_JSON}: {err}"
+            )
+            raise click.exceptions.Exit(1) from err
+        if stored != set_token:
             logger.error(
                 f"Unable to persist the token to {constants.Hosting.HOSTING_JSON}."
             )
