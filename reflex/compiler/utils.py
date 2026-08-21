@@ -420,6 +420,18 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
+    if definition.forward_root_props:
+        # Make the wrapper transparent: merge runtime-injected props
+        # (``...rest`` from the destructured signature, which includes ``ref``
+        # via React 19 ref-as-prop) with the root's compiled-in props.
+        # ``mergeSlotProps`` applies Radix ``Slot`` semantics — own props win,
+        # ``on*`` handlers compose, refs compose, ``className`` concatenates,
+        # object-valued props deep-merge — so a Slot parent cloning the
+        # wrapper behaves as if it had cloned the root element directly.
+        rendered["props"] = [
+            f"...mergeSlotProps(rest, ({{ {', '.join(rendered['props'])} }}))"
+        ]
+
     # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
     # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
     # body that references its own specifier doesn't recurse.
@@ -438,6 +450,13 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
+    # The ``mergeSlotProps`` call is spliced into the rendered props rather
+    # than carried by any Var, so its import is merged explicitly.
+    if definition.forward_root_props:
+        imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+            ImportVar(tag="mergeSlotProps")
+        )
+
     signature_fields = [
         field
         for param in definition.params
@@ -450,6 +469,10 @@ def compile_experimental_component_memo(
     rest_param = next(
         (p for p in definition.params if p.kind is MemoParamKind.REST), None
     )
+    if rest_param is not None:
+        rest_name = rest_param.placeholder_name
+    else:
+        rest_name = "rest" if definition.forward_root_props else None
 
     return (
         {
@@ -459,7 +482,7 @@ def compile_experimental_component_memo(
             )[1],
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
-                rest=rest_param.placeholder_name if rest_param is not None else None,
+                rest=rest_name,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
             "render": rendered,

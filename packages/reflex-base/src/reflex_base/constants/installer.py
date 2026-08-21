@@ -140,6 +140,10 @@ class PackageJson(SimpleNamespace):
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
             "isbot": "5.2.1",
+            # Deep prop merging in $/utils/state's mergeSlotProps. This is
+            # the single owner of the pin — components (e.g. plotly) import
+            # "mergician" unversioned and collapse onto this version.
+            "mergician": "v2.0.2",
             "socket.io-client": "4.8.3",
             "universal-cookie": "8.1.2",
         }
