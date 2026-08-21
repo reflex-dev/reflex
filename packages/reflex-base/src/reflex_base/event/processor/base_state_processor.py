@@ -233,6 +233,33 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
+def ensure_locked(
+    state: BaseState | StateProxy, root_state: BaseState | None
+) -> BaseState | None:
+    """The root to flush deltas from, only while the state lock is held.
+
+    Foreground handlers pass the locked root in. A background handler
+    yielding from inside ``async with self`` is suspended while its proxy
+    still holds the lock, so flushing through the proxy's root keeps the
+    documented ordering: deltas reach the frontend before the yielded event.
+    Outside the proxy context there is no lock, and flushing there is the
+    unlocked snapshot/clean that discards concurrent writes. Evaluated per
+    yield: a generator can move between inside and outside the context.
+
+    Args:
+        state: The state the handler runs against, possibly a StateProxy.
+        root_state: The locked root passed by foreground callers, if any.
+
+    Returns:
+        The root state to flush, or None when the lock is not held.
+    """
+    if root_state is not None:
+        return root_state
+    if isinstance(state, StateProxy) and state._is_mutable():
+        return state.__wrapped__._get_root_state()
+    return None
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
@@ -269,25 +296,6 @@ async def process_event(
             f"Error transforming event payload for handler {handler_name}: {ex}"
         )
 
-    def _flush_root_state() -> BaseState | None:
-        """The root to flush deltas from, only while the state lock is held.
-
-        Foreground handlers pass the locked root in. A background handler
-        yielding from inside ``async with self`` is suspended while its proxy
-        still holds the lock, so flushing through the proxy's root keeps the
-        documented ordering: deltas reach the frontend before the yielded
-        event. Outside the proxy context there is no lock, and flushing there
-        is the unlocked snapshot/clean that discards concurrent writes.
-
-        Returns:
-            The root state to flush, or None when the lock is not held.
-        """
-        if root_state is not None:
-            return root_state
-        if isinstance(state, StateProxy) and state._is_mutable():
-            return state.__wrapped__._get_root_state()
-        return None
-
     # Handle async functions.
     if inspect.iscoroutinefunction(fn.func):
         events = await fn(**payload)
@@ -299,10 +307,12 @@ async def process_event(
     if inspect.isasyncgen(events):
         async for event in events:
             await chain_updates(
-                event, root_state=_flush_root_state(), handler_name=handler_name
+                event,
+                root_state=ensure_locked(state, root_state),
+                handler_name=handler_name,
             )
         await chain_updates(
-            None, root_state=_flush_root_state(), handler_name=handler_name
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
         )
 
     # Handle regular generators.
@@ -311,7 +321,7 @@ async def process_event(
             while True:
                 await chain_updates(
                     next(events),
-                    root_state=_flush_root_state(),
+                    root_state=ensure_locked(state, root_state),
                     handler_name=handler_name,
                 )
         except StopIteration as si:
@@ -319,16 +329,20 @@ async def process_event(
             # in the loop, we must catch StopIteration to access it
             if si.value is not None:
                 await chain_updates(
-                    si.value, root_state=_flush_root_state(), handler_name=handler_name
+                    si.value,
+                    root_state=ensure_locked(state, root_state),
+                    handler_name=handler_name,
                 )
         await chain_updates(
-            None, root_state=_flush_root_state(), handler_name=handler_name
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
         )
 
     # Handle regular event chains.
     else:
         await chain_updates(
-            events, root_state=_flush_root_state(), handler_name=handler_name
+            events,
+            root_state=ensure_locked(state, root_state),
+            handler_name=handler_name,
         )
 
 

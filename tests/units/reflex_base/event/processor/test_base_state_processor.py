@@ -536,3 +536,35 @@ async def test_chained_event_keeps_originating_router_data(
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(RouterState)).seen == ["/item/abc|abc"]
+
+
+async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """ensure_locked passes a locked root through and refuses everything else.
+
+    Foreground callers hand in the root they locked; a plain substate or an
+    un-entered proxy holds no lock, so there is nothing safe to flush.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.event.processor.base_state_processor import ensure_locked
+
+    from reflex.istate.proxy import StateProxy
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    EventContext.set(root_ctx.fork(token=token))
+    root = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    substate = await root.get_state(OnLoadInternalState)
+
+    assert ensure_locked(substate, root) is root
+    assert ensure_locked(substate, None) is None
+    assert ensure_locked(StateProxy(substate), None) is None
