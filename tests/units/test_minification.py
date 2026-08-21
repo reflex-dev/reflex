@@ -20,6 +20,7 @@ from reflex.minify import (
     MinifyNameResolver,
     StateEntry,
     clear_config_cache,
+    ensure_minify_resolver_for_active_context,
     generate_minify_config,
     get_minify_config,
     get_parent_key,
@@ -331,6 +332,59 @@ class TestMinifyConfig:
         with pytest.raises(ValueError, match="must be an object with a string 'id'"):
             is_mode_enabled("REFLEX_MINIFY_STATES")
 
+    @pytest.mark.parametrize("payload", ["[1, 2, 3]", '"a string"', "42", "null"])
+    def test_non_object_json_raises(
+        self, temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, payload: str
+    ) -> None:
+        """Valid JSON that isn't an object is rejected as a ValueError."""
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+        (temp_minify_json / MINIFY_JSON).write_text(payload, encoding="utf-8")
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match="must be a JSON object"):
+            is_mode_enabled("REFLEX_MINIFY_STATES")
+
+    @pytest.mark.parametrize("bad_id", ["", "1bad", "a-b", "a.b", "a b"])
+    def test_invalid_state_id_raises(
+        self, temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, bad_id: str
+    ) -> None:
+        """State ids must be non-empty and built only from the minify alphabet."""
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+        config = {
+            "version": SCHEMA_VERSION,
+            "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
+            "events": {},
+        }
+        (temp_minify_json / MINIFY_JSON).write_text(
+            json.dumps(config), encoding="utf-8"
+        )
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match="invalid id"):
+            is_mode_enabled("REFLEX_MINIFY_STATES")
+
+    @pytest.mark.parametrize("bad_id", ["", "1bad", "a-b"])
+    def test_invalid_event_id_raises(
+        self, temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, bad_id: str
+    ) -> None:
+        """Event ids go through the same alphabet check as state ids."""
+        _set_minify_modes(monkeypatch, events=MinifyMode.ENABLED)
+        config = {
+            "version": SCHEMA_VERSION,
+            "states": {},
+            "events": {"test.module.MyState": {"handler": bad_id}},
+        }
+        (temp_minify_json / MINIFY_JSON).write_text(
+            json.dumps(config), encoding="utf-8"
+        )
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match="invalid id"):
+            is_mode_enabled("REFLEX_MINIFY_EVENTS")
+
 
 class TestGenerateMinifyConfig:
     """Tests for generate_minify_config function."""
@@ -588,8 +642,16 @@ class TestSyncMinifyConfig:
         class ChildB(ParentState):
             pass
 
+        # Simulate ChildB living in another module, the way get_state_full_path
+        # sees a state relocated by ``ComponentState.create()``. Its path now
+        # diverges from ChildA's in the prefix, not just the trailing class name,
+        # so grouping siblings by string-splitting the path would put the two in
+        # different buckets and hand both the same id.
+        ChildB.__original_module__ = "some.other.module"
+
         parent_path = get_state_full_path(ParentState)
         child_a_path = get_state_full_path(ChildA)
+        assert not get_state_full_path(ChildB).startswith(parent_path)
 
         # Config already has ParentState and ChildA assigned
         existing_config: MinifyConfig = {
@@ -1003,6 +1065,41 @@ class TestDynamicHandlerMinification:
         assert LateBornState.get_name() == "lb"
         # State stays un-minified, so the parent prefix is its default snake form.
         assert ctx.base_states.get(f"{State.get_full_name()}.lb") is LateBornState
+
+    def test_add_event_handler_registered_after_resolver_swap(
+        self, temp_minify_json, monkeypatch
+    ):
+        """Handlers added to a state that predates the resolver swap still register.
+
+        Swapping the resolver renames already-registered states, so the
+        "is this class registered?" check must not depend on the resolved name.
+        """
+        import reflex as rx
+
+        _set_minify_modes(
+            monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.ENABLED
+        )
+
+        # The class exists *before* the config is installed.
+        class PreSwapState(State):
+            pass
+
+        state_path = get_state_full_path(PreSwapState)
+        _install_config(
+            states={state_path: "b"},
+            events={state_path: {"post_swap_handler": "d"}},
+            include_state_root=True,
+        )
+        assert PreSwapState.get_name() == "b"
+
+        @rx.event
+        def post_swap_handler(self):
+            pass
+
+        PreSwapState._add_event_handler("post_swap_handler", post_swap_handler)
+
+        handlers = RegistrationContext.get().event_handlers
+        assert f"{PreSwapState.get_full_name()}.d" in handlers
 
 
 class TestMinifyModeEnvVars:
@@ -1441,3 +1538,25 @@ class TestImportTimeInstall:
             check=False,
         )
         assert result.returncode == 0, result.stderr
+
+    def test_no_resolver_installed_without_config(self, temp_minify_json: Path) -> None:
+        """Without a ``minify.json`` the zero-cost default resolver stays in place."""
+        ctx = RegistrationContext.ensure_context()
+        ctx.set_name_resolver(DefaultNameResolver())
+
+        ensure_minify_resolver_for_active_context()
+
+        assert type(ctx.name_resolver) is DefaultNameResolver
+
+    def test_resolver_installed_when_config_appears(
+        self, temp_minify_json: Path
+    ) -> None:
+        """A ``minify.json`` showing up later still swaps the resolver in."""
+        ctx = RegistrationContext.ensure_context()
+        ctx.set_name_resolver(DefaultNameResolver())
+
+        _install_config(states={"test.module.MyState": "a"})
+        ensure_minify_resolver_for_active_context()
+
+        assert isinstance(ctx.name_resolver, MinifyNameResolver)
+        assert ctx.name_resolver.config is not None

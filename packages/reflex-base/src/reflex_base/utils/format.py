@@ -480,6 +480,12 @@ def format_event_handler(handler: EventHandler) -> str:
     registry/resolver dispatch on every event. The cache is invalidated by
     :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
 
+    Like the per-class ``get_full_name`` cache this keys on nothing but the
+    handler, so a process must run a single resolver at a time. Forked
+    contexts inherit the parent's ``name_resolver`` to preserve that; giving
+    two live contexts different resolvers makes both caches serve whichever
+    one resolved the name last.
+
     Args:
         handler: The event handler to format.
 

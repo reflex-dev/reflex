@@ -50,6 +50,21 @@ def _get_minify_json_path() -> Path:
     return Path.cwd() / MINIFY_JSON
 
 
+def _validate_minified_id(label: str, value: str) -> None:
+    """Reject ids that can't be emitted as a JS identifier segment.
+
+    Args:
+        label: Human-readable location for the error message.
+        value: The candidate minified id.
+
+    Raises:
+        ValueError: If the id is empty or uses characters outside the alphabet.
+    """
+    if not value or not _MINIFY_CHARS_SET.issuperset(value):
+        msg = f"Invalid {MINIFY_JSON}: {label} has invalid id: {value!r}"
+        raise ValueError(msg)
+
+
 def _load_minify_config_uncached() -> MinifyConfig | None:
     """Load and validate ``minify.json`` from disk.
 
@@ -69,6 +84,12 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
     except json.JSONDecodeError as e:
         msg = f"Invalid JSON in {MINIFY_JSON}: {e}"
         raise ValueError(msg) from e
+
+    if not isinstance(data, dict):
+        msg = (
+            f"Invalid {MINIFY_JSON}: must be a JSON object, got {type(data).__name__}."
+        )
+        raise ValueError(msg)
 
     # Validate schema version
     version = data.get("version")
@@ -91,6 +112,7 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
         if not isinstance(value, dict) or not isinstance(value.get("id"), str):
             msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id': {value}"
             raise ValueError(msg)
+        _validate_minified_id(f"state '{key}'", value["id"])
         parent = value.get("parent")
         if parent is not None and not isinstance(parent, str):
             msg = (
@@ -107,6 +129,7 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
             if not isinstance(event_id, str):
                 msg = f"Invalid {MINIFY_JSON}: event '{state_path}.{handler_name}' has non-string id: {event_id}"
                 raise ValueError(msg)
+            _validate_minified_id(f"event '{state_path}.{handler_name}'", event_id)
 
     return MinifyConfig(
         version=data["version"],
@@ -298,17 +321,21 @@ def ensure_minify_resolver_for_active_context() -> None:
     """Install a :class:`MinifyNameResolver` if one isn't already in place.
 
     Idempotent — safe to wire into hot paths like
-    :func:`reflex.utils.prerequisites.get_app`. Re-installs only when on-disk
-    state could have changed (config appearing, or non-minify resolver).
+    :func:`reflex.utils.prerequisites.get_app`. Apps without a ``minify.json``
+    keep the :class:`~reflex_base.registry.DefaultNameResolver` and its
+    zero-cost name lookups; the resolver is installed the moment a config
+    shows up.
     """
     from reflex_base.registry import RegistrationContext
 
+    if not _get_minify_json_path().exists():
+        return
     ctx = RegistrationContext.ensure_context()
-    if isinstance(ctx.name_resolver, MinifyNameResolver):
-        if ctx.name_resolver.config is not None:
-            return
-        if not _get_minify_json_path().exists():
-            return
+    if (
+        isinstance(ctx.name_resolver, MinifyNameResolver)
+        and ctx.name_resolver.config is not None
+    ):
+        return
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
@@ -327,6 +354,7 @@ def clear_config_cache() -> None:
 # Using letters (a-z, A-Z) plus $ and _ which are valid JS identifier chars
 _MINIFY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
 _MINIFY_BASE = len(_MINIFY_CHARS)  # 54
+_MINIFY_CHARS_SET = frozenset(_MINIFY_CHARS)
 
 
 def int_to_minified_name(id_: int) -> str:
