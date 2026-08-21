@@ -1,7 +1,7 @@
 @@HEADER@@
 name: changelog
 
-# Two guards on every pull request:
+# Three guards on every pull request:
 #
 # 1. New CHANGELOG.md version headings are rejected. A merged version heading
 #    without a git tag is a real publish trigger (see
@@ -12,8 +12,12 @@ name: changelog
 #    already-published sections: the 'changelog-version-edit' label.
 #
 # 2. Every package whose source the PR touches must add a news fragment under
-#    its news/ directory. Waive with the 'skip-changelog' label for changes
-#    that are genuinely not user-facing.
+#    its news/ directory, and every fragment the PR adds must be named
+#    <pr-number>.<type>.md. A towncrier orphan fragment (+name.type.md) is a
+#    placeholder for before the number is known; merged, it renders a changelog
+#    entry with no link back to the change, so the PR that created one has to
+#    rename it. Waive with the 'skip-changelog' label for changes that are
+#    genuinely not user-facing.
 #
 # 3. The generated release workflows must match what the pinned reflex-release
 #    version produces from [tool.reflex-release] — adding a package or editing

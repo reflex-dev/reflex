@@ -43,7 +43,7 @@ give every package a [tag-derived version](#tag-derived-versions), and commit.
 | `.github/workflows/dispatch_release.yml` | manual | Materializes news fragments into `CHANGELOG.md` at the next version. Final releases land through a pull request; prereleases go straight to an `r/pre-*` branch. |
 | `.github/workflows/release_from_changelog.yml` | push to `main`, `r/pre-**`, `r/hotfix/**` | Publishes any changelog version that has no git tag. |
 | `.github/workflows/publish.yml` | called by the two above, or manual | Builds one package — in-repo, or through a [workflow you supply](#custom-builds) — waits for `pypi` environment approval, uploads, then tags and creates the GitHub release. |
-| `.github/workflows/changelog.yml` | pull request | Requires a news fragment for every package the PR touches, rejects hand-written version headings, and fails if the generated workflows have drifted. |
+| `.github/workflows/changelog.yml` | pull request | Requires a news fragment named after the PR for every package the PR touches, rejects hand-written version headings, and fails if the generated workflows have drifted. |
 | `.github/workflows/auto_release_internal.yml` | push to `main` | Only for repos with `internal-packages`: patch-releases them whenever they change. |
 
 ### Why the workflows are copied, not referenced
@@ -242,9 +242,11 @@ uvx reflex-release create --package widget-core 1234.bugfix.md   # sub-package
 ```
 
 Before you know the PR number, use an orphan fragment (`+something.feature.md`)
-and rename it later. CI requires a fragment for every package whose source the
-PR touches; the `skip-changelog` label waives that for changes that genuinely
-are not user-facing.
+and rename it once the PR exists — CI rejects a fragment the PR adds under any
+other name, since a merged orphan renders a changelog entry with no link back to
+the change. CI also requires a fragment for every package whose source the PR
+touches; the `skip-changelog` label waives both for changes that genuinely are
+not user-facing.
 
 ## Adding sub-packages
 
@@ -775,7 +777,7 @@ a flag for running the same command by hand.
 | `push-tag` / `create-release` | Tag and publish the GitHub release. |
 | `post-release` | Dispatch the configured post-release workflow for a tag. |
 | `check-headings` | Reject hand-written changelog version headings (PR CI). |
-| `changelog-check` | Require news fragments for changed packages (PR CI). |
+| `changelog-check` | Require news fragments for changed packages, named after the PR (PR CI). |
 | `detect-internal` | List internal packages touched by a push. |
 
 ## Adopting it in a repository that already has releases

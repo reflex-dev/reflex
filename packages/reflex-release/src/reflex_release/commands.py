@@ -47,6 +47,7 @@ from .discovery import (
 )
 from .dist import pin_exact, verify_dist
 from .gitutil import (
+    added_files,
     changed_files,
     commit_exists,
     configure_bot_identity,
@@ -70,6 +71,9 @@ RELEASE_WORKFLOW = "release_from_changelog.yml"
 SKIP_CHANGELOG_LABEL = "skip-changelog"
 
 _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
+
+#: A fragment references its pull request by leading its name with the number.
+_FRAGMENT_REFERENCE = re.compile(r"[0-9]+")
 
 
 def _is_null_sha(sha: str) -> bool:
@@ -602,13 +606,61 @@ def affected_packages(config: Config, paths: list[str]) -> list[str]:
     ]
 
 
+def placeholder_fragments(config: Config, paths: list[str]) -> list[str]:
+    """List the news fragments among a set of paths that reference no pull request.
+
+    towncrier's orphan fragments (``+name.type.md``) exist so an entry can be
+    written before the pull request number is known; a merged one renders a
+    changelog line with no link back to the change it describes.
+
+    Args:
+        config: The repository configuration.
+        paths: Repo-relative paths, POSIX-style.
+
+    Returns:
+        The offending fragment paths, in the order given.
+    """
+    types = fragment_types(config)
+    news_dirs = {
+        config.news_dir(package).relative_to(config.root).as_posix()
+        for package in config.all_packages()
+    }
+    placeholders: list[str] = []
+    for path in paths:
+        directory, _, name = path.rpartition("/")
+        if directory not in news_dirs:
+            continue
+        # The same shape towncrier reads: <issue>.<type>[.<counter>].<suffix>.
+        components = name.split(".")
+        if types.isdisjoint(components) or _FRAGMENT_REFERENCE.fullmatch(components[0]):
+            continue
+        placeholders.append(path)
+    return placeholders
+
+
 def cmd_changelog_check(config: Config, base_ref: str) -> None:
     """Require a news fragment for every package whose source a branch changes.
+
+    Fragments the branch adds must also be named after the pull request they
+    come from, so no placeholder outlives the branch that created it.
 
     Args:
         config: The repository configuration.
         base_ref: The ref the branch is compared against (e.g. ``origin/main``).
     """
+    placeholders = placeholder_fragments(config, added_files(config.root, base_ref))
+    if placeholders:
+        for path in placeholders:
+            error(f"{path}: news fragment name carries no pull request number")
+        fail(
+            "news fragments must be named <pr-number>.<type>.md so every "
+            "changelog entry links back to the pull request it came from. An "
+            "orphan fragment is a placeholder for before that number is known: "
+            "rename it now that the pull request exists.\n"
+            f"Or apply the '{SKIP_CHANGELOG_LABEL}' label if the change is genuinely "
+            "not user-facing."
+        )
+
     affected = affected_packages(config, changed_files(config.root, base_ref))
     if not affected:
         echo("No packaged source changes; no changelog fragments required.")

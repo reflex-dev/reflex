@@ -89,6 +89,26 @@ def git_show(root: Path, ref: str, rel_path: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
+def _diff_names(root: Path, base_ref: str, *options: str) -> list[str]:
+    """List the paths a diff against the merge base with a ref reports.
+
+    Args:
+        root: The repository root.
+        base_ref: The ref to compare against (e.g. ``origin/main``).
+        *options: Extra ``git diff`` options (e.g. a ``--diff-filter``).
+
+    Returns:
+        The paths, POSIX-style.
+    """
+    return [
+        line
+        for line in git(
+            ["diff", *options, "--name-only", f"{base_ref}...HEAD"], root
+        ).splitlines()
+        if line
+    ]
+
+
 def changed_files(root: Path, base_ref: str) -> list[str]:
     """List the repo-relative paths changed since the merge base with a ref.
 
@@ -99,13 +119,24 @@ def changed_files(root: Path, base_ref: str) -> list[str]:
     Returns:
         The changed paths, POSIX-style.
     """
-    return [
-        line
-        for line in git(
-            ["diff", "--name-only", f"{base_ref}...HEAD"], root
-        ).splitlines()
-        if line
-    ]
+    return _diff_names(root, base_ref)
+
+
+def added_files(root: Path, base_ref: str) -> list[str]:
+    """List the repo-relative paths added since the merge base with a ref.
+
+    Rename detection is off, so a renamed file counts as an addition at its new
+    path: renaming a fragment is how a placeholder gets its pull request number,
+    and the result has to be judged under the name it lands with.
+
+    Args:
+        root: The repository root.
+        base_ref: The ref to compare against (e.g. ``origin/main``).
+
+    Returns:
+        The added paths, POSIX-style.
+    """
+    return _diff_names(root, base_ref, "--no-renames", "--diff-filter=A")
 
 
 def tag_versions(config: Config, package: str) -> list[Version]:

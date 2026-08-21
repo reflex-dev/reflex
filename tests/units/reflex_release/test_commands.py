@@ -572,6 +572,93 @@ def test_changelog_check_passes_with_a_fragment(config: Config, repo: Path) -> N
     commands.cmd_changelog_check(config, base)
 
 
+def test_changelog_check_rejects_an_orphan_fragment(config: Config, repo: Path) -> None:
+    """A placeholder outliving its branch renders an entry with no PR link."""
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
+    fragment(config, "mypkg", "+adds-app.feature.md", "Adds app.")
+    commit_all(repo)
+    with pytest.raises(ReleaseError, match="must be named <pr-number>"):
+        commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_rejects_an_orphan_fragment_for_any_package(
+    config: Config, repo: Path
+) -> None:
+    """The guard reads the news directories, not the affected packages."""
+    base = git(repo, "rev-parse", "HEAD").strip()
+    fragment(config, "widget-core", "+adds-widget.feature.md", "Adds widget.")
+    commit_all(repo)
+    with pytest.raises(ReleaseError, match="must be named <pr-number>"):
+        commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_rejects_an_unnumbered_fragment(
+    config: Config, repo: Path
+) -> None:
+    """Any non-numeric reference renders a broken issue link, not just '+'."""
+    base = git(repo, "rev-parse", "HEAD").strip()
+    fragment(config, "mypkg", "TBD.feature.md", "Adds app.")
+    commit_all(repo)
+    with pytest.raises(ReleaseError, match="must be named <pr-number>"):
+        commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_accepts_a_renamed_orphan_fragment(
+    config: Config, repo: Path
+) -> None:
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
+    fragment(config, "mypkg", "+adds-app.feature.md", "Adds app.")
+    commit_all(repo)
+    (config.news_dir("mypkg") / "+adds-app.feature.md").rename(
+        config.news_dir("mypkg") / "12.feature.md"
+    )
+    commit_all(repo)
+    commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_accepts_a_counter_suffix(config: Config, repo: Path) -> None:
+    """A second fragment of one type gets a <pr>.<type>.<n>.md counter suffix."""
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
+    fragment(config, "mypkg", "12.feature.md", "Adds app.")
+    fragment(config, "mypkg", "12.feature.1.md", "Adds more app.")
+    commit_all(repo)
+    commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_ignores_pre_existing_orphan_fragments(
+    config: Config, repo: Path
+) -> None:
+    """Only what the branch adds is the branch's to fix."""
+    fragment(config, "mypkg", "+adds-app.feature.md", "Adds app.")
+    commit_all(repo)
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "src" / "mypkg" / "app.py").write_text("x = 1\n", encoding="utf-8")
+    fragment(config, "mypkg", "12.bugfix.md", "Fixes app.")
+    commit_all(repo)
+    commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_ignores_non_fragments_in_the_news_directory(
+    config: Config, repo: Path
+) -> None:
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (config.news_dir("mypkg") / "README.md").write_text("Read me.\n", encoding="utf-8")
+    commit_all(repo)
+    commands.cmd_changelog_check(config, base)
+
+
+def test_changelog_check_ignores_orphan_files_outside_the_news_directory(
+    config: Config, repo: Path
+) -> None:
+    base = git(repo, "rev-parse", "HEAD").strip()
+    (repo / "+notes.feature.md").write_text("Not a fragment.\n", encoding="utf-8")
+    commit_all(repo)
+    commands.cmd_changelog_check(config, base)
+
+
 def test_detect_internal_uses_the_dispatched_package(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
