@@ -62,11 +62,14 @@ jobs:
           && github.event.pull_request.user.login == 'github-actions[bot]') }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
+        shell: bash
         run: @@CLI@@ check-headings
       - name: Check for news fragments
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
+        shell: bash
         run: @@CLI@@ changelog-check
       - name: Check the release workflows are up to date
+        shell: bash
         run: @@CLI@@ sync --check
