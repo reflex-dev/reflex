@@ -51,6 +51,7 @@ from .gitutil import (
     changed_files,
     commit_exists,
     configure_bot_identity,
+    gh_capture,
     gh_output,
     gh_run,
     git,
@@ -74,8 +75,16 @@ _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
 
 #: The release fields read back after a release is created (or found already
 #: created), to prove the thing ``post-release`` is about to be pointed at is
-#: the release this run published.
-_RELEASE_FIELDS = "tagName,name,isDraft,isPrerelease,assets"
+#: the release this run published. Asked for and read from one place, so a
+#: field can never be verified without having been requested.
+_RELEASE_FIELDS = ("tagName", "name", "isDraft", "isPrerelease", "assets")
+
+#: Markers in gh's stderr that mean the tag has no release, as opposed to a
+#: release gh could not ask GitHub about. A bare 404 counts: the same job
+#: pushed this tag through the same gh, so a not-found on the releases endpoint
+#: is about the release rather than the repository — and reading a phrasing
+#: this list misses as a hard failure would stop every ordinary release.
+_NO_RELEASE_STDERR = ("release not found", "404")
 
 
 def _is_null_sha(sha: str) -> bool:
@@ -952,15 +961,33 @@ def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
     """
     # A probe, not an action: keep its output (and its "not found" stderr on the
     # normal path) out of the job log.
-    payload = gh_output(
-        ["release", "view", tag, "--json", _RELEASE_FIELDS], config.root, check=False
+    returncode, payload, stderr = gh_capture(
+        ["release", "view", tag, "--json", ",".join(_RELEASE_FIELDS)], config.root
     )
-    if not payload:
-        return None
+    if returncode != 0:
+        # A tag with no release and a GitHub that could not be reached both
+        # exit non-zero. Only the first means there is nothing there; reading
+        # the second as "no release" would create a release over one that
+        # exists, or report a release that was just made as missing.
+        lowered = stderr.lower()
+        if any(marker in lowered for marker in _NO_RELEASE_STDERR):
+            return None
+        fail(
+            f"could not read the GitHub release for {tag}: gh exited "
+            f"{returncode} saying {stderr or '(nothing)'}. Nothing is known "
+            "about the release either way, so re-run this job once gh can "
+            "reach GitHub."
+        )
     try:
-        return json.loads(payload)
+        release = json.loads(payload)
     except json.JSONDecodeError:
         fail(f"gh reported release metadata for {tag} that is not JSON: {payload!r}")
+    if missing := [field for field in _RELEASE_FIELDS if field not in release]:
+        fail(
+            f"the release metadata gh reported for {tag} carries no "
+            f"{', '.join(missing)}, so the release cannot be verified"
+        )
+    return release
 
 
 def _metadata_problems(
@@ -981,16 +1008,16 @@ def _metadata_problems(
     # repository rather than to one release, so a release published since this
     # one legitimately holds it.
     problems = []
-    if (tag_name := release.get("tagName")) != tag:
+    if (tag_name := release["tagName"]) != tag:
         problems.append(f"it points at tag {tag_name!r} rather than {tag!r}")
-    if release.get("isDraft"):
+    if release["isDraft"]:
         problems.append("it is still a draft, so the version is not released")
-    if bool(release.get("isPrerelease")) != prerelease:
+    if (is_prerelease := bool(release["isPrerelease"])) != prerelease:
         problems.append(
-            f"it is marked prerelease={bool(release.get('isPrerelease'))} rather "
-            f"than prerelease={prerelease}"
+            f"it is marked prerelease={is_prerelease} rather than "
+            f"prerelease={prerelease}"
         )
-    if (name := release.get("name")) != title:
+    if (name := release["name"]) != title:
         problems.append(f"it is titled {name!r} rather than {title!r}")
     return problems
 
@@ -1010,8 +1037,7 @@ def _checksum_asset_problem(
     """
     name = checksums_path.name
     asset = next(
-        (asset for asset in release.get("assets") or () if asset.get("name") == name),
-        None,
+        (asset for asset in release["assets"] if asset.get("name") == name), None
     )
     if asset is None:
         return f"the {name} manifest is not attached to it"

@@ -866,21 +866,50 @@ def created_release_payload(create_args: list[str]) -> str:
     )
 
 
-def stub_gh(monkeypatch: pytest.MonkeyPatch, views: list[str]) -> list[list[str]]:
+#: What gh reports for a tag that simply has no release.
+GH_NO_RELEASE = (1, "", "release not found")
+
+#: The same answer phrased as the bare HTTP status, as gh reports it when the
+#: release lookup itself is what 404s.
+GH_NO_RELEASE_404 = (
+    1,
+    "",
+    "gh: Not Found (HTTP 404) (https://api.github.com/repos/acme/widgets/releases/tags/v0.2.1)",
+)
+
+#: What gh reports when it could not ask GitHub at all.
+GH_UNREACHABLE = (1, "", "HTTP 503: Service Unavailable (https://api.github.com)")
+
+
+def gh_found(payload: str) -> tuple[int, str, str]:
+    """Render what gh reports for a release it read successfully.
+
+    Args:
+        payload: The ``gh release view --json`` output.
+
+    Returns:
+        The exit status, stdout and stderr of that read.
+    """
+    return (0, payload, "")
+
+
+def stub_gh(
+    monkeypatch: pytest.MonkeyPatch, reads: list[tuple[int, str, str]]
+) -> list[list[str]]:
     """Stub the two gh helpers the release commands use.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
-        views: The ``gh release view`` payloads to answer reads with, in order;
-            the last one answers every further read.
+        reads: What ``gh release view`` reports, in order; the last entry
+            answers every further read.
 
     Returns:
         The list every ``gh`` command that is run is appended to.
     """
     calls: list[list[str]] = []
-    queued = iter(views[:-1])
+    queued = iter(reads[:-1])
     monkeypatch.setattr(
-        commands, "gh_output", lambda *args, **kwargs: next(queued, views[-1])
+        commands, "gh_capture", lambda *args, **kwargs: next(queued, reads[-1])
     )
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: calls.append(args) or 0
@@ -902,11 +931,13 @@ def release_args(
     """
     captured: list[list[str]] = []
 
-    def view(*args: object, **kwargs: object) -> str:
+    def view(*args: object, **kwargs: object) -> tuple[int, str, str]:
         creates = [call for call in captured if call[:2] == ["release", "create"]]
-        return created_release_payload(creates[-1]) if creates else ""
+        if not creates:
+            return GH_NO_RELEASE
+        return gh_found(created_release_payload(creates[-1]))
 
-    monkeypatch.setattr(commands, "gh_output", view)
+    monkeypatch.setattr(commands, "gh_capture", view)
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
     )
@@ -999,7 +1030,7 @@ def test_create_release_fails_when_the_release_cannot_be_read_back(
 ) -> None:
     """A zero exit from gh is not proof of the release GitHub actually holds."""
     notes, checksums = release_inputs(tmp_path)
-    stub_gh(monkeypatch, [""])
+    stub_gh(monkeypatch, [GH_NO_RELEASE])
     with pytest.raises(ReleaseError, match="reading it back found no release"):
         commands.cmd_create_release(
             config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
@@ -1010,7 +1041,7 @@ def test_create_release_rejects_unparseable_release_metadata(
     config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     notes, checksums = release_inputs(tmp_path)
-    stub_gh(monkeypatch, ["", "not json"])
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found("not json")])
     with pytest.raises(ReleaseError, match="that is not JSON"):
         commands.cmd_create_release(
             config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
@@ -1036,7 +1067,7 @@ def test_create_release_rejects_a_release_that_is_not_the_one_asked_for(
     """The next step hands this tag on, so a mismatch stops the job here."""
     notes, checksums = release_inputs(tmp_path)
     created = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
-    stub_gh(monkeypatch, ["", created])
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found(created)])
     with pytest.raises(
         ReleaseError, match="is not the one that was asked for"
     ) as raised:
@@ -1064,7 +1095,7 @@ def test_create_release_rejects_an_incomplete_checksum_asset(
     """A release without the manifest of what was uploaded is not a record of it."""
     notes, checksums = release_inputs(tmp_path)
     created = release_payload("v0.2.1", "v0.2.1", assets=assets)
-    stub_gh(monkeypatch, ["", created])
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found(created)])
     with pytest.raises(ReleaseError, match=rf"is incomplete: .*{expected}"):
         commands.cmd_create_release(
             config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
@@ -1080,7 +1111,7 @@ def test_create_release_skips_a_matching_existing_release(
     """The safe re-run: the release is already exactly the one this run makes."""
     notes, checksums = release_inputs(tmp_path)
     existing = release_payload("v0.2.1", "v0.2.1", [checksums])
-    calls = stub_gh(monkeypatch, [existing])
+    calls = stub_gh(monkeypatch, [gh_found(existing)])
     commands.cmd_create_release(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
@@ -1097,7 +1128,7 @@ def test_create_release_attaches_a_manifest_an_earlier_attempt_left_off(
     notes, checksums = release_inputs(tmp_path)
     partial = release_payload("v0.2.1", "v0.2.1")
     repaired = release_payload("v0.2.1", "v0.2.1", [checksums])
-    calls = stub_gh(monkeypatch, [partial, repaired])
+    calls = stub_gh(monkeypatch, [gh_found(partial), gh_found(repaired)])
     commands.cmd_create_release(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
@@ -1108,7 +1139,7 @@ def test_create_release_fails_when_attaching_the_manifest_does_not_take(
     config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     notes, checksums = release_inputs(tmp_path)
-    stub_gh(monkeypatch, [release_payload("v0.2.1", "v0.2.1")])
+    stub_gh(monkeypatch, [gh_found(release_payload("v0.2.1", "v0.2.1"))])
     with pytest.raises(ReleaseError, match="reading it back found that"):
         commands.cmd_create_release(
             config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
@@ -1128,7 +1159,7 @@ def test_create_release_refuses_to_reuse_a_stale_release(
     """A release nobody here made must not be handed on as this publish's."""
     notes, checksums = release_inputs(tmp_path)
     existing = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
-    calls = stub_gh(monkeypatch, [existing])
+    calls = stub_gh(monkeypatch, [gh_found(existing)])
     with pytest.raises(ReleaseError, match=r"already exists for v0\.2\.1"):
         commands.cmd_create_release(
             config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
@@ -1144,11 +1175,68 @@ def test_create_release_reuses_a_release_without_a_local_manifest(
     """Nothing to attach and nothing to verify: the metadata is the whole check."""
     notes, checksums = release_inputs(tmp_path)
     checksums.unlink()
-    calls = stub_gh(monkeypatch, [release_payload("v0.2.1", "v0.2.1")])
+    calls = stub_gh(monkeypatch, [gh_found(release_payload("v0.2.1", "v0.2.1"))])
     commands.cmd_create_release(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert calls == []
+
+
+@pytest.mark.parametrize("absent", [GH_NO_RELEASE, GH_NO_RELEASE_404])
+def test_create_release_creates_when_gh_says_there_is_no_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    absent: tuple[int, str, str],
+) -> None:
+    """Either phrasing of "no release" has to reach the create, not a failure."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [absent, gh_found(created)])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls[0][:3] == ["release", "create", "v0.2.1"]
+
+
+def test_create_release_fails_when_reading_the_created_release_fails(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A gh that could not reach GitHub has not said the release is absent."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [GH_NO_RELEASE, GH_UNREACHABLE])
+    with pytest.raises(ReleaseError, match="could not read the GitHub release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls[0][:2] == ["release", "create"]
+
+
+def test_create_release_does_not_create_over_an_unreadable_release(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Treating an unreadable release as absent would release over it."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [GH_UNREACHABLE])
+    with pytest.raises(ReleaseError, match="re-run this job once gh can reach"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
+
+
+def test_create_release_rejects_metadata_missing_a_requested_field(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A field that was asked for but not answered must not read as a mismatch."""
+    notes, checksums = release_inputs(tmp_path)
+    payload = json.loads(release_payload("v0.2.1", "v0.2.1", [checksums]))
+    del payload["isDraft"]
+    stub_gh(monkeypatch, [gh_found(json.dumps(payload))])
+    with pytest.raises(ReleaseError, match="carries no isDraft"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
 
 
 def test_post_release_without_a_configured_workflow_does_nothing(
