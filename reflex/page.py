@@ -11,15 +11,16 @@ if TYPE_CHECKING:
     from typing import Any
 
     from reflex_base.event import EventType
+    from reflex_base.vars import Var
 
 DECORATED_PAGES: dict[str, list[tuple[Callable, dict[str, Any]]]] = defaultdict(list)
 
 
 def page(
     route: str | None = None,
-    title: str | None = None,
+    title: str | Var | None = None,
     image: str | None = None,
-    description: str | None = None,
+    description: str | Var | None = None,
     meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
     on_load: EventType[()] | None = None,
@@ -51,11 +52,11 @@ def page(
         kwargs: dict[str, Any] = {}
         if route:
             kwargs["route"] = route
-        if title:
+        if title is not None:
             kwargs["title"] = title
         if image:
             kwargs["image"] = image
-        if description:
+        if description is not None:
             kwargs["description"] = description
         if meta:
             kwargs["meta"] = meta
@@ -79,9 +80,9 @@ class PageNamespace:
     def __new__(
         cls,
         route: str | None = None,
-        title: str | None = None,
+        title: str | Var | None = None,
         image: str | None = None,
-        description: str | None = None,
+        description: str | Var | None = None,
         meta: list[Any] | None = None,
         script_tags: list[Any] | None = None,
         on_load: EventType[()] | None = None,
