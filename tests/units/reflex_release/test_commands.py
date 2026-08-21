@@ -893,8 +893,17 @@ def gh_found(payload: str) -> tuple[int, str, str]:
     return (0, payload, "")
 
 
+#: What gh reports for a repository it read without trouble.
+GH_REPO_READS = (0, '{"name": "widgets"}', "")
+
+#: What gh reports for a repository it could not read at all.
+GH_REPO_UNREADABLE = (1, "", "gh: Not Found (HTTP 404)")
+
+
 def stub_gh(
-    monkeypatch: pytest.MonkeyPatch, reads: list[tuple[int, str, str]]
+    monkeypatch: pytest.MonkeyPatch,
+    reads: list[tuple[int, str, str]],
+    repo: tuple[int, str, str] = GH_REPO_READS,
 ) -> list[list[str]]:
     """Stub the two gh helpers the release commands use.
 
@@ -902,15 +911,21 @@ def stub_gh(
         monkeypatch: The pytest monkeypatch fixture.
         reads: What ``gh release view`` reports, in order; the last entry
             answers every further read.
+        repo: What the ``gh repo view`` probe reports — the check that a
+            not-found is about the release and not about reaching GitHub.
 
     Returns:
         The list every ``gh`` command that is run is appended to.
     """
     calls: list[list[str]] = []
     queued = iter(reads[:-1])
-    monkeypatch.setattr(
-        commands, "gh_capture", lambda *args, **kwargs: next(queued, reads[-1])
-    )
+
+    def capture(args: list[str], *rest: object, **kwargs: object):
+        if args[:2] == ["repo", "view"]:
+            return repo
+        return next(queued, reads[-1])
+
+    monkeypatch.setattr(commands, "gh_capture", capture)
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: calls.append(args) or 0
     )
@@ -931,7 +946,9 @@ def release_args(
     """
     captured: list[list[str]] = []
 
-    def view(*args: object, **kwargs: object) -> tuple[int, str, str]:
+    def view(args: list[str], *rest: object, **kwargs: object) -> tuple[int, str, str]:
+        if args[:2] == ["repo", "view"]:
+            return GH_REPO_READS
         creates = [call for call in captured if call[:2] == ["release", "create"]]
         if not creates:
             return GH_NO_RELEASE
@@ -1197,6 +1214,23 @@ def test_create_release_creates_when_gh_says_there_is_no_release(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert calls[0][:3] == ["release", "create", "v0.2.1"]
+
+
+@pytest.mark.parametrize("absent", [GH_NO_RELEASE, GH_NO_RELEASE_404])
+def test_create_release_will_not_believe_a_not_found_it_cannot_corroborate(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    absent: tuple[int, str, str],
+) -> None:
+    """A 404 from an unreachable repository says nothing about the release."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [absent], repo=GH_REPO_UNREADABLE)
+    with pytest.raises(ReleaseError, match="could not read the GitHub release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
 
 
 def test_create_release_fails_when_reading_the_created_release_fails(

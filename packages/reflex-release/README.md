@@ -430,6 +430,12 @@ drafted, flagged and titled the way this run asked for, and carrying the
 manifest at exactly the size that was built. Anything else fails the job before
 the tag is handed on.
 
+A read that fails is not an absent release: gh answers "there is no such
+release" and "GitHub could not be asked" the same way, so a not-found is
+believed only once the repository itself reads back, and anything else stops
+the job saying what gh reported. Otherwise a rate-limited or unauthenticated
+read would look exactly like a tag with no release yet.
+
 A re-run of a release whose tag already has a release verifies it the same way
 instead of taking its existence as success. A missing or stale manifest is the
 one partial state a re-run finishes by itself — the attempt that died during the

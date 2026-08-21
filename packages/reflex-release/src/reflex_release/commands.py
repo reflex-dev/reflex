@@ -79,11 +79,11 @@ _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
 #: field can never be verified without having been requested.
 _RELEASE_FIELDS = ("tagName", "name", "isDraft", "isPrerelease", "assets")
 
-#: Markers in gh's stderr that mean the tag has no release, as opposed to a
-#: release gh could not ask GitHub about. A bare 404 counts: the same job
-#: pushed this tag through the same gh, so a not-found on the releases endpoint
-#: is about the release rather than the repository — and reading a phrasing
-#: this list misses as a hard failure would stop every ordinary release.
+#: Markers in gh's stderr for a release that is not there. Matched widely — a
+#: bare 404 counts — because a phrasing this list misses would stop every
+#: ordinary release; what makes the wide match safe is that a not-found is
+#: only believed once the repository itself has been read (see
+#: :func:`_reads_as_absent`).
 _NO_RELEASE_STDERR = ("release not found", "404")
 
 
@@ -948,6 +948,33 @@ def cmd_push_tag(config: Config, tag: str) -> None:
     git_push(f"refs/tags/{tag}", config.root)
 
 
+def _reads_as_absent(config: Config, stderr: str) -> bool:
+    """Decide whether a failed release read means the tag has no release.
+
+    gh answers "there is no such release" and "GitHub could not be asked" the
+    same way: a non-zero exit and a message. A not-found is only evidence that
+    the release is absent if GitHub could be reached and this repository read
+    at all, so that is established rather than inferred from the wording — a
+    404 for a repository that is missing, renamed or beyond the token's reach
+    says nothing about the release.
+
+    Args:
+        config: The repository configuration.
+        stderr: What gh wrote to stderr.
+
+    Returns:
+        Whether the tag can be treated as having no release.
+    """
+    lowered = stderr.lower()
+    if not any(marker in lowered for marker in _NO_RELEASE_STDERR):
+        return False
+    # One extra call, and only on the path where a release is about to be
+    # created anyway: if the repository reads back, the not-found was about the
+    # release rather than about reaching GitHub.
+    returncode, _, _ = gh_capture(["repo", "view", "--json", "name"], config.root)
+    return returncode == 0
+
+
 def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
     """Read a GitHub release's metadata and asset list.
 
@@ -969,8 +996,7 @@ def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
         # exit non-zero. Only the first means there is nothing there; reading
         # the second as "no release" would create a release over one that
         # exists, or report a release that was just made as missing.
-        lowered = stderr.lower()
-        if any(marker in lowered for marker in _NO_RELEASE_STDERR):
+        if _reads_as_absent(config, stderr):
             return None
         fail(
             f"could not read the GitHub release for {tag}: gh exited "
