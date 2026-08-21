@@ -302,6 +302,9 @@ class RedisTokenManager(LocalTokenManager):
 
         Returns:
             New token if duplicate detected and new token generated, None otherwise.
+
+        Raises:
+            RuntimeError: If Redis keeps reporting the token as already claimed.
         """
         # Fast local check first (handles reconnections)
         if (
@@ -312,36 +315,36 @@ class RedisTokenManager(LocalTokenManager):
         # Make sure the update subscriber is running
         self._ensure_socket_record_task()
 
-        # Check Redis for cross-worker duplicates
-        redis_key = self._get_redis_key(token)
+        socket_record = SocketRecord(instance_id=self.instance_id, sid=sid)
+        socket_record_data = pickle.dumps(socket_record)
+        new_token = None
+        claimed = False
 
         try:
-            token_exists_in_redis = await self.redis.exists(redis_key)
+            for _ in range(3):
+                if await self.redis.set(
+                    self._get_redis_key(token),
+                    socket_record_data,
+                    ex=self.token_expiration,
+                    nx=True,
+                ):
+                    claimed = True
+                    break
+                token = new_token = _get_new_token()
         except Exception as e:
-            logger.error(f"Redis error checking token existence: {e}")
-            return await super().link_token_to_sid(token, sid)
+            logger.error(f"Redis error claiming token: {e}")
+            fallback_token = await super().link_token_to_sid(token, sid)
+            return fallback_token or new_token
 
-        new_token = None
-        if token_exists_in_redis:
-            # Duplicate exists somewhere - generate new token
-            token = new_token = _get_new_token()
-            redis_key = self._get_redis_key(new_token)
+        if not claimed:
+            msg = "Redis failed to claim a unique token after 3 attempts"
+            logger.error(msg)
+            raise RuntimeError(msg)
 
         # Store in local dicts
-        socket_record = self.token_to_socket[token] = SocketRecord(
-            instance_id=self.instance_id, sid=sid
-        )
+        self.token_to_socket[token] = socket_record
         self.sid_to_token[sid] = token
 
-        # Store in Redis if possible
-        try:
-            await self.redis.set(
-                redis_key,
-                pickle.dumps(socket_record),
-                ex=self.token_expiration,
-            )
-        except Exception as e:
-            logger.error(f"Redis error storing token: {e}")
         # Return the new token if one was generated
         return new_token
 
