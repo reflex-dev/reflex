@@ -11,6 +11,16 @@ concurrency:
 on:
   pull_request:
     branches: ["main"]
+    # labeled/unlabeled: skip-changelog and changelog-version-edit waive parts
+    # of this check, so the verdict is only valid for the label set it was
+    # computed under. Without these types, removing a label leaves the green
+    # run that the label produced standing, and the gate silently stays open.
+    #
+    # The job cannot cheaply no-op on an unrelated label: a job skipped by `if`
+    # reports its check as skipped, which branch protection counts as passing,
+    # so it would overwrite a real failure with a green. Every run therefore
+    # computes the real verdict.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   changelog:
