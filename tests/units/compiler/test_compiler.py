@@ -19,7 +19,7 @@ from reflex_base.utils.exceptions import (
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
-from reflex_components_core.base import document
+from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
@@ -615,6 +615,25 @@ def test_create_document_root():
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
     assert isinstance(root.children[0].children[5], Links)
+
+
+def test_add_meta_accepts_dynamic_description():
+    """Dynamic page descriptions should be represented as component Vars."""
+
+    class PageState(rx.State):
+        description: str = "Dynamic description"
+
+    page = rx.box()
+    utils.add_meta(
+        page,
+        title="title",
+        image="",
+        meta=(),
+        description=PageState.description,
+    )
+
+    assert isinstance(page.children[1], Description)
+    assert page.children[1].content is PageState.description
 
 
 def test_create_document_root_with_scripts():
