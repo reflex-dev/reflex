@@ -408,7 +408,13 @@ class EnvVar(Generic[T]):
             name: The environment variable name.
             default: The default value.
             type_: The type of the value.
+
+        Raises:
+            ValueError: If the name is not fully uppercase.
         """
+        if not name.isupper():
+            msg = f"Environment variable name must be uppercase: {name!r}"
+            raise ValueError(msg)
         self.name = name
         self.default = default
         self.type_ = type_
