@@ -360,16 +360,22 @@ class TokenSource(str, Enum):
 
 
 def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
-    """Fetch the access token from the existing config if applicable, and say where it came from.
+    """Fetch the access token from the environment or existing config, and say where it came from.
 
-    The config file takes precedence: ``REFLEX_ACCESS_TOKEN`` is consulted only
-    when the config file holds no token.
+    ``REFLEX_ACCESS_TOKEN`` takes precedence: exporting it is an explicit
+    choice for this invocation, while the config file is ambient state left
+    behind by an earlier ``reflex login``.
 
     Returns:
         The access token and the source it was loaded from.
         If not found, return empty string and ``TokenSource.NONE`` instead.
 
     """
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
     logger.debug("Fetching token from existing config...")
     try:
         access_token = stored_access_token()
@@ -377,15 +383,10 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
         logger.debug(
             f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
-        access_token = ""
+        return "", TokenSource.NONE
 
     if access_token:
         return access_token, TokenSource.CONFIG
-
-    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-    if access_token:
-        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
-        return access_token, TokenSource.ENVIRONMENT
 
     return "", TokenSource.NONE
 

@@ -71,13 +71,33 @@ def test_get_existing_access_token(
     assert get_existing_access_token() == ""
 
 
-def test_get_existing_access_token_prefers_the_config_file(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+def test_get_existing_access_token_prefers_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
 ):
+    """An exported token is an explicit choice; the config file is ambient state.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
     monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
-    mocker.patch(
-        "pathlib.Path.open", mock_open(read_data='{"access_token": "config_token"}')
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
+
+    assert get_existing_access_token_with_source() == (
+        "env_token",
+        TokenSource.ENVIRONMENT,
     )
+
+
+def test_get_existing_access_token_falls_back_to_the_config_file(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Without the environment variable the stored token is used.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
 
     assert get_existing_access_token_with_source() == (
         "config_token",
@@ -85,15 +105,20 @@ def test_get_existing_access_token_prefers_the_config_file(
     )
 
 
-def test_get_existing_access_token_falls_back_to_the_environment(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+def test_get_existing_access_token_ignores_an_empty_environment_variable(
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
-    mocker.patch("pathlib.Path.open", mock_open(read_data='{"another_key": "value"}'))
+    """An empty export is not a token and must not shadow the config file.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "")
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
 
     assert get_existing_access_token_with_source() == (
-        "env_token",
-        TokenSource.ENVIRONMENT,
+        "config_token",
+        TokenSource.CONFIG,
     )
 
 
