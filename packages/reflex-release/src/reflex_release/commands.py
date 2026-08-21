@@ -1021,10 +1021,13 @@ def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
             f"the release metadata gh reported for {tag} carries no "
             f"{', '.join(missing)}, so the release cannot be verified"
         )
-    if not isinstance(release["assets"], list):
+    assets = release["assets"]
+    if not isinstance(assets, list) or not all(
+        isinstance(asset, dict) for asset in assets
+    ):
         fail(
             f"the release metadata gh reported for {tag} lists its assets as "
-            f"{release['assets']!r} rather than as a list, so what the release "
+            f"{assets!r} rather than as a list of assets, so what the release "
             "carries cannot be verified"
         )
     return release

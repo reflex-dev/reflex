@@ -1259,14 +1259,22 @@ def test_create_release_does_not_create_over_an_unreadable_release(
     assert calls == []
 
 
-#: A payload shaped like a release except that its assets are not a list.
-NULL_ASSETS_PAYLOAD = json.dumps({
-    "tagName": "v0.2.1",
-    "name": "v0.2.1",
-    "isDraft": False,
-    "isPrerelease": False,
-    "assets": None,
-})
+def malformed_assets_payload(assets: Any) -> str:
+    """Render a release payload whose assets are not a list of assets.
+
+    Args:
+        assets: The malformed value to report as the release's assets.
+
+    Returns:
+        The JSON ``gh release view --json`` would print for it.
+    """
+    return json.dumps({
+        "tagName": "v0.2.1",
+        "name": "v0.2.1",
+        "isDraft": False,
+        "isPrerelease": False,
+        "assets": assets,
+    })
 
 
 @pytest.mark.parametrize(
@@ -1274,7 +1282,9 @@ NULL_ASSETS_PAYLOAD = json.dumps({
     [
         ("null", "is not an object"),
         ("[]", "is not an object"),
-        (NULL_ASSETS_PAYLOAD, "rather than as a list"),
+        (malformed_assets_payload(None), "rather than as a list of assets"),
+        (malformed_assets_payload([None]), "rather than as a list of assets"),
+        (malformed_assets_payload(["SHA256SUMS"]), "rather than as a list of assets"),
     ],
 )
 def test_create_release_rejects_metadata_of_the_wrong_shape(
