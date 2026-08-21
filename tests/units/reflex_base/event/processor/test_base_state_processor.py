@@ -568,3 +568,50 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     assert ensure_locked(substate, root) is root
     assert ensure_locked(substate, None) is None
     assert ensure_locked(StateProxy(substate), None) is None
+
+
+async def test_failed_context_enter_does_not_mark_the_proxy_entered(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A proxy whose enter failed still gets the compatibility flush.
+
+    The entered flag means "a context opened whose exit will flush". If
+    ``__aenter__`` raises before that and the handler swallows it, the
+    processor must still run the locked fallback flush, or preamble dirty
+    vars like router_data would never reach a delta.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex.istate.proxy import StateProxy
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    EventContext.set(root_ctx.fork(token=token))
+    root = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    substate = await root.get_state(OnLoadInternalState)
+
+    proxy = StateProxy(substate)
+
+    def raise_on_modify(*args, **kwargs):
+        msg = "state manager unavailable"
+        raise RuntimeError(msg)
+
+    original = root_ctx.state_manager.modify_state_with_links
+    object.__setattr__(
+        root_ctx.state_manager, "modify_state_with_links", raise_on_modify
+    )
+    try:
+        with pytest.raises(RuntimeError, match="state manager unavailable"):
+            async with proxy:
+                pass
+    finally:
+        object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
+
+    assert proxy._self_entered_context is False
