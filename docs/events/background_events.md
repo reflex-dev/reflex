@@ -104,6 +104,40 @@ def background_task_example():
     )
 ```
 
+## Passing Mutable Values to Helpers
+
+A helper that only receives a mutable state value can enter that value as an
+async context manager. This refreshes the value from its owning state and holds
+the same exclusive state lock as `async with self`.
+
+```python
+import asyncio
+
+import reflex as rx
+
+
+async def advance_job(job):
+    async with job:
+        job["progress"] += 1
+
+
+class JobState(rx.State):
+    jobs: dict[str, dict[str, int]] = {"build": {"progress": 0}}
+
+    @rx.event(background=True)
+    async def run_job(self):
+        job = self.jobs["build"]
+        await asyncio.sleep(1)
+        await advance_job(job)
+```
+
+Root mutable state fields and nested values reached through stable dictionary
+keys or object attributes can be refreshed this way. Values taken from list
+indexes, list slices, iteration, or a missing `dict.get()` default cannot be
+safely identified after concurrent state changes, so using those values as
+async context managers raises `RuntimeError`. Enter `async with self` and
+retrieve the current list item again while holding the state lock instead.
+
 ## Terminating Background Tasks on Page Close or Navigation
 
 Sometimes, background tasks may continue running even after the user navigates away from the page or closes the browser tab. To handle such cases, you can check if the websocket associated with the state is disconnected and terminate the background task when necessary.

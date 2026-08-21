@@ -172,7 +172,9 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
             # Match a single optional segment (/slug or nothing)
             regex_parts.append(r"(/[^/]+)?")
         elif part == constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT:
-            regex_parts.append(".*")
+            # The frontend compiles this to React Router's `*`, which matches the
+            # route and its descendants only, so the segment separator is required.
+            regex_parts.append("(/.*)?")
         else:
             regex_parts.append(re.escape("/" + part))
     # Join the regex parts and compile the regex

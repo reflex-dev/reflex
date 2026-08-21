@@ -18,8 +18,9 @@ declare -A MAP=(
   [reflex_components_sonner]=reflex-components-sonner
   [reflex_docgen]=reflex-docgen
   [reflex_hosting_cli]=reflex-hosting-cli
+  [reflex_release]=reflex-release
 )
-ORDER=(hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli)
+ORDER=(hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli reflex_release)
 
 PACKAGES=()
 for key in "${ORDER[@]}"; do
@@ -29,9 +30,11 @@ for key in "${ORDER[@]}"; do
 done
 
 if [[ ${#PACKAGES[@]} -eq 0 ]]; then
-  echo "Error: select at least one package"
-  exit 1
+  # No explicit selection: the plan step auto-detects packages with pending
+  # news fragments (or, for release-from-prerelease, packages whose changelog
+  # is topped by an alpha).
+  echo "No packages checked; deferring to auto-detection in the plan step."
 fi
 
-JOINED=$(IFS=,; echo "${PACKAGES[*]}")
+JOINED=$(IFS=,; echo "${PACKAGES[*]:-}")
 echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"

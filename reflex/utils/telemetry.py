@@ -3,6 +3,7 @@
 import dataclasses
 import importlib.metadata
 import json
+import logging
 import multiprocessing
 import os
 import platform
@@ -25,7 +26,7 @@ from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
 from typing_extensions import NotRequired
 
-from reflex.utils import console, processes
+from reflex.utils import processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import (
     ensure_reflex_installation_id,
@@ -33,6 +34,8 @@ from reflex.utils.prerequisites import (
     has_uuid_distinct_id_semantics,
     mark_uuid_distinct_id_semantics,
 )
+
+logger = logging.getLogger(__name__)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -80,7 +83,8 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
                 cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
-            output = processes.execute_command_and_return_output("lscpu")
+            # Force the C locale so the field names below aren't translated.
+            output = processes.execute_command_and_return_output("LC_ALL=C lscpu")
             if output:
                 lines = output.split("\n")
                 for line in lines:
@@ -103,7 +107,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 "uname -m"
             )
     except Exception as err:
-        console.error(f"Failed to retrieve CPU info. {err}")
+        logger.error(f"Failed to retrieve CPU info. {err}")
         return None
 
     return (
@@ -329,7 +333,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
         The default event data.
     """
     if (installation_id := ensure_reflex_installation_id()) is None:
-        console.debug("Could not get installation_id")
+        logger.debug("Could not get installation_id")
         return None
     cpuinfo = get_cpu_info()
     properties: _Properties = {
@@ -505,7 +509,7 @@ def _run_suppressed(fn: Callable[..., Any], /, *args, **kwargs) -> None:
     try:
         fn(*args, **kwargs)
     except Exception as err:
-        console.debug(f"Failed to process telemetry event: {err}")
+        logger.debug(f"Failed to process telemetry event: {err}")
 
 
 def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:

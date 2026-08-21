@@ -2,9 +2,11 @@
 
 import asyncio
 import contextlib
+import logging
 from typing import Any
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -14,7 +16,6 @@ from reflex_base.event.processor.event_processor import (
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
-from reflex.utils import console
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -302,6 +303,36 @@ async def test_stop_idempotent(processor: EventProcessor):
     await processor.stop()
 
 
+@pytest.mark.skipif(
+    not hasattr(asyncio, "QueueShutDown"),
+    reason="asyncio.Queue.shutdown() requires Python 3.13+",
+)
+async def test_native_queue_shutdown_is_suppressed(
+    processor: EventProcessor, mocker: MockerFixture
+):
+    """Native queue shutdown exceptions do not surface as processor errors.
+
+    Args:
+        processor: The event processor fixture.
+        mocker: The pytest mock fixture.
+    """
+    send_error = mocker.patch("reflex.utils.telemetry.send_error")
+    console_error = mocker.patch("reflex.utils.console.error")
+    queue: asyncio.Queue = asyncio.Queue()
+    queue.shutdown()
+
+    processor._queue = queue
+    await processor._process_queue()
+
+    processor._queue = None
+    processor._queue_task = asyncio.create_task(queue.get())
+    await asyncio.sleep(0)
+    await processor.stop()
+
+    send_error.assert_not_called()
+    console_error.assert_not_called()
+
+
 async def test_async_context_manager(processor: EventProcessor):
     """Entering/exiting via ``async with`` starts and stops the processor.
 
@@ -429,6 +460,32 @@ async def test_multiple_futures_cancelled_on_stop(processor: EventProcessor):
         f2 = await ep.enqueue("t2", Event.from_event_type(slow_event(10.0))[0])
     for f in (f1, f2):
         assert f.done()
+    assert ep._futures == {}
+
+
+async def test_stop_drains_same_token_sequential_backlog(
+    processor: EventProcessor,
+    token: str,
+):
+    """Graceful stop drains queued same-token events within the shutdown budget.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        futures = [
+            await ep.enqueue(
+                token, Event.from_event_type(slow_logging_event(str(i)))[0]
+            )
+            for i in range(10)
+        ]
+
+    assert [entry["value"] for entry in _CALL_LOG] == [str(i) for i in range(10)]
+    assert all(future.done() and not future.cancelled() for future in futures)
+    assert ep._tasks == {}
+    assert ep._token_queues == {}
     assert ep._futures == {}
 
 
@@ -899,18 +956,18 @@ async def test_superseding_event_cancels_previous_chain(
 async def test_superseding_event_logs_debug_on_cancel(
     processor: EventProcessor,
     token: str,
-    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ):
     """Cancelling a stale chain emits a debug log naming the handler (#6593).
 
     Args:
         processor: The event processor fixture.
         token: The client token.
-        monkeypatch: Pytest monkeypatch fixture.
+        caplog: Pytest log capture fixture.
     """
-    messages: list[str] = []
-    monkeypatch.setattr(console, "debug", lambda msg, **_kwargs: messages.append(msg))
-
+    caplog.set_level(
+        logging.DEBUG, logger="reflex_base.event.processor.event_processor"
+    )
     _GATES["stale"] = asyncio.Event()
     stale_event = Event.from_event_type(superseding_root_event("stale"))[0]
     processor.configure()
@@ -918,16 +975,16 @@ async def test_superseding_event_logs_debug_on_cancel(
         await ep.enqueue(token, stale_event)
         await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
         # Nothing was superseded yet, so nothing is logged.
-        assert messages == []
+        assert caplog.messages == []
 
         current = await ep.enqueue(
             token, Event.from_event_type(superseding_root_event("fresh"))[0]
         )
         await asyncio.wait_for(current.wait_all(), timeout=1)
 
-    assert len(messages) == 1
-    assert stale_event.name in messages[0]
-    assert token in messages[0]
+    assert len(caplog.messages) == 1
+    assert stale_event.name in caplog.messages[0]
+    assert token in caplog.messages[0]
 
 
 async def test_superseding_event_skips_queued_stale_chain(
