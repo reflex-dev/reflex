@@ -1,0 +1,1 @@
+`rx.input(type="hidden")` no longer leaves a stray bar on the page. Radix wraps the input in a styled container that stayed visible even when the input itself was hidden, so a hidden input (or one passed `hidden=True`) now renders as a plain `<input>` with no wrapper.
