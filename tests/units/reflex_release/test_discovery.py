@@ -2,13 +2,23 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
 from reflex_release.actions import ReleaseError
 from reflex_release.changelog import DEFAULT_TITLE_FORMAT
 from reflex_release.config import Config, load_config
-from reflex_release.discovery import title_format
+from reflex_release.discovery import (
+    associate_orphan_fragments,
+    fragment_types,
+    orphan_prefix,
+    pull_request_number,
+    split_fragment_name,
+    title_format,
+)
+
+from .conftest import commit_all, git
 
 
 def set_title_format(repo: Path, value: str) -> Config:
@@ -46,3 +56,203 @@ def test_title_format_rejects_a_non_string(config: Config, repo: Path) -> None:
     reloaded = set_title_format(repo, "3")
     with pytest.raises(ReleaseError, match="must be a string"):
         title_format(reloaded)
+
+
+def set_orphan_prefix(repo: Path, value: str) -> Config:
+    """Configure the repository's towncrier ``orphan_prefix``.
+
+    Args:
+        repo: The repository root.
+        value: The TOML value to write, verbatim.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]\n",
+            f"\n[tool.towncrier]\norphan_prefix = {value}\n",
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def commit_fragment(config: Config, package: str, name: str, message: str) -> Path:
+    """Write a news fragment and commit it with a message.
+
+    Args:
+        config: The repository configuration.
+        package: The package name.
+        name: The fragment filename.
+        message: The commit message to land it with.
+
+    Returns:
+        The fragment path.
+    """
+    path = config.news_dir(package) / name
+    path.write_text("Something.\n", encoding="utf-8")
+    commit_all(config.root, message)
+    return path
+
+
+def test_orphan_prefix_defaults_to_towncriers_own(config: Config) -> None:
+    assert orphan_prefix(config) == "+"
+
+
+def test_orphan_prefix_is_configurable(config: Config, repo: Path) -> None:
+    assert orphan_prefix(set_orphan_prefix(repo, '"~"')) == "~"
+
+
+def test_orphan_prefix_rejects_a_non_string(config: Config, repo: Path) -> None:
+    with pytest.raises(ReleaseError, match="must be a string"):
+        orphan_prefix(set_orphan_prefix(repo, "3"))
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("feat: add a thing (#1234)", "1234"),
+        ("ENG-1 refactor(log): split it up (4/5) (#6866)", "6866"),
+        ("Merge pull request #77 from someone/branch\n\nfeat: a thing", "77"),
+        ("feat: add a thing (#1234)\n\nA body.", "1234"),
+        ("feat: add a thing", None),
+        # A number in the body references an issue, not the pull request.
+        ("feat: add a thing\n\nFixes #12", None),
+        ("feat: add a thing\n\n(#12)", None),
+        ("feat: add a thing (#12) and more", None),
+        ("", None),
+    ],
+)
+def test_pull_request_number(message: str, expected: str | None) -> None:
+    assert pull_request_number(message) == expected
+
+
+@pytest.mark.parametrize(
+    ("basename", "expected"),
+    [
+        ("+something.feature.md", ("+something", "feature.md")),
+        ("1234.bugfix.md", ("1234", "bugfix.md")),
+        ("+something.feature.1.md", ("+something", "feature.1.md")),
+        ("+something.feature", ("+something", "feature")),
+        # The last part naming a type wins, as in towncrier.
+        ("+feature.bugfix.md", ("+feature", "bugfix.md")),
+        ("README.md", None),
+        ("feature", None),
+    ],
+)
+def test_split_fragment_name(
+    config: Config, basename: str, expected: tuple[str, str] | None
+) -> None:
+    assert split_fragment_name(basename, fragment_types(config)) == expected
+
+
+def test_associate_names_an_orphan_after_its_pull_request(
+    config: Config, repo: Path
+) -> None:
+    commit_fragment(config, "widget-core", "+a-thing.feature.md", "feat: a thing (#42)")
+
+    assert associate_orphan_fragments(config, "widget-core") == [
+        ("+a-thing.feature.md", "42.feature.md")
+    ]
+    news = config.news_dir("widget-core")
+    assert not (news / "+a-thing.feature.md").exists()
+    assert (news / "42.feature.md").is_file()
+
+
+def test_associate_stages_the_rename(config: Config, repo: Path) -> None:
+    """Only fragments git knows about get their deletion staged by towncrier."""
+    commit_fragment(config, "widget-core", "+a-thing.feature.md", "feat: a thing (#42)")
+
+    associate_orphan_fragments(config, "widget-core")
+
+    staged = git(repo, "diff", "--cached", "--name-status", "--no-renames").split()
+    assert staged == [
+        "D",
+        "packages/widget-core/news/+a-thing.feature.md",
+        "A",
+        "packages/widget-core/news/42.feature.md",
+    ]
+
+
+def test_associate_leaves_numbered_fragments_alone(config: Config, repo: Path) -> None:
+    commit_fragment(config, "widget-core", "7.feature.md", "feat: a thing (#42)")
+
+    assert associate_orphan_fragments(config, "widget-core") == []
+    assert (config.news_dir("widget-core") / "7.feature.md").is_file()
+
+
+def test_associate_keeps_an_orphan_without_a_pull_request(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    commit_fragment(
+        config, "widget-core", "+a-thing.feature.md", "pushed straight to main"
+    )
+
+    assert associate_orphan_fragments(config, "widget-core") == []
+    assert (config.news_dir("widget-core") / "+a-thing.feature.md").is_file()
+    assert "::warning::" in capsys.readouterr().out
+
+
+def test_associate_keeps_an_uncommitted_orphan(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A fragment that never landed has no commit to read a number from."""
+    (config.news_dir("widget-core") / "+a-thing.feature.md").write_text(
+        "Something.\n", encoding="utf-8"
+    )
+
+    assert associate_orphan_fragments(config, "widget-core") == []
+    assert (config.news_dir("widget-core") / "+a-thing.feature.md").is_file()
+    assert "::warning::" in capsys.readouterr().out
+
+
+def test_associate_counts_up_on_a_name_collision(config: Config, repo: Path) -> None:
+    """A pull request can leave behind more than one fragment of a type."""
+    news = config.news_dir("widget-core")
+    (news / "42.feature.md").write_text("Numbered.\n", encoding="utf-8")
+    (news / "+one.feature.md").write_text("One.\n", encoding="utf-8")
+    (news / "+two.feature.md").write_text("Two.\n", encoding="utf-8")
+    commit_all(repo, "feat: three entries (#42)")
+
+    assert associate_orphan_fragments(config, "widget-core") == [
+        ("+one.feature.md", "42.feature.1.md"),
+        ("+two.feature.md", "42.feature.2.md"),
+    ]
+    assert sorted(path.name for path in news.iterdir()) == [
+        ".gitkeep",
+        "42.feature.1.md",
+        "42.feature.2.md",
+        "42.feature.md",
+    ]
+
+
+def test_associate_honors_a_custom_orphan_prefix(config: Config, repo: Path) -> None:
+    reloaded = set_orphan_prefix(repo, '"~"')
+    commit_fragment(
+        reloaded, "widget-core", "~a-thing.feature.md", "feat: a thing (#42)"
+    )
+
+    assert associate_orphan_fragments(reloaded, "widget-core") == [
+        ("~a-thing.feature.md", "42.feature.md")
+    ]
+
+
+def test_associate_skips_a_package_without_a_news_directory(
+    config: Config, repo: Path
+) -> None:
+    shutil.rmtree(config.news_dir("mypkg"))
+    assert associate_orphan_fragments(config, "mypkg") == []
+
+
+def test_associate_is_a_no_op_when_orphans_are_disabled(
+    config: Config, repo: Path
+) -> None:
+    reloaded = set_orphan_prefix(repo, '""')
+    commit_fragment(
+        reloaded, "widget-core", "+a-thing.feature.md", "feat: a thing (#42)"
+    )
+
+    assert associate_orphan_fragments(reloaded, "widget-core") == []
+    assert (reloaded.news_dir("widget-core") / "+a-thing.feature.md").is_file()
