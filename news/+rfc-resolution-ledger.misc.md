@@ -1,0 +1,1 @@
+RFC: delta flushes clean selectively via a resolution-dirt ledger, so a write landing during delta resolution survives for the next harvest instead of being discarded by a clean that never snapshotted it.
