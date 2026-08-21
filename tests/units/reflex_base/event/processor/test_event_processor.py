@@ -14,6 +14,7 @@ from reflex_base.event.processor.event_processor import (
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from reflex.utils import console
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -893,6 +894,40 @@ async def test_superseding_event_cancels_previous_chain(
         assert ep._superseded == {}
 
     assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
+
+
+async def test_superseding_event_logs_debug_on_cancel(
+    processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Cancelling a stale chain emits a debug log naming the handler (#6593).
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    messages: list[str] = []
+    monkeypatch.setattr(console, "debug", lambda msg, **_kwargs: messages.append(msg))
+
+    _GATES["stale"] = asyncio.Event()
+    stale_event = Event.from_event_type(superseding_root_event("stale"))[0]
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(token, stale_event)
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+        # Nothing was superseded yet, so nothing is logged.
+        assert messages == []
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+
+    assert len(messages) == 1
+    assert stale_event.name in messages[0]
+    assert token in messages[0]
 
 
 async def test_superseding_event_skips_queued_stale_chain(

@@ -549,6 +549,12 @@ class EventProcessor:
         key = (event.name, token)
         previous = self._superseded.get(key)
         if previous is not None and not previous.all_done():
+            console.debug(
+                rich.markup.escape(
+                    f"Cancelling the previous unfinished {event.name} chain for token "
+                    f"{token}, superseded by a newer invocation."
+                )
+            )
             previous.cancel()
         self._superseded[key] = tracked
         tracked.supersede_key = key

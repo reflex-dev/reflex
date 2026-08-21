@@ -555,7 +555,9 @@ class EventHandler(EventActionsMixin):
 
         When True, enqueuing this handler as a chain root cancels the previous
         unfinished event chain rooted at the same handler for the same client
-        token.
+        token. Cancellation is cooperative: a handler that never yields to the
+        event loop runs to completion, and only its not-yet-started chained
+        events are skipped.
 
         Returns:
             True if the event handler is marked as superseding.
@@ -2967,7 +2969,8 @@ class EventNamespace:
             background: Whether the event should be run in the background. Defaults to False.
             supersedes: Whether enqueuing the event cancels the previous unfinished
                 chain of the same event for the same client token (latest-wins).
-                Defaults to False.
+                Cancellation is cooperative, so a handler that never yields to the
+                event loop is not interrupted. Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
