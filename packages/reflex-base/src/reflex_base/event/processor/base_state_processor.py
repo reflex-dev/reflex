@@ -221,26 +221,38 @@ async def chain_updates(
         # into the ledger), so the fan-out capture stays complete while a
         # concurrent writer's dirt survives for the next harvest instead of
         # being discarded by a clean that never snapshotted it.
-        flushed: dict[str, set[str]] = {}
-        try:
-            delta = root_state.get_delta()
+        delta = root_state.get_delta()
+        if not delta or not any(
+            inspect.iscoroutine(value)
+            for subdelta in delta.values()
+            for value in subdelta.values()
+        ):
+            # A coroutine-free resolution never yields the loop, so nothing
+            # can interleave with this flush before the emit; the selective
+            # machinery below would record and subtract nothing. Take the
+            # plain path the sync pipeline has always had.
+            try:
+                if delta:
+                    await ctx.emit_delta(delta)
+            finally:
+                root_state._clean()
+        else:
+            # The flush suspends while resolving, which is the window the
+            # selective clean exists for: snapshot what this flush publishes,
+            # record what resolution itself dirties, and clean exactly that
+            # union, so a concurrent writer's dirt survives for the next
+            # harvest instead of being discarded by a clean that never
+            # snapshotted it.
             flushed = root_state._snapshot_dirty_vars()
-            if delta and any(
-                inspect.iscoroutine(value)
-                for subdelta in delta.values()
-                for value in subdelta.values()
-            ):
-                # Only a delta with coroutines suspends during resolution, so
-                # only then can the patch machinery (or anything else) mark
-                # dirt mid-resolution worth recording.
+            try:
                 with _recording_resolution_dirt(flushed_by_resolution := {}):
                     delta = await _resolve_delta(delta)
                 for state_name, var_names in flushed_by_resolution.items():
                     flushed.setdefault(state_name, set()).update(var_names)
-            if delta:
-                await ctx.emit_delta(delta)
-        finally:
-            root_state._clean_flushed(flushed)
+                if delta:
+                    await ctx.emit_delta(delta)
+            finally:
+                root_state._clean_flushed(flushed)
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
