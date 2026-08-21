@@ -1963,10 +1963,20 @@ class BaseState(EvenMoreBasicBaseState):
             name: The var name to mark dirty on this state.
         """
         self.dirty_vars.add(name)
-        if (
-            _RESOLUTION_RECORDING_DEPTH
-            and (ledger := _RESOLUTION_DIRT.get()) is not None
-        ):
+        if _RESOLUTION_RECORDING_DEPTH:
+            self._note_resolution_dirt(name)
+
+    def _note_resolution_dirt(self, name: str) -> None:
+        """Record one var into the active flush's resolution ledger.
+
+        The cold half of ``_record_dirty_var``: reached only while a flush is
+        resolving, so the hot path pays one set-add and one falsy global
+        check.
+
+        Args:
+            name: The var name that became dirty during resolution.
+        """
+        if (ledger := _RESOLUTION_DIRT.get()) is not None:
             ledger.setdefault(self.get_full_name(), set()).add(name)
 
     def _snapshot_dirty_vars(self) -> dict[str, set[str]]:

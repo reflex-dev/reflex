@@ -225,11 +225,18 @@ async def chain_updates(
         try:
             delta = root_state.get_delta()
             flushed = root_state._snapshot_dirty_vars()
-            with _recording_resolution_dirt(flushed_by_resolution := {}):
-                if delta:
+            if delta and any(
+                inspect.iscoroutine(value)
+                for subdelta in delta.values()
+                for value in subdelta.values()
+            ):
+                # Only a delta with coroutines suspends during resolution, so
+                # only then can the patch machinery (or anything else) mark
+                # dirt mid-resolution worth recording.
+                with _recording_resolution_dirt(flushed_by_resolution := {}):
                     delta = await _resolve_delta(delta)
-            for state_name, var_names in flushed_by_resolution.items():
-                flushed.setdefault(state_name, set()).update(var_names)
+                for state_name, var_names in flushed_by_resolution.items():
+                    flushed.setdefault(state_name, set()).update(var_names)
             if delta:
                 await ctx.emit_delta(delta)
         finally:
