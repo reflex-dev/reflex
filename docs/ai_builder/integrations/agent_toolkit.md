@@ -63,6 +63,7 @@ You do not need an API key to read Reflex documentation. Start by deciding how y
 
 - For local app development, use Python 3.10 or newer and a project virtual environment.
 - For current documentation context, give the assistant Markdown docs or `llms.txt`.
+- For a large or multi-page app, start with [Scaling State](/docs/state-structure/scaling-state/), [Project Structure (Advanced)](/docs/advanced-onboarding/code-structure/), and [State Structure](/docs/state-structure/overview/).
 - For structured tool access, use the Reflex MCP integration.
 - For repeatable agent behavior, install Reflex Agent Skills.
 - For a browser-based AI builder, use Reflex Build.
@@ -82,6 +83,8 @@ https://reflex.dev/docs/ai/integrations/agent-toolkit.md
 ```
 
 Use this when an agent needs one focused page.
+
+For architecture work in a large or multi-page app, send the agent directly to the [Scaling State Markdown page](https://reflex.dev/docs/state-structure/scaling-state.md). It links the State ownership decisions to the advanced project-structure and State-structure guidance.
 
 
 ## llms.txt
@@ -146,6 +149,13 @@ Create a new Reflex app. Use current Reflex documentation, set up a Python 3.10+
 
 ```text
 Work on this existing Reflex app. First inspect the project structure and current dependencies. Use Reflex docs for current APIs, make the requested change, then run reflex compile --dry or the project's existing test command.
+```
+
+
+## Large App
+
+```text
+Plan or refactor this large, multi-page Reflex app. Before changing code, read the current Scaling State, Project Structure (Advanced), and State Structure guides. Map page and feature ownership plus cross-State dependencies, choose boundaries using those guides, make the smallest coherent change, and validate it with reflex compile --dry and the project's tests.
 ```
 
 

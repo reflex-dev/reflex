@@ -65,9 +65,12 @@ The template covers Reflex-wide setup. Below it, add anything else the assistant
 - Internal conventions and code style.
 - Required lint, type-check, or test commands.
 - Folder layout and where new code should go.
+- State ownership, page or feature boundaries, and permitted cross-State dependencies.
 - Hosting or deployment notes.
 
 Keep entries short and imperative — assistants follow concise, direct instructions more reliably than long paragraphs.
+
+For large or multi-page apps, direct the assistant to read [Scaling State](/docs/state-structure/scaling-state/), [Project Structure (Advanced)](/docs/advanced-onboarding/code-structure/), and [State Structure](/docs/state-structure/overview/) before it introduces State inheritance or reorganizes modules.
 
 ## Keeping Files Updated
 

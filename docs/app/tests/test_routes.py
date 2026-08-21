@@ -64,6 +64,16 @@ def test_authentication_overview_moved_to_enterprise(routes_fixture):
     assert "/enterprise/auth/overview/" in paths
 
 
+def test_legacy_substate_redirects(routes_fixture):
+    """Legacy substate routes redirect to their State Structure replacements."""
+    from reflex_docs.redirects import get_redirects
+
+    assert {
+        ("/substates/overview/", "/state-structure/overview/"),
+        ("/substates/component-state/", "/state-structure/component-state/"),
+    } <= set(get_redirects(routes_fixture))
+
+
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
     """Generated docs meta descriptions should not exceed the SEO snippet cap."""
     overlong = {

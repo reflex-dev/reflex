@@ -4,7 +4,15 @@ import reflex as rx
 
 # State Mixins
 
-State mixins allow you to define shared functionality that can be reused across multiple State classes. This is useful for creating reusable components, shared business logic, or common state patterns.
+State mixins allow you to define reactive functionality that can be reused across multiple State classes. This is useful when several concrete States need the same focused Vars, computed vars, or event handlers.
+
+A mixin reuses declarations; it does not create an independent State scope or one shared State instance. Every concrete
+State that inherits the mixin owns its own resulting Vars. If several States need the same value, give that value one
+State owner and access it with `get_var_value` or `get_state`. If reused logic does not need reactive Vars or event
+handlers, prefer a plain helper or service.
+
+See [Scaling State](/docs/state-structure/scaling-state#mixins-reuse-behavior-not-state-instances) for guidance on
+choosing between a mixin, helper, decentralized event handler, independent State, and inherited child State.
 
 ## What are State Mixins?
 
@@ -216,6 +224,8 @@ This pattern allows you to build complex functionality by composing simpler mixi
 - **Document Dependencies**: If mixins depend on specific variables, document them
 - **Test Mixins**: Create test cases for mixin functionality
 - **Naming Convention**: Use descriptive names ending with "Mixin"
+- **Prefer Plain Python First**: Use a helper or service unless the reused capability must declare Vars or event handlers
+- **Avoid Aggregate States**: Composing many mixins into one concrete State can recreate a monolithic State and hide ownership
 ```
 
 ## Limitations
@@ -233,11 +243,13 @@ This pattern allows you to build complex functionality by composing simpler mixi
 
 State mixins are particularly useful for:
 
-- **Form Validation**: Shared validation logic across forms
+- **Form State**: Shared reactive validation and submission status
+- **Pagination**: Common page Vars and navigation handlers
 - **UI State Management**: Common modal, loading, or notification patterns
-- **Logging**: Centralized logging and debugging
-- **API Integration**: Shared HTTP client functionality
-- **Data Formatting**: Consistent data presentation across components
+- **Data Formatting**: Computed vars used consistently by several concrete States
+
+Keep HTTP clients, repositories, logging, and business operations in plain Python services unless they must declare
+reactive Vars or event handlers. A service is independently testable and does not add members to every consuming State.
 
 ```python demo exec
 import asyncio

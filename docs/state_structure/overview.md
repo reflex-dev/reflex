@@ -9,6 +9,17 @@ Substates allow you to break up your state into multiple classes to make it more
 grows, as it allows you to think about each page as a separate entity. Substates also allow you to share common state
 resources, such as variables or event handlers.
 
+This guide uses **substate** for any application State class below `rx.State` in the runtime State tree. There are two
+important shapes:
+
+- A class that directly inherits from `rx.State` creates a flat, independently loaded branch and is the default for a
+  page or feature.
+- A class that inherits from another application State creates a parent-child loading relationship. Use this only when
+  the child needs the parent for most of its events.
+
+See [Scaling State](/docs/state-structure/scaling-state) for the decision guide covering independent States,
+inherited children, `ComponentState`, mixins, decentralized handlers, and `SharedState`.
+
 When a particular state class becomes too large, breaking it up into several substates can bring performance
 benefits by only loading parts of the state that are used to handle a certain event.
 
@@ -17,7 +28,7 @@ benefits by only loading parts of the state that are used to handle a certain ev
 One common pattern is to create a substate for each page in your app.
 This allows you to think about each page as a separate entity, and makes it easier to manage your code as your app grows.
 
-To create a substate, simply inherit from `rx.State` multiple times:
+To create independent State branches, define multiple classes that directly inherit from `rx.State`:
 
 ```python
 # index.py

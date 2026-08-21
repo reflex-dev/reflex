@@ -17,6 +17,7 @@ from reflex_site_shared.meta.meta import (
 from reflex_site_shared.telemetry import get_pixel_website_trackers
 
 from reflex_docs.pages import page404, routes
+from reflex_docs.redirects import get_redirects
 from reflex_docs.whitelist import _check_whitelisted_path
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
@@ -168,24 +169,7 @@ for route in routes:
         app.add_page(**page_args)
 
 # Add redirects.
-redirects = [
-    ("/ai/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
-    ("/ai-builder/integrations/ai-onboarding/", "/ai/integrations/agent-toolkit/"),
-    *[
-        (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
-        for route in routes
-        if route.path.startswith("/ai/")
-    ],
-]
-redirects.extend([
-    ("/ai/features/ide/", "/ai/features/editor-modes/"),
-    ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
-    ("/ai/features/customization/", "/ai/features/design-systems/"),
-    ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
-    ("/hosting/adding-members/", "/hosting/project-members/"),
-    ("/hosting/projects/", "/hosting/project-members/"),
-    ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
-])
+redirects = get_redirects(routes)
 
 
 def _redirect_page():
