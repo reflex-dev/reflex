@@ -12,6 +12,7 @@ import json
 import os
 import re
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 from packaging.version import InvalidVersion, Version
@@ -70,6 +71,11 @@ RELEASE_WORKFLOW = "release_from_changelog.yml"
 SKIP_CHANGELOG_LABEL = "skip-changelog"
 
 _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
+
+#: The release fields read back after a release is created (or found already
+#: created), to prove the thing ``post-release`` is about to be pointed at is
+#: the release this run published.
+_RELEASE_FIELDS = "tagName,name,isDraft,isPrerelease,assets"
 
 
 def _is_null_sha(sha: str) -> bool:
@@ -933,6 +939,144 @@ def cmd_push_tag(config: Config, tag: str) -> None:
     git_push(f"refs/tags/{tag}", config.root)
 
 
+def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
+    """Read a GitHub release's metadata and asset list.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag the release points at.
+
+    Returns:
+        The parsed ``gh release view`` payload, or None when the tag has no
+        release.
+    """
+    # A probe, not an action: keep its output (and its "not found" stderr on the
+    # normal path) out of the job log.
+    payload = gh_output(
+        ["release", "view", tag, "--json", _RELEASE_FIELDS], config.root, check=False
+    )
+    if not payload:
+        return None
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError:
+        fail(f"gh reported release metadata for {tag} that is not JSON: {payload!r}")
+
+
+def _metadata_problems(
+    release: dict[str, Any], tag: str, title: str, prerelease: bool
+) -> list[str]:
+    """List the ways a GitHub release disagrees with what was published.
+
+    Args:
+        release: A ``gh release view`` payload.
+        tag: The tag the release has to point at.
+        title: The title the release has to carry.
+        prerelease: Whether the release has to be flagged as a prerelease.
+
+    Returns:
+        Human-readable problems, empty when the release matches.
+    """
+    # The "Latest" marker is deliberately not checked: it belongs to the
+    # repository rather than to one release, so a release published since this
+    # one legitimately holds it.
+    problems = []
+    if (tag_name := release.get("tagName")) != tag:
+        problems.append(f"it points at tag {tag_name!r} rather than {tag!r}")
+    if release.get("isDraft"):
+        problems.append("it is still a draft, so the version is not released")
+    if bool(release.get("isPrerelease")) != prerelease:
+        problems.append(
+            f"it is marked prerelease={bool(release.get('isPrerelease'))} rather "
+            f"than prerelease={prerelease}"
+        )
+    if (name := release.get("name")) != title:
+        problems.append(f"it is titled {name!r} rather than {title!r}")
+    return problems
+
+
+def _checksum_asset_problem(
+    release: dict[str, Any], checksums_path: Path
+) -> str | None:
+    """Return why a release does not carry this run's checksum manifest, if so.
+
+    Args:
+        release: A ``gh release view`` payload.
+        checksums_path: The local manifest of everything that was uploaded.
+
+    Returns:
+        A human-readable problem, or None when the release carries exactly this
+        manifest.
+    """
+    name = checksums_path.name
+    asset = next(
+        (asset for asset in release.get("assets") or () if asset.get("name") == name),
+        None,
+    )
+    if asset is None:
+        return f"the {name} manifest is not attached to it"
+    if (state := asset.get("state")) != "uploaded":
+        return f"its {name} asset is in state {state!r} rather than 'uploaded'"
+    if (size := asset.get("size")) != (expected := checksums_path.stat().st_size):
+        return f"its {name} asset is {size} bytes rather than {expected}"
+    return None
+
+
+def _accept_existing_release(
+    config: Config,
+    tag: str,
+    title: str,
+    prerelease: bool,
+    checksums_path: Path,
+    release: dict[str, Any],
+) -> None:
+    """Accept a release an earlier attempt left behind, or fail loudly.
+
+    A re-run stands down for an existing release only once that release is the
+    one this run would have created: on this tag, published rather than drafted,
+    flagged the same way and carrying the manifest of exactly what was uploaded.
+    The one partial state a re-run can finish by itself is a missing or stale
+    manifest — an attempt that died during the asset upload — so that is
+    uploaded again; anything else is a release nobody here made, and the tag is
+    not handed on until a human has looked at it.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag the release points at.
+        title: The title this run would have given the release.
+        prerelease: Whether this run would have flagged it as a prerelease.
+        checksums_path: The ``sha256sum`` manifest of everything that was
+            uploaded.
+        release: The existing release's ``gh release view`` payload.
+    """
+    if problems := _metadata_problems(release, tag, title, prerelease):
+        fail(
+            f"a GitHub release already exists for {tag}, but {'; '.join(problems)}. "
+            "It is not the release this publish would have created, so it is not "
+            "handed to the post-release workflow: inspect it, then either fix it "
+            "or delete it and re-run this job."
+        )
+    if checksums_path.is_file() and (
+        problem := _checksum_asset_problem(release, checksums_path)
+    ):
+        notice(f"release {tag} exists but {problem}; attaching it now")
+        gh_run(
+            ["release", "upload", tag, str(checksums_path), "--clobber"], config.root
+        )
+        reread = _release_view(config, tag)
+        problem = (
+            "there is no release on the tag"
+            if reread is None
+            else _checksum_asset_problem(reread, checksums_path)
+        )
+        if problem:
+            fail(
+                f"attached the checksum manifest to the release for {tag}, but "
+                f"reading it back found that {problem}"
+            )
+    echo(f"Release {tag} already matches this publish; skipping (safe re-run).")
+
+
 def cmd_create_release(
     config: Config,
     tag: str,
@@ -944,6 +1088,11 @@ def cmd_create_release(
     checksums_path: Path,
 ) -> None:
     """Create the GitHub release for a published version.
+
+    The release is read back once it exists: the next step hands the tag to the
+    post-release workflow, which publishes docs and images against a release it
+    trusts to be complete, so a release that is a draft, flagged the wrong way
+    or missing the checksum manifest stops the job here instead.
 
     Args:
         config: The repository configuration.
@@ -957,14 +1106,15 @@ def cmd_create_release(
             uploaded, attached to the release so the record of what a version
             contains outlives the workflow artifact it was built as.
     """
-    # A probe, not an action: keep its output (and its "not found" stderr on the
-    # normal path) out of the job log.
-    if gh_output(["release", "view", tag, "--json", "name"], config.root, check=False):
-        echo(f"Release {tag} already exists; skipping (safe re-run).")
-        return
     # The root package is the repository, so its tag already names the release
     # unambiguously; only a sub-package needs to say which package it is.
     title = tag if package == config.root_package else f"{package}@{version}"
+    existing = _release_view(config, tag)
+    if existing is not None:
+        _accept_existing_release(
+            config, tag, title, prerelease, checksums_path, existing
+        )
+        return
     args = [
         "release",
         "create",
@@ -985,6 +1135,27 @@ def cmd_create_release(
     else:
         notice(f"no checksum manifest at {checksums_path}; releasing without one")
     gh_run(args, config.root)
+
+    # gh's exit status covers the request it made, not the state GitHub was
+    # left in — a release whose asset upload failed is still a release — so what
+    # the next step hands on is proven from GitHub's own copy of it.
+    release = _release_view(config, tag)
+    if release is None:
+        fail(
+            f"gh created the release for {tag}, but reading it back found no "
+            f"release on the tag; check {tag} on the releases page before the "
+            "post-release workflow is pointed at it"
+        )
+    if problems := _metadata_problems(release, tag, title, prerelease):
+        fail(
+            f"the GitHub release created for {tag} is not the one that was "
+            f"asked for: {'; '.join(problems)}"
+        )
+    if checksums_path.is_file() and (
+        problem := _checksum_asset_problem(release, checksums_path)
+    ):
+        fail(f"the GitHub release created for {tag} is incomplete: {problem}")
+    echo(f"Release {tag} created and verified as {title!r}.")
 
 
 def cmd_post_release(config: Config, tag: str, package: str, version: str) -> None:

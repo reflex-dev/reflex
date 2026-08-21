@@ -422,6 +422,21 @@ distribution files by bare filename — exactly the files that went to PyPI — 
 `sha256sum -c SHA256SUMS` works in a directory holding the downloaded wheel and
 sdist, years later.
 
+`create-release` then reads the release back from GitHub rather than trusting
+`gh`'s exit status, since the next step hands the tag to your [post-release
+workflow](#post-release-workflow) and a `gh` call can succeed on a release whose
+asset upload did not: the release has to be on that tag, published rather than
+drafted, flagged and titled the way this run asked for, and carrying the
+manifest at exactly the size that was built. Anything else fails the job before
+the tag is handed on.
+
+A re-run of a release whose tag already has a release verifies it the same way
+instead of taking its existence as success. A missing or stale manifest is the
+one partial state a re-run finishes by itself — the attempt that died during the
+asset upload — so it is attached again; a release that is drafted, flagged or
+titled differently is one this run did not make, and it stops the job for a
+human to look at rather than being passed off as this version's release.
+
 For cryptographic provenance rather than a self-attested manifest — a PyPI
 [attestation](https://docs.pypi.org/attestations/) tying the artifact to the
 workflow that built it — publish with `pypa/gh-action-pypi-publish` in place of
@@ -741,6 +756,12 @@ and `auto_release_internal.yml`, so re-run `reflex-release sync`.
 The dispatch is the last thing a release does, so a failure there never leaves a
 half-published version — but it does fail the run, loudly, naming the tag whose
 follow-up did not start.
+
+It is also reached only through a release that was verified after it was created
+(see [what the approval covers](#what-the-approval-actually-covers)), so a workflow that
+publishes docs or images against the release can rely on the release being
+complete — the tag published, correctly flagged, with its checksum manifest
+attached — rather than merely existing.
 
 ## Keeping the workflows current
 

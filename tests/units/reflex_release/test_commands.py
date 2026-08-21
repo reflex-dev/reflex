@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 from reflex_release import commands
@@ -792,11 +793,106 @@ def test_open_release_pr_summary_links_the_pull_request(
     assert f"::notice::release pull request opened: {url}" in capsys.readouterr().out
 
 
+#: The ``gh release create`` flags that consume the argument after them, so a
+#: fake gh can tell an option value from an asset to attach.
+_VALUED_FLAGS = frozenset({"--title", "--notes-file", "--target"})
+
+
+def release_payload(
+    tag: str,
+    title: str,
+    assets: Sequence[Path | dict[str, Any]] = (),
+    **overrides: Any,
+) -> str:
+    """Render the ``gh release view`` payload of a released version.
+
+    Args:
+        tag: The tag the release points at.
+        title: The release title.
+        assets: Files attached to the release — a path is rendered as the asset
+            GitHub reports for it, a dict is used as the asset entry itself, to
+            model an upload that did not finish.
+        **overrides: Fields to replace, to model a partial or stale release.
+
+    Returns:
+        The JSON ``gh release view --json`` would print.
+    """
+    payload: dict[str, Any] = {
+        "tagName": tag,
+        "name": title,
+        "isDraft": False,
+        "isPrerelease": False,
+        "assets": [
+            asset
+            if isinstance(asset, dict)
+            else {
+                "name": asset.name,
+                "state": "uploaded",
+                "size": asset.stat().st_size,
+            }
+            for asset in assets
+        ],
+    }
+    return json.dumps(payload | overrides)
+
+
+def created_release_payload(create_args: list[str]) -> str:
+    """Render the release a ``gh release create`` invocation would leave behind.
+
+    Args:
+        create_args: The arguments of the ``gh release create`` call.
+
+    Returns:
+        The JSON ``gh release view --json`` would print for it.
+    """
+    title = ""
+    assets: list[Path] = []
+    index = 3
+    while index < len(create_args):
+        arg = create_args[index]
+        if arg in _VALUED_FLAGS:
+            if arg == "--title":
+                title = create_args[index + 1]
+            index += 2
+            continue
+        if not arg.startswith("--"):
+            assets.append(Path(arg))
+        index += 1
+    return release_payload(
+        create_args[2],
+        title,
+        assets,
+        isPrerelease="--prerelease" in create_args,
+    )
+
+
+def stub_gh(monkeypatch: pytest.MonkeyPatch, views: list[str]) -> list[list[str]]:
+    """Stub the two gh helpers the release commands use.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        views: The ``gh release view`` payloads to answer reads with, in order;
+            the last one answers every further read.
+
+    Returns:
+        The list every ``gh`` command that is run is appended to.
+    """
+    calls: list[list[str]] = []
+    queued = iter(views[:-1])
+    monkeypatch.setattr(
+        commands, "gh_output", lambda *args, **kwargs: next(queued, views[-1])
+    )
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: calls.append(args) or 0
+    )
+    return calls
+
+
 @pytest.fixture
 def release_args(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[], list[str]]:
-    """Capture the ``gh release create`` arguments instead of running gh.
+    """Fake gh for a first release: no release yet, then the one just created.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
@@ -805,7 +901,12 @@ def release_args(
         A callable returning the arguments of the last ``gh`` invocation.
     """
     captured: list[list[str]] = []
-    monkeypatch.setattr(commands, "gh_output", lambda *args, **kwargs: "")
+
+    def view(*args: object, **kwargs: object) -> str:
+        creates = [call for call in captured if call[:2] == ["release", "create"]]
+        return created_release_payload(creates[-1]) if creates else ""
+
+    monkeypatch.setattr(commands, "gh_output", view)
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
     )
@@ -878,6 +979,176 @@ def test_create_release_without_a_manifest_still_releases(
         config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
     )
     assert str(checksums) not in release_args()
+
+
+def test_create_release_reports_the_verified_release(
+    config: Config,
+    tmp_path: Path,
+    release_args: Callable[[], list[str]],
+    capsys: pytest.CaptureFixture,
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert "Release v0.2.1 created and verified" in capsys.readouterr().out
+
+
+def test_create_release_fails_when_the_release_cannot_be_read_back(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A zero exit from gh is not proof of the release GitHub actually holds."""
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [""])
+    with pytest.raises(ReleaseError, match="reading it back found no release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+def test_create_release_rejects_unparseable_release_metadata(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, ["", "not json"])
+    with pytest.raises(ReleaseError, match="that is not JSON"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({"isDraft": True}, "still a draft"),
+        ({"isPrerelease": True}, "prerelease=True rather than prerelease=False"),
+        ({"name": "v0.2.0"}, "titled 'v0.2.0' rather than 'v0.2.1'"),
+        ({"tagName": "v0.2.0"}, "points at tag 'v0.2.0'"),
+    ],
+)
+def test_create_release_rejects_a_release_that_is_not_the_one_asked_for(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, Any],
+    expected: str,
+) -> None:
+    """The next step hands this tag on, so a mismatch stops the job here."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
+    stub_gh(monkeypatch, ["", created])
+    with pytest.raises(
+        ReleaseError, match="is not the one that was asked for"
+    ) as raised:
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert expected in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    ("assets", "expected"),
+    [
+        ([], "manifest is not attached"),
+        ([{"name": "SHA256SUMS", "state": "new", "size": 42}], "state 'new'"),
+        ([{"name": "SHA256SUMS", "state": "uploaded", "size": 7}], "7 bytes rather"),
+    ],
+)
+def test_create_release_rejects_an_incomplete_checksum_asset(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    assets: list[dict[str, Any]],
+    expected: str,
+) -> None:
+    """A release without the manifest of what was uploaded is not a record of it."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", assets=assets)
+    stub_gh(monkeypatch, ["", created])
+    with pytest.raises(ReleaseError, match=rf"is incomplete: .*{expected}"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+def test_create_release_skips_a_matching_existing_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """The safe re-run: the release is already exactly the one this run makes."""
+    notes, checksums = release_inputs(tmp_path)
+    existing = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [existing])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == []
+    assert "already matches this publish" in capsys.readouterr().out
+
+
+def test_create_release_attaches_a_manifest_an_earlier_attempt_left_off(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An attempt that died during the asset upload is finished, not accepted."""
+    notes, checksums = release_inputs(tmp_path)
+    partial = release_payload("v0.2.1", "v0.2.1")
+    repaired = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [partial, repaired])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == [["release", "upload", "v0.2.1", str(checksums), "--clobber"]]
+
+
+def test_create_release_fails_when_attaching_the_manifest_does_not_take(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [release_payload("v0.2.1", "v0.2.1")])
+    with pytest.raises(ReleaseError, match="reading it back found that"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"isDraft": True}, {"isPrerelease": True}, {"name": "something else"}],
+)
+def test_create_release_refuses_to_reuse_a_stale_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, Any],
+) -> None:
+    """A release nobody here made must not be handed on as this publish's."""
+    notes, checksums = release_inputs(tmp_path)
+    existing = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
+    calls = stub_gh(monkeypatch, [existing])
+    with pytest.raises(ReleaseError, match=r"already exists for v0\.2\.1"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
+
+
+def test_create_release_reuses_a_release_without_a_local_manifest(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Nothing to attach and nothing to verify: the metadata is the whole check."""
+    notes, checksums = release_inputs(tmp_path)
+    checksums.unlink()
+    calls = stub_gh(monkeypatch, [release_payload("v0.2.1", "v0.2.1")])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == []
 
 
 def test_post_release_without_a_configured_workflow_does_nothing(
