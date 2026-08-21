@@ -89,6 +89,62 @@ def git_show(root: Path, ref: str, rel_path: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
+def adding_commit_message(root: Path, rel_path: str) -> str | None:
+    """Return the message of the commit that most recently added a file.
+
+    Args:
+        root: The repository root.
+        rel_path: Repo-relative file path.
+
+    Returns:
+        The full commit message, or None when no commit in the local history
+        added the path (an uncommitted file, or a shallow checkout that does not
+        reach the commit).
+    """
+    result = subprocess.run(
+        [
+            "git",
+            "log",
+            "--diff-filter=A",
+            "--max-count=1",
+            "--format=%B",
+            "--",
+            rel_path,
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def move_file(root: Path, src: Path, dst: Path) -> None:
+    """Rename a file, keeping git's index in sync when the source is tracked.
+
+    A tracked file has to move through ``git mv``: a bare rename would leave the
+    deletion of the old path unstaged, and the commands that commit a release
+    stage only the changelogs, so the old path would survive the release.
+
+    Args:
+        root: The repository root.
+        src: The existing path.
+        dst: The path to move it to.
+    """
+    if (
+        subprocess.run(
+            ["git", "mv", "--", str(src), str(dst)],
+            cwd=root,
+            capture_output=True,
+            check=False,
+        ).returncode
+        != 0
+    ):
+        src.rename(dst)
+
+
 def changed_files(root: Path, base_ref: str) -> list[str]:
     """List the repo-relative paths changed since the merge base with a ref.
 
