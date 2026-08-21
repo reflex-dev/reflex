@@ -194,6 +194,56 @@ This gives you, for free:
 `pin-exact` rewrites the requirement in the publishing package's
 `pyproject.toml` at build time only; it is never committed.
 
+### Dependency pins across a release
+
+A package that depends on a sibling it is waiting for pins the unreleased
+version — `widget-core >= 0.2.0.dev1` — so the workspace resolves while the
+sibling is still unpublished. That pin cannot be published: `*.dev` versions
+never reach PyPI, so the metadata would be uninstallable. `check-dev-pins`
+rejects it at build time, which means someone has to remember to lift it once
+the sibling is out.
+
+Materialization does it instead. When *Dispatch release* plans a release, each
+selected package's published dependencies are checked for a floor the release
+cannot ship, and the floor is lifted to the **earliest published version that
+satisfies the whole requirement**:
+
+| Floor | Materializing a prerelease | Materializing a final version |
+| --- | --- | --- |
+| `>= 0.2.0.dev1` | earliest published `0.2.0a1`, `0.2.0`, … | earliest published *final* `0.2.0`, … |
+| `>= 0.2.0a1` | left alone — an alpha may ship it | lifted to the earliest published final |
+| `>= 0.2.0` | left alone | left alone |
+
+"Published" means **tagged**: tags are created only after a successful upload,
+so the repository's own tags are its record of what is on PyPI — which is why
+the release workflows check out with full history and tags. The rewritten
+`pyproject.toml` files and the re-resolved `uv.lock` are part of the release
+commit, so they land through the same review as the changelog bump; nothing else
+is staged, not even an unrelated edit to a file the upgrade happened not to
+touch.
+
+The lifted floor is always one the resolved version satisfies — a strict
+`> 0.2.0.dev1` becomes `>= 0.2.0`, since `> 0.2.0` would exclude the very
+release it resolved to — and the rewrite is verified against the resolved
+version before it is written. Pins and lock file move together: if `uv lock`
+cannot follow the new pins, the `pyproject.toml` rewrites are rolled back, so a
+re-run has the same work to do rather than finding the pins already lifted and
+skipping the lock.
+
+A floor nothing published satisfies has nowhere to go, and the package is
+**held back** rather than materialized into a version that could never be
+published — auto-selected packages are dropped from the batch (a lockstep group
+whole, since its members only release together) and listed in the run summary;
+an explicitly selected one fails the dispatch. Release the depended-on package
+first and the next release lifts the pin by itself.
+
+Two things are deliberately left alone: a floor on a lockstep sibling that
+`pin-exact` rewrites at build time anyway, and a *prerelease* floor on a
+dependency outside the repository, whose releases are not recorded here and
+whose pin is somebody's deliberate choice. A `*.dev` floor on an outside
+dependency still holds the package back — that pin is unpublishable whoever
+owns it.
+
 ## Adding towncrier
 
 `init` writes this for you if `[tool.towncrier]` is absent. If you configure it
@@ -501,6 +551,10 @@ comma-separated text field; see `dispatch-package-inputs`.
 | `release-patch` / `-minor` / `-major` | Final version straight from `main`. Opens a PR. |
 | `release-post` | `1.2.3.post1`, for packaging-only fixes. Opens a PR. |
 
+A package whose dependency pins no published version satisfies is held back and
+listed in the run summary — see
+[Dependency pins across a release](#dependency-pins-across-a-release).
+
 Release actions open a pull request; **merging it is what publishes.** The push
 to `main` triggers `release_from_changelog`, which builds every untagged
 changelog version and waits for the `pypi` approval before uploading. Only then
@@ -764,7 +818,7 @@ a flag for running the same command by hand.
 | `create [--package P] NAME` | Create a news fragment. |
 | `packages` | List releasable packages. |
 | `plan` | Compute the next version of each selected package. |
-| `materialize` | Run towncrier and (for `release-from-prerelease`) collapse alphas. |
+| `materialize` | Run towncrier, lift unshippable dependency pins, collapse alphas. |
 | `open-release-pr` / `push-prerelease` | Commit the changelogs and deliver them. |
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
@@ -809,7 +863,8 @@ a flag for running the same command by hand.
   artifact that was built and validated before the approval.
 - **Detection fails closed.** A broken lockstep pair, a version the branch may
   not publish, or a `*.dev` pin stops the batch rather than shipping something
-  uninstallable.
+  uninstallable. A pin a published version *can* satisfy is lifted in the
+  release commit instead, so the same rule does not turn into busywork.
 
 ## License
 
