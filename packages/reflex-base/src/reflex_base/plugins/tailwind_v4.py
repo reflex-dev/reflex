@@ -22,8 +22,13 @@ class Constants(SimpleNamespace):
     VERSION = "tailwindcss@4.3.0"
     # The Tailwind config.
     CONFIG = "tailwind.config.js"
-    # Default Tailwind content paths
-    CONTENT = [f"./{Dirs.PAGES}/**/*.{{js,ts,jsx,tsx}}", "./utils/**/*.{js,ts,jsx,tsx}"]
+    # Default Tailwind content paths. Includes mirrored memo components under
+    # app_components/, which hold class names from memoized subtrees.
+    CONTENT = [
+        f"./{Dirs.PAGES}/**/*.{{js,ts,jsx,tsx}}",
+        "./utils/**/*.{js,ts,jsx,tsx}",
+        f"./{Dirs.APP_COMPONENTS}/**/*.{{js,ts,jsx,tsx}}",
+    ]
     # Relative tailwind style path to root stylesheet in Dirs.STYLES.
     ROOT_STYLE_PATH = "./tailwind.css"
 
