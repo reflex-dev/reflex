@@ -3,7 +3,7 @@ import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
-from reflex_docs.pages.docs import authentication, database, getting_started
+from reflex_docs.pages.docs import database, enterprise, getting_started
 from reflex_docs.pages.docs.library import library
 from reflex_docs.pages.library_previews import core_components_dict
 
@@ -55,7 +55,7 @@ def links_section() -> rx.Component:
             "ShieldUserIcon",
             "Auth",
             "Implement secure authentication for your apps using Reflex’s built-in features and extensible architecture.",
-            authentication.authentication_overview.path,
+            enterprise.auth.overview.path,
             enterprise_only=True,
         ),
         docs_item(

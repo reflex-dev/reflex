@@ -47,7 +47,7 @@ def test_algolia_search_asset_is_published_and_non_ai() -> None:
         ("/docs/", "Docs"),
         ("/blog/", "Blog"),
     ):
-        assert f'path.startsWith("{route}")' in source
+        assert f'pathname.startsWith("{route}")' in source
         assert f'return "{section}"' in source
     assert 'return "Reflex"' in source
 
@@ -425,21 +425,34 @@ def test_algolia_search_input_row_contains_safari_search_input() -> None:
 
 
 def test_algolia_search_builds_result_breadcrumbs() -> None:
-    """Render result hierarchy from its section and indexed headers."""
+    """Render docs hierarchy from canonical URLs instead of indexed headings."""
     assets = dict(SharedSiteStylesPlugin().get_static_assets())
     source = assets[Path("public/components/AlgoliaSearch.tsx")]
 
     assert "breadcrumbs: string[];" in source
     assert "function resultBreadcrumbs(" in source
     assert 'section === "Blog" ? "Blogs" : section' in source
-    assert 'section === "API Reference" ||' in source
-    assert 'section === "Blog" ||' in source
-    assert 'section === "Reflex"' in source
-    assert "breadcrumbs: resultBreadcrumbs(hit, section, displayTitle)" in source
+    assert "RESULT_PATH_PREFIXES" in source
+    assert 'Docs: ["docs"]' in source
+    assert 'Components: ["docs", "library"]' in source
+    assert 'XY: ["docs", "xy"]' in source
+    assert '"API Reference": ["docs", "api-reference"]' in source
+    assert "RESULT_PATH_LABELS" in source
+    assert 'ai: "AI"' in source
+    assert "function normalizeResultUrl(hit: AlgoliaHit): URL | null" in source
+    assert "function resultSection(pathname: string)" in source
+    assert "function resultPathBreadcrumbs(" in source
+    assert 'pathname.split("/").filter(Boolean)' in source
+    assert ".slice(prefix.length, -1)" in source
+    assert ".map(resultPathLabel)" in source
+    assert "breadcrumb.toLowerCase() !== normalizedRoot" in source
+    assert "const url = normalizedUrl.toString();" in source
+    assert "const pathname = normalizedUrl.pathname;" in source
+    assert "breadcrumbs: resultBreadcrumbs(pathname, section)" in source
     assert 'className="ReflexSearch-hitBreadcrumbs"' in source
     assert "hit.breadcrumbs.map((breadcrumb, index)" in source
     assert "icon={ArrowRight01Icon}" in source
-    assert "(hit.headers ?? []).slice(0, 2)" in source
+    assert "(hit.headers ?? []).slice(0, 2)" not in source
     assert "<mark" not in source
     assert "font-size: 1.125rem;" in source
 
@@ -566,7 +579,8 @@ def test_algolia_search_precomputes_result_metadata() -> None:
         "</ul>", 1
     )[0]
 
-    assert "const section = resultSection(url)" in normalize_hits
+    assert "const section = resultSection(pathname)" in normalize_hits
+    assert normalize_hits.count("new URL(") == 0
     assert "const displayTitle = resultTitle(hit)" in normalize_hits
     assert "section," in normalize_hits
     assert "displayTitle," in normalize_hits

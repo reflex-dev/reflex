@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import io
+import logging
 import pickle
 import shutil
 from collections.abc import Generator
@@ -258,11 +259,13 @@ def test_asset_hash_retries_after_in_place_rewrite(
 
 def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Hashing falls back to a timestamp if every read sees a file change.
 
     Args:
         monkeypatch: A pytest fixture for patching.
+        caplog: Pytest log capture fixture.
     """
     import reflex.assets as assets_module
 
@@ -274,16 +277,19 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
             self.open_calls += 1
             return io.BytesIO(str(self.open_calls).encode())
 
-    warn_calls: list[str] = []
     monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
-    monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
 
     result = assets_module._short_content_hash(cast(Path, _ChangingPath()))
 
     assert result == "1234.5"
+    warn_calls = [r for r in caplog.records if r.levelno == logging.WARNING]
     assert len(warn_calls) == 1
-    assert warn_calls[0].endswith(
-        f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+    assert (
+        warn_calls[0]
+        .getMessage()
+        .endswith(
+            f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+        )
     )
 
 

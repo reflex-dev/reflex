@@ -2,18 +2,20 @@
 
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator
 from typing import TypeVar
 
 from reflex_base.constants import ROUTER_DATA
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState, State, _override_base_method
+
+logger = logging.getLogger(__name__)
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
@@ -28,7 +30,7 @@ def _log_update_client_errors(task: asyncio.Task):
     try:
         task.result()
     except Exception as e:
-        console.warn(f"Error updating linked client: {e}")
+        logger.warning(f"Error updating linked client: {e}")
     finally:
         UPDATE_OTHER_CLIENT_TASKS.discard(task)
 

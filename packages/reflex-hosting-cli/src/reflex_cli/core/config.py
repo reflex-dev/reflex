@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import types
 import typing
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -101,7 +102,10 @@ def _validate_dispatch(
     if _type in [str, int, float, bool]:
         _validate_type(value, _type, key)
     origin = get_origin(_type)
-    if origin is typing.Union:
+    # `X | None` reports types.UnionType below 3.14, where typing.Union became
+    # the same object; without both, every optional field went unvalidated on
+    # the Python versions this package still supports.
+    if origin is typing.Union or origin is types.UnionType:
         args = typing.get_args(_type)
         if len(args) == 2 and type(None) in args:
             non_optional_type = next(arg for arg in args if arg is not type(None))
@@ -132,6 +136,10 @@ class Config:
     appid: str | None = dataclasses.field(default=None)
     strategy: str | None = dataclasses.field(default=None)
     provider: str | None = dataclasses.field(default=None)
+    gcp_connection: str | None = dataclasses.field(default=None)
+    # None, not False: an unset mode leaves the app's alone, while False would
+    # take every deploy from this config file off full deploy.
+    full_deploy: bool | None = dataclasses.field(default=None)
     include_db: bool = dataclasses.field(default=False)
 
     _cloud_config_path: Path | None = dataclasses.field(default=None)
