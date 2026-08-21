@@ -1387,3 +1387,45 @@ def test_register_plugin_routes_preserves_component_source_module():
     compiler._register_plugin_routes(app, [ComponentPlugin()])
 
     assert app._unevaluated_pages["component-page"]._source_module == __name__
+
+
+def test_compile_stylesheets_includes_enabled_ui_plugin(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """An enabled UIComponentsPlugin adds the theme stylesheet import."""
+    from reflex_components_core.ui.plugin import UIComponentsPlugin
+
+    project = tmp_path / "test_project"
+    project.mkdir()
+    (project / "assets").mkdir()
+
+    config = mocker.Mock()
+    config.plugins = [rx.plugins.UIComponentsPlugin()]
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    _, code = compiler.compile_root_stylesheet([])
+
+    assert "@import url('./reflex-ui/theme.css');" in code
+
+    implicit_only = compiler._resolve_ui_components_plugin([])
+    assert len(implicit_only) == 1
+    assert isinstance(implicit_only[0], UIComponentsPlugin)
+    assert not implicit_only[0].enabled
+
+
+def test_resolve_ui_components_plugin_prefers_explicit_instance():
+    """An explicitly configured plugin is not duplicated in the chain."""
+    from reflex_components_core.ui.plugin import UIComponentsPlugin
+
+    explicit = UIComponentsPlugin()
+    chain = compiler._resolve_ui_components_plugin([explicit])
+
+    assert chain == (explicit,)

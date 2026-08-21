@@ -21,6 +21,7 @@ from reflex_base.plugins import (
     tailwind_v3,
     tailwind_v4,
 )
+from reflex_components_core.ui.plugin import UIComponentsPlugin
 from reflex_components_radix.plugin import RadixThemesPlugin
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "SitemapPlugin",
     "TailwindV3Plugin",
     "TailwindV4Plugin",
+    "UIComponentsPlugin",
     "_ScreenshotPlugin",
     "embed",
     "get_plugin",

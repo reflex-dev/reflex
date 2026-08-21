@@ -146,7 +146,7 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.el.elements.media": ["image"],
     "reflex_components_lucide": ["icon"],
     **_COMPONENTS_BASE_MAPPING,
-    "reflex_components_core": ["el"],
+    "reflex_components_core": ["el", "ui"],
     "reflex_components_markdown.markdown": ["markdown"],
     **RADIX_MAPPING,
     "reflex_components_plotly": ["plotly"],

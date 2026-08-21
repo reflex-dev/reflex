@@ -1,0 +1,1 @@
+Added the `reflex_components_core.ui` package: a Tailwind-styled, CSS-variable-themable component library built on base HTML elements, exposed as `rx.ui`. The `UIComponentsPlugin` compiles the active `Theme` into the app's Tailwind stylesheet and auto-enables when a UI component is used.

@@ -1126,6 +1126,28 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _resolve_ui_components_plugin(
+    plugins: Sequence[Plugin],
+) -> tuple[Plugin, ...]:
+    """Resolve the effective UI components plugin for the active compile.
+
+    When the plugin is not configured explicitly, a compile-local instance is
+    appended that starts disabled and auto-enables when a UI component is
+    compiled, so its theme stylesheet is only emitted when actually used.
+
+    Args:
+        plugins: The plugin chain resolved so far.
+
+    Returns:
+        The compiler plugin chain including a UI components plugin.
+    """
+    from reflex_components_core.ui.plugin import UIComponentsPlugin
+
+    if any(isinstance(plugin, UIComponentsPlugin) for plugin in plugins):
+        return tuple(plugins)
+    return (*plugins, UIComponentsPlugin.create_implicit())
+
+
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
 
@@ -1194,6 +1216,7 @@ def compile_app(
         app,
         config.plugins,
     )
+    compiler_plugins = _resolve_ui_components_plugin(compiler_plugins)
     reset_bundled_libraries()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
@@ -1427,7 +1450,7 @@ def compile_app(
             )
         output_mapping[path] = code
 
-    for plugin in config.plugins:
+    for plugin in compiler_plugins:
         for static_file_path, content in plugin.get_static_assets():
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:

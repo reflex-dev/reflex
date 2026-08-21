@@ -9,6 +9,7 @@ _SUBMODULES: set[str] = {
     "core",
     "datadisplay",
     "el",
+    "ui",
 }
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {}
