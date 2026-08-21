@@ -96,6 +96,9 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
         self._self_parent_state_proxy = parent_state_proxy
+        # Whether `async with self` was ever entered; a background handler that
+        # never did emitted no delta, so the processor flushes once for it.
+        self._self_entered_context = False
 
     def _is_mutable(self) -> bool:
         """Check if the state is mutable.
@@ -122,6 +125,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is already mutable.
         """
+        self._self_entered_context = True
         if self._self_parent_state_proxy is not None:
             from reflex.state import State
 

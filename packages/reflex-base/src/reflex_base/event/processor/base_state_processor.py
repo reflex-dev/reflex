@@ -346,29 +346,6 @@ async def process_event(
         )
 
 
-class _EnterTrackingStateProxy(StateProxy):
-    """A StateProxy recording whether the handler ever entered ``async with self``."""
-
-    def __init__(self, *args, **kwargs):
-        """Create the proxy with the entered flag unset.
-
-        Args:
-            *args: Positional arguments for StateProxy.
-            **kwargs: Keyword arguments for StateProxy.
-        """
-        super().__init__(*args, **kwargs)
-        self._self_entered_context = False
-
-    async def __aenter__(self):
-        """Enter the mutability context, recording that it was entered.
-
-        Returns:
-            This proxy in mutable mode.
-        """
-        self._self_entered_context = True
-        return await super().__aenter__()
-
-
 class BaseStateEventProcessor(EventProcessor):
     """Event processor for BaseState-derived states.
 
@@ -479,7 +456,7 @@ class BaseStateEventProcessor(EventProcessor):
         # its _clean() would be discarded before any delta carries it. A
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
-        proxy = _EnterTrackingStateProxy(substate)
+        proxy = StateProxy(substate)
         await process_event(
             handler=registered_handler.handler,
             state=proxy,
