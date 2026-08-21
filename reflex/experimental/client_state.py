@@ -133,7 +133,6 @@ class ClientStateVar(Var):
         setter_name = f"set{var_name.capitalize()}"
         hooks: dict[str, VarData | None] = {
             f"const {id_name} = useId()": None,
-            f"const [{var_name}, {setter_name}] = useState({default_var!s})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState"), ImportVar(tag="useId")],
@@ -144,6 +143,10 @@ class ClientStateVar(Var):
             var_ref = _client_state_ref(var_name)
             var_dict_ref = _client_state_ref_dict(var_name)
             setter_dict_ref = _client_state_ref_dict(setter_name)
+            default_expr = "undefined" if default is NoValue else f"{default_var!s}"
+            hooks[
+                f"const [{var_name}, {setter_name}] = useState(() => {var_ref!s} !== undefined ? {var_ref!s} : {default_expr})"
+            ] = VarData.merge(default_var._var_data, var_ref._get_all_var_data())
             func = ArgsFunctionOperationBuilder.create(
                 args_names=(arg_name,),
                 return_expr=Var("Array.prototype.forEach.call")
@@ -175,6 +178,10 @@ class ClientStateVar(Var):
             )
             hooks[f"{setter_dict_ref!s}[{id_name}] = {setter_name}"] = (
                 setter_dict_ref._get_all_var_data()
+            )
+        else:
+            hooks[f"const [{var_name}, {setter_name}] = useState({default_var!s})"] = (
+                None
             )
         return cls(
             _js_expr="null",
