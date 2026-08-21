@@ -1008,10 +1008,24 @@ def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
         release = json.loads(payload)
     except json.JSONDecodeError:
         fail(f"gh reported release metadata for {tag} that is not JSON: {payload!r}")
+    # The shape is established once, here, so everything downstream can read the
+    # payload as the release it claims to be rather than re-checking it. Each
+    # miss is a diagnostic failure: a TypeError traceback out of a job that has
+    # already published a version says nothing about what went wrong.
+    if not isinstance(release, dict):
+        fail(
+            f"gh reported release metadata for {tag} that is not an object: {payload!r}"
+        )
     if missing := [field for field in _RELEASE_FIELDS if field not in release]:
         fail(
             f"the release metadata gh reported for {tag} carries no "
             f"{', '.join(missing)}, so the release cannot be verified"
+        )
+    if not isinstance(release["assets"], list):
+        fail(
+            f"the release metadata gh reported for {tag} lists its assets as "
+            f"{release['assets']!r} rather than as a list, so what the release "
+            "carries cannot be verified"
         )
     return release
 

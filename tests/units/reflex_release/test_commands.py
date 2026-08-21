@@ -1259,6 +1259,40 @@ def test_create_release_does_not_create_over_an_unreadable_release(
     assert calls == []
 
 
+#: A payload shaped like a release except that its assets are not a list.
+NULL_ASSETS_PAYLOAD = json.dumps({
+    "tagName": "v0.2.1",
+    "name": "v0.2.1",
+    "isDraft": False,
+    "isPrerelease": False,
+    "assets": None,
+})
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ("null", "is not an object"),
+        ("[]", "is not an object"),
+        (NULL_ASSETS_PAYLOAD, "rather than as a list"),
+    ],
+)
+def test_create_release_rejects_metadata_of_the_wrong_shape(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: str,
+    expected: str,
+) -> None:
+    """A shape gh should never send has to read as a diagnostic, not a traceback."""
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [gh_found(payload)])
+    with pytest.raises(ReleaseError, match=expected):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
 def test_create_release_rejects_metadata_missing_a_requested_field(
     config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
