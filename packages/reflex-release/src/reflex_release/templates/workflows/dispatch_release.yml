@@ -89,11 +89,13 @@ jobs:
           # nothing leaves PACKAGES blank and the planner auto-selects.
           PACKAGES: >-
 @@PACKAGE_SELECTION@@
+        shell: bash
         run: @@CLI@@ plan
       - name: Materialize changelogs
         env:
           ACTION: ${{ inputs.action }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+        shell: bash
         run: @@CLI@@ materialize
       - name: Push prerelease branch
         if: ${{ !startsWith(inputs.action, 'release-') }}
@@ -102,6 +104,7 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+        shell: bash
         run: @@CLI@@ push-prerelease
       - name: Open release pull request
         if: ${{ startsWith(inputs.action, 'release-') }}
@@ -110,4 +113,5 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+        shell: bash
         run: @@CLI@@ open-release-pr
