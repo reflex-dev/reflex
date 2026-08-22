@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import time
@@ -531,4 +532,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
         finally:
             heartbeat_task.cancel()
             self._sockets.pop(sid, None)
-            self.handle_disconnect(sid)
+            cleanup_task = self.handle_disconnect(sid)
+            if cleanup_task is not None:
+                # Await the token cleanup so an immediate reconnect is not
+                # treated as a duplicate tab; shielded so cancellation (e.g.
+                # server shutdown) cannot abort it. Errors are logged by the
+                # task's done callback.
+                with contextlib.suppress(Exception):
+                    await asyncio.shield(cleanup_task)

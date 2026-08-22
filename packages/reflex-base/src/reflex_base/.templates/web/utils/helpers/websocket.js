@@ -96,13 +96,42 @@ export class ReflexWebSocket {
     // Network emulation and OS offline do not interrupt established
     // websockets, so (like engine.io-client) treat the browser's offline
     // event as a disconnect. Localhost connections keep working offline.
+    this._offlineListener = null;
     if (
       typeof addEventListener === "function" &&
       this._url.hostname !== "localhost"
     ) {
-      addEventListener("offline", () => this._onOffline(), false);
+      this._offlineListener = () => this._onOffline();
+      addEventListener("offline", this._offlineListener, false);
     }
     this.connect();
+  }
+
+  /**
+   * Remove registered handlers (socket.io-compatible). With no arguments,
+   * all handlers are removed and the global offline listener is released:
+   * state.js calls this form when discarding the transport on unmount.
+   * @param event The event name; omit to remove all handlers.
+   * @param fn The handler to remove; omit to remove all handlers for event.
+   */
+  off(event, fn) {
+    if (event === undefined) {
+      this._callbacks = {};
+      if (this._offlineListener) {
+        removeEventListener("offline", this._offlineListener, false);
+        this._offlineListener = null;
+      }
+      return;
+    }
+    if (fn === undefined) {
+      delete this._callbacks["$" + event];
+      return;
+    }
+    const handlers = this._callbacks["$" + event];
+    const ix = handlers ? handlers.indexOf(fn) : -1;
+    if (ix !== -1) {
+      handlers.splice(ix, 1);
+    }
   }
 
   /**

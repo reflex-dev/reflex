@@ -569,6 +569,12 @@ export const connect = async (
     }
     return;
   }
+  // Another connect() call may be awaiting the socket.io-client import;
+  // don't create a second transport.
+  if (socket.connecting) {
+    return;
+  }
+  socket.connecting = true;
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -576,28 +582,33 @@ export const connect = async (
 
   // Create the socket.
   const transport = transports[0];
-  if (transport === "websocket") {
-    // Default transport: plain WebSocket speaking the Reflex event protocol.
-    socket.current = new ReflexWebSocket(endpoint.href, {
-      query: { token: getToken() },
-      protocols: [reflexEnvironment.version],
-    });
-  } else {
-    // Socket.IO transport ("socketio" over websocket, or "polling"); the
-    // client library is only loaded when this transport is configured.
-    const { default: io } = await import("socket.io-client");
-    socket.current = io(endpoint.href, {
-      path: endpoint["pathname"],
-      transports: [transport === "socketio" ? "websocket" : transport],
-      protocols: [reflexEnvironment.version],
-      autoUnref: false,
-      query: { token: getToken() },
-      reconnection: false, // Reconnection will be handled manually.
-    });
-    // Ensure undefined fields in events are sent as null instead of removed
-    socket.current.io.encoder.replacer = undefinedToNull;
-    // The decoder API expects false (not undefined) for unparsable input.
-    socket.current.io.decoder.tryParse = (str) => parseJsonLenient(str, false);
+  try {
+    if (transport === "websocket") {
+      // Default transport: plain WebSocket speaking the Reflex event protocol.
+      socket.current = new ReflexWebSocket(endpoint.href, {
+        query: { token: getToken() },
+        protocols: [reflexEnvironment.version],
+      });
+    } else {
+      // Socket.IO transport ("socketio" over websocket, or "polling"); the
+      // client library is only loaded when this transport is configured.
+      const { default: io } = await import("socket.io-client");
+      socket.current = io(endpoint.href, {
+        path: endpoint["pathname"],
+        transports: [transport === "socketio" ? "websocket" : transport],
+        protocols: [reflexEnvironment.version],
+        autoUnref: false,
+        query: { token: getToken() },
+        reconnection: false, // Reconnection will be handled manually.
+      });
+      // Ensure undefined fields in events are sent as null instead of removed
+      socket.current.io.encoder.replacer = undefinedToNull;
+      // The decoder API expects false (not undefined) for unparsable input.
+      socket.current.io.decoder.tryParse = (str) =>
+        parseJsonLenient(str, false);
+    }
+  } finally {
+    socket.connecting = false;
   }
   socket.current.wait_connect = !socket.current.connected;
   // Set up a reconnect helper function
