@@ -7,7 +7,11 @@ The tarball is produced with the stdlib rather than ``npm pack`` because the
 release build environment has no JS toolchain, and its bytes must be
 deterministic: package managers record content hashes for ``file:`` tarballs
 in lockfiles, so a wheel rebuilt from the sdist has to reproduce the tarball
-byte for byte.
+byte for byte. Tar metadata and the gzip header are fully normalized; the
+compressed bytes still depend on the zlib implementation CPython links
+(zlib-ng output differs from madler zlib), so a wheel built from the sdist on
+an exotic Python may pair with committed lockfiles from PyPI wheels only
+after a one-time lockfile refresh.
 """
 
 from __future__ import annotations

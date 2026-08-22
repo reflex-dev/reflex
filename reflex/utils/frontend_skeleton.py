@@ -824,12 +824,14 @@ def _compile_vite_config(config: Config):
             if frontend_package.mode is FrontendPackageMode.SOURCE
             else None
         ),
-        # Resolve the frontend package's runtime deps from the app root: keeps
+        # Resolve the frontend package's runtime deps (and its optional peers,
+        # installed by the components that use them) from the app root: keeps
         # singletons single, and lets the symlinked source (whose real path
         # has no node_modules) resolve its bare imports in SSR builds.
         dedupe=[
             *templates.DEFAULT_VITE_DEDUPE,
             *frontend_package.dependencies,
+            *frontend_package.peer_dependencies,
         ],
     )
 

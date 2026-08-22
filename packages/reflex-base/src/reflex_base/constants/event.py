@@ -63,7 +63,7 @@ class SocketEvent(SimpleNamespace):
 class ClientErrorType(SimpleNamespace):
     """Error types reported by the frontend via the client_error socket event.
 
-    Must match the ERROR_TYPE_* constants in .templates/web/utils/state.js.
+    Must match the ERROR_TYPE_* constants in reflex_base/frontend/state.js.
     """
 
     DISPATCH_MISSING = "dispatch_function_missing"

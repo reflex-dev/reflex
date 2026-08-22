@@ -2158,7 +2158,7 @@ def test_install_frontend_packages_tarball_mode_skips_manifest_deps(
     assert "vite@8.0.9" in dev_call
 
 
-def test_install_frontend_packages_source_mode_stale_sweep_removes_legacy_pins(
+def test_install_frontend_packages_tarball_mode_stale_sweep_removes_legacy_pins(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
     """Legacy top-level framework pins are swept in TARBALL mode (dual-React guard)."""

@@ -6,8 +6,6 @@ import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
-from reflex_base.constants.base import FrontendPackage
-
 # Absolute import paths beginning with one of these reserved ``.web``
 # subdirectories are rewritten to ``$``-prefixed module specifiers.
 ABSOLUTE_IMPORT_PREFIXES = (
@@ -23,22 +21,24 @@ ABSOLUTE_IMPORT_PREFIXES = (
 # old-style imports compiling against the package (and prevents spurious
 # same-tag conflicts between the old and new spellings of one module). The
 # generated vite config aliases the same specifiers for user JS code.
+# Values are literal (not ``constants.FrontendPackage``) because this module
+# is imported by ``constants``; a unit test asserts they stay in sync.
 LEGACY_FRONTEND_SPECIFIERS = {
     old: new
     for base, new in {
-        "$/utils/state": FrontendPackage.STATE,
-        "$/utils/runtime": FrontendPackage.RUNTIME,
-        "$/utils/react-theme": FrontendPackage.REACT_THEME,
-        "$/utils/helpers/debounce": FrontendPackage.HELPERS_DEBOUNCE,
-        "$/utils/helpers/throttle": FrontendPackage.HELPERS_THROTTLE,
-        "$/utils/helpers/upload": FrontendPackage.HELPERS_UPLOAD,
-        "$/utils/helpers/datetime": FrontendPackage.HELPERS_DATETIME,
-        "$/utils/helpers/paste": FrontendPackage.HELPERS_PASTE,
-        "$/utils/helpers/range": FrontendPackage.HELPERS_RANGE,
-        "$/utils/helpers/dataeditor": FrontendPackage.HELPERS_DATAEDITOR,
-        "$/components/shiki/code": FrontendPackage.SHIKI_CODE,
+        "$/utils/state": "@reflex-dev/reflex-base/state",
+        "$/utils/runtime": "@reflex-dev/reflex-base/runtime",
+        "$/utils/react-theme": "@reflex-dev/reflex-base/react-theme",
+        "$/utils/helpers/debounce": "@reflex-dev/reflex-base/helpers/debounce",
+        "$/utils/helpers/throttle": "@reflex-dev/reflex-base/helpers/throttle",
+        "$/utils/helpers/upload": "@reflex-dev/reflex-base/helpers/upload",
+        "$/utils/helpers/datetime": "@reflex-dev/reflex-base/helpers/datetime",
+        "$/utils/helpers/paste": "@reflex-dev/reflex-base/helpers/paste",
+        "$/utils/helpers/range": "@reflex-dev/reflex-base/helpers/range",
+        "$/utils/helpers/dataeditor": "@reflex-dev/reflex-base/helpers/dataeditor",
+        "$/components/shiki/code": "@reflex-dev/reflex-base/components/shiki-code",
         "$/components/reflex/radix_themes_color_mode_provider": (
-            FrontendPackage.RADIX_COLOR_MODE_PROVIDER
+            "@reflex-dev/reflex-base/components/radix-themes-color-mode-provider"
         ),
     }.items()
     for old in (base, base + ".js")

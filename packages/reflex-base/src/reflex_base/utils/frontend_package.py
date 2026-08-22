@@ -47,6 +47,9 @@ class FrontendPackage:
     # a dependency's devDependencies, so Reflex installs these into the app's
     # own devDependencies at setup time.
     dev_dependencies: dict[str, str]
+    # Optional peers backing per-component modules; installed by the owning
+    # components' lib_dependencies only when actually used.
+    peer_dependencies: dict[str, str] = dataclasses.field(default_factory=dict)
 
     @property
     def tarball_basename(self) -> str:
@@ -85,6 +88,7 @@ def _package_from_manifest(
         version=manifest["version"],
         dependencies=manifest.get("dependencies") or {},
         dev_dependencies=manifest.get("devDependencies") or {},
+        peer_dependencies=manifest.get("peerDependencies") or {},
     )
 
 

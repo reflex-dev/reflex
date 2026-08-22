@@ -236,3 +236,14 @@ class SpecialAttributes(enum.Enum):
             True if the attribute is special.
         """
         return attr.startswith(SPECIAL_ATTRS)
+
+
+class ResetStylesheet(SimpleNamespace):
+    """Deprecated: the reset ships in the bundled npm package.
+
+    Use FrontendPackage.STYLE_RESET_CSS; kept so downstream imports of this
+    constant do not break at import time.
+    """
+
+    # The filename of the CSS reset file in pre-package Reflex versions.
+    FILENAME = "__reflex_style_reset.css"

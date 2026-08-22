@@ -31,6 +31,10 @@ class Dirs(SimpleNamespace):
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
+    # Deprecated: the state module moved into the bundled npm package — use
+    # FrontendPackage.STATE. Kept because downstream libraries declare imports
+    # as f"$/{Dirs.STATE_PATH}", which still normalizes to the package.
+    STATE_PATH = UTILS + "/state"
     # The name of the components file, where memos that can't be mirrored to a
     # user module (``__main__``, unsafe names) get one file per memo.
     COMPONENTS_PATH = UTILS + "/components"
