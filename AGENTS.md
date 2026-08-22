@@ -23,6 +23,7 @@ uv run python scripts/check_min_deps.py                          # validate each
 uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # publish gate: fail if pkg (default: all) declares an unpublishable *.dev dependency pin
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
+npm --prefix tests/js ci && npm --prefix tests/js test            # javascript unit tests (frontend templates)
 ```
 
 ## Layout
@@ -31,6 +32,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
 tests/units/            # unit tests, mirrors source tree
+tests/js/               # vitest unit tests for the shipped frontend javascript
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
   tests_playwright/     # Playwright integration tests (preferred for new tests)
 tests/benchmarks/       # performance benchmarks
@@ -57,6 +59,24 @@ docs/                   # documentation site (separate workspace member)
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
 - **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
+
+### Frontend javascript tests
+
+The javascript Reflex ships lives in
+`packages/reflex-base/src/reflex_base/.templates/web/` and is copied verbatim into a
+user's `.web` directory, so tests must **not** live inside that tree. They go in
+`tests/js/`, which has its own `package.json` and runs under vitest + jsdom:
+`npm --prefix tests/js test`.
+
+Reach for these when behavior can only be observed at runtime and an integration
+test would be indirect or impossible to set up — provider teardown, SSR vs. client
+branches, subscription bookkeeping. Prefer a Playwright test when the thing you
+want to assert is visible in a real app.
+
+`$/...` specifiers resolve to the template tree via a vitest alias. `$/utils/state`
+is stubbed (`tests/js/stubs/state.js`) because the real module pulls in socket.io,
+react-router and the per-app *generated* `utils/context.js`; a module needing those
+is not currently unit-testable.
 
 ### Integration test patterns
 
