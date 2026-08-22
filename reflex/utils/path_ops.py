@@ -47,6 +47,7 @@ def copy_tree(
     src: str | Path,
     dest: str | Path,
     ignore: tuple[str, ...] | None = None,
+    delete_existing: bool = True,
 ):
     """Copy a directory tree.
 
@@ -54,10 +55,13 @@ def copy_tree(
         src: The path to the source directory.
         dest: The path to the destination directory.
         ignore: Ignoring files and directories that match one of the glob-style patterns provided
+        delete_existing: Whether to delete the existing destination contents
+            first. When False, source files overwrite their destination
+            counterparts in place and everything else is left untouched.
     """
     src = Path(src)
     dest = Path(dest)
-    if dest.exists():
+    if delete_existing and dest.exists():
         for item in dest.iterdir():
             rm(item)
     shutil.copytree(

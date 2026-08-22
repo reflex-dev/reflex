@@ -23,10 +23,12 @@ def test_compress_static_output_overwrites_stale_sidecars(
 
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
-    compress_script = (
-        Path(reflex_base.__file__).parent / ".templates/web/compress-static.js"
+    compress_script = Path(reflex_base.__file__).parent / "frontend/compress-static.js"
+    installed_script = (
+        web_dir / "node_modules/@reflex-dev/reflex-base/compress-static.js"
     )
-    (web_dir / "compress-static.js").write_text(compress_script.read_text())
+    installed_script.parent.mkdir(parents=True)
+    installed_script.write_text(compress_script.read_text())
 
     static_dir = tmp_path / "static"
     static_dir.mkdir()

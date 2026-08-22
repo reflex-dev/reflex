@@ -1,8 +1,8 @@
 // Registry of app-provided runtime values for the Reflex frontend runtime.
 //
 // The shipped runtime modules (state.js and friends) must not import per-app
-// generated artifacts (env.json, reflex.json, utils/context.js) — that
-// coupling is inverted here: the generated `$/utils/context` module calls
+// generated artifacts (env.json, reflex.json, the generated context module) —
+// that coupling is inverted here: the app's generated context module calls
 // configureReflexRuntime() in its module body, which ESM guarantees runs
 // before any importer's code, so the registry is populated before any
 // component renders or event dispatches.
@@ -41,8 +41,8 @@ export function configureReflexRuntime(options) {
 export function getEnv() {
   if (runtimeConfig.env === undefined) {
     throw new Error(
-      "Reflex runtime is not configured (env is missing). The generated " +
-        "'$/utils/context' module configures it on import; in tests, call " +
+      "Reflex runtime is not configured (env is missing). The app's " +
+        "generated context module configures it on import; in tests, call " +
         "configureReflexRuntime({ env: {...}, ... }) first.",
     );
   }

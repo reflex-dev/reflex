@@ -153,6 +153,33 @@ class Javascript(SimpleNamespace):
     NODE_MODULES = "node_modules"
 
 
+class FrontendPackage(SimpleNamespace):
+    """Module specifiers for the bundled frontend npm package.
+
+    The values must match the exports map in
+    ``reflex_base/frontend/package.json`` (asserted by unit tests); the
+    package itself is described at runtime by
+    :mod:`reflex_base.utils.frontend_package`.
+    """
+
+    NAME = "@reflex-dev/reflex-base"
+    STATE = f"{NAME}/state"
+    RUNTIME = f"{NAME}/runtime"
+    REACT_THEME = f"{NAME}/react-theme"
+    HELPERS_DEBOUNCE = f"{NAME}/helpers/debounce"
+    HELPERS_THROTTLE = f"{NAME}/helpers/throttle"
+    HELPERS_UPLOAD = f"{NAME}/helpers/upload"
+    HELPERS_DATETIME = f"{NAME}/helpers/datetime"
+    HELPERS_PASTE = f"{NAME}/helpers/paste"
+    HELPERS_RANGE = f"{NAME}/helpers/range"
+    HELPERS_DATAEDITOR = f"{NAME}/helpers/dataeditor"
+    SHIKI_CODE = f"{NAME}/components/shiki-code"
+    RADIX_COLOR_MODE_PROVIDER = f"{NAME}/components/radix-themes-color-mode-provider"
+    STYLE_RESET_CSS = f"{NAME}/style-reset.css"
+    VITE_PLUGIN_SAFARI_CACHEBUST = f"{NAME}/vite-plugin-safari-cachebust"
+    COMPRESS_STATIC_SCRIPT = f"{NAME}/compress-static.js"
+
+
 class ReactRouter(Javascript):
     """Constants related to React Router."""
 

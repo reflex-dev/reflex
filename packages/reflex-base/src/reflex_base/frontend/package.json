@@ -1,0 +1,59 @@
+{
+  "name": "@reflex-dev/reflex-base",
+  "version": "0.0.0",
+  "description": "Reflex frontend runtime: state and event plumbing, theming, and helpers imported by Reflex-compiled apps.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./state": "./state.js",
+    "./runtime": "./runtime.js",
+    "./react-theme": "./react-theme.js",
+    "./helpers/*": "./helpers/*.js",
+    "./components/*": "./components/*.js",
+    "./style-reset.css": "./style-reset.css",
+    "./vite-plugin-safari-cachebust": "./vite-plugin-safari-cachebust.js",
+    "./compress-static.js": "./compress-static.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "state.js",
+    "runtime.js",
+    "react-theme.js",
+    "helpers/",
+    "components/",
+    "style-reset.css",
+    "vite-plugin-safari-cachebust.js",
+    "compress-static.js"
+  ],
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router": "8.3.0",
+    "socket.io-client": "4.8.3",
+    "universal-cookie": "8.1.2",
+    "json5": "2.2.3"
+  },
+  "devDependencies": {
+    "@emotion/react": "11.14.0",
+    "@react-router/dev": "8.3.0",
+    "@react-router/fs-routes": "8.3.0",
+    "@react-router/node": "8.3.0",
+    "autoprefixer": "10.5.4",
+    "isbot": "5.2.1",
+    "postcss": "8.5.23",
+    "postcss-import": "16.1.1",
+    "vite": "8.2.0"
+  },
+  "peerDependencies": {
+    "shiki": "4.3.1",
+    "@glideapps/glide-data-grid": "6.0.3"
+  },
+  "peerDependenciesMeta": {
+    "shiki": {
+      "optional": true
+    },
+    "@glideapps/glide-data-grid": {
+      "optional": true
+    }
+  }
+}

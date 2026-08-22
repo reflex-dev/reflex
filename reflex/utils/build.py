@@ -213,7 +213,10 @@ def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
     result = processes.new_process(
         [
             runtime,
-            web_dir / "compress-static.js",
+            web_dir
+            / constants.Javascript.NODE_MODULES
+            / constants.FrontendPackage.NAME
+            / "compress-static.js",
             directory.resolve(),
             *formats,
         ],

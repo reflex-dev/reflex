@@ -4269,9 +4269,7 @@ def test_client_error_constants_match_frontend():
 
     Nothing at runtime keeps the two definitions in sync, so pin them here.
     """
-    state_js = (
-        Path(reflex_base.__file__).parent / ".templates/web/utils/state.js"
-    ).read_text()
+    state_js = (Path(reflex_base.__file__).parent / "frontend/state.js").read_text()
     assert (
         f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
     )

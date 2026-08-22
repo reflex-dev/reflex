@@ -1,5 +1,5 @@
 import JSON5 from "json5";
-import { getEnv } from "$/utils/runtime";
+import { getEnv } from "../runtime.js";
 
 /**
  * Upload files to the server.

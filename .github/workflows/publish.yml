@@ -164,6 +164,12 @@ jobs:
           BUILD_DIR: ${{ steps.prepare.outputs.build_dir }}
         run: bash .github/scripts/publish/verify_pyi.sh
 
+      - name: Verify frontend package tarball in reflex-base wheel
+        if: steps.prepare.outputs.skipped != 'true' && inputs.package == 'reflex-base'
+        env:
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: uv run --no-config --locked --script scripts/release.py verify-frontend-tgz
+
       - name: Extract release notes from changelog
         if: steps.prepare.outputs.skipped != 'true'
         env:

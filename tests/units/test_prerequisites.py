@@ -13,6 +13,7 @@ from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.frontend_package import FrontendPackage, FrontendPackageMode
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -81,10 +82,76 @@ class InstallPackagesEnv:
     install: _InstallFn
 
 
+def _stub_frontend_package(
+    monkeypatch: pytest.MonkeyPatch,
+    dependencies: dict[str, str] | None = None,
+    dev_dependencies: dict[str, str] | None = None,
+    mode: FrontendPackageMode = FrontendPackageMode.SOURCE,
+    path: Path | None = None,
+) -> FrontendPackage:
+    """Stub the bundled frontend package manifest for install tests.
+
+    Returns:
+        The synthetic package descriptor now returned by get_frontend_package.
+    """
+    package = FrontendPackage(
+        mode=mode,
+        path=path or Path("stub-frontend"),
+        name="@reflex-dev/reflex-base",
+        version="0.0.0",
+        dependencies=dependencies or {},
+        dev_dependencies=dev_dependencies or {},
+    )
+    monkeypatch.setattr(js_runtimes, "get_frontend_package", lambda: package)
+    monkeypatch.setattr(frontend_skeleton, "get_frontend_package", lambda: package)
+    return package
+
+
+#: Real entry/tarball lifecycle helpers, captured before any neutralization so
+#: the dedicated entry tests can restore them over the shared fixture's stubs.
+_REAL_ENTRY_MANAGEMENT = {
+    name: getattr(frontend_skeleton, name)
+    for name in (
+        "materialize_frontend_tarball",
+        "prune_stale_frontend_tarballs",
+        "current_frontend_package_entry",
+        "frontend_package_entry_resolvable",
+        "set_frontend_package_entry",
+    )
+}
+
+
+def _restore_frontend_entry_management(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Restore the real entry/tarball lifecycle over the fixture's no-op stubs."""
+    for name, function in _REAL_ENTRY_MANAGEMENT.items():
+        monkeypatch.setattr(frontend_skeleton, name, function)
+
+
+def _neutralize_frontend_entry_management(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable the frontend package entry/tarball lifecycle.
+
+    Most install tests reason about the plugin/custom package calls; the
+    entry reconcile has its own dedicated tests below.
+    """
+    monkeypatch.setattr(frontend_skeleton, "materialize_frontend_tarball", lambda: None)
+    monkeypatch.setattr(
+        frontend_skeleton, "prune_stale_frontend_tarballs", lambda: None
+    )
+    monkeypatch.setattr(
+        frontend_skeleton, "current_frontend_package_entry", lambda: None
+    )
+    monkeypatch.setattr(
+        frontend_skeleton, "frontend_package_entry_resolvable", lambda spec: True
+    )
+    monkeypatch.setattr(
+        frontend_skeleton, "set_frontend_package_entry", lambda spec: False
+    )
+
+
 def _stub_framework_packages(monkeypatch: pytest.MonkeyPatch) -> None:
     """Empty out framework deps and overrides so install call counts are predictable."""
-    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {})
-    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {})
+    _stub_frontend_package(monkeypatch)
+    _neutralize_frontend_entry_management(monkeypatch)
     monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
 
 
@@ -686,7 +753,7 @@ def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
 ):
     """A framework dep listed in the wrong section gets relocated and re-pinned."""
     env = install_packages_env
-    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    _stub_frontend_package(monkeypatch, dependencies={"react": "19.2.5"})
     env.root_package_json.write_text(
         json.dumps({"devDependencies": {"react": "18.0.0"}})
     )
@@ -823,12 +890,13 @@ def test_install_frontend_packages_pins_framework_dependencies(
     install_packages_env: InstallPackagesEnv,
     monkeypatch,
 ):
-    """Framework dep constants are emitted as pinned ``name@version`` specs."""
+    """Manifest deps are emitted as pinned ``name@version`` specs in SOURCE mode."""
     env = install_packages_env
-    monkeypatch.setattr(
-        constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5", "isbot": "5.1.39"}
+    _stub_frontend_package(
+        monkeypatch,
+        dependencies={"react": "19.2.5", "isbot": "5.1.39"},
+        dev_dependencies={"vite": "8.0.9"},
     )
-    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
     calls = _record_calls(env)
 
     env.install()
@@ -1364,8 +1432,11 @@ def test_install_frontend_packages_keeps_framework_deps_during_remove(
     monkeypatch,
 ):
     env = install_packages_env
-    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
-    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    _stub_frontend_package(
+        monkeypatch,
+        dependencies={"react": "19.2.5"},
+        dev_dependencies={"vite": "8.0.9"},
+    )
     env.root_package_json.write_text(
         json.dumps({
             "dependencies": {"react": "19.2.5", "stale-dep": "1.0.0"},
@@ -1957,3 +2028,236 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+def _stub_tarball_package(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str = "1.0.0"
+) -> FrontendPackage:
+    """Stub a TARBALL-mode frontend package backed by a real file on disk.
+
+    Returns:
+        The synthetic tarball-mode package descriptor.
+    """
+    install_dir = tmp_path / "installed-reflex-base"
+    install_dir.mkdir(exist_ok=True)
+    tgz = install_dir / f"reflex-dev-reflex-base-{version}.tgz"
+    tgz.write_bytes(b"tarball-bytes-" + version.encode())
+    return _stub_frontend_package(
+        monkeypatch, mode=FrontendPackageMode.TARBALL, path=tgz
+    )
+
+
+def test_install_frontend_packages_writes_entry_on_fresh_project(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Fresh project: tarball materialized, entry written, no initial install."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    _stub_tarball_package(monkeypatch, env.tmp_path)
+    env.web_package_json.write_text(json.dumps({"name": "reflex"}))
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert (env.web_dir / "reflex-dev-reflex-base-1.0.0.tgz").exists()
+    entry = json.loads(env.web_package_json.read_text())["dependencies"][
+        "@reflex-dev/reflex-base"
+    ]
+    assert entry == "file:./reflex-dev-reflex-base-1.0.0.tgz"
+    # With nothing else to add, one plain install resolves the new entry.
+    install_calls = [c for c in calls if "install" in c]
+    assert len(install_calls) == 1
+    assert "--frozen-lockfile" not in install_calls[0]
+
+
+def test_install_frontend_packages_upgrade_in_place_keeps_frozen_install(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """A still-resolvable old tarball entry frozen-installs, then is rewritten."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    _stub_tarball_package(monkeypatch, env.tmp_path, version="2.0.0")
+    (env.web_dir / "reflex-dev-reflex-base-1.0.0.tgz").write_bytes(b"old")
+    env.web_package_json.write_text(
+        json.dumps({
+            "name": "reflex",
+            "dependencies": {
+                "@reflex-dev/reflex-base": "file:./reflex-dev-reflex-base-1.0.0.tgz"
+            },
+        })
+    )
+    env.root_lock.write_text("lock")
+    calls = _record_calls(env)
+
+    env.install({"some-package"})
+
+    install_calls = [c for c in calls if "install" in c]
+    assert len(install_calls) == 1
+    assert "--frozen-lockfile" in install_calls[0]
+    entry = json.loads(env.web_package_json.read_text())["dependencies"][
+        "@reflex-dev/reflex-base"
+    ]
+    assert entry == "file:./reflex-dev-reflex-base-2.0.0.tgz"
+    # The superseded tarball is pruned after a successful install.
+    assert not (env.web_dir / "reflex-dev-reflex-base-1.0.0.tgz").exists()
+    assert (env.web_dir / "reflex-dev-reflex-base-2.0.0.tgz").exists()
+
+
+def test_install_frontend_packages_dead_entry_relaxes_frozen_install(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """An unresolvable persisted entry is rewritten upfront and unfreezes install."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    _stub_tarball_package(monkeypatch, env.tmp_path)
+    env.web_package_json.write_text(
+        json.dumps({
+            "name": "reflex",
+            "dependencies": {
+                "@reflex-dev/reflex-base": "file:./reflex-dev-reflex-base-0.9.0.tgz"
+            },
+        })
+    )
+    env.root_lock.write_text("lock")
+    calls = _record_calls(env)
+
+    env.install()
+
+    install_calls = [c for c in calls if "install" in c]
+    assert len(install_calls) == 1
+    assert "--frozen-lockfile" not in install_calls[0]
+    entry = json.loads(env.web_package_json.read_text())["dependencies"][
+        "@reflex-dev/reflex-base"
+    ]
+    assert entry == "file:./reflex-dev-reflex-base-1.0.0.tgz"
+
+
+def test_install_frontend_packages_tarball_mode_skips_manifest_deps(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """TARBALL mode never adds runtime framework deps at the top level."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    package = _stub_tarball_package(monkeypatch, env.tmp_path)
+    monkeypatch.setattr(js_runtimes, "get_frontend_package", lambda: package)
+    _stub_frontend_package(
+        monkeypatch,
+        dependencies={"react": "19.2.5"},
+        dev_dependencies={"vite": "8.0.9"},
+        mode=FrontendPackageMode.TARBALL,
+        path=package.path,
+    )
+    env.web_package_json.write_text(json.dumps({"name": "reflex"}))
+    calls = _record_calls(env)
+
+    env.install()
+
+    add_calls = [c for c in calls if "add" in c]
+    assert not any("react@19.2.5" in c for c in add_calls)
+    dev_call = next(c for c in add_calls if "-d" in c)
+    assert "vite@8.0.9" in dev_call
+
+
+def test_install_frontend_packages_source_mode_stale_sweep_removes_legacy_pins(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Legacy top-level framework pins are swept in TARBALL mode (dual-React guard)."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    _stub_tarball_package(monkeypatch, env.tmp_path)
+    env.root_package_json.write_text(
+        json.dumps({
+            "dependencies": {
+                "react": "19.2.8",
+                "react-dom": "19.2.8",
+                "socket.io-client": "4.8.3",
+            },
+            "devDependencies": {"vite": "8.2.0"},
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install()
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    for legacy in ("react", "react-dom", "socket.io-client", "vite"):
+        assert legacy in remove_calls[0]
+
+
+def test_install_frontend_packages_cache_invalidated_by_package_version(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """A new frontend package version busts the install cache."""
+    env = install_packages_env
+    _restore_frontend_entry_management(monkeypatch)
+    _stub_tarball_package(monkeypatch, env.tmp_path, version="1.0.0")
+    env.web_package_json.write_text(json.dumps({"name": "reflex"}))
+    calls = _record_calls(env)
+
+    env.install()
+    first_count = len(calls)
+    env.install()
+    assert len(calls) == first_count, "same version should be a cache hit"
+
+    _stub_tarball_package(monkeypatch, env.tmp_path, version="2.0.0")
+    env.install()
+    assert len(calls) > first_count, "new version should re-run the install"
+
+
+def test_refresh_web_directory_preserves_state(tmp_path, monkeypatch):
+    """The refresh keeps node_modules/lockfiles/hash, removes obsolete files."""
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
+    (template_dir / "jsconfig.json").write_text("new-template-content")
+    monkeypatch.setattr(
+        frontend_skeleton.constants.Templates.Dirs, "WEB_TEMPLATE", template_dir
+    )
+    web_dir = tmp_path / constants.Dirs.WEB
+    (web_dir / "node_modules").mkdir(parents=True)
+    (web_dir / "node_modules" / "sentinel").write_text("keep")
+    root_lock = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
+    root_lock.parent.mkdir(parents=True)
+    root_lock.write_text("lock")
+    (web_dir / constants.Bun.LOCKFILE_PATH).write_text("lock")
+    (web_dir / "jsconfig.json").write_text("old-template-content")
+    (web_dir / "utils" / "helpers").mkdir(parents=True)
+    (web_dir / "utils" / "state.js").write_text("obsolete")
+    (web_dir / "utils" / "helpers" / "debounce.js").write_text("obsolete")
+    (web_dir / "utils" / "context.js").write_text("generated-keep")
+    (web_dir / constants.Reflex.JSON).write_text(
+        json.dumps({"version": "0.0.1", "project_hash": 1234})
+    )
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    _stub_skeleton_initializers_except(monkeypatch)
+    monkeypatch.setattr(frontend_skeleton, "get_project_hash", lambda: 1234)
+
+    with chdir(tmp_path):
+        frontend_skeleton.refresh_web_directory()
+
+    assert (web_dir / "node_modules" / "sentinel").read_text() == "keep"
+    assert (web_dir / constants.Bun.LOCKFILE_PATH).read_text() == "lock"
+    assert (web_dir / "jsconfig.json").read_text() == "new-template-content"
+    assert not (web_dir / "utils" / "state.js").exists()
+    assert not (web_dir / "utils" / "helpers").exists()
+    assert (web_dir / "utils" / "context.js").read_text() == "generated-keep"
+
+
+def test_needs_web_refresh_on_version_change(tmp_path, monkeypatch):
+    """A .web initialized by another Reflex version wants a refresh, not reinit."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+
+    (web_dir / constants.Reflex.JSON).write_text(
+        json.dumps({"version": "0.0.1", "project_hash": 1})
+    )
+    assert prerequisites.needs_reinit() is False
+    assert prerequisites.needs_web_refresh() is True
+
+    (web_dir / constants.Reflex.JSON).write_text(
+        json.dumps({"version": constants.Reflex.VERSION, "project_hash": 1})
+    )
+    assert prerequisites.needs_web_refresh() is False

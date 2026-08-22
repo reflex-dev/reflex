@@ -8,8 +8,7 @@ import reflex as rx
 from reflex.state import State
 
 STATE_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
+    Path(__file__).parents[3] / "packages/reflex-base/src/reflex_base/frontend/state.js"
 )
 
 

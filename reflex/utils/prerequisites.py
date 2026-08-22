@@ -591,7 +591,11 @@ def assert_in_reflex_dir():
 
 
 def needs_reinit() -> bool:
-    """Check if an app needs to be reinitialized.
+    """Check if an app needs to be fully reinitialized.
+
+    A Reflex version change alone no longer triggers this: the matching
+    frontend package is installed at compile time and
+    :func:`needs_web_refresh` handles the in-place template refresh.
 
     Returns:
         Whether the app needs to be reinitialized.
@@ -602,9 +606,6 @@ def needs_reinit() -> bool:
 
     # Make sure the .web directory exists in frontend mode.
     if not get_web_dir().exists():
-        return True
-
-    if not _is_app_compiled_with_same_reflex_version():
         return True
 
     if constants.IS_WINDOWS:
@@ -618,6 +619,30 @@ def needs_reinit() -> bool:
             )
     # No need to reinitialize if the app is already initialized.
     return False
+
+
+def needs_web_refresh() -> bool:
+    """Check if ``.web`` was initialized by a different Reflex version.
+
+    Returns:
+        Whether the non-destructive web refresh should run.
+    """
+    return not _is_app_compiled_with_same_reflex_version()
+
+
+def refresh_frontend_dependencies():
+    """Refresh ``.web`` in place for the current Reflex version.
+
+    The non-destructive counterpart to :func:`initialize_frontend_dependencies`
+    for version changes: bun is validated/updated if needed and the web
+    directory is refreshed without discarding ``node_modules``, lockfiles, or
+    the project hash.
+    """
+    from reflex.utils import frontend_skeleton, js_runtimes
+
+    js_runtimes.validate_frontend_dependencies(init=True)
+    js_runtimes.install_bun()
+    frontend_skeleton.refresh_web_directory()
 
 
 def _is_app_compiled_with_same_reflex_version() -> bool:

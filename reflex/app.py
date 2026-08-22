@@ -46,6 +46,7 @@ from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
+from reflex_base.utils.frontend_package import get_frontend_package
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -1448,14 +1449,17 @@ class App(MiddlewareMixin, LifespanMixin):
         Example:
             >>> _get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
-        dependencies = constants.PackageJson.DEPENDENCIES
-        dev_dependencies = constants.PackageJson.DEV_DEPENDENCIES
+        frontend_package = get_frontend_package()
+        framework_packages = (
+            frontend_package.dependencies.keys()
+            | frontend_package.dev_dependencies.keys()
+            | {frontend_package.name}
+        )
         page_imports = {
             package_name
             for import_name, tags in imports.items()
             if (package_name := self._get_frontend_package_name(import_name))
-            and package_name not in dependencies
-            and package_name not in dev_dependencies
+            and package_name not in framework_packages
             and any(tag.install for tag in tags)
         }
         pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}

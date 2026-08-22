@@ -4,7 +4,7 @@ import dataclasses
 from pathlib import Path
 from types import SimpleNamespace
 
-from reflex_base.constants.base import Dirs
+from reflex_base.constants.base import Dirs, FrontendPackage
 from reflex_base.constants.compiler import Ext, PageNames
 from reflex_base.plugins.shared_tailwind import (
     TailwindConfig,
@@ -144,7 +144,7 @@ def add_tailwind_to_css_file(
         (
             index + 1
             for index, line in enumerate(lines)
-            if "__reflex_style_reset.css" in line
+            if FrontendPackage.STYLE_RESET_CSS in line
         ),
         1,
     )

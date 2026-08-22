@@ -17,7 +17,7 @@ def test_add_tailwind_to_css_file_inserts_import_without_radix(module):
     """Tailwind should still be added when the root stylesheet has no Radix import."""
     css = (
         "@layer __reflex_base;\n"
-        "@import url('./__reflex_style_reset.css');\n"
+        "@import url('@reflex-dev/reflex-base/style-reset.css');\n"
         "@import url('./style.css');"
     )
 
@@ -28,7 +28,7 @@ def test_add_tailwind_to_css_file_inserts_import_without_radix(module):
 
     assert updated_css.splitlines() == [
         "@layer __reflex_base;",
-        "@import url('./__reflex_style_reset.css');",
+        "@import url('@reflex-dev/reflex-base/style-reset.css');",
         "@import url('./tailwind.css');",
         "@import url('./style.css');",
     ]

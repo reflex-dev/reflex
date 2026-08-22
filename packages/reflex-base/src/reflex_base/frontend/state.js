@@ -8,10 +8,10 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import { getEnv, runtimeConfig } from "$/utils/runtime";
-import debounce from "$/utils/helpers/debounce";
-import throttle from "$/utils/helpers/throttle";
-import { uploadFiles } from "$/utils/helpers/upload";
+import { getEnv, runtimeConfig } from "./runtime.js";
+import debounce from "./helpers/debounce.js";
+import throttle from "./helpers/throttle.js";
+import { uploadFiles } from "./helpers/upload.js";
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";

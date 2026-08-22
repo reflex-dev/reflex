@@ -27,6 +27,17 @@ fallback-version = "0.0.0dev0"
 [tool.hatch.build]
 artifacts = [".templates/**"]
 
+# The frontend JS source ships only in the sdist; wheels instead carry the
+# packed npm tarball that the custom hook force-includes at
+# reflex_base/frontend/<name>-<version>.tgz. Do not add target-level
+# `artifacts` here: hatchling replaces (not merges) the build-level list,
+# which would drop `.templates/**` from the dist.
+[tool.hatch.build.targets.wheel]
+exclude = ["src/reflex_base/frontend"]
+
+[tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
+
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"

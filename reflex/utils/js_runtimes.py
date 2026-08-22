@@ -6,6 +6,7 @@ import logging
 import os
 import tempfile
 from collections.abc import Sequence
+from importlib import metadata
 from pathlib import Path
 
 from packaging import version
@@ -14,6 +15,7 @@ from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
+from reflex_base.utils.frontend_package import FrontendPackageMode, get_frontend_package
 from rich.markup import escape
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
@@ -568,8 +570,8 @@ def _split_by_version_specifier(
     return pinned, unpinned
 
 
-def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
-    """Render constants-style dep dicts as ``name@version`` add args.
+def _pinned_specs_from_manifest(deps: dict[str, str]) -> set[str]:
+    """Render manifest-style dep dicts as ``name@version`` add args.
 
     Args:
         deps: Mapping of package name to version string.
@@ -595,10 +597,14 @@ def _frontend_packages_cache_payload(
     Returns:
         Stable fingerprint string for the cached procedure.
     """
+    frontend_package = get_frontend_package()
     return (
         f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
-        f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
-        f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r},"
+        f"{frontend_package.mode.value},{frontend_package.path!s},"
+        f"{frontend_package.name},{frontend_package.version},"
+        f"{sorted(frontend_package.dependencies.items())!r},"
+        f"{sorted(frontend_package.dev_dependencies.items())!r},"
+        f"{metadata.version('reflex-base')},"
         f"{sorted(constants.PackageJson.OVERRIDES.items())!r}"
     )
 
@@ -612,15 +618,25 @@ def _install_frontend_packages(
     config: Config,
     install_package_managers: Sequence[str],
 ):
-    """Installs the base and custom frontend packages.
+    """Installs the bundled frontend package and custom frontend packages.
 
     Resolution rules:
-      * Framework deps in :attr:`constants.PackageJson.DEPENDENCIES` and
-        :attr:`constants.PackageJson.DEV_DEPENDENCIES` always carry version
-        specifiers and are added with strict pins so they overwrite any
-        existing entry in package.json.
-      * Plugin/custom packages with explicit version specifiers are also
-        added with strict pins.
+      * The bundled frontend package (``@reflex-dev/reflex-base``) is
+        referenced by a Python-written ``file:``/``link:`` entry. When the
+        persisted entry differs from the current install's, the entry is
+        rewritten after the frozen initial install when the old target still
+        resolves (upgrade in place), or before it (with the frozen install
+        relaxed) when it no longer does.
+      * The runtime framework deps (react, react-router, ...) resolve
+        transitively through that package, so user ``overrides`` control
+        their versions. In SOURCE mode (editable installs, where the
+        symlinked directory's deps are not auto-installed) they are also
+        added top-level with the manifest's pins.
+      * The app toolchain comes from the manifest's ``devDependencies`` and
+        is added with strict pins (a dependency's devDependencies are never
+        installed by package managers).
+      * Plugin/custom packages with explicit version specifiers are added
+        with strict pins.
       * Plugin/custom packages without version specifiers are skipped
         entirely if package.json already declares them in the correct
         section, so previously resolved pins are preserved across runs
@@ -629,7 +645,8 @@ def _install_frontend_packages(
       * Packages declared in the wrong section (e.g. a regular dep
         listed under ``devDependencies``) are removed first and re-added
         so they land in the section the framework/plugin/import-graph
-        actually intends.
+        actually intends. Framework deps that older Reflex versions pinned
+        at the top level fall out through the same stale sweep.
 
     Args:
         packages: Custom packages requested by the caller (from
@@ -664,6 +681,24 @@ def _install_frontend_packages(
         env=env,
     )
 
+    frontend_package = get_frontend_package()
+    frontend_skeleton.materialize_frontend_tarball()
+    desired_spec = frontend_skeleton.get_frontend_package_spec(primary_package_manager)
+    current_spec = frontend_skeleton.current_frontend_package_entry()
+    frontend_entry_unchanged = current_spec == desired_spec
+    entry_rewritten_before_install = False
+    if (
+        not frontend_entry_unchanged
+        and not frontend_skeleton.frontend_package_entry_resolvable(current_spec)
+    ):
+        # The persisted entry points at nothing installable (e.g. a fresh
+        # checkout after a Reflex upgrade whose tarball isn't in .web), so
+        # the restored pair cannot install anyway: rewrite before the
+        # initial install and let it resolve unfrozen.
+        entry_rewritten_before_install = frontend_skeleton.set_frontend_package_entry(
+            desired_spec
+        )
+
     # Resolve plugin-contributed deps up front so we know the full needed
     # set before deciding which entries in package.json are stale.
     development_deps: set[str] = set()
@@ -671,16 +706,23 @@ def _install_frontend_packages(
         development_deps.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())
 
-    wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
-        _extract_package_name(p) for p in packages
-    }
+    manifest_dependencies = (
+        frontend_package.dependencies
+        if frontend_package.mode is FrontendPackageMode.SOURCE
+        else {}
+    )
+    wanted_dep_names = (
+        {frontend_package.name}
+        | set(manifest_dependencies)
+        | {_extract_package_name(p) for p in packages}
+    )
     # If the same package is requested as both a regular and a development
     # dependency (e.g. two plugins disagree on the section), prefer the
     # regular-dep section. This keeps the placement deterministic instead
     # of depending on the order the package manager processes the two
     # add calls.
     wanted_dev_dep_names = (
-        set(constants.PackageJson.DEV_DEPENDENCIES.keys())
+        set(frontend_package.dev_dependencies)
         | {_extract_package_name(p) for p in development_deps}
     ) - wanted_dep_names
     needed_names = wanted_dep_names | wanted_dev_dep_names
@@ -689,7 +731,7 @@ def _install_frontend_packages(
     existing_names = existing_deps | existing_dev_deps
 
     # Drop deps lingering in package.json that no component, plugin, or
-    # framework constant calls for anymore, plus any package declared in
+    # framework manifest calls for anymore, plus any package declared in
     # the wrong section. bun and npm both update the existing entry
     # in-place on a re-add and won't move it across sections, so misplaced
     # entries must be removed first to land in the correct one.
@@ -709,17 +751,38 @@ def _install_frontend_packages(
         )
 
     # Install against the recovered lockfile so its pins are honored
-    # before any further mutation.
+    # before any further mutation. The frozen check is relaxed when the
+    # frontend package entry had to be rewritten upfront, since the pair is
+    # then knowingly out of sync with the persisted lockfile.
+    initial_install_ran = False
     if any(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
-        _run_initial_install(primary_package_manager, env, config.frozen_lockfile)
+        if config.frozen_lockfile and entry_rewritten_before_install:
+            logger.warning(
+                "The Reflex frontend package reference changed to "
+                f"{desired_spec}; the persisted lockfile will be updated."
+            )
+        _run_initial_install(
+            primary_package_manager,
+            env,
+            config.frozen_lockfile and not entry_rewritten_before_install,
+        )
+        initial_install_ran = True
 
     # Framework overrides are withheld while the persisted package.json is
     # restored so the frozen install above sees exactly the file that produced
     # the persisted lockfile. Merge them now, before any resolution happens.
     overrides_changed = frontend_skeleton.update_package_json_overrides()
+
+    # Upgrade in place: the old tarball satisfied the frozen install above;
+    # point the entry at the current one now so the adds below resolve it.
+    entry_rewritten_after_install = False
+    if not frontend_entry_unchanged and not entry_rewritten_before_install:
+        entry_rewritten_after_install = frontend_skeleton.set_frontend_package_entry(
+            desired_spec
+        )
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
@@ -734,7 +797,7 @@ def _install_frontend_packages(
     new_unpinned_dev_deps = unpinned_dev_deps - existing_dev_deps
 
     deps_to_add = (
-        _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
+        _pinned_specs_from_manifest(manifest_dependencies)
         | pinned_packages
         | new_unpinned_packages
     )
@@ -742,7 +805,7 @@ def _install_frontend_packages(
     dev_deps_to_add = {
         spec
         for spec in (
-            _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
+            _pinned_specs_from_manifest(frontend_package.dev_dependencies)
             | pinned_dev_deps
             | new_unpinned_dev_deps
         )
@@ -769,17 +832,40 @@ def _install_frontend_packages(
             show_status_message="Installing frontend packages",
         )
 
-    if overrides_changed and not (dev_deps_to_add or deps_to_add):
-        # Newly merged overrides with no add to carry them into the lockfile:
-        # resolve them now so the persisted pair stays frozen-install ready.
+    # An entry rewritten before the (unfrozen) initial install was already
+    # resolved by it; anything later still needs to reach the lockfile.
+    entry_needs_resolution = entry_rewritten_after_install or (
+        entry_rewritten_before_install and not initial_install_ran
+    )
+    if (overrides_changed or entry_needs_resolution) and not (
+        dev_deps_to_add or deps_to_add
+    ):
+        # Newly merged overrides or a rewritten frontend entry with no add to
+        # carry them into the lockfile: resolve them now so the persisted
+        # pair stays frozen-install ready.
         run_package_manager(
             [primary_package_manager, "install", "--legacy-peer-deps"],
-            show_status_message="Applying frontend package overrides",
+            show_status_message="Applying frontend package changes",
         )
+
+    frontend_skeleton.prune_stale_frontend_tarballs()
 
 
 def install_frontend_packages(packages: set[str], config: Config):
     """Install frontend packages while respecting the canonical root bun.lock."""
+    for env_var in ("REACT_VERSION", "REACT_ROUTER_VERSION"):
+        if os.getenv(env_var):
+            console.deprecate(
+                feature_name=f"The {env_var} environment variable",
+                reason=(
+                    "it no longer has any effect: frontend framework versions "
+                    "are declared by the bundled @reflex-dev/reflex-base npm "
+                    "package. Pin versions via 'overrides' in "
+                    "reflex.lock/package.json instead"
+                ),
+                deprecation_version="0.9.9",
+                removal_version="1.0",
+            )
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )

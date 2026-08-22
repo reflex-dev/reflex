@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -10,6 +11,7 @@ from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
+from reflex_base.utils.frontend_package import FrontendPackageMode, get_frontend_package
 
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
@@ -448,6 +450,136 @@ def _read_persisted_package_json() -> dict:
     return _read_package_json_object(get_root_lockfile_path(constants.PackageJson.PATH))
 
 
+def get_frontend_package_spec(package_manager: str | None = None) -> str:
+    """Build the package.json spec for the bundled frontend package.
+
+    TARBALL mode references the tarball copied into ``.web`` by a
+    machine-portable relative ``file:`` spec, so committed
+    ``reflex.lock/package.json`` and lockfiles stay valid on any machine.
+    SOURCE mode symlinks the live source directory (``link:`` for bun,
+    ``file:`` for npm — both symlink a directory), preferring a
+    ``.web``-relative path so monorepo checkouts don't churn persisted files.
+
+    Args:
+        package_manager: The package manager executable path or name; decides
+            the directory-spec protocol in SOURCE mode.
+
+    Returns:
+        The dependency spec string for the frontend package entry.
+    """
+    package = get_frontend_package()
+    if package.mode is FrontendPackageMode.TARBALL:
+        return f"file:./{package.tarball_basename}"
+    source_dir = package.path.resolve()
+    try:
+        relative = os.path.relpath(source_dir, get_web_dir().resolve())
+    except ValueError:
+        # Windows cross-drive paths have no relative form.
+        path_str = source_dir.as_posix()
+    else:
+        path_str = Path(relative).as_posix()
+    protocol = (
+        "link:"
+        if package_manager is not None and Path(package_manager).stem.lower() == "bun"
+        else "file:"
+    )
+    return f"{protocol}{path_str}"
+
+
+def materialize_frontend_tarball():
+    """Copy the bundled frontend tarball into ``.web`` when missing.
+
+    The tarball bytes are deterministic for a given version, so an existing
+    copy never needs refreshing. SOURCE mode is a no-op.
+    """
+    package = get_frontend_package()
+    if package.mode is not FrontendPackageMode.TARBALL:
+        return
+    destination = get_web_dir() / package.tarball_basename
+    if not destination.exists():
+        logger.debug(f"Copying {package.path} to {destination}")
+        path_ops.cp(package.path, destination)
+
+
+def prune_stale_frontend_tarballs():
+    """Remove superseded frontend tarballs from ``.web``.
+
+    Only tarballs matching the frontend package's npm-pack name prefix are
+    touched, and the currently referenced one is kept.
+    """
+    package = get_frontend_package()
+    prefix = package.name.removeprefix("@").replace("/", "-") + "-"
+    keep = (
+        package.tarball_basename
+        if package.mode is FrontendPackageMode.TARBALL
+        else None
+    )
+    for tarball in get_web_dir().glob(f"{prefix}*.tgz"):
+        if tarball.name != keep:
+            logger.debug(f"Removing stale frontend tarball {tarball}")
+            path_ops.rm(tarball)
+
+
+def frontend_package_entry_resolvable(spec: str | None) -> bool:
+    """Whether a persisted frontend package spec can still be installed.
+
+    A ``file:``/``link:`` spec resolves when its target exists (relative to
+    ``.web``). A superseded tarball that is still on disk resolves — that is
+    the upgrade-in-place case where the frozen install of the restored
+    lockfile pair must succeed before the entry is rewritten.
+
+    Args:
+        spec: The persisted spec string, or None when absent.
+
+    Returns:
+        Whether the spec's target exists.
+    """
+    if not spec:
+        return False
+    path = Path(spec.removeprefix("link:").removeprefix("file:"))
+    if not path.is_absolute():
+        path = get_web_dir() / path
+    return path.exists()
+
+
+def current_frontend_package_entry() -> str | None:
+    """Read the frontend package's spec from ``.web/package.json``.
+
+    Returns:
+        The spec string under ``dependencies``, or None when absent.
+    """
+    package_json = _read_package_json_object(
+        get_web_lockfile_path(constants.PackageJson.PATH)
+    )
+    return (package_json.get("dependencies") or {}).get(get_frontend_package().name)
+
+
+def set_frontend_package_entry(spec: str) -> bool:
+    """Set the frontend package's spec in ``.web/package.json``.
+
+    Written directly (rather than via ``bun add <path>``) so the persisted
+    string stays canonical and byte-stable across package managers, which
+    normalize path specs differently.
+
+    Args:
+        spec: The dependency spec to record.
+
+    Returns:
+        Whether ``.web/package.json`` was changed.
+    """
+    package_json_path = get_web_lockfile_path(constants.PackageJson.PATH)
+    package_json = _read_package_json_object(package_json_path)
+    if not package_json:
+        return False
+    dependencies = package_json.setdefault("dependencies", {})
+    if dependencies.get(get_frontend_package().name) == spec:
+        return False
+    dependencies[get_frontend_package().name] = spec
+    logger.debug(f"Setting frontend package entry to {spec}")
+    package_json_path.write_text(json.dumps(package_json))
+    return True
+
+
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     logger.info("Initializing the web directory.")
@@ -483,6 +615,67 @@ def initialize_web_directory():
     logger.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
+
+
+#: ``.web`` files that older Reflex versions copied from the web template and
+#: that current templates no longer ship. ``refresh_web_directory`` deletes
+#: them so a version refresh cannot leave stale framework code behind. When a
+#: file is removed from ``.templates/web`` in a release, add its ``.web``
+#: relative path here.
+OBSOLETE_WEB_FILES: tuple[str, ...] = (
+    "utils/state.js",
+    "utils/runtime.js",
+    "utils/react-theme.js",
+    "utils/helpers/debounce.js",
+    "utils/helpers/throttle.js",
+    "utils/helpers/upload.js",
+    "utils/helpers/datetime.js",
+    "utils/helpers/paste.js",
+    "utils/helpers/range.js",
+    "utils/helpers/dataeditor.js",
+    "components/shiki/code.js",
+    "components/reflex/radix_themes_color_mode_provider.js",
+    "styles/__reflex_style_reset.css",
+    "vite-plugin-safari-cachebust.js",
+    "compress-static.js",
+)
+
+
+def refresh_web_directory():
+    """Refresh ``.web`` in place after a Reflex version change.
+
+    Non-destructive counterpart to :func:`initialize_web_directory`:
+    ``node_modules``, lockfiles, build output, copied frontend tarballs, and
+    the project hash all survive. Templates are overwrite-copied, files owned
+    by older versions are removed, the generated config files are re-rendered,
+    and ``reflex.json`` picks up the current version. The subsequent compile's
+    package install brings in the matching frontend package.
+    """
+    logger.info("Refreshing the web directory for the current Reflex version.")
+    path_ops.copy_tree(
+        constants.Templates.Dirs.WEB_TEMPLATE,
+        str(get_web_dir()),
+        delete_existing=False,
+    )
+    for relative_path in OBSOLETE_WEB_FILES:
+        stale = get_web_dir() / relative_path
+        if stale.exists():
+            logger.debug(f"Removing obsolete {stale}")
+            path_ops.rm(stale)
+        # Drop directories the deletions emptied out.
+        parent = stale.parent
+        while parent != get_web_dir() and parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+
+    sync_root_lockfiles_to_web()
+    initialize_package_json()
+    sync_web_lockfiles_to_root()
+    initialize_bun_config()
+    initialize_npmrc()
+    update_react_router_config()
+    initialize_vite_config()
+    init_reflex_json(project_hash=get_project_hash())
 
 
 def update_entry_client():
@@ -541,10 +734,10 @@ def _compile_package_json():
     ``engines``) are passed through unchanged.
 
     Everything a lockfile resolves against is reproduced verbatim, so the
-    rendered file still pairs with the persisted lockfile: the framework
-    entries in ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES``
-    are added later at install time via ``bun add`` (picking up strict pins),
-    and ``overrides`` are carried over as persisted, with
+    rendered file still pairs with the persisted lockfile: the frontend
+    package entry and the toolchain devDependencies from its manifest are
+    applied later at install time (after the frozen install), and
+    ``overrides`` are carried over as persisted, with
     ``constants.PackageJson.OVERRIDES`` merged in by
     :func:`update_package_json_overrides` after the frozen install.
 
@@ -615,6 +808,7 @@ def _compile_vite_config(config: Config):
         # Cross-origin hosts must resolve assets against the bundle's server
         # rather than their own document.baseURI.
         base = embed_plugin.embed_origin.rstrip("/") + base
+    frontend_package = get_frontend_package()
     return templates.vite_config_template(
         base=base,
         hmr=environment.VITE_HMR.get(),
@@ -623,6 +817,20 @@ def _compile_vite_config(config: Config):
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,
+        # The dev server refuses /@fs requests outside .web by default; allow
+        # the symlinked frontend package source in dev installs.
+        extra_fs_allow=(
+            frontend_package.path.resolve().as_posix()
+            if frontend_package.mode is FrontendPackageMode.SOURCE
+            else None
+        ),
+        # Resolve the frontend package's runtime deps from the app root: keeps
+        # singletons single, and lets the symlinked source (whose real path
+        # has no node_modules) resolve its bare imports in SSR builds.
+        dedupe=[
+            *templates.DEFAULT_VITE_DEDUPE,
+            *frontend_package.dependencies,
+        ],
     )
 
 

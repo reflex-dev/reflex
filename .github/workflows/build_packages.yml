@@ -54,3 +54,6 @@ jobs:
         run: uv build --directory "${{ matrix.dir }}"
         env:
           PYI_GENERATOR_RAISE_FAILED_IMPORTS: "1"
+      - name: Verify frontend package tarball in reflex-base wheel
+        if: matrix.name == 'reflex-base'
+        run: uv run --no-config --locked --script scripts/release.py verify-frontend-tgz

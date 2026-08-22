@@ -842,8 +842,7 @@ class AppHarnessProd(AppHarness):
 
             reflex.utils.prerequisites.assert_in_reflex_dir()
 
-            if reflex.utils.prerequisites.needs_reinit():
-                reflex.reflex._init(name=get_config().app_name)
+            reflex.reflex._ensure_app_initialized(get_config().app_name)
 
             export(
                 zipping=False,

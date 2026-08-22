@@ -557,6 +557,11 @@ def package_json_template(
     })
 
 
+#: Baseline packages vite must always resolve from the app root. Callers
+#: extend this with the frontend package's runtime dependencies.
+DEFAULT_VITE_DEDUPE = ["react", "react-dom", "react-router", "@emotion/react"]
+
+
 def vite_config_template(
     base: str,
     hmr: bool,
@@ -565,6 +570,8 @@ def vite_config_template(
     sourcemap: bool | Literal["inline", "hidden"],
     minify: bool = True,
     allowed_hosts: bool | list[str] = False,
+    extra_fs_allow: str | None = None,
+    dedupe: list[str] = DEFAULT_VITE_DEDUPE,
 ):
     """Template for vite.config.js.
 
@@ -576,6 +583,11 @@ def vite_config_template(
         sourcemap: The sourcemap configuration.
         minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        extra_fs_allow: Extra directory the dev server may serve files from
+            (the symlinked frontend package source in dev installs).
+        dedupe: Packages always resolved from the app root — keeps singletons
+            single and lets the symlinked frontend package source (whose real
+            path has no node_modules of its own) resolve its bare imports.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -586,10 +598,15 @@ def vite_config_template(
         allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
+    fs_allow_line = (
+        f'\n    fs: {{ allow: [".", {json.dumps(extra_fs_allow)}] }},'
+        if extra_fs_allow
+        else ""
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import safariCacheBustPlugin from "{constants.FrontendPackage.VITE_PLUGIN_SAFARI_CACHEBUST}";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -685,7 +702,7 @@ export default defineConfig((config) => ({{
     hmr: {"true" if experimental_hmr else "false"},
   }},
   server: {{
-    port: process.env.PORT,{allowed_hosts_line}
+    port: process.env.PORT,{allowed_hosts_line}{fs_allow_line}
     hmr: {"true" if hmr else "false"},
     watch: {{
       ignored: [
@@ -703,7 +720,40 @@ export default defineConfig((config) => ({{
   }},
   resolve: {{
     mainFields: ["browser", "module", "jsnext"],
+    dedupe: {json.dumps(sorted(set(dedupe)))},
     alias: [
+      // Deprecated `$/...` specifiers for framework modules that moved into
+      // the bundled npm package; kept resolving for user custom code. These
+      // anchored entries must precede the generic `$` alias (first match
+      // wins) and also cover the `.js`-suffixed spellings.
+      {{
+        find: /^\$\/utils\/state(\.js)?$/,
+        replacement: "{constants.FrontendPackage.STATE}",
+      }},
+      {{
+        find: /^\$\/utils\/runtime(\.js)?$/,
+        replacement: "{constants.FrontendPackage.RUNTIME}",
+      }},
+      {{
+        find: /^\$\/utils\/react-theme(\.js)?$/,
+        replacement: "{constants.FrontendPackage.REACT_THEME}",
+      }},
+      {{
+        find: /^\$\/utils\/helpers\/(debounce|throttle|upload|datetime|paste|range|dataeditor)(\.js)?$/,
+        replacement: "{constants.FrontendPackage.NAME}/helpers/$1",
+      }},
+      {{
+        find: /^\$\/components\/shiki\/code(\.js)?$/,
+        replacement: "{constants.FrontendPackage.SHIKI_CODE}",
+      }},
+      {{
+        find: /^\$\/components\/reflex\/radix_themes_color_mode_provider(\.js)?$/,
+        replacement: "{constants.FrontendPackage.RADIX_COLOR_MODE_PROVIDER}",
+      }},
+      {{
+        find: /^\$\/styles\/__reflex_style_reset\.css$/,
+        replacement: "{constants.FrontendPackage.STYLE_RESET_CSS}",
+      }},
       {{
         find: "$",
         replacement: fileURLToPath(new URL("./", import.meta.url)),

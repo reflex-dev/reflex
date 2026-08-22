@@ -25,6 +25,8 @@ reflex.db
 .env.*
 node_modules
 package-lock.json
+# The frontend package's test lockfile is committed so CI can `npm ci`.
+!packages/reflex-base/src/reflex_base/frontend/tests/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees

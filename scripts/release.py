@@ -43,6 +43,9 @@ style, and append to ``$GITHUB_OUTPUT`` / ``$GITHUB_STEP_SUMMARY``):
   the exact release version before building.
 - ``verify-dist``: check the core-metadata Version of every built artifact
   against the target version.
+- ``verify-frontend-tgz``: check the reflex-base wheel bundles exactly the
+  frontend npm tarball for the built version (and that the sdist ships the
+  JS source).
 - ``extract-notes``: write the changelog section for a version to a file, for
   use as GitHub release notes.
 - ``check-headings``: fail when the working tree adds changelog version
@@ -1226,6 +1229,73 @@ def cmd_verify_dist() -> None:
     sys.stderr.write(f"✓ {len(files)} artifact(s) at version {target}\n")
 
 
+def cmd_verify_frontend_tgz() -> None:
+    """Verify the reflex-base wheel bundles exactly the frontend npm tarball.
+
+    Reads DIST_DIR (default ``dist``) and optionally VERSION from the
+    environment (falling back to the wheel's own metadata version). Asserts
+    the wheel carries exactly one correctly named tarball under
+    ``reflex_base/frontend/`` whose packed manifest matches the expected
+    name/version, that no frontend source or node_modules leaked into the
+    wheel, and that the sdist still ships the JS source so wheels can be
+    rebuilt from it.
+    """
+    import gzip
+    import importlib.util
+    import io
+
+    hook_path = REPO_ROOT / "packages/reflex-base/scripts/hatch_build.py"
+    spec = importlib.util.spec_from_file_location("reflex_base_hatch_build", hook_path)
+    if spec is None or spec.loader is None:
+        fail(f"cannot load {hook_path}")
+    hatch_build = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hatch_build)
+
+    manifest = json.loads(
+        (
+            REPO_ROOT / "packages/reflex-base/src/reflex_base/frontend/package.json"
+        ).read_text()
+    )
+    dist = REPO_ROOT / os.environ.get("DIST_DIR", "dist")
+    wheels = sorted(dist.glob("reflex_base-*.whl"))
+    if len(wheels) != 1:
+        fail(f"expected exactly one reflex-base wheel in {dist}, found {len(wheels)}")
+    wheel = wheels[0]
+    version = os.environ.get("VERSION") or _dist_metadata_version(wheel)
+    npm_version = hatch_build.pep440_to_npm_semver(version)
+    expected = f"reflex_base/frontend/{hatch_build.npm_tarball_basename(manifest['name'], npm_version)}"
+
+    with zipfile.ZipFile(wheel) as zf:
+        names = zf.namelist()
+        frontend_members = [n for n in names if n.startswith("reflex_base/frontend/")]
+        if frontend_members != [expected]:
+            fail(f"wheel frontend members {frontend_members}, expected [{expected}]")
+        if any("node_modules" in name for name in names):
+            fail("wheel contains node_modules entries")
+        tgz_bytes = zf.read(expected)
+    with tarfile.open(fileobj=io.BytesIO(gzip.decompress(tgz_bytes))) as tar:
+        member = tar.extractfile("package/package.json")
+        if member is None:
+            fail("tarball lacks package/package.json")
+        packed = json.load(member)
+    if packed["name"] != manifest["name"] or packed["version"] != npm_version:
+        fail(
+            f"packed manifest is {packed['name']}@{packed['version']}, "
+            f"expected {manifest['name']}@{npm_version}"
+        )
+
+    sdists = sorted(dist.glob("reflex_base-*.tar.gz"))
+    if len(sdists) != 1:
+        fail(f"expected exactly one reflex-base sdist in {dist}, found {len(sdists)}")
+    with tarfile.open(sdists[0]) as tar:
+        if not any(
+            name.endswith("src/reflex_base/frontend/package.json")
+            for name in tar.getnames()
+        ):
+            fail("sdist does not ship the frontend package source")
+    sys.stderr.write(f"✓ wheel bundles {expected}\n")
+
+
 def _git_show(root: Path, ref: str, rel_path: str) -> str | None:
     """Return a file's content at a git ref, or None if absent there.
 
@@ -1317,6 +1387,7 @@ def main() -> None:
         "prepare-publish": cmd_prepare_publish,
         "pin-reflex-base": cmd_pin_reflex_base,
         "verify-dist": cmd_verify_dist,
+        "verify-frontend-tgz": cmd_verify_frontend_tgz,
         "extract-notes": cmd_extract_notes,
         "check-headings": cmd_check_headings,
     }

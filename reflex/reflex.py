@@ -94,6 +94,25 @@ def _init(
     )
 
 
+def _ensure_app_initialized(app_name: str):
+    """Fully initialize the app when needed, or refresh .web for a new version.
+
+    A missing ``.web`` (or reflex user dir) still triggers the full init; a
+    Reflex version change only refreshes ``.web`` in place, keeping
+    node_modules and lockfiles — the compile's package install brings in the
+    matching frontend package.
+
+    Args:
+        app_name: The name of the app.
+    """
+    from reflex.utils import prerequisites
+
+    if prerequisites.needs_reinit():
+        _init(name=app_name)
+    elif prerequisites.needs_web_refresh():
+        prerequisites.refresh_frontend_dependencies()
+
+
 @cli.command()
 @log_options
 @click.option(
@@ -344,8 +363,8 @@ def _run(
     prerequisites.assert_in_reflex_dir()
 
     # Check that the app is initialized.
-    if running_mode.has_frontend() and prerequisites.needs_reinit():
-        _init(name=config.app_name)
+    if running_mode.has_frontend():
+        _ensure_app_initialized(config.app_name)
 
     # Delete the states folder if it exists.
     reset_disk_state_manager()
@@ -541,8 +560,7 @@ def compile(dry: bool, rich: bool):
     from reflex.utils import prerequisites
 
     # Check the app.
-    if prerequisites.needs_reinit():
-        _init(name=get_config().app_name)
+    _ensure_app_initialized(get_config().app_name)
     reload_config()
     starting_time = time.monotonic()
     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
@@ -634,8 +652,8 @@ def export(
 
     prerequisites.assert_in_reflex_dir()
 
-    if running_mode.has_frontend() and prerequisites.needs_reinit():
-        _init(name=config.app_name)
+    if running_mode.has_frontend():
+        _ensure_app_initialized(config.app_name)
 
     export_utils.export(
         zipping=zip,
@@ -982,8 +1000,7 @@ def deploy(
     prerequisites.assert_in_reflex_dir()
 
     # Check if we are set up.
-    if prerequisites.needs_reinit():
-        _init(name=config.app_name)
+    _ensure_app_initialized(config.app_name)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
     hosting_cli.deploy(

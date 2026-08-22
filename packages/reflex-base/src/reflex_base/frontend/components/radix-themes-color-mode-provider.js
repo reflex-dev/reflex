@@ -1,4 +1,4 @@
-import { useTheme } from "$/utils/react-theme";
+import { useTheme } from "../react-theme.js";
 import { useEffect } from "react";
 
 export default function RadixThemesColorModeProvider({ children }) {

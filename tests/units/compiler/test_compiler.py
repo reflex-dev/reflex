@@ -16,6 +16,7 @@ from reflex_base.utils.exceptions import (
     PageValueError,
     RouteValueError,
 )
+from reflex_base.utils.frontend_package import frontend_package_dir
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
@@ -175,7 +176,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
         ),
         (
             "@layer __reflex_base;\n"
-            "@import url('./__reflex_style_reset.css');\n"
+            "@import url('@reflex-dev/reflex-base/style-reset.css');\n"
             "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css');\n"
@@ -238,7 +239,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         ),
         (
             "@layer __reflex_base;\n"
-            "@import url('./__reflex_style_reset.css');\n"
+            "@import url('@reflex-dev/reflex-base/style-reset.css');\n"
             "@import url('./style.css');\n"
             "@import url('./preprocess/styles_a.css');\n"
             "@import url('./preprocess/styles_b.css');"
@@ -259,7 +260,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         ),
         (
             "@layer __reflex_base;\n"
-            "@import url('./__reflex_style_reset.css');\n"
+            "@import url('@reflex-dev/reflex-base/style-reset.css');\n"
             "@import url('./style.css');\n"
             "@import url('./preprocess/styles_a.css');\n"
             "@import url('./preprocess/styles_b.css');"
@@ -355,7 +356,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('@reflex-dev/reflex-base/style-reset.css');\n@import url('./style.css');",
     )
 
 
@@ -428,7 +429,7 @@ def test_compile_stylesheets_includes_radix_plugin(
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('@reflex-dev/reflex-base/style-reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
     )
 
 
@@ -481,9 +482,7 @@ def test_compile_contexts_has_default_color_mode_context():
     _, code = compiler.compile_contexts(None, None)
 
     assert 'export { ColorModeContext } from "$/utils/react-theme";' in code
-    react_theme = (
-        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "react-theme.js"
-    ).read_text()
+    react_theme = (frontend_package_dir() / "react-theme.js").read_text()
     assert 'rawColorMode: "system"' in react_theme
     assert 'resolvedColorMode: "light"' in react_theme
 

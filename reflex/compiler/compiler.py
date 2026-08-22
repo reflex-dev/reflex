@@ -28,7 +28,7 @@ from reflex_base.components.memo import (
     reset_memo_component_classes,
 )
 from reflex_base.config import get_config
-from reflex_base.constants.compiler import PageNames, ResetStylesheet
+from reflex_base.constants.compiler import PageNames
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
@@ -334,8 +334,9 @@ def _compile_root_stylesheet(
 
     # Add CSS reset if enabled
     if reset_style:
-        # Reference the vendored style reset file (automatically copied from .templates/web)
-        sheets.append(f"./{ResetStylesheet.FILENAME}")
+        # The reset ships inside the bundled frontend npm package; vite
+        # resolves the bare specifier from node_modules.
+        sheets.append(constants.FrontendPackage.STYLE_RESET_CSS)
 
     active_plugins = get_config().plugins if plugins is None else plugins
     sheets.extend([
