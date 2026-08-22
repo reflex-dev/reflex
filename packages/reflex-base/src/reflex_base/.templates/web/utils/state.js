@@ -21,8 +21,8 @@ import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 import {
   ReflexWebSocket,
-  rewriteBareNonFiniteFloats,
-  reviveNonFiniteFloats,
+  parseJsonLenient,
+  undefinedToNull,
 } from "$/utils/helpers/websocket";
 
 // Endpoint URLs.
@@ -595,21 +595,9 @@ export const connect = async (
       reconnection: false, // Reconnection will be handled manually.
     });
     // Ensure undefined fields in events are sent as null instead of removed
-    socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
-    socket.current.io.decoder.tryParse = (str) => {
-      try {
-        return JSON.parse(str);
-      } catch (e) {
-        try {
-          return JSON.parse(
-            rewriteBareNonFiniteFloats(str),
-            reviveNonFiniteFloats,
-          );
-        } catch (e2) {
-          return false;
-        }
-      }
-    };
+    socket.current.io.encoder.replacer = undefinedToNull;
+    // The decoder API expects false (not undefined) for unparsable input.
+    socket.current.io.decoder.tryParse = (str) => parseJsonLenient(str, false);
   }
   socket.current.wait_connect = !socket.current.connected;
   // Set up a reconnect helper function

@@ -21,26 +21,28 @@ const NON_FINITE_REPLACEMENTS = {
   "-Infinity": "-1e999",
   NaN: `"${NAN_SENTINEL}"`,
 };
-export const rewriteBareNonFiniteFloats = (str) =>
+const rewriteBareNonFiniteFloats = (str) =>
   str.replace(NON_FINITE_FLOAT_RE, (match) =>
     match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
   );
-export const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
+const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
 
 /**
- * Serialize an outgoing frame, sending undefined fields as null.
- * @param frame The frame array to serialize.
- * @returns The JSON string.
+ * JSON.stringify replacer that sends undefined fields as null instead of
+ * removing them. Also assigned as the socket.io encoder replacer.
+ * @param _k The key being serialized.
+ * @param v The value being serialized.
+ * @returns The value to serialize.
  */
-const stringifyFrame = (frame) =>
-  JSON.stringify(frame, (k, v) => (v === undefined ? null : v));
+export const undefinedToNull = (_k, v) => (v === undefined ? null : v);
 
 /**
- * Parse an incoming frame, tolerating bare non-finite float tokens.
- * @param text The raw frame text.
- * @returns The parsed frame, or undefined if unparsable.
+ * Parse JSON, tolerating bare non-finite float tokens.
+ * @param text The text to parse.
+ * @param fallback The value to return if the text is unparsable.
+ * @returns The parsed value, or the fallback.
  */
-const parseFrame = (text) => {
+export const parseJsonLenient = (text, fallback) => {
   try {
     return JSON.parse(text);
   } catch (e) {
@@ -50,10 +52,17 @@ const parseFrame = (text) => {
         reviveNonFiniteFloats,
       );
     } catch (e2) {
-      return undefined;
+      return fallback;
     }
   }
 };
+
+/**
+ * Serialize an outgoing frame.
+ * @param frame The frame array to serialize.
+ * @returns The JSON string.
+ */
+const stringifyFrame = (frame) => JSON.stringify(frame, undefinedToNull);
 
 export class ReflexWebSocket {
   /**
@@ -193,7 +202,7 @@ export class ReflexWebSocket {
    */
   _onMessage(text) {
     this._resetWatchdog();
-    const message = parseFrame(text);
+    const message = parseJsonLenient(text, undefined);
     if (!Array.isArray(message)) {
       console.error("Failed to parse websocket message", text);
       return;
