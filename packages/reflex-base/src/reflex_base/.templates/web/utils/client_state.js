@@ -1,14 +1,20 @@
 /**
- * Client-only state, shared by name across components without a backend rx.State.
+ * Client-only state, scoped by name down the component tree.
  *
  * `useClientState` is the only thing compiled components call. Everything else
- * here is the bookkeeping it needs: a store of independently-subscribable slots,
- * the context that delivers it, and a module-level door for JS that runs outside
- * the React tree (see `getClientState` / `setClientState`).
+ * here is the bookkeeping it needs: independently-subscribable slots, the scope
+ * chain that decides which slot a name resolves to, and a module-level door for
+ * JS that runs outside the React tree (`getClientState` / `setClientState`).
+ *
+ * Scoping: a scope owns some names and delegates the rest to its parent. The
+ * first component in a tree to use a name claims it for its descendants, so
+ * separate instances of a boundary get separate state while everything under one
+ * boundary shares. Compiler-inserted `ClientStateScope` elements create the
+ * boundaries; boundaries that only exist as a compiler optimization do not, so
+ * splitting a subtree across memo modules is semantically invisible.
  *
  * Each slot owns its own listener set, so writing one var only re-renders the
- * components subscribed to *that* var. The context value is the store object
- * itself and never changes identity, so mounting the provider never cascades.
+ * components subscribed to *that* var.
  */
 import {
   createContext,
@@ -26,9 +32,9 @@ import {
 export const CLIENT_STATE_REF = "__client_state";
 
 /**
- * Create a slot: one named (or anonymous) piece of client state.
+ * Create a slot: one piece of client state, with its own subscribers.
  * @param value The initial value.
- * @returns A slot with its own listener set.
+ * @returns The slot.
  */
 const createSlot = (value) => {
   const listeners = new Set();
@@ -54,60 +60,90 @@ const createSlot = (value) => {
 };
 
 /**
- * Create a store of client state slots.
+ * Create a scope: a node in the ownership chain.
+ * @param parent The enclosing scope, or null for a root.
+ * @returns The scope.
+ */
+const createScope = (parent) => {
+  const owned = new Map();
+  const scope = {
+    parent,
+    owned,
+    /**
+     * Claim `name` in this scope, or return the slot already claimed here.
+     *
+     * Get-or-create, so a double invocation under StrictMode or a re-entrant
+     * render converges on one slot rather than replacing it.
+     * @param name The client state name.
+     * @param defaultValue Initial value, used only when claiming.
+     * @returns The slot this scope owns for `name`.
+     */
+    own: (name, defaultValue) => {
+      let slot = owned.get(name);
+      if (slot === undefined) {
+        slot = createSlot(defaultValue);
+        owned.set(name, slot);
+      }
+      return slot;
+    },
+    /**
+     * Find the slot an ancestor (or this scope) already owns for `name`.
+     * @param name The client state name.
+     * @returns The slot, or undefined when nothing in the chain owns it.
+     */
+    find: (name) => {
+      for (let current = scope; current !== null; current = current.parent) {
+        const found = current.owned.get(name);
+        if (found !== undefined) {
+          return found;
+        }
+      }
+      return undefined;
+    },
+  };
+  return scope;
+};
+
+/**
+ * Walk to the root of a scope chain.
+ * @param scope Any scope in the chain.
+ * @returns The root scope.
+ */
+const rootOf = (scope) => {
+  let current = scope;
+  while (current.parent !== null) {
+    current = current.parent;
+  }
+  return current;
+};
+
+/**
+ * Create a store: the root scope, plus the by-name access the backend uses.
  * @returns The store.
  */
 export const createClientStateStore = () => {
-  const slots = new Map();
-
-  /**
-   * Get the slot for `name`, creating it if absent.
-   * @param name The slot name.
-   * @param defaultValue Initial value, used only when creating the slot.
-   * @returns The named slot.
-   */
-  const namedSlot = (name, defaultValue) => {
-    let slot = slots.get(name);
-    if (slot === undefined) {
-      slot = createSlot(defaultValue);
-      slots.set(name, slot);
-    }
-    return slot;
-  };
-
+  const root = createScope(null);
   return {
+    root,
     /**
-     * Resolve the slot a `useClientState` call should bind to.
-     * @param name The shared name, or a falsy value for a private slot.
-     * @param defaultValue The initial value.
-     * @returns A shared slot when named, else a fresh anonymous one.
+     * Read a name from the root scope.
+     * @param name The client state name.
+     * @returns The value, or undefined if nothing owns the name yet.
      */
-    slot: (name, defaultValue) =>
-      name ? namedSlot(name, defaultValue) : createSlot(defaultValue),
+    get: (name) => root.owned.get(name)?.value,
     /**
-     * Read a named slot's current value.
-     * @param name The slot name.
-     * @returns The value, or undefined if the slot does not exist yet.
-     */
-    get: (name) => slots.get(name)?.value,
-    /**
-     * Write a named slot, creating it if it does not exist yet, so a value
-     * pushed before any component mounts is picked up on mount.
-     * @param name The slot name.
+     * Write a name in the root scope, claiming it if needed, so a value pushed
+     * before any component mounts is picked up on mount.
+     * @param name The client state name.
      * @param value The value, or an updater function.
      */
     set: (name, value) => {
-      namedSlot(name, undefined).set(value);
+      root.own(name, undefined).set(value);
     },
   };
 };
 
 let _clientStore = null;
-
-// How many providers are currently mounted. Several can share one store (an
-// embedded app rendered alongside a main app), so the `refs` entry must survive
-// until the last of them unmounts.
-let _mountedProviders = 0;
 
 /**
  * The client-side store singleton.
@@ -127,20 +163,22 @@ export const getClientStore = () => {
   return _clientStore;
 };
 
-export const ClientStateContext = createContext(null);
+/** The nearest owning scope. Null outside any provider. */
+export const ClientStateScopeContext = createContext(null);
 
 /**
- * Read a named client state var from outside the React tree.
+ * Read a globally-named client state var from outside the React tree.
  *
  * A point-in-time snapshot with no reactivity; prefer the value returned by
- * `useClientState` inside components.
+ * `useClientState` inside components. Only names declared as global resolve
+ * here — tree-scoped vars are deliberately unreachable from outside their tree.
  * @param name The client state var name.
  * @returns The current value.
  */
 export const getClientState = (name) => getClientStore().get(name);
 
 /**
- * Write a named client state var from outside the React tree.
+ * Write a globally-named client state var from outside the React tree.
  *
  * Every subscribed component re-renders. Use this to drive client state from
  * third-party library callbacks or other non-React JS.
@@ -151,8 +189,10 @@ export const setClientState = (name, value) => {
   getClientStore().set(name, value);
 };
 
+let _mountedProviders = 0;
+
 /**
- * Provide the client state store to the tree.
+ * Provide the root scope to the tree.
  * @param props The component props.
  * @param props.children The children to render.
  * @param props.registry Optional object to publish the store on, under
@@ -187,24 +227,84 @@ export function ClientStateProvider({ children, registry }) {
     };
   }, [store, registry]);
 
-  return createElement(ClientStateContext.Provider, { value: store }, children);
+  return createElement(
+    ClientStateScopeContext.Provider,
+    { value: store.root },
+    children,
+  );
 }
+
+/**
+ * Open a client state scope around a subtree.
+ *
+ * Emitted by the compiler at component-instance boundaries. Names first used
+ * inside are owned here, so each mounted instance gets its own state and its
+ * descendants share it.
+ * @param props The component props.
+ * @param props.children The children to render.
+ * @returns The provider element.
+ */
+export function ClientStateScope({ children }) {
+  const parent = useContext(ClientStateScopeContext);
+  const scopeRef = useRef(null);
+  if (scopeRef.current === null || scopeRef.current.parent !== parent) {
+    scopeRef.current = createScope(parent ?? getClientStore().root);
+  }
+  return createElement(
+    ClientStateScopeContext.Provider,
+    { value: scopeRef.current },
+    children,
+  );
+}
+
+/**
+ * Wrap a component so each mounted instance gets its own client state scope.
+ *
+ * The scope must sit *above* the component, not inside what it returns: a
+ * component's hooks run before the elements it returns are mounted, so a
+ * provider in its own output would leave its own `useClientState` calls
+ * resolving against the enclosing scope and sharing state across instances.
+ *
+ * The compiler applies this to memo definitions that are real component
+ * instance boundaries, leaving optimizer-generated ones untouched so they stay
+ * semantically invisible.
+ * @param Component The component to wrap.
+ * @returns The wrapped component.
+ */
+export const withClientStateScope = (Component) => {
+  const Wrapped = (props) =>
+    createElement(ClientStateScope, null, createElement(Component, props));
+  Wrapped.displayName = `withClientStateScope(${
+    Component.displayName ?? Component.name ?? "Component"
+  })`;
+  return Wrapped;
+};
 
 /**
  * Subscribe to a piece of client state.
  * @param defaultValue The initial value.
- * @param name Shared name, or omitted for state private to this component.
+ * @param name The name identifying this var. Compiler-generated when the caller
+ *   did not choose one, and always a compile-time constant.
+ * @param isGlobal When true the name resolves in the root scope, ignoring any
+ *   enclosing boundary, so it is shared app-wide and reachable from the backend.
  * @returns A `[value, setValue]` pair, like `useState`.
  */
-export function useClientState(defaultValue, name) {
-  const store = useContext(ClientStateContext) ?? getClientStore();
-  const slotRef = useRef(null);
-  if (slotRef.current === null) {
-    // `name` is a compile-time constant per call site, so the slot a mounted
-    // hook is bound to can never change.
-    slotRef.current = store.slot(name, defaultValue);
+export function useClientState(defaultValue, name, isGlobal) {
+  const contextScope = useContext(ClientStateScopeContext);
+  const nearest = contextScope ?? getClientStore().root;
+  const scope = isGlobal ? rootOf(nearest) : nearest;
+
+  const bindingRef = useRef(null);
+  if (bindingRef.current === null || bindingRef.current.scope !== scope) {
+    // Re-resolve when the scope identity changes: binding once would strand a
+    // mounted hook on a slot from a scope that no longer applies.
+    bindingRef.current = {
+      scope,
+      slot: scope.find(name) ?? scope.own(name, defaultValue),
+    };
   }
-  const slot = slotRef.current;
+  const { slot } = bindingRef.current;
+
   const value = useSyncExternalStore(
     slot.subscribe,
     slot.getSnapshot,

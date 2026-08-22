@@ -1332,7 +1332,7 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     """
     from reflex.compiler.compiler import compile_memo_components
 
-    counter = rx.client_state("counter", default=0)
+    counter = rx.client_state(0, name="counter")
 
     def page() -> Component:
         return rx.el.button(
@@ -1359,7 +1359,7 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
         "Expected the memo body to call the client-state setter.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    assert 'useClientState(0, "counter")' in memo_code, (
+    assert 'useClientState(0, "counter", true)' in memo_code, (
         "Expected the memo body to declare the client-state hook so the setter "
         f"binding exists.\nMemo code snippet: {memo_code[:2000]}"
     )
@@ -2124,19 +2124,19 @@ def test_static_restricted_element_no_id_no_children_does_not_memoize() -> None:
     )
 
 
-@pytest.mark.parametrize("global_ref", [True, False])
+@pytest.mark.parametrize("name", ["titletest", None])
 def test_client_state_value_inside_snapshot_boundary_is_memoized(
-    global_ref: bool,
+    name: str | None,
 ) -> None:
     """Client-state Vars are reactive and must trigger boundary memoization.
 
     A ``client_state`` Var contributes its ``useClientState`` hook via
     ``var_data.hooks`` without setting ``var_data.state``. The reactive-Var
     walk must catch the hooks-only case so client-state-driven content
-    inside a snapshot boundary lands in the memo body. Both global and
-    page-local ``ClientStateVar`` Vars must drive the same wrapping.
+    inside a snapshot boundary lands in the memo body. Both a named (global)
+    and an unnamed (tree-scoped) var must drive the same wrapping.
     """
-    cs_var = rx.client_state("titletest", default="hi", global_ref=global_ref)
+    cs_var = rx.client_state("hi", name=name)
     title = Title.create(cs_var.value)
     ctx, page_ctx = _compile_single_page(lambda: title)
     assert len(ctx.memoize_wrappers) == 1, (
@@ -2376,3 +2376,101 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def _memo_export_line(files: object, symbol: str) -> str:
+    """Get the `export const` line for one memo symbol.
+
+    Memos from the same source module are grouped into one JS file, so assertions
+    about a single memo's wrapper have to look at its own export line rather than
+    the whole file.
+
+    Args:
+        files: The compiled (path, code) pairs.
+        symbol: Substring identifying the memo's exported symbol.
+
+    Returns:
+        The matching export line.
+    """
+    for _path, code in files:  # pyright: ignore [reportGeneralTypeIssues]
+        for line in code.splitlines():
+            if line.startswith("export const") and symbol in line:
+                return line
+    msg = f"no export line found for {symbol!r}"
+    raise AssertionError(msg)
+
+
+def test_explicit_memo_using_client_state_opens_a_scope() -> None:
+    """An ``@rx.memo`` whose body uses client state is an instance boundary.
+
+    The scope must wrap the component function, not sit inside what it returns:
+    a component's hooks run before its own output mounts, so an inner provider
+    would leave its own ``useClientState`` resolving against the enclosing scope
+    and sharing state across instances.
+    """
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def scoped_toggle(label: rx.Var[str]) -> Component:
+        local = rx.client_state(False)
+        return rx.el.button(label, on_click=local.set(True))
+
+    scoped_toggle(label="x")
+    files, _ = compile_memo_components(memos=tuple(MEMOS.values()))
+    export_line = _memo_export_line(files, "ScopedToggle")
+
+    assert "withClientStateScope(memo(Component))" in export_line, (
+        f"expected the memo wrapped in a client state scope.\n{export_line}"
+    )
+    assert any(
+        "withClientStateScope" in line
+        for _path, code in files
+        for line in code.splitlines()
+        if line.startswith("import")
+    ), "the scope HOC must be imported"
+
+
+def test_memo_without_client_state_is_not_wrapped() -> None:
+    """Pages must not pay for a scope provider on every memo."""
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def unscoped_label(label: rx.Var[str]) -> Component:
+        return rx.text(label)
+
+    unscoped_label(label="y")
+    files, _ = compile_memo_components(memos=tuple(MEMOS.values()))
+    export_line = _memo_export_line(files, "UnscopedLabel")
+
+    assert "= memo(" in export_line, f"expected the plain memo wrapper.\n{export_line}"
+    assert "withClientStateScope" not in export_line
+
+
+def test_auto_memo_wrappers_do_not_open_a_scope() -> None:
+    """Optimizer-generated wrappers must stay semantically invisible.
+
+    Auto-memoization splits one logical component across modules; if each split
+    opened a scope, the pieces would resolve different slots and a var read in
+    one and written in another would silently disconnect.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    counter = rx.client_state(0, name="autotransparent")
+
+    def page() -> Component:
+        return rx.vstack(
+            rx.text(counter.value),
+            rx.el.button("set", on_click=counter.set(1)),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    files, _ = compile_memo_components(memos=tuple(ctx.auto_memo_components.values()))
+    assert files, "expected auto-memo wrappers for the client-state consumers"
+    for path, code in files:
+        assert "withClientStateScope" not in code, (
+            f"auto-memo wrapper {path} must not open a client state scope"
+        )

@@ -17,6 +17,7 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
+from reflex_base.components.client_state_context import scoped_memo_wrapper
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.components.memo import (
     MemoComponentDefinition,
@@ -434,6 +435,15 @@ def compile_experimental_component_memo(
     # var itself, so a custom wrapper brings its own imports and ``None``
     # pulls in nothing.
     wrapper = definition.wrapper
+    if (
+        definition.is_instance_boundary
+        and f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+    ):
+        # This memo is a real component instance boundary and its body uses
+        # client state, so wrap it in a client state scope: names it declares are
+        # owned per instance, and its descendants resolve to the same slots.
+        # Gated on actual usage so pages don't pay a provider per memo.
+        wrapper = scoped_memo_wrapper(wrapper)
     if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)

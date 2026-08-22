@@ -15,6 +15,7 @@ from reflex_base.components.component import Component
 from reflex_base.constants import Dirs
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.function import FunctionVar
 
 # Inside ErrorBoundary (55) so a client-state error is caught, outside the
 # theme/toaster/overlay wraps. It depends on neither StateProvider nor
@@ -29,6 +30,33 @@ refs_var = Var(
     _js_expr="refs",
     _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
 )
+
+
+def scoped_memo_wrapper(inner: Var | None) -> Var:
+    """Compose a memo wrapper that also opens a client state scope.
+
+    The scope has to sit *above* the component function: a component's hooks run
+    before the elements it returns are mounted, so a provider inside its own
+    output would leave its own ``useClientState`` calls resolving against the
+    enclosing scope and sharing state across instances.
+
+    Args:
+        inner: The wrapper the definition would otherwise use, if any.
+
+    Returns:
+        A function Var suitable for ``MemoComponentDefinition.wrapper``.
+    """
+    scope_import = VarData(
+        imports={f"$/{Dirs.CLIENT_STATE_PATH}": [ImportVar(tag="withClientStateScope")]}
+    )
+    if inner is None:
+        return Var(_js_expr="withClientStateScope", _var_data=scope_import).to(
+            FunctionVar
+        )
+    return Var(
+        _js_expr=f"((Component) => withClientStateScope({inner!s}(Component)))",
+        _var_data=VarData.merge(scope_import, inner._get_all_var_data()),
+    ).to(FunctionVar)
 
 
 class ClientStateContextProvider(Component):

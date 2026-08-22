@@ -21,9 +21,9 @@ def ClientStateApp():
 
     import reflex as rx
 
-    shared = rx.client_state("shared", default="initial")
-    counter = rx.client_state("counter", default=0)
-    other = rx.client_state("other", default="untouched")
+    shared = rx.client_state("initial", name="shared")
+    counter = rx.client_state(0, name="counter")
+    other = rx.client_state("untouched", name="other")
 
     class ClientStateAppState(rx.State):
         retrieved: str = ""
@@ -42,8 +42,9 @@ def ClientStateApp():
 
     @rx.memo
     def local_input(label: rx.Var[str]) -> rx.Component:
-        # global_ref=False: each rendered instance owns a private slot.
-        local = rx.client_state(global_ref=False, default="")
+        # Unnamed: constructed inside the component, so each rendered instance
+        # owns its own slot.
+        local = rx.client_state("")
         return rx.hstack(
             rx.input(
                 value=local.value,

@@ -85,7 +85,7 @@ def feedback_button_toc() -> rx.Component:
 
 @rx.memo
 def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
-    copied = rx.client_state("is_copied", default=False, global_ref=False)
+    copied = rx.client_state(False)
     return marketing_button(
         rx.cond(
             copied.value,

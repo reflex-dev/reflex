@@ -8,7 +8,7 @@ import reflex as rx
 
 from reflex_components_lucide.icon import LUCIDE_ICON_LIST
 
-icon_search_cs = rx.client_state("icon_search", default="")
+icon_search_cs = rx.client_state("", name="icon_search")
 
 
 @rx.memo

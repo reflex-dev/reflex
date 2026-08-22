@@ -21,8 +21,8 @@ from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.components.icons.others import select_arrow
 from reflex_components_internal.utils.twmerge import cn
 
-demo_form_error_message = rx.client_state("demo_form_error_message", "")
-demo_form_open_cs = rx.client_state("demo_form_open", False)
+demo_form_error_message = rx.client_state("", name="demo_form_error_message")
+demo_form_open_cs = rx.client_state(False, name="demo_form_open")
 
 PERSONAL_EMAIL_PROVIDERS = r"^(?!.*@(gmail|outlook|hotmail|yahoo|icloud|aol|protonmail|mail|yandex|zoho|live|msn|me|mac|googlemail)\.com$|.*@(yahoo|outlook|hotmail)\.co\.uk$|.*@yahoo\.ca$|.*@yahoo\.co\.in$|.*@proton\.me$).*$"
 

@@ -56,6 +56,16 @@ _name_counter = itertools.count()
 # generated var-name sequence.
 _placeholder_counter = itertools.count()
 
+# Raised for every path that addresses a var by name from outside its tree.
+_NOT_GLOBAL_MSG = (
+    "Cannot {action}: this client state var is scoped to the component tree "
+    'that uses it. Give it a name -- rx.client_state("my_name") -- to make it '
+    "global and addressable."
+)
+
+# Default prefix for generated names.
+_DEFAULT_NAME_PREFIX = "cs"
+
 _VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
 
 # The store's entry point on the global `refs` object. This is the only binding
@@ -206,8 +216,9 @@ class ClientStateVar(Var):
     # The bare name keying this var in the client state store.
     _state_name: str = dataclasses.field(default="")
 
-    # Whether the state is shared by name (and reachable from the backend).
-    _global_ref: bool = dataclasses.field(default=True)
+    # Whether the name resolves in the app-wide root scope (and is therefore
+    # reachable from the backend) rather than being owned by a component tree.
+    _is_global: bool = dataclasses.field(default=True)
 
     # VarData without the hook, for accessors that work in any JS scope.
     _escape_var_data: VarData | None = dataclasses.field(default=None)
@@ -224,23 +235,28 @@ class ClientStateVar(Var):
             self._getter_name,
             self._setter_name,
             self._state_name,
-            self._global_ref,
+            self._is_global,
         ))
 
     @classmethod
     def create(
         cls,
-        var_name: str | None = None,
         default: Any = NoValue,
-        global_ref: bool = True,
+        *,
+        name: str | None = None,
+        prefix: str = _DEFAULT_NAME_PREFIX,
     ) -> ClientStateVar:
-        """Create a local_state Var that can be accessed and updated on the client.
+        """Create a client state Var that can be accessed and updated on the client.
 
-        With ``global_ref`` set (the default) the state is keyed by name in a
-        store shared across the app, so it can be read and written from any
-        component and from the backend. Without it the state is anonymous: it is
-        private to the component the hook is emitted in, and `push`, `retrieve`,
-        `global_value` and `global_set` cannot address it.
+        Whether the state is shared app-wide follows from whether you name it:
+
+        - ``rx.client_state("my_name")`` is **global**. It resolves in one
+          app-wide store, so any component and the backend can read and write
+          it, and `push`, `retrieve`, `global_value` and `global_set` work.
+        - ``rx.client_state()`` is **tree-scoped**. It gets a compile-time name
+          and the first component to use it claims it for its descendants, so
+          each instance of that component gets its own state -- like React's
+          ``useState`` -- and nothing outside the tree can address it.
 
         To render the var in a component, use the `value` property.
 
@@ -258,32 +274,46 @@ class ClientStateVar(Var):
         `global_value` and `global_set` properties.
 
         Args:
-            var_name: The name of the variable.
             default: The default value of the variable.
-            global_ref: Whether the state should be accessible in any Component and on the backend.
+            name: Optional name. Naming the var makes it global.
+            prefix: Prefix for the generated name when the var is unnamed, to
+                keep the compiled javascript readable. Ignored when ``name`` is
+                given.
 
         Returns:
             ClientStateVar
 
         Raises:
-            ValueError: If var_name is not a valid identifier string.
+            ValueError: If name or prefix is not a valid identifier string.
         """
-        if var_name is None:
-            var_name = f"cs{next(_name_counter)}"
+        # Named -> global, unnamed -> tree-scoped.
+        is_global = name is not None
+        if name is None:
+            if not _VALID_NAME.match(prefix):
+                msg = (
+                    f"prefix {prefix!r} is not a valid javascript identifier; it "
+                    "is emitted as one in the compiled app."
+                )
+                raise ValueError(msg)
+            # One shared counter across every prefix, so a generated name is
+            # unique no matter what prefixes are in play.
+            var_name = f"{prefix}{next(_name_counter)}"
+        else:
+            var_name = name
         if isinstance(var_name, Var):
             msg = (
-                "var_name must be a string, not a Var. The name keys the client "
+                "name must be a string, not a Var. The name keys the client "
                 "state store and is embedded in the events that `push`, "
                 "`retrieve` and `global_set` send, so it has to be known at "
                 "compile time."
             )
             raise ValueError(msg)
         if not isinstance(var_name, str):
-            msg = "var_name must be a string."
+            msg = "name must be a string."
             raise ValueError(msg)
         if not _VALID_NAME.match(var_name):
             msg = (
-                f"var_name {var_name!r} is not a valid javascript identifier; it "
+                f"name {var_name!r} is not a valid javascript identifier; it "
                 "is emitted as one in the compiled app."
             )
             raise ValueError(msg)
@@ -300,9 +330,13 @@ class ClientStateVar(Var):
         # word; the store key stays the bare name.
         getter_name = f"{var_name}{CAMEL_CASE_CLIENT_STATE_MARKER}"
         setter_name = f"set{var_name[0].upper()}{var_name[1:]}"
-        name_arg = f", {LiteralVar.create(var_name)!s}" if global_ref else ""
+        # The name is always passed: it identifies the slot within whichever
+        # scope owns it. The trailing flag is what escapes to the root scope.
+        args = f"{default_var!s}, {LiteralVar.create(var_name)!s}"
+        if is_global:
+            args += ", true"
         hooks: dict[str, VarData | None] = {
-            f"const [{getter_name}, {setter_name}] = useClientState({default_var!s}{name_arg})": None,
+            f"const [{getter_name}, {setter_name}] = useClientState({args})": None,
         }
         app_wraps = get_client_state_app_wraps()
         return cls(
@@ -310,7 +344,7 @@ class ClientStateVar(Var):
             _setter_name=setter_name,
             _getter_name=getter_name,
             _state_name=var_name,
-            _global_ref=global_ref,
+            _is_global=is_global,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
                 default_var._var_data,
@@ -414,8 +448,8 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._global_ref:
-            msg = "ClientStateVar must be global to read the value from any scope."
+        if not self._is_global:
+            msg = _NOT_GLOBAL_MSG.format(action="read the value from outside the tree")
             raise ValueError(msg)
         return Var(
             _js_expr=f"getClientState({LiteralVar.create(self._state_name)!s})",
@@ -436,8 +470,8 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._global_ref:
-            msg = "ClientStateVar must be global to set the value from any scope."
+        if not self._is_global:
+            msg = _NOT_GLOBAL_MSG.format(action="set the value from outside the tree")
             raise ValueError(msg)
         return Var(
             _js_expr=(
@@ -460,8 +494,8 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._global_ref:
-            msg = "ClientStateVar must be global to retrieve the value."
+        if not self._is_global:
+            msg = _NOT_GLOBAL_MSG.format(action="retrieve the value")
             raise ValueError(msg)
         callback_kwargs = {"callback": None}
         if callback is not None:
@@ -494,8 +528,8 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._global_ref:
-            msg = "ClientStateVar must be global to push the value."
+        if not self._is_global:
+            msg = _NOT_GLOBAL_MSG.format(action="push a value")
             raise ValueError(msg)
         if isinstance(value, Var):
             # A Var is a client-side expression, which cannot survive the JSON

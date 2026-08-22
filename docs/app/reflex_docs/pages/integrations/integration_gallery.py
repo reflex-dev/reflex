@@ -5,7 +5,7 @@ from reflex_site_shared.integrations import get_integration_logo_url
 from .integration_list import get_integration_path
 from .integration_request import request_integration_dialog
 
-selected_filter = rx.client_state("selected_filter", "All")
+selected_filter = rx.client_state("All", name="selected_filter")
 
 FilterOptions = [
     {"name": "AI", "icon": "BotIcon"},

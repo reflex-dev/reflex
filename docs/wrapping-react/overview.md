@@ -70,7 +70,7 @@ class ColorPicker(NoSSRComponent):
 
 color_picker = ColorPicker.create
 
-ColorPickerState = rx.client_state(default="#db114b", var_name="color")
+ColorPickerState = rx.client_state("#db114b", name="color")
 ```
 
 ```python eval
@@ -130,7 +130,7 @@ library that hands you a plain JavaScript callback -- or you are writing your ow
 they work anywhere in your compiled page:
 
 ```python
-picker_color = rx.client_state("picker_color", default="#db114b")
+picker_color = rx.client_state("#db114b", name="picker_color")
 
 
 class MyPicker(rx.Component):
