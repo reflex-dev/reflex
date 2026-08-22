@@ -1094,7 +1094,7 @@ def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
 
     exists = _get_minify_json_path().exists()
     if require_exists and not exists:
-        console.error(
+        logger.error(
             f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
         )
         raise SystemExit(1)
@@ -1107,10 +1107,10 @@ def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
     try:
         config = _load_minify_config_uncached()
     except ValueError as e:
-        console.error(str(e))
+        logger.error(str(e))
         raise SystemExit(1) from e
     if config is None:
-        console.error(f"Failed to load {MINIFY_JSON}.")
+        logger.error(f"Failed to load {MINIFY_JSON}.")
         raise SystemExit(1)
     return config
 
@@ -1127,7 +1127,7 @@ def minify_init():
     )
 
     if _get_minify_json_path().exists():
-        console.error(
+        logger.error(
             f"{MINIFY_JSON} already exists. Use 'reflex minify sync' to update "
             "or delete the file to reinitialize."
         )
@@ -1137,7 +1137,7 @@ def minify_init():
     config = generate_minify_config()
     save_minify_config(config)
 
-    console.log(
+    logger.info(
         f"Created {MINIFY_JSON} with {len(config['states'])} states "
         f"and {_count_events(config)} events."
     )
@@ -1168,11 +1168,11 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     )
     save_minify_config(new_config)
 
-    console.log(f"Updated {MINIFY_JSON}:")
-    console.log(
+    logger.info(f"Updated {MINIFY_JSON}:")
+    logger.info(
         f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
     )
-    console.log(
+    logger.info(
         f"  Events: {_count_events(existing_config)} -> {_count_events(new_config)}"
     )
 
@@ -1190,23 +1190,23 @@ def minify_validate():
     errors, warnings, missing = validate_minify_config(config)
 
     if errors:
-        console.error("Errors found:")
+        logger.error("Errors found:")
         for error in errors:
-            console.error(f"  - {error}")
+            logger.error(f"  - {error}")
 
     if warnings:
-        console.warn("Warnings:")
+        logger.warning("Warnings:")
         for warning in warnings:
-            console.warn(f"  - {warning}")
+            logger.warning(f"  - {warning}")
 
     if missing:
-        console.warn("Missing entries (in code but not in config):")
+        logger.warning("Missing entries (in code but not in config):")
         for entry in missing:
-            console.warn(f"  - {entry}")
+            logger.warning(f"  - {entry}")
 
     if errors or missing:
         raise SystemExit(1)
-    console.log(f"{MINIFY_JSON} is valid and up-to-date.")
+    logger.info(f"{MINIFY_JSON} is valid and up-to-date.")
 
 
 @minify.command(name="list")
@@ -1293,9 +1293,9 @@ def minify_list(output_json: bool):
         # Print the state node
         connector = "`-- " if is_last else "|-- "
         if state_id is not None:
-            console.log(f'{prefix}{connector}{state_data["name"]} -> "{state_id}"')
+            click.echo(f'{prefix}{connector}{state_data["name"]} -> "{state_id}"')
         else:
-            console.log(f"{prefix}{connector}{state_data['name']}")
+            click.echo(f"{prefix}{connector}{state_data['name']}")
 
         # Calculate new prefix for children
         child_prefix = prefix + ("    " if is_last else "|   ")
@@ -1306,7 +1306,7 @@ def minify_list(output_json: bool):
         has_substates = len(substates) > 0
 
         if handlers:
-            console.log(
+            click.echo(
                 f"{child_prefix}{'|' if has_substates else '`'}-- Event Handlers:"
             )
             handler_prefix = child_prefix + ("|   " if has_substates else "    ")
@@ -1316,11 +1316,11 @@ def minify_list(output_json: bool):
                 # event_id is now the minified name directly
                 event_id = handler["event_id"]
                 if event_id is not None:
-                    console.log(
+                    click.echo(
                         f'{handler_prefix}{h_connector}{handler["name"]} -> "{event_id}"'
                     )
                 else:
-                    console.log(f"{handler_prefix}{h_connector}{handler['name']}")
+                    click.echo(f"{handler_prefix}{h_connector}{handler['name']}")
 
         # Print substates recursively
         for i, substate in enumerate(substates):
@@ -1335,9 +1335,9 @@ def minify_list(output_json: bool):
         click.echo(json.dumps(tree_data, indent=2))
     else:
         if config is not None:
-            console.log("State Tree (minify.json loaded)")
+            click.echo("State Tree (minify.json loaded)")
         else:
-            console.log("State Tree (no minify.json)")
+            click.echo("State Tree (no minify.json)")
         print_state_tree(tree_data)
 
 
@@ -1390,7 +1390,7 @@ def minify_lookup(output_json: bool, minified_path: str):
             None,
         )
         if found is None:
-            console.error(
+            logger.error(
                 f"No state found for minified segment '{part}' in path '{minified_path}'"
             )
             raise SystemExit(1)
@@ -1412,7 +1412,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     else:
         # Simple output: module.ClassName for each part
         for info in result_parts:
-            console.log(f"{info['module']}.{info['class']}")
+            click.echo(f"{info['module']}.{info['class']}")
 
 
 if find_spec("typer") and find_spec("typer.main"):

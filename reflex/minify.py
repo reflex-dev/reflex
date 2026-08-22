@@ -12,12 +12,15 @@ from __future__ import annotations
 import dataclasses
 import functools
 import json
+import logging
 from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
+logger = logging.getLogger(__name__)
 
 # File name for the minify configuration
 MINIFY_JSON = "minify.json"
@@ -224,12 +227,11 @@ class MinifyNameResolver:
             A configured resolver.
         """
         from reflex.environment import MinifyMode, environment
-        from reflex.utils import console
 
         try:
             config = _load_minify_config_uncached()
         except ValueError as e:
-            console.warn(
+            logger.warning(
                 f"{MINIFY_JSON} could not be loaded: {e}; minification disabled."
             )
             config = None

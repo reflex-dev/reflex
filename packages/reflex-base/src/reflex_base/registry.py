@@ -9,6 +9,7 @@ resolver via :meth:`RegistrationContext.set_name_resolver`.
 from __future__ import annotations
 
 import dataclasses
+import logging
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 
@@ -22,6 +23,8 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.config import Config
     from reflex_base.event import EventHandler
+
+logger = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 
@@ -39,14 +42,12 @@ def _rekey(
     Returns:
         A new dict mapping resolved key to item; later items overwrite earlier.
     """
-    from reflex.utils import console
-
     out: dict[str, _T] = {}
     for item in items:
         key = key_fn(item)
         existing = out.get(key)
         if existing is not None and existing is not item:
-            console.warn(
+            logger.warning(
                 f"Two {kind}s resolve to the same full name {key!r}: "
                 f"{existing!r} and {item!r}. The first one will be unreachable "
                 "in the registry. Check minify.json for duplicate ids."
