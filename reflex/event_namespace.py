@@ -483,10 +483,14 @@ class WebsocketEventNamespace(BaseEventNamespace):
             while True:
                 text = await websocket.receive_text()
                 last_received = time.monotonic()
+                # ASGI delivers complete messages, so the server has already
+                # buffered the frame; its protocol-level caps (enforced during
+                # frame reassembly) bound that allocation. This check applies
+                # the Reflex policy limit on top.
                 # The limit is in bytes; UTF-8 encodes 1-4 bytes per character,
                 # so more characters than the limit is certainly over, and a
                 # quarter or fewer certainly under -- only encode to count the
-                # exact bytes in between.
+                # exact bytes in between (bounding the copy to 4x the limit).
                 text_length = len(text)
                 if text_length > max_message_size or (
                     text_length * 4 > max_message_size
