@@ -1,12 +1,13 @@
 // Unit tests for the state runtime. These are only possible because the
 // module no longer imports per-app generated artifacts: the runtime registry
 // below stands in for the generated context module's configure call.
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { configureReflexRuntime } from "@reflex-dev/reflex-base/runtime";
 import {
   ReflexEvent,
   applyDelta,
+  applyEvent,
   getBackendURL,
   hydrateClientStorage,
   isNotNullOrUndefined,
@@ -132,6 +133,33 @@ describe("python semantics shims", () => {
     expect(pyFlatMap(["ab"], (s) => s)).toEqual(["a", "b"]);
     expect(pyFlatMap([{ a: 1, b: 2 }], (o) => o)).toEqual(["a", "b"]);
     expect(() => pyFlatMap([1], (x) => x)).toThrow(TypeError);
+  });
+});
+
+describe("_download upload-url special case", () => {
+  test("substitutes the compiled uploaded_files_url_prefix expression", async () => {
+    // The searched literal must match the _js_expr of the Python-side
+    // uploaded_files_url_prefix Var (reflex_components_core/core/upload.py).
+    const clicked = [];
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function () {
+        clicked.push(this.href);
+      });
+    try {
+      await applyEvent(
+        ReflexEvent("_download", {
+          url: 'getBackendURL(getEnv().UPLOAD)+"/myfile.txt"',
+          filename: "myfile.txt",
+        }),
+        null,
+        () => {},
+        { current: {} },
+      );
+    } finally {
+      clickSpy.mockRestore();
+    }
+    expect(clicked).toEqual(["http://localhost:8000/_upload/myfile.txt"]);
   });
 });
 

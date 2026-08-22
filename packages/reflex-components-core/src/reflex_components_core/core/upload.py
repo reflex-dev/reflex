@@ -31,7 +31,6 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style
 from reflex_base.utils import format
-from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var, get_unique_variable_name
 from reflex_base.vars.function import FunctionVar
@@ -163,11 +162,11 @@ def get_upload_dir() -> Path:
 
 
 uploaded_files_url_prefix = Var(
-    _js_expr="getBackendURL(env.UPLOAD)",
+    _js_expr="getBackendURL(getEnv().UPLOAD)",
     _var_data=VarData(
         imports={
             FrontendPackage.STATE: "getBackendURL",
-            "$/env.json": ImportVar(tag="env", is_default=True),
+            FrontendPackage.RUNTIME: "getEnv",
         }
     ),
 ).to(str)

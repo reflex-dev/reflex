@@ -59,10 +59,10 @@ class WebsocketTargetURL(Var):
             The websocket target URL component.
         """
         return Var(
-            _js_expr="getBackendURL(env.EVENT).href",
+            _js_expr="getBackendURL(getEnv().EVENT).href",
             _var_data=VarData(
                 imports={
-                    "$/env.json": [ImportVar(tag="env", is_default=True)],
+                    FrontendPackage.RUNTIME: [ImportVar(tag="getEnv")],
                     FrontendPackage.STATE: [ImportVar(tag="getBackendURL")],
                 },
             ),

@@ -1,9 +1,11 @@
 import asyncio
 import io
 import json
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
+import reflex_base
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -24,6 +26,7 @@ from reflex_components_core.core.upload import (
     _on_drop_spec,  # pyright: ignore [reportAttributeAccessIssue]
     cancel_upload,
     get_upload_url,
+    uploaded_files_url_prefix,
 )
 from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -559,3 +562,14 @@ def test_upload_namespace():
 
     assert isinstance(up_ns(id="foo_id"), StyledUpload)
     assert isinstance(up_ns.root(id="foo_id"), Upload)
+
+
+def test_uploaded_files_url_prefix_matches_frontend_download_handler():
+    """The compiled upload-url expression is pattern-matched by state.js.
+
+    The frontend `_download` handler substitutes the literal expression
+    emitted by ``uploaded_files_url_prefix`` in event payloads; nothing at
+    runtime keeps the two strings in sync, so pin them here.
+    """
+    state_js = (Path(reflex_base.__file__).parent / "frontend/state.js").read_text()
+    assert f'includes("{uploaded_files_url_prefix!s}")' in state_js

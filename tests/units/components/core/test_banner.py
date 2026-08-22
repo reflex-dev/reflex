@@ -13,7 +13,7 @@ def test_websocket_target_url():
     assert var_data is not None
     assert sorted(key for key, _ in var_data.imports) == sorted((
         "@reflex-dev/reflex-base/state",
-        "$/env.json",
+        "@reflex-dev/reflex-base/runtime",
     ))
 
 
@@ -24,7 +24,7 @@ def test_connection_banner():
         "react",
         "$/utils/context",
         "@reflex-dev/reflex-base/state",
-        "$/env.json",
+        "@reflex-dev/reflex-base/runtime",
     ))
 
     msg = "Connection error"
@@ -39,7 +39,7 @@ def test_connection_modal():
         "react",
         "$/utils/context",
         "@reflex-dev/reflex-base/state",
-        "$/env.json",
+        "@reflex-dev/reflex-base/runtime",
     ))
 
     msg = "Connection error"

@@ -303,12 +303,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
     a.hidden = true;
     a.href = event.payload.url;
     // Special case when linking to uploaded files. The searched string is a
-    // literal emitted by the compiled event payload; only the replacement
-    // value is evaluated here.
-    if (a.href.includes("getBackendURL(env.UPLOAD)")) {
+    // literal emitted by the compiled event payload (the
+    // uploaded_files_url_prefix Var); only the replacement value is
+    // evaluated here.
+    if (a.href.includes("getBackendURL(getEnv().UPLOAD)")) {
       a.href = eval?.(
         event.payload.url.replace(
-          "getBackendURL(env.UPLOAD)",
+          "getBackendURL(getEnv().UPLOAD)",
           `"${getBackendURL(getEnv().UPLOAD)}"`,
         ),
       );
