@@ -92,7 +92,12 @@ dev = [
   "plotly",
   "pre-commit",
   "psutil",
-  "psycopg[binary]",
+  # No cp315 psycopg-binary wheels yet; use pure-python psycopg on 3.15+.
+  # This only affects dev/test environments (3.15 CI), not the published
+  # package. TODO: revert to a single "psycopg[binary]" once a psycopg
+  # release ships cp315 wheels for psycopg-binary.
+  "psycopg[binary]; python_version < '3.15'",
+  "psycopg; python_version >= '3.15'",
   "pydantic",
   "pyright",
   "pytest-asyncio",
