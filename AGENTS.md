@@ -57,6 +57,7 @@ docs/                   # documentation site (separate workspace member)
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
 - **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
+- **Frontend JS tests:** the shipped frontend runtime is an npm package at `packages/reflex-base/src/reflex_base/frontend/` (never imports per-app generated artifacts — the generated context module registers app config via `configureReflexRuntime`). Its vitest suite lives in `frontend/tests/`; run with `npm ci && npm test` from that directory. The committed `package-lock.json` there is intentional (CI uses `npm ci`).
 
 ### Integration test patterns
 

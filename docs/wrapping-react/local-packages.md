@@ -127,6 +127,15 @@ code.
 
 These package specifiers can be used for `library` or `lib_dependencies`.
 
+Reflex itself uses this mechanism for its own frontend runtime: the
+`@reflex-dev/reflex-base` entry in `.web/package.json` points at a tarball (or,
+for editable installs, a linked source directory) bundled with the installed
+`reflex-base` version, so the compiled code always matches the shipped runtime.
+Framework dependencies like `react` and `react-router` resolve through that
+package rather than being pinned at the top level — to force a different
+version of any of them, add an entry to `overrides` in
+`reflex.lock/package.json`, which Reflex preserves across runs.
+
 ```python demo exec
 class GithubComponent(rx.Component):
     library = "@masenf/hello-react@github:masenf/hello-react"
