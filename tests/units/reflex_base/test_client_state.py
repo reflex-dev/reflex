@@ -502,3 +502,23 @@ def test_push_var_is_evaluated_on_the_client() -> None:
     assert 'refs["__client_state"].set("counter", Date.now())' in str(
         event.payload["function"]
     )
+
+
+def test_retrieve_callback_runs_even_without_a_store() -> None:
+    """The runtime must call back with undefined rather than never resuming.
+
+    Asserted against the shipped ``state.js`` because a handler awaiting
+    ``retrieve`` would otherwise hang forever when no provider is mounted.
+    """
+    from pathlib import Path
+
+    import reflex_base
+
+    state_js = (
+        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
+    ).read_text()
+    branch = state_js.split('event.name == "_client_state_get"')[1].split("return;")[0]
+    assert "applyResultCallback" in branch
+    # Optional chaining rather than an early return, so a missing store still
+    # reaches the callback with undefined.
+    assert "store?.get(" in branch

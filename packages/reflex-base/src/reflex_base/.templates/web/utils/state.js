@@ -395,15 +395,16 @@ export const applyEvent = async (event, socket, navigate, params) => {
   if (event.name == "_client_state_get") {
     const store = refs["__client_state"];
     if (store === undefined) {
+      // Still call back, with undefined: the handler awaiting this result would
+      // otherwise wait for a value that is never coming.
       console.error(
         `Cannot read client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
       );
-      return;
     }
     try {
       await applyResultCallback(
         event,
-        store.get(event.payload.var_name),
+        store?.get(event.payload.var_name),
         socket,
         navigate,
         params,

@@ -103,6 +103,11 @@ export const createClientStateStore = () => {
 
 let _clientStore = null;
 
+// How many providers are currently mounted. Several can share one store (an
+// embedded app rendered alongside a main app), so the `refs` entry must survive
+// until the last of them unmounts.
+let _mountedProviders = 0;
+
 /**
  * The client-side store singleton.
  *
@@ -163,8 +168,10 @@ export function ClientStateProvider({ children }) {
   useEffect(() => {
     // Client-only, so the server's module-scope `refs` is never written.
     refs[CLIENT_STATE_REF] = store;
+    _mountedProviders += 1;
     return () => {
-      if (refs[CLIENT_STATE_REF] === store) {
+      _mountedProviders -= 1;
+      if (_mountedProviders === 0 && refs[CLIENT_STATE_REF] === store) {
         delete refs[CLIENT_STATE_REF];
       }
     };

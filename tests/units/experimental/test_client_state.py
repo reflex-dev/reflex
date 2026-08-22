@@ -19,3 +19,5 @@ def test_promoted_names_are_reachable_from_rx() -> None:
     """The lazy-loader wiring only fails at attribute access, so assert it."""
     assert rx.client_state("promoted", default=0)._state_name == "promoted"
     assert isinstance(rx.client_state("typed", default=0), rx.ClientStateVar)
+    # Exported so `.set` can be named in a type annotation.
+    assert isinstance(rx.client_state("setter", default=0).set, rx.ClientStateSetter)
