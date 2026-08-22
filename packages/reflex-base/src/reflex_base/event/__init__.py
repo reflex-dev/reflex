@@ -1997,6 +1997,21 @@ def _check_event_args_subclass_of_callback(
         raise delayed_exceptions[0]
 
 
+def _type_hints_or_empty(fn: Callable) -> dict[str, Any]:
+    """Type hints of ``fn``, or empty when its ForwardRefs cannot be resolved.
+
+    Args:
+        fn: The function to get the type hints of.
+
+    Returns:
+        The type hints, or an empty dict.
+    """
+    try:
+        return get_type_hints(fn)
+    except NameError:
+        return {}
+
+
 def call_event_handler(
     event_callback: EventHandler | EventSpec,
     event_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2035,10 +2050,9 @@ def call_event_handler(
 
         event_callback_spec_args = list(parameters)
 
-        try:
-            type_hints_of_provided_callback = get_type_hints(event_callback.handler.fn)
-        except NameError:
-            type_hints_of_provided_callback = {}
+        type_hints_of_provided_callback = _type_hints_or_empty(
+            event_callback.handler.fn
+        )
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
@@ -2073,10 +2087,7 @@ def call_event_handler(
     if event_spec_return_types:
         event_callback_spec_args = list(parameters)
 
-        try:
-            type_hints_of_provided_callback = get_type_hints(event_callback.fn)
-        except NameError:
-            type_hints_of_provided_callback = {}
+        type_hints_of_provided_callback = _type_hints_or_empty(event_callback.fn)
 
         _check_event_args_subclass_of_callback(
             event_callback_spec_args[n_self_args:],

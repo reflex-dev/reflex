@@ -420,3 +420,47 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
         cls: Class to test.
     """
     assert get_attribute_access_type(cls, "no_default") == int | None
+
+
+class UnresolvableRefClass:
+    """Class with an unresolvable forward-ref annotation."""
+
+    broken: UndefinedElsewhere  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    count: int = 0
+
+
+def test_get_attribute_access_type_unannotated_name_skips_hint_resolution(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An unannotated name resolves to None without ForwardRef warnings."""
+    assert get_attribute_access_type(UnresolvableRefClass, "_is_coroutine_marker") is (
+        None
+    )
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]
+
+
+def test_get_attribute_access_type_unresolvable_annotation_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An annotated name whose hints cannot be resolved still warns and returns None."""
+    assert get_attribute_access_type(UnresolvableRefClass, "broken") is None
+    assert [r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message]
+
+
+def test_get_attribute_access_type_probe_on_lazy_annotations(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Probing a class with lazy (PEP 649) annotations must not raise.
+
+    Built via ``exec`` to escape this module's ``from __future__ import annotations``.
+    """
+    ns: dict[str, object] = {}
+    exec("class Lazy:\n    broken: UndefinedElsewhere\n    count: int = 0", ns)
+    lazy_cls = ns["Lazy"]
+    assert isinstance(lazy_cls, type)
+    assert get_attribute_access_type(lazy_cls, "_is_coroutine_marker") is None
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]
