@@ -171,16 +171,21 @@ rx.vstack(counter(), counter(), counter())  # three independent counters
 ```
 
 Each item rendered by `rx.foreach` is its own scope too, so an unnamed var used in a
-loop body is per item:
+loop body is per item, and can be seeded from the loop item or index:
 
 ```python
-def row(item: rx.Var[str]) -> rx.Component:
+def row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
     expanded = rx.client_state(False)  # one per rendered row
+    count = rx.client_state(index)  # row N starts at N
     ...
 
 
 rx.foreach(State.items, row)
 ```
+
+A default is read once, when the scope first claims the name, so it seeds the state
+rather than tracking the var. Set the value explicitly (`on_mount=count.set(index)`)
+when you need it to follow.
 
 Pass `prefix=` to make generated names readable in the compiled output:
 `rx.client_state(0, prefix="counter")`.

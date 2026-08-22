@@ -29,6 +29,7 @@ def MemoApp():
     class MemoState(rx.State):
         last_value: str = ""
         order: list[str] = ["row-a", "row-b", "row-c"]
+        grid: list[list[str]] = [["a0", "a1"], ["b0", "b1"]]
         tree: TreeNode = TreeNode(
             name="root",
             children=[
@@ -98,6 +99,9 @@ def MemoApp():
         # read into its own memo -- so each one only works if it can reach the
         # loop item from the scope the loop provides around the item.
         opened = rx.client_state(False, prefix="opened")
+        # Seeded from a loop var: the default is a cast Var whose declaration
+        # has to travel into every module that reads the slot.
+        count = rx.client_state(position, prefix="seeded")
         return rx.hstack(
             rx.form(
                 rx.el.button("submit", type="submit"),
@@ -113,6 +117,41 @@ def MemoApp():
                 rx.cond(opened.value, f"open:{item}", f"closed:{item}"),
                 id=f"scoped-status-{position}",
             ),
+            rx.text(count.value, id=f"scoped-count-{position}"),
+            rx.el.button(
+                "bump",
+                id=f"scoped-bump-{position}",
+                on_click=count.set(lambda prev: prev + 1),
+            ),
+        )
+
+    def nested_grid() -> rx.Component:
+        # Distinct names, so the leaf reads the outer item by walking out past
+        # the inner loop's provider.
+        return rx.box(
+            rx.foreach(
+                MemoState.grid,
+                lambda row: rx.foreach(
+                    row,
+                    lambda cell: rx.text(f"{row[0]}/{cell}", class_name="nested-cell"),
+                ),
+            ),
+            id="nested-grid",
+        )
+
+    def shadowed_grid() -> rx.Component:
+        # Both loops name their arg the same. Python shadows the outer binding
+        # inside the inner lambda, and the compiled output has to shadow it the
+        # same way: each level renders its own value.
+        return rx.box(
+            rx.foreach(
+                MemoState.grid,
+                lambda v: rx.box(
+                    rx.text(v[0], class_name="shadowed-head"),
+                    rx.foreach(v, lambda v: rx.text(v, class_name="shadowed-cell")),
+                ),
+            ),
+            id="shadowed-grid",
         )
 
     def index() -> rx.Component:
@@ -144,6 +183,8 @@ def MemoApp():
                 rx.foreach(MemoState.order, scoped_row),
                 id="scoped-rows",
             ),
+            nested_grid(),
+            shadowed_grid(),
         )
 
     app = rx.App()
@@ -343,3 +384,71 @@ def test_foreach_item_client_state_is_per_item(
     # The other rows are untouched: each item owns its own slot.
     expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
     expect(page.locator("#scoped-status-2")).to_have_text("closed:row-c")
+
+
+def test_foreach_item_client_state_seeded_from_the_loop_index(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A client state var defaulting to a loop var is seeded per item.
+
+    The default is a cast ``Var`` whose ``useScopedValue`` declaration lives on
+    the var it wraps; dropping it compiled every consumer to
+    ``useClientState(<name>, …)`` with nothing declaring ``<name>``, so each row
+    seeded from ``undefined``.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for position in range(3):
+        expect(page.locator(f"#scoped-count-{position}")).to_have_text(str(position))
+
+    page.locator("#scoped-bump-1").click()
+
+    expect(page.locator("#scoped-count-1")).to_have_text("2")
+    # Seeded per item, and independent of each other.
+    expect(page.locator("#scoped-count-0")).to_have_text("0")
+    expect(page.locator("#scoped-count-2")).to_have_text("2")
+
+
+def test_nested_foreach_leaf_reads_both_loop_scopes(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A leaf in a nested loop reaches the outer item by walking outward.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    cells = page.locator("#nested-grid .nested-cell")
+    expect(cells).to_have_count(4)
+    expect(cells).to_have_text(["a0/a0", "a0/a1", "b0/b0", "b0/b1"])
+
+
+def test_nested_foreach_with_shadowed_names_renders_each_level(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Nested loops reusing one parameter name each render their own values.
+
+    Reusing the name is only expressible in Python by shadowing the outer
+    binding, and the scope chain has to resolve it the same way: a read inside
+    the inner loop binds to the inner provider, and the outer row head -- which
+    sits above that provider -- keeps binding to the outer one.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#shadowed-grid .shadowed-head")).to_have_text(["a0", "b0"])
+    expect(page.locator("#shadowed-grid .shadowed-cell")).to_have_text([
+        "a0",
+        "a1",
+        "b0",
+        "b1",
+    ])

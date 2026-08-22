@@ -249,9 +249,39 @@ Client state works the same way: an unnamed `rx.client_state` var in a
 def expandable_row(item: rx.Var[str]) -> rx.Component:
     expanded = rx.client_state(False)  # one per rendered row
     return rx.vstack(
-        rx.button(item, on_click=expanded.set(~expanded.value)),
+        rx.button(item, on_click=expanded.set(lambda prev: ~prev)),
         rx.cond(expanded.value, rx.text(f"details for {item}")),
     )
+```
+
+The default can be the loop item or index, which seeds each row from its own
+value:
+
+```python
+def counter_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+    count = rx.client_state(index)  # row N starts at N
+    return rx.hstack(
+        rx.text(item),
+        rx.heading(count.value),
+        rx.button("+", on_click=count.set(lambda prev: prev + 1)),
+    )
+```
+
+A default is a *seed*: it is read once, when the row first claims the slot, so a
+later change to the var does not reset a row that has already been edited. To
+push a new value in, set it explicitly -- `on_mount=count.set(index)`, or on a
+`rx.fragment(key=..., on_mount=...)` when you want the reset keyed to something.
+
+Loops nest, and each level gets its own scope. A nested body can read an
+*enclosing* loop's item and index, as long as it does not reuse their names --
+the same rule Python already imposes, since an inner argument of the same name
+shadows the outer one:
+
+```python
+rx.foreach(
+    State.rows,
+    lambda row: rx.foreach(row, lambda cell: rx.text(f"{row[0]}/{cell}")),
+)
 ```
 
 By default each item is keyed by its position in the list. Pass `key=` on the

@@ -29,6 +29,27 @@ def _hook(cs: ClientStateVar) -> str:
     return hooks[0]
 
 
+def _hooks_ending_with_client_state(cs: ClientStateVar) -> list[str]:
+    """Get every hook a client state var contributes, its own hook last.
+
+    A var whose default is itself a Var contributes that default's hooks too;
+    they have to be declared before the ``useClientState`` line that reads them.
+
+    Args:
+        cs: The client state var.
+
+    Returns:
+        The hook source lines, in emission order.
+    """
+    var_data = cs._get_all_var_data()
+    assert var_data is not None
+    hooks = list(var_data.hooks)
+    assert "useClientState(" in hooks[-1], (
+        f"expected the client state hook to come last, got {hooks}"
+    )
+    return hooks
+
+
 def _app_wraps(var_data: VarData | None) -> list[tuple[int, str]]:
     """Summarize the app wraps a VarData carries.
 
@@ -468,6 +489,40 @@ def test_var_default_is_used_directly() -> None:
     cs = client_state(Var("someExpr").to(int), name="x")
     assert "useClientState(someExpr" in _hook(cs)
     assert cs._var_type is int
+
+
+def test_derived_var_default_brings_its_hook_and_import() -> None:
+    """A default whose var data is only reachable through the operation graph.
+
+    ``scoped_loop_var(...).guess_type()`` returns a cast wrapper whose own
+    ``_var_data`` is ``None`` -- the hook and import live on the var it wraps.
+    Reading the field directly dropped them, compiling the default's identifier
+    into a dangling reference.
+    """
+    from reflex_base.components.tags.iter_tag import scoped_loop_var
+
+    cs = client_state(scoped_loop_var("ix_rx_state_", int), name="seeded")
+
+    # The declaration comes first; ``useClientState`` reading it comes last.
+    assert _hooks_ending_with_client_state(cs) == [
+        'const ix_rx_state_ = useScopedValue("ix_rx_state_")',
+        'const [seededRxClientState, setSeeded] = useClientState(ix_rx_state_, "seeded", true)',
+    ]
+    var_data = cs._get_all_var_data()
+    assert var_data is not None
+    assert "useScopedValue" in str(dict(var_data.imports))
+
+
+def test_state_var_default_brings_its_state_wiring() -> None:
+    """A state var default carries its own hook too, not just loop vars."""
+
+    class ClientStateDefaultState(rx.State):
+        seed: str = "from state"
+
+    cs = client_state(ClientStateDefaultState.seed, name="seeded_from_state")
+
+    hooks = _hooks_ending_with_client_state(cs)
+    assert any("useContext(StateContexts" in hook for hook in hooks[:-1])
 
 
 def test_retrieve_with_callback_serializes_the_handler() -> None:

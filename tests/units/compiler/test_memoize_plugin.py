@@ -2582,3 +2582,47 @@ def test_memo_wrapper_carries_the_wrapped_component_key() -> None:
     code = "\n".join(memo_code for _path, memo_code in files)
 
     assert f"jsx(ScopedValues,{{key:item{FIELD_MARKER}," in code
+
+
+def test_client_state_seeded_from_a_loop_var_declares_it_in_every_consumer() -> None:
+    """A ``Var`` client state default reaches each consumer module it seeds.
+
+    A loop var is a cast wrapper whose hooks live on the var it wraps, so the
+    default used to compile into a bare identifier with nothing declaring it --
+    ``useClientState(ix_rx_state_, "cs0")`` above no ``useScopedValue`` line.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def counter(initial: Any) -> Component:
+        count = rx.client_state(initial, prefix="seeded")
+        return rx.hstack(
+            rx.el.button("-", on_click=count.set(lambda v: v - 1)),
+            Bare.create(count.value),
+        )
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(SpecialFormMemoState.items, lambda _x, ix: counter(ix))
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    consumers = [
+        block
+        for _path, code in files
+        for block in code.split("export const ")
+        if "useClientState(" in block
+    ]
+    assert consumers, "no memo module read the client state var"
+    for block in consumers:
+        read = re.search(r'const (\w+) = useScopedValue\("(\w+)"\)', block)
+        assert read is not None, f"nothing declares the seed\n{block}"
+        local, provided = read.groups()
+        assert local == provided
+        assert f"useClientState({local}," in block
+        # Declared before it is read, since hooks emit in order.
+        assert block.index(local) < block.index("useClientState(")
+
+    assert "useScopedValue" not in (page_ctx.output_code or "")
