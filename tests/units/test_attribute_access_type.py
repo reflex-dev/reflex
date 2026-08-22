@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import List  # noqa: UP035
 
 import attrs
@@ -449,17 +450,30 @@ def test_get_attribute_access_type_unresolvable_annotation_warns(
     assert [r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message]
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 14), reason="PEP 649 lazy annotations require 3.14+"
+)
 def test_get_attribute_access_type_probe_on_lazy_annotations(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Probing a class with lazy (PEP 649) annotations must not raise.
 
-    Built via ``exec`` to escape this module's ``from __future__ import annotations``.
+    Compiled with ``dont_inherit=True``: ``exec`` inherits this module's
+    ``from __future__ import annotations`` flag by default, which would
+    stringify the annotations instead of leaving them lazily evaluated.
     """
+    code = compile(
+        "class Lazy:\n    broken: UndefinedElsewhere\n    count: int = 0",
+        "<lazy>",
+        "exec",
+        dont_inherit=True,
+    )
     ns: dict[str, object] = {}
-    exec("class Lazy:\n    broken: UndefinedElsewhere\n    count: int = 0", ns)
+    exec(code, ns)
     lazy_cls = ns["Lazy"]
     assert isinstance(lazy_cls, type)
+    with pytest.raises(NameError):
+        lazy_cls.__annotations__  # prove annotations are genuinely lazy
     assert get_attribute_access_type(lazy_cls, "_is_coroutine_marker") is None
     assert not [
         r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
