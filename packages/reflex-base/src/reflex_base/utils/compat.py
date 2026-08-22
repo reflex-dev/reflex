@@ -2,7 +2,16 @@
 
 import sys
 from collections.abc import Mapping
+from functools import lru_cache
 from typing import Any
+
+if sys.version_info >= (3, 14):
+    from annotationlib import (
+        Format,
+        call_annotate_function,
+        get_annotate_from_class_namespace,
+        get_annotations,
+    )
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -39,12 +48,43 @@ def annotations_from_namespace(namespace: Mapping[str, Any]) -> dict[str, Any]:
         The (forward-ref) annotations from the class namespace.
     """
     if sys.version_info >= (3, 14) and "__annotations__" not in namespace:
-        from annotationlib import (
-            Format,
-            call_annotate_function,
-            get_annotate_from_class_namespace,
-        )
-
         if annotate := get_annotate_from_class_namespace(namespace):
             return call_annotate_function(annotate, format=Format.FORWARDREF)
     return namespace.get("__annotations__", {})
+
+
+@lru_cache
+def _mro_annotation_names(cls: type) -> frozenset[str]:
+    """All annotation names declared across ``cls``'s MRO.
+
+    Never evaluates annotation values, which under PEP 649 lazy evaluation
+    (3.14+) may raise NameError. Cached: annotations added later are not seen.
+
+    Args:
+        cls: The class to inspect.
+
+    Returns:
+        The annotation names declared in the MRO.
+    """
+    if sys.version_info >= (3, 14):
+        return frozenset(
+            name
+            for klass in cls.__mro__
+            for name in get_annotations(klass, format=Format.STRING)
+        )
+    return frozenset(
+        name for klass in cls.__mro__ for name in getattr(klass, "__annotations__", {})
+    )
+
+
+def declares_annotation(cls: type, name: str) -> bool:
+    """Whether ``name`` is annotated on any class in ``cls``'s MRO.
+
+    Args:
+        cls: The class to inspect.
+        name: The attribute name to look for.
+
+    Returns:
+        Whether ``name`` is annotated.
+    """
+    return name in _mro_annotation_names(cls)
