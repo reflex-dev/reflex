@@ -378,10 +378,9 @@ class BaseEventNamespace(ABC):
 
 
 class WebsocketEventNamespace(BaseEventNamespace):
-    """Default event transport speaking JSON frames over a plain WebSocket.
+    """Default event transport over a plain WebSocket.
 
-    Each message is a JSON array ``[event_name, payload]``. Heartbeats and the
-    initial handshake use reserved underscore-prefixed message names.
+    Frames are JSON arrays ``[event_name, payload]``.
     """
 
     def __init__(self, namespace: str, app: App):
