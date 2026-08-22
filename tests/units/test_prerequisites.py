@@ -16,7 +16,7 @@ from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
+from reflex.utils import frontend_skeleton, js_runtimes, path_ops, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -175,7 +175,7 @@ def _stub_skeleton_initializers(monkeypatch):
                 app_name="test",
             ),
             False,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
@@ -183,7 +183,7 @@ def _stub_skeleton_initializers(monkeypatch):
                 static_page_generation_timeout=30,
             ),
             False,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
@@ -191,14 +191,14 @@ def _stub_skeleton_initializers(monkeypatch):
                 frontend_path="/test",
             ),
             False,
-            'export default {"basename": "/test/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/test/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false,"prerender":true,"build":"build"};',
         ),
     ],
 )
@@ -236,6 +236,38 @@ def test_update_react_router_config(config, export, expected_output):
 def test_initialise_vite_config(config, expected_output):
     output = _compile_vite_config(config)
     assert expected_output in output
+
+
+def test_initialize_vite_config_writes_utf8(tmp_path, monkeypatch):
+    """vite.config.js must be written with an explicit encoding.
+
+    ``orjson_dumps`` emits non-ASCII verbatim where ``json.dumps`` escaped it to
+    a unicode escape, so a non-ASCII ``vite_allowed_hosts`` entry now reaches
+    the writer as-is and would raise on a non-UTF-8 default locale. Asserting
+    the keyword rather than the round trip keeps the check locale-independent.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(
+        frontend_skeleton,
+        "get_config",
+        lambda: Config(app_name="test", vite_allowed_hosts=["königsallee.example"]),
+    )
+
+    original = Path.write_text
+
+    def strict_write_text(self, data, encoding=None, *args, **kwargs):
+        assert encoding is not None, f"{self.name} written with the locale encoding"
+        return original(self, data, encoding, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", strict_write_text)
+
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_vite_config()
+
+    written = web_dir / constants.ReactRouter.VITE_CONFIG_FILE
+    assert "königsallee.example" in written.read_text(encoding="utf-8")
 
 
 @pytest.mark.usefixtures("_stub_skeleton_initializers")
@@ -353,6 +385,46 @@ def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch
     assert web_pkg["dependencies"] == {"react": "19.2.5"}
     assert web_pkg["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
+def test_sync_root_package_json_to_web_noop_when_already_rendered(
+    tmp_path, monkeypatch
+):
+    """An already up-to-date .web copy is left untouched so no reinstall is triggered."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.sync_root_package_json_to_web() is False
+        assert frontend_skeleton.sync_root_package_json_to_web() is False
+
+
+def test_sync_root_package_json_to_web_replaces_undecodable_web_copy(
+    tmp_path, monkeypatch
+):
+    """A .web/package.json holding undecodable bytes is overwritten, not raised on."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_bytes(b'{"name": "\xff\xfe"}')
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.sync_root_package_json_to_web() is True
+
+    assert json.loads(web_pkg.read_text(encoding="utf-8"))["dependencies"] == {
+        "react": "19.2.5"
+    }
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
@@ -1255,6 +1327,48 @@ def test_update_package_json_overrides_skips_unusable_file(
         assert web_pkg.read_text() == content
 
 
+@pytest.mark.parametrize("overrides", ["a-string", [1, 2], 7])
+def test_update_package_json_overrides_preserves_unmergeable_overrides(
+    tmp_path, monkeypatch, overrides
+):
+    """A non-mapping ``overrides`` is left for the user to fix, not overwritten.
+
+    Reading it as ``{}`` and merging would silently replace whatever the user
+    locked before dependency resolution ever sees the file.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    content = json.dumps({"name": "reflex", "overrides": overrides})
+    web_pkg.write_text(content)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    assert web_pkg.read_text() == content
+
+
+def test_update_package_json_overrides_treats_null_as_absent(tmp_path, monkeypatch):
+    """A null ``overrides`` still receives the framework entries.
+
+    npm and bun both read ``null`` as "no overrides", so there is nothing to
+    preserve; refusing would silently drop framework security pins.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(json.dumps({"name": "reflex", "overrides": None}))
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    assert json.loads(web_pkg.read_text())["overrides"] == {"cookie": "1.1.1"}
+
+
 def test_compile_package_json_preserves_additional_fields(tmp_path):
     """Persisted fields beyond the framework-managed ones pass through as-is."""
     root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
@@ -1957,3 +2071,47 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+def test_project_hash_survives_reflex_json_update(tmp_path, monkeypatch):
+    """A 128-bit project_hash round-trips through reflex.json rewrites unchanged."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+
+    project_hash = uuid.uuid4().int
+    frontend_skeleton.init_reflex_json(project_hash=project_hash)
+
+    # A later update (e.g. the version check timestamp) rewrites the whole file.
+    path_ops.update_json_file(
+        web_dir / constants.Reflex.JSON,
+        {"last_version_check_datetime": "2024-01-01 00:00:00"},
+    )
+
+    read_hash = prerequisites.get_project_hash()
+    assert isinstance(read_hash, int)
+    assert read_hash == project_hash
+    # Telemetry re-encodes the hash as a UUID, which requires the exact int.
+    assert uuid.UUID(int=read_hash).version == 4
+
+
+def test_read_package_json_object_preserves_large_ints(tmp_path):
+    """User-owned >64-bit integers in package.json are read back exactly."""
+    package_json_path = tmp_path / constants.PackageJson.PATH
+    package_json = {"name": "app", "customId": 2**70 + 1}
+    package_json_path.write_text(json.dumps(package_json))
+
+    assert (
+        frontend_skeleton._read_package_json_object(package_json_path) == package_json
+    )
+
+
+def test_read_package_json_object_undecodable_bytes(tmp_path, caplog):
+    """A package.json that is not valid UTF-8 is warned about and treated as empty."""
+    package_json_path = tmp_path / constants.PackageJson.PATH
+    package_json_path.write_bytes(b'{"name": "\xff\xfe"}')
+
+    assert frontend_skeleton._read_package_json_object(package_json_path) == {}
+
+    assert "treating it as empty" in caplog.text

@@ -65,6 +65,7 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
+orjson = ["orjson >=3.11.1,<4.0"]
 pydantic = ["reflex-base[pydantic]"]
 
 [project.urls]
@@ -86,6 +87,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "orjson",
   "pandas",
   "pillow",
   "playwright",
@@ -409,6 +411,9 @@ cryptography = false
 # Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
 # pinned floor resolves before it ages out of the exclude-newer window.
 starlette = false
+# Dev-only type checker with frequent releases; exempt so a fresh version is not
+# held back by the exclude-newer window.
+ty = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

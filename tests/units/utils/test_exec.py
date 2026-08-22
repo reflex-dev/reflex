@@ -1,5 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
+import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -78,6 +80,36 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_get_package_json_and_hash_preserves_large_ints(tmp_path: Path):
+    """User-owned >64-bit integers survive the read and the hash matches stdlib json."""
+    package_json_path = tmp_path / "package.json"
+    package_json = {"name": "app", "customId": 2**70 + 1, "dependencies": {}}
+    package_json_path.write_text(json.dumps(package_json))
+
+    json_data, package_hash = exec_utils.get_package_json_and_hash(package_json_path)
+
+    # An exact comparison: a rounded float would not equal the original int.
+    assert json_data == package_json
+    assert (
+        package_hash
+        == hashlib.sha256(json.dumps(package_json, sort_keys=True).encode()).hexdigest()
+    )
+
+
+def test_get_package_json_and_hash_matches_stdlib_json(tmp_path: Path):
+    """The hash must stay stable regardless of the optional orjson extra."""
+    package_json_path = tmp_path / "package.json"
+    package_json = {"name": "app", "dependencies": {"react": "19.0.0"}}
+    package_json_path.write_text(json.dumps(package_json))
+
+    _, package_hash = exec_utils.get_package_json_and_hash(package_json_path)
+
+    assert (
+        package_hash
+        == hashlib.sha256(json.dumps(package_json, sort_keys=True).encode()).hexdigest()
+    )
 
 
 def test_with_development_condition_sets_node_and_bun_options():

@@ -84,7 +84,7 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("r") as file:
+    with package_json_path.open("r", encoding="utf-8") as file:
         json_data = json.load(file)
 
     # Calculate the hash
