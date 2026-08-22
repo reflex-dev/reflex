@@ -93,6 +93,15 @@ export class ReflexWebSocket {
     this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
     this._closeReason = null;
+    // Network emulation and OS offline do not interrupt established
+    // websockets, so (like engine.io-client) treat the browser's offline
+    // event as a disconnect. Localhost connections keep working offline.
+    if (
+      typeof addEventListener === "function" &&
+      this._url.hostname !== "localhost"
+    ) {
+      addEventListener("offline", () => this._onOffline(), false);
+    }
     this.connect();
   }
 
@@ -164,6 +173,28 @@ export class ReflexWebSocket {
    * Close the connection deliberately (reason "io client disconnect").
    */
   disconnect() {
+    this._teardown("io client disconnect", undefined);
+  }
+
+  /**
+   * Handle the browser going offline: report the disconnect immediately so
+   * reconnect attempts (and their connect_error reports) start right away.
+   */
+  _onOffline() {
+    if (this.connected) {
+      this._teardown("transport close", {
+        description: "network connection lost",
+      });
+    }
+  }
+
+  /**
+   * Tear down the current connection, reporting the disconnect synchronously
+   * (onclose may never fire during page unload or while offline).
+   * @param reason The disconnect reason to report.
+   * @param details The disconnect details to report.
+   */
+  _teardown(reason, details) {
     this._clearConnectTimer();
     this._clearWatchdog();
     const ws = this._ws;
@@ -174,9 +205,7 @@ export class ReflexWebSocket {
     this._ws = null;
     if (this.connected) {
       this.connected = false;
-      // Match socket.io: report the client-initiated disconnect synchronously,
-      // since onclose may never fire during page unload.
-      this._emitLocal("disconnect", "io client disconnect", undefined);
+      this._emitLocal("disconnect", reason, details);
     }
     if (ws.readyState <= WebSocket.OPEN) {
       ws.onclose = null;
