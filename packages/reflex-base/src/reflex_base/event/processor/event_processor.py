@@ -27,8 +27,8 @@ from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.app import EventNamespace
     from reflex.event import Event, EventSpec
+    from reflex.event_namespace import BaseEventNamespace
 
 if hasattr(asyncio, "QueueShutDown"):
 
@@ -133,7 +133,7 @@ class EventProcessor:
         self,
         *,
         state_manager: StateManager | None = None,
-        event_namespace: EventNamespace | None = None,
+        event_namespace: BaseEventNamespace | None = None,
     ) -> Self:
         """Set up the event processor.
 
