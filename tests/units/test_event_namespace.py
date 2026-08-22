@@ -112,15 +112,21 @@ def mock_app() -> Mock:
 
 
 @pytest.fixture
-def namespace(mock_app: Mock) -> WebsocketEventNamespace:
-    """A websocket event namespace with a mock app.
+def namespace(mock_app: Mock, mocker) -> WebsocketEventNamespace:
+    """A websocket event namespace with a mock app and a local token manager.
+
+    Redis is disabled so token linking stays in-process: these tests must not
+    write session records into a shared Redis instance (which would leak into
+    other tests) or depend on Redis I/O timing for disconnect cleanup.
 
     Args:
         mock_app: The mock app.
+        mocker: The pytest-mock fixture.
 
     Returns:
         The namespace.
     """
+    mocker.patch("reflex.utils.prerequisites.check_redis_used", return_value=False)
     return WebsocketEventNamespace("/_event", mock_app)
 
 
