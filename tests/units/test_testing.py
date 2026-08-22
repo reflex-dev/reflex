@@ -190,7 +190,7 @@ def test_app_harness_initialize_reloads_existing_imported_app(
 
 
 def test_app_harness_frontend_env_has_development_condition(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
+    tmp_path, monkeypatch: pytest.MonkeyPatch, harness_mocks
 ) -> None:
     """The frontend dev server env enables the `development` export condition."""
     harness = AppHarness(
