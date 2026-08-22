@@ -170,6 +170,18 @@ def counter():
 rx.vstack(counter(), counter(), counter())  # three independent counters
 ```
 
+Each item rendered by `rx.foreach` is its own scope too, so an unnamed var used in a
+loop body is per item:
+
+```python
+def row(item: rx.Var[str]) -> rx.Component:
+    expanded = rx.client_state(False)  # one per rendered row
+    ...
+
+
+rx.foreach(State.items, row)
+```
+
 Pass `prefix=` to make generated names readable in the compiled output:
 `rx.client_state(0, prefix="counter")`.
 

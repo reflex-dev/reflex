@@ -217,7 +217,53 @@ def foreach_complex_dict_example():
     )
 ```
 
+## Per-Item State And Event Handlers
+
+Each rendered item gets its own scope, so the item and index are available
+anywhere in that item's subtree -- including in event handlers and in
+components the compiler splits out on its own:
+
+```python
+class TodoState(rx.State):
+    items: list[str] = ["write docs", "ship it"]
+
+    @rx.event
+    def done(self, item: str, index: int): ...
+
+
+def todo_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+    return rx.hstack(
+        rx.text(item),
+        rx.button("done", on_click=TodoState.done(item, index)),
+    )
+
+
+def todo_list():
+    return rx.vstack(rx.foreach(TodoState.items, todo_row))
+```
+
+Client state works the same way: an unnamed `rx.client_state` var in a
+`foreach` body is per item, the way `useState` would be in a React list.
+
+```python
+def expandable_row(item: rx.Var[str]) -> rx.Component:
+    expanded = rx.client_state(False)  # one per rendered row
+    return rx.vstack(
+        rx.button(item, on_click=expanded.set(~expanded.value)),
+        rx.cond(expanded.value, rx.text(f"details for {item}")),
+    )
+```
+
+By default each item is keyed by its position in the list. Pass `key=` on the
+item to key by identity instead, which is what preserves a row's DOM state
+(a typed-in value, focus, an in-flight animation) when the list is reordered:
+
+```python
+rx.foreach(TodoState.items, lambda item: todo_row(item, key=item))
+```
+
 ## API Reference
+
 
 ### `rx.foreach`
 

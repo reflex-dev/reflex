@@ -16,11 +16,13 @@ import {
   CLIENT_STATE_REF,
   ClientStateProvider,
   ClientStateScope,
+  ScopedValues,
   createClientStateStore,
   getClientState,
   getClientStore,
   setClientState,
   useClientState,
+  useScopedValue,
   withClientStateScope,
 } from "$/utils/client_state";
 
@@ -523,6 +525,171 @@ describe("withClientStateScope", () => {
     act(() => parentSeen[0].set("from parent"));
 
     expect(childSeen.at(-1)).toBe("from parent");
+
+    unmount();
+  });
+});
+
+describe("scoped values", () => {
+  /** Render a component that reads one scoped value by name. */
+  const reader = (name) => {
+    const seen = [];
+    const Reader = () => {
+      seen.push(useScopedValue(name));
+      return null;
+    };
+    return { seen, element: createElement(Reader) };
+  };
+
+  test("a descendant component reads a value it never received as a prop", () => {
+    // The shape a loop emits: the value lives in context, so a descendant that
+    // compiled into its own component can still see it.
+    const item = reader("item0");
+    const { unmount } = mount(
+      createElement(ScopedValues, { values: { item0: "a" } }, item.element),
+    );
+
+    expect(item.seen.at(-1)).toBe("a");
+
+    unmount();
+  });
+
+  test("a nested provider still exposes the outer values", () => {
+    const outer = reader("outer0");
+    const inner = reader("inner0");
+    const { unmount } = mount(
+      createElement(
+        ScopedValues,
+        { values: { outer0: "out" } },
+        createElement(
+          ScopedValues,
+          { values: { inner0: "in" } },
+          outer.element,
+          inner.element,
+        ),
+      ),
+    );
+
+    expect(outer.seen.at(-1)).toBe("out");
+    expect(inner.seen.at(-1)).toBe("in");
+
+    unmount();
+  });
+
+  test("a nearer provider shadows the same name", () => {
+    const item = reader("item0");
+    const { unmount } = mount(
+      createElement(
+        ScopedValues,
+        { values: { item0: "outer" } },
+        createElement(
+          ScopedValues,
+          { values: { item0: "inner" } },
+          item.element,
+        ),
+      ),
+    );
+
+    expect(item.seen.at(-1)).toBe("inner");
+
+    unmount();
+  });
+
+  test("an unprovided name reads undefined rather than throwing", () => {
+    const item = reader("missing");
+    const { unmount } = mount(
+      createElement(ScopedValues, { values: {} }, item.element),
+    );
+
+    expect(item.seen.at(-1)).toBeUndefined();
+
+    unmount();
+  });
+
+  test("reading outside any provider is undefined", () => {
+    const item = reader("orphan");
+    const { unmount } = mount(item.element);
+
+    expect(item.seen.at(-1)).toBeUndefined();
+
+    unmount();
+  });
+
+  test("a re-render with new values is seen by descendants", () => {
+    // A loop re-renders with a new item on every list change, so the provided
+    // value must not be frozen at first render.
+    const item = reader("item0");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const render = (value) =>
+      act(() => {
+        root.render(
+          createElement(
+            ScopedValues,
+            { values: { item0: value } },
+            item.element,
+          ),
+        );
+      });
+
+    render("first");
+    expect(item.seen.at(-1)).toBe("first");
+
+    render("second");
+    expect(item.seen.at(-1)).toBe("second");
+
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  test("each provided subtree owns its unnamed client state", () => {
+    // One rendered item is one component instance, so an unnamed var used in a
+    // loop body must not be shared between items.
+    const stateProbe = () => {
+      const renders = { value: undefined, set: undefined };
+      const Probe = () => {
+        const [value, set] = useClientState("", "cs0");
+        renders.value = value;
+        renders.set = set;
+        return null;
+      };
+      return { renders, element: createElement(Probe) };
+    };
+    const first = stateProbe();
+    const second = stateProbe();
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        { registry },
+        createElement(ScopedValues, { values: { item0: "a" } }, first.element),
+        createElement(ScopedValues, { values: { item0: "b" } }, second.element),
+      ),
+    );
+
+    act(() => first.renders.set("typed into the first"));
+
+    expect(first.renders.value).toBe("typed into the first");
+    expect(second.renders.value).toBe("");
+
+    unmount();
+  });
+
+  test("sibling providers give each subtree its own value", () => {
+    // One loop, two items: each item's subtree sees only its own value.
+    const first = reader("item0");
+    const second = reader("item0");
+    const { unmount } = mount(
+      createElement(
+        "div",
+        null,
+        createElement(ScopedValues, { values: { item0: "a" } }, first.element),
+        createElement(ScopedValues, { values: { item0: "b" } }, second.element),
+      ),
+    );
+
+    expect(first.seen.at(-1)).toBe("a");
+    expect(second.seen.at(-1)).toBe("b");
 
     unmount();
   });

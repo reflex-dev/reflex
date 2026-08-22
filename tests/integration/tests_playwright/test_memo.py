@@ -55,6 +55,10 @@ def MemoApp():
         def reverse_order(self):
             self.order = list(reversed(self.order))
 
+        @rx.event
+        def record_submit(self, item: str, position: int):
+            self.last_value = f"{item}@{position}"
+
     @rx.memo
     def my_memoed_component(
         some_value: rx.Var[str],
@@ -87,6 +91,30 @@ def MemoApp():
         # component that must still render and follow its prop.
         return rx.text(value, id="unwrapped-label")
 
+    def scoped_row(item: rx.Var[str], position: rx.Var[int]) -> rx.Component:
+        # No ``rx.memo``: an inline foreach body, which is where loop vars used
+        # to fall out of scope. Every consumer here compiles into its own
+        # module -- the submit handler into a ``useCallback``, the client state
+        # read into its own memo -- so each one only works if it can reach the
+        # loop item from the scope the loop provides around the item.
+        opened = rx.client_state(False, prefix="opened")
+        return rx.hstack(
+            rx.form(
+                rx.el.button("submit", type="submit"),
+                on_submit=lambda _form_data: MemoState.record_submit(item, position),
+                id=f"scoped-form-{position}",
+            ),
+            rx.el.button(
+                "toggle",
+                id=f"scoped-toggle-{position}",
+                on_click=opened.set(~opened.value),
+            ),
+            rx.text(
+                rx.cond(opened.value, f"open:{item}", f"closed:{item}"),
+                id=f"scoped-status-{position}",
+            ),
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.input(
@@ -112,6 +140,10 @@ def MemoApp():
                 id="keyed-rows",
             ),
             unwrapped_label(value=MemoState.last_value),
+            rx.box(
+                rx.foreach(MemoState.order, scoped_row),
+                id="scoped-rows",
+            ),
         )
 
     app = rx.App()
@@ -263,3 +295,51 @@ def test_memo_wrapper_none_renders_and_updates(
     expect(page.locator("#unwrapped-label")).to_have_text("")
     page.locator("#memo-input").fill("unwrapped_update")
     expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")
+
+
+def test_foreach_item_handler_receives_its_own_loop_vars(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A submit handler inside an inline foreach body sees its item and index.
+
+    Regression for reflex-dev/reflex#3210: the handler compiles into a
+    ``useCallback`` that the compiler lifts out of the ``.map`` body, so the
+    loop vars it referenced were not in scope and the page threw
+    ``ReferenceError``. Submitting each row must report that row's own values.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for position, item in enumerate(("row-a", "row-b", "row-c")):
+        page.locator(f"#scoped-form-{position} button").click()
+        expect(page.locator("#memo-last-value")).to_have_text(f"{item}@{position}")
+
+
+def test_foreach_item_client_state_is_per_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """An unnamed client state var in an inline foreach body is per item.
+
+    The var is constructed once at compile time, so all three rows resolve the
+    same generated name -- against the scope the loop opens around each item,
+    which is what makes them independent. The rendered text also interpolates
+    the loop item, so this covers the item reaching a memoized reader.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
+    expect(page.locator("#scoped-status-1")).to_have_text("closed:row-b")
+
+    page.locator("#scoped-toggle-1").click()
+
+    expect(page.locator("#scoped-status-1")).to_have_text("open:row-b")
+    # The other rows are untouched: each item owns its own slot.
+    expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
+    expect(page.locator("#scoped-status-2")).to_have_text("closed:row-c")

@@ -281,6 +281,62 @@ export const withClientStateScope = (Component) => {
 };
 
 /**
+ * Per-render values provided down the tree, chained like the slot scopes.
+ *
+ * Distinct from the slot scopes on purpose: these are read-only values that
+ * change every render (a loop's item and index), so their context identity has
+ * to be free to change, while a slot scope must stay stable or mounted hooks
+ * would rebind. Null outside any provider.
+ */
+export const ScopedValuesContext = createContext(null);
+
+/**
+ * Provide read-only values to a subtree, keyed by name.
+ *
+ * This is how a loop hands its item and index to descendants that compile into
+ * their own components: they read by name from context instead of closing over
+ * a variable that only exists inside the loop callback.
+ *
+ * It also opens a client state scope, because it marks a component instance the
+ * same way a memo boundary does -- one rendered item. That makes an unnamed
+ * client state var used in a loop body per item, which is what a reader of the
+ * Python expects and what React's `useState` would do.
+ * @param props The component props.
+ * @param props.children The children to render.
+ * @param props.values Mapping of name to value for this subtree.
+ * @returns The provider element.
+ */
+export function ScopedValues({ children, values }) {
+  const parent = useContext(ScopedValuesContext);
+  // A fresh object each render is correct here -- the values themselves change
+  // per render, and nothing subscribes to them.
+  const chained = { parent, values };
+  return createElement(
+    ScopedValuesContext.Provider,
+    { value: chained },
+    createElement(ClientStateScope, null, children),
+  );
+}
+
+/**
+ * Read a value provided by an enclosing `ScopedValues`.
+ *
+ * Walks outward, so a nested loop's descendants can still reach the outer loop's
+ * values. Names are generated at compile time, so nested loops never collide.
+ * @param name The value's name.
+ * @returns The value, or undefined when nothing provides it.
+ */
+export function useScopedValue(name) {
+  const scope = useContext(ScopedValuesContext);
+  for (let current = scope; current !== null; current = current.parent) {
+    if (name in current.values) {
+      return current.values[name];
+    }
+  }
+  return undefined;
+}
+
+/**
  * Subscribe to a piece of client state.
  * @param defaultValue The initial value.
  * @param name The name identifying this var. Compiler-generated when the caller
