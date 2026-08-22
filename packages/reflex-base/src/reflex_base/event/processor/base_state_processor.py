@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import inspect
+import logging
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
@@ -14,15 +15,24 @@ from typing import TYPE_CHECKING, Any
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
-from reflex.utils import console, types
+from reflex.utils import types
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from reflex.event import Event, EventHandler, EventSpec
     from reflex.state import BaseState
+
+# Resolved once at import: find_spec on a missing package scans sys.path (~90us),
+# far too slow for the per-event-argument path below.
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+else:
+    BaseModelV2 = None
 
 
 @functools.lru_cache(maxsize=1)
@@ -113,11 +123,8 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)
-        if find_spec("pydantic"):
-            from pydantic import BaseModel as BaseModelV2
-
-            if issubclass(hinted_args, BaseModelV2):
-                return hinted_args.model_validate(value)
+        if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
+            return hinted_args.model_validate(value)
     if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
         return set(value)
     if isinstance(value, list) and hinted_args is tuple:
@@ -248,7 +255,7 @@ async def process_event(
         payload = _transform_event_payload(payload, type_hints)
     except Exception as ex:
         # No transformation was possible, continue with the original payload
-        console.warn(
+        logger.warning(
             f"Error transforming event payload for handler {handler_name}: {ex}"
         )
 
@@ -335,7 +342,9 @@ class BaseStateEventProcessor(EventProcessor):
         """
         ctx = entry.ctx
         event = entry.event
-        router_data = event.router_data or {}
+        # The context, not the event: a chained event carries none of its own
+        # and inherits the producing view's through fork().
+        router_data = ctx.router_data
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(

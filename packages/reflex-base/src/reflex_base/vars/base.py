@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -9,6 +10,7 @@ import datetime
 import functools
 import inspect
 import json
+import logging
 import re
 import string
 import uuid
@@ -42,7 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -70,6 +72,8 @@ from reflex_base.utils.types import (
     safe_issubclass,
     unionize,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -611,7 +615,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return self._js_expr
 
     @property
-    def _var_is_local(self) -> bool:
+    def _var_is_local(self) -> builtins.bool:
         """Whether this is a local javascript variable.
 
         Returns:
@@ -620,7 +624,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return False
 
     @property
-    def _var_is_string(self) -> bool:
+    def _var_is_string(self) -> builtins.bool:
         """Whether the var is a string literal.
 
         Returns:
@@ -728,7 +732,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self
 
-    def equals(self, other: Var) -> bool:
+    def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
 
         Args:
@@ -815,7 +819,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
-        value: bool,
+        value: builtins.bool,
         _var_data: VarData | None = None,
     ) -> LiteralBooleanVar: ...
 
@@ -940,7 +944,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def to(self, output: type[str]) -> StringVar: ...  # pyright: ignore[reportOverlappingOverload]
 
     @overload
-    def to(self, output: type[bool]) -> BooleanVar: ...
+    def to(self, output: type[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def to(self, output: type[int]) -> NumberVar[int]: ...
@@ -1048,7 +1052,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def guess_type(self: Var[str]) -> StringVar: ...
 
     @overload
-    def guess_type(self: Var[bool]) -> BooleanVar: ...
+    def guess_type(self: Var[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
@@ -1156,7 +1160,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     value = self._var_type(value)
                     setattr(state, name, value)
                 except ValueError:
-                    console.debug(
+                    logger.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
@@ -1307,7 +1311,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return ~self.bool()
 
-    def to_string(self, use_json: bool = True) -> StringVar:
+    def to_string(self, use_json: builtins.bool = True) -> StringVar:
         """Convert the var to a string.
 
         Args:
@@ -2603,7 +2607,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
-            console.error(
+            logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
@@ -2652,7 +2656,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 func=obj, state_cls=objclass, dependencies=d
             ).dependencies
         except Exception as e:
-            console.warn(
+            logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
@@ -3500,8 +3504,9 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
             annotated_type: The annotated type for the field.
-            source_field: If given, deep-copy custom (non-reserved) attributes
-                from this field that the new field did not compute itself.
+            source_field: If given, carry custom (non-reserved) attributes
+                from this field that the new field did not compute itself,
+                by reference.
         """
         self.default = default
         self.default_factory = default_factory
@@ -3533,9 +3538,14 @@ class Field(Generic[FIELD_TYPE]):
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
         if source_field is not None:
+            # Carry custom attrs by reference: the source field is a throwaway
+            # namespace value replaced during class creation, and tag consumers
+            # rely on identity (deep-copying cloned stateful callable markers
+            # and crashed outright on non-copyable values like locks). This
+            # matches how _copy_fn carries a function's __dict__.
             for key, value in source_field.__dict__.items():
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
-                    self.__dict__[key] = copy.deepcopy(value)
+                    self.__dict__[key] = value
 
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.
@@ -3704,7 +3714,7 @@ def field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     if default is not MISSING and not types.is_immutable(default):
-        console.warn(
+        logger.warning(
             "Mutable default values are not recommended. "
             "Use default_factory instead to avoid unexpected behavior."
         )

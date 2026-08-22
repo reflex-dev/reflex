@@ -36,13 +36,15 @@ def test_shared_site_styles_plugin_emits_package_css():
         Path("styles/reflex-site-shared/custom-colors.css"),
         Path("styles/reflex-site-shared/tailwind-theme.css"),
         Path("styles/reflex-site-shared/fonts.css"),
+        Path("public/components/AlgoliaSearch.tsx"),
         Path("public/components/GradientButton.tsx"),
         Path("public/icons/search.svg"),
     ]
     assert all(content.strip() for _path, content in assets)
     assert "ph-conversations-widget" in assets[1][1]
-    assert "export function GradientButton" in assets[3][1]
-    assert "<svg" in assets[4][1]
+    assert "export function AlgoliaSearch" in assets[3][1]
+    assert "export function GradientButton" in assets[4][1]
+    assert "<svg" in assets[5][1]
 
 
 def test_docs_markdown_plugin_emits_route_equivalents(tmp_path: Path, monkeypatch):
