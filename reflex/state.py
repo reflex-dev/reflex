@@ -37,6 +37,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     call_script,
+    typing_event,
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
@@ -77,6 +78,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
+from reflex.minify import ensure_minify_resolver_for_active_context
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -84,6 +86,11 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+# Must run before any state class registers — a later install renames states
+# while names captured by VarData.from_state keep the old value (e.g. granian
+# prod workers import the app module directly, bypassing get_app).
+ensure_minify_resolver_for_active_context()
 
 
 Delta = dict[str, dict[str, Any]]
@@ -411,6 +418,11 @@ class BaseState(EvenMoreBasicBaseState):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
+    # Set once __init_subclass__ has registered this exact class. Checked via
+    # ``cls.__dict__`` so a subclass never inherits its parent's flag, and kept
+    # name-independent so swapping the NameResolver can't invalidate it.
+    _is_registered: ClassVar[bool] = False
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -722,22 +734,27 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
         all_base_state_classes[cls.get_full_name()] = None
+        cls._is_registered = True
 
     @classmethod
     def _add_event_handler(
         cls,
         name: str,
         fn: Callable,
-    ):
+    ) -> EventHandler:
         """Add an event handler dynamically to the state.
 
         Args:
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
+
+        Returns:
+            The created EventHandler instance.
         """
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        return handler
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1060,13 +1077,21 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     @functools.lru_cache
     def get_name(cls) -> str:
-        """Get the name of the state.
+        """Get the user-visible name of the state.
+
+        Defers to the active :class:`~reflex_base.registry.NameResolver`
+        (e.g. ``minify.json`` rewrites), falling back to the built-in
+        snake-cased ``module___ClassName`` when no context is attached.
 
         Returns:
-            The name of the state.
+            The resolved name of the state.
         """
-        module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        from reflex_base.registry import RegistrationContext
+
+        ctx = RegistrationContext.try_get()
+        if ctx is None:
+            return RegistrationContext.default_state_name(cls)
+        return ctx.get_state_name(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1084,11 +1109,16 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.lru_cache
-    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
+    def get_class_substate(
+        cls, path: Sequence[str] | str, _skip_self: bool = True
+    ) -> type[BaseState]:
         """Get the class substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The class substate.
@@ -1101,13 +1131,13 @@ class BaseState(EvenMoreBasicBaseState):
 
         if len(path) == 0:
             return cls
-        if path[0] == cls.get_name():
+        if _skip_self and path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
-                return substate.get_class_substate(path[1:])
+                return substate.get_class_substate(path[1:], _skip_self=False)
         msg = f"Invalid path: {path}"
         raise ValueError(msg)
 
@@ -1242,7 +1272,7 @@ class BaseState(EvenMoreBasicBaseState):
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         handler = event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
-        if cls.get_full_name() in all_base_state_classes:
+        if cls.__dict__.get("_is_registered", False):
             # Register handlers created after the class was registered.
             reg_ctx = RegistrationContext.get()
             reg_ctx.register_event_handler(handler, states=(cls,))
@@ -1251,7 +1281,9 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
+            state_cls=cls
+        )
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1620,11 +1652,14 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    def get_substate(self, path: Sequence[str], _skip_self: bool = True) -> BaseState:
         """Get the substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The substate.
@@ -1634,14 +1669,14 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if _skip_self and path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
         if path[0] not in self.substates:
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        return self.substates[path[0]].get_substate(path[1:], _skip_self=False)
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -2388,7 +2423,7 @@ class FrontendEventExceptionState(State):
         ),
     ]
 
-    @event
+    @typing_event
     def handle_frontend_exception(
         self, info: str, component_stack: str
     ) -> Iterator[EventSpec]:
@@ -2429,6 +2464,7 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
+    @typing_event
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
@@ -2456,6 +2492,7 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
+    @typing_event
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
@@ -2674,6 +2711,7 @@ def reload_state_module(
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             all_base_state_classes.pop(subclass.get_full_name(), None)
+            subclass._is_registered = False
             substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
