@@ -406,10 +406,7 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    # imported lazily: reflex_base.vars imports this module
-    from reflex_base.vars.hybrid_property import HybridProperty
-
-    if not isinstance(attr, (*PROPERTY_CLASSES, HybridProperty)):
+    if not isinstance(attr, PROPERTY_CLASSES) or attr.fget is None:
         return None
     hints = get_type_hints(attr.fget)
     return hints.get("return", None)

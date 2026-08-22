@@ -250,6 +250,237 @@ def test_hybrid_property_var_fn_as_classmethod():
     )
 
 
+def test_hybrid_property_functional_construction():
+    """A functionally constructed property binds under the assigned name."""
+
+    def _get_val(self) -> str:
+        return self._v
+
+    def _set_val(self, new: str) -> None:
+        self._v = new
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        value = hybrid_property(_get_val).setter(_set_val)
+
+    assert "value" in Holder.__dict__
+    assert "_get_val" not in Holder.__dict__
+    holder = Holder()
+    assert holder.value == "a"
+    holder.value = "b"
+    assert holder.value == "b"
+
+
+def test_hybrid_property_functional_copy_keeps_original():
+    """Assigning a derived copy to a new name must not touch the original."""
+
+    def _set_val(self, new: str) -> None:
+        self._v = new
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @hybrid_property
+        def a(self) -> str:
+            return self._v
+
+        b = a.setter(_set_val)
+
+    assert "a" in Holder.__dict__
+    assert "b" in Holder.__dict__
+    holder = Holder()
+    holder.b = "c"
+    assert holder.a == "c"
+    with pytest.raises(AttributeError, match="no setter"):
+        holder.a = "x"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_hybrid_property_getterless_getter_decorator():
+    """A getter-less property accepts its getter via the decorator form."""
+
+    class Holder:
+        value = hybrid_property()
+
+        @value.getter  # pyright: ignore[reportGeneralTypeIssues]
+        def value(self) -> str:
+            return "got"
+
+    assert Holder().value == "got"
+
+
+def test_hybrid_property_getterless_var_only():
+    """A getter-less property with only a var function works on a state."""
+
+    class VarOnlyState(rx.State):
+        count: int = 0
+
+        maybe = hybrid_property().var(lambda owner: owner.count + 1)
+
+    assert str(Var.create(VarOnlyState.maybe)) == str(
+        Var.create(VarOnlyState.count + 1)
+    )
+
+
+def test_hybrid_property_unchained_setter_and_deleter():
+    """setter/deleter derived from the same property (not chained) both survive."""
+    seen: list[str] = []
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @hybrid_property
+        def value(self) -> str:
+            return self._v
+
+        @value.setter
+        def _value_setter(self, new: str) -> None:
+            self._v = new
+
+        @value.deleter
+        def _value_deleter(self) -> None:
+            seen.append("deleted")
+
+    holder = Holder()
+    assert holder.value == "a"
+    holder.value = "b"
+    assert holder.value == "b"
+    del holder.value
+    assert seen == ["deleted"]
+
+
+def test_hybrid_property_in_pydantic_model():
+    """A hybrid property may be declared directly in a pydantic model body."""
+    from pydantic import BaseModel
+
+    class Person(BaseModel):
+        first_name: str
+        last_name: str
+
+        @hybrid_property
+        def full_name(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    assert Person(first_name="Jane", last_name="Doe").full_name == "Jane Doe"
+
+
+def test_hybrid_property_backend_var_not_resolved_during_class_creation():
+    """An inherited hybrid property at an annotated backend var name must not run
+    while the state class is being constructed.
+    """
+    calls: list[str] = []
+
+    class HybridBase:
+        @hybrid_property
+        def _foo(self) -> int:
+            calls.append("getter ran")
+            return 1
+
+    class GuardState(HybridBase, rx.State):
+        _foo: int  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert calls == []
+
+
+def test_hybrid_property_annotated_name_keeps_descriptor():
+    """An annotation on the property's name must not turn it into a field."""
+
+    class AnnotatedState(rx.State):
+        count: int = 3
+        doubled: int  # pyright: ignore[reportRedeclaration]
+
+        @hybrid_property
+        def doubled(self) -> int:
+            return self.count * 2
+
+    assert isinstance(AnnotatedState.__dict__["doubled"], hybrid_property)
+    assert AnnotatedState(_reflex_internal_init=True).doubled == 6  # pyright: ignore[reportCallIssue]
+    assert str(Var.create(AnnotatedState.doubled)) == str(
+        Var.create(AnnotatedState.count * 2)
+    )
+
+
+def test_hybrid_property_subclass_identity_preserved():
+    """Deriving via setter/deleter/var keeps the descriptor's subclass."""
+    from reflex_base.vars.hybrid_property import HybridProperty
+
+    class MyHybridProperty(HybridProperty):
+        pass
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @MyHybridProperty
+        def value(self) -> str:
+            return self._v
+
+        @value.setter
+        def _value_setter(self, new: str) -> None:
+            self._v = new
+
+    assert type(Holder.__dict__["value"]) is MyHybridProperty
+
+
+def test_hybrid_property_abstractmethod():
+    """A hybrid property over an abstractmethod keeps the class abstract."""
+    import abc
+
+    class AbstractBase(abc.ABC):
+        @hybrid_property
+        @abc.abstractmethod
+        def name(self) -> str: ...
+
+    class Incomplete(AbstractBase):  # pyright: ignore[reportImplicitAbstractClass]
+        pass
+
+    with pytest.raises(TypeError):
+        Incomplete()  # pyright: ignore[reportAbstractUsage]
+
+    class Complete(AbstractBase):
+        @hybrid_property
+        def name(self) -> str:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return "x"
+
+    assert Complete().name == "x"
+
+
+def test_hybrid_property_non_state_class_access_returns_descriptor():
+    """Class-level access on a non-state class returns the descriptor itself."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class Info:
+        first: str
+
+        @hybrid_property
+        def combined(self) -> str:
+            return self.first
+
+    assert isinstance(Info.__dict__["combined"], hybrid_property)
+    assert Info(first="a").combined == "a"
+
+
+def test_hybrid_property_var_fn_as_staticmethod():
+    """A var function may be a staticmethod receiving the owner."""
+
+    class StaticVarState(rx.State):
+        count: int = 0
+
+        @hybrid_property
+        def maybe(self) -> int:  # pyright: ignore[reportRedeclaration]
+            return self.count
+
+        maybe = maybe.var(staticmethod(lambda owner: owner.count * 5))
+
+    assert str(Var.create(StaticVarState.maybe)) == str(
+        Var.create(StaticVarState.count * 5)
+    )
+
+
 def test_hybrid_property_class_access_var_type_follows_getter():
     """Class-level access resolves to the var equivalent of the getter's return type."""
 

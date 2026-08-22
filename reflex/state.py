@@ -67,7 +67,6 @@ from reflex_base.vars.base import (
     dispatch,
     is_computed_var,
 )
-from reflex_base.vars.hybrid_property import HybridProperty
 from rich.markup import escape
 from typing_extensions import Self
 
@@ -349,7 +348,6 @@ def _is_user_descriptor(value: Any) -> bool:
             classmethod,
             staticmethod,
             property,
-            HybridProperty,
             functools.cached_property,
             EventHandler,
             Var,
@@ -1316,6 +1314,10 @@ class BaseState(EvenMoreBasicBaseState):
     def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
         """Get the default value of a (backend) var.
 
+        The class dicts are read directly instead of going through `getattr`:
+        resolving a descriptor here would run user code (e.g. a hybrid property
+        getter) against the class while it is still being constructed.
+
         Args:
             name: The name of the var.
             annotation_value: The annotation value of the var.
@@ -1323,15 +1325,21 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The default value of the var or None.
         """
+        for klass in cls.__mro__:
+            if name not in klass.__dict__:
+                continue
+            value = klass.__dict__[name]
+            if isinstance(value, Field):
+                # matches what Field.__get__ returns on class-level access
+                return None
+            if hasattr(type(value), "__get__"):
+                # A descriptor provides behavior, not a stored default.
+                break
+            return value
         try:
-            value = getattr(cls, name)
-            return value if not isinstance(value, Field) else value.default_value()
-        except AttributeError:
-            try:
-                return types.get_default_value_for_type(annotation_value)
-            except TypeError:
-                pass
-        return None
+            return types.get_default_value_for_type(annotation_value)
+        except TypeError:
+            return None
 
     @staticmethod
     def _get_base_functions() -> builtins.dict[str, FunctionType]:
