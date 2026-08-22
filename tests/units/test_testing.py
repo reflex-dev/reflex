@@ -162,13 +162,15 @@ def test_app_harness_initialize_resets_leaked_prod_env_mode(
     assert not should_prerender_routes()
 
 
-def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, harness_mocks, monkeypatch
+def test_app_harness_initialize_preserves_existing_imported_app(
+    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure pre-existing imported apps are reloaded after memo registry reset.
+    """A real (``app_source is None``) app is imported with ``reload=False`` and
+    its registrations (incl. memos) are kept, not reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
+        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
@@ -182,8 +184,11 @@ def test_app_harness_initialize_reloads_existing_imported_app(
         harness_mocks.config.module,
         ModuleType(harness_mocks.config.module),
     )
+    MEMOS["existing_memo", None] = mock.sentinel.memo
 
     harness = AppHarness.create(root=tmp_path / "plain_app")
     harness._initialize_app()
 
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=False)
+    # The real app's registrations (incl. memos) are preserved, not reset.
+    assert ("existing_memo", None) in MEMOS
