@@ -7,7 +7,9 @@ import throttle from "@reflex-dev/reflex-base/helpers/throttle";
 describe("compareDatetime helper", () => {
   test("orders serialized python datetimes without local-tz drift", () => {
     expect(compareDatetime("2020-01-02", "2020-01-03")).toBe(-1);
-    expect(compareDatetime("2020-01-02 10:00:00", "2020-01-02 09:00:00")).toBe(1);
+    expect(compareDatetime("2020-01-02 10:00:00", "2020-01-02 09:00:00")).toBe(
+      1,
+    );
     expect(
       compareDatetime("2020-01-02 10:00:00+02:00", "2020-01-02 08:00:00Z"),
     ).toBe(0);

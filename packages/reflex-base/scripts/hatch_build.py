@@ -19,14 +19,17 @@ import re
 import shutil
 import tarfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from packaging.version import Version
 
-try:
+if TYPE_CHECKING:
     from hatchling.builders.hooks.plugin.interface import BuildHookInterface
-except ImportError:  # loaded outside a build (release verification, tests)
-    BuildHookInterface = object
+else:
+    try:
+        from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+    except ImportError:  # loaded outside a build (release verification, tests)
+        BuildHookInterface = object
 
 FRONTEND_RELATIVE_PATH = "src/reflex_base/frontend"
 WHEEL_DESTINATION_DIR = "reflex_base/frontend"

@@ -15,7 +15,10 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: /^@reflex-dev\/reflex-base\/(.*)$/, replacement: `${packageRoot}$1` },
+      {
+        find: /^@reflex-dev\/reflex-base\/(.*)$/,
+        replacement: `${packageRoot}$1`,
+      },
       { find: /^react$/, replacement: require.resolve("react") },
       { find: /^react-dom$/, replacement: require.resolve("react-dom") },
       { find: /^react-router$/, replacement: require.resolve("react-router") },

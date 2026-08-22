@@ -32,7 +32,7 @@ configureReflexRuntime({
   state_name: "reflex___state____state",
   exception_state_name:
     "reflex___state____state.reflex___state____frontend_event_exception_state",
-  initialState: { "reflex___state____state": {} },
+  initialState: { reflex___state____state: {} },
 });
 
 describe("getBackendURL", () => {
@@ -71,7 +71,9 @@ describe("state helpers", () => {
 
   test("ReflexEvent omits empty payloads and actions", () => {
     expect(ReflexEvent("evt")).toEqual({ name: "evt" });
-    expect(ReflexEvent("evt", { a: 1 }, { debounce: 5 }, "uploadFiles")).toEqual({
+    expect(
+      ReflexEvent("evt", { a: 1 }, { debounce: 5 }, "uploadFiles"),
+    ).toEqual({
       name: "evt",
       payload: { a: 1 },
       event_actions: { debounce: 5 },
