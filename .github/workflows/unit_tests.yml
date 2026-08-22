@@ -29,7 +29,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        experimental: [false]
+        include:
+          # Prerelease; non-blocking until the codebase is 3.15-compatible
+          # (e.g. dataclasses._MISSING_TYPE usage). Deps without cp315
+          # wheels build from sdist.
+          - os: ubuntu-latest
+            python-version: "3.15"
+            experimental: true
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
 
     # Service containers to run with `runner-job`
     services:

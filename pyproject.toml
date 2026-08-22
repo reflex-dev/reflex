@@ -92,7 +92,9 @@ dev = [
   "plotly",
   "pre-commit",
   "psutil",
-  "psycopg[binary]",
+  # No cp315 psycopg-binary wheels yet; use pure-python psycopg on 3.15+
+  "psycopg[binary]; python_version < '3.15'",
+  "psycopg; python_version >= '3.15'",
   "pydantic",
   "pyright",
   "pytest-asyncio",
