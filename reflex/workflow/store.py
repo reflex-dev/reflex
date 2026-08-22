@@ -1790,8 +1790,14 @@ class MemoryRunStore:
             if (
                 child.parent_run_id != run_id
                 or child.parent_close == "abandon"
+                or child.cancel_requested
                 or child.status in TERMINAL_RUN_STATUSES
             ):
+                # cancel_requested is durable and monotonic, so an
+                # already-marked child has nothing left to write -- and
+                # skipping it keeps a second close (a failed run later
+                # skip-completed by an operator) from appending a duplicate
+                # cancel-requested event to its history.
                 continue
             self._runs[child.run_id] = dataclasses.replace(
                 child,
@@ -1922,6 +1928,27 @@ class MemoryRunStore:
                         updated_at=now,
                     )
                     self._append_events(run_id, events, now)
+                    if not open_left:
+                        # Completed by an operator's decision is still
+                        # completed: branches are told to stop, and a parent
+                        # joined on this run hears it finished instead of
+                        # waiting forever on a run that no longer will.
+                        self._close_children(run_id, now)
+                        if run.parent_run_id is not None and (
+                            run.parent_ordinal is not None
+                        ):
+                            self._apply_arrival(
+                                run.parent_run_id,
+                                run.parent_ordinal,
+                                {
+                                    "run_id": run_id,
+                                    "status": RunStatus.COMPLETED.value,
+                                    "result": None,
+                                    "error": None,
+                                },
+                                run_id,
+                                now,
+                            )
                     return True
             return False
 
@@ -2003,11 +2030,17 @@ class MemoryRunStore:
         restored: list[int] = []
         for index, step in enumerate(steps):
             if step.status is StepStatus.CANCELLED:
+                # A wait or join comes back as what it was -- BLOCKED, with
+                # its arrival count and deadline intact -- never as READY:
+                # restored-as-READY it would run immediately with a missing
+                # or partial payload. Plain slots keep their own due_at too,
+                # so a restored delay still waits out its delay instead of
+                # firing the moment an operator retries.
+                waiting = step.wait_key is not None
                 steps[index] = dataclasses.replace(
                     step,
-                    status=StepStatus.READY,
+                    status=StepStatus.BLOCKED if waiting else StepStatus.READY,
                     attempts=0,
-                    due_at=now,
                     lease_expires_at=0.0,
                     error=None,
                     updated_at=now,
@@ -2079,12 +2112,49 @@ class MemoryRunStore:
                             error={"reason": "recovery_budget_exhausted"},
                             updated_at=now,
                         )
+                        # Replaced from the CURRENT record, not the loop's
+                        # snapshot: when a parent and its child both exhaust
+                        # in one pass, the parent's cascade has already set
+                        # cancel_requested on this child, and a snapshot
+                        # rebuild would silently revert it -- letting a later
+                        # retry revive a branch whose parent is dead. The SQL
+                        # stores update columns in place and keep the flag;
+                        # this is the same semantics.
                         self._runs[run.run_id] = dataclasses.replace(
-                            run,
+                            self._runs[run.run_id],
                             status=RunStatus.FAILED,
                             error={"reason": "recovery_budget_exhausted"},
                             updated_at=now,
                         )
+                        # Exhaustion is a failure, and failure closes the run
+                        # completely: open slots tombstoned so a dead run
+                        # surfaces no wake times, branches told to stop so
+                        # children do not keep working for a parent that no
+                        # longer exists.
+                        tombstoned = []
+                        for other in list(steps):
+                            if (
+                                other.ordinal != step.ordinal
+                                and other.status not in TERMINAL_STEP_STATUSES
+                            ):
+                                steps[other.ordinal] = dataclasses.replace(
+                                    other,
+                                    status=StepStatus.CANCELLED,
+                                    updated_at=now,
+                                )
+                                tombstoned.append(other.ordinal)
+                        self._append_events(
+                            run.run_id,
+                            tuple(
+                                (
+                                    HistoryEventType.STEP_TOMBSTONED,
+                                    {"ordinal": ordinal},
+                                )
+                                for ordinal in tombstoned
+                            ),
+                            now,
+                        )
+                        self._close_children(run.run_id, now)
                         failed.append(run.run_id)
                         if run.parent_run_id is not None and (
                             run.parent_ordinal is not None
@@ -2111,25 +2181,25 @@ class MemoryRunStore:
                             ),
                             now,
                         )
-                    else:
-                        steps[step.ordinal] = dataclasses.replace(
-                            step,
-                            status=StepStatus.RECOVERY_WAIT,
-                            recoveries=step.recoveries + 1,
-                            due_at=now,
-                            lease_expires_at=0.0,
-                            updated_at=now,
-                        )
-                        self._append_events(
-                            run.run_id,
+                        break
+                    steps[step.ordinal] = dataclasses.replace(
+                        step,
+                        status=StepStatus.RECOVERY_WAIT,
+                        recoveries=step.recoveries + 1,
+                        due_at=now,
+                        lease_expires_at=0.0,
+                        updated_at=now,
+                    )
+                    self._append_events(
+                        run.run_id,
+                        (
                             (
-                                (
-                                    HistoryEventType.STEP_RECOVERED,
-                                    {"ordinal": step.ordinal},
-                                ),
+                                HistoryEventType.STEP_RECOVERED,
+                                {"ordinal": step.ordinal},
                             ),
-                            now,
-                        )
+                        ),
+                        now,
+                    )
             return recovered, tuple(failed)
 
     async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
@@ -2913,6 +2983,7 @@ class SqliteRunStore:
         closing = self._db.execute(
             "UPDATE workflow_runs SET cancel_requested = 1, status = ?,"
             " updated_at = ? WHERE parent_run_id = ? AND parent_close <> 'abandon'"
+            " AND NOT cancel_requested"
             f" AND status NOT IN ({','.join('?' * len(terminal))})"
             " RETURNING run_id",
             (RunStatus.CANCELLING.value, now, run_id, *terminal),
@@ -4330,13 +4401,19 @@ class SqliteRunStore:
                         # "from there" is a lie unless they come back. Nothing
                         # independently cancelled can be in a run these
                         # actions accept (see MemoryRunStore._restore_tombstoned).
+                        # Waits and joins come back BLOCKED with their
+                        # arrival counts and deadlines intact, never READY --
+                        # restored-as-READY they would run immediately with a
+                        # missing or partial payload. Plain slots keep their
+                        # own due_at, so a restored delay still waits.
                         self._db.execute(
-                            "UPDATE workflow_steps SET status = ?, attempts = 0,"
-                            " due_at = ?, lease_expires_at = 0, error = NULL,"
+                            "UPDATE workflow_steps SET status = CASE WHEN"
+                            " wait_key IS NULL THEN ? ELSE ? END, attempts = 0,"
+                            " lease_expires_at = 0, error = NULL,"
                             " updated_at = ? WHERE run_id = ? AND status = ?",
                             (
                                 StepStatus.READY.value,
-                                now,
+                                StepStatus.BLOCKED.value,
                                 now,
                                 run_id,
                                 StepStatus.CANCELLED.value,
@@ -4370,6 +4447,30 @@ class SqliteRunStore:
                     if not open_left:
                         events.append((HistoryEventType.RUN_COMPLETED, {}))
                     self._append_events(run_id, events, now)
+                    if not open_left:
+                        # Completed by an operator's decision is still
+                        # completed: branches are told to stop, and a parent
+                        # joined on this run hears it finished instead of
+                        # waiting forever.
+                        self._close_children_sql(run_id, now)
+                        parent = self._db.execute(
+                            "SELECT parent_run_id, parent_ordinal FROM"
+                            " workflow_runs WHERE run_id = ?",
+                            (run_id,),
+                        ).fetchone()
+                        if parent is not None and (parent["parent_run_id"] is not None):
+                            self._apply_arrival_sql(
+                                parent["parent_run_id"],
+                                parent["parent_ordinal"],
+                                {
+                                    "run_id": run_id,
+                                    "status": RunStatus.COMPLETED.value,
+                                    "result": None,
+                                    "error": None,
+                                },
+                                run_id,
+                                now,
+                            )
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")
@@ -4434,13 +4535,19 @@ class SqliteRunStore:
                         # "from there" is a lie unless they come back. Nothing
                         # independently cancelled can be in a run these
                         # actions accept (see MemoryRunStore._restore_tombstoned).
+                        # Waits and joins come back BLOCKED with their
+                        # arrival counts and deadlines intact, never READY --
+                        # restored-as-READY they would run immediately with a
+                        # missing or partial payload. Plain slots keep their
+                        # own due_at, so a restored delay still waits.
                         self._db.execute(
-                            "UPDATE workflow_steps SET status = ?, attempts = 0,"
-                            " due_at = ?, lease_expires_at = 0, error = NULL,"
+                            "UPDATE workflow_steps SET status = CASE WHEN"
+                            " wait_key IS NULL THEN ? ELSE ? END, attempts = 0,"
+                            " lease_expires_at = 0, error = NULL,"
                             " updated_at = ? WHERE run_id = ? AND status = ?",
                             (
                                 StepStatus.READY.value,
-                                now,
+                                StepStatus.BLOCKED.value,
                                 now,
                                 run_id,
                                 StepStatus.CANCELLED.value,
@@ -4580,6 +4687,43 @@ class SqliteRunStore:
                                     step.run_id,
                                 ),
                             )
+                            # Exhaustion is a failure, and failure closes the
+                            # run completely: open slots tombstoned, branches
+                            # told to stop.
+                            step_terminal = tuple(
+                                s.value for s in TERMINAL_STEP_STATUSES
+                            )
+                            open_rows = self._db.execute(
+                                "SELECT ordinal FROM workflow_steps"
+                                " WHERE run_id = ? AND ordinal != ? AND status"
+                                " NOT IN"
+                                f" ({','.join('?' * len(step_terminal))})",
+                                (step.run_id, step.ordinal, *step_terminal),
+                            ).fetchall()
+                            for open_row in open_rows:
+                                self._db.execute(
+                                    "UPDATE workflow_steps SET status = ?,"
+                                    " updated_at = ? WHERE run_id = ?"
+                                    " AND ordinal = ?",
+                                    (
+                                        StepStatus.CANCELLED.value,
+                                        now,
+                                        step.run_id,
+                                        open_row["ordinal"],
+                                    ),
+                                )
+                            self._append_events(
+                                step.run_id,
+                                tuple(
+                                    (
+                                        HistoryEventType.STEP_TOMBSTONED,
+                                        {"ordinal": open_row["ordinal"]},
+                                    )
+                                    for open_row in open_rows
+                                ),
+                                now,
+                            )
+                            self._close_children_sql(step.run_id, now)
                             failed.append(step.run_id)
                             parent = self._db.execute(
                                 "SELECT parent_run_id, parent_ordinal FROM"

@@ -423,3 +423,33 @@ def _pg_step(run_id: str, ordinal: int = 0, **over) -> StepRecord:
     }
     fields.update(over)
     return StepRecord(**fields)
+
+
+async def test_twelve_workers_can_initialize_a_fresh_schema_together():
+    """First deploy of a fleet: every worker races the same CREATE statements.
+
+    IF NOT EXISTS does not make concurrent DDL safe -- each CREATE TABLE also
+    inserts the table's composite type, and two backends that both saw "not
+    exists" race on pg_type. Twelve fresh workers produced one winner and
+    eleven UniqueViolations, so a fleet's first deploy crash-looped everyone
+    but one. The advisory lock serializes initializers; this drives twelve
+    concurrent stores at one brand-new schema and requires them all to come
+    up.
+    """
+    from reflex.workflow.postgres import PostgresRunStore
+
+    schema = f"initrace_{uuid.uuid4().hex[:12]}"
+    stores = [
+        PostgresRunStore(POSTGRES_URL, schema=schema, min_size=0, max_size=2)
+        for _ in range(12)
+    ]
+    try:
+        outcomes = await asyncio.gather(
+            *(store.epoch_time() for store in stores), return_exceptions=True
+        )
+        errors = [o for o in outcomes if isinstance(o, BaseException)]
+        assert not errors, f"{len(errors)} of 12 initializers failed: {errors[:2]}"
+    finally:
+        for store in stores:
+            await store.close()
+        stores[0].drop_schema()

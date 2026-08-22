@@ -383,15 +383,44 @@ class PostgresRunStore:
                 open=False,
             )
             await pool.open(wait=True)
-            async with pool.connection() as conn:
-                if schema is not None:
-                    await conn.execute(
-                        SQL("CREATE SCHEMA IF NOT EXISTS {}").format(Identifier(schema))
-                    )
-                    await conn.execute(_set_search_path(schema))
-                await conn.execute(_SCHEMA)
+            try:
+                await self._initialize_schema(pool, schema)
+            except BaseException:
+                # The pool is already open; abandoning it here would leak its
+                # connections and every retry would leak another pool's worth.
+                await pool.close()
+                raise
             self._pool = pool
             return pool
+
+    async def _initialize_schema(self, pool: Any, schema: str | None) -> None:
+        """Create this store's schema and tables, safely under concurrency.
+
+        Args:
+            pool: The open connection pool.
+            schema: The schema to create tables in, or None for the search
+                path's default.
+        """
+        async with pool.connection() as conn, conn.transaction():
+            # IF NOT EXISTS does not make concurrent DDL safe: each
+            # CREATE TABLE also inserts the table's composite type, and
+            # two backends that both saw "not exists" race on pg_type --
+            # twelve fresh workers produced one winner and eleven
+            # UniqueViolations. The advisory lock serializes the
+            # initializers so the losers' IF NOT EXISTS genuinely sees
+            # the winner's objects, and running every statement in one
+            # transaction means a worker that dies mid-setup leaves
+            # nothing half-created behind.
+            await conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                (f"reflex-workflow-ddl:{schema or ''}",),
+            )
+            if schema is not None:
+                await conn.execute(
+                    SQL("CREATE SCHEMA IF NOT EXISTS {}").format(Identifier(schema))
+                )
+                await conn.execute(_set_search_path(schema))
+            await conn.execute(_SCHEMA)
 
     @property
     def schema(self) -> str | None:
@@ -897,7 +926,16 @@ class PostgresRunStore:
                 f" WHERE {_RUNNABLE_PREDICATE} AND {_FRONTIER_PREDICATE}"
                 f" AND {_CLAIMABLE_PREDICATE} AND {_QUEUE_PREDICATE}"
                 " ORDER BY r.created_at, s.run_id"
-                " FOR UPDATE OF s SKIP LOCKED LIMIT 1",
+                # OF r, not OF s: every arrival path holds the parent run row
+                # and then updates the join step, and a join slot with a
+                # lapsed wait deadline is claimable -- locking the step first
+                # here was the last remaining inversion of the run-first
+                # invariant, and it deadlocked a timeout claim against the
+                # child arrival racing it. Holding the run row serializes the
+                # step writers just as well, because every one of them takes
+                # the run row first. SKIP LOCKED at run granularity also
+                # matches the serial mailbox: one claim per run.
+                " FOR UPDATE OF r SKIP LOCKED LIMIT 1",
                 params,
             )
             candidate = await cursor.fetchone()
@@ -1003,8 +1041,9 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
+            locked_children: list[str] = []
             if completion.run_status in TERMINAL_RUN_STATUSES:
-                await self._lock_children(conn, claim.run.run_id)
+                locked_children = await self._lock_children(conn, claim.run.run_id)
             await self._lock_run(conn, claim.run.run_id)
             deadline = await self._check_claim(conn, claim)
             # Past the deadline the only permitted outcome is TIMED_OUT, and
@@ -1069,7 +1108,7 @@ class PostgresRunStore:
             )
             await self._append_events(conn, claim.run.run_id, completion.events, now)
             if completion.run_status in TERMINAL_RUN_STATUSES:
-                await self._close_children(conn, claim.run.run_id, now)
+                await self._close_children(conn, now, locked_children)
             if completion.parent_arrival is not None:
                 await self._apply_arrival(conn, *completion.parent_arrival, now)
 
@@ -1271,7 +1310,7 @@ class PostgresRunStore:
                 await self._lock_run(conn, parent)
                 await self._append_events(conn, parent, events, now)
 
-    async def _lock_children(self, conn: Any, run_id: str) -> None:
+    async def _lock_children(self, conn: Any, run_id: str) -> list[str]:
         """Take the branch rows this transaction will close, before its own.
 
         Closing a parent locks the parent and then its children; a child
@@ -1285,18 +1324,32 @@ class PostgresRunStore:
         before shallower ones, so no cycle can form. The ORDER BY matters for
         the same reason within one level.
 
+        Children already told to cancel are excluded: the flag is durable
+        and monotonic, so there is nothing left to write on them -- and
+        skipping them keeps a second close from appending a duplicate
+        cancel-requested event to their history.
+
         Args:
             conn: The connection inside an open transaction.
             run_id: The run whose branches may be closed.
+
+        Returns:
+            The child run ids this transaction holds, for _close_children --
+            which must write exactly this set, because a child revived
+            between the lock and the write would otherwise be written
+            parent-before-child, the inversion this ordering exists to
+            prevent.
         """
-        await conn.execute(
+        cursor = await conn.execute(
             "SELECT run_id FROM workflow_runs WHERE parent_run_id = %s"
-            " AND parent_close <> 'abandon' AND NOT (status = ANY(%s))"
+            " AND parent_close <> 'abandon' AND NOT cancel_requested"
+            " AND NOT (status = ANY(%s))"
             " ORDER BY run_id FOR UPDATE",
             (run_id, [s.value for s in TERMINAL_RUN_STATUSES]),
         )
+        return [row["run_id"] for row in await cursor.fetchall()]
 
-    async def _close_children(self, conn: Any, run_id: str, now: float) -> None:
+    async def _close_children(self, conn: Any, now: float, children: list[str]) -> None:
         """Request cancellation of branches the closing run fanned out to.
 
         Called inside the transaction that takes a run terminal, so an
@@ -1308,19 +1361,30 @@ class PostgresRunStore:
 
         Args:
             conn: The connection inside an open transaction.
-            run_id: The run reaching a terminal state.
             now: Current time in epoch seconds.
+            children: The child run ids _lock_children pinned earlier in this
+                transaction.
         """
+        if not children:
+            return
         closing = await (
             await conn.execute(
+                # Exactly the set _lock_children pinned, never re-derived: a
+                # child revived between the lock and this write would match a
+                # fresh predicate without ever having been locked, and this
+                # transaction would then take its row while holding the
+                # parent -- the shallower-before-deeper inversion the lock
+                # ordering exists to prevent. The revived child is the
+                # operator's decision and keeps running; it was terminal when
+                # this close began.
                 "UPDATE workflow_runs SET cancel_requested = TRUE, status = %s,"
-                " updated_at = %s WHERE parent_run_id = %s"
-                " AND parent_close <> 'abandon' AND NOT (status = ANY(%s))"
+                " updated_at = %s WHERE run_id = ANY(%s)"
+                " AND NOT (status = ANY(%s))"
                 " RETURNING run_id",
                 (
                     RunStatus.CANCELLING.value,
                     now,
-                    run_id,
+                    children,
                     [s.value for s in TERMINAL_RUN_STATUSES],
                 ),
             )
@@ -1708,7 +1772,7 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
-            await self._lock_children(conn, run_id)
+            locked_children = await self._lock_children(conn, run_id)
             cursor = await conn.execute(
                 "SELECT status FROM workflow_runs WHERE run_id = %s FOR UPDATE",
                 (run_id,),
@@ -1745,7 +1809,7 @@ class PostgresRunStore:
             ]
             events.append((event, {} if error is None else dict(error)))
             await self._append_events(conn, run_id, events, now)
-            await self._close_children(conn, run_id, now)
+            await self._close_children(conn, now, locked_children)
             if parent_arrival is not None:
                 await self._apply_arrival(conn, *parent_arrival, now)
         return True
@@ -1804,12 +1868,18 @@ class PostgresRunStore:
             The restored ordinals, in order.
         """
         cursor = await conn.execute(
-            "UPDATE workflow_steps SET status = %s, attempts = 0, due_at = %s,"
+            # Waits and joins come back BLOCKED with their arrival counts and
+            # deadlines intact, never READY -- restored-as-READY they would
+            # run immediately with a missing or partial payload. Plain slots
+            # keep their own due_at, so a restored delay still waits out its
+            # delay instead of firing the moment an operator retries.
+            "UPDATE workflow_steps SET status = CASE WHEN wait_key IS NULL"
+            " THEN %s ELSE %s END, attempts = 0,"
             " lease_expires_at = 0, error = NULL, updated_at = %s"
             " WHERE run_id = %s AND status = %s RETURNING ordinal",
             (
                 StepStatus.READY.value,
-                now,
+                StepStatus.BLOCKED.value,
                 now,
                 run_id,
                 StepStatus.CANCELLED.value,
@@ -1876,6 +1946,12 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
+            # A skip that removes the last open slot completes the run, and
+            # terminal transitions take child locks before their own row.
+            # Whether this skip completes is not known until the slot count
+            # below, so the branches are taken unconditionally -- the order
+            # is what matters, not the need.
+            locked_children = await self._lock_children(conn, run_id)
             await self._lock_run(conn, run_id)
             cursor = await conn.execute(
                 "SELECT s.ordinal AS ordinal FROM workflow_steps s"
@@ -1926,6 +2002,31 @@ class PostgresRunStore:
             if not open_left:
                 events.append((HistoryEventType.RUN_COMPLETED, {}))
             await self._append_events(conn, run_id, tuple(events), now)
+            if not open_left:
+                # Completed by an operator's decision is still completed:
+                # branches are told to stop, and a parent joined on this run
+                # hears it finished instead of waiting forever.
+                await self._close_children(conn, now, locked_children)
+                cursor = await conn.execute(
+                    "SELECT parent_run_id, parent_ordinal FROM workflow_runs"
+                    " WHERE run_id = %s",
+                    (run_id,),
+                )
+                parent = await cursor.fetchone()
+                if parent is not None and parent["parent_run_id"] is not None:
+                    await self._apply_arrival(
+                        conn,
+                        parent["parent_run_id"],
+                        parent["parent_ordinal"],
+                        {
+                            "run_id": run_id,
+                            "status": RunStatus.COMPLETED.value,
+                            "result": None,
+                            "error": None,
+                        },
+                        run_id,
+                        now,
+                    )
         return True
 
     async def recover_orphans(
@@ -1941,7 +2042,9 @@ class PostgresRunStore:
             How many steps were transitioned, and the runs failed outright.
         """
         pool = await self._open()
-        exhausted = {"reason": "recovery_budget_exhausted"}
+        recovered = 0
+        failed: list[str] = []
+        overdrawn: list[StepRecord] = []
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
                 # Lock the run rows, not the step rows. Every other write
@@ -1958,83 +2061,168 @@ class PostgresRunStore:
                 (StepStatus.CLAIMED.value, now, _TERMINAL_RUNS),
             )
             rows = await cursor.fetchall()
-            recovered = 0
-            failed: list[str] = []
             for row in rows:
                 step = _step_from_row(row)
-                recovered += 1
                 if step.recoveries + 1 > max_recoveries:
-                    await conn.execute(
-                        "UPDATE workflow_steps SET status = %s, recoveries = %s,"
-                        " lease_expires_at = 0, error = %s, updated_at = %s"
-                        " WHERE run_id = %s AND ordinal = %s",
-                        (
-                            StepStatus.FAILED.value,
-                            step.recoveries + 1,
-                            _json(exhausted),
-                            now,
-                            step.run_id,
-                            step.ordinal,
-                        ),
-                    )
-                    await conn.execute(
-                        "UPDATE workflow_runs SET status = %s, error = %s,"
-                        " updated_at = %s WHERE run_id = %s",
-                        (
-                            RunStatus.FAILED.value,
-                            _json(exhausted),
-                            now,
-                            step.run_id,
-                        ),
-                    )
-                    failed.append(step.run_id)
-                    cursor = await conn.execute(
-                        "SELECT parent_run_id, parent_ordinal FROM workflow_runs"
-                        " WHERE run_id = %s",
-                        (step.run_id,),
-                    )
-                    parent = await cursor.fetchone()
-                    if parent is not None and parent["parent_run_id"] is not None:
-                        await self._apply_arrival(
-                            conn,
-                            parent["parent_run_id"],
-                            parent["parent_ordinal"],
-                            {
-                                "run_id": step.run_id,
-                                "status": RunStatus.FAILED.value,
-                                "result": None,
-                                "error": dict(exhausted),
-                            },
-                            step.run_id,
-                            now,
-                        )
-                    await self._append_events(
-                        conn,
-                        step.run_id,
-                        ((HistoryEventType.RUN_FAILED, dict(exhausted)),),
+                    # Exhaustion is a terminal transition, and terminal
+                    # transitions take child locks before their own row. This
+                    # transaction already holds a batch of run rows, so
+                    # taking children now would acquire shallower before
+                    # deeper -- the inversion both deadlock fixes removed.
+                    # The step stays CLAIMED with its lapsed lease (nothing
+                    # can claim it) and fails in its own transaction below,
+                    # in the canonical order.
+                    overdrawn.append(step)
+                    continue
+                cursor = await conn.execute(
+                    # Guarded like the exhaustion write below: a renewal can
+                    # land between the batch SELECT and this UPDATE because
+                    # renew_lease takes no run-row lock.
+                    "UPDATE workflow_steps SET status = %s, recoveries = %s,"
+                    " due_at = %s, lease_expires_at = 0, updated_at = %s"
+                    " WHERE run_id = %s AND ordinal = %s AND status = %s"
+                    " AND lease_expires_at <= %s",
+                    (
+                        StepStatus.RECOVERY_WAIT.value,
+                        step.recoveries + 1,
                         now,
-                    )
-                else:
-                    await conn.execute(
-                        "UPDATE workflow_steps SET status = %s, recoveries = %s,"
-                        " due_at = %s, lease_expires_at = 0, updated_at = %s"
-                        " WHERE run_id = %s AND ordinal = %s",
-                        (
-                            StepStatus.RECOVERY_WAIT.value,
-                            step.recoveries + 1,
-                            now,
-                            now,
-                            step.run_id,
-                            step.ordinal,
-                        ),
-                    )
-                    await self._append_events(
-                        conn,
-                        step.run_id,
-                        ((HistoryEventType.STEP_RECOVERED, {"ordinal": step.ordinal}),),
                         now,
-                    )
+                        step.run_id,
+                        step.ordinal,
+                        StepStatus.CLAIMED.value,
+                        now,
+                    ),
+                )
+                if cursor.rowcount == 0:
+                    continue
+                recovered += 1
+                await self._append_events(
+                    conn,
+                    step.run_id,
+                    ((HistoryEventType.STEP_RECOVERED, {"ordinal": step.ordinal}),),
+                    now,
+                )
+        for step in overdrawn:
+            if await self._fail_exhausted(step, now):
+                recovered += 1
+                failed.append(step.run_id)
         return recovered, tuple(failed)
+
+    async def _fail_exhausted(self, step: StepRecord, now: float) -> bool:
+        """Fail a run whose step outlived its recovery budget, completely.
+
+        The budget path used to mark the one step and the run FAILED and stop
+        there: preallocated slots stayed open on a dead run, and child runs
+        kept working for a parent that no longer existed. This is the same
+        terminal transition failure takes everywhere else -- open slots
+        tombstoned, branches closed, the parent told -- in the same lock
+        order: children, then self, then parent.
+
+        Args:
+            step: The exhausted step, as phase one saw it.
+            now: Current time in epoch seconds.
+
+        Returns:
+            True if this call performed the transition.
+        """
+        exhausted = {"reason": "recovery_budget_exhausted"}
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            locked_children = await self._lock_children(conn, step.run_id)
+            cursor = await conn.execute(
+                "SELECT status, parent_run_id, parent_ordinal FROM workflow_runs"
+                " WHERE run_id = %s FOR UPDATE",
+                (step.run_id,),
+            )
+            run_row = await cursor.fetchone()
+            if run_row is None or run_row["status"] in _TERMINAL_RUNS:
+                return False
+            cursor = await conn.execute(
+                "SELECT status, lease_expires_at, recoveries FROM workflow_steps"
+                " WHERE run_id = %s AND ordinal = %s",
+                (step.run_id, step.ordinal),
+            )
+            step_row = await cursor.fetchone()
+            if (
+                step_row is None
+                or step_row["status"] != StepStatus.CLAIMED.value
+                or step_row["lease_expires_at"] > now
+            ):
+                # Renewed, recovered, or failed by a peer between phases; the
+                # attempt is someone else's to account for.
+                return False
+            cursor = await conn.execute(
+                # The guard repeats the re-check inside the write itself:
+                # renew_lease is the one writer that takes no run-row lock,
+                # so a renewal can land in the round trip between the SELECT
+                # above and this UPDATE -- and an unguarded write would
+                # acknowledge the worker's lease and fail its run in the
+                # same instant, discarding in-flight work the store just
+                # promised another lease_duration to.
+                "UPDATE workflow_steps SET status = %s, recoveries = %s,"
+                " lease_expires_at = 0, error = %s, updated_at = %s"
+                " WHERE run_id = %s AND ordinal = %s AND status = %s"
+                " AND lease_expires_at <= %s",
+                (
+                    StepStatus.FAILED.value,
+                    step_row["recoveries"] + 1,
+                    _json(exhausted),
+                    now,
+                    step.run_id,
+                    step.ordinal,
+                    StepStatus.CLAIMED.value,
+                    now,
+                ),
+            )
+            if cursor.rowcount == 0:
+                # Renewed in the window; the attempt is someone else's to
+                # account for after all.
+                return False
+            cursor = await conn.execute(
+                "SELECT ordinal FROM workflow_steps WHERE run_id = %s"
+                " AND ordinal != %s AND NOT (status = ANY(%s)) ORDER BY ordinal",
+                (step.run_id, step.ordinal, _TERMINAL_STEPS),
+            )
+            tombstoned = [row["ordinal"] for row in await cursor.fetchall()]
+            if tombstoned:
+                await conn.execute(
+                    "UPDATE workflow_steps SET status = %s, updated_at = %s"
+                    " WHERE run_id = %s AND ordinal = ANY(%s)",
+                    (StepStatus.CANCELLED.value, now, step.run_id, tombstoned),
+                )
+            await conn.execute(
+                "UPDATE workflow_runs SET status = %s, error = %s, updated_at = %s"
+                " WHERE run_id = %s",
+                (RunStatus.FAILED.value, _json(exhausted), now, step.run_id),
+            )
+            await self._append_events(
+                conn,
+                step.run_id,
+                (
+                    *(
+                        (HistoryEventType.STEP_TOMBSTONED, {"ordinal": ordinal})
+                        for ordinal in tombstoned
+                    ),
+                    (HistoryEventType.RUN_FAILED, dict(exhausted)),
+                ),
+                now,
+            )
+            await self._close_children(conn, now, locked_children)
+            if run_row["parent_run_id"] is not None:
+                await self._apply_arrival(
+                    conn,
+                    run_row["parent_run_id"],
+                    run_row["parent_ordinal"],
+                    {
+                        "run_id": step.run_id,
+                        "status": RunStatus.FAILED.value,
+                        "result": None,
+                        "error": dict(exhausted),
+                    },
+                    step.run_id,
+                    now,
+                )
+            return True
 
     async def list_runs(self, query: RunQuery) -> tuple[RunRecord, ...]:
         """List runs matching a query, newest first.

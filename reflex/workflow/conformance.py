@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from reflex.workflow.records import (
+    TERMINAL_RUN_STATUSES,
     HistoryEventType,
     RunQuery,
     RunRecord,
@@ -1418,6 +1419,268 @@ async def check_an_arrival_to_a_past_deadline_parent_is_refused(
     ) == ("expired")
 
 
+async def check_recovery_exhaustion_closes_the_whole_run(store: RunStore) -> None:
+    """Exhausting the recovery budget must end the run the way failure does.
+
+    The budget path marked the one exhausted step FAILED and stamped the run
+    FAILED -- and stopped. Preallocated successor slots stayed open, so the
+    dead run still surfaced wake times and confused retry; child runs kept
+    working for a parent that no longer existed. A budget exhaustion is a
+    failure, and failure closes the run completely: open slots tombstoned,
+    branches told to stop.
+    """
+    await store.admit(
+        make_run("par0", next_ordinal=1),
+        make_step(
+            "par0",
+            status=StepStatus.BLOCKED,
+            wait_key="join:0",
+            join_expected=1,
+            origin="join",
+            due_at=0.0,
+        ),
+        _ADMITTED,
+    )
+    await store.admit(
+        make_run(parent_run_id="par0", parent_ordinal=0), make_step(), _ADMITTED
+    )
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    assert claim.run.run_id == "run1", "par0 has no claimable slot"
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.PENDING,
+            state={"n": 1},
+            new_steps=(
+                make_step(ordinal=1, due_at=NOW),
+                make_step(ordinal=2, due_at=NOW + 3600),
+            ),
+            next_ordinal=3,
+            events=((HistoryEventType.ATTEMPT_SUCCEEDED, {}),),
+            children=(
+                (
+                    make_run("kid", parent_run_id="run1", parent_ordinal=2),
+                    make_step("kid", due_at=NOW + 7200),
+                ),
+            ),
+        ),
+        NOW,
+    )
+    claim = await store.claim_next(NOW, lease_duration=0.0)
+    assert claim is not None
+    assert claim.run.run_id == "run1"
+
+    _, failed = await store.recover_orphans(NOW + 1, max_recoveries=0)
+    assert "run1" in failed
+
+    run = await store.get_run("run1")
+    assert run is not None
+    assert run.status is RunStatus.FAILED
+    steps = await store.get_steps("run1")
+    assert steps[1].status is StepStatus.FAILED
+    assert steps[2].status is StepStatus.CANCELLED, (
+        f"the preallocated slot must be tombstoned CANCELLED -- the exact "
+        f"status retry restores -- not left {steps[2].status}"
+    )
+    kid = await store.get_run("kid")
+    assert kid is not None
+    assert kid.cancel_requested, "the child kept working for a dead parent"
+    par_steps = await store.get_steps("par0")
+    assert par_steps[0].join_arrived == 1, "the parent never heard the child exhausted"
+    assert par_steps[0].args["__results__"][0]["status"] == RunStatus.FAILED.value
+    # No leftover-claim sweep here: with every slot's status pinned exactly
+    # above, a frontier-based claim has nothing left to find, and a loop
+    # that cannot iterate reads as coverage it does not provide.
+
+
+async def check_skipping_the_last_step_completes_like_a_completion(
+    store: RunStore,
+) -> None:
+    """A skip that finishes the run must finish it everywhere it matters.
+
+    Skipping the only open slot stamped the run COMPLETED and stopped there:
+    no arrival reached the parent's join, which stayed BLOCKED 0/1 forever,
+    and the skipped run's own children kept running. "Completed by an
+    operator's decision" and "completed" must be the same terminal
+    transition.
+    """
+    await store.admit(
+        make_run("par", next_ordinal=1),
+        make_step(
+            "par",
+            status=StepStatus.BLOCKED,
+            wait_key="join:0",
+            join_expected=1,
+            origin="join",
+            due_at=0.0,
+        ),
+        _ADMITTED,
+    )
+    await store.admit(
+        make_run(
+            "kid",
+            parent_run_id="par",
+            parent_ordinal=0,
+            status=RunStatus.FAILED,
+            error={"reason": "boom"},
+        ),
+        make_step("kid", status=StepStatus.FAILED, error={"reason": "boom"}),
+        _ADMITTED,
+    )
+    await store.admit(make_run("gk", parent_run_id="kid"), make_step("gk"), _ADMITTED)
+
+    assert await store.skip_step("kid", NOW)
+
+    kid = await store.get_run("kid")
+    assert kid is not None
+    assert kid.status is RunStatus.COMPLETED
+    par_steps = await store.get_steps("par")
+    assert par_steps[0].join_arrived == 1, "the parent never heard the child finished"
+    assert par_steps[0].status is StepStatus.READY
+    assert par_steps[0].args["__results__"][0]["status"] == RunStatus.COMPLETED.value
+    gk = await store.get_run("gk")
+    assert gk is not None
+    assert gk.cancel_requested, "the grandchild kept working under a closed branch"
+
+
+async def check_a_cascade_flag_survives_the_childs_own_exhaustion(
+    store: RunStore,
+) -> None:
+    """One crashed worker takes out a parent and its child in the same pass.
+
+    The parent exhausts first and its cascade durably requests the child's
+    cancellation; the child's own exhaustion then fails the child. Rebuilding
+    the child's record from a pre-pass snapshot reverted the flag the cascade
+    had just set, and a later retry could revive a branch whose parent is
+    dead with nothing ever re-requesting its cancellation. The failure may
+    keep the child FAILED, but the request must survive it.
+
+    Run ids are chosen so every store processes the parent first ("a-" sorts
+    and inserts before "z-"), which is the ordering that exercises the
+    cascade-then-exhaust path.
+    """
+    await store.admit(make_run("a-par"), make_step("a-par"), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=0.0)
+    assert claim is not None
+    assert claim.run.run_id == "a-par"
+    await store.admit(
+        make_run("z-kid", parent_run_id="a-par"), make_step("z-kid"), _ADMITTED
+    )
+    claim = await store.claim_next(NOW, lease_duration=0.0)
+    assert claim is not None
+    assert claim.run.run_id == "z-kid"
+
+    _, failed = await store.recover_orphans(NOW + 1, max_recoveries=0)
+    assert "a-par" in failed
+
+    kid = await store.get_run("z-kid")
+    assert kid is not None
+    assert kid.status in TERMINAL_RUN_STATUSES
+    assert kid.cancel_requested, (
+        "the parent's cascade requested cancellation and the child's own "
+        "exhaustion erased the request"
+    )
+
+
+async def check_a_second_close_does_not_repeat_the_cancel_request(
+    store: RunStore,
+) -> None:
+    """History records the decision to stop a branch once, not per close.
+
+    A failed run whose children were already told to stop can reach a second
+    terminal transition -- an operator skipping its failed step completes it.
+    The second close used to append another cancel-requested event to every
+    still-CANCELLING child, so history read as if the decision were made
+    twice. The flag is durable and monotonic; a marked child has nothing
+    left to write.
+    """
+    await store.admit(
+        make_run("x", status=RunStatus.FAILED, error={"reason": "boom"}),
+        make_step("x", status=StepStatus.FAILED, error={"reason": "boom"}),
+        _ADMITTED,
+    )
+    await store.admit(make_run("kid", parent_run_id="x"), make_step("kid"), _ADMITTED)
+    assert await store.request_cancel("kid", NOW)
+    assert await store.skip_step("x", NOW + 1)
+
+    kid = await store.get_run("kid")
+    assert kid is not None
+    assert kid.cancel_requested
+    events = [
+        event
+        for event in await store.get_history("kid")
+        if event.type is HistoryEventType.RUN_CANCEL_REQUESTED
+    ]
+    assert len(events) == 1, f"the stop decision was recorded {len(events)} times"
+
+
+async def check_retry_after_exhaustion_restores_waits_as_waits(
+    store: RunStore,
+) -> None:
+    """A restored join must wait again, not run with missing inputs.
+
+    Exhaustion tombstones every open slot, including a BLOCKED join holding
+    partial arrivals and a delayed slot holding a future due time. Retry
+    restores the chain -- and restoring a join as READY would run its
+    handler immediately with a partial result set, while rewriting a delayed
+    slot's due time to "now" would erase the delay. What was waiting comes
+    back waiting, with its arrival count and its deadline intact.
+    """
+    await store.admit(make_run(), make_step(), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    await store.commit(
+        claim,
+        StepCompletion(
+            step_status=StepStatus.SUCCEEDED,
+            run_status=RunStatus.PENDING,
+            state={"n": 1},
+            new_steps=(
+                make_step(ordinal=1, due_at=NOW),
+                make_step(
+                    ordinal=2,
+                    status=StepStatus.BLOCKED,
+                    wait_key="join:2",
+                    join_expected=2,
+                    join_arrived=1,
+                    origin="join",
+                    due_at=NOW + 9000,
+                ),
+                make_step(ordinal=3, due_at=NOW + 3600),
+            ),
+            next_ordinal=4,
+            events=((HistoryEventType.ATTEMPT_SUCCEEDED, {}),),
+        ),
+        NOW,
+    )
+    claim = await store.claim_next(NOW, lease_duration=0.0)
+    assert claim is not None
+    assert claim.step.ordinal == 1
+
+    _, failed = await store.recover_orphans(NOW + 1, max_recoveries=0)
+    assert "run1" in failed
+    steps = await store.get_steps("run1")
+    assert steps[2].status is StepStatus.CANCELLED
+    assert steps[3].status is StepStatus.CANCELLED
+
+    assert await store.retry_run("run1", NOW + 10)
+    steps = await store.get_steps("run1")
+    assert steps[2].status is StepStatus.BLOCKED, (
+        f"the join came back {steps[2].status}, and READY would run it with "
+        "one of two results"
+    )
+    assert steps[2].join_arrived == 1, "the arrival already counted was lost"
+    assert steps[2].due_at == pytest.approx(NOW + 9000), (
+        "the join's timeout deadline was rewritten"
+    )
+    assert steps[3].status is StepStatus.READY
+    assert steps[3].due_at == pytest.approx(NOW + 3600), (
+        "the delayed slot's due time was rewritten; its delay is erased"
+    )
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1459,6 +1722,11 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_join_arrivals_count_once,
     check_an_arrival_to_a_past_deadline_parent_is_refused,
     check_finalize_refuses_while_a_step_is_claimed,
+    check_recovery_exhaustion_closes_the_whole_run,
+    check_a_cascade_flag_survives_the_childs_own_exhaustion,
+    check_skipping_the_last_step_completes_like_a_completion,
+    check_a_second_close_does_not_repeat_the_cancel_request,
+    check_retry_after_exhaustion_restores_waits_as_waits,
     check_finalize_tombstones_open_slots,
     check_finalizing_a_parent_closes_its_branches,
     check_closing_a_branch_never_revives_a_finished_one,

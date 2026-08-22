@@ -365,7 +365,7 @@ reason rather than on message text.
 | the next step's handler no longer exists | `unknown_handler` | step and run `NEEDS_ATTENTION`; restore the handler and `resume(run)`, or cancel |
 | a recorded payload carries arguments the handler no longer accepts | `incompatible_payload` | step and run `NEEDS_ATTENTION`, naming the arguments; restore the parameters or cancel |
 | a run allocated more steps than `WorkflowConfig.max_steps` | `max_steps_exceeded` | the committing step succeeds, every other open slot is tombstoned, run `FAILED`. The bound is on a runaway loop, so it fails rather than suspending for a person to approve more of the same |
-| a step's lease lapsed more times than `max_recoveries` | `recovery_budget_exhausted` | run `FAILED`. Infrastructure recoveries are free of the retry budget precisely so they can be bounded separately; the bound is what stops a poison step cycling forever |
+| a step's lease lapsed more times than `max_recoveries` | `recovery_budget_exhausted` | run `FAILED` — the complete terminal transition, identical to any other failure: remaining open slots are tombstoned, children are told to stop, and the parent's join hears one `FAILED` arrival. Infrastructure recoveries are free of the retry budget precisely so they can be bounded separately; the bound is what stops a poison step cycling forever |
 | an error's `details` cannot be serialized | — | the reason is preserved and the details are replaced by `{"unserializable": repr(...)}`. Losing the payload never turns a failure into a crash |
 
 Nothing on this table is silent: each writes its reason to the run's error and
@@ -410,10 +410,21 @@ no-op with a reason.
 - `skip(run)` — a run stopped for attention or failure: marks the blocking
   step `SKIPPED` (terminal, recorded as a decision rather than an outcome)
   and lets the run continue at whatever comes next. With nothing left to run,
-  the run completes with no result rather than sitting pending forever.
+  the run completes with no result rather than sitting pending forever — and
+  completing by decision is the same terminal transition as completing by
+  execution: children are told to stop, and a parent joined on this run
+  receives one `COMPLETED` arrival (`result: null`) instead of waiting
+  forever on a run that no longer will. If the run already delivered its
+  arrival when it first reached a terminal state, the join keeps what it
+  heard: a run delivers exactly one arrival (§5), and operator repair does
+  not rewrite a result the parent has already counted.
 - Both restore the successors the stopping failure tombstoned (`step_restored`
   in history, fresh budgets), so a preallocated chain's remaining steps —
-  including its finalizer — still run. Only that failure's casualties come
+  including its finalizer — still run. What was waiting comes back waiting:
+  a tombstoned join or wait slot is restored `BLOCKED` with its arrival
+  count and timeout deadline intact — never `READY`, which would run it
+  immediately with a missing or partial payload — and a delayed slot keeps
+  its original due time rather than firing the moment an operator retries. Only that failure's casualties come
   back: a `CANCELLED` slot in a run these actions accept can have no other
   source, because run-level cancellation ends in a `CANCELLED` run they
   refuse and force-finalization leaves them no step to target.
