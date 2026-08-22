@@ -16,7 +16,13 @@ from reflex_base.constants.state import (
     CAMEL_CASE_MEMO_MARKER,
     FIELD_MARKER,
 )
-from reflex_base.event import EventChain, EventHandler, EventSpec, server_side
+from reflex_base.event import (
+    EventChain,
+    EventHandler,
+    EventSpec,
+    run_script,
+    server_side,
+)
 from reflex_base.utils import console, format
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.utils.imports import ImportVar
@@ -51,6 +57,17 @@ _name_counter = itertools.count()
 _placeholder_counter = itertools.count()
 
 _VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+
+# The store's entry point on the global `refs` object. This is the only binding
+# reachable from the scope `run_script` code is evaluated in, and doubles as the
+# devtools handle for inspecting client state. Must match CLIENT_STATE_REF in
+# `$/utils/client_state`.
+_client_state_store_ref = Var(
+    _js_expr='refs["__client_state"]',
+    _var_data=VarData(
+        imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
+    ),
+)
 
 # Reflex marks every identifier it puts in scope; an unmarked `_`-leading name is
 # an event-arg placeholder from `parse_args_spec`.
@@ -268,7 +285,10 @@ class ClientStateVar(Var):
             )
             raise ValueError(msg)
         if default is NoValue:
-            default_var = Var(_js_expr="")
+            # Explicit `undefined` rather than an empty expression: the name is
+            # passed as a second argument, so an empty first argument would emit
+            # `useClientState(, "name")` -- a syntax error.
+            default_var = Var(_js_expr="undefined")
         elif not isinstance(default, Var):
             default_var = LiteralVar.create(default)
         else:
@@ -474,6 +494,14 @@ class ClientStateVar(Var):
         if not self._global_ref:
             msg = "ClientStateVar must be global to push the value."
             raise ValueError(msg)
+        if isinstance(value, Var):
+            # A Var is a client-side expression, which cannot survive the JSON
+            # event payload -- it would arrive as its own source text. Evaluate
+            # it on the client instead, reaching the store through `refs` (the
+            # only binding in scope where run_script's code is evaluated).
+            return run_script(
+                f"{_client_state_store_ref!s}.set({LiteralVar.create(self._state_name)!s}, {value!s})"
+            )
         return server_side(
             "_client_state_set",
             inspect.signature(_client_state_set),

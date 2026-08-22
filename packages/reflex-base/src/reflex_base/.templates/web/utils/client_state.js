@@ -107,11 +107,14 @@ let _clientStore = null;
  * The client-side store singleton.
  *
  * Shared so that non-React callers and the hooks operate on the same slots
- * regardless of mount order. Never used during SSR — `ClientStateProvider`
- * builds a per-render store on the server so requests stay isolated.
+ * regardless of mount order. On the server a fresh store is returned every
+ * call and never memoized, so no value can leak between requests.
  * @returns The store.
  */
 export const getClientStore = () => {
+  if (typeof document === "undefined") {
+    return createClientStateStore();
+  }
   if (_clientStore === null) {
     _clientStore = createClientStateStore();
   }
@@ -151,12 +154,9 @@ export const setClientState = (name, value) => {
 export function ClientStateProvider({ children }) {
   const storeRef = useRef(null);
   if (storeRef.current === null) {
-    // A per-render store on the server keeps requests isolated; on the client,
-    // share the singleton so `setClientState` reaches these same slots.
-    storeRef.current =
-      typeof document === "undefined"
-        ? createClientStateStore()
-        : getClientStore();
+    // On the client this is the shared singleton, so `setClientState` and the
+    // hooks reach the same slots; on the server it is per-render.
+    storeRef.current = getClientStore();
   }
   const store = storeRef.current;
 

@@ -55,6 +55,23 @@ def test_single_hook_no_useState() -> None:
     assert "refs[" not in hook
 
 
+@pytest.mark.parametrize("global_ref", [True, False])
+def test_omitted_default_emits_valid_javascript(global_ref: bool) -> None:
+    """No default must still emit a syntactically valid hook call.
+
+    Regression: an empty default expression rendered as
+    ``useClientState(, "name")`` once the store name became a second argument,
+    which is a syntax error that breaks the whole page build.
+    """
+    cs = client_state("counter", global_ref=global_ref)
+    hook = _hook(cs)
+    assert "(," not in hook
+    expected = 'undefined, "counter"' if global_ref else "undefined"
+    assert (
+        hook == f"const [counterRxClientState, setCounter] = useClientState({expected})"
+    )
+
+
 def test_local_var_omits_store_name() -> None:
     """A ``global_ref=False`` var gets no name, so its slot stays private."""
     cs = client_state("copied", default=False, global_ref=False)
@@ -397,9 +414,10 @@ def test_acceptance_throttle_controlled_input_compiles() -> None:
     assert len(declarations) == 2, (
         f"expected one hook per local var, got {declarations}"
     )
-    # Distinct bindings, and neither is registered under a shared store name.
+    # Distinct bindings, and neither is registered under a shared store name
+    # (a named var would pass the name as a second, string, argument).
     assert len(set(declarations)) == 2
-    assert all("useClientState()" in line for line in declarations)
+    assert all("useClientState(undefined)" in line for line in declarations)
     assert 'from "$/utils/client_state"' in code
 
 
@@ -458,3 +476,29 @@ def test_retrieve_with_callback_serializes_the_handler() -> None:
     assert args["var_name"] == '"counter"'
     assert "queueEvents" in args["callback"]
     assert "got" in args["callback"]
+
+
+def test_push_plain_value_uses_json_payload() -> None:
+    """A concrete value crosses the wire as JSON, not as JS source."""
+    from reflex_base.event import fix_events
+
+    cs = client_state("counter", default=0)
+    event = fix_events([cs.push({"a": 1})], token="tok")[0]
+    assert event.name.endswith("_client_state_set")
+    assert event.payload == {"var_name": "counter", "value": {"a": 1}}
+
+
+def test_push_var_is_evaluated_on_the_client() -> None:
+    """A Var is a client-side expression, so it must not be sent as its text.
+
+    A JSON payload would deliver the literal source (``"Date.now()"``), so a Var
+    keeps the evaluated path, reaching the store through ``refs``.
+    """
+    from reflex_base.event import fix_events
+
+    cs = client_state("counter", default=0)
+    event = fix_events([cs.push(Var("Date.now()"))], token="tok")[0]
+    assert event.name.endswith("_call_function")
+    assert 'refs["__client_state"].set("counter", Date.now())' in str(
+        event.payload["function"]
+    )
