@@ -7,6 +7,7 @@ import importlib
 import importlib.metadata
 import inspect
 import json
+import logging
 import re
 import sys
 import typing
@@ -22,11 +23,15 @@ from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.constants.base import RunningMode
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once
+from rich.markup import escape
 
 from reflex import model
-from reflex.utils import console, net, path_ops
+from reflex.utils import net, path_ops
 from reflex.utils.misc import get_module_path
+
+logger = logging.getLogger(__name__)
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
@@ -83,23 +88,23 @@ def check_latest_package_version(package_name: str):
     if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
-        console.debug(f"Checking for the latest version of {package_name}...")
+        logger.debug(f"Checking for the latest version of {package_name}...")
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url, timeout=2)
         latest_version = response.json()["info"]["version"]
-        console.debug(f"Latest version of {package_name}: {latest_version}")
+        logger.debug(f"Latest version of {package_name}: {latest_version}")
         if get_or_set_last_reflex_version_check_datetime():
             # Versions were already checked and saved in reflex.json, no need to warn again
             return
         if version.parse(current_version) < version.parse(latest_version):
             # Show a warning when the host version is older than PyPI version
-            console.warn(
+            logger.warning(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
     except Exception:
-        console.debug(f"Failed to check for the latest version of {package_name}.")
+        logger.debug(f"Failed to check for the latest version of {package_name}.")
 
 
 def get_or_set_last_reflex_version_check_datetime():
@@ -200,13 +205,14 @@ def get_app(reload: bool = False) -> ModuleType:
             else config.app_module
         )
         if reload:
-            from reflex.page import DECORATED_PAGES
             from reflex.state import reload_state_module
 
             # Reset rx.State subclasses to avoid conflict when reloading.
             reload_state_module(module=module)
 
-            DECORATED_PAGES.clear()
+            reg_ctx = RegistrationContext.ensure_context()
+            reg_ctx.decorated_pages.clear()
+            object.__setattr__(reg_ctx, "_app", None)
 
             # Reload the app module.
             importlib.reload(app)
@@ -388,7 +394,7 @@ def get_redis() -> Redis | None:
         from redis.asyncio import Redis
         from redis.exceptions import RedisError
     except ImportError:
-        console.debug("Redis package not installed.")
+        logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
@@ -408,7 +414,7 @@ def get_redis_sync() -> RedisSync | None:
         from redis import Redis as RedisSync
         from redis.exceptions import RedisError
     except ImportError:
-        console.debug("Redis package not installed.")
+        logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
@@ -455,9 +461,9 @@ async def get_redis_status() -> dict[str, bool | None]:
             status = None
     except Exception as exc:
         status = False
-        console.error(
+        logger.error(
             f"Redis health check failed: {exc} (subsequent errors will not be logged)",
-            dedupe=True,
+            extra={"dedupe": True},
         )
 
     return {"redis": status}
@@ -480,14 +486,15 @@ def validate_app_name(app_name: str | None = None) -> str:
     app_name = app_name or Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
-        console.error(
-            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
+        logger.error(
+            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold].",
+            extra={"rich": True},
         )
         raise SystemExit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
-        console.error(
+        logger.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
         raise SystemExit(1)
@@ -576,8 +583,9 @@ def assert_in_reflex_dir():
         SystemExit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
-        console.error(
-            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
+        logger.error(
+            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project.",
+            extra={"rich": True},
         )
         raise SystemExit(1)
 
@@ -600,12 +608,12 @@ def needs_reinit() -> bool:
         return True
 
     if constants.IS_WINDOWS:
-        console.warn(
+        logger.warning(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
 
         if windows_check_onedrive_in_path():
-            console.warn(
+            logger.warning(
                 "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
             )
     # No need to reinitialize if the app is already initialized.
@@ -627,7 +635,7 @@ def ensure_reflex_installation_id() -> int | None:
         Distinct id.
     """
     try:
-        console.debug("Ensuring reflex installation id.")
+        logger.debug("Ensuring reflex installation id.")
         initialize_reflex_user_directory()
         installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
@@ -651,7 +659,7 @@ def ensure_reflex_installation_id() -> int | None:
             # up front; there is no legacy numeric id for telemetry to alias.
             mark_uuid_distinct_id_semantics()
     except Exception as e:
-        console.debug(f"Failed to ensure reflex installation id: {e}")
+        logger.debug(f"Failed to ensure reflex installation id: {e}")
         return None
     else:
         # If we get here, installation_id is definitely set
@@ -660,7 +668,7 @@ def ensure_reflex_installation_id() -> int | None:
 
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
-    console.debug(f"Creating {environment.REFLEX_DIR.get()}")
+    logger.debug(f"Creating {environment.REFLEX_DIR.get()}")
     # Create the reflex directory.
     path_ops.mkdir(environment.REFLEX_DIR.get())
 
@@ -671,10 +679,10 @@ def initialize_frontend_dependencies():
     from reflex.utils.js_runtimes import install_bun, validate_frontend_dependencies
 
     # validate dependencies before install
-    console.debug("Validating frontend dependencies.")
+    logger.debug("Validating frontend dependencies.")
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    console.debug("Installing or validating bun.")
+    logger.debug("Installing or validating bun.")
     install_bun()
     # Set up the web directory.
     initialize_web_directory()
@@ -708,9 +716,9 @@ def check_db_initialized() -> bool:
         get_config().db_url is not None
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
-        console.error(
+        logger.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first.",
-            dedupe=True,
+            extra={"dedupe": True, "rich": True},
         )
         return False
     return True
@@ -728,14 +736,16 @@ def check_schema_up_to_date():
                 connection=connection,
                 write_migration_scripts=False,
             ):
-                console.error(
+                logger.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
                     "to generate migration scripts.",
+                    extra={"rich": True},
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
-                console.error(
-                    f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                logger.error(
+                    f"{escape(str(command_error))} Run [bold]reflex db migrate[/bold] to update database.",
+                    extra={"rich": True},
                 )
 
 

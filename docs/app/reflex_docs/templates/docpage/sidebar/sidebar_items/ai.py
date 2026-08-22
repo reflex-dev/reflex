@@ -11,6 +11,7 @@ def get_sidebar_items_ai_builder_overview():
             children=[
                 ai_builder.overview.best_practices,
                 ai_builder.overview.what_is_reflex_build,
+                ai_builder.overview.project_overview,
                 ai_builder.overview.tutorial,
                 ai_builder.overview.templates,
             ],
@@ -18,8 +19,10 @@ def get_sidebar_items_ai_builder_overview():
         create_item(
             "Features",
             children=[
-                ai_builder.features.ide,
                 ai_builder.features.editor_modes,
+                ai_builder.features.planning,
+                ai_builder.features.generation_controls,
+                ai_builder.features.agent_tools,
                 ai_builder.features.file_tree,
                 ai_builder.features.restore_checkpoint,
                 ai_builder.features.secrets,
@@ -28,19 +31,21 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.features.connect_to_github,
                 ai_builder.features.connect_to_git_providers,
                 ai_builder.features.knowledge,
+                ai_builder.features.design_systems,
                 ai_builder.features.image_as_prompt,
-                # ai_builder.features.automated_testing,
-                ai_builder.features.customization,
+                ai_builder.features.automated_testing,
+                ai_builder.features.agent_toolkit,
+                ai_builder.features.security_scanner,
             ],
         ),
         create_item(
             "App Lifecycle",
             children=[
                 ai_builder.app_lifecycle.general,
-                ai_builder.app_lifecycle.fork_app,
                 ai_builder.app_lifecycle.deploy_app,
                 ai_builder.app_lifecycle.download_app,
                 ai_builder.app_lifecycle.copy_app,
+                ai_builder.app_lifecycle.fork_app,
                 ai_builder.app_lifecycle.share_app,
             ],
         ),
@@ -49,11 +54,16 @@ def get_sidebar_items_ai_builder_overview():
             children=[
                 ai_builder.organization.overview,
                 ai_builder.organization.members,
+                ai_builder.organization.teams,
                 ai_builder.organization.roles_and_permissions,
                 ai_builder.organization.project_access,
                 ai_builder.organization.custom_roles,
                 ai_builder.organization.domains,
                 ai_builder.organization.sso,
+                ai_builder.organization.provisioning,
+                ai_builder.organization.service_accounts,
+                ai_builder.organization.automated_provisioning,
+                ai_builder.organization.usage,
                 ai_builder.organization.deployment_approvals,
                 ai_builder.organization.audit_logs,
                 ai_builder.organization.moving_projects_and_apps,
@@ -163,13 +173,13 @@ def get_ai_builder_integrations():
     ]
 
 
-def get_sidebar_items_ai_onboarding():
+def get_sidebar_items_agent_toolkit():
     from reflex_docs.pages.docs import ai_builder
 
     return [
         SideBarItem(
-            names="AI Onboarding",
-            link=ai_builder.integrations.ai_onboarding.path,
+            names="Agent Toolkit",
+            link=ai_builder.integrations.agent_toolkit.path,
         ),
     ]
 
@@ -206,6 +216,6 @@ def get_sidebar_items_skills():
 
 ai_builder_overview_items = get_sidebar_items_ai_builder_overview()
 ai_builder_integrations = get_ai_builder_integrations()
-ai_onboarding_items = get_sidebar_items_ai_onboarding()
+agent_toolkit_items = get_sidebar_items_agent_toolkit()
 mcp_items = get_sidebar_items_mcp()
 skills_items = get_sidebar_items_skills()
