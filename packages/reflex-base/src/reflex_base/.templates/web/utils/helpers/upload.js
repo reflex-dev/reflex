@@ -1,5 +1,5 @@
 import JSON5 from "json5";
-import env from "$/env.json";
+import { getEnv } from "$/utils/runtime";
 
 /**
  * Upload files to the server.
@@ -153,7 +153,7 @@ export const uploadFiles = async (
     });
 
     // Configure and send request
-    xhr.open("POST", getBackendURL(env.UPLOAD));
+    xhr.open("POST", getBackendURL(getEnv().UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     for (const [key, value] of Object.entries(extra_headers || {})) {

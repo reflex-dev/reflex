@@ -8,17 +8,30 @@ import {
   useMemo,
 } from "react";
 
-import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
-
 const allowedModes = ["light", "dark", "system"];
 
+// Shared-identity color mode context: provided by ThemeProvider below and
+// consumed by compiled `useContext(ColorModeContext)` hooks. The default only
+// applies when no provider is mounted (e.g. isolated tests) — generated app
+// roots always mount ThemeProvider with the app's default color mode.
+export const ColorModeContext = createContext({
+  rawColorMode: "system",
+  resolvedColorMode: "light",
+  toggleColorMode: () => {},
+  setColorMode: () => {},
+});
+
 const ThemeContext = createContext({
-  theme: defaultColorMode,
-  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
+  theme: "system",
+  resolvedTheme: "light",
   setTheme: () => {},
 });
 
-export function ThemeProvider({ children, defaultTheme = "system" }) {
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  isDevMode = false,
+}) {
   const [theme, setTheme] = useState(defaultTheme);
   const [systemTheme, setSystemTheme] = useState(
     defaultTheme !== "system" ? defaultTheme : "light",
@@ -28,9 +41,9 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   const setColorMode = (mode) => {
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${defaultTheme}".`,
       );
-      mode = defaultColorMode;
+      mode = defaultTheme;
     }
     setTheme(mode);
   };
@@ -55,11 +68,11 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
     if (isDevMode) {
       const lastCompiledTheme = localStorage.getItem("last_compiled_theme");
-      if (lastCompiledTheme !== defaultColorMode) {
+      if (lastCompiledTheme !== defaultTheme) {
         // on app startup, make sure the application color mode is persisted correctly.
-        setColorMode(defaultColorMode);
-        localStorage.setItem("last_compiled_theme", defaultColorMode);
-        localStorage.setItem("theme", defaultColorMode);
+        setColorMode(defaultTheme);
+        localStorage.setItem("last_compiled_theme", defaultTheme);
+        localStorage.setItem("theme", defaultTheme);
         setIsInitialized(true);
         return;
       }

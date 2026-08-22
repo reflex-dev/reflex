@@ -477,11 +477,39 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
 
 
 def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
+    """ColorModeContext is re-exported from the shipped react-theme module."""
     _, code = compiler.compile_contexts(None, None)
 
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+    assert 'export { ColorModeContext } from "$/utils/react-theme";' in code
+    react_theme = (
+        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "react-theme.js"
+    ).read_text()
+    assert 'rawColorMode: "system"' in react_theme
+    assert 'resolvedColorMode: "light"' in react_theme
+
+
+def test_compile_contexts_configures_runtime():
+    """The generated context module registers app config into the runtime."""
+    _, code = compiler.compile_contexts(None, None)
+
+    assert 'import { configureReflexRuntime } from "$/utils/runtime"' in code
+    assert 'import env from "$/env.json";' in code
+    assert 'import reflexEnvironment from "$/reflex.json";' in code
+    configure_call = code[code.index("configureReflexRuntime({") :]
+    for key in (
+        "env,",
+        "reflexEnvironment,",
+        "initialState,",
+        "initialEvents,",
+        "onLoadInternalEvent,",
+        "state_name,",
+        "exception_state_name,",
+    ):
+        assert key in configure_call
+    # The call must come after the const definitions it references (not hoisted).
+    assert code.index("export const initialEvents") < code.index(
+        "configureReflexRuntime({"
+    )
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:

@@ -212,7 +212,7 @@ def app_root_template(
     return f"""
 {imports_str}
 {dynamic_imports_str}
-import {{ defaultColorMode }} from "$/utils/context";
+import {{ defaultColorMode, isDevMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
@@ -229,7 +229,7 @@ function ReflexProviders({{children}}) {{
     window["__reflex"] = windowImports;
   }}, []);
 
-  return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
+  return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, isDevMode: isDevMode, attribute: "class"}},
     jsx(AppWrap, {{}}, children)
   );
 }}
@@ -360,17 +360,15 @@ export const initialEvents = () => []
 
     return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ configureReflexRuntime }} from "$/utils/runtime"
 import {{ jsx }} from "@emotion/react";
+import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext({{
-  colorMode: defaultColorMode,
-  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
-  toggleColorMode: () => {{}},
-  setColorMode: () => {{}},
-}});
+export {{ ColorModeContext }} from "$/utils/react-theme";
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
@@ -380,6 +378,20 @@ export const clientStorage = {"{}" if client_storage is None else json.dumps(cli
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
+
+// Push the app-specific runtime values into the shipped runtime registry.
+// This runs in the module body, so ESM guarantees it completes before any
+// importer of this module executes — i.e. before anything renders or
+// dispatches events.
+configureReflexRuntime({{
+  env,
+  reflexEnvironment,
+  initialState,
+  initialEvents,
+  onLoadInternalEvent,
+  state_name,
+  exception_state_name,
+}});
 
 // Module-level event dispatchers populated by ``EventLoopProvider`` on each
 // render. Components reach addEvents/connectErrors via this import instead of

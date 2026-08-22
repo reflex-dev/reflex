@@ -1,7 +1,5 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
-import env from "$/env.json";
-import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -10,19 +8,10 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import {
-  initialEvents,
-  initialState,
-  onLoadInternalEvent,
-  state_name,
-  exception_state_name,
-} from "$/utils/context";
+import { getEnv, runtimeConfig } from "$/utils/runtime";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
-
-// Endpoint URLs.
-const EVENTURL = env.EVENT;
 
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
@@ -57,12 +46,10 @@ const event_queue = [];
 // with the in-widget URL. In embed mode the host page's window.location is
 // unrelated to the Reflex route, so the backend's on_load and dynamic-route
 // matching rely on this ref instead. Updated by useEventLoop once mounted;
-// pre-seeded in embed mode with the memory router's initial path (see
-// initialEntries in entry.client.embed.js) so events dispatched before the
-// first effect commit don't briefly fall back to the host page's URL.
-const locationRef = {
-  current: env.MOUNT_TARGET ? { pathname: "/", search: "", hash: "" } : null,
-};
+// before the first effect commit, applyEvent falls back to the memory
+// router's initial path (see initialEntries in entry.client.embed.js) in
+// embed mode so early events don't briefly use the host page's URL.
+const locationRef = { current: null };
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -109,7 +96,7 @@ export const getToken = () => {
  */
 export const getBackendURL = (url_str) => {
   if ((url_str ?? undefined) === undefined) {
-    url_str = env.PING;
+    url_str = getEnv().PING;
   }
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
@@ -258,31 +245,56 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(
+      runtimeConfig.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(
+      runtimeConfig.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(
+      runtimeConfig.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(
+      runtimeConfig.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(
+      runtimeConfig.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
@@ -290,12 +302,14 @@ export const applyEvent = async (event, socket, navigate, params) => {
     const a = document.createElement("a");
     a.hidden = true;
     a.href = event.payload.url;
-    // Special case when linking to uploaded files
+    // Special case when linking to uploaded files. The searched string is a
+    // literal emitted by the compiled event payload; only the replacement
+    // value is evaluated here.
     if (a.href.includes("getBackendURL(env.UPLOAD)")) {
       a.href = eval?.(
         event.payload.url.replace(
           "getBackendURL(env.UPLOAD)",
-          `"${getBackendURL(env.UPLOAD)}"`,
+          `"${getBackendURL(getEnv().UPLOAD)}"`,
         ),
       );
     }
@@ -400,7 +414,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    const loc = locationRef.current ?? window.location;
+    const isEmbedMode = runtimeConfig.env?.MOUNT_TARGET;
+    // Before useEventLoop's first effect commit, fall back to the memory
+    // router's initial path in embed mode (matches initialEntries in
+    // entry.client.embed.js) so early events don't use the host page's URL.
+    const loc =
+      locationRef.current ??
+      (isEmbedMode ? { pathname: "/", search: "", hash: "" } : window.location);
     // React Router's location (mirrored in locationRef) does not observe direct
     // window.history.pushState/replaceState calls (e.g. via rx.call_script), so
     // read the live query string and hash to keep router_data in sync. The
@@ -408,7 +428,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     // frontend_path prefix is not applied twice. In embed mode the host page's
     // window.location is unrelated to the in-widget memory router, so use the
     // mirrored location there.
-    const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+    const liveLoc = isEmbedMode ? loc : window.location;
     const search = liveLoc.search ?? "";
     const hash = liveLoc.hash ?? "";
     event.router_data = {
@@ -586,14 +606,14 @@ export const connect = async (
   }
 
   // Get backend URL object from the endpoint.
-  const endpoint = getBackendURL(EVENTURL);
+  const endpoint = getBackendURL(getEnv().EVENT);
   const on_hydrated_queue = [];
 
   // Create the socket.
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
-    protocols: [reflexEnvironment.version],
+    protocols: [runtimeConfig.reflexEnvironment?.version],
     autoUnref: false,
     query: { token: getToken() },
     reconnection: false, // Reconnection will be handled manually.
@@ -677,7 +697,13 @@ export const connect = async (
     window.addEventListener("beforeunload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
+      queueEvents(
+        runtimeConfig.initialEvents(),
+        socket,
+        true,
+        navigate,
+        params,
+      );
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
@@ -757,7 +783,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === state_name &&
+            substate === runtimeConfig.state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client
@@ -1014,7 +1040,7 @@ export const useEventLoop = (
     }
     // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (
-      Object.keys(initialState).length > 1 &&
+      Object.keys(runtimeConfig.initialState).length > 1 &&
       !isBackendDisabled() &&
       !socket.current?.connected
     ) {
@@ -1022,7 +1048,7 @@ export const useEventLoop = (
       await connect(
         socket,
         dispatch,
-        [env.TRANSPORT],
+        [getEnv().TRANSPORT],
         setConnectErrors,
         client_storage,
         navigate,
@@ -1078,10 +1104,13 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
-          info: error.name + ": " + error.message + "\n" + error.stack,
-          component_stack: "",
-        }),
+        ReflexEvent(
+          `${runtimeConfig.exception_state_name}.handle_frontend_exception`,
+          {
+            info: error.name + ": " + error.message + "\n" + error.stack,
+            component_stack: "",
+          },
+        ),
       ]);
       return false;
     };
@@ -1090,15 +1119,18 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
-          info:
-            event.reason?.name +
-            ": " +
-            event.reason?.message +
-            "\n" +
-            event.reason?.stack,
-          component_stack: "",
-        }),
+        ReflexEvent(
+          `${runtimeConfig.exception_state_name}.handle_frontend_exception`,
+          {
+            info:
+              event.reason?.name +
+              ": " +
+              event.reason?.message +
+              "\n" +
+              event.reason?.stack,
+            component_stack: "",
+          },
+        ),
       ]);
       return false;
     };
@@ -1156,7 +1188,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+          `${runtimeConfig.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
         addEvents([event], e);
@@ -1199,11 +1231,11 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
-    addEvents(onLoadInternalEvent());
+    addEvents(runtimeConfig.onLoadInternalEvent());
 
     // Update the ref
     prevLocationRef.current = location;
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+  }, [location, dispatch, addEvents]);
 
   return [addEvents, connectErrors];
 };
