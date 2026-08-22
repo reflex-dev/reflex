@@ -460,7 +460,7 @@ class _MemoGroup:
 # memos swap or drop the default wrapper doesn't import it. Shared by the
 # grouped and un-mirrored compile paths so they can't drift apart.
 _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
-    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    constants.FrontendPackage.STATE: [ImportVar(tag="isTrue")],
 }
 
 

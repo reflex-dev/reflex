@@ -14,7 +14,7 @@ from reflex_base.components.component import (
 )
 from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.components.state_context import get_event_app_wraps
-from reflex_base.constants import Dirs
+from reflex_base.constants import Dirs, FrontendPackage
 from reflex_base.constants.compiler import Imports
 from reflex_base.environment import environment
 from reflex_base.event import (
@@ -166,7 +166,7 @@ uploaded_files_url_prefix = Var(
     _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
-            f"$/{Dirs.STATE_PATH}": "getBackendURL",
+            FrontendPackage.STATE: "getBackendURL",
             "$/env.json": ImportVar(tag="env", is_default=True),
         }
     ),

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex_base import constants
 from reflex_base.components.component import Component
-from reflex_base.constants import Dirs, Hooks, Imports
+from reflex_base.constants import FrontendPackage, Hooks, Imports
 from reflex_base.constants.compiler import CompileVars
 from reflex_base.environment import environment
 from reflex_base.utils.imports import ImportVar
@@ -63,7 +63,7 @@ class WebsocketTargetURL(Var):
             _var_data=VarData(
                 imports={
                     "$/env.json": [ImportVar(tag="env", is_default=True)],
-                    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                    FrontendPackage.STATE: [ImportVar(tag="getBackendURL")],
                 },
             ),
             _var_type=WebsocketTargetURL,
@@ -335,7 +335,7 @@ class BackendDisabled(Div):
                     "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
                 },
                 imports={
-                    f"$/{constants.Dirs.STATE_PATH}": [
+                    constants.FrontendPackage.STATE: [
                         ImportVar(tag="isBackendDisabled")
                     ],
                 },

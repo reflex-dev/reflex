@@ -26,7 +26,13 @@ from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import Tag
-from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
+from reflex_base.constants import (
+    EventTriggers,
+    FrontendPackage,
+    Hooks,
+    Imports,
+    MemoizationMode,
+)
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
@@ -1903,9 +1909,7 @@ class Component(BaseComponent, ABC):
         if self._get_ref_hook() is not None:
             # Handle hooks needed for attaching react refs to DOM nodes.
             imports_.setdefault("react", set()).add(ImportVar(tag="useRef"))
-            imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
-                ImportVar(tag="refs")
-            )
+            imports_.setdefault(FrontendPackage.STATE, set()).add(ImportVar(tag="refs"))
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.

@@ -23,7 +23,7 @@ from reflex_base.vars.object import ObjectVar
 
 # Reference the global ColorModeContext
 color_mode_imports = {
-    f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    constants.FrontendPackage.REACT_THEME: [ImportVar(tag="ColorModeContext")],
     "react": [ImportVar(tag="useContext")],
 }
 

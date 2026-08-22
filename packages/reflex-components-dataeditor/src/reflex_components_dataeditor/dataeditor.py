@@ -10,6 +10,7 @@ from typing import Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex_base.utils import format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
@@ -412,7 +413,7 @@ class DataEditor(NoSSRComponent):
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: ["GridCellKind", "CompactSelection"],
-            "$/utils/helpers/dataeditor.js": ImportVar(
+            FrontendPackage.HELPERS_DATAEDITOR: ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
             ),
         }

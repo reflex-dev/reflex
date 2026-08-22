@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.components.props import NoExtrasAllowedProps
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.event import run_script, set_clipboard
 from reflex_base.style import Style
 from reflex_base.utils.exceptions import VarTypeError
@@ -540,7 +541,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
 class ShikiCodeBlock(Component, MarkdownComponentMap):
     """A Code block."""
 
-    library = "/components/shiki/code"
+    library = FrontendPackage.SHIKI_CODE
 
     tag = "Code"
 

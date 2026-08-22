@@ -209,11 +209,20 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    # Backend-evaluated dynamic components in the wild reach the runtime via
+    # the pre-package registry key; keep it pointing at the same module.
+    registered_paths = {lib_path for _, lib_path in window_libraries}
+    legacy_window_aliases = "\n".join(
+        f'    window["__reflex"][{json.dumps(legacy)}] = windowImports[{json.dumps(current)}];'
+        for legacy, current in (("$/utils/state", constants.FrontendPackage.STATE),)
+        if current in registered_paths
+    )
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
 import {{ defaultColorMode, isDevMode }} from "$/utils/context";
-import {{ ThemeProvider }} from '$/utils/react-theme';
+import {{ ThemeProvider }} from "{constants.FrontendPackage.REACT_THEME}";
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
 {import_window_libraries}
@@ -227,6 +236,7 @@ function ReflexProviders({{children}}) {{
       {window_imports_str}
     }};
     window["__reflex"] = windowImports;
+{legacy_window_aliases}
   }}, []);
 
   return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, isDevMode: isDevMode, attribute: "class"}},
@@ -359,8 +369,8 @@ export const initialEvents = () => []
     )
 
     return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
-import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
-import {{ configureReflexRuntime }} from "$/utils/runtime"
+import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "{constants.FrontendPackage.STATE}"
+import {{ configureReflexRuntime }} from "{constants.FrontendPackage.RUNTIME}"
 import {{ jsx }} from "@emotion/react";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
@@ -368,7 +378,7 @@ import reflexEnvironment from "$/reflex.json";
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export {{ ColorModeContext }} from "$/utils/react-theme";
+export {{ ColorModeContext }} from "{constants.FrontendPackage.REACT_THEME}";
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};

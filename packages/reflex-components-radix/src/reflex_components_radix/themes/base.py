@@ -6,6 +6,7 @@ from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import Tag
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Responsive
@@ -269,7 +270,7 @@ class ThemePanel(RadixThemesComponent):
 class RadixThemesColorModeProvider(Component):
     """React-themes integration for radix themes components."""
 
-    library = "$/components/reflex/radix_themes_color_mode_provider"
+    library = FrontendPackage.RADIX_COLOR_MODE_PROVIDER
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

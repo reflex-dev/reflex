@@ -31,7 +31,7 @@ def _default_bundled_libraries() -> list[str]:
         "react",
         "@emotion/react",
         f"$/{constants.Dirs.CONTEXTS_PATH}",
-        f"$/{constants.Dirs.STATE_PATH}",
+        constants.FrontendPackage.STATE,
     ]
 
 

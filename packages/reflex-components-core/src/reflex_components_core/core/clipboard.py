@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from reflex_base.components.component import field
 from reflex_base.components.tags.tag import Tag
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.constants.compiler import Hooks
 from reflex_base.event import EventChain, EventHandler, passthrough_event_spec
 from reflex_base.utils.format import format_prop, wrap
@@ -71,7 +72,7 @@ class Clipboard(Fragment):
             The import dict for the component.
         """
         return {
-            "$/utils/helpers/paste.js": ImportVar(
+            FrontendPackage.HELPERS_PASTE: ImportVar(
                 tag="usePasteHandler", is_default=True
             ),
         }

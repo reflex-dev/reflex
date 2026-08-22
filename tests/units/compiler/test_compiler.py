@@ -481,7 +481,10 @@ def test_compile_contexts_has_default_color_mode_context():
     """ColorModeContext is re-exported from the shipped react-theme module."""
     _, code = compiler.compile_contexts(None, None)
 
-    assert 'export { ColorModeContext } from "$/utils/react-theme";' in code
+    assert (
+        'export { ColorModeContext } from "@reflex-dev/reflex-base/react-theme";'
+        in code
+    )
     react_theme = (frontend_package_dir() / "react-theme.js").read_text()
     assert 'rawColorMode: "system"' in react_theme
     assert 'resolvedColorMode: "light"' in react_theme
@@ -491,7 +494,10 @@ def test_compile_contexts_configures_runtime():
     """The generated context module registers app config into the runtime."""
     _, code = compiler.compile_contexts(None, None)
 
-    assert 'import { configureReflexRuntime } from "$/utils/runtime"' in code
+    assert (
+        'import { configureReflexRuntime } from "@reflex-dev/reflex-base/runtime"'
+        in code
+    )
     assert 'import env from "$/env.json";' in code
     assert 'import reflexEnvironment from "$/reflex.json";' in code
     configure_call = code[code.index("configureReflexRuntime({") :]

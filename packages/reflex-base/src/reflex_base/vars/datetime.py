@@ -6,6 +6,7 @@ import dataclasses
 from datetime import date, datetime
 from typing import Any, Literal, TypeVar
 
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.vars.number import BooleanVar
 
@@ -24,7 +25,7 @@ DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 datetime_types = datetime | date
 
 _COMPARE_DATETIME_IMPORT = {
-    "$/utils/helpers/datetime.js": [
+    FrontendPackage.HELPERS_DATETIME: [
         ImportVar(tag="compareDatetime", is_default=True, install=False)
     ],
 }

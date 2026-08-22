@@ -1339,7 +1339,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             _js_expr=f"refs[{Var.create(str(self))}]",
             _var_data=VarData(
                 imports={
-                    f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
+                    constants.FrontendPackage.STATE: [imports.ImportVar(tag="refs")]
                 }
             ),
         ).to(str)
@@ -2158,11 +2158,11 @@ class CachedVarOperation:
 
 
 _PY_AND_IMPORT: ImportDict = {
-    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyAnd")],
+    constants.FrontendPackage.STATE: [ImportVar(tag="pyAnd")],
 }
 
 _PY_OR_IMPORT: ImportDict = {
-    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyOr")],
+    constants.FrontendPackage.STATE: [ImportVar(tag="pyOr")],
 }
 
 
@@ -3269,7 +3269,7 @@ class StateOperation(CachedVarOperation, Var):
 
 
 def get_uuid_string_var() -> Var:
-    """Return a Var that generates a single memoized UUID via .web/utils/state.js.
+    """Return a Var that generates a single memoized UUID via the frontend runtime.
 
     useMemo with an empty dependency array ensures that the generated UUID is
     consistent across re-renders of the component.
@@ -3283,7 +3283,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
+            constants.FrontendPackage.STATE: ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},

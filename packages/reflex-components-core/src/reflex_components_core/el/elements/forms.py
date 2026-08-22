@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import Tag
-from reflex_base.constants import Dirs, EventTriggers
+from reflex_base.constants import EventTriggers, FrontendPackage
 from reflex_base.event import (
     FORM_DATA,
     FORM_SUBMIT_MAPPING,
@@ -324,7 +324,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            FrontendPackage.STATE: ["getRefValue", "getRefValues"],
         }
 
     def add_hooks(self) -> list[str]:

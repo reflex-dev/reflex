@@ -1323,13 +1323,13 @@ def test_memoized_match_wrapper_receives_case_children_in_page_output() -> None:
 def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     """A button whose ``on_click`` calls a global ``ClientStateVar`` setter
     must memoize and the resulting memo body's imports must include ``refs``
-    from ``$/utils/state``.
+    from the frontend state module.
 
     Regression: ``ClientStateVar.set_value`` builds its setter as
     ``refs['_client_state_<setter>']`` but the returned setter ``Var`` does not
     carry the ``refs`` import. When the on_click event chain is compiled into
     the memo body, the body references ``refs['_client_state_<setter>'](42)``
-    with no matching ``import { refs } from "$/utils/state"`` — producing a
+    with no matching ``import { refs } from "@reflex-dev/reflex-base/state"`` — producing a
     ``ReferenceError: refs is not defined`` at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components
@@ -1364,18 +1364,18 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     )
 
     state_import_match = re.search(
-        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/state"',
+        r'^import\s*\{([^}]*)\}\s*from\s*"@reflex-dev/reflex-base/state"',
         memo_code,
         flags=re.MULTILINE,
     )
     assert state_import_match is not None, (
-        "Memo body must import from $/utils/state since the on_click handler "
+        "Memo body must import from @reflex-dev/reflex-base/state since the on_click handler "
         "uses refs['_client_state_setCounter'].\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
     imported_names = {name.strip() for name in state_import_match.group(1).split(",")}
     assert "refs" in imported_names, (
-        f"Memo body imports {imported_names!r} from $/utils/state but is missing "
+        f"Memo body imports {imported_names!r} from @reflex-dev/reflex-base/state but is missing "
         "'refs' — the on_click handler references refs['_client_state_setCounter'].\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )

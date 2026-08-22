@@ -5,7 +5,7 @@ import enum
 from enum import Enum
 from types import SimpleNamespace
 
-from reflex_base.constants import Dirs
+from reflex_base.constants import Dirs, FrontendPackage
 from reflex_base.utils.imports import ImportVar
 
 # The prefix used to create setters for state vars.
@@ -153,7 +153,7 @@ class Imports(SimpleNamespace):
     # constraint a ``useContext(EventLoopContext)`` hoist would impose.
     EVENTS = {
         f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag=CompileVars.ADD_EVENTS)],
-        f"$/{Dirs.STATE_PATH}": [
+        FrontendPackage.STATE: [
             ImportVar(tag=CompileVars.TO_EVENT),
             ImportVar(tag=CompileVars.APPLY_EVENT_ACTIONS),
         ],
@@ -236,10 +236,3 @@ class SpecialAttributes(enum.Enum):
             True if the attribute is special.
         """
         return attr.startswith(SPECIAL_ATTRS)
-
-
-class ResetStylesheet(SimpleNamespace):
-    """Constants for CSS reset stylesheet."""
-
-    # The filename of the CSS reset file.
-    FILENAME = "__reflex_style_reset.css"

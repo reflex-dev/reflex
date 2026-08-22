@@ -12,7 +12,7 @@ def test_websocket_target_url():
     var_data = url._get_all_var_data()
     assert var_data is not None
     assert sorted(key for key, _ in var_data.imports) == sorted((
-        "$/utils/state",
+        "@reflex-dev/reflex-base/state",
         "$/env.json",
     ))
 
@@ -23,7 +23,7 @@ def test_connection_banner():
     assert sorted(imports) == sorted((
         "react",
         "$/utils/context",
-        "$/utils/state",
+        "@reflex-dev/reflex-base/state",
         "$/env.json",
     ))
 
@@ -38,7 +38,7 @@ def test_connection_modal():
     assert sorted(imports) == sorted((
         "react",
         "$/utils/context",
-        "$/utils/state",
+        "@reflex-dev/reflex-base/state",
         "$/env.json",
     ))
 

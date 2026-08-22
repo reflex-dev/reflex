@@ -31,8 +31,6 @@ class Dirs(SimpleNamespace):
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
-    # The name of the state file.
-    STATE_PATH = UTILS + "/state"
     # The name of the components file, where memos that can't be mirrored to a
     # user module (``__main__``, unsafe names) get one file per memo.
     COMPONENTS_PATH = UTILS + "/components"

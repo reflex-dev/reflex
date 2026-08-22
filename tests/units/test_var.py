@@ -14,7 +14,7 @@ from pytest_mock import MockerFixture
 from reflex_base.constants.base import (
     REFLEX_VAR_CLOSING_TAG,
     REFLEX_VAR_OPENING_TAG,
-    Dirs,
+    FrontendPackage,
 )
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import (
@@ -1186,7 +1186,7 @@ def _assert_var_imports(var: Var, tag: str):
     assert var_data is not None
     assert any(
         import_var.tag == tag
-        for import_var in dict(var_data.imports).get(f"$/{Dirs.STATE_PATH}", ())
+        for import_var in dict(var_data.imports).get(FrontendPackage.STATE, ())
     )
 
 

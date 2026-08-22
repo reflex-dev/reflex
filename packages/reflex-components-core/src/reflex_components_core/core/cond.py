@@ -7,7 +7,7 @@ from typing import Any, TypeVar, overload
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
 from reflex_base.components.tags import CondTag, Tag
-from reflex_base.constants import Dirs
+from reflex_base.constants import FrontendPackage
 from reflex_base.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex_base.utils import types
 from reflex_base.utils.imports import ImportDict, ImportVar
@@ -20,7 +20,7 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    FrontendPackage.STATE: [ImportVar(tag="isTrue")],
 }
 
 

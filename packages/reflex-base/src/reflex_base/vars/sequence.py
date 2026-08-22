@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex_base import constants
-from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, Dirs
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, FrontendPackage
 from reflex_base.utils import console, types
 from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.utils.imports import ImportDict, ImportVar
@@ -1144,15 +1144,15 @@ def string_capitalize_operation(string: StringVar[Any]):
 
 
 _PY_STRIP_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrip")],
+    FrontendPackage.STATE: [ImportVar(tag="pyStrip")],
 }
 
 _PY_LSTRIP_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyLstrip")],
+    FrontendPackage.STATE: [ImportVar(tag="pyLstrip")],
 }
 
 _PY_RSTRIP_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
+    FrontendPackage.STATE: [ImportVar(tag="pyRstrip")],
 }
 
 
@@ -2035,7 +2035,7 @@ def reduce_array_operation(
 
 
 _PY_FLAT_MAP_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyFlatMap")],
+    FrontendPackage.STATE: [ImportVar(tag="pyFlatMap")],
 }
 
 

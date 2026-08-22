@@ -18,7 +18,7 @@ NoValue = object()
 
 
 _refs_import = {
-    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
+    constants.FrontendPackage.STATE: [ImportVar(tag="refs")],
 }
 
 

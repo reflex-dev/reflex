@@ -6,6 +6,8 @@ import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
+from reflex_base.constants.base import FrontendPackage
+
 # Absolute import paths beginning with one of these reserved ``.web``
 # subdirectories are rewritten to ``$``-prefixed module specifiers.
 ABSOLUTE_IMPORT_PREFIXES = (
@@ -15,6 +17,32 @@ ABSOLUTE_IMPORT_PREFIXES = (
     "/public/",
     "/app_components/",
 )
+
+# Deprecated ``$/...`` specifiers for framework modules that moved into the
+# bundled npm package. Normalizing them here keeps user Python code declaring
+# old-style imports compiling against the package (and prevents spurious
+# same-tag conflicts between the old and new spellings of one module). The
+# generated vite config aliases the same specifiers for user JS code.
+LEGACY_FRONTEND_SPECIFIERS = {
+    old: new
+    for base, new in {
+        "$/utils/state": FrontendPackage.STATE,
+        "$/utils/runtime": FrontendPackage.RUNTIME,
+        "$/utils/react-theme": FrontendPackage.REACT_THEME,
+        "$/utils/helpers/debounce": FrontendPackage.HELPERS_DEBOUNCE,
+        "$/utils/helpers/throttle": FrontendPackage.HELPERS_THROTTLE,
+        "$/utils/helpers/upload": FrontendPackage.HELPERS_UPLOAD,
+        "$/utils/helpers/datetime": FrontendPackage.HELPERS_DATETIME,
+        "$/utils/helpers/paste": FrontendPackage.HELPERS_PASTE,
+        "$/utils/helpers/range": FrontendPackage.HELPERS_RANGE,
+        "$/utils/helpers/dataeditor": FrontendPackage.HELPERS_DATAEDITOR,
+        "$/components/shiki/code": FrontendPackage.SHIKI_CODE,
+        "$/components/reflex/radix_themes_color_mode_provider": (
+            FrontendPackage.RADIX_COLOR_MODE_PROVIDER
+        ),
+    }.items()
+    for old in (base, base + ".js")
+}
 
 
 def merge_parsed_imports(
@@ -53,6 +81,7 @@ def merge_imports(
         ):
             # If the lib is an absolute path, we need to prefix it with a $
             lib = "$" + lib if lib.startswith(ABSOLUTE_IMPORT_PREFIXES) else lib
+            lib = LEGACY_FRONTEND_SPECIFIERS.get(lib, lib)
             if isinstance(fields, (list, tuple, set)):
                 all_imports[lib].extend(
                     ImportVar(field) if isinstance(field, str) else field

@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.components.props import NoExtrasAllowedProps
-from reflex_base.constants.base import Dirs
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.event import EventSpec, run_script
 from reflex_base.style import Style, resolved_color_mode
 from reflex_base.utils import format
@@ -32,7 +32,7 @@ LiteralPosition = Literal[
 
 toast_ref = Var(
     _js_expr="refs['__toast']",
-    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+    _var_data=VarData(imports={FrontendPackage.STATE: [ImportVar(tag="refs")]}),
 )
 
 
@@ -232,7 +232,7 @@ class Toaster(Component):
             _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
-                    "$/utils/state": [ImportVar(tag="refs")],
+                    FrontendPackage.STATE: [ImportVar(tag="refs")],
                     self.library: [ImportVar(tag="toast", install=False)],
                 }
             ),

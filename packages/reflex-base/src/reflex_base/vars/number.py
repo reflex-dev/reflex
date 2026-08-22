@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
 from typing_extensions import TypeVar as TypeVarExt
 
-from reflex_base.constants.base import Dirs
+from reflex_base.constants.base import FrontendPackage
 from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     VarTypeError,
@@ -1077,11 +1077,11 @@ boolean_types = BooleanVar | bool
 
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    FrontendPackage.STATE: [ImportVar(tag="isTrue")],
 }
 
 _IS_NOT_NULL_OR_UNDEFINED_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isNotNullOrUndefined")],
+    FrontendPackage.STATE: [ImportVar(tag="isNotNullOrUndefined")],
 }
 
 
