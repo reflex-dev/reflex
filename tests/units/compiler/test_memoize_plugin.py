@@ -1320,27 +1320,24 @@ def test_memoized_match_wrapper_receives_case_children_in_page_output() -> None:
     )
 
 
-def test_client_state_setter_in_call_function_event_imports_refs() -> None:
-    """A button whose ``on_click`` calls a global ``ClientStateVar`` setter
-    must memoize and the resulting memo body's imports must include ``refs``
-    from ``$/utils/state``.
+def test_client_state_setter_in_call_function_event_imports_hook() -> None:
+    """A button whose ``on_click`` calls a ``ClientStateVar`` setter must memoize
+    and the resulting memo body must declare the ``useClientState`` hook and
+    import it from ``$/utils/client_state``.
 
-    Regression: ``ClientStateVar.set_value`` builds its setter as
-    ``refs['_client_state_<setter>']`` but the returned setter ``Var`` does not
-    carry the ``refs`` import. When the on_click event chain is compiled into
-    the memo body, the body references ``refs['_client_state_<setter>'](42)``
-    with no matching ``import { refs } from "$/utils/state"`` — producing a
-    ``ReferenceError: refs is not defined`` at runtime.
+    The setter is the local binding returned by the hook, so the memo body is
+    only valid if ``ClientStateVar.set`` carries its own hook VarData. When it
+    did not, the body referenced a setter that nothing declared, producing a
+    ``ReferenceError`` at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components
-    from reflex.experimental.client_state import ClientStateVar
 
-    counter = ClientStateVar.create("counter", default=0)
+    counter = rx.client_state("counter", default=0)
 
     def page() -> Component:
         return rx.el.button(
             "click",
-            on_click=rx.call_function(counter.set_value(42)),
+            on_click=rx.call_function(counter.set(42)),
         )
 
     ctx, _page_ctx = _compile_single_page(page)
@@ -1358,25 +1355,32 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
     )
 
-    assert "refs['_client_state_setCounter'](42)" in memo_code, (
-        "Expected the memo body to call the client-state setter via refs.\n"
+    assert "setCounter(42)" in memo_code, (
+        "Expected the memo body to call the client-state setter.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
+    assert 'useClientState(0, "counter")' in memo_code, (
+        "Expected the memo body to declare the client-state hook so the setter "
+        f"binding exists.\nMemo code snippet: {memo_code[:2000]}"
+    )
 
-    state_import_match = re.search(
-        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/state"',
+    import_match = re.search(
+        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/client_state"',
         memo_code,
         flags=re.MULTILINE,
     )
-    assert state_import_match is not None, (
-        "Memo body must import from $/utils/state since the on_click handler "
-        "uses refs['_client_state_setCounter'].\n"
-        f"Memo code snippet: {memo_code[:2000]}"
+    assert import_match is not None, (
+        "Memo body must import from $/utils/client_state since it calls "
+        f"useClientState.\nMemo code snippet: {memo_code[:2000]}"
     )
-    imported_names = {name.strip() for name in state_import_match.group(1).split(",")}
-    assert "refs" in imported_names, (
-        f"Memo body imports {imported_names!r} from $/utils/state but is missing "
-        "'refs' — the on_click handler references refs['_client_state_setCounter'].\n"
+    imported_names = {name.strip() for name in import_match.group(1).split(",")}
+    assert "useClientState" in imported_names, (
+        f"Memo body imports {imported_names!r} from $/utils/client_state but is "
+        f"missing 'useClientState'.\nMemo code snippet: {memo_code[:2000]}"
+    )
+
+    assert "refs['_client_state" not in memo_code, (
+        "Client state must no longer route through the global refs object.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
 
@@ -2126,15 +2130,13 @@ def test_client_state_value_inside_snapshot_boundary_is_memoized(
 ) -> None:
     """Client-state Vars are reactive and must trigger boundary memoization.
 
-    A ``client_state`` Var contributes its ``useState``/``useId`` hooks via
+    A ``client_state`` Var contributes its ``useClientState`` hook via
     ``var_data.hooks`` without setting ``var_data.state``. The reactive-Var
     walk must catch the hooks-only case so client-state-driven content
     inside a snapshot boundary lands in the memo body. Both global and
     page-local ``ClientStateVar`` Vars must drive the same wrapping.
     """
-    from reflex.experimental.client_state import ClientStateVar
-
-    cs_var = ClientStateVar.create("titletest", default="hi", global_ref=global_ref)
+    cs_var = rx.client_state("titletest", default="hi", global_ref=global_ref)
     title = Title.create(cs_var.value)
     ctx, page_ctx = _compile_single_page(lambda: title)
     assert len(ctx.memoize_wrappers) == 1, (
@@ -2143,7 +2145,7 @@ def test_client_state_value_inside_snapshot_boundary_is_memoized(
     )
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useState" not in page_output, (
+    assert "useClientState" not in page_output, (
         "Client-state hooks should be inside the memo body, not the page.\n"
         f"Page output snippet: {page_output[:2000]}"
     )

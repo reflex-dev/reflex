@@ -6,7 +6,6 @@ from collections.abc import Callable, Collection
 import reflex as rx
 import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
-from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
@@ -86,7 +85,7 @@ def feedback_button_toc() -> rx.Component:
 
 @rx.memo
 def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
-    copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
+    copied = rx.client_state("is_copied", default=False, global_ref=False)
     return marketing_button(
         rx.cond(
             copied.value,
@@ -101,10 +100,10 @@ def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
         variant="ghost",
         class_name="justify-start pl-0 text-secondary-11",
         on_click=[
-            rx.call_function(copied.set_value(True)),
+            rx.call_function(copied.set(True)),
             rx.set_clipboard(text),
         ],
-        on_mouse_down=rx.call_function(copied.set_value(False)).debounce(1500),
+        on_mouse_down=rx.call_function(copied.set(False)).debounce(1500),
     )
 
 

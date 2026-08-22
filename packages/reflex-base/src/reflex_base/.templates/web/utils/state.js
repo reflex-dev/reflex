@@ -217,6 +217,41 @@ function urlFrom(string) {
 }
 
 /**
+ * Invoke an event's result callback, if it declared one.
+ *
+ * The callback arrives as a string built by ``format_queue_events``, which
+ * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
+ * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
+ * the ``eval`` resolves them from this function's scope, so renaming them breaks
+ * every callback.
+ * @param event The event whose callback to run.
+ * @param eval_result The value to pass to the callback, awaited if thenable.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ */
+const applyResultCallback = async (
+  event,
+  eval_result,
+  socket,
+  navigate,
+  params,
+) => {
+  if (!event.payload.callback) {
+    return;
+  }
+  const final_result =
+    !!eval_result && typeof eval_result.then === "function"
+      ? await eval_result
+      : eval_result;
+  const callback =
+    typeof event.payload.callback === "string"
+      ? eval(event.payload.callback)
+      : event.payload.callback;
+  callback(final_result);
+};
+
+/**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
@@ -342,23 +377,58 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  // Client state is reached through `refs` rather than an import: `client_state.js`
+  // imports `refs` from here, so importing it back would be a cycle. The key must
+  // stay in sync with CLIENT_STATE_REF in `$/utils/client_state`.
+  if (event.name == "_client_state_set") {
+    const store = refs["__client_state"];
+    if (store === undefined) {
+      console.error(
+        `Cannot set client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
+      );
+    } else {
+      store.set(event.payload.var_name, event.payload.value);
+    }
+    return;
+  }
+
+  if (event.name == "_client_state_get") {
+    const store = refs["__client_state"];
+    if (store === undefined) {
+      console.error(
+        `Cannot read client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
+      );
+      return;
+    }
+    try {
+      await applyResultCallback(
+        event,
+        store.get(event.payload.var_name),
+        socket,
+        navigate,
+        params,
+      );
+    } catch (e) {
+      console.log("_client_state_get", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return;
+  }
+
   if (
     event.name == "_call_function" &&
     typeof event.payload.function !== "string"
   ) {
     try {
-      const eval_result = event.payload.function();
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(
+        event,
+        event.payload.function(),
+        socket,
+        navigate,
+        params,
+      );
     } catch (e) {
       console.log("_call_function", e);
       if (window && window?.onerror) {
@@ -375,17 +445,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
           ? eval(event.payload.javascript_code)
           : eval(event.payload.function)();
 
-      if (event.payload.callback) {
-        const final_result =
-          !!eval_result && typeof eval_result.then === "function"
-            ? await eval_result
-            : eval_result;
-        const callback =
-          typeof event.payload.callback === "string"
-            ? eval(event.payload.callback)
-            : event.payload.callback;
-        callback(final_result);
-      }
+      await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_script", e);
       if (window && window?.onerror) {

@@ -9,7 +9,6 @@ from typing import Any
 
 import reflex as rx
 from reflex.event import EventType
-from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
     track_demo_form_posthog_submission,
@@ -22,8 +21,8 @@ from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.components.icons.others import select_arrow
 from reflex_components_internal.utils.twmerge import cn
 
-demo_form_error_message = ClientStateVar.create("demo_form_error_message", "")
-demo_form_open_cs = ClientStateVar.create("demo_form_open", False)
+demo_form_error_message = rx.client_state("demo_form_error_message", "")
+demo_form_open_cs = rx.client_state("demo_form_open", False)
 
 PERSONAL_EMAIL_PROVIDERS = r"^(?!.*@(gmail|outlook|hotmail|yahoo|icloud|aol|protonmail|mail|yandex|zoho|live|msn|me|mac|googlemail)\.com$|.*@(yahoo|outlook|hotmail)\.co\.uk$|.*@yahoo\.ca$|.*@yahoo\.co\.in$|.*@proton\.me$).*$"
 
@@ -376,7 +375,7 @@ def demo_form(
         ),
         on_submit=[
             DemoFormStateUI.track_demo_form_posthog,
-            rx.call_function(demo_form_open_cs.set_value(False)),
+            rx.call_function(demo_form_open_cs.set(False)),
             *extra_on_submit,
         ],
         data_default_form_id="965991",
@@ -439,10 +438,8 @@ def demo_form_dialog(
             ),
         ),
         open=demo_form_open_cs.value,
-        on_open_change=demo_form_open_cs.set_value,
-        on_open_change_complete=[
-            rx.call_function(demo_form_error_message.set_value(""))
-        ],
+        on_open_change=demo_form_open_cs.set,
+        on_open_change_complete=[rx.call_function(demo_form_error_message.set(""))],
         class_name=class_name,
         **props,
     )
