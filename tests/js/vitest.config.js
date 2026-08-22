@@ -28,15 +28,6 @@ export default defineConfig({
   define: { __WEB_ROOT__: JSON.stringify(webRoot) },
   resolve: {
     alias: [
-      // `$/utils/state` pulls in socket.io, react-router and the per-app
-      // generated `context.js`, none of which these units need. Stub the one
-      // binding they import from it.
-      {
-        find: "$/utils/state",
-        replacement: fileURLToPath(
-          new URL("./stubs/state.js", import.meta.url),
-        ),
-      },
       { find: /^\$\//, replacement: webRoot },
       { find: /^react$/, replacement: require.resolve("react") },
     ],

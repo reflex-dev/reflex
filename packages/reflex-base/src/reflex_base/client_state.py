@@ -223,6 +223,8 @@ class ClientStateVar(Var):
             str(self._var_type),
             self._getter_name,
             self._setter_name,
+            self._state_name,
+            self._global_ref,
         ))
 
     @classmethod
@@ -234,10 +236,11 @@ class ClientStateVar(Var):
     ) -> ClientStateVar:
         """Create a local_state Var that can be accessed and updated on the client.
 
-        The `ClientStateVar` should be included in the highest parent component
-        that contains the components which will access and manipulate the client
-        state. It has no visual rendering, including it ensures that the
-        `useClientState` hook is called in the correct scope.
+        With ``global_ref`` set (the default) the state is keyed by name in a
+        store shared across the app, so it can be read and written from any
+        component and from the backend. Without it the state is anonymous: it is
+        private to the component the hook is emitted in, and `push`, `retrieve`,
+        `global_value` and `global_set` cannot address it.
 
         To render the var in a component, use the `value` property.
 

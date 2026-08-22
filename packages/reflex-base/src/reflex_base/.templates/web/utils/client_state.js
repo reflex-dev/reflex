@@ -19,9 +19,10 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import { refs } from "$/utils/state";
-
-/** The single `refs` key holding the live store, for devtools introspection. */
+/**
+ * Key under which the provider publishes its store on the `registry` object it
+ * is handed, for backend-evaluated code and devtools introspection.
+ */
 export const CLIENT_STATE_REF = "__client_state";
 
 /**
@@ -154,9 +155,13 @@ export const setClientState = (name, value) => {
  * Provide the client state store to the tree.
  * @param props The component props.
  * @param props.children The children to render.
+ * @param props.registry Optional object to publish the store on, under
+ *   `CLIENT_STATE_REF`, so code running outside the React tree can reach it.
+ *   Passed in by the caller rather than imported, so this module stays
+ *   independent of where that lives.
  * @returns The provider element.
  */
-export function ClientStateProvider({ children }) {
+export function ClientStateProvider({ children, registry }) {
   const storeRef = useRef(null);
   if (storeRef.current === null) {
     // On the client this is the shared singleton, so `setClientState` and the
@@ -166,16 +171,21 @@ export function ClientStateProvider({ children }) {
   const store = storeRef.current;
 
   useEffect(() => {
-    // Client-only, so the server's module-scope `refs` is never written.
-    refs[CLIENT_STATE_REF] = store;
+    if (registry === undefined) {
+      return undefined;
+    }
+    // In an effect, so the store is never published during an SSR render.
+    registry[CLIENT_STATE_REF] = store;
     _mountedProviders += 1;
     return () => {
       _mountedProviders -= 1;
-      if (_mountedProviders === 0 && refs[CLIENT_STATE_REF] === store) {
-        delete refs[CLIENT_STATE_REF];
+      // Several providers can share one store, so only the last one out clears
+      // the entry.
+      if (_mountedProviders === 0 && registry[CLIENT_STATE_REF] === store) {
+        delete registry[CLIENT_STATE_REF];
       }
     };
-  }, [store]);
+  }, [store, registry]);
 
   return createElement(ClientStateContext.Provider, { value: store }, children);
 }

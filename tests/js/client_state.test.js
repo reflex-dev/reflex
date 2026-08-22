@@ -21,7 +21,6 @@ import {
   setClientState,
   useClientState,
 } from "$/utils/client_state";
-import { refs } from "$/utils/state";
 
 // React 19 wants this set when driving roots manually.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -43,8 +42,11 @@ const mount = (element, { strict = false } = {}) => {
   };
 };
 
-afterEach(() => {
-  delete refs[CLIENT_STATE_REF];
+/** A stand-in for the global object the app publishes the store on. */
+let registry;
+
+beforeEach(() => {
+  registry = {};
 });
 
 describe("store slots", () => {
@@ -152,43 +154,46 @@ describe("getClientStore", () => {
 });
 
 describe("ClientStateProvider", () => {
-  test("publishes the store on refs while mounted", () => {
-    expect(refs[CLIENT_STATE_REF]).toBeUndefined();
+  test("publishes the store on the registry it is given", () => {
+    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
 
-    const { unmount } = mount(createElement(ClientStateProvider, null, null));
+    const { unmount } = mount(createElement(ClientStateProvider, { registry }));
 
-    expect(refs[CLIENT_STATE_REF]).toBe(getClientStore());
+    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
 
     unmount();
 
-    expect(refs[CLIENT_STATE_REF]).toBeUndefined();
+    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
   });
 
-  test("keeps the refs entry until the last provider unmounts", () => {
+  test("keeps the entry until the last provider unmounts", () => {
     // Two app roots on one page (an embedded app beside a main app) share the
     // client singleton, so the first teardown must not strand the other.
-    const first = mount(createElement(ClientStateProvider, null, null));
-    const second = mount(createElement(ClientStateProvider, null, null));
+    const first = mount(createElement(ClientStateProvider, { registry }));
+    const second = mount(createElement(ClientStateProvider, { registry }));
 
     first.unmount();
 
-    expect(refs[CLIENT_STATE_REF]).toBe(getClientStore());
+    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
 
     second.unmount();
 
-    expect(refs[CLIENT_STATE_REF]).toBeUndefined();
+    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
   });
 
   test("survives StrictMode's double mount", () => {
-    const { unmount } = mount(createElement(ClientStateProvider, null, null), {
-      strict: true,
-    });
+    const { unmount } = mount(
+      createElement(ClientStateProvider, { registry }),
+      {
+        strict: true,
+      },
+    );
 
-    expect(refs[CLIENT_STATE_REF]).toBe(getClientStore());
+    expect(registry[CLIENT_STATE_REF]).toBe(getClientStore());
 
     unmount();
 
-    expect(refs[CLIENT_STATE_REF]).toBeUndefined();
+    expect(registry[CLIENT_STATE_REF]).toBeUndefined();
   });
 });
 
@@ -210,7 +215,7 @@ describe("useClientState", () => {
     const a = probe("initial", "shared", "a");
     const b = probe("initial", "shared", "b");
     const { unmount } = mount(
-      createElement(ClientStateProvider, null, a.element, b.element),
+      createElement(ClientStateProvider, { registry }, a.element, b.element),
     );
 
     act(() => a.renders.set("typed"));
@@ -225,7 +230,7 @@ describe("useClientState", () => {
     const a = probe("", undefined, "a");
     const b = probe("", undefined, "b");
     const { unmount } = mount(
-      createElement(ClientStateProvider, null, a.element, b.element),
+      createElement(ClientStateProvider, { registry }, a.element, b.element),
     );
 
     act(() => a.renders.set("mine"));
@@ -243,7 +248,7 @@ describe("useClientState", () => {
     const { unmount } = mount(
       createElement(
         ClientStateProvider,
-        null,
+        { registry },
         watched.element,
         unrelated.element,
       ),
@@ -261,13 +266,13 @@ describe("useClientState", () => {
   test("a late mount reads the current value, not the default", () => {
     const early = probe("default", "late", "early");
     const first = mount(
-      createElement(ClientStateProvider, null, early.element),
+      createElement(ClientStateProvider, { registry }, early.element),
     );
     act(() => early.renders.set("current"));
 
     const late = probe("default", "late", "late");
     const second = mount(
-      createElement(ClientStateProvider, null, late.element),
+      createElement(ClientStateProvider, { registry }, late.element),
     );
 
     expect(late.renders.value).toBe("current");
@@ -279,7 +284,7 @@ describe("useClientState", () => {
   test("accepts a functional updater", () => {
     const counter = probe(1, "counter", "counter");
     const { unmount } = mount(
-      createElement(ClientStateProvider, null, counter.element),
+      createElement(ClientStateProvider, { registry }, counter.element),
     );
 
     act(() => counter.renders.set((previous) => previous + 41));
@@ -300,7 +305,7 @@ describe("non-React escape hatch", () => {
       return null;
     };
     const { unmount } = mount(
-      createElement(ClientStateProvider, null, createElement(Probe)),
+      createElement(ClientStateProvider, { registry }, createElement(Probe)),
     );
 
     expect(getClientState("escaped")).toBe("initial");
@@ -315,8 +320,8 @@ describe("non-React escape hatch", () => {
 });
 
 test("CLIENT_STATE_REF matches the key state.js reads", () => {
-  // The runtime reaches the store through `refs` rather than an import, to
-  // avoid a cycle, so the key is duplicated and has to stay in sync.
+  // The runtime reaches the store through the object it is handed, so the key
+  // is duplicated on the reading side and has to stay in sync.
   const stateJs = readFileSync(`${__WEB_ROOT__}utils/state.js`, "utf8");
 
   expect(stateJs).toContain(`refs["${CLIENT_STATE_REF}"]`);
