@@ -345,6 +345,7 @@ class AppHarness:
                 app=self.app_asgi,
                 host="127.0.0.1",
                 port=port,
+                ws_max_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
             )
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()

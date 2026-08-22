@@ -630,6 +630,8 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
         reload_delay=0.1,
+        # Enforce the websocket message size limit before buffering the frame.
+        ws_max_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
     )
 
 
@@ -749,6 +751,11 @@ def run_uvicorn_backend_prod(
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            # Enforce the websocket message size limit before buffering the frame.
+            *(
+                "--ws-max-size",
+                str(environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get()),
+            ),
             "--factory",
             app_module,
         ]

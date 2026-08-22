@@ -261,6 +261,50 @@ async def test_oversize_message_closes_connection(
 
 
 @pytest.mark.asyncio
+async def test_oversize_multibyte_message_closes_connection(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """The size limit counts bytes, so multibyte text cannot sneak past it.
+
+    Args:
+        namespace: The websocket event namespace.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "25")
+    # 15 characters (under the limit) but 29 UTF-8 bytes (over it).
+    frame = '["x","€€€€€€€"]'
+    assert len(frame) <= 25 < len(frame.encode("utf-8"))
+    websocket = FakeWebSocket()
+    websocket.feed(frame)
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1009
+
+
+@pytest.mark.asyncio
+async def test_multibyte_message_within_limit_is_processed(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """Multibyte frames within the byte limit pass through the exact check.
+
+    Args:
+        namespace: The websocket event namespace.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    # 12 characters, 14 bytes: over limit/4 (triggers the exact byte count)
+    # but within the limit itself.
+    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "14")
+    websocket = FakeWebSocket()
+    websocket.feed('["ping","€"]')
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code is None
+    assert ["ping", "pong"] in websocket.sent
+
+
+@pytest.mark.asyncio
 async def test_disallowed_origin_is_rejected(
     namespace: WebsocketEventNamespace, mocker
 ):

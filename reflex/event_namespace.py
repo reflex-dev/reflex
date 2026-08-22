@@ -483,7 +483,15 @@ class WebsocketEventNamespace(BaseEventNamespace):
             while True:
                 text = await websocket.receive_text()
                 last_received = time.monotonic()
-                if len(text) > max_message_size:
+                # The limit is in bytes; UTF-8 encodes 1-4 bytes per character,
+                # so more characters than the limit is certainly over, and a
+                # quarter or fewer certainly under -- only encode to count the
+                # exact bytes in between.
+                text_length = len(text)
+                if text_length > max_message_size or (
+                    text_length * 4 > max_message_size
+                    and len(text.encode("utf-8")) > max_message_size
+                ):
                     await websocket.close(code=1009)
                     break
                 try:

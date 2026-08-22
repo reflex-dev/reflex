@@ -84,11 +84,13 @@ export class ReflexWebSocket {
     // socket.io's packet buffering.
     this._sendQueue = [];
     this._watchdogTimer = null;
-    // Heartbeat window; refined by the server handshake.
+    // Heartbeat window: 145 seconds (25s ping interval + 120s ping timeout,
+    // mirroring the server defaults) in ms; refined by the server handshake.
     this._watchdogMs = (25 + 120) * 1000;
-    // Give up on a dial that neither opens nor errors (like socket.io's
-    // connect timeout), so a connect_error always fires and retries proceed.
-    this._connectTimeoutMs = 20000;
+    // Give up after 20 seconds on a dial that neither opens nor errors (like
+    // socket.io's connect timeout), so a connect_error always fires and
+    // retries proceed.
+    this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
     this._closeReason = null;
     this.connect();
@@ -214,7 +216,8 @@ export class ReflexWebSocket {
     }
     if (event === HANDSHAKE_MESSAGE) {
       // Application-level liveness confirmed; adopt the server's heartbeat
-      // settings for the connection watchdog.
+      // settings (sent in seconds, converted to ms) for the connection
+      // watchdog.
       this._clearConnectTimer();
       this._watchdogMs = (payload.ping_interval + payload.ping_timeout) * 1000;
       this._resetWatchdog();
