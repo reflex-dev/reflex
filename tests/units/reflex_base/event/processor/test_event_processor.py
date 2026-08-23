@@ -614,8 +614,8 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
 async def test_stream_delta_future_does_not_claim_root_txid(token: str):
     """Regression: a streamed event must not reuse the root context's txid.
 
-    A stream future registered under the root txid captured unrelated events
-    as children, raising once the stream was done (#6932).
+    Otherwise unrelated events forking from the root context attach to the
+    stream's future as children (#6932).
 
     Args:
         token: The client token.

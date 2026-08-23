@@ -449,8 +449,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             websocket: The client websocket connection.
         """
         if not self._origin_allowed(websocket.headers.get("origin")):
-            # Reject cross-origin connections before accepting (CSWSH parity
-            # with the Socket.IO transport's origin check).
+            # Reject cross-origin connections before accepting.
             await websocket.close(code=1008)
             return
         subprotocols = websocket.scope.get("subprotocols") or []
@@ -553,8 +552,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                             f"Ignoring unknown socket event {event!r} from session {sid}."
                         )
                 except Exception:
-                    # Match Socket.IO behavior: a failing handler is logged and
-                    # the connection survives.
+                    # A failing handler is logged; the connection survives.
                     logger.exception(
                         f"Error handling socket event {event!r} for session {sid}."
                     )

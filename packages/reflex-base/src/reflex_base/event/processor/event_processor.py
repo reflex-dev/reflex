@@ -473,10 +473,8 @@ class EventProcessor:
         task_future = await self.enqueue(
             token,
             event,
-            # Fork for a fresh txid: replacing on the root context would keep
-            # its txid, registering this future under it, and every event that
-            # later forks from the root context would attach to this stream as
-            # a child (raising once the stream's future is done).
+            # Fork for a fresh txid: reusing the root txid would register this
+            # future under it, attaching unrelated events as children.
             ev_ctx=dataclasses.replace(
                 self._root_context.fork(token=token),
                 emit_delta_impl=_emit_delta_impl,

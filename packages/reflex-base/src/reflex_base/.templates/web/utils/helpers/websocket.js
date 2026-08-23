@@ -66,7 +66,7 @@ const stringifyFrame = (frame) => JSON.stringify(frame, undefinedToNull);
 
 export class ReflexWebSocket {
   /**
-   * Create the transport and start connecting (like socket.io's `io()`).
+   * Create the transport and start connecting.
    * @param url The http(s) endpoint URL of the backend event route.
    * @param opts Options: `query` (object) and `protocols` (subprotocol list).
    */
@@ -76,26 +76,23 @@ export class ReflexWebSocket {
     // io.opts.query before reconnecting.
     this.io = { opts };
     this.connected = false;
-    // Handler registry shaped like socket.io's component-emitter, because
     // upload.js reads socket._callbacks.$event directly.
     this._callbacks = {};
     this._ws = null;
-    // Frames emitted while disconnected, flushed on (re)connect, matching
-    // socket.io's packet buffering.
+    // Frames emitted while disconnected, flushed on (re)connect.
     this._sendQueue = [];
     this._watchdogTimer = null;
-    // Heartbeat window: 145 seconds (25s ping interval + 120s ping timeout,
-    // mirroring the server defaults) in ms; refined by the server handshake.
+    // Heartbeat window: 145 seconds (25s ping interval + 120s ping timeout)
+    // in ms; refined by the server handshake.
     this._watchdogMs = (25 + 120) * 1000;
-    // Give up after 20 seconds on a dial that neither opens nor errors (like
-    // socket.io's connect timeout), so a connect_error always fires and
-    // retries proceed.
+    // Give up after 20 seconds on a dial that neither opens nor errors, so
+    // a connect_error always fires and retries proceed.
     this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
     this._closeReason = null;
     // Network emulation and OS offline do not interrupt established
-    // websockets, so (like engine.io-client) treat the browser's offline
-    // event as a disconnect. Localhost connections keep working offline.
+    // websockets, so treat the browser's offline event as a disconnect.
+    // Localhost connections keep working offline.
     this._offlineListener = null;
     if (
       typeof addEventListener === "function" &&
@@ -108,9 +105,8 @@ export class ReflexWebSocket {
   }
 
   /**
-   * Remove registered handlers (socket.io-compatible). With no arguments,
-   * all handlers are removed and the global offline listener is released:
-   * state.js calls this form when discarding the transport on unmount.
+   * Remove registered handlers. With no arguments, also releases the global
+   * offline listener (transport disposal).
    * @param event The event name; omit to remove all handlers.
    * @param fn The handler to remove; omit to remove all handlers for event.
    */
@@ -213,8 +209,7 @@ export class ReflexWebSocket {
   }
 
   /**
-   * Handle the browser going offline: report the disconnect immediately so
-   * reconnect attempts (and their connect_error reports) start right away.
+   * Report the disconnect immediately when the browser goes offline.
    */
   _onOffline() {
     if (this.connected) {
@@ -276,9 +271,8 @@ export class ReflexWebSocket {
     }
     const [event, payload] = message;
     if (event === PING_MESSAGE) {
-      // The server pings unconditionally every interval, so resetting the
-      // watchdog only here (not per data message) detects dead connections
-      // just as well without timer churn on the hot path.
+      // The server pings every interval regardless of traffic, so resetting
+      // the watchdog only here avoids timer churn per data message.
       this._resetWatchdog();
       this._ws?.send(stringifyFrame([PONG_MESSAGE]));
       return;

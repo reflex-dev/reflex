@@ -3,9 +3,8 @@
 Measures the server-side transport layer in isolation: inbound event frames
 from an established connection to the (mocked) event processor, and outbound
 state updates to the (mocked) wire. Both transports share BaseEventNamespace,
-so the difference is the framing and dispatch layer this PR replaced.
-Socket.IO runs with ``async_handlers=False`` (inline dispatch, no per-message
-task), which biases the comparison in Socket.IO's favor.
+so the difference is the framing and dispatch layer. Socket.IO runs with
+``async_handlers=False`` (inline dispatch), its cheapest configuration.
 """
 
 import asyncio
