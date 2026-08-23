@@ -298,6 +298,66 @@ def test_hybrid_property_functional_copy_keeps_original():
         holder.a = "x"  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def test_hybrid_property_functional_construction_then_alias_setter():
+    """An alias decorator on a functionally constructed property binds under its name."""
+
+    def _get_value(self) -> str:
+        return self._v
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        value = hybrid_property(_get_value)
+
+        @value.setter
+        def _set_value(self, new: str) -> None:
+            self._v = new
+
+    assert "_get_value" not in Holder.__dict__
+    assert "_set_value" not in Holder.__dict__
+    holder = Holder()
+    holder.value = "b"
+    assert holder.value == "b"
+
+
+def test_hybrid_property_functional_construction_then_redeclared_setter():
+    """Redeclaring the property's name for the setter keeps that name."""
+
+    def _get_value(self) -> str:
+        return self._v
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        value = hybrid_property(_get_value)  # pyright: ignore[reportRedeclaration]
+
+        @value.setter  # pyright: ignore[reportGeneralTypeIssues]
+        def value(self, new: str) -> None:
+            self._v = new
+
+    assert "_get_value" not in Holder.__dict__
+    assert "value" in Holder.__dict__
+    holder = Holder()
+    holder.value = "b"
+    assert holder.value == "b"
+
+
+def test_hybrid_property_getterless_alias_getter_decorator():
+    """A getter added under an alias name binds to the getter-less property."""
+
+    class Holder:
+        value = hybrid_property()
+
+        @value.getter
+        def _get_value(self) -> str:
+            return "got"
+
+    assert "_get_value" not in Holder.__dict__
+    assert Holder().value == "got"
+
+
 def test_hybrid_property_getterless_getter_decorator():
     """A getter-less property accepts its getter via the decorator form."""
 
@@ -354,6 +414,7 @@ def test_hybrid_property_unchained_setter_and_deleter():
 
 def test_hybrid_property_in_pydantic_model():
     """A hybrid property may be declared directly in a pydantic model body."""
+    pytest.importorskip("pydantic")
     from pydantic import BaseModel
 
     class Person(BaseModel):
@@ -368,9 +429,7 @@ def test_hybrid_property_in_pydantic_model():
 
 
 def test_hybrid_property_backend_var_not_resolved_during_class_creation():
-    """An inherited hybrid property at an annotated backend var name must not run
-    while the state class is being constructed.
-    """
+    """An inherited hybrid property backend var must not run during class creation."""
     calls: list[str] = []
 
     class HybridBase:

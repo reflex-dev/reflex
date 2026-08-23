@@ -1314,9 +1314,8 @@ class BaseState(EvenMoreBasicBaseState):
     def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
         """Get the default value of a (backend) var.
 
-        The class dicts are read directly instead of going through `getattr`:
-        resolving a descriptor here would run user code (e.g. a hybrid property
-        getter) against the class while it is still being constructed.
+        Reads class dicts directly; `getattr` would run descriptors (e.g. a
+        hybrid property getter) against the half-built class.
 
         Args:
             name: The name of the var.

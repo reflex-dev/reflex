@@ -79,14 +79,7 @@ class _StateBackendVarGuard:
 if TYPE_CHECKING:
 
     class _PropertyBase:
-        """Typing stand-in for `property`.
-
-        At runtime `HybridProperty` subclasses `property` so that third-party
-        introspection (pydantic's ignored types, `abc`'s `__isabstractmethod__`,
-        sqlalchemy, ...) treats it like one. Type checkers hard-code class-level
-        access on properties to the descriptor itself, which would hide the
-        frontend var, so they see this stand-in instead.
-        """
+        """Typing stand-in for `property`, see `HybridProperty` docstring."""
 
         fget: Callable[[Any], Any] | None
         fset: Callable[[Any, Any], None] | None
@@ -108,12 +101,11 @@ else:
 class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
     """A hybrid property that can also be used in frontend/as var.
 
-    A `property` subclass at runtime, but typed independently: type checkers
-    hard-code class-level access on properties to the descriptor itself, which
-    would hide the frontend var this descriptor returns there. `_T` is the value
-    the getter returns on an instance, `_O` the class the property is defined
-    on, and `_V` the frontend var returned when the property is accessed on the
-    class.
+    A `property` subclass at runtime (so pydantic, `abc` and friends treat it
+    like one), but typed independently: type checkers hard-code class-level
+    access on properties to the descriptor itself, hiding the frontend var.
+    `_T` is the instance value, `_O` the owning class, `_V` the frontend var
+    returned on class access.
 
     Without a var function, class-level access is typed as the var equivalent of
     `_T`, which holds as long as the getter builds a Var when it runs against
@@ -139,23 +131,20 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         super().__init__(fget, fset, fdel, doc)
         # The optional var function for the property.
         self._var: Callable[[Any], Var[Any] | None] | None = None
-        # The attribute name the property is bound to, for error messages and
-        # for rebinding a derived copy defined under an alias name.
+        # The attribute name the property is bound to.
         self._name: str | None = getattr(fget, "__name__", None)
-        # The name of the function the deriving decorator was applied to; only
-        # set on copies made by `getter`/`setter`/`deleter`/`var`.
+        # Whether __set_name__ has made `_name` authoritative.
+        self._bound: bool = False
+        # Derivation source and decorated-function name, set by `_derive`.
+        self._origin: HybridProperty[Any, Any, Any] | None = None
         self._alias: str | None = None
 
     def __set_name__(self, owner: type, name: str, /) -> None:
         """Bind the property under its final attribute name.
 
-        A copy produced by `getter`, `setter`, `deleter` or `var` is commonly
-        defined under an alias name so it does not shadow the property's
-        declaration. Such a copy rebinds itself under the property's own name
-        and removes the alias from the class, merging in accessors an earlier
-        copy already bound there. Assigned under any other name (a direct
-        declaration or functional construction), the property binds to the
-        assigned name.
+        A derived copy defined under an alias name rebinds itself under its
+        origin's name, removing the alias and merging in accessors an earlier
+        copy already bound there.
 
         Args:
             owner: The class the property is defined on.
@@ -164,9 +153,16 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         alias, self._alias = self._alias, None
         if alias is None or name != alias:
             self._name = name
+            self._bound = True
             return
-        target = self._name or name
+        # Resolve the target name only now: the origin learns its final name
+        # in its own __set_name__, which by class-body order has already run.
+        origin = self._origin
+        while origin is not None and not origin._bound:
+            origin = origin._origin
+        target = (origin._name or name) if origin is not None else name
         self._name = target
+        self._bound = True
         if target == name:
             return
         bound = self
@@ -182,6 +178,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             )
             bound._var = self._var if self._var is not None else existing._var
             bound._name = target
+            bound._bound = True
         setattr(owner, target, bound)
         delattr(owner, name)
 
@@ -203,9 +200,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
     ) -> Self:
         """Copy the property, so each class gets its own descriptor.
 
-        The copy notes the name of ``func`` (the function the deriving
-        decorator was applied to) so that `__set_name__` can tell an alias
-        definition apart from an assignment under the property's real name.
+        The copy records its origin and ``func``'s name for `__set_name__`.
 
         Args:
             func: The function the deriving decorator was applied to.
@@ -221,6 +216,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         )
         new._var = self._var
         new._name = self._name
+        new._origin = self
         new._alias = getattr(func, "__name__", None)
         return new
 
