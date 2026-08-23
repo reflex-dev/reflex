@@ -247,3 +247,21 @@ def test_embedded_server_stops_after_unexpected_serve_return(monkeypatch):
     port_before = server.port
     server.run()
     assert server.port == port_before
+
+
+def test_embedded_server_raises_after_retries_exhausted(monkeypatch):
+    """Exhausted bind retries re-raise the error instead of returning silently."""
+    import granian.server.embed
+
+    class FakeServer:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def serve(self):
+            bind_error = "Address already in use (os error 98)"
+            raise RuntimeError(bind_error)
+
+    monkeypatch.setattr(granian.server.embed, "Server", FakeServer)
+    server = reflex_testing._EmbeddedServer(app=FakeServer)  # pyright: ignore[reportArgumentType]
+    with pytest.raises(RuntimeError, match="in use"):
+        server.run()

@@ -168,7 +168,7 @@ class _EmbeddedServer:
         try:
             # Another process can claim the probed port before granian binds
             # it; retry the bind on a fresh port.
-            for _ in range(10):
+            for attempts_left in reversed(range(10)):
                 server = Server(
                     self.app,
                     address=self.host,
@@ -194,10 +194,13 @@ class _EmbeddedServer:
                         "address already in use" not in message
                         and "os error 10048" not in message
                         and "os error 10013" not in message
-                    ):
+                    ) or not attempts_left:
                         raise
                     if self._should_exit.is_set():
                         break
+                    logger.warning(
+                        f"Port {self.port} unavailable ({ex}); retrying on a fresh port."
+                    )
                     with socket.socket() as probe:
                         probe.bind((self.host, 0))
                         self.port = probe.getsockname()[1]
