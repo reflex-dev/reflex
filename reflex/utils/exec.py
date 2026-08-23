@@ -639,7 +639,20 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
         reload_delay=0.1,
+        ws_max_size=_uvicorn_ws_max_size(),
     )
+
+
+def _uvicorn_ws_max_size() -> int:
+    """Websocket message size limit for uvicorn.
+
+    Never below uvicorn's 16 MiB default, so unrelated websocket endpoints
+    keep working; raised when the Reflex policy limit needs more.
+
+    Returns:
+        The message size limit in bytes.
+    """
+    return max(environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(), 16 * 1024 * 1024)
 
 
 HOTRELOAD_IGNORE_EXTENSIONS = (
@@ -758,6 +771,7 @@ def run_uvicorn_backend_prod(
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            *("--ws-max-size", str(_uvicorn_ws_max_size())),
             "--factory",
             app_module,
         ]
