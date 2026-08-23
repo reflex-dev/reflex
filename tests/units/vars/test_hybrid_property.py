@@ -519,7 +519,7 @@ def test_hybrid_property_non_state_class_access_returns_descriptor():
         def combined(self) -> str:
             return self.first
 
-    assert isinstance(Info.__dict__["combined"], hybrid_property)
+    assert Info.combined is Info.__dict__["combined"]
     assert Info(first="a").combined == "a"
 
 
