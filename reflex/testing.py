@@ -186,11 +186,14 @@ class _EmbeddedServer:
                     await server.serve()
                 except (OSError, RuntimeError) as ex:
                     # Granian surfaces bind failures as RuntimeError; the
-                    # message is platform-specific (os error 98 / 10048).
+                    # message is platform-specific: os error 98 (posix), or
+                    # 10048/10013 (windows; exclusively-held ports fail with
+                    # WSAEACCES rather than WSAEADDRINUSE).
                     message = str(ex).lower()
                     if (
                         "address already in use" not in message
                         and "os error 10048" not in message
+                        and "os error 10013" not in message
                     ):
                         raise
                     if self._should_exit.is_set():
