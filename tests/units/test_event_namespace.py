@@ -189,7 +189,17 @@ async def test_malformed_frame_closes_connection(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("payload", [None, "not an event", 42])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        None,
+        "not an event",
+        42,
+        {"name": 123, "payload": {}, "router_data": {}},
+        {"name": "x", "payload": "nope", "router_data": {}},
+        {"name": "x", "payload": {}, "router_data": {"query": "not-a-dict"}},
+    ],
+)
 async def test_undeserializable_event_closes_connection(
     namespace: WebsocketEventNamespace, payload: object
 ):

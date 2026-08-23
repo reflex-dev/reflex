@@ -206,7 +206,7 @@ class BaseEventNamespace(ABC):
             asgi_scope: The ASGI scope of the client connection.
 
         Raises:
-            EventDeserializationError: If the event data is not a dictionary.
+            EventDeserializationError: If the event data is malformed.
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
@@ -239,6 +239,15 @@ class BaseEventNamespace(ABC):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
+        # The dataclass does not validate field types.
+        if (
+            not isinstance(event.name, str)
+            or not isinstance(event.payload, dict)
+            or not isinstance(event.router_data, dict)
+        ):
+            msg = "Event fields have invalid types."
+            raise exceptions.EventDeserializationError(msg)
+
         # Decode the connection headers once: the scope is per-connection
         # state, so cache the decoded mapping in it and copy per event (the
         # copy is mutated below and ends up in the event's router_data).
@@ -269,18 +278,23 @@ class BaseEventNamespace(ABC):
             .strip()
         )
         router_data = event.router_data
-        router_data.update({
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        })
-        router_data[constants.RouteVar.PATH] = "/" + (
-            self.app.router(path) or "404"
-            if (path := router_data.get(constants.RouteVar.PATH))
-            else "404"
-        ).removeprefix("/")
+        try:
+            # The nested values are still client-controlled.
+            router_data.update({
+                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+                constants.RouteVar.CLIENT_TOKEN: token,
+                constants.RouteVar.SESSION_ID: sid,
+                constants.RouteVar.HEADERS: headers,
+                constants.RouteVar.CLIENT_IP: client_ip,
+            })
+            router_data[constants.RouteVar.PATH] = "/" + (
+                self.app.router(path) or "404"
+                if (path := router_data.get(constants.RouteVar.PATH))
+                else "404"
+            ).removeprefix("/")
+        except (AttributeError, LookupError, TypeError, ValueError) as ex:
+            msg = "Failed to normalize event router_data."
+            raise exceptions.EventDeserializationError(msg) from ex
         await self.app.event_processor.enqueue(token, event)
 
     async def handle_ping(self, sid: str) -> None:
