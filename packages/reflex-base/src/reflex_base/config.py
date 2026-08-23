@@ -1,5 +1,6 @@
 """The Reflex config."""
 
+import contextlib
 import dataclasses
 import importlib
 import logging
@@ -814,6 +815,12 @@ def _get_config() -> Config:
     Returns:
         The app config.
     """
+    # Never cache rxconfig or its project-local dependencies — each load goes
+    # to disk so different RegistrationContexts hold independent Config
+    # instances resolved against the current project. Evict before probing:
+    # find_spec answers from sys.modules, so a leftover module from another
+    # project directory would fake the existence check below.
+    sys.modules.pop(constants.Config.MODULE, None)
     # only import the module if it exists. If a module spec exists then
     # the module exists.
     spec = find_spec(constants.Config.MODULE)
@@ -821,10 +828,6 @@ def _get_config() -> Config:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
         return Config(app_name="", _skip_plugins_checks=True)
-    # Never cache rxconfig or its project-local dependencies — each load goes
-    # to disk so different RegistrationContexts hold independent Config
-    # instances resolved against the current project.
-    sys.modules.pop(constants.Config.MODULE, None)
     for dep in _config_module_deps:
         sys.modules.pop(dep, None)
     _config_module_deps.clear()
@@ -874,28 +877,23 @@ def get_state_auto_setters() -> bool:
 def _load_config() -> Config:
     """Load the config from rxconfig.py with cwd on sys.path.
 
+    The cwd is prepended (not swapped in) so rxconfig resolves from the app
+    directory first while other threads keep a working import path: clearing
+    sys.path here made concurrent first-time imports elsewhere fail with
+    ModuleNotFoundError for the duration of the rxconfig import.
+
     Returns:
         The app config.
     """
     with _load_config_lock:
-        orig_sys_path = sys.path.copy()
-        sys.path.clear()
-        sys.path.append(str(Path.cwd()))
+        cwd = str(Path.cwd())
+        sys.path.insert(0, cwd)
         try:
             return _get_config()
-        except Exception:
-            # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(orig_sys_path)
-            return _get_config()
         finally:
-            # Find any entries added to sys.path by rxconfig.py itself.
-            extra_paths = [
-                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
-            ]
-            # Restore the original sys.path.
-            sys.path.clear()
-            sys.path.extend(extra_paths)
-            sys.path.extend(orig_sys_path)
+            # Remove only our entry; rxconfig may add (or want) others.
+            with contextlib.suppress(ValueError):
+                sys.path.remove(cwd)
 
 
 def get_config() -> Config:

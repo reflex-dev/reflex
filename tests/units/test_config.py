@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -890,3 +891,43 @@ def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatc
 
     assert load_count == 1
     assert all(config is results[0] for config in results)
+
+
+def test_load_config_keeps_sys_path_usable_for_other_threads(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Importing an unrelated module while rxconfig loads must succeed.
+
+    _load_config used to clear sys.path down to the cwd for the duration of
+    the rxconfig import, so any concurrent first-time import in another
+    thread (e.g. the lazy granian import when the backend starts) failed
+    with ModuleNotFoundError.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    inside_load = threading.Event()
+    release_load = threading.Event()
+
+    def blocking_get_config() -> rx.Config:
+        inside_load.set()
+        release_load.wait(timeout=5)
+        return rx.Config(app_name="racer")
+
+    monkeypatch.setattr(reflex_base.config, "_get_config", blocking_get_config)
+    # A stdlib module that nothing imports by default; drop it so the import
+    # below walks sys.path again.
+    sys.modules.pop("colorsys", None)
+    sys_path_before = sys.path.copy()
+
+    loader = threading.Thread(target=reflex_base.config._load_config)
+    loader.start()
+    try:
+        assert inside_load.wait(timeout=5)
+        import colorsys  # noqa: F401
+    finally:
+        release_load.set()
+        loader.join(timeout=5)
+    assert not loader.is_alive()
+    # The temporarily prepended cwd entry was removed again.
+    assert sys.path == sys_path_before
