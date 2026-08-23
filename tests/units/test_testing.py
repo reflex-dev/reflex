@@ -253,11 +253,14 @@ def test_embedded_server_raises_after_retries_exhausted(monkeypatch):
     """Exhausted bind retries re-raise the error instead of returning silently."""
     import granian.server.embed
 
+    calls = []
+
     class FakeServer:
         def __init__(self, *args, **kwargs):
             pass
 
         async def serve(self):
+            calls.append(1)
             bind_error = "Address already in use (os error 98)"
             raise RuntimeError(bind_error)
 
@@ -265,3 +268,32 @@ def test_embedded_server_raises_after_retries_exhausted(monkeypatch):
     server = reflex_testing._EmbeddedServer(app=FakeServer)  # pyright: ignore[reportArgumentType]
     with pytest.raises(RuntimeError, match="in use"):
         server.run()
+    assert len(calls) == 10
+
+
+def test_embedded_server_shutdown_wins_over_exhausted_retries(monkeypatch):
+    """A stop requested during the last failed bind ends the server cleanly."""
+    import threading
+
+    import granian.server.embed
+
+    calls = []
+    holder = {}
+
+    class FakeServer:
+        def __init__(self, *args, **kwargs):
+            self.interrupt_signal = False
+            self.main_loop_interrupt = threading.Event()
+
+        async def serve(self):
+            calls.append(1)
+            if len(calls) == 10:
+                holder["server"].should_exit = True
+            bind_error = "Address already in use (os error 98)"
+            raise RuntimeError(bind_error)
+
+    monkeypatch.setattr(granian.server.embed, "Server", FakeServer)
+    server = reflex_testing._EmbeddedServer(app=FakeServer)  # pyright: ignore[reportArgumentType]
+    holder["server"] = server
+    server.run()
+    assert len(calls) == 10

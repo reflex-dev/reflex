@@ -194,10 +194,12 @@ class _EmbeddedServer:
                         "address already in use" not in message
                         and "os error 10048" not in message
                         and "os error 10013" not in message
-                    ) or not attempts_left:
+                    ):
                         raise
                     if self._should_exit.is_set():
                         break
+                    if not attempts_left:
+                        raise
                     logger.warning(
                         f"Port {self.port} unavailable ({ex}); retrying on a fresh port."
                     )
