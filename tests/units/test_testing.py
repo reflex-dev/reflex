@@ -207,9 +207,11 @@ def test_embedded_server_retries_taken_port():
 
     server = reflex_testing._EmbeddedServer(app)
     probed_port = server.port
-    # Steal the probed port before the server binds it.
+    # Steal the probed port before the server binds it. On Windows only
+    # SO_EXCLUSIVEADDRUSE makes the port unavailable to other binders.
     blocker = socket.socket()
-    blocker.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if exclusive := getattr(socket, "SO_EXCLUSIVEADDRUSE", None):
+        blocker.setsockopt(socket.SOL_SOCKET, exclusive, 1)
     blocker.bind((server.host, probed_port))
     blocker.listen(1)
     thread = threading.Thread(target=server.run)
@@ -227,3 +229,21 @@ def test_embedded_server_retries_taken_port():
         server.should_exit = True
         thread.join(timeout=15)
         assert not thread.is_alive()
+
+
+def test_embedded_server_stops_after_unexpected_serve_return(monkeypatch):
+    """A serve() return that was not requested stops the server without rebinding."""
+    import granian.server.embed
+
+    class FakeServer:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def serve(self):
+            return
+
+    monkeypatch.setattr(granian.server.embed, "Server", FakeServer)
+    server = reflex_testing._EmbeddedServer(app=FakeServer)  # pyright: ignore[reportArgumentType]
+    port_before = server.port
+    server.run()
+    assert server.port == port_before

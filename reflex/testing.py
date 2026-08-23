@@ -167,7 +167,7 @@ class _EmbeddedServer:
 
         try:
             # Another process can claim the probed port before granian binds
-            # it; retry on a fresh port until a stop was actually requested.
+            # it; retry the bind on a fresh port.
             for _ in range(10):
                 server = Server(
                     self.app,
@@ -185,14 +185,23 @@ class _EmbeddedServer:
                 try:
                     await server.serve()
                 except (OSError, RuntimeError) as ex:
-                    # Granian surfaces bind failures as RuntimeError.
-                    if "address already in use" not in str(ex).lower():
+                    # Granian surfaces bind failures as RuntimeError; the
+                    # message is platform-specific (os error 98 / 10048).
+                    message = str(ex).lower()
+                    if (
+                        "address already in use" not in message
+                        and "os error 10048" not in message
+                    ):
                         raise
-                if self._should_exit.is_set():
-                    break
-                with socket.socket() as probe:
-                    probe.bind((self.host, 0))
-                    self.port = probe.getsockname()[1]
+                    if self._should_exit.is_set():
+                        break
+                    with socket.socket() as probe:
+                        probe.bind((self.host, 0))
+                        self.port = probe.getsockname()[1]
+                    continue
+                # serve() returned: shutdown, or a server failure after
+                # startup -- never restart on a different port.
+                break
         finally:
             await self.shutdown()
 
