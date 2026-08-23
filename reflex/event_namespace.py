@@ -481,13 +481,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 subprotocols[0] if subprotocols else None,
             )
             while True:
-                try:
-                    text = await websocket.receive_text()
-                except KeyError:
-                    # Binary frame; not part of the protocol.
-                    await websocket.close(code=1003)
+                received = await websocket.receive()
+                if received["type"] == "websocket.disconnect":
                     break
                 last_received = time.monotonic()
+                text = received.get("text")
+                if text is None:
+                    # Binary frame; not part of the protocol.
+                    logger.debug(f"Closing session {sid}: received a binary frame.")
+                    await websocket.close(code=1003)
+                    break
                 # ASGI delivers complete messages, so the server has already
                 # buffered the frame; its protocol-level caps (enforced during
                 # frame reassembly) bound that allocation. This check applies
@@ -501,6 +504,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     text_length * 4 > max_message_size
                     and len(text.encode("utf-8")) > max_message_size
                 ):
+                    logger.debug(
+                        f"Closing session {sid}: message over {max_message_size} bytes."
+                    )
                     await websocket.close(code=1009)
                     break
                 try:

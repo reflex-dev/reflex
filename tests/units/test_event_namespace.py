@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from starlette.routing import WebSocketRoute
-from starlette.websockets import WebSocketDisconnect
 
 from reflex.app import App
 from reflex.event_namespace import (
@@ -74,23 +73,18 @@ class FakeWebSocket:
         """
         self.close_code = code
 
-    async def receive_text(self) -> str:
-        """Return the next queued frame.
+    async def receive(self) -> dict[str, Any]:
+        """Return the next queued frame as an ASGI message.
 
         Returns:
-            The frame text.
-
-        Raises:
-            WebSocketDisconnect: When the disconnect sentinel is reached.
-            KeyError: For a binary frame, matching starlette's behavior.
+            The ASGI websocket message.
         """
         item = await self._incoming.get()
         if item is _DISCONNECT:
-            raise WebSocketDisconnect(1000)
+            return {"type": "websocket.disconnect", "code": 1000}
         if isinstance(item, bytes):
-            missing_key = "text"
-            raise KeyError(missing_key)
-        return item
+            return {"type": "websocket.receive", "bytes": item}
+        return {"type": "websocket.receive", "text": item}
 
     def feed(self, *frames: Any):
         """Queue incoming frames (lists are JSON-encoded) and a disconnect."""

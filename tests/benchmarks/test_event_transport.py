@@ -18,7 +18,6 @@ import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.utils import format
-from starlette.websockets import WebSocketDisconnect
 
 from reflex.event_namespace import WebsocketEventNamespace
 from reflex.state import StateUpdate
@@ -112,20 +111,17 @@ class FakeWebSocket:
         """
         self.sent.append(text)
 
-    async def receive_text(self) -> str:
-        """Return the next queued frame.
+    async def receive(self) -> dict[str, Any]:
+        """Return the next queued frame as an ASGI message.
 
         Returns:
-            The frame text.
-
-        Raises:
-            WebSocketDisconnect: When all frames are consumed.
+            The ASGI websocket message.
         """
         item = self._incoming[self._pos]
         self._pos += 1
         if item is _DISCONNECT:
-            raise WebSocketDisconnect(1000)
-        return item  # pyright: ignore[reportReturnType]
+            return {"type": "websocket.disconnect", "code": 1000}
+        return {"type": "websocket.receive", "text": item}
 
     async def close(self, code: int = 1000):
         """Close the connection.

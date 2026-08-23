@@ -791,6 +791,9 @@ export const connect = async (
     window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
+  // Track the handler on the ref so unmount cleanup can remove it; a
+  // surviving listener would resurrect a transport for the unmounted hook.
+  socket.visibilityHandler = checkVisibility;
   document.addEventListener("visibilitychange", checkVisibility);
 };
 
@@ -1117,6 +1120,13 @@ export const useEventLoop = (
       mounted.current = false;
       // Abort a connect() that is still awaiting the socket.io-client import.
       socket.cancelConnect = true;
+      if (socket.visibilityHandler) {
+        document.removeEventListener(
+          "visibilitychange",
+          socket.visibilityHandler,
+        );
+        socket.visibilityHandler = null;
+      }
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();
