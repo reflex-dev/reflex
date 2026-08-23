@@ -495,6 +495,10 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 websocket.scope.get("query_string", b"").decode(),
                 subprotocols[0] if subprotocols else None,
             )
+            if sid not in self._token_manager.sid_to_token:
+                # No token was linked; not a Reflex client.
+                await websocket.close(code=1008)
+                return
             while True:
                 received = await websocket.receive()
                 if received["type"] == "websocket.disconnect":
@@ -527,15 +531,18 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 try:
                     message = json.loads(text)
                 except json.JSONDecodeError:
-                    logger.warning(f"Ignoring malformed message from session {sid}.")
-                    continue
+                    message = None
                 if (
                     not isinstance(message, list)
                     or not message
                     or not isinstance(message[0], str)
                 ):
-                    logger.warning(f"Ignoring malformed message from session {sid}.")
-                    continue
+                    # A Reflex client never sends malformed frames; close
+                    # instead of logging per frame, which a hostile client
+                    # could use to flood the logs.
+                    logger.debug(f"Closing session {sid}: malformed frame.")
+                    await websocket.close(code=1002)
+                    break
                 event = message[0]
                 data = message[1] if len(message) > 1 else None
                 try:

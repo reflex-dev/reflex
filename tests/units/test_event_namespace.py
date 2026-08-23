@@ -27,13 +27,7 @@ class FakeWebSocket:
         origin: str | None = None,
         subprotocols: list[str] | None = None,
     ):
-        """Initialize the fake websocket.
-
-        Args:
-            query_string: The raw query string of the connection.
-            origin: The Origin header value, if any.
-            subprotocols: The offered subprotocols.
-        """
+        """Initialize the fake websocket."""
         self.scope: dict[str, Any] = {
             "type": "websocket",
             "query_string": query_string,
@@ -49,28 +43,16 @@ class FakeWebSocket:
         self._incoming: asyncio.Queue = asyncio.Queue()
 
     async def accept(self, subprotocol: str | None = None):
-        """Record the accept call.
-
-        Args:
-            subprotocol: The selected subprotocol.
-        """
+        """Record the accept call."""
         self.accepted = True
         self.accepted_subprotocol = subprotocol
 
     async def send_text(self, text: str):
-        """Record an outgoing frame.
-
-        Args:
-            text: The frame text.
-        """
+        """Record an outgoing frame."""
         self.sent.append(json.loads(text))
 
     async def close(self, code: int = 1000):
-        """Record the close call.
-
-        Args:
-            code: The close code.
-        """
+        """Record the close call."""
         self.close_code = code
 
     async def receive(self) -> dict[str, Any]:
@@ -115,10 +97,6 @@ def namespace(mock_app: Mock, mocker) -> WebsocketEventNamespace:
 
     Redis is disabled so token linking cannot leak into a shared Redis.
 
-    Args:
-        mock_app: The mock app.
-        mocker: The pytest-mock fixture.
-
     Returns:
         The namespace.
     """
@@ -134,11 +112,7 @@ async def _drain_tasks():
 
 @pytest.mark.asyncio
 async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
-    """The server sends the handshake first and links the token from the query.
-
-    Args:
-        namespace: The websocket event namespace.
-    """
+    """The server sends the handshake first and links the token from the query."""
     websocket = FakeWebSocket(subprotocols=["0.0.1"])
     websocket.feed()
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -154,12 +128,7 @@ async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
 
 @pytest.mark.asyncio
 async def test_event_is_enqueued(namespace: WebsocketEventNamespace, mock_app: Mock):
-    """An incoming event frame reaches the app's event processor.
-
-    Args:
-        namespace: The websocket event namespace.
-        mock_app: The mock app.
-    """
+    """An incoming event frame reaches the app's event processor."""
     websocket = FakeWebSocket()
     websocket.feed([
         "event",
@@ -178,11 +147,7 @@ async def test_event_is_enqueued(namespace: WebsocketEventNamespace, mock_app: M
 
 @pytest.mark.asyncio
 async def test_ping_pong(namespace: WebsocketEventNamespace):
-    """An application-level ping event gets a pong reply.
-
-    Args:
-        namespace: The websocket event namespace.
-    """
+    """An application-level ping event gets a pong reply."""
     websocket = FakeWebSocket()
     websocket.feed(["ping"], [PONG_MESSAGE])
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -195,12 +160,7 @@ async def test_ping_pong(namespace: WebsocketEventNamespace):
 async def test_client_error_reaches_exception_handler(
     namespace: WebsocketEventNamespace, mock_app: Mock
 ):
-    """A client_error frame is routed to the frontend exception handler.
-
-    Args:
-        namespace: The websocket event namespace.
-        mock_app: The mock app.
-    """
+    """A client_error frame is routed to the frontend exception handler."""
     errors: list[str] = []
     mock_app.frontend_exception_handler = lambda exc: errors.append(str(exc))
     websocket = FakeWebSocket()
@@ -213,40 +173,38 @@ async def test_client_error_reaches_exception_handler(
 
 
 @pytest.mark.asyncio
-async def test_malformed_frames_are_ignored(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+@pytest.mark.parametrize("frame", ["not json", '{"an": "object"}', "[42]"])
+async def test_malformed_frame_closes_connection(
+    namespace: WebsocketEventNamespace, frame: str
 ):
-    """Malformed frames are skipped without dropping the connection.
-
-    Args:
-        namespace: The websocket event namespace.
-        mock_app: The mock app.
-    """
+    """A malformed frame closes the connection with 1002 (protocol error)."""
     websocket = FakeWebSocket()
-    websocket.feed(
-        "not json",
-        '{"an": "object"}',
-        [42],
-        ["ping"],
-    )
+    websocket.feed(frame, ["ping"])
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
 
-    # The valid ping after the malformed frames was still processed.
-    assert ["ping", "pong"] in websocket.sent
-    assert websocket.close_code is None
+    assert websocket.close_code == 1002
+    # Nothing after the malformed frame is processed.
+    assert ["ping", "pong"] not in websocket.sent
+
+
+@pytest.mark.asyncio
+async def test_tokenless_connection_rejected(namespace: WebsocketEventNamespace):
+    """A connection without a token closes with 1008 (policy violation)."""
+    websocket = FakeWebSocket(query_string=b"")
+    websocket.feed(["ping"])
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1008
+    assert ["ping", "pong"] not in websocket.sent
 
 
 @pytest.mark.asyncio
 async def test_oversize_message_closes_connection(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
-    """A frame over the size limit closes the connection with 1009.
-
-    Args:
-        namespace: The websocket event namespace.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """A frame over the size limit closes the connection with 1009."""
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "10")
     websocket = FakeWebSocket()
     websocket.feed(["event", {"payload": "x" * 100}])
@@ -260,12 +218,7 @@ async def test_oversize_message_closes_connection(
 async def test_oversize_multibyte_message_closes_connection(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
-    """The size limit counts bytes, so multibyte text cannot sneak past it.
-
-    Args:
-        namespace: The websocket event namespace.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """The size limit counts bytes, so multibyte text cannot sneak past it."""
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "25")
     # 15 characters (under the limit) but 29 UTF-8 bytes (over it).
     frame = '["x","€€€€€€€"]'
@@ -282,12 +235,7 @@ async def test_oversize_multibyte_message_closes_connection(
 async def test_multibyte_message_within_limit_is_processed(
     namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
-    """Multibyte frames within the byte limit pass through the exact check.
-
-    Args:
-        namespace: The websocket event namespace.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """Multibyte frames within the byte limit pass through the exact check."""
     # 12 characters, 14 bytes: over limit/4 (triggers the exact byte count)
     # but within the limit itself.
     monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "14")
@@ -302,11 +250,7 @@ async def test_multibyte_message_within_limit_is_processed(
 
 @pytest.mark.asyncio
 async def test_binary_frame_closes_connection(namespace: WebsocketEventNamespace):
-    """A binary frame closes the connection with 1003 (unsupported data).
-
-    Args:
-        namespace: The websocket event namespace.
-    """
+    """A binary frame closes the connection with 1003 (unsupported data)."""
     websocket = FakeWebSocket()
     websocket.feed(b"\x00\x01")
     await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -319,12 +263,7 @@ async def test_binary_frame_closes_connection(namespace: WebsocketEventNamespace
 async def test_disallowed_origin_is_rejected(
     namespace: WebsocketEventNamespace, mocker
 ):
-    """A cross-origin connection is closed before being accepted.
-
-    Args:
-        namespace: The websocket event namespace.
-        mocker: The pytest-mock fixture.
-    """
+    """A cross-origin connection is closed before being accepted."""
     from reflex_base.config import get_config
 
     mocker.patch.object(
@@ -339,12 +278,7 @@ async def test_disallowed_origin_is_rejected(
 
 @pytest.mark.asyncio
 async def test_allowed_origin_is_accepted(namespace: WebsocketEventNamespace, mocker):
-    """A connection from an allowed origin is accepted.
-
-    Args:
-        namespace: The websocket event namespace.
-        mocker: The pytest-mock fixture.
-    """
+    """A connection from an allowed origin is accepted."""
     from reflex_base.config import get_config
 
     mocker.patch.object(
@@ -360,11 +294,7 @@ async def test_allowed_origin_is_accepted(namespace: WebsocketEventNamespace, mo
 
 @pytest.mark.asyncio
 async def test_duplicate_token_gets_new_token(namespace: WebsocketEventNamespace):
-    """A second tab connecting with the same token receives a new_token frame.
-
-    Args:
-        namespace: The websocket event namespace.
-    """
+    """A second tab connecting with the same token receives a new_token frame."""
     first = FakeWebSocket()
     second = FakeWebSocket()
     namespace._sockets["sid1"] = first  # pyright: ignore[reportArgumentType]
@@ -386,10 +316,6 @@ async def test_emit_to_unknown_sid_does_not_raise(
 
     A client disconnecting mid-event is routine, so nothing above DEBUG may be
     logged.
-
-    Args:
-        namespace: The websocket event namespace.
-        caplog: The pytest log capture fixture.
     """
     import logging
 
@@ -413,11 +339,7 @@ def test_default_transport_uses_websocket_namespace():
 def test_socketio_transport_uses_socketio_namespace(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """transport="socketio" sets up the Socket.IO server and namespace.
-
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """transport="socketio" sets up the Socket.IO server and namespace."""
     from reflex.socketio_namespace import EventNamespace
 
     monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
@@ -431,11 +353,7 @@ def test_socketio_transport_uses_socketio_namespace(
 def test_polling_transport_uses_socketio_namespace(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """transport="polling" sets up the Socket.IO server with polling only.
-
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """transport="polling" sets up the Socket.IO server with polling only."""
     from reflex.socketio_namespace import EventNamespace
 
     monkeypatch.setenv("REFLEX_TRANSPORT", "polling")
@@ -454,11 +372,7 @@ def test_custom_sio_requires_socketio_transport():
 
 
 def test_custom_sio_with_socketio_transport(monkeypatch: pytest.MonkeyPatch):
-    """A custom sio server works with the Socket.IO transport.
-
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-    """
+    """A custom sio server works with the Socket.IO transport."""
     from socketio import AsyncServer
 
     monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")

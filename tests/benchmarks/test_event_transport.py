@@ -54,9 +54,6 @@ _ASGI_SCOPE = {
 def _make_app(sio: Any = None) -> SimpleNamespace:
     """Build a minimal app double for the event namespace.
 
-    Args:
-        sio: The Socket.IO server, for the legacy transport.
-
     Returns:
         The app double.
     """
@@ -78,11 +75,7 @@ class FakeWebSocket:
     """Minimal stand-in for a starlette WebSocket."""
 
     def __init__(self, frames: list[str]):
-        """Initialize with the inbound frames to deliver.
-
-        Args:
-            frames: The frames to deliver before disconnecting.
-        """
+        """Initialize with the inbound frames to deliver."""
         self.scope: dict[str, Any] = {
             "type": "websocket",
             "query_string": f"token={TOKEN}".encode(),
@@ -96,18 +89,10 @@ class FakeWebSocket:
         self._pos = 0
 
     async def accept(self, subprotocol: str | None = None):
-        """Accept the connection.
-
-        Args:
-            subprotocol: The selected subprotocol.
-        """
+        """Accept the connection."""
 
     async def send_text(self, text: str):
-        """Record an outgoing frame.
-
-        Args:
-            text: The frame text.
-        """
+        """Record an outgoing frame."""
         self.sent.append(text)
 
     async def receive(self) -> dict[str, Any]:
@@ -123,11 +108,7 @@ class FakeWebSocket:
         return {"type": "websocket.receive", "text": item}
 
     async def close(self, code: int = 1000):
-        """Close the connection.
-
-        Args:
-            code: The close code.
-        """
+        """Close the connection."""
 
 
 @pytest_asyncio.fixture
@@ -269,12 +250,7 @@ async def socketio_outbound():
 
 
 def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixture):
-    """Benchmark inbound event handling on the plain WebSocket transport.
-
-    Args:
-        websocket_inbound: The runner.
-        benchmark: The codspeed benchmark fixture.
-    """
+    """Benchmark inbound event handling on the plain WebSocket transport."""
     loop = asyncio.get_event_loop()
 
     @benchmark
@@ -283,12 +259,7 @@ def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixt
 
 
 def test_transport_inbound_socketio(socketio_inbound, benchmark: BenchmarkFixture):
-    """Benchmark inbound event handling on the Socket.IO transport.
-
-    Args:
-        socketio_inbound: The runner.
-        benchmark: The codspeed benchmark fixture.
-    """
+    """Benchmark inbound event handling on the Socket.IO transport."""
     loop = asyncio.get_event_loop()
 
     @benchmark
@@ -297,12 +268,7 @@ def test_transport_inbound_socketio(socketio_inbound, benchmark: BenchmarkFixtur
 
 
 def test_transport_outbound_websocket(websocket_outbound, benchmark: BenchmarkFixture):
-    """Benchmark emitting state updates on the plain WebSocket transport.
-
-    Args:
-        websocket_outbound: The runner.
-        benchmark: The codspeed benchmark fixture.
-    """
+    """Benchmark emitting state updates on the plain WebSocket transport."""
     loop = asyncio.get_event_loop()
 
     @benchmark
@@ -311,12 +277,7 @@ def test_transport_outbound_websocket(websocket_outbound, benchmark: BenchmarkFi
 
 
 def test_transport_outbound_socketio(socketio_outbound, benchmark: BenchmarkFixture):
-    """Benchmark emitting state updates on the Socket.IO transport.
-
-    Args:
-        socketio_outbound: The runner.
-        benchmark: The codspeed benchmark fixture.
-    """
+    """Benchmark emitting state updates on the Socket.IO transport."""
     loop = asyncio.get_event_loop()
 
     @benchmark
