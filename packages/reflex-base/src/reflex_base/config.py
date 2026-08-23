@@ -808,6 +808,32 @@ class Config(BaseConfig):
 _config_module_deps: set[str] = set()
 
 
+class _ImportRecorder:
+    """Meta-path finder that records import attempts on the installing thread.
+
+    Never resolves anything; it attributes the modules rxconfig.py pulls in to
+    the config load itself. Diffing sys.modules instead would sweep up modules
+    imported concurrently by other threads and wrongly evict them on the next
+    load.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the recorder bound to the current thread."""
+        self._thread = threading.get_ident()
+        self.names: set[str] = set()
+
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
+        """Record the import attempt and decline to resolve it.
+
+        Args:
+            fullname: The module being imported.
+            path: The parent package search path (unused).
+            target: The module object to reload into (unused).
+        """
+        if threading.get_ident() == self._thread:
+            self.names.add(fullname)
+
+
 def _get_config() -> Config:
     """Import rxconfig.py fresh and return its config object.
 
@@ -830,14 +856,16 @@ def _get_config() -> Config:
     for dep in _config_module_deps:
         sys.modules.pop(dep, None)
     _config_module_deps.clear()
-    before = set(sys.modules)
+    recorder = _ImportRecorder()
+    sys.meta_path.insert(0, recorder)
     try:
         rxconfig = importlib.import_module(constants.Config.MODULE)
     finally:
+        sys.meta_path.remove(recorder)
         # Record even on failure so a retry evicts partially-imported deps.
         project_root = Path.cwd()
-        for name in set(sys.modules) - before:
-            origin = getattr(sys.modules[name], "__file__", None)
+        for name in recorder.names:
+            origin = getattr(sys.modules.get(name), "__file__", None)
             if (
                 origin
                 and (path := Path(origin)).is_relative_to(project_root)
@@ -885,16 +913,18 @@ def _load_config() -> Config:
         The app config.
     """
     with _load_config_lock:
+        # A fresh str object, so the exact inserted entry can be removed by
+        # identity: rxconfig.py may itself add or remove equal cwd entries,
+        # which removal by value could confuse with caller-owned ones.
         cwd = str(Path.cwd())
-        preexisting = sys.path.count(cwd)
         sys.path.insert(0, cwd)
         try:
             return _get_config()
         finally:
-            # Remove one cwd entry, but never a caller-owned one: rxconfig.py
-            # itself may add or remove path entries, including the cwd.
-            if sys.path.count(cwd) > preexisting:
-                sys.path.remove(cwd)
+            for i, entry in enumerate(sys.path):
+                if entry is cwd:
+                    del sys.path[i]
+                    break
 
 
 def get_config() -> Config:

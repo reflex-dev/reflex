@@ -953,3 +953,60 @@ def test_load_config_keeps_caller_owned_cwd_entry(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(reflex_base.config, "_get_config", removing_get_config)
     reflex_base.config._load_config()
     assert sys.path.count(cwd) == caller_owned
+
+
+def test_concurrent_import_not_recorded_as_rxconfig_dep(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A project-local module imported by another thread mid-load is not evicted.
+
+    Dependency recording used to diff sys.modules around the rxconfig import,
+    so a concurrent import from another thread was misattributed to rxconfig
+    and evicted from sys.modules on the next config load.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import textwrap
+    import types
+
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import _config_race_gate
+            import reflex as rx
+
+            _config_race_gate.in_load.set()
+            _config_race_gate.release.wait(timeout=5)
+            config = rx.Config(app_name="depapp")
+            """
+        )
+    )
+    (tmp_path / "side_module.py").write_text("value = 42\n")
+    gate = types.ModuleType("_config_race_gate")
+    gate.in_load = threading.Event()  # pyright: ignore[reportAttributeAccessIssue]
+    gate.release = threading.Event()  # pyright: ignore[reportAttributeAccessIssue]
+    monkeypatch.setitem(sys.modules, "_config_race_gate", gate)
+    monkeypatch.chdir(tmp_path)
+    sys.modules.pop("side_module", None)
+
+    loader = threading.Thread(target=reflex_base.config._load_config)
+    loader.start()
+    try:
+        assert gate.in_load.wait(timeout=5)
+        # Import a project-local module from this thread while rxconfig loads.
+        import side_module  # noqa: F401  # pyright: ignore[reportMissingImports]
+    finally:
+        gate.release.set()
+        loader.join(timeout=5)
+    assert not loader.is_alive()
+
+    assert "side_module" not in reflex_base.config._config_module_deps
+    # A second load must not evict the concurrently imported module.
+    gate.release.set()
+    reflex_base.config._load_config()
+    assert "side_module" in sys.modules
+    sys.modules.pop("side_module", None)
+    sys.modules.pop("rxconfig", None)
+    reflex_base.config._config_module_deps.discard("rxconfig")
