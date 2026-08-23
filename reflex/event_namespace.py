@@ -10,7 +10,7 @@ import time
 import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
@@ -36,6 +36,14 @@ logger = logging.getLogger(__name__)
 HANDSHAKE_MESSAGE = "_handshake"
 PING_MESSAGE = "_ping"
 PONG_MESSAGE = "_pong"
+
+# Application-level socket event names, resolved once for the hot paths.
+_EVENT = str(constants.SocketEvent.EVENT)
+_PING = str(constants.SocketEvent.PING)
+_CLIENT_ERROR = str(constants.SocketEvent.CLIENT_ERROR)
+
+# The heartbeat frame is static; serialize it once.
+_PING_FRAME = json.dumps([PING_MESSAGE])
 
 
 class BaseEventNamespace(ABC):
@@ -183,12 +191,12 @@ class BaseEventNamespace(ABC):
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
+            self.emit(_EVENT, update, to=socket_record.sid),
             name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
         )
 
     async def handle_event(
-        self, sid: str, data: Any, asgi_scope: Mapping[str, Any]
+        self, sid: str, data: Any, asgi_scope: MutableMapping[str, Any]
     ) -> None:
         """Handle an incoming front-end event.
 
@@ -231,10 +239,16 @@ class BaseEventNamespace(ABC):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8") for (k, v) in asgi_scope["headers"]
-        }
+        # Decode the connection headers once: the scope is per-connection
+        # state, so cache the decoded mapping in it and copy per event (the
+        # copy is mutated below and ends up in the event's router_data).
+        base_headers = asgi_scope.get("_reflex_headers")
+        if base_headers is None:
+            base_headers = {
+                k.decode("utf-8"): v.decode("utf-8") for (k, v) in asgi_scope["headers"]
+            }
+            asgi_scope["_reflex_headers"] = base_headers
+        headers = dict(base_headers)
 
         # Get the client IP
         client = asgi_scope.get("client")
@@ -276,7 +290,7 @@ class BaseEventNamespace(ABC):
             sid: The session id.
         """
         # Emit the test event.
-        await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+        await self.emit(_PING, "pong", to=sid)
 
     async def handle_client_error(self, sid: str, data: Any) -> None:
         """Handle errors reported by the frontend.
@@ -458,7 +472,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     if time.monotonic() - last_received > ping_interval + ping_timeout:
                         await websocket.close(code=1001)
                         return
-                    await websocket.send_text(format.json_dumps([PING_MESSAGE]))
+                    await websocket.send_text(_PING_FRAME)
             except Exception:
                 # Socket went away; the receive loop handles cleanup.
                 return
@@ -523,14 +537,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     continue
                 event = message[0]
                 data = message[1] if len(message) > 1 else None
-                if event == PONG_MESSAGE:
-                    continue
                 try:
-                    if event == str(constants.SocketEvent.EVENT):
+                    # Ordered by frequency: events are the hot path, heartbeat
+                    # pongs arrive once per ping interval.
+                    if event == _EVENT:
                         await self.handle_event(sid, data, websocket.scope)
-                    elif event == str(constants.SocketEvent.PING):
+                    elif event == PONG_MESSAGE:
+                        continue
+                    elif event == _PING:
                         await self.handle_ping(sid)
-                    elif event == str(constants.SocketEvent.CLIENT_ERROR):
+                    elif event == _CLIENT_ERROR:
                         await self.handle_client_error(sid, data)
                     else:
                         logger.debug(

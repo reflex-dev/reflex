@@ -269,7 +269,6 @@ export class ReflexWebSocket {
    * @param text The raw frame text.
    */
   _onMessage(text) {
-    this._resetWatchdog();
     const message = parseJsonLenient(text, undefined);
     if (!Array.isArray(message)) {
       console.error("Failed to parse websocket message", text);
@@ -277,6 +276,10 @@ export class ReflexWebSocket {
     }
     const [event, payload] = message;
     if (event === PING_MESSAGE) {
+      // The server pings unconditionally every interval, so resetting the
+      // watchdog only here (not per data message) detects dead connections
+      // just as well without timer churn on the hot path.
+      this._resetWatchdog();
       this._ws?.send(stringifyFrame([PONG_MESSAGE]));
       return;
     }
