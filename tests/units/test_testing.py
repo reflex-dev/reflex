@@ -187,3 +187,43 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def test_embedded_server_retries_taken_port():
+    """The embedded server rebinds to a fresh port when its probed port is taken."""
+    import socket
+    import threading
+    import time
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    await send({"type": "lifespan.startup.complete"})
+                elif message["type"] == "lifespan.shutdown":
+                    await send({"type": "lifespan.shutdown.complete"})
+                    return
+
+    server = reflex_testing._EmbeddedServer(app)
+    probed_port = server.port
+    # Steal the probed port before the server binds it.
+    blocker = socket.socket()
+    blocker.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    blocker.bind((server.host, probed_port))
+    blocker.listen(1)
+    thread = threading.Thread(target=server.run)
+    thread.start()
+    try:
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if server.port != probed_port and server.is_listening():
+                break
+            time.sleep(0.05)
+        assert server.port != probed_port
+        assert server.is_listening()
+    finally:
+        blocker.close()
+        server.should_exit = True
+        thread.join(timeout=15)
+        assert not thread.is_alive()

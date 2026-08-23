@@ -66,8 +66,8 @@ db = [
 ]
 pydantic = ["reflex-base[pydantic]"]
 socketio = ["python-socketio >=5.12.0,<6.0"]
-# The optional uvicorn backend needs a websocket protocol library of its own.
-uvicorn = ["uvicorn >=0.20.0", "websockets >=13.0"]
+# The uvicorn backend: server, websocket support, and the posix prod runner.
+uvicorn = ["uvicorn >=0.20.0", "websockets >=13.0", "gunicorn >=23.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"

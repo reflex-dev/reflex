@@ -380,13 +380,22 @@ async def test_duplicate_token_gets_new_token(namespace: WebsocketEventNamespace
 @pytest.mark.asyncio
 async def test_emit_to_unknown_sid_does_not_raise(
     namespace: WebsocketEventNamespace,
+    caplog: pytest.LogCaptureFixture,
 ):
-    """Emitting to a session that went away is a no-op.
+    """Emitting to a session that went away is a silent no-op.
+
+    A client disconnecting mid-event is routine, so nothing above DEBUG may be
+    logged.
 
     Args:
         namespace: The websocket event namespace.
+        caplog: The pytest log capture fixture.
     """
-    await namespace.emit("event", {"delta": {}}, to="gone")
+    import logging
+
+    with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
+        await namespace.emit("event", {"delta": {}}, to="gone")
+    assert all(record.levelno <= logging.DEBUG for record in caplog.records)
 
 
 def test_default_transport_uses_websocket_namespace():

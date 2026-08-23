@@ -165,21 +165,34 @@ class _EmbeddedServer:
     async def _serve(self) -> None:
         from granian.server.embed import Server
 
-        server = Server(
-            self.app,
-            address=self.host,
-            port=self.port,
-            interface=Interfaces.ASGI,
-            log_enabled=False,
-        )
-        self._server = server
-        self._loop = asyncio.get_running_loop()
-        if self._should_exit.is_set():
-            # Stopped before startup: let serve() exit right after binding.
-            server.interrupt_signal = True
-            server.main_loop_interrupt.set()
         try:
-            await server.serve()
+            # Another process can claim the probed port before granian binds
+            # it; retry on a fresh port until a stop was actually requested.
+            for _ in range(10):
+                server = Server(
+                    self.app,
+                    address=self.host,
+                    port=self.port,
+                    interface=Interfaces.ASGI,
+                    log_enabled=False,
+                )
+                self._server = server
+                self._loop = asyncio.get_running_loop()
+                if self._should_exit.is_set():
+                    # Stopped before startup: let serve() exit right after binding.
+                    server.interrupt_signal = True
+                    server.main_loop_interrupt.set()
+                try:
+                    await server.serve()
+                except (OSError, RuntimeError) as ex:
+                    # Granian surfaces bind failures as RuntimeError.
+                    if "address already in use" not in str(ex).lower():
+                        raise
+                if self._should_exit.is_set():
+                    break
+                with socket.socket() as probe:
+                    probe.bind((self.host, 0))
+                    self.port = probe.getsockname()[1]
         finally:
             await self.shutdown()
 

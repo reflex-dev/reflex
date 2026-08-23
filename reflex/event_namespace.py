@@ -418,7 +418,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
         """
         websocket = self._sockets.get(to) if to is not None else None
         if websocket is None:
-            logger.warning(f"Attempted to emit {event!r} to unknown session {to!r}.")
+            # Routine race: the client disconnected while an event was still
+            # being processed, so its remaining updates have nowhere to go.
+            logger.debug(f"Attempted to emit {event!r} to unknown session {to!r}.")
             return
         try:
             await websocket.send_text(format.json_dumps([event, data]))
