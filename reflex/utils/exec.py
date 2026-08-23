@@ -407,6 +407,15 @@ def _warn_user_about_uvicorn():
     logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
+    if (
+        importlib.util.find_spec("websockets") is None
+        and importlib.util.find_spec("wsproto") is None
+    ):
+        logger.warning(
+            "Uvicorn has no websocket protocol library installed, so the default "
+            "WebSocket transport will not connect. Install `reflex[uvicorn]` or "
+            "use Granian (REFLEX_USE_GRANIAN=1)."
+        )
 
 
 def should_use_granian():

@@ -3678,6 +3678,11 @@ pydantic = [
 socketio = [
     { name = "python-socketio" },
 ]
+uvicorn = [
+    { name = "uvicorn" },
+    { name = "websockets", version = "16.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "websockets", version = "17.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -3733,7 +3738,7 @@ dev = [
 requires-dist = [
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.8.1" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
@@ -3760,9 +3765,11 @@ requires-dist = [
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
     { name = "starlette", specifier = ">=1.3.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
+    { name = "uvicorn", marker = "extra == 'uvicorn'", specifier = ">=0.20.0" },
+    { name = "websockets", marker = "extra == 'uvicorn'", specifier = ">=13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.2" },
 ]
-provides-extras = ["db", "pydantic", "socketio"]
+provides-extras = ["db", "pydantic", "socketio", "uvicorn"]
 
 [package.metadata.requires-dev]
 dev = [

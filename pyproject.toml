@@ -21,7 +21,7 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "click >=8.2",
-  "granian[reload] >=2.7.4",
+  "granian[reload] >=2.8.1",
   "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
@@ -66,6 +66,8 @@ db = [
 ]
 pydantic = ["reflex-base[pydantic]"]
 socketio = ["python-socketio >=5.12.0,<6.0"]
+# The optional uvicorn backend needs a websocket protocol library of its own.
+uvicorn = ["uvicorn >=0.20.0", "websockets >=13.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
