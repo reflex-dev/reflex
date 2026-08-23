@@ -481,7 +481,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 subprotocols[0] if subprotocols else None,
             )
             while True:
-                text = await websocket.receive_text()
+                try:
+                    text = await websocket.receive_text()
+                except KeyError:
+                    # Binary frame; not part of the protocol.
+                    await websocket.close(code=1003)
+                    break
                 last_received = time.monotonic()
                 # ASGI delivers complete messages, so the server has already
                 # buffered the frame; its protocol-level caps (enforced during

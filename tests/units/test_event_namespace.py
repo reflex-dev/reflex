@@ -82,17 +82,21 @@ class FakeWebSocket:
 
         Raises:
             WebSocketDisconnect: When the disconnect sentinel is reached.
+            KeyError: For a binary frame, matching starlette's behavior.
         """
         item = await self._incoming.get()
         if item is _DISCONNECT:
             raise WebSocketDisconnect(1000)
+        if isinstance(item, bytes):
+            missing_key = "text"
+            raise KeyError(missing_key)
         return item
 
     def feed(self, *frames: Any):
         """Queue incoming frames (lists are JSON-encoded) and a disconnect."""
         for frame in frames:
             self._incoming.put_nowait(
-                frame if isinstance(frame, str) else json.dumps(frame)
+                frame if isinstance(frame, (str, bytes)) else json.dumps(frame)
             )
         self._incoming.put_nowait(_DISCONNECT)
 
@@ -300,6 +304,21 @@ async def test_multibyte_message_within_limit_is_processed(
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
+
+
+@pytest.mark.asyncio
+async def test_binary_frame_closes_connection(namespace: WebsocketEventNamespace):
+    """A binary frame closes the connection with 1003 (unsupported data).
+
+    Args:
+        namespace: The websocket event namespace.
+    """
+    websocket = FakeWebSocket()
+    websocket.feed(b"\x00\x01")
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1003
 
 
 @pytest.mark.asyncio

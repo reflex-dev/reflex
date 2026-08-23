@@ -562,6 +562,8 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // Connecting (again) revokes a pending unmount cancellation.
+  socket.cancelConnect = false;
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -593,6 +595,10 @@ export const connect = async (
       // Socket.IO transport ("socketio" over websocket, or "polling"); the
       // client library is only loaded when this transport is configured.
       const { default: io } = await import("socket.io-client");
+      if (socket.cancelConnect) {
+        // The event loop unmounted while the import was pending.
+        return;
+      }
       socket.current = io(endpoint.href, {
         path: endpoint["pathname"],
         transports: [transport === "socketio" ? "websocket" : transport],
@@ -1109,6 +1115,8 @@ export const useEventLoop = (
     // Cleanup function.
     return () => {
       mounted.current = false;
+      // Abort a connect() that is still awaiting the socket.io-client import.
+      socket.cancelConnect = true;
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();

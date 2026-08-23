@@ -163,7 +163,9 @@ export class ReflexWebSocket {
       return;
     }
     const url = new URL(this._url);
-    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    // Secure endpoints (https or already-wss) stay secure.
+    url.protocol =
+      url.protocol === "https:" || url.protocol === "wss:" ? "wss:" : "ws:";
     url.search = new URLSearchParams(this.io.opts.query ?? {}).toString();
     this._closeReason = null;
     const ws = new WebSocket(url, this.io.opts.protocols);
@@ -173,7 +175,12 @@ export class ReflexWebSocket {
         ws.close();
       }
     }, this._connectTimeoutMs);
-    ws.onmessage = (msg) => this._onMessage(msg.data);
+    ws.onmessage = (msg) => {
+      if (this._ws === ws) {
+        // Ignore stragglers from a superseded connection.
+        this._onMessage(msg.data);
+      }
+    };
     ws.onclose = (event) => {
       if (this._ws !== ws) {
         // A newer connection or an explicit disconnect() superseded this one.
@@ -238,6 +245,7 @@ export class ReflexWebSocket {
     }
     if (ws.readyState <= WebSocket.OPEN) {
       ws.onclose = null;
+      ws.onmessage = null;
       ws.close(1000);
     }
   }
