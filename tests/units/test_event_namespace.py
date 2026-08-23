@@ -205,20 +205,30 @@ async def test_undeserializable_event_closes_connection(
 
 @pytest.mark.asyncio
 async def test_handler_error_keeps_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock
+    namespace: WebsocketEventNamespace,
+    mock_app: Mock,
+    caplog: pytest.LogCaptureFixture,
 ):
     """A server-side handler failure is logged and the connection survives."""
+    import logging
+
     mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
     websocket = FakeWebSocket()
     websocket.feed(
         ["event", {"name": "state.on_click", "payload": {}, "router_data": {}}],
         ["ping"],
     )
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
+    assert any(
+        record.levelno == logging.ERROR
+        and "Error handling socket event" in record.getMessage()
+        for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
