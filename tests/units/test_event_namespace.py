@@ -189,6 +189,39 @@ async def test_malformed_frame_closes_connection(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("payload", [None, "not an event", 42])
+async def test_undeserializable_event_closes_connection(
+    namespace: WebsocketEventNamespace, payload: object
+):
+    """An event frame that fails deserialization closes with 1002."""
+    websocket = FakeWebSocket()
+    websocket.feed(["event", payload], ["ping"])
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1002
+    assert ["ping", "pong"] not in websocket.sent
+
+
+@pytest.mark.asyncio
+async def test_handler_error_keeps_connection(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """A server-side handler failure is logged and the connection survives."""
+    mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+    websocket = FakeWebSocket()
+    websocket.feed(
+        ["event", {"name": "state.on_click", "payload": {}, "router_data": {}}],
+        ["ping"],
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code is None
+    assert ["ping", "pong"] in websocket.sent
+
+
+@pytest.mark.asyncio
 async def test_tokenless_connection_rejected(namespace: WebsocketEventNamespace):
     """A connection without a token closes with 1008 (policy violation)."""
     websocket = FakeWebSocket(query_string=b"")

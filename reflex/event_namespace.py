@@ -560,8 +560,15 @@ class WebsocketEventNamespace(BaseEventNamespace):
                         logger.debug(
                             f"Ignoring unknown socket event {event!r} from session {sid}."
                         )
+                except exceptions.EventDeserializationError:
+                    # Client-controlled input a Reflex client never sends;
+                    # close instead of logging per frame.
+                    logger.debug(f"Closing session {sid}: undeserializable event.")
+                    await websocket.close(code=1002)
+                    break
                 except Exception:
-                    # A failing handler is logged; the connection survives.
+                    # A failing handler is a server-side bug: log it loudly;
+                    # the connection survives.
                     logger.exception(
                         f"Error handling socket event {event!r} for session {sid}."
                     )
