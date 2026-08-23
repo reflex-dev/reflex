@@ -1,6 +1,5 @@
 """The Reflex config."""
 
-import contextlib
 import dataclasses
 import importlib
 import logging
@@ -887,12 +886,14 @@ def _load_config() -> Config:
     """
     with _load_config_lock:
         cwd = str(Path.cwd())
+        preexisting = sys.path.count(cwd)
         sys.path.insert(0, cwd)
         try:
             return _get_config()
         finally:
-            # Remove only our entry; rxconfig may add (or want) others.
-            with contextlib.suppress(ValueError):
+            # Remove one cwd entry, but never a caller-owned one: rxconfig.py
+            # itself may add or remove path entries, including the cwd.
+            if sys.path.count(cwd) > preexisting:
                 sys.path.remove(cwd)
 
 

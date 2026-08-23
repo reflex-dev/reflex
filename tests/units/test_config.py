@@ -931,3 +931,25 @@ def test_load_config_keeps_sys_path_usable_for_other_threads(
     assert not loader.is_alive()
     # The temporarily prepended cwd entry was removed again.
     assert sys.path == sys_path_before
+
+
+def test_load_config_keeps_caller_owned_cwd_entry(monkeypatch: pytest.MonkeyPatch):
+    """A pre-existing cwd entry survives even if rxconfig removes one itself.
+
+    The cleanup must only take back the entry _load_config prepended, not a
+    caller-owned equal entry.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    cwd = str(Path.cwd())
+    monkeypatch.setattr(sys, "path", [cwd, *sys.path])
+    caller_owned = sys.path.count(cwd)
+
+    def removing_get_config() -> rx.Config:
+        sys.path.remove(cwd)
+        return rx.Config(app_name="pathological")
+
+    monkeypatch.setattr(reflex_base.config, "_get_config", removing_get_config)
+    reflex_base.config._load_config()
+    assert sys.path.count(cwd) == caller_owned
