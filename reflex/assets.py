@@ -2,6 +2,7 @@
 
 import hashlib
 import inspect
+import logging
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
@@ -9,7 +10,8 @@ from typing import TYPE_CHECKING, overload
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
-from reflex_base.utils import console
+
+logger = logging.getLogger(__name__)
 
 _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
@@ -133,7 +135,7 @@ def _short_content_hash(path: Path) -> str:
         if digest == _content_digest(path):
             break
     else:
-        console.warn(
+        logger.warning(
             f"{path} was modified {_MAX_HASH_ATTEMPTS} times while calculating hash."
         )
         return str(time.time())

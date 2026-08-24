@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -39,7 +40,8 @@ from typing_extensions import TypeAliasType
 from typing_extensions import override as override
 
 from reflex_base import constants
-from reflex_base.utils import console
+
+logger = logging.getLogger(__name__)
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
@@ -559,7 +561,7 @@ def get_attribute_access_type(
             if name in hints:
                 return hints[name]
         except exceptions as e:
-            console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
 

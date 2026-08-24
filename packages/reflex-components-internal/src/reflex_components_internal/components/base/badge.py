@@ -56,9 +56,9 @@ LIGHT_COLORS = {"sky", "mint", "lime", "yellow", "amber", "secondary"}
 
 BADGE_VARIANTS = {
     "size": {
-        "xs": "px-1.5 py-0.5 h-4 rounded-ui-xss text-[11px] [&_svg]:size-3",
-        "sm": "px-1.5 py-0.5 h-5 rounded-ui-xs text-xs [&_svg]:size-3.5",
-        "md": "px-2 py-0.5 h-6 rounded-ui-sm text-sm [&_svg]:size-4",
+        "xs": "px-1.5 py-0.5 h-4 rounded-ui-xxs text-[11px] [&_svg]:size-3",
+        "sm": "px-1.5 py-0.5 h-5 rounded-ui-xxs text-xs [&_svg]:size-3.5",
+        "md": "px-2 py-0.5 h-6 rounded-ui-xs text-sm [&_svg]:size-4",
     }
 }
 

@@ -105,7 +105,9 @@ dev = [
   "pytest-split",
   "pytest",
   "python-dotenv",
+  "pyyaml",
   "reflex-docgen",
+  "reflex-release",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -151,6 +153,7 @@ extraPaths = [
   "packages/reflex-moment/src",
   "packages/reflex-plotly/src",
   "packages/reflex-radix/src",
+  "packages/reflex-release/src",
   "packages/reflex-react-player/src",
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
@@ -216,6 +219,7 @@ lint.ignore = [
   "TC",
   "TD",
   "TRY0",
+  "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -282,6 +286,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -421,6 +426,7 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
