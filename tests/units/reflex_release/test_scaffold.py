@@ -150,6 +150,22 @@ def test_rendered_workflows_are_valid_yaml(
         assert document["jobs"], name
 
 
+def test_every_generated_run_step_pins_the_shell(config: Config, repo: Path) -> None:
+    """A default shell must not get to reinterpret a release-critical script."""
+    write_custom_build(repo)
+    add_internal(repo, "widget-core")
+    reloaded = set_post_release_workflow(repo, "post_release.yml")
+    steps = 0
+    for name in managed_workflows(reloaded):
+        for job in yaml.safe_load(render(name, reloaded))["jobs"].values():
+            for step in job.get("steps", ()):
+                if "run" not in step:
+                    continue
+                steps += 1
+                assert step.get("shell") == "bash", (name, step.get("name"))
+    assert steps
+
+
 def test_dispatch_inputs_give_a_lockstep_group_one_checkbox(
     config: Config, repo: Path
 ) -> None:

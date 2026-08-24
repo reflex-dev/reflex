@@ -35,6 +35,7 @@ from .changelog import (
 from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
 from .discovery import (
     alpha_train_packages,
+    associate_orphan_fragments,
     build_changelog,
     category_order,
     changelog_packages,
@@ -328,8 +329,10 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
 def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     """Write the planned versions into the changelogs via towncrier.
 
-    For ``release-from-prerelease``, collapses the alpha sections of each
-    changelog into the single final-version section after building it.
+    Orphan fragments are first named after the pull request that added them, so
+    the entries towncrier writes carry a link. For ``release-from-prerelease``,
+    collapses the alpha sections of each changelog into the single final-version
+    section after building it.
 
     Args:
         config: The repository configuration.
@@ -346,6 +349,8 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
 
     for release in releases:
         package, version = release["package"], release["next"]
+        for old_name, new_name in associate_orphan_fragments(config, package):
+            echo(f"{package}: renamed news fragment {old_name} -> {new_name}")
         build_changelog(config, package, version, today)
         if collapse:
             path = config.changelog_path(package)
