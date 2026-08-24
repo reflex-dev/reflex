@@ -17,14 +17,6 @@ hosting_cli = (
 runner = CliRunner()
 
 
-@pytest.fixture
-def mock_console(mocker: MockFixture):
-    """Fixture to mock console.print and console.error."""
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-    return mock_print, mock_error
-
-
 def test_get_vm_types_success(mocker: MockFixture):
     """Test successful retrieval of VM types."""
     mock_get_vm_types = mocker.patch(

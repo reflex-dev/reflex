@@ -22,11 +22,10 @@ from typing import Any, TypedDict
 from urllib.parse import urljoin
 
 import click
-from reflex_base.utils import log
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, dependency, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
     GetAppError,
