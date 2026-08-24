@@ -32,9 +32,11 @@ else:
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CLI_PYPROJECT = REPO_ROOT / "packages" / "reflex-hosting-cli" / "pyproject.toml"
 
-# The reflex release that first shipped the workspace packages: reflex-base was
-# carved out in #6281 and its earliest tag is reflex-base-v0.9.0. No package
-# under packages/ can be depended on from a reflex older than this.
+ROOT_PYPROJECT = REPO_ROOT / "pyproject.toml"
+
+# The reflex release that first shipped the framework runtime packages:
+# reflex-base was carved out in #6281 and its earliest tag is reflex-base-v0.9.0.
+# None of them can be depended on from a reflex older than this.
 REFLEX_WORKSPACE_SPLIT_VERSION = Version("0.9.0")
 
 
@@ -51,11 +53,23 @@ def _load(pyproject: Path) -> dict:
         return tomllib.load(f)
 
 
+def _dependency_names(pyproject: Path) -> set[str]:
+    """Collect the canonicalized names a package declares as dependencies.
+
+    Args:
+        pyproject: The pyproject.toml to read.
+
+    Returns:
+        The canonicalized distribution names.
+    """
+    return {
+        canonicalize_name(Requirement(dep).name)
+        for dep in _load(pyproject)["project"]["dependencies"]
+    }
+
+
 def _workspace_package_names() -> set[str]:
     """Collect the distribution name of every package in the workspace.
-
-    Derived from the checkout rather than hard-coded, so a package added under
-    ``packages/`` later is covered without touching this test.
 
     Returns:
         The canonicalized distribution names.
@@ -67,11 +81,37 @@ def _workspace_package_names() -> set[str]:
     return names
 
 
-def test_workspace_packages_are_discoverable():
-    """The workspace scan finds real packages, so the guards below are not vacuous."""
-    names = _workspace_package_names()
-    assert canonicalize_name("reflex-base") in names
-    assert canonicalize_name("reflex-hosting-cli") in names
+def _framework_runtime_packages() -> set[str]:
+    """Collect the workspace packages that reflex itself pulls in.
+
+    These are the framework runtime: their presence and version are decided by
+    whichever reflex the user installed, so the hosting CLI depending on one is
+    either unsatisfiable on old reflex or silently resolves to a second,
+    mismatched copy alongside it. Workspace *utilities* reflex does not depend
+    on (reflex-release, reflex-docgen) are ordinary PyPI distributions and are
+    perfectly fine to depend on -- they are excluded here.
+
+    Derived from the checkout rather than hard-coded, so a framework package
+    added later is covered without touching this test.
+
+    Returns:
+        The canonicalized distribution names, excluding the hosting CLI itself.
+    """
+    return (_dependency_names(ROOT_PYPROJECT) & _workspace_package_names()) - {
+        canonicalize_name("reflex-hosting-cli")
+    }
+
+
+def test_framework_runtime_packages_are_discoverable():
+    """The scan finds the right packages, so the guards below are not vacuous."""
+    framework = _framework_runtime_packages()
+    # Shipped by reflex, so gated on the user's reflex version.
+    assert canonicalize_name("reflex-base") in framework
+    assert canonicalize_name("reflex-components-core") in framework
+    # Independent distributions, and the CLI itself: not gated, not banned.
+    assert canonicalize_name("reflex-release") not in framework
+    assert canonicalize_name("reflex-docgen") not in framework
+    assert canonicalize_name("reflex-hosting-cli") not in framework
 
 
 def test_no_dependency_that_the_minimum_reflex_cannot_satisfy():
@@ -82,17 +122,13 @@ def test_no_dependency_that_the_minimum_reflex_cannot_satisfy():
     MINIMUM_REFLEX_VERSION is raised past the workspace split.
     """
     minimum = ReflexHostingCli.MINIMUM_REFLEX_VERSION
-    declared = {
-        canonicalize_name(Requirement(dep).name)
-        for dep in _load(CLI_PYPROJECT)["project"]["dependencies"]
-    }
-    offenders = sorted(declared & _workspace_package_names())
+    offenders = sorted(_dependency_names(CLI_PYPROJECT) & _framework_runtime_packages())
 
     if minimum >= REFLEX_WORKSPACE_SPLIT_VERSION:
         pytest.skip(
             f"MINIMUM_REFLEX_VERSION is {minimum}, at or past the workspace "
-            f"split ({REFLEX_WORKSPACE_SPLIT_VERSION}); workspace dependencies "
-            "are satisfiable and this guard no longer applies."
+            f"split ({REFLEX_WORKSPACE_SPLIT_VERSION}); framework packages are "
+            "satisfiable and this guard no longer applies."
         )
 
     assert not offenders, (
