@@ -52,22 +52,33 @@ def _do_update_other_tokens(
     Returns:
         The list of asyncio tasks created to perform the updates.
     """
+    from reflex.utils.token_manager import RedisTokenManager
+
     app = RegistrationContext.get().app
 
+    tasks = []
+    if (event_namespace := app.event_namespace) is None:
+        return tasks
+    token_manager = event_namespace._token_manager
+
     async def _update_client(token: str):
+        # Don't send updates for disconnected clients. The local
+        # token_to_socket map only tracks sockets owned by this instance, so
+        # with redis the socket record is resolved (and cached) from redis
+        # instead; emit_update then relays the delta to the owning instance
+        # via the lost-and-found channel.
+        if isinstance(token_manager, RedisTokenManager):
+            if await token_manager._get_token_owner(token) is None:
+                return
+        elif token not in token_manager.token_to_socket:
+            return
         async with app.modify_state(
             BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
         ):
             pass
 
-    tasks = []
-    if (event_namespace := app.event_namespace) is None:
-        return tasks
     for affected_token in affected_tokens:
-        # Don't send updates for disconnected clients.
-        if affected_token not in event_namespace._token_manager.token_to_socket:
-            continue
         # TODO: remove disconnected clients after some time.
         t = asyncio.create_task(_update_client(affected_token))
         UPDATE_OTHER_CLIENT_TASKS.add(t)
