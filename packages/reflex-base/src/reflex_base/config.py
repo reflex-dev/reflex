@@ -809,29 +809,42 @@ _config_module_deps: set[str] = set()
 
 
 class _ImportRecorder:
-    """Meta-path finder that records import attempts on the installing thread.
+    """Meta-path finder that records import attempts on the recording thread.
 
-    Never resolves anything; it attributes the modules rxconfig.py pulls in to
-    the config load itself. Diffing sys.modules instead would sweep up modules
-    imported concurrently by other threads and wrongly evict them on the next
-    load.
+    Never resolves anything; per-thread recording keeps concurrent imports by
+    other threads out of the rxconfig dep set (unlike a sys.modules diff).
+    Left in sys.meta_path permanently: removal shifts the list under other
+    threads' unlocked _find_spec iteration, which can skip a real finder, and
+    raises ValueError if rxconfig.py rebuilt sys.meta_path.
     """
 
     def __init__(self) -> None:
-        """Initialize the recorder bound to the current thread."""
-        self._thread = threading.get_ident()
+        """Initialize the recorder as inactive."""
+        self._thread: int | None = None
         self.names: set[str] = set()
 
+    def start(self) -> None:
+        """Start recording imports made on the current thread."""
+        self.names.clear()
+        self._thread = threading.get_ident()
+
+    def stop(self) -> None:
+        """Stop recording; names stay readable."""
+        self._thread = None
+
     def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
-        """Record the import attempt and decline to resolve it.
+        """Record the import attempt without resolving it.
 
         Args:
             fullname: The module being imported.
-            path: The parent package search path (unused).
-            target: The module object to reload into (unused).
+            path: Unused.
+            target: Unused.
         """
         if threading.get_ident() == self._thread:
             self.names.add(fullname)
+
+
+_import_recorder = _ImportRecorder()
 
 
 def _get_config() -> Config:
@@ -856,15 +869,17 @@ def _get_config() -> Config:
     for dep in _config_module_deps:
         sys.modules.pop(dep, None)
     _config_module_deps.clear()
-    recorder = _ImportRecorder()
-    sys.meta_path.insert(0, recorder)
+    # Reinstall if rxconfig.py rebuilt sys.meta_path on a previous load.
+    if _import_recorder not in sys.meta_path:
+        sys.meta_path.insert(0, _import_recorder)
+    _import_recorder.start()
     try:
         rxconfig = importlib.import_module(constants.Config.MODULE)
     finally:
-        sys.meta_path.remove(recorder)
+        _import_recorder.stop()
         # Record even on failure so a retry evicts partially-imported deps.
         project_root = Path.cwd()
-        for name in recorder.names:
+        for name in _import_recorder.names:
             origin = getattr(sys.modules.get(name), "__file__", None)
             if (
                 origin
@@ -902,12 +917,10 @@ def get_state_auto_setters() -> bool:
 
 
 def _load_config() -> Config:
-    """Load the config from rxconfig.py with cwd on sys.path.
+    """Load the config from rxconfig.py with cwd prepended to sys.path.
 
-    The cwd is prepended (not swapped in) so rxconfig resolves from the app
-    directory first while other threads keep a working import path: clearing
-    sys.path here made concurrent first-time imports elsewhere fail with
-    ModuleNotFoundError for the duration of the rxconfig import.
+    Prepending (not replacing sys.path) keeps concurrent imports in other
+    threads working while rxconfig resolves from the app directory first.
 
     Returns:
         The app config.

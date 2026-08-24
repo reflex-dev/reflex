@@ -1010,3 +1010,46 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     sys.modules.pop("side_module", None)
     sys.modules.pop("rxconfig", None)
     reflex_base.config._config_module_deps.discard("rxconfig")
+
+
+def test_load_config_survives_rxconfig_rebuilding_meta_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A load succeeds even if rxconfig.py rebuilds sys.meta_path.
+
+    Cleanup used to call sys.meta_path.remove(recorder) unconditionally in a
+    finally block, so an rxconfig that rebound sys.meta_path turned a
+    successful load into a ValueError (or masked the real import error). The
+    recorder is now permanent and reinstalled on the next load.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import textwrap
+
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import sys
+            import reflex as rx
+            from reflex_base.config import _import_recorder
+
+            sys.meta_path = [f for f in sys.meta_path if f is not _import_recorder]
+            config = rx.Config(app_name="metapathapp")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    try:
+        config = reflex_base.config._load_config()
+        assert config.app_name == "metapathapp"
+        assert reflex_base.config._import_recorder not in sys.meta_path
+        # The next load reinstalls the recorder, so deps are recorded again.
+        reflex_base.config._load_config()
+        assert "rxconfig" in reflex_base.config._config_module_deps
+    finally:
+        sys.modules.pop("rxconfig", None)
+        reflex_base.config._config_module_deps.discard("rxconfig")
+        if reflex_base.config._import_recorder not in sys.meta_path:
+            sys.meta_path.insert(0, reflex_base.config._import_recorder)
