@@ -135,6 +135,34 @@ def test_fallback_log_level_enum_matches_reflex_base():
         assert forked.DEBUG <= forked.DEBUG
         assert forked.ERROR > forked.INFO
         assert forked.ERROR >= forked.ERROR
+        for level in forked:
+            assert (
+                level.subprocess_level().value
+                == BaseLogLevel(level.value).subprocess_level().value
+            )
+
+
+def test_fallback_log_level_covers_the_whole_reflex_base_api():
+    """The fork must expose everything the shared enum does.
+
+    The fork is a drop-in for reflex-base's LogLevel, so CLI code written
+    against the shared enum has to keep working when reflex-base is absent.
+    A method added there and missed here would work on reflex 0.9 and break on
+    older reflex -- the exact class of bug this package guards against.
+    """
+    from reflex_base.constants.base import LogLevel as BaseLogLevel
+
+    with _without_reflex_base() as (constants_base, _, _console):
+        forked = constants_base.LogLevel
+        missing = {
+            name
+            for name in dir(BaseLogLevel)
+            if not name.startswith("_") and not hasattr(forked, name)
+        }
+        assert not missing, (
+            f"reflex_cli.constants.log_level.LogLevel is missing {sorted(missing)}, "
+            "which reflex_base.constants.base.LogLevel defines."
+        )
 
 
 @pytest.mark.parametrize(
@@ -180,7 +208,7 @@ def test_fallback_gates_on_log_level(capsys):
 
 
 def test_fallback_does_not_stack_handlers():
-    """Repeated set_log_level calls re-use the one sink instead of stacking."""
+    """Repeated set_log_level calls reuse the one sink instead of stacking."""
     with _without_reflex_base() as (constants_base, fallback_log, _console):
         cli_logger = logging.getLogger("reflex_cli")
         fallback_log.set_log_level(constants_base.LogLevel.INFO)
@@ -202,7 +230,7 @@ def test_fallback_rejects_non_log_level():
         fallback_log.set_log_level(None)
 
 
-def test_set_log_level_accepts_strings():
+def test_set_log_level_accepts_strings(monkeypatch):
     """console.set_log_level keeps taking legacy string values."""
     with _without_reflex_base() as (_, _log, fallback_console):
         fallback_console.set_log_level("warning")
@@ -211,8 +239,22 @@ def test_set_log_level_accepts_strings():
         fallback_console.set_log_level("nonsense")
         assert logging.getLogger("reflex_cli").level == logging.INFO
 
-    console.set_log_level("warning")
-    console.set_log_level("info")
+    # The reflex-base path is process-wide: it sets REFLEX_LOGLEVEL so
+    # subprocesses inherit the level, and moves a module global. Sandbox the
+    # environment and put the level back, or the rest of the session (and any
+    # subprocess it spawns) inherits whatever this test left behind.
+    from reflex_base.constants.base import LogLevel as BaseLogLevel
+    from reflex_base.utils import log as base_log
+
+    previous = base_log.get_log_level()
+    monkeypatch.setenv("REFLEX_LOGLEVEL", previous.value)
+    try:
+        console.set_log_level("warning")
+        assert base_log.get_log_level() is BaseLogLevel.WARNING
+        console.set_log_level("nonsense")
+        assert base_log.get_log_level() is BaseLogLevel.INFO
+    finally:
+        base_log.set_log_level(previous)
 
 
 def test_fallback_console_helpers(capsys):

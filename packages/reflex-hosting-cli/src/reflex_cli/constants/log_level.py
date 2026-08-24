@@ -49,6 +49,14 @@ class LogLevel(str, Enum):
         """
         return _LOGGING_LEVELS[self]
 
+    def subprocess_level(self) -> LogLevel:
+        """Return the log level to hand to a subprocess.
+
+        Returns:
+            This level, or WARNING when it is DEFAULT.
+        """
+        return self if self != LogLevel.DEFAULT else LogLevel.WARNING
+
     # The str mixin supplies alphabetical comparisons, so all four operators
     # must be overridden to compare by verbosity rank instead.
     def __lt__(self, other: LogLevel) -> bool:
