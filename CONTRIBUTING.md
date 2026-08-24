@@ -84,7 +84,7 @@ uv run towncrier create --config pyproject.toml --dir packages/reflex-components
 
 Drop `--dir` for a fragment against the main `reflex` package.
 
-If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`) and rename it after opening the PR.
+If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`). Renaming it after opening the PR is nice, but not required: the release workflow renames any orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
