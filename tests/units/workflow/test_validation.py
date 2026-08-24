@@ -516,3 +516,61 @@ async def test_a_retyped_parameter_suspends_without_consuming_attempts(
         assert pending[0].attempts == 0, (
             "suspension must not consume the attempt budget"
         )
+
+
+async def test_python_by_key_lookup_and_signal(forked_registration_context):
+    """The Python forms of business-key addressing mirror the HTTP ones.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+
+    class Keyed(rx.State):
+        __workflow__ = WorkflowConfig(id="validation.keyed")
+        go = Signal()
+
+        @rx.event(durable=True, effect="none", trigger=manual())
+        def begin(self):
+            """Wait for the go signal.
+
+            Returns:
+                The wait.
+            """
+            return rx.wait_for(Keyed.go, then=Keyed.done, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def done(self, payload):
+            """Finish.
+
+            Args:
+                payload: The delivered payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=payload)
+
+    async with WorkflowTestHarness(Keyed) as harness:
+        result = await harness.start(Keyed.begin(), request_key="order_7")
+        assert result.run_id is not None
+        await harness.run_until_idle()
+
+        assert await harness.kernel.find_by_key(Keyed, "order_7") == result.run_id
+        assert await harness.kernel.find_by_key("validation.keyed", "order_7") == (
+            result.run_id
+        )
+        assert await harness.kernel.find_by_key(Keyed, "order_8") is None
+        assert (
+            await harness.kernel.signal_by_key(
+                Keyed, "order_8", Keyed.go(None), key="e1"
+            )
+            == "unknown_key"
+        )
+        assert (
+            await harness.kernel.signal_by_key(
+                Keyed, "order_7", Keyed.go(None), key="e1"
+            )
+            == "resolved"
+        )
+        with pytest.raises(Exception, match="not registered"):
+            await harness.kernel.find_by_key("validation.nope", "order_7")

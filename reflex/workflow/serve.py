@@ -22,7 +22,7 @@ import os
 from typing import TYPE_CHECKING, Any, Final
 
 from reflex_base.utils import console
-from reflex_base.utils.exceptions import WorkflowDefinitionError
+from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import ChannelDelivery
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -274,6 +274,104 @@ def signal_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
     return endpoint
 
 
+def key_read_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that reads a run by its business key.
+
+    Args:
+        runtime: The runtime owning the runs.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("read")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """Resolve the key and answer with the run's identity and status.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The run reference, or 404.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        workflow_id = request.path_params["workflow_id"]
+        request_key = request.path_params["request_key"]
+        try:
+            run_id = await runtime.kernel.find_by_key(workflow_id, request_key)
+        except WorkflowRuntimeError as error:
+            return JSONResponse({"error": str(error)}, status_code=404)
+        if run_id is None:
+            return JSONResponse({"error": "unknown key"}, status_code=404)
+        snapshot = await runtime.kernel.get_run(run_id)
+        if snapshot is None:
+            return JSONResponse({"error": "unknown key"}, status_code=404)
+        return JSONResponse({
+            "run_id": snapshot.run_id,
+            "workflow": snapshot.workflow_id,
+            "status": snapshot.status.value,
+            "result": snapshot.result,
+            "error": snapshot.error,
+        })
+
+    return endpoint
+
+
+def key_signal_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that signals a run by its business key.
+
+    Args:
+        runtime: The runtime owning the runs.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("signal")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """Deliver the request body to the keyed run's channel.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The delivery disposition, or an error.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        payload, bad = await _read_json(request)
+        if bad is not None:
+            return bad
+        key = request.headers.get("idempotency-key") or request.query_params.get("key")
+        try:
+            disposition = await runtime.kernel.signal_by_key(
+                request.path_params["workflow_id"],
+                request.path_params["request_key"],
+                ChannelDelivery(
+                    channel=request.path_params["channel"], payload=payload
+                ),
+                key=key,
+            )
+        except WorkflowRuntimeError as error:
+            return JSONResponse({"error": str(error)}, status_code=404)
+        except WorkflowDefinitionError as error:
+            return JSONResponse({"error": str(error)}, status_code=400)
+        status = {
+            "unknown_key": 404,
+            "unknown_run": 404,
+            "run_terminal": 409,
+            "expired": 409,
+        }.get(disposition, 202)
+        return JSONResponse({"disposition": disposition}, status_code=status)
+
+    return endpoint
+
+
 def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: str):
     """Build one operator action endpoint.
 
@@ -463,6 +561,18 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                     }
                     for action in ("cancel", "retry", "resume")
                 },
+                "/workflows/{workflow_id}/keys/{request_key}": {
+                    "get": {
+                        "summary": "Read a run by business key (scope: read)",
+                        "responses": {"200": {"description": "The run"}},
+                    }
+                },
+                "/workflows/{workflow_id}/keys/{request_key}/signals/{channel}": {
+                    "post": {
+                        "summary": ("Deliver a signal by business key (scope: signal)"),
+                        "responses": {"202": {"description": "Delivered"}},
+                    }
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -571,6 +681,19 @@ def build_app(
                     methods=["POST"],
                 )
                 for action in ("cancel", "retry", "resume")
+            ),
+            # Business-key addressing over the durable request-key index: the
+            # caller that knows "order_123" reaches the order's run without
+            # ever having stored the engine's run id.
+            Route(
+                "/workflows/{workflow_id}/keys/{request_key}",
+                key_read_endpoint(runtime, tokens),
+                methods=["GET"],
+            ),
+            Route(
+                "/workflows/{workflow_id}/keys/{request_key}/signals/{channel}",
+                key_signal_endpoint(runtime, tokens),
+                methods=["POST"],
             ),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a
             # minted approval link configured against an rx.App keeps working

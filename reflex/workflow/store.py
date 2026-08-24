@@ -56,6 +56,7 @@ DeliveryDisposition = Literal[
     "duplicate",
     "unknown_run",
     "run_terminal",
+    "unknown_key",
 ]
 
 

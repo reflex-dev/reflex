@@ -449,6 +449,57 @@ class WorkflowsNamespace:
         return RunHandle(result.run_id, result.disposition)
 
     @staticmethod
+    async def get_by_key(workflow: Any, request_key: str) -> RunHandle[Any] | None:
+        """Find the run a business key admitted, as a handle.
+
+        The request key is already a durable unique index -- it is what makes
+        redelivery idempotent -- so it doubles as the business address of a
+        run: ``order_123`` finds the order's run without anyone having stored
+        the engine's run id::
+
+            handle = await rx.workflows.get_by_key(Order, "order_123")
+
+        Args:
+            workflow: The registered workflow class or its id.
+            request_key: The admission key the run was started under.
+
+        Returns:
+            A handle on the run, or None when the key admitted nothing.
+        """
+        run_id = await get_runtime().kernel.find_by_key(workflow, request_key)
+        return None if run_id is None else RunHandle(run_id, "found")
+
+    @staticmethod
+    async def signal_by_key(
+        workflow: Any,
+        request_key: str,
+        delivery: Any,
+        *,
+        key: str | None = None,
+    ) -> str:
+        """Deliver a signal to the run a business key admitted.
+
+        Usage::
+
+            await rx.workflows.signal_by_key(
+                Order, "order_123", Order.shipped(payload), key=event_id
+            )
+
+        Args:
+            workflow: The registered workflow class or its id.
+            request_key: The admission key the run was started under.
+            delivery: The addressed payload, e.g. ``Order.shipped(payload)``.
+            key: Sender idempotency key; a repeated key is a no-op.
+
+        Returns:
+            The delivery disposition, ``"unknown_key"`` when the key admitted
+            nothing.
+        """
+        return await get_runtime().kernel.signal_by_key(
+            workflow, request_key, delivery, key=key
+        )
+
+    @staticmethod
     async def cancel(run_id: str) -> bool:
         """Request cancellation of a run.
 

@@ -383,3 +383,58 @@ def test_a_signed_stripe_webhook_lands_with_no_rx_app(
             headers={"Stripe-Signature": f"t={timestamp},v1={digest}"},
         )
         assert redelivered.json()["disposition"] == "deduplicated"
+
+
+def test_business_keys_address_runs_without_run_ids(service):
+    """`order_123` reaches the order's run; nobody stored a run id.
+
+    Args:
+        service: The served client.
+    """
+    started = service.post(
+        "/runs",
+        json={
+            "workflow": "serve.orders",
+            "handler": "place",
+            "args": {"order_id": "o1"},
+            "request_key": "order_123",
+        },
+        headers=_auth("tk_start"),
+    )
+    assert started.status_code == 202
+    run_id = started.json()["run_id"]
+
+    found = service.get(
+        "/workflows/serve.orders/keys/order_123", headers=_auth("tk_read")
+    )
+    assert found.status_code == 200
+    assert found.json()["run_id"] == run_id
+
+    missing = service.get(
+        "/workflows/serve.orders/keys/order_999", headers=_auth("tk_read")
+    )
+    assert missing.status_code == 404
+
+    delivered = service.post(
+        "/workflows/serve.orders/keys/order_123/signals/shipped",
+        json={"parcel": "P-9"},
+        headers={**_auth("tk_signal"), "Idempotency-Key": "evt_9"},
+    )
+    assert delivered.status_code == 202
+    redelivered = service.post(
+        "/workflows/serve.orders/keys/order_123/signals/shipped",
+        json={"parcel": "P-9"},
+        headers={**_auth("tk_signal"), "Idempotency-Key": "evt_9"},
+    )
+    assert redelivered.json()["disposition"] == "duplicate"
+    unkeyed = service.post(
+        "/workflows/serve.orders/keys/order_999/signals/shipped",
+        json={},
+        headers=_auth("tk_signal"),
+    )
+    assert unkeyed.status_code == 404
+    assert unkeyed.json()["disposition"] == "unknown_key"
+    unknown_workflow = service.get(
+        "/workflows/serve.nope/keys/order_123", headers=_auth("tk_read")
+    )
+    assert unknown_workflow.status_code == 404

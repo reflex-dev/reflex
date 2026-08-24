@@ -260,6 +260,19 @@ Checked in this order at start:
    refuses its signal rather than letting it resolve a later wait on the
    same channel.
 
+### Business-key addressing
+
+The request key is a durable unique index per workflow (`§6`), so it doubles
+as a run's business address: `rx.workflows.get_by_key(Order, "order_123")`
+and `rx.workflows.signal_by_key(Order, "order_123", Order.shipped(p),
+key=event_id)` reach the run the key admitted, without the caller ever
+storing the engine's run id. Over HTTP the same pair is
+`GET /workflows/{id}/keys/{request_key}` and `POST .../signals/{channel}`.
+A key that admitted nothing answers `unknown_key` (HTTP 404) — the caller
+decides whether that means "not yet" (buffer upstream, or start the run) or
+"never". Signal dedupe stays the sender's idempotency key; the business key
+addresses, the event id deduplicates.
+
 ## 7. Workers
 
 - A **claim** takes the run's frontier step (lowest unresolved ordinal) —

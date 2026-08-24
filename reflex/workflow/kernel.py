@@ -957,6 +957,76 @@ class WorkflowKernel:
             self._wakeup.set()
         return recorded
 
+    def _workflow_id_of(self, workflow: Any) -> str:
+        """Resolve a workflow argument to its stable identity.
+
+        Args:
+            workflow: A registered workflow class, or a workflow id string.
+
+        Returns:
+            The workflow id.
+
+        Raises:
+            WorkflowRuntimeError: If the workflow is not registered here.
+        """
+        if isinstance(workflow, str):
+            if workflow in self._definitions:
+                return workflow
+        else:
+            defn = self._definitions_by_cls.get(workflow)
+            if defn is not None:
+                return defn.workflow_id
+        known = ", ".join(sorted(self._definitions)) or "<none>"
+        msg = (
+            f"Workflow {workflow!r} is not registered with this runtime; "
+            f"registered: {known}."
+        )
+        raise WorkflowRuntimeError(msg)
+
+    async def find_by_key(self, workflow: Any, request_key: str) -> str | None:
+        """Find the run a business key admitted, if any.
+
+        The request key is already a durable unique index -- it is what makes
+        webhook redelivery idempotent -- so it doubles as the business
+        address of a run: ``order_123`` finds the order's run without anyone
+        having threaded the engine's run id through their own tables.
+
+        Args:
+            workflow: The registered workflow class or its id.
+            request_key: The admission key the run was started under.
+
+        Returns:
+            The run id, or None when the key admitted nothing.
+        """
+        return await self._store.find_by_request_key(
+            self._workflow_id_of(workflow), request_key
+        )
+
+    async def signal_by_key(
+        self,
+        workflow: Any,
+        request_key: str,
+        delivery: ChannelDelivery,
+        *,
+        key: str | None = None,
+    ) -> DeliveryDisposition:
+        """Deliver a signal to the run a business key admitted.
+
+        Args:
+            workflow: The registered workflow class or its id.
+            request_key: The admission key the run was started under.
+            delivery: The addressed payload, e.g. ``Order.shipped(payload)``.
+            key: Sender idempotency key; a repeated key is a no-op.
+
+        Returns:
+            What the store did with the delivery, or ``"unknown_key"`` when
+            the key admitted nothing.
+        """
+        run_id = await self.find_by_key(workflow, request_key)
+        if run_id is None:
+            return "unknown_key"
+        return await self.signal(run_id, delivery, key=key)
+
     async def signal(
         self,
         run_id: str,
