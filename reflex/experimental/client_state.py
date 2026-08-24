@@ -22,6 +22,12 @@ _refs_import = {
 }
 
 
+def _event_arg_name(value_str: str) -> tuple[str, ...]:
+    """Return the event argument name for an event-derived expression."""
+    match = re.match(r"^([A-Za-z_$][0-9A-Za-z_$]*)", value_str)
+    return (match.group(1),) if match else ()
+
+
 def _client_state_ref(var_name: str) -> Var:
     """Get the ref accessor Var for a ClientStateVar.
 
@@ -194,7 +200,7 @@ class ClientStateVar(Var):
 
     @property
     def value(self) -> Var:
-        """Get a placeholder for the Var.
+        """A placeholder for the Var.
 
         This property can only be rendered on the frontend.
 
@@ -235,8 +241,7 @@ class ClientStateVar(Var):
             value_str = str(value_var)
 
             setter = ArgsFunctionOperationBuilder.create(
-                # remove patterns of ["*"] from the value_str using regex
-                args_names=(re.sub(r"(\?\.)?\[\".*\"\]", "", value_str),)
+                args_names=_event_arg_name(value_str)
                 if value_str.startswith("_")
                 else (),
                 return_expr=setter.call(value_var),
