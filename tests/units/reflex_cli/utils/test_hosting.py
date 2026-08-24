@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+from pathlib import Path
+from typing import Any
 from unittest.mock import mock_open
 
 import click
@@ -10,6 +13,7 @@ import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.utils.exceptions import NotAuthenticatedError, TokenValidationError
 from reflex_cli.utils.hosting import (
+    UPLOAD_CHUNK_SIZE,
     AuthenticatedClient,
     ScaleParams,
     ScaleType,
@@ -687,58 +691,363 @@ def test_create_app_omits_provider_when_none(mocker: MockerFixture):
     assert "provider" not in mock_post.call_args.kwargs["json"]
 
 
-def test_create_deployment_forwards_description(mocker: MockerFixture):
-    """A per-deployment note is sent as the multipart description field."""
-    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+def _reservation(deployment_id: str, suffix: str = "") -> dict[str, Any]:
+    """Build a ``/deployments/reserve`` response body.
+
+    Args:
+        deployment_id: The id the reservation minted.
+        suffix: Appended to both signed URLs, to tell one reservation's targets
+            from another's within a test.
+
+    Returns:
+        The response body the reserve endpoint would return.
+    """
+    return {
+        "deployment_id": deployment_id,
+        "backend": {
+            "url": f"https://storage.invalid/backend{suffix}",
+            "headers": {"Content-Type": "application/zip"},
+        },
+        "frontend": {
+            "url": f"https://storage.invalid/frontend{suffix}",
+            "headers": {"Content-Type": "application/zip"},
+        },
+        "expires_in": 1800,
+    }
+
+
+def _put_response(mocker: MockerFixture, status_code: int):
+    """Build a mock storage response for a signed archive PUT.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        status_code: The status the storage service answered with.
+
+    Returns:
+        A mock response, raising on ``raise_for_status`` when it is a refusal.
+    """
+    response = mocker.Mock()
+    response.status_code = status_code
+    if status_code >= 400:
+        response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "refused", request=mocker.Mock(), response=response
+        )
+    else:
+        response.raise_for_status.return_value = None
+    return response
+
+
+@pytest.fixture
+def zip_dir(tmp_path: Path) -> Path:
+    """A directory holding a build's two archives.
+
+    Args:
+        tmp_path: The pytest temporary directory.
+
+    Returns:
+        The directory, with ``backend.zip`` and ``frontend.zip`` written.
+    """
+    (tmp_path / "backend.zip").write_bytes(b"backend archive " * 300)
+    (tmp_path / "frontend.zip").write_bytes(b"frontend archive " * 5000)
+    return tmp_path
+
+
+def _deploy(zip_dir: Path, app_id: str | None = "app-1", **kwargs: Any) -> str:
+    """Run ``create_deployment`` over ``zip_dir`` with the boilerplate filled in.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        app_id: The app to deploy, or None to leave the CLI without one.
+        **kwargs: Overrides for any other ``create_deployment`` argument.
+
+    Returns:
+        Whatever ``create_deployment`` returned.
+    """
+    return create_deployment(**{
+        "zip_dir": zip_dir,
+        "client": _CLIENT,
+        "app_name": "n",
+        "project_id": None,
+        "regions": None,
+        "hostname": None,
+        "vmtype": None,
+        "secrets": None,
+        "packages": None,
+        "strategy": None,
+        "app_id": app_id,
+        **kwargs,
+    })
+
+
+def _capturing_put(
+    mocker: MockerFixture, uploaded: dict[str, bytes], expired: str = ""
+) -> Any:
+    """A stand-in for httpx.put that drains the streamed body it is handed.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        uploaded: Filled in with each URL's uploaded bytes.
+        expired: URLs *not* containing this marker answer 403, the way a
+            presigned URL past its window does. Empty means every URL works.
+
+    Returns:
+        A side effect for a patched ``httpx.put``.
+    """
+
+    def put(url: str, **kwargs: Any):
+        body = b"".join(kwargs["content"])
+        if expired and expired not in url:
+            return _put_response(mocker, 403)
+        uploaded[url] = body
+        return _put_response(mocker, 200)
+
+    return put
+
+
+@pytest.fixture
+def deploy_env(mocker: MockerFixture):
+    """Pin the version strings ``create_deployment`` stamps onto a submission.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
     mocker.patch("importlib.metadata.version", return_value="0.1.99")
     mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
-    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
-    from pathlib import Path
 
-    create_deployment(
-        zip_dir=Path("/tmp"),
-        client=_CLIENT,
-        app_name="n",
-        project_id=None,
-        regions=None,
-        hostname=None,
-        vmtype=None,
-        secrets=None,
-        packages=None,
-        strategy=None,
-        app_id="app-1",
-        description="my note",
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_forwards_description(mocker: MockerFixture, zip_dir: Path):
+    """A per-deployment note is sent as the submit description field."""
+    mock_post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
     )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}))
+
+    _deploy(zip_dir, description="my note")
+
     assert mock_post.call_args.kwargs["data"]["description"] == "my note"
 
 
+@pytest.mark.usefixtures("deploy_env")
 @pytest.mark.parametrize("vmtype", ["c2m2", None])
-def test_create_deployment_forwards_vmtype(mocker: MockerFixture, vmtype: str | None):
+def test_create_deployment_forwards_vmtype(
+    mocker: MockerFixture, zip_dir: Path, vmtype: str | None
+):
     """A requested VM type reaches the submit body; nothing is sent otherwise."""
-    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
-    mocker.patch("importlib.metadata.version", return_value="0.1.99")
-    mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
-    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
-    from pathlib import Path
-
-    create_deployment(
-        zip_dir=Path("/tmp"),
-        client=_CLIENT,
-        app_name="n",
-        project_id=None,
-        regions=None,
-        hostname=None,
-        vmtype=vmtype,
-        secrets=None,
-        packages=None,
-        strategy=None,
-        app_id="app-1",
+    mock_post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
     )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}))
+
+    _deploy(zip_dir, vmtype=vmtype)
+
     data = mock_post.call_args.kwargs["data"]
     if vmtype is None:
         assert "vm_type" not in data
     else:
         assert data["vm_type"] == vmtype
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_uploads_archives_directly(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """The archives go straight to storage and only their id is submitted."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
+    )
+    uploaded: dict[str, bytes] = {}
+    put = mocker.patch("httpx.put", side_effect=_capturing_put(mocker, uploaded))
+
+    assert _deploy(zip_dir) == "dep-1"
+
+    reserve = post.call_args_list[0]
+    assert reserve.args[0].endswith("/api/v1/deployments/reserve")
+    assert reserve.kwargs["json"] == {
+        "app_id": "app-1",
+        "backend_size": (zip_dir / "backend.zip").stat().st_size,
+        "frontend_size": (zip_dir / "frontend.zip").stat().st_size,
+    }
+
+    # Every byte, and only those bytes: the size is signed into the URL, so a
+    # body that does not match it exactly is a signature the store will refuse.
+    assert uploaded == {
+        "https://storage.invalid/backend": (zip_dir / "backend.zip").read_bytes(),
+        "https://storage.invalid/frontend": (zip_dir / "frontend.zip").read_bytes(),
+    }
+    for call in put.call_args_list:
+        name = call.args[0].rsplit("/", 1)[-1] + ".zip"
+        assert call.kwargs["headers"] == {
+            "Content-Type": "application/zip",
+            "Content-Length": str((zip_dir / name).stat().st_size),
+        }
+
+    submit = post.call_args_list[1]
+    assert submit.args[0].endswith("/api/v1/deployments")
+    assert submit.kwargs["data"]["stored_build_id"] == "dep-1"
+    assert submit.kwargs["files"] is None
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_reserves_again_when_the_window_expires(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A lapsed signature is recovered by reserving, and re-uploading both."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, _reservation("dep-2", suffix="-retry")),
+            _ok_body(mocker, "dep-2"),
+        ],
+    )
+    uploaded: dict[str, bytes] = {}
+    mocker.patch(
+        "httpx.put", side_effect=_capturing_put(mocker, uploaded, expired="-retry")
+    )
+
+    assert _deploy(zip_dir) == "dep-2"
+
+    # The second reservation minted a new id naming a new prefix, so both
+    # archives went up under it -- not just the one whose PUT expired.
+    assert set(uploaded) == {
+        "https://storage.invalid/backend-retry",
+        "https://storage.invalid/frontend-retry",
+    }
+    assert post.call_args_list[2].kwargs["data"]["stored_build_id"] == "dep-2"
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_gives_up_after_one_more_window(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """Past two signed windows the link is the problem, and the user is told."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, _reservation("dep-2", suffix="-retry")),
+        ],
+    )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}, expired="never"))
+
+    result = _deploy(zip_dir)
+
+    assert "deployment failed" in result
+    assert "too slow" in result
+    # Two reservations and no submission: nothing was ever in the bucket.
+    assert post.call_count == 2
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_relays_when_the_control_plane_cannot_reserve(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A 404 is the route being absent, so the archives are relayed instead."""
+    missing = mocker.Mock()
+    missing.status_code = 404
+    post = mocker.patch("httpx.post", side_effect=[missing, _ok_body(mocker, "dep-1")])
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir) == "dep-1"
+
+    put.assert_not_called()
+    submit = post.call_args_list[1]
+    assert "stored_build_id" not in submit.kwargs["data"]
+    assert [name for _, (name, _) in submit.kwargs["files"]] == [
+        "backend.zip",
+        "frontend.zip",
+    ]
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_relays_without_an_app_id(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """With no app id there is nothing to reserve against, so nothing is."""
+    post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir, app_id=None) == "dep-1"
+
+    put.assert_not_called()
+    post.assert_called_once()
+    assert post.call_args.kwargs["files"] is not None
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_surfaces_a_refused_reservation(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """What the control plane said about the refusal is what the user reads."""
+    detail = "backend.zip is 0 bytes; an archive must be between 1 byte and 5 GiB"
+    post = mocker.patch("httpx.post", return_value=_error(mocker, 400, detail))
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir) == f"deployment failed: {detail}"
+
+    put.assert_not_called()
+    post.assert_called_once()
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_surfaces_an_unreachable_control_plane(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A reserve that never gets an answer is reported, not raised at the user."""
+    mocker.patch("httpx.post", side_effect=httpx.ConnectError("no route to host"))
+    put = mocker.patch("httpx.put")
+
+    result = _deploy(zip_dir)
+
+    assert result.startswith(
+        "deployment failed: could not reach the deployment service"
+    )
+    put.assert_not_called()
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_a_failed_archive_abandons_the_other_mid_stream(
+    mocker: MockerFixture, tmp_path: Path
+):
+    """One archive failing stops the other rather than letting it finish."""
+    chunks = 8
+    (tmp_path / "backend.zip").write_bytes(b"b")
+    (tmp_path / "frontend.zip").write_bytes(b"f" * (chunks * UPLOAD_CHUNK_SIZE))
+    mocker.patch("httpx.post", return_value=_ok_body(mocker, _reservation("dep-1")))
+    read = {}
+
+    def put(url: str, **kwargs: Any):
+        if "backend" in url:
+            return _put_response(mocker, 500)
+        read[url] = 0
+        for chunk in kwargs["content"]:
+            time.sleep(0.05)
+            read[url] += len(chunk)
+        return _put_response(mocker, 200)
+
+    mocker.patch("httpx.put", side_effect=put)
+
+    result = _deploy(tmp_path)
+
+    # The backend's failure is the one worth reporting, and the frontend stopped
+    # partway rather than streaming megabytes into a deployment that cannot be.
+    assert (
+        result == "deployment failed: could not upload the build to storage: HTTP 500"
+    )
+    assert read["https://storage.invalid/frontend"] < chunks * UPLOAD_CHUNK_SIZE
 
 
 def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
