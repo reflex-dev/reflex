@@ -7,6 +7,7 @@ from reflex_components_internal.blocks.demo_form import demo_form_dialog
 import reflex as rx
 
 RENDER_PROP_PATTERN = re.compile(r"render:\(jsx\((\w+)")
+TRIGGER_LABEL = "Show me the demo form"
 
 
 def test_demo_form_dialog_omits_trigger_when_not_given() -> None:
@@ -21,7 +22,11 @@ def test_demo_form_dialog_omits_trigger_when_not_given() -> None:
 
 def test_demo_form_dialog_renders_given_trigger() -> None:
     """A dialog with a trigger renders it through the trigger's render prop."""
-    rendered = str(demo_form_dialog(trigger=rx.el.button("Book a Demo")))
+    # The dialog body has fixed copy of its own, so the label must be one that
+    # only the trigger can contribute.
+    assert TRIGGER_LABEL not in str(demo_form_dialog())
+
+    rendered = str(demo_form_dialog(trigger=rx.el.button(TRIGGER_LABEL)))
 
     assert "Dialog.Trigger" in rendered
-    assert "Book a Demo" in rendered
+    assert TRIGGER_LABEL in rendered
