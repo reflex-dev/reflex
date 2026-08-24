@@ -596,7 +596,10 @@ jobs:
 
       # The dynamic-versioning backend reads the version off the newest tag, so
       # tagging the local checkout is what makes the wheels carry `version`.
+      # `shell: bash` because a Windows leg would otherwise run this under
+      # PowerShell, where `$TAG` is not the environment variable.
       - run: git tag "$TAG"
+        shell: bash
         env:
           TAG: ${{ inputs.tag }}
 
@@ -810,6 +813,10 @@ a flag for running the same command by hand.
 - **Detection fails closed.** A broken lockstep pair, a version the branch may
   not publish, or a `*.dev` pin stops the batch rather than shipping something
   uninstallable.
+- **Every step names its shell.** The generated `run:` steps declare `shell:
+  bash`, so a `defaults.run.shell` added to one of these files — or a runner
+  whose default is not bash — cannot change how a release-critical script is
+  interpreted, or drop the `-e`/`-o pipefail` a failing step relies on.
 
 ## License
 
