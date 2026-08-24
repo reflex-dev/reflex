@@ -92,6 +92,10 @@ def git_show(root: Path, ref: str, rel_path: str) -> str | None:
 def _log_message(root: Path, args: list[str], rel_path: str) -> str | None:
     """Return the message of the first commit a path-limited ``git log`` selects.
 
+    The path is passed as a ``:(literal)`` pathspec: a filename holding ``*``,
+    ``?`` or brackets is a glob to git, which would read some other file's
+    history.
+
     Args:
         root: The repository root.
         args: Extra ``git log`` arguments placed before the pathspec.
@@ -101,7 +105,15 @@ def _log_message(root: Path, args: list[str], rel_path: str) -> str | None:
         The commit message, or None when the log selected no commit.
     """
     result = subprocess.run(
-        ["git", "log", *args, "--max-count=1", "--format=%B", "--", rel_path],
+        [
+            "git",
+            "log",
+            *args,
+            "--max-count=1",
+            "--format=%B",
+            "--",
+            f":(literal){rel_path}",
+        ],
         cwd=root,
         capture_output=True,
         text=True,

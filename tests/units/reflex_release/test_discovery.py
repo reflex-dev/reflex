@@ -227,6 +227,21 @@ def test_associate_ignores_the_history_of_a_reused_path(
     assert "::warning::" in capsys.readouterr().out
 
 
+def test_associate_matches_a_glob_like_filename_literally(
+    config: Config, repo: Path
+) -> None:
+    """A fragment name holding brackets is a path, not a git pathspec."""
+    commit_fragment(
+        config, "widget-core", "+a[b].feature.md", "feat: the real one (#222)"
+    )
+    commit_fragment(config, "widget-core", "+ab.feature.md", "feat: a sibling (#111)")
+
+    assert associate_orphan_fragments(config, "widget-core") == [
+        ("+a[b].feature.md", "222.feature.md"),
+        ("+ab.feature.md", "111.feature.md"),
+    ]
+
+
 def test_associate_leaves_numbered_fragments_alone(config: Config, repo: Path) -> None:
     commit_fragment(config, "widget-core", "7.feature.md", "feat: a thing (#42)")
 
