@@ -1,0 +1,1 @@
+`AppHarness` starts the frontend dev server with the `development` export condition enabled, fixing "Frontend did not start" on node-less (bun-only) installs where react-router's dev CLI restart guard trips.
