@@ -327,6 +327,36 @@ exclude_also = [
 [tool.coverage.html]
 directory = "coverage_html_report"
 
+[tool.reflex-release]
+# The release path runs the reflex-release bundled in this repository, resolved
+# from uv.lock, rather than a version published to PyPI. That pins the whole
+# pipeline to one commit: the workflows below are generated from the templates
+# in packages/reflex-release, and the sync --check on every pull request
+# compares them against the templates of that same commit. A workflow edited by
+# hand and a template updated without regenerating are both drift, and both
+# fail the same check.
+cli-command = "uv run --frozen --package reflex-release reflex-release"
+root-package = "reflex"
+root-source-dirs = ["reflex"]
+packages-dir = "packages"
+package-source-subdirs = ["src"]
+# Changelog dates and r/pre-<date> branch names are stamped in the project's
+# home timezone, so an evening release is not dated tomorrow by a UTC runner.
+release-timezone = "America/Los_Angeles"
+# No changelog, no news fragments: patch-released on every push to main that
+# touches them.
+internal-packages = ["reflex-components-internal", "reflex-site-shared"]
+# Ships inside the docs site rather than to PyPI, so pull requests touching it
+# need no news fragment.
+changelog-exempt-packages = ["integrations-docs"]
+
+# reflex's metadata pins reflex-base exactly, so the two always release together
+# at one version and reflex uploads only after reflex-base is on PyPI.
+[[tool.reflex-release.lockstep]]
+members = ["reflex", "reflex-base"]
+publish-last = ["reflex"]
+pin-exact = true
+
 [tool.towncrier]
 # Shared monorepo config. package/name intentionally empty — each invocation
 # passes --dir <package_path> --name <package> --version <vX.Y.Z> to target a
