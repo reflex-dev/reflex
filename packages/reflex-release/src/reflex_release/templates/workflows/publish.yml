@@ -108,6 +108,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}
+        shell: bash
         run: @@CLI@@ prepare-publish
 @@CUSTOM_DEV_PIN_STEP@@
 
@@ -134,6 +135,7 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
+        shell: bash
         run: @@CLI@@ pin-lockstep
 
       # A *.dev dependency pin references an unpublished version, so it must
@@ -144,6 +146,7 @@ jobs:
       - name: Reject development-release dependency pins
         env:
           PACKAGE: ${{ inputs.package }}
+        shell: bash
         run: @@CLI@@ check-dev-pins "$PACKAGE"
 
       # The dynamic versioning backend derives each package's version from the
@@ -153,6 +156,7 @@ jobs:
       - name: Tag local checkout
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
+        shell: bash
         run: git tag "$TAG"
 
       # --out-dir is absolute so the artifacts land in the repository root
@@ -162,6 +166,7 @@ jobs:
       - name: Build
         env:
           BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
+        shell: bash
         run: uv build --directory "$BUILD_DIR" --out-dir "$GITHUB_WORKSPACE/dist"
 
       - name: Upload the built distribution files
@@ -213,6 +218,7 @@ jobs:
           merge-multiple: true
 
       - name: Flatten the downloaded artifacts
+        shell: bash
         run: |
           set -euo pipefail
           # mkdir, because no matching artifact leaves nothing behind at all —
@@ -231,6 +237,7 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
+        shell: bash
         run: @@CLI@@ verify-dist
 
       - name: Repository-specific post-build checks
@@ -240,6 +247,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
           DIST_DIR: dist
+        shell: bash
         run: bash .github/scripts/publish/post_build.sh
 
       - name: Extract release notes from changelog
@@ -247,6 +255,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
           NOTES_PATH: release_notes.md
+        shell: bash
         run: @@CLI@@ extract-notes
 
       # The manifest covers exactly the files that go to PyPI. It lets the
@@ -255,6 +264,7 @@ jobs:
       # front of the approver (job summary), and it is attached to the GitHub
       # release so the record of what a version contains outlives this run.
       - name: Write checksum manifest
+        shell: bash
         run: |
           set -euo pipefail
           # Bare filenames, covering exactly the files that go to PyPI: the
@@ -301,6 +311,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ALLOW_SELF_REVIEW: "@@ALLOW_SELF_REVIEW@@"
+        shell: bash
         run: |
           set -euo pipefail
           # Fail closed: uploads must never run unattended. If this job started
@@ -348,12 +359,14 @@ jobs:
           name: publish-${{ inputs.package }}
 
       - name: Verify artifact integrity
+        shell: bash
         run: cd dist && sha256sum -c ../SHA256SUMS
 
       # --check-url makes a retried run skip files that already made it to PyPI
       # (e.g. when the upload succeeded but tagging failed), instead of erroring
       # on the duplicate upload.
       - name: Publish
+        shell: bash
         run: uv publish --check-url https://pypi.org/simple/ dist/*
 
   tag-and-release:
@@ -382,6 +395,7 @@ jobs:
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: @@CLI@@ push-tag
 
       - name: Create GitHub release
@@ -394,5 +408,6 @@ jobs:
           NOTES_PATH: release_notes.md
           CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: @@CLI@@ create-release
 @@POST_RELEASE_STEP@@
