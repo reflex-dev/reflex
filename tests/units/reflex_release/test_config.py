@@ -8,7 +8,13 @@ from pathlib import Path
 import pytest
 from packaging.version import Version
 from reflex_release.actions import ReleaseError
-from reflex_release.config import Config, is_final, load_config
+from reflex_release.config import (
+    DEFAULT_PYTHON_VERSION,
+    DEFAULT_UV_VERSION,
+    Config,
+    is_final,
+    load_config,
+)
 
 
 def write_config(repo: Path, body: str) -> None:
@@ -266,12 +272,49 @@ def test_no_lockstep_by_default(config: Config) -> None:
             'root-package = "mypkg"\ndispatch-package-inputs = "maybe"\n',
             "must be one of",
         ),
+        (
+            'root-package = "mypkg"\nuv-version = 12\n',
+            "uv-version must be a string",
+        ),
+        # The pins are interpolated into a quoted YAML scalar, so anything that
+        # could end the scalar or open an expression is rejected outright.
+        (
+            'root-package = "mypkg"\nuv-version = \'0.1" # \'\n',
+            "uv-version must be a version or specifier",
+        ),
+        (
+            'root-package = "mypkg"\npython-version = "${{ secrets.X }}"\n',
+            "python-version must be a version or specifier",
+        ),
     ],
 )
 def test_invalid_config(repo: Path, body: str, message: str) -> None:
     write_config(repo, body)
     with pytest.raises(ReleaseError, match=message):
         load_config(repo)
+
+
+def test_version_pins_default_to_the_tools_own(config: Config) -> None:
+    assert config.uv_version == DEFAULT_UV_VERSION
+    assert config.python_version == DEFAULT_PYTHON_VERSION
+
+
+@pytest.mark.parametrize(
+    "pin", ["0.12.5", "latest", ">=1.2", "3.14", "pypy-3.10", "1.2.*"]
+)
+def test_version_pins_accept_versions_and_specifiers(repo: Path, pin: str) -> None:
+    write_config(repo, f'root-package = "mypkg"\nuv-version = "{pin}"\n')
+    assert load_config(repo).uv_version == pin
+
+
+def test_version_pins_can_be_disabled(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\nuv-version = ""\npython-version = "  "\n',
+    )
+    config = load_config(repo)
+    assert config.uv_version == ""
+    assert config.python_version == ""
 
 
 def test_missing_table(tmp_path: Path) -> None:

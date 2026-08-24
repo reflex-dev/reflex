@@ -96,11 +96,11 @@ package's `CHANGELOG.md` under a new version heading and landing that change on
 a release branch — never by tagging manually. The pieces:
 
 1. **Dispatch release** (`dispatch_release.yml`, run from the Actions tab)
-   takes a release action and a comma-separated list of packages, computes
-   the next version(s), runs towncrier, and delivers the changelog bump.
-   Leaving the package list empty auto-selects the packages with pending news
-   fragments (for `release-from-prerelease`: the packages whose changelog is
-   topped by an alpha). Details:
+   selects packages and a release action, computes the next version(s), runs
+   towncrier, and delivers the changelog bump. Leaving every package
+   unchecked auto-selects the packages with pending news fragments (for
+   `release-from-prerelease`: the packages whose changelog is topped by an
+   alpha). Details:
    - *Prerelease actions* (`new-prerelease-*`, `continued-prerelease`) push
      alpha versions straight to an `r/pre-<date>` branch (continued
      prereleases push back to the `r/pre-*` branch they are dispatched on);
@@ -115,8 +115,10 @@ a release branch — never by tagging manually. The pieces:
      `release-from-prerelease` collapses the accumulated alpha sections into
      one final-version section — alpha headings never ship in a final
      changelog.
-   - `reflex` and `reflex-base` are a lockstep pair: selecting either one
-     releases both at the same version.
+   - `reflex` and `reflex-base` are a lockstep pair and share one checkbox:
+     selecting it releases both at the same version. The checkboxes are
+     generated from the package list, so adding or removing a package means
+     re-running `uv run reflex-release sync`.
 2. **Release from changelog** (`release_from_changelog.yml`) runs on every push
    to `main`, `r/pre-*`, and `r/hotfix/**`: any package whose newest changelog
    version has no git tag gets built and queued for publishing. Final

@@ -81,6 +81,14 @@ single-package repository usually needs no more than the first two keys.
 # from; bump it and re-run `sync` to upgrade.
 cli-command = "uvx reflex-release@0.1.0"
 
+# The uv and Python the generated workflows install, written into every one of
+# them verbatim so the release path is reproducible. Both default to a version
+# this tool pins, so upgrading reflex-release moves them too — and `sync
+# --check` reports that as drift until you regenerate. Set either one to keep
+# your own cadence, or to "" to install whatever setup-uv defaults to.
+uv-version = "0.12.5"
+python-version = "3.14.7"
+
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
 # who can release, and one of them can carry a release through end to end. Set
@@ -138,7 +146,7 @@ post-release-workflow = "docs_publish.yml"
 
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
-# checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
+# checkboxes while they fit under GitHub's twenty-input workflow_dispatch limit,
 # free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
@@ -457,6 +465,10 @@ job this design keeps free of everything but the upload.
 
 ### Supply chain
 
+Every generated workflow installs uv and Python at the exact versions
+`uv-version` and `python-version` name, so the toolchain the release path runs
+on does not move on its own.
+
 The workflows run `uvx reflex-release@<pinned version>`. A published PyPI
 version is immutable, so the pinned tool cannot change under you — but its
 dependencies (`packaging`, `towncrier`) resolve fresh on every run, and the tool
@@ -495,9 +507,10 @@ Selecting nothing auto-selects: packages with pending news fragments, or — for
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
-package. The pull-request drift check catches it if you forget. Past ten
-packages (GitHub's `workflow_dispatch` input limit) the form falls back to a
-comma-separated text field; see `dispatch-package-inputs`.
+package. The pull-request drift check catches it if you forget. Past twenty
+packages (GitHub's `workflow_dispatch` input limit, one of which the release
+action takes) the form falls back to a comma-separated text field; see
+`dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |

@@ -57,8 +57,9 @@ CORE_WORKFLOWS = (
     "publish.yml",
 )
 
-#: ``workflow_dispatch`` accepts at most ten inputs, one of which is the action.
-MAX_DISPATCH_CHECKBOXES = 9
+#: ``workflow_dispatch`` accepts at most twenty inputs, one of which is the
+#: action.
+MAX_DISPATCH_CHECKBOXES = 19
 
 #: Workflow scaffolded only for repositories that declare internal packages.
 INTERNAL_WORKFLOW = "auto_release_internal.yml"
@@ -320,6 +321,32 @@ def _selects_package(packages: tuple[str, ...]) -> str:
     return f"contains(fromJson('{listing}'), inputs.package)"
 
 
+def _uv_setup_block(config: Config) -> str:
+    """Render the ``with:`` block pinning the uv and Python the workflows use.
+
+    Every generated workflow installs uv the same way, so the pins live in one
+    rendered block rather than in each template. They are written verbatim, so a
+    repository that has not overridden them sees a bumped default as workflow
+    drift the next ``sync --check`` reports.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The block, indented under a ``uses: astral-sh/setup-uv`` step, or an
+        empty string when neither version is pinned.
+    """
+    pins = [
+        f'          {key}: "{value}"'
+        for key, value in (
+            ("version", config.uv_version),
+            ("python-version", config.python_version),
+        )
+        if value
+    ]
+    return "\n".join(["        with:", *pins]) if pins else ""
+
+
 def _custom_build_note(config: Config) -> str:
     """Render the header comment describing the custom build stage.
 
@@ -476,6 +503,7 @@ def render(name: str, config: Config) -> str:
     substitutions = {
         "@@HEADER@@": header,
         "@@CLI@@": cli,
+        "@@UV_SETUP_WITH@@": _uv_setup_block(config),
         "@@MAIN_BRANCH@@": config.main_branch,
         "@@PRERELEASE_PREFIX@@": config.prerelease_branch_prefix,
         "@@HOTFIX_PREFIX@@": config.hotfix_branch_prefix,

@@ -27,6 +27,23 @@ TOOL_TABLE = "reflex-release"
 #: The setting naming the workflow to dispatch after each published tag.
 POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
 
+#: The uv release the generated workflows install. It is written verbatim into
+#: every workflow, so bumping it here surfaces in each consumer repository as
+#: workflow drift the next ``sync --check`` reports — which is the point: the
+#: tool and the release path it generates move together. A repository that wants
+#: its own cadence sets ``uv-version``.
+DEFAULT_UV_VERSION = "0.12.5"
+
+#: The Python the generated workflows run uv with, pinned for the same reason. A
+#: repository whose packages cannot build on it sets ``python-version``.
+DEFAULT_PYTHON_VERSION = "3.14.7"
+
+#: What ``uv-version`` and ``python-version`` may contain. Both are interpolated
+#: into a double-quoted YAML scalar in the generated workflows, so the allowed
+#: characters are those of a version or a specifier and nothing that could end
+#: the scalar or open a ``${{ }}`` expression.
+_VERSION_PIN_RE = re.compile(r"[A-Za-z0-9<>=~!^][A-Za-z0-9._+*,<>=~!^-]*")
+
 #: The ``workflow_dispatch`` inputs that workflow is dispatched with, in the
 #: order they are passed. This is the contract a consumer repository writes its
 #: post-release workflow against, so the payload built by ``post-release``, the
@@ -42,8 +59,10 @@ _KNOWN_KEYS = frozenset({
     "root-package",
     "root-source-dirs",
     "packages-dir",
+    "python-version",
     "package-source-subdirs",
     "release-timezone",
+    "uv-version",
     "main-branch",
     "prerelease-branch-prefix",
     "hotfix-branch-prefix",
@@ -132,6 +151,10 @@ class Config:
             self-review, so every upload needs a second person.
         cli_command: How the scaffolded workflows invoke this tool. ``init``
             writes it pinned to the version that generated them.
+        uv_version: The uv release the generated workflows install, pinned
+            verbatim; empty installs whatever setup-uv defaults to.
+        python_version: The Python those workflows run uv with, pinned the same
+            way; empty leaves the choice to uv.
         dispatch_package_inputs: How the Dispatch release workflow asks which
             packages to release — ``checkboxes``, a free-text ``text`` field, or
             ``auto`` (checkboxes while they fit under the GitHub input limit).
@@ -172,6 +195,8 @@ class Config:
     root: Path
     allow_self_review: bool = True
     cli_command: str = "uvx reflex-release"
+    uv_version: str = DEFAULT_UV_VERSION
+    python_version: str = DEFAULT_PYTHON_VERSION
     dispatch_package_inputs: str = "auto"
     news_directory: str = "news"
     changelog_filename: str = "CHANGELOG.md"
@@ -603,6 +628,27 @@ def _string(
     return value
 
 
+def _version_pin(table: dict, key: str, default: str) -> str:
+    """Read a version pin destined for a quoted YAML scalar.
+
+    Args:
+        table: The table to read from.
+        key: The setting name.
+        default: The value to use when the key is absent.
+
+    Returns:
+        The configured pin, or ``""`` to leave that version unpinned.
+    """
+    value = _string(table, key, default).strip()
+    if value and not _VERSION_PIN_RE.fullmatch(value):
+        fail(
+            f"[tool.{TOOL_TABLE}] {key} must be a version or specifier such as "
+            f'"1.2.3", ">=1.2" or "latest" (got {value!r}); leave it empty to '
+            "install whatever the setup action defaults to"
+        )
+    return value
+
+
 def _boolean(table: dict, key: str, default: bool) -> bool:
     """Read a boolean setting.
 
@@ -820,6 +866,8 @@ def load_config(root: Path) -> Config:
         root=root,
         allow_self_review=_boolean(table, "allow-self-review", True),
         cli_command=_string(table, "cli-command", "uvx reflex-release"),
+        uv_version=_version_pin(table, "uv-version", DEFAULT_UV_VERSION),
+        python_version=_version_pin(table, "python-version", DEFAULT_PYTHON_VERSION),
         dispatch_package_inputs=_string(table, "dispatch-package-inputs", "auto"),
         news_directory=towncrier.get("directory") or "news",
         changelog_filename=towncrier.get("filename") or "CHANGELOG.md",

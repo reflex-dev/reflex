@@ -68,11 +68,78 @@ on:
           - release-patch
           - release-minor
           - release-major
-      packages:
-        description: "Packages to release (comma-separated; empty auto-selects)"
-        required: false
-        type: string
-        default: ""
+      reflex:
+        description: "reflex (with reflex-base)"
+        type: boolean
+        default: false
+      hatch_reflex_pyi:
+        description: "hatch-reflex-pyi"
+        type: boolean
+        default: false
+      integrations_docs:
+        description: "integrations-docs"
+        type: boolean
+        default: false
+      reflex_components_code:
+        description: "reflex-components-code"
+        type: boolean
+        default: false
+      reflex_components_core:
+        description: "reflex-components-core"
+        type: boolean
+        default: false
+      reflex_components_dataeditor:
+        description: "reflex-components-dataeditor"
+        type: boolean
+        default: false
+      reflex_components_gridjs:
+        description: "reflex-components-gridjs"
+        type: boolean
+        default: false
+      reflex_components_lucide:
+        description: "reflex-components-lucide"
+        type: boolean
+        default: false
+      reflex_components_markdown:
+        description: "reflex-components-markdown"
+        type: boolean
+        default: false
+      reflex_components_moment:
+        description: "reflex-components-moment"
+        type: boolean
+        default: false
+      reflex_components_plotly:
+        description: "reflex-components-plotly"
+        type: boolean
+        default: false
+      reflex_components_radix:
+        description: "reflex-components-radix"
+        type: boolean
+        default: false
+      reflex_components_react_player:
+        description: "reflex-components-react-player"
+        type: boolean
+        default: false
+      reflex_components_recharts:
+        description: "reflex-components-recharts"
+        type: boolean
+        default: false
+      reflex_components_sonner:
+        description: "reflex-components-sonner"
+        type: boolean
+        default: false
+      reflex_docgen:
+        description: "reflex-docgen"
+        type: boolean
+        default: false
+      reflex_hosting_cli:
+        description: "reflex-hosting-cli"
+        type: boolean
+        default: false
+      reflex_release:
+        description: "reflex-release"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -95,6 +162,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
       - name: Plan versions
         id: plan
         env:
@@ -102,7 +172,24 @@ jobs:
           # Each unselected package contributes an empty string, so selecting
           # nothing leaves PACKAGES blank and the planner auto-selects.
           PACKAGES: >-
-            ${{ inputs.packages }}
+            ${{ inputs.reflex && 'reflex,reflex-base' || '' }}
+            ${{ inputs.hatch_reflex_pyi && 'hatch-reflex-pyi' || '' }}
+            ${{ inputs.integrations_docs && 'integrations-docs' || '' }}
+            ${{ inputs.reflex_components_code && 'reflex-components-code' || '' }}
+            ${{ inputs.reflex_components_core && 'reflex-components-core' || '' }}
+            ${{ inputs.reflex_components_dataeditor && 'reflex-components-dataeditor' || '' }}
+            ${{ inputs.reflex_components_gridjs && 'reflex-components-gridjs' || '' }}
+            ${{ inputs.reflex_components_lucide && 'reflex-components-lucide' || '' }}
+            ${{ inputs.reflex_components_markdown && 'reflex-components-markdown' || '' }}
+            ${{ inputs.reflex_components_moment && 'reflex-components-moment' || '' }}
+            ${{ inputs.reflex_components_plotly && 'reflex-components-plotly' || '' }}
+            ${{ inputs.reflex_components_radix && 'reflex-components-radix' || '' }}
+            ${{ inputs.reflex_components_react_player && 'reflex-components-react-player' || '' }}
+            ${{ inputs.reflex_components_recharts && 'reflex-components-recharts' || '' }}
+            ${{ inputs.reflex_components_sonner && 'reflex-components-sonner' || '' }}
+            ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
+            ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
+            ${{ inputs.reflex_release && 'reflex-release' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan
       - name: Materialize changelogs
