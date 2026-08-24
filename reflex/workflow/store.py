@@ -333,7 +333,7 @@ class RunStore(Protocol):
         run_id: str,
         wait_key: str,
         dedupe_key: str,
-        payload: dict[str, Any],
+        payload: Any,
         now: float,
     ) -> DeliveryDisposition:
         """Deliver a payload to a run, resolving its wait or buffering it.
@@ -1286,7 +1286,7 @@ class MemoryRunStore:
         run_id: str,
         wait_key: str,
         dedupe_key: str,
-        payload: dict[str, Any],
+        payload: Any,
         now: float,
     ) -> DeliveryDisposition:
         """Deliver a payload to a run, resolving its wait or buffering it.
@@ -3651,7 +3651,7 @@ class SqliteRunStore:
         run_id: str,
         wait_key: str,
         dedupe_key: str,
-        payload: dict[str, Any],
+        payload: Any,
         now: float,
     ) -> DeliveryDisposition:
         """Deliver a payload to a run, resolving its wait or buffering it.

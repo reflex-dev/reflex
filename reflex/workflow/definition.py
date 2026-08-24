@@ -24,6 +24,7 @@ from reflex_base.workflow import (
     RateLimit,
     Retry,
     ScheduleTrigger,
+    Signal,
     Singleton,
     Throttle,
     Trigger,
@@ -117,6 +118,7 @@ class WorkflowDefinition:
         handler_ids_by_name: Map from Python method name to handler id.
         roots: Handler ids that declare a trigger and may start runs.
         fields: Run-state field schemas in declaration order.
+        channels: Signal channels the class declares, keyed by channel name.
     """
 
     workflow_id: str
@@ -129,6 +131,7 @@ class WorkflowDefinition:
     handler_ids_by_name: Mapping[str, str]
     roots: tuple[str, ...]
     fields: tuple[FieldSchema, ...]
+    channels: Mapping[str, Signal]
 
 
 def _error(workflow_cls: type, msg: str) -> WorkflowDefinitionError:
@@ -675,6 +678,35 @@ def _compute_digest(
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+def channels_of(state_cls: type) -> dict[str, Signal]:
+    """Collect the signal channels a workflow class declares.
+
+    Args:
+        state_cls: The workflow class.
+
+    Returns:
+        Declared channels keyed by channel name.
+
+    Raises:
+        WorkflowDefinitionError: If two declarations share one channel name.
+    """
+    channels: dict[str, Signal] = {}
+    for klass in reversed(state_cls.__mro__):
+        for value in vars(klass).values():
+            if not isinstance(value, Signal):
+                continue
+            existing = channels.get(value.name)
+            if existing is not None and existing is not value:
+                msg = (
+                    f"Workflow {state_cls.__name__}: two rx.Signal declarations "
+                    f"share the channel name {value.name!r}; a delivery could "
+                    "not say which one it means."
+                )
+                raise WorkflowDefinitionError(msg)
+            channels[value.name] = value
+    return channels
+
+
 def unbound_params(handler: HandlerDefinition, supplied: set[str]) -> set[str]:
     """Parameters a handler requires that a recorded payload cannot fill.
 
@@ -731,6 +763,20 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
     durable_names = frozenset(defn.name for defn in handlers.values())
     for defn in handlers.values():
         _validate_handler_body(workflow_cls, defn, durable_names)
+    for defn in handlers.values():
+        if isinstance(defn.trigger, ScheduleTrigger):
+            unfillable = sorted(unbound_params(defn, set()))
+            if unfillable:
+                # A schedule fires with no caller to supply arguments, so a
+                # required parameter here means every occurrence would admit
+                # and immediately suspend. That is an authoring error, and
+                # authoring errors surface at compile, not at 2am.
+                raise _error(
+                    workflow_cls,
+                    f"schedule root {defn.name!r} requires parameters "
+                    f"{unfillable}, which a schedule occurrence cannot "
+                    "supply; give them defaults.",
+                )
     roots = tuple(
         defn.id
         for defn in sorted(handlers.values(), key=lambda d: d.id)
@@ -757,4 +803,5 @@ def compile_workflow(workflow_cls: type[BaseState]) -> WorkflowDefinition:
         handler_ids_by_name={defn.name: defn.id for defn in handlers.values()},
         roots=roots,
         fields=fields,
+        channels=channels_of(workflow_cls),
     )

@@ -12,10 +12,12 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from reflex_base.utils import console
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from reflex.workflow.validation import canonical_payload, missing_args, mistyped_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine, Mapping
@@ -185,18 +187,35 @@ def _legacy_dedupe_keys(trigger: WebhookTrigger, payload: Any) -> tuple[str, ...
 def _root_args(handler: HandlerDefinition, payload: Any) -> dict[str, Any]:
     """Map a decoded payload onto the root handler's parameters.
 
+    One parameter can mean two things: "hand me the event object" or "hand
+    me this one field". The declared type decides -- if the whole payload
+    satisfies the parameter's hint it is passed whole, and otherwise a dict
+    payload carrying the parameter's name is unpacked to that field. Before
+    types were consulted, ``def on_paid(self, id: str)`` received the entire
+    event dict as ``id`` and nothing ever said so.
+
     Args:
         handler: The root handler definition.
         payload: The decoded request payload.
 
     Returns:
-        The keyword arguments to start the root with.
+        The keyword arguments to start the root with; absent object fields
+        are omitted rather than filled with None, so the boundary's
+        missing-argument check can see them.
     """
     if not handler.params:
         return {}
     if len(handler.params) == 1:
-        return {handler.params[0]: payload}
-    return {name: payload.get(name) for name in handler.params}
+        name = handler.params[0]
+        if (
+            mistyped_args(handler, {name: payload})
+            and isinstance(payload, dict)
+            and name in payload
+            and not mistyped_args(handler, {name: payload[name]})
+        ):
+            return {name: payload[name]}
+        return {name: payload}
+    return {name: payload[name] for name in handler.params if name in payload}
 
 
 def webhook_endpoint(
@@ -255,7 +274,10 @@ def webhook_endpoint(
 
         if route.trigger.model is not None:
             try:
-                TypeAdapter(route.trigger.model).validate_python(payload)
+                # The canonical form -- coercions applied, defaults filled --
+                # is what goes onward. Validating and then passing the raw
+                # payload threw the validation away.
+                payload = canonical_payload(route.trigger.model, payload)
             except ValidationError:
                 return JSONResponse(
                     {"error": "payload does not match the declared model"},
@@ -287,6 +309,21 @@ def webhook_endpoint(
                 status_code=400,
             )
         args = _root_args(route.handler, payload)
+        absent = missing_args(route.handler, args)
+        wrong = mistyped_args(route.handler, args)
+        if absent or wrong:
+            # Refused before any run exists. Admitting would produce a run
+            # that suspends on its first step for a reason the provider is
+            # never told; a 400 naming the arguments is retryable after the
+            # sender fixes their payload, and creates nothing until then.
+            faults = [
+                *(f"missing required argument {name!r}" for name in absent),
+                *wrong,
+            ]
+            return JSONResponse(
+                {"error": f"payload does not fit the handler: {'; '.join(faults)}"},
+                status_code=400,
+            )
         result = await runtime.kernel.start(
             spec(**args) if args else spec,
             request_key=request_key,

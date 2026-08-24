@@ -20,7 +20,7 @@ import traceback
 import uuid
 from typing import TYPE_CHECKING, Any, Final
 
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
@@ -68,6 +68,7 @@ from reflex.workflow.store import (
     StepCompletion,
     _child_admission_events,
 )
+from reflex.workflow.validation import canonical_payload, mistyped_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -712,6 +713,21 @@ class WorkflowKernel:
                 does not match the admitting ingress.
         """
         defn, handler, payload = self._resolve_target(target)
+        unbound = sorted(unbound_params(handler, set(payload)))
+        problems = mistyped_args(handler, payload)
+        if unbound or problems:
+            # Refused before anything is written: admitting this run would
+            # only postpone the same message to its first dispatch, minus the
+            # stack frame that shows the caller which call site is wrong.
+            faults = [
+                *(f"missing required argument {name!r}" for name in unbound),
+                *problems,
+            ]
+            msg = (
+                f"Cannot start {handler.id!r} of {defn.workflow_id!r}: "
+                f"{'; '.join(faults)}."
+            )
+            raise WorkflowDefinitionError(msg)
         declared = getattr(handler.trigger, "kind", None)
         # A handler without a trigger is a mid-flow step, not a root; no
         # ingress -- and no test privilege -- makes it startable.
@@ -957,12 +973,48 @@ class WorkflowKernel:
 
         Returns:
             What the store did with the delivery.
+
+        Raises:
+            WorkflowDefinitionError: If the run's workflow is registered here
+                and does not declare the channel, or the payload does not
+                satisfy the channel's declared model.
         """
+        payload = delivery.payload
+        run = await self._store.get_run(run_id)
+        defn = self._definitions.get(run.workflow_id) if run is not None else None
+        if defn is not None:
+            channel = defn.channels.get(delivery.channel)
+            if channel is None:
+                # A typo'd channel would buffer forever: the store cannot
+                # know the name is wrong, so the sender must hear it here,
+                # from the process that knows what the workflow declares.
+                declared = sorted(defn.channels) or ["<none>"]
+                msg = (
+                    f"Workflow {defn.workflow_id!r} declares no channel "
+                    f"{delivery.channel!r}; declared channels: "
+                    f"{', '.join(declared)}."
+                )
+                raise WorkflowDefinitionError(msg)
+            if channel.model is not None:
+                # Every route into a channel validates the same way --
+                # including deliveries built without Signal.__call__, such
+                # as approval-token redemptions -- and what goes onward is
+                # the canonical form the model promises, not the raw input.
+                try:
+                    payload = canonical_payload(channel.model, payload)
+                except ValidationError as error:
+                    msg = (
+                        f"Channel {delivery.channel!r} of "
+                        f"{defn.workflow_id!r} expects "
+                        f"{channel.model.__name__}: {error.error_count()} "
+                        "validation error(s)."
+                    )
+                    raise WorkflowDefinitionError(msg) from error
         disposition = await self._store.deliver(
             run_id,
             f"sig:{delivery.channel}",
             key or uuid.uuid4().hex,
-            to_run_data({"value": delivery.payload})["value"],
+            to_run_data({"value": payload})["value"],
             self._clock(),
         )
         if disposition == "resolved":
@@ -2193,6 +2245,22 @@ class WorkflowKernel:
                     f"Step payload has arguments {unexpected} that handler "
                     f"{handler.id!r} no longer accepts; restore the parameters "
                     "or cancel the run."
+                ),
+            }
+        wrong = mistyped_args(handler, claim.step.args)
+        if wrong:
+            # A recorded value that no longer fits the parameter's type is a
+            # redeploy problem exactly like a renamed parameter: the payload
+            # was valid when it was recorded and the code changed underneath
+            # it. Dispatching anyway raises from inside the handler and
+            # burns retry attempts on a state no retry can change.
+            return {
+                "reason": "incompatible_payload",
+                "handler_id": handler.id,
+                "detail": (
+                    f"Recorded payload no longer fits handler {handler.id!r}: "
+                    f"{'; '.join(wrong)}. Restore the parameter types, or "
+                    "cancel the run."
                 ),
             }
         return None

@@ -651,5 +651,8 @@ async def test_github_form_encoded_deliveries_are_understood(
     await runtime.kernel.run_until_idle()
     snapshot = await runtime.kernel.get_run(response.json()["run_id"])
     assert snapshot is not None
-    assert snapshot.result == {"sha": "abc123"}, "the wrapped JSON is the payload"
+    assert snapshot.result == "abc123", (
+        "the wrapped JSON is the payload, and a parameter annotated str "
+        "receives its field, not the enclosing object"
+    )
     await runtime.shutdown()

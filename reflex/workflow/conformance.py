@@ -1681,6 +1681,34 @@ async def check_retry_after_exhaustion_restores_waits_as_waits(
     )
 
 
+async def check_none_is_a_legal_payload_everywhere(store: RunStore) -> None:
+    """None is the JSON value null, not an absent column.
+
+    A signal with no payload -- an "approved" ping -- and a journaled
+    substep whose call returned nothing are both everyday shapes, and one
+    store refusing what the others accept is a divergence someone only
+    finds after migrating.
+    """
+    await store.admit(
+        make_run(),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:ping", due_at=0.0),
+        _ADMITTED,
+    )
+    assert await store.deliver("run1", "sig:ping", "d1", None, NOW) == "resolved"
+    steps = await store.get_steps("run1")
+    assert steps[0].args["__payload__"] is None
+
+    await store.admit(make_run("sub1"), make_step("sub1"), _ADMITTED)
+    claim = await store.claim_next(NOW, lease_duration=LEASE)
+    while claim is not None and claim.run.run_id != "sub1":
+        # run1's resolved continuation is claimable too, and stores order
+        # their frontiers differently.
+        claim = await store.claim_next(NOW, lease_duration=LEASE)
+    assert claim is not None
+    assert await store.record_substep("sub1", 0, claim.step.epoch, "notify", None, NOW)
+    assert await store.get_substeps("sub1", 0) == {"notify": None}
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1706,6 +1734,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_list_children_finds_a_joins_branches,
     check_claims_respect_queue_boundaries,
     check_substeps_record_once_and_fence_stale_writers,
+    check_none_is_a_legal_payload_everywhere,
     check_recovery_respects_a_live_lease,
     check_a_terminal_run_refuses_further_control,
     check_finalize_delivers_a_childs_arrival,

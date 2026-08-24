@@ -1183,7 +1183,7 @@ class PostgresRunStore:
         run_id: str,
         wait_key: str,
         dedupe_key: str,
-        payload: dict[str, Any],
+        payload: Any,
         now: float,
     ) -> DeliveryDisposition:
         """Deliver a payload to a run, resolving its wait or buffering it.
@@ -1249,7 +1249,7 @@ class PostgresRunStore:
                     wait_key,
                     dedupe_key,
                     await self._next_inbox_seq(conn, run_id),
-                    _json(payload),
+                    Jsonb(payload),
                     "CONSUMED" if resolves else "PENDING",
                     now,
                 ),
@@ -1457,7 +1457,7 @@ class PostgresRunStore:
                 wait_key,
                 dedupe_key,
                 await self._next_inbox_seq(conn, run_id),
-                _json(payload),
+                Jsonb(payload),
                 now,
             ),
         )
@@ -1553,7 +1553,7 @@ class PostgresRunStore:
                     wait_key,
                     dedupe_key,
                     await self._next_inbox_seq(conn, run_id),
-                    _json(payload),
+                    Jsonb(payload),
                     now,
                 ),
             )
@@ -2375,7 +2375,10 @@ class PostgresRunStore:
                 "INSERT INTO workflow_substeps"
                 " (run_id, ordinal, key, payload, created_at)"
                 " VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
-                (run_id, ordinal, key, _json(payload), now),
+                # Jsonb, not _json: a substep that recorded None recorded
+                # the JSON value null, and the column is NOT NULL because
+                # every journal entry has a payload.
+                (run_id, ordinal, key, Jsonb(payload), now),
             )
             if cursor.rowcount:
                 await self._append_events(

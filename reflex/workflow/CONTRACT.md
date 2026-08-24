@@ -71,6 +71,25 @@ Substep results (`rx.step`) are the deliberate exception: each records in its
 **own** transaction the moment the callable returns, because their purpose is
 to survive a crash that prevents the attempt from ever committing.
 
+### One validation semantics at every boundary
+
+Python starts, HTTP starts, webhooks, signal deliveries, and worker dispatch
+all validate arguments the same way (`reflex.workflow.validation`): required
+parameters must bind, and supplied values must satisfy the declared types.
+A **boundary** refuses before anything is written — an invalid webhook or
+HTTP payload is a 400 and zero runs; an invalid Python start or signal is an
+exception at the call site. **Dispatch** — which judges payloads recorded
+before a redeploy changed the code — suspends the run `NEEDS_ATTENTION`
+instead (§8, `incompatible_payload`) and never consumes retry attempts.
+A payload model declared on a webhook (`model=...`) or channel
+(`rx.Signal(Model)`) is enforced on every route in, including deliveries
+built without `Signal.__call__`, and what goes onward is the **canonical**
+form — coercions applied, defaults filled — not the raw input. A single
+root parameter receives the whole payload when the payload satisfies its
+declared type, and otherwise its same-named field of an object payload; an
+unknown channel is rejected at the sender when the workflow is registered
+in the sending process.
+
 ## 2. When handlers re-execute
 
 A handler runs more than once in exactly two situations, both bounded:
@@ -363,7 +382,7 @@ reason rather than on message text.
 |---|---|---|
 | the run's workflow class is not registered in this process | `unknown_workflow` | step and run `NEEDS_ATTENTION`; re-register and `resume(run)`. Not a failure: a worker that does not serve a workflow must not decide that workflow's fate |
 | the next step's handler no longer exists | `unknown_handler` | step and run `NEEDS_ATTENTION`; restore the handler and `resume(run)`, or cancel |
-| a recorded payload carries arguments the handler no longer accepts | `incompatible_payload` | step and run `NEEDS_ATTENTION`, naming the arguments; restore the parameters or cancel |
+| a recorded payload carries arguments the handler no longer accepts — names it no longer declares, required names it cannot fill, or values its declared types no longer fit | `incompatible_payload` | step and run `NEEDS_ATTENTION`, naming the arguments; restore the parameters (or their types) or cancel. Never consumes retry attempts: retrying cannot change what the code declares |
 | a run allocated more steps than `WorkflowConfig.max_steps` | `max_steps_exceeded` | the committing step succeeds, every other open slot is tombstoned, run `FAILED`. The bound is on a runaway loop, so it fails rather than suspending for a person to approve more of the same |
 | a step's lease lapsed more times than `max_recoveries` | `recovery_budget_exhausted` | run `FAILED` — the complete terminal transition, identical to any other failure: remaining open slots are tombstoned, children are told to stop, and the parent's join hears one `FAILED` arrival. Infrastructure recoveries are free of the retry budget precisely so they can be bounded separately; the bound is what stops a poison step cycling forever |
 | an error's `details` cannot be serialized | — | the reason is preserved and the details are replaced by `{"unserializable": repr(...)}`. Losing the payload never turns a failure into a crash |
