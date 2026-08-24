@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-import re
+import unicodedata
 from collections.abc import Callable
 from typing import Any
 
@@ -24,8 +24,46 @@ _refs_import = {
 
 def _event_arg_name(value_str: str) -> tuple[str, ...]:
     """Return the event argument name for an event-derived expression."""
-    match = re.match(r"^([A-Za-z_$][0-9A-Za-z_$]*)", value_str)
-    return (match.group(1),) if match else ()
+    if not value_str:
+        return ()
+
+    arg_name = value_str[0]
+    if not _is_js_identifier_start(arg_name):
+        return ()
+
+    for char in value_str[1:]:
+        if not _is_js_identifier_part(char):
+            break
+        arg_name += char
+
+    return (arg_name,)
+
+
+def _is_js_identifier_start(char: str) -> bool:
+    """Return whether a character can start a JavaScript identifier."""
+    return char in {"$", "_"} or unicodedata.category(char) in {
+        "Lu",
+        "Ll",
+        "Lt",
+        "Lm",
+        "Lo",
+        "Nl",
+    }
+
+
+def _is_js_identifier_part(char: str) -> bool:
+    """Return whether a character can continue a JavaScript identifier."""
+    return (
+        _is_js_identifier_start(char)
+        or unicodedata.category(char)
+        in {
+            "Mn",
+            "Mc",
+            "Nd",
+            "Pc",
+        }
+        or char in {"\u200c", "\u200d"}
+    )
 
 
 def _client_state_ref(var_name: str) -> Var:
