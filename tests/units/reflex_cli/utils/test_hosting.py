@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
+import threading
 from pathlib import Path
 from typing import Any
 from unittest.mock import mock_open
@@ -18,6 +18,8 @@ from reflex_cli.utils.hosting import (
     ScaleParams,
     ScaleType,
     SecurityReviewError,
+    _archive_chunks,
+    _UploadAbandonedError,
     authenticated_token,
     create_app,
     create_deployment,
@@ -1018,36 +1020,44 @@ def test_create_deployment_surfaces_an_unreachable_control_plane(
     put.assert_not_called()
 
 
+def test_archive_chunks_stop_once_the_other_upload_failed(tmp_path: Path):
+    """The stream ends at the next chunk boundary, not at the end of the file."""
+    archive = tmp_path / "frontend.zip"
+    archive.write_bytes(b"f" * (4 * UPLOAD_CHUNK_SIZE))
+    abandoned = threading.Event()
+
+    chunks = _archive_chunks(archive, lambda _n: None, abandoned)
+    first = next(chunks)
+    abandoned.set()
+    with pytest.raises(_UploadAbandonedError):
+        next(chunks)
+
+    # One chunk off disk, not the other three: the point of abandoning is the
+    # bytes that never go up.
+    assert len(first) == UPLOAD_CHUNK_SIZE
+
+
 @pytest.mark.usefixtures("deploy_env")
-def test_a_failed_archive_abandons_the_other_mid_stream(
-    mocker: MockerFixture, tmp_path: Path
+def test_an_abandoned_archive_does_not_mask_the_real_failure(
+    mocker: MockerFixture, zip_dir: Path
 ):
-    """One archive failing stops the other rather than letting it finish."""
-    chunks = 8
-    (tmp_path / "backend.zip").write_bytes(b"b")
-    (tmp_path / "frontend.zip").write_bytes(b"f" * (chunks * UPLOAD_CHUNK_SIZE))
+    """The archive that actually failed is the one whose error reaches the user."""
     mocker.patch("httpx.post", return_value=_ok_body(mocker, _reservation("dep-1")))
-    read = {}
 
     def put(url: str, **kwargs: Any):
         if "backend" in url:
             return _put_response(mocker, 500)
-        read[url] = 0
-        for chunk in kwargs["content"]:
-            time.sleep(0.05)
-            read[url] += len(chunk)
-        return _put_response(mocker, 200)
+        # What the frontend's stream does once the backend has set the flag.
+        # Raised here rather than raced into, so the assertion below does not
+        # depend on which thread the scheduler runs first.
+        raise _UploadAbandonedError
 
     mocker.patch("httpx.put", side_effect=put)
 
-    result = _deploy(tmp_path)
-
-    # The backend's failure is the one worth reporting, and the frontend stopped
-    # partway rather than streaming megabytes into a deployment that cannot be.
     assert (
-        result == "deployment failed: could not upload the build to storage: HTTP 500"
+        _deploy(zip_dir)
+        == "deployment failed: could not upload the build to storage: HTTP 500"
     )
-    assert read["https://storage.invalid/frontend"] < chunks * UPLOAD_CHUNK_SIZE
 
 
 def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
