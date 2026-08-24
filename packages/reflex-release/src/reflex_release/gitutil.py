@@ -89,28 +89,19 @@ def git_show(root: Path, ref: str, rel_path: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
-def adding_commit_message(root: Path, rel_path: str) -> str | None:
-    """Return the message of the commit that most recently added a file.
+def _log_message(root: Path, args: list[str], rel_path: str) -> str | None:
+    """Return the message of the first commit a path-limited ``git log`` selects.
 
     Args:
         root: The repository root.
+        args: Extra ``git log`` arguments placed before the pathspec.
         rel_path: Repo-relative file path.
 
     Returns:
-        The full commit message, or None when no commit in the local history
-        added the path (an uncommitted file, or a shallow checkout that does not
-        reach the commit).
+        The commit message, or None when the log selected no commit.
     """
     result = subprocess.run(
-        [
-            "git",
-            "log",
-            "--diff-filter=A",
-            "--max-count=1",
-            "--format=%B",
-            "--",
-            rel_path,
-        ],
+        ["git", "log", *args, "--max-count=1", "--format=%B", "--", rel_path],
         cwd=root,
         capture_output=True,
         text=True,
@@ -121,28 +112,48 @@ def adding_commit_message(root: Path, rel_path: str) -> str | None:
     return result.stdout.strip() or None
 
 
-def move_file(root: Path, src: Path, dst: Path) -> None:
-    """Rename a file, keeping git's index in sync when the source is tracked.
+def adding_commit_messages(root: Path, rel_path: str) -> list[str]:
+    """Return the messages of the commits that brought a file into ``HEAD``.
 
-    A tracked file has to move through ``git mv``: a bare rename would leave the
-    deletion of the old path unstaged, and the commands that commit a release
-    stage only the changelogs, so the old path would survive the release.
+    Two candidates, most specific first, because which one carries the pull
+    request number depends on the repository's merge strategy:
+
+    1. the commit that added the path along ``HEAD``'s first-parent line, which
+       is the merge commit of a non-fast-forward merge (``Merge pull request
+       #N``) and the squash commit of a squash merge;
+    2. the commit that created the file anywhere in history, which is that same
+       squash commit, or the branch commit of a non-fast-forward merge.
+
+    The second is what recovers the number when a fragment reaches the branch
+    being released through a merge that is not a pull request — merging ``main``
+    into a prerelease branch to pull new work into the train, say, where the
+    first-parent commit is that plain branch merge.
 
     Args:
         root: The repository root.
-        src: The existing path.
-        dst: The path to move it to.
+        rel_path: Repo-relative file path.
+
+    Returns:
+        The distinct candidate messages, most specific first. Empty when the
+        path is not committed in ``HEAD``: an uncommitted file is not the file
+        an old commit added at the same path (a fragment an earlier release
+        already consumed), so its history says nothing about it.
     """
     if (
         subprocess.run(
-            ["git", "mv", "--", str(src), str(dst)],
+            ["git", "rev-parse", "-q", "--verify", f"HEAD:{rel_path}"],
             cwd=root,
             capture_output=True,
             check=False,
         ).returncode
         != 0
     ):
-        src.rename(dst)
+        return []
+    messages = [
+        _log_message(root, ["--first-parent", "--diff-filter=A"], rel_path),
+        _log_message(root, ["--diff-filter=A"], rel_path),
+    ]
+    return list(dict.fromkeys(message for message in messages if message))
 
 
 def changed_files(root: Path, base_ref: str) -> list[str]:

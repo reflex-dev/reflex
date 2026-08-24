@@ -176,6 +176,57 @@ def test_associate_stages_the_rename(config: Config, repo: Path) -> None:
     ]
 
 
+def test_associate_reads_a_merge_commit_subject(config: Config, repo: Path) -> None:
+    """A repository that lands pull requests as merge commits names them there."""
+    git(repo, "checkout", "-q", "-b", "feature")
+    commit_fragment(config, "widget-core", "+a-thing.feature.md", "add a fragment")
+    git(repo, "checkout", "-q", "main")
+    git(
+        repo,
+        "merge",
+        "--no-ff",
+        "-q",
+        "-m",
+        "Merge pull request #99 from someone/feature",
+        "feature",
+    )
+
+    assert associate_orphan_fragments(config, "widget-core") == [
+        ("+a-thing.feature.md", "99.feature.md")
+    ]
+
+
+def test_associate_looks_past_a_merge_that_is_not_a_pull_request(
+    config: Config, repo: Path
+) -> None:
+    """A prerelease train pulls new work in by merging main, which names no PR."""
+    git(repo, "branch", "r/pre-1")
+    commit_fragment(config, "widget-core", "+a-thing.feature.md", "feat: a thing (#55)")
+    git(repo, "checkout", "-q", "r/pre-1")
+    git(
+        repo, "merge", "--no-ff", "-q", "-m", "Merge branch 'main' into r/pre-1", "main"
+    )
+
+    assert associate_orphan_fragments(config, "widget-core") == [
+        ("+a-thing.feature.md", "55.feature.md")
+    ]
+
+
+def test_associate_ignores_the_history_of_a_reused_path(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A new fragment is not the one an earlier release consumed at that path."""
+    news = config.news_dir("widget-core")
+    commit_fragment(config, "widget-core", "+.feature.md", "feat: an old thing (#7)")
+    (news / "+.feature.md").unlink()
+    commit_all(repo, "release: v0.1.0")
+    (news / "+.feature.md").write_text("A new thing.\n", encoding="utf-8")
+
+    assert associate_orphan_fragments(config, "widget-core") == []
+    assert (news / "+.feature.md").is_file()
+    assert "::warning::" in capsys.readouterr().out
+
+
 def test_associate_leaves_numbered_fragments_alone(config: Config, repo: Path) -> None:
     commit_fragment(config, "widget-core", "7.feature.md", "feat: a thing (#42)")
 

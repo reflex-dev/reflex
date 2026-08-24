@@ -12,7 +12,7 @@ from packaging.version import Version
 from .actions import fail, warning
 from .changelog import DEFAULT_TITLE_FORMAT, latest_version
 from .config import Config, load_pyproject
-from .gitutil import adding_commit_message, latest_tag_version, move_file
+from .gitutil import adding_commit_messages, git_run, latest_tag_version
 
 #: towncrier's default prefix for fragments written before the number is known.
 DEFAULT_ORPHAN_PREFIX = "+"
@@ -202,6 +202,24 @@ def _unused_fragment_name(taken: set[str], issue: str, suffix: str) -> str:
     return candidate
 
 
+def _fragment_pull_request(root: Path, rel_path: str) -> str | None:
+    """Return the pull request number a committed fragment landed through.
+
+    Args:
+        root: The repository root.
+        rel_path: Repo-relative path of the fragment.
+
+    Returns:
+        The number named by the first candidate commit that has one, or None
+        when none of them does.
+    """
+    for message in adding_commit_messages(root, rel_path):
+        number = pull_request_number(message)
+        if number is not None:
+            return number
+    return None
+
+
 def associate_orphan_fragments(config: Config, package: str) -> list[tuple[str, str]]:
     """Rename a package's orphan fragments after the pull request that added them.
 
@@ -221,6 +239,12 @@ def associate_orphan_fragments(config: Config, package: str) -> list[tuple[str, 
 
     Returns:
         The ``(old name, new name)`` pairs that were renamed.
+
+    Raises:
+        ReleaseError: When a fragment cannot be renamed. Only a tracked fragment
+            is ever renamed, so ``git mv`` failing means the worktree is not in
+            the state the release assumes, and a bare rename in its place would
+            leave the orphan behind in the release commit.
     """
     news_dir = config.news_dir(package)
     prefix = orphan_prefix(config)
@@ -237,8 +261,7 @@ def associate_orphan_fragments(config: Config, package: str) -> list[tuple[str, 
         if parsed is None:
             continue
         rel_path = path.relative_to(config.root).as_posix()
-        message = adding_commit_message(config.root, rel_path)
-        number = pull_request_number(message) if message else None
+        number = _fragment_pull_request(config.root, rel_path)
         if number is None:
             warning(
                 f"{rel_path}: no pull request found for the commit that added "
@@ -246,7 +269,10 @@ def associate_orphan_fragments(config: Config, package: str) -> list[tuple[str, 
             )
             continue
         new_name = _unused_fragment_name(taken, number, parsed[1])
-        move_file(config.root, path, news_dir / new_name)
+        # git mv, not a bare rename: the release commit stages only the
+        # changelogs, so an unstaged deletion would leave the orphan behind for
+        # the next release to materialize a second time.
+        git_run(["mv", "--", str(path), str(news_dir / new_name)], config.root)
         taken.add(new_name)
         renamed.append((path.name, new_name))
     return renamed
