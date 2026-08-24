@@ -81,6 +81,17 @@ class TokenManager(ABC):
         for token in self.token_to_socket:
             yield token
 
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket.
+        """
+        return token in self.token_to_socket
+
     @abstractmethod
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID.
@@ -442,6 +453,34 @@ class RedisTokenManager(LocalTokenManager):
         except Exception as e:
             logger.error(f"Redis error getting token owner: {e}")
         return None
+
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        A record owned by this instance is authoritative. A cached record
+        from another instance may be stale (the client may have reconnected
+        elsewhere), so the socket record is refreshed from redis instead,
+        and dropped from the local cache if the client is gone.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket on any instance.
+        """
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and socket_record.instance_id == self.instance_id:
+            return True
+        if await self._get_token_owner(token, refresh=True) is not None:
+            return True
+        if (
+            socket_record is not None
+            and self.token_to_socket.get(token) is socket_record
+        ):
+            self.token_to_socket.pop(token, None)
+            self.sid_to_token.pop(socket_record.sid, None)
+        return False
 
     async def emit_lost_and_found(
         self,

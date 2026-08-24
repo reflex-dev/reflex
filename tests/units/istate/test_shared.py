@@ -106,3 +106,6 @@ async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redi
     assert sorted(modified_tokens) == ["foreign", "local"]
     # The foreign socket record is cached locally for later emit_update routing.
     assert redis_manager.token_to_socket["foreign"] == foreign_record
+    # Locally owned sockets are authoritative and never require a redis lookup.
+    local_key = redis_manager._get_redis_key("local")
+    assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]

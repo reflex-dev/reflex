@@ -477,6 +477,38 @@ class TestRedisTokenManager:
             assert result is None
             mock_super.assert_called_once()
 
+    async def test_is_token_connected_locally_owned(self, manager, mock_redis):
+        """A locally owned socket record is authoritative, without a redis lookup."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id=manager.instance_id, sid="sid1"
+        )
+
+        assert await manager.is_token_connected("token1")
+        mock_redis.get.assert_not_called()
+
+    async def test_is_token_connected_stale_foreign_record(self, manager, mock_redis):
+        """A cached foreign record is refreshed from redis and dropped when gone."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="other-instance", sid="sid1"
+        )
+        manager.sid_to_token["sid1"] = "token1"
+        mock_redis.get = AsyncMock(return_value=None)
+
+        assert not await manager.is_token_connected("token1")
+        assert "token1" not in manager.token_to_socket
+        assert "sid1" not in manager.sid_to_token
+
+    async def test_is_token_connected_foreign_record_moved(self, manager, mock_redis):
+        """A cached foreign record is replaced when the client moved instances."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="old-instance", sid="sid1"
+        )
+        new_record = SocketRecord(instance_id="new-instance", sid="sid2")
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(new_record))
+
+        assert await manager.is_token_connected("token1")
+        assert manager.token_to_socket["token1"] == new_record
+
     def test_inheritance_from_local_manager(self, manager):
         """Test RedisTokenManager inherits from LocalTokenManager.
 
