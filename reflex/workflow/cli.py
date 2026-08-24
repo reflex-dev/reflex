@@ -1286,6 +1286,134 @@ def _load_module(target: str):
     return importlib.import_module(target)
 
 
+def _run_server(app: Any, host: str, port: int) -> None:
+    """Serve an ASGI app; separated so tests can intercept it.
+
+    Args:
+        app: The ASGI application.
+        host: The interface to bind.
+        port: The port to bind.
+    """
+    import uvicorn
+
+    uvicorn.run(app, host=host, port=port, log_level="info", lifespan="on")
+
+
+@workflows.command()
+@database_option
+@click.argument("target")
+@click.option("--host", default="0.0.0.0", help="Interface to bind.")
+@click.option("--port", default=8000, type=int, help="Port to bind.")
+@click.option(
+    "--queue",
+    "queues",
+    multiple=True,
+    help="Execute only these queues. Repeatable; default serves every queue.",
+)
+@click.option(
+    "--ingress-only",
+    is_flag=True,
+    help="Accept webhooks and API calls but execute nothing.",
+)
+@click.option(
+    "--worker-only",
+    is_flag=True,
+    help="Execute steps but accept nothing; keeps /healthz, /readyz, /metrics.",
+)
+@click.option(
+    "--drain",
+    default=None,
+    help=(
+        "How long shutdown lets running attempts finish. Defaults to "
+        "REFLEX_WORKFLOW_DRAIN, or 30s."
+    ),
+)
+def serve(
+    database: str | None,
+    target: str,
+    host: str,
+    port: int,
+    queues: tuple[str, ...],
+    ingress_only: bool,
+    worker_only: bool,
+    drain: str | None,
+):
+    """Serve TARGET's workflows as a standalone service: ingress, API, worker.
+
+    One process, no frontend, no rx.App: webhook and approval ingress, the
+    run HTTP API (POST /runs, GET /runs, signals, operator actions), health
+    and readiness probes, Prometheus metrics, an OpenAPI document, and the
+    worker loop. Scale the halves separately with --ingress-only and
+    --worker-only against the same database.
+
+    The API authenticates with bearer tokens: REFLEX_WORKFLOW_API_TOKEN grants
+    everything; REFLEX_WORKFLOW_API_TOKEN_READ, _START, _SIGNAL, and _OPERATE
+    each grant one scope. Webhooks authenticate with provider signatures.
+
+    On SIGTERM the server stops accepting requests, then gives running
+    attempts --drain to commit, so a rolling deploy hands over cleanly.
+    """
+    from reflex_base.utils.exceptions import WorkflowDefinitionError
+    from reflex_base.workflow import parse_duration
+
+    from reflex.workflow.runtime import WorkflowRuntime, configured_drain
+    from reflex.workflow.serve import build_app
+    from reflex.workflow.store import resolve_store
+
+    if ingress_only and worker_only:
+        console.error("--ingress-only and --worker-only exclude each other.")
+        raise click.exceptions.Exit(1)
+    if drain is None:
+        drain_seconds = configured_drain()
+    else:
+        try:
+            drain_seconds = parse_duration(drain)
+        except Exception as err:
+            console.error(f"--drain {drain!r} is not a duration: {err}")
+            raise click.exceptions.Exit(1) from None
+
+    try:
+        module = _load_module(target)
+    except Exception as err:
+        console.error(f"Could not load {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+    classes = [
+        value
+        for value in vars(module).values()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    ]
+    if not classes:
+        console.error(
+            f"No workflow classes in {target!r}. A workflow is an rx.State "
+            "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
+        )
+        raise click.exceptions.Exit(1)
+
+    runtime = WorkflowRuntime(resolve_store(database), queues=queues or None)
+    try:
+        for workflow_cls in classes:
+            runtime.register(workflow_cls)
+    except WorkflowDefinitionError as err:
+        console.error(f"Cannot serve {target!r}: {err}")
+        raise click.exceptions.Exit(1) from None
+    app = build_app(
+        runtime,
+        worker=not ingress_only,
+        ingress=not worker_only,
+        drain=drain_seconds,
+    )
+    served = ", ".join(sorted(d.workflow_id for d in runtime.definitions))
+    mode = (
+        "ingress only"
+        if ingress_only
+        else "worker only"
+        if worker_only
+        else "ingress + worker"
+    )
+    console.print(f"Serving {served} on {host}:{port} ({mode}).")
+    _run_server(app, host, port)
+
+
 @workflows.command()
 @database_option
 @click.argument("run_id")

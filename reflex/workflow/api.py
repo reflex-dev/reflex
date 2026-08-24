@@ -51,6 +51,32 @@ def api_token() -> str | None:
     return os.environ.get(TOKEN_ENV) or None
 
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
+
+    AuthorizeFn = Callable[[Request], JSONResponse | None]
+else:
+    AuthorizeFn = object
+
+
+def _refusal(request: Request, token: str | AuthorizeFn) -> JSONResponse | None:
+    """Authorize a request against a token or a scope authorizer.
+
+    Args:
+        request: The incoming request.
+        token: The single bearer token, or an authorizer returning a refusal
+            response (401/403) or None to admit.
+
+    Returns:
+        The refusal to send, or None when the request may proceed.
+    """
+    if callable(token):
+        return token(request)
+    if _authorized(request, token):
+        return None
+    return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+
 def _authorized(request: Request, token: str) -> bool:
     """Check a request's bearer token in constant time.
 
@@ -69,7 +95,7 @@ def _authorized(request: Request, token: str) -> bool:
 
 
 def start_endpoint(
-    runtime: WorkflowRuntime, token: str
+    runtime: WorkflowRuntime, token: str | AuthorizeFn
 ) -> Callable[[Request], Coroutine[Any, Any, JSONResponse]]:
     """Build the endpoint that starts a run.
 
@@ -90,8 +116,9 @@ def start_endpoint(
         Returns:
             The admission result, or an error.
         """
-        if not _authorized(request, token):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        refused = _refusal(request, token)
+        if refused is not None:
+            return refused
         body = await request.body()
         if len(body) > MAX_BODY_BYTES:
             return JSONResponse({"error": "payload too large"}, status_code=413)
@@ -181,7 +208,7 @@ def start_endpoint(
 
 
 def run_endpoint(
-    runtime: WorkflowRuntime, token: str
+    runtime: WorkflowRuntime, token: str | AuthorizeFn
 ) -> Callable[[Request], Coroutine[Any, Any, JSONResponse]]:
     """Build the endpoint that reads one run.
 
@@ -202,8 +229,9 @@ def run_endpoint(
         Returns:
             The run projection, or an error.
         """
-        if not _authorized(request, token):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        refused = _refusal(request, token)
+        if refused is not None:
+            return refused
         run_id = request.path_params.get("run_id", "")
         snapshot = await runtime.kernel.get_run(run_id)
         if snapshot is None:
@@ -275,7 +303,7 @@ def render_prometheus(snapshot: dict[str, Any]) -> str:
 
 
 def metrics_endpoint(
-    runtime: WorkflowRuntime, token: str
+    runtime: WorkflowRuntime, token: str | AuthorizeFn
 ) -> Callable[[Request], Coroutine[Any, Any, Response]]:
     """Build the endpoint that exposes this process's counters.
 
@@ -302,8 +330,9 @@ def metrics_endpoint(
         """
         # Reading in-process counters needs no await; the signature is a
         # Starlette endpoint's, not a claim that this does I/O.
-        if not _authorized(request, token):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        refused = _refusal(request, token)
+        if refused is not None:
+            return refused
         return PlainTextResponse(
             render_prometheus(runtime.metrics.snapshot()),
             media_type="text/plain; version=0.0.4; charset=utf-8",

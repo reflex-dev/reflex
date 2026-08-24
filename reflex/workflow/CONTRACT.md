@@ -312,6 +312,28 @@ Checked in this order at start:
 - Multiple workers share one Postgres store via `SKIP LOCKED` claims; SQLite
   is a one-process store (calls off-loop, contention bounded); memory is for
   tests. All three answer the same conformance suite.
+### The standalone service
+
+`reflex workflows serve module.py` is the deployment shape for a workflow
+with no frontend: webhook and approval ingress, the run HTTP API
+(`POST /runs`, `GET /runs`, `GET /runs/{id}`, `POST /runs/{id}/signals/
+{channel}`, `POST /runs/{id}/cancel|retry|resume`), `/healthz`, `/readyz`,
+`/metrics`, `/openapi.json`, and the worker loop in one process.
+`--ingress-only` and `--worker-only` split the halves for separate scaling
+against the same store; both keep the probes and metrics. Shutdown is the
+graceful sequence: the server stops accepting, then running attempts get
+the drain budget (§ drain) to commit.
+
+API authorization is scoped bearer tokens: `REFLEX_WORKFLOW_API_TOKEN`
+grants every scope; `REFLEX_WORKFLOW_API_TOKEN_READ`, `_START`, `_SIGNAL`,
+and `_OPERATE` grant exactly one each, so a dashboard's credential cannot
+cancel runs and a relay's credential cannot read them. No valid token is
+401; a valid token without the route's scope is 403. Webhooks and approval
+links do not use these tokens — they authenticate with provider signatures
+and signed link tokens respectively. HTTP signal deliveries pass through
+the same kernel path as Python ones, so dispositions, channel validation,
+and payload canonicalization are identical by construction.
+
 ### Tenancy and who runs the workers
 
 Managed and customer-hosted are a deployment split, not a semantic one. A

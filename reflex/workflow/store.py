@@ -2900,8 +2900,16 @@ class SqliteRunStore:
             raise
 
     def close(self) -> None:
-        """Close the backing database connection."""
-        self._db.close()
+        """Close the backing database connection.
+
+        Under the store's lock: every operation runs its SQL holding it, and
+        an operation abandoned by a cancelled awaiter is still executing on
+        its worker thread. Closing the connection out from under that thread
+        is a segfault in the sqlite3 C layer, not an exception -- taking the
+        lock makes close wait out whatever is mid-statement.
+        """
+        with self._lock:
+            self._db.close()
 
     def _append_events(
         self,
