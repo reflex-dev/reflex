@@ -298,10 +298,14 @@ def test_submit_security_review_uploads_then_submits(mocker: MockerFixture):
         "content_length": len(b"zip-bytes"),
         "content_type": "application/zip",
     }
-    # Bytes PUT straight to storage with the returned headers, no auth header.
+    # Bytes PUT straight to storage with the returned headers, no auth header,
+    # carrying the exact length the signature pins.
     assert mock_put.call_args.args[0] == "https://bucket.s3/abc?sig=1"
     assert mock_put.call_args.kwargs["content"] == b"zip-bytes"
-    assert mock_put.call_args.kwargs["headers"] == {"Content-Type": "application/zip"}
+    assert mock_put.call_args.kwargs["headers"] == {
+        "Content-Type": "application/zip",
+        "Content-Length": str(len(b"zip-bytes")),
+    }
     assert "X-API-TOKEN" not in mock_put.call_args.kwargs["headers"]
     # Job submitted by key, not by raw bytes.
     assert (

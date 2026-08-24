@@ -53,8 +53,8 @@ ARCHIVES = {"backend": "backend.zip", "frontend": "frontend.zip"}
 UPLOAD_CHUNK_SIZE = 256 * 1024
 
 # Per socket operation, not per upload. A link that cannot move one chunk in
-# this long -- roughly 17 kbps -- cannot move a deploy archive inside the signed
-# window either, and hanging on it tells the user nothing.
+# this long -- roughly 17 kbps -- cannot finish an upload inside the window its
+# signature was issued for either, and hanging on it tells the user nothing.
 UPLOAD_CONNECT_TIMEOUT = 30.0
 UPLOAD_IO_TIMEOUT = 120.0
 
@@ -1985,6 +1985,41 @@ def _archive_chunks(
             advance(len(chunk))
 
 
+def presigned_put(target: dict[str, Any], content: Any, size: int) -> None:
+    """Upload a body to the presigned key it was signed for.
+
+    Content-Length is set here rather than left to httpx, and that is the whole
+    reason this is one function. The signature pins the exact byte count, so the
+    request has to carry it: for a bytes body httpx would derive the same value
+    anyway, but for a stream it cannot, and falls back to a chunked body that
+    the signature does not match. Getting that wrong is silent until storage
+    refuses the upload.
+
+    No authorization header goes with it. The signature is the credential, and
+    the destination is not ours to authenticate against.
+
+    Args:
+        target: The ``url`` and any required ``headers`` from the signing call.
+        content: The body, as bytes or as an iterator of byte chunks.
+        size: The body's exact byte count, as signed.
+
+    """
+    import httpx
+
+    response = httpx.put(
+        target["url"],
+        headers={**target.get("headers", {}), "Content-Length": str(size)},
+        content=content,
+        timeout=httpx.Timeout(
+            connect=UPLOAD_CONNECT_TIMEOUT,
+            read=UPLOAD_IO_TIMEOUT,
+            write=UPLOAD_IO_TIMEOUT,
+            pool=UPLOAD_CONNECT_TIMEOUT,
+        ),
+    )
+    response.raise_for_status()
+
+
 def _put_archive(
     path: Path,
     target: dict[str, Any],
@@ -1992,11 +2027,7 @@ def _put_archive(
     advance: Callable[[int], None],
     abandoned: threading.Event,
 ) -> None:
-    """Upload one archive to the key it was signed for.
-
-    Content-Length is set here rather than left to httpx: the exact byte count
-    is part of the signature, and an unsized body would go up chunked and fail
-    to match it.
+    """Stream one archive to the key it was signed for.
 
     Args:
         path: The archive to upload.
@@ -2006,20 +2037,7 @@ def _put_archive(
         abandoned: Set once the other archive's upload has failed.
 
     """
-    import httpx
-
-    response = httpx.put(
-        target["url"],
-        headers={**target["headers"], "Content-Length": str(size)},
-        content=_archive_chunks(path, advance, abandoned),
-        timeout=httpx.Timeout(
-            connect=UPLOAD_CONNECT_TIMEOUT,
-            read=UPLOAD_IO_TIMEOUT,
-            write=UPLOAD_IO_TIMEOUT,
-            pool=UPLOAD_CONNECT_TIMEOUT,
-        ),
-    )
-    response.raise_for_status()
+    presigned_put(target, _archive_chunks(path, advance, abandoned), size)
 
 
 def _put_reserved_archives(
@@ -2314,17 +2332,9 @@ def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str
         raise SecurityReviewError(_security_review_detail(ex.response)) from ex
     upload = upload_url_response.json()
 
-    # 2. Upload the bytes to storage. The presigned URL pins the content length
-    #    and type, so send the returned headers verbatim and let httpx derive
-    #    Content-Length from the body — setting it manually breaks the signature.
-    put_response = httpx.put(
-        upload["url"],
-        content=zip_bytes,
-        headers=upload.get("headers", {}),
-        timeout=120,
-    )
+    # 2. Upload the bytes to storage, under the length and type the URL pins.
     try:
-        put_response.raise_for_status()
+        presigned_put(upload, zip_bytes, len(zip_bytes))
     except httpx.HTTPStatusError as ex:
         raise SecurityReviewError("failed to upload app source for review") from ex
 
