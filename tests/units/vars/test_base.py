@@ -77,3 +77,52 @@ def test_computed_var_replace() -> None:
 
     replaced = cv._replace(_var_type=float)
     assert replaced._var_type is float
+
+
+def _type_alias_types() -> list[type]:
+    import typing
+
+    from typing_extensions import TypeAliasType
+
+    native = getattr(typing, "TypeAliasType", None)
+    return (
+        [TypeAliasType] if native in (None, TypeAliasType) else [TypeAliasType, native]
+    )
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_guess_type_resolves_type_alias(alias_cls: type) -> None:
+    """A TypeAliasType (PEP 695 ``type`` statement) resolves to its value.
+
+    State var annotations like ``type Key = Literal[...]`` reach guess_type as
+    a TypeAliasType, which must be unwrapped instead of raising TypeError.
+    """
+    from typing import Literal
+
+    from reflex_base.vars.base import Var
+    from reflex_base.vars.sequence import StringVar
+
+    alias = alias_cls("ChartKey", Literal["day", "week"])
+
+    var = Var(_js_expr="key", _var_type=alias).guess_type()
+    assert isinstance(var, StringVar)
+    assert var._var_type == Literal["day", "week"]
+
+    optional_var = Var(_js_expr="key", _var_type=alias | None).guess_type()
+    assert isinstance(optional_var, StringVar)
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_state_var_type_alias(alias_cls: type) -> None:
+    """A state var annotated with a TypeAliasType compiles."""
+    from typing import Literal
+
+    from reflex_base.vars.sequence import StringVar
+
+    chart_key = alias_cls("ChartKey", Literal["day", "week"])
+
+    class TypeAliasState(State):
+        key: chart_key = "day"  # pyright: ignore[reportInvalidTypeForm]
+
+    assert isinstance(TypeAliasState.key, StringVar)
+    assert TypeAliasState.key._var_type == Literal["day", "week"]

@@ -6,6 +6,7 @@ import dataclasses
 import logging
 import sys
 import types
+import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
@@ -48,6 +49,15 @@ GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
+
+# Potential TypeAliasType classes for isinstance checks. On 3.12+ the native
+# typing.TypeAliasType (produced by the `type` statement) and the
+# typing_extensions backport are distinct classes.
+TypeAliasTypes: tuple[type, ...] = (
+    (TypeAliasType, typing.TypeAliasType)
+    if sys.version_info >= (3, 12)
+    else (TypeAliasType,)
+)
 
 # Union of generic types.
 GenericType = type | _GenericAlias
@@ -349,6 +359,26 @@ def is_classvar(a_type: Any) -> bool:
             type(a_type) is ForwardRef and a_type.__forward_arg__.startswith("ClassVar")
         )
     )
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+
+    Aliases appearing as members of a union are resolved as well.
+
+    Args:
+        cls: The type to resolve.
+
+    Returns:
+        The resolved type, or the original type if it contains no alias.
+    """
+    while isinstance(cls, TypeAliasTypes):
+        cls = cls.__value__
+    if is_union(cls):
+        args = get_args(cls)
+        if any(isinstance(arg, TypeAliasTypes) for arg in args):
+            return unionize(*(resolve_type_alias(arg) for arg in args))
+    return cls
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:
