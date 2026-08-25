@@ -42,7 +42,7 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, _FrozenDictStrStr
+from reflex.istate.data import HeaderData, RouterData, SessionData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -991,13 +991,12 @@ async def test_process_event_substate(
     )
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(token, event)
+    # GrandchildState3.computed is uncached, but its value is unchanged since the
+    # previous delta, so it is not sent again.
     assert emitted_deltas == [
         (
             token,
-            {
-                GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: "new"},
-                GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
-            },
+            {GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: "new"}},
         )
     ]
 
@@ -1455,9 +1454,8 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
-    }
+    # no_cache_v is recomputed, but the value is unchanged, so it is not resent.
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 0}}
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
@@ -1472,16 +1470,168 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
+
+
+def test_uncached_computed_var_unchanged_omitted_from_delta():
+    """An uncached var that recomputes to the same value is left out of the delta."""
+    calls = 0
+
+    class UncachedState(BaseState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            nonlocal calls
+            calls += 1
+            return self.v
+
+    ucs = UncachedState()
+    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+    assert calls == 1
+    ucs._clean()
+
+    # Still recomputed, but the unchanged value is not sent again.
+    assert ucs.get_delta() == {}
+    assert calls == 2
+    ucs._clean()
+
+    ucs.v = 1
+    assert ucs.get_delta() == {
+        ucs.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
+    }
+    ucs._clean()
+    assert ucs.get_delta() == {}
+
+
+def test_uncached_computed_var_records_last_value_for_redis():
+    """Recording a new value for an uncached var marks the state as touched."""
+
+    class UncachedTouchedState(BaseState):
+        _v: int = 0
+
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            return self._v
+
+    ucs = UncachedTouchedState()
+    assert ucs._was_touched is False
+    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+    assert ucs._was_touched is True
+
+    # The recorded (client token, key) is part of the instance dict, so it
+    # reaches redis.
+    cvar = UncachedTouchedState.computed_vars["no_cache_v"]
+    assert ucs.__getstate__()[cvar._last_delta_key_attr] == ("", 0)
+
+    # Recomputing an unchanged value does not force another redis write.
+    ucs._clean()
+    ucs._was_touched = False
+    assert ucs.get_delta() == {}
+    assert ucs._was_touched is False
+
+
+def test_uncached_computed_var_mutable_value_mutated_in_place():
+    """An uncached var returning a state-owned mutable value still sees mutations."""
+
+    class UncachedMutableState(BaseState):
+        items: list[str] = []
+
+        @rx.var(cache=False)
+        def all_items(self) -> list[str]:
+            return self.items
+
+    ums = UncachedMutableState()
+    assert ums.get_delta() == {ums.get_name(): {"all_items" + FIELD_MARKER: []}}
+    ums._clean()
+    assert ums.get_delta() == {}
+    ums._clean()
+
+    ums.items.append("a")
+    assert ums.get_delta() == {
+        ums.get_name(): {
+            "items" + FIELD_MARKER: ["a"],
+            "all_items" + FIELD_MARKER: ["a"],
+        }
+    }
+    ums._clean()
+    assert ums.get_delta() == {}
+
+
+def test_uncached_computed_var_recorded_per_client_token():
+    """A value already sent to one client is still sent to another client.
+
+    A single state instance can serve multiple clients (linked shared states),
+    so the recorded value only suppresses the delta for the client that got it.
+    """
+
+    class MultiClientState(BaseState):
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            return 1
+
+    mcs = MultiClientState()
+    mcs.router = RouterData(session=SessionData(client_token="token_a"))
+    mcs._clean()
+    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    mcs._clean()
+    assert mcs.get_delta() == {}
+    mcs._clean()
+
+    # The same state instance now produces a delta for a different client.
+    mcs.router = RouterData(session=SessionData(client_token="token_b"))
+    mcs._clean()
+    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    mcs._clean()
+    assert mcs.get_delta() == {}
+
+
+def test_uncached_computed_var_unkeyable_value_always_sent():
+    """A value that cannot be serialized has no key and is always sent."""
+
+    class CircularState(BaseState):
+        @rx.var(cache=False)
+        def circular(self) -> list:
+            value = []
+            value.append(value)
+            return value
+
+    cs = CircularState()
+    # Compare the keys only: the values are self-referential.
+    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+    cs._clean()
+    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+
+
+async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
+    """An unchanged async uncached var is dropped from the resolved delta."""
+
+    class AsyncUncachedState(BaseState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        async def no_cache_v(self) -> int:
+            return self.v
+
+    aus = AsyncUncachedState()
+    assert await aus._get_resolved_delta() == {
+        aus.get_name(): {"no_cache_v" + FIELD_MARKER: 0}
+    }
+    aus._clean()
+    assert await aus._get_resolved_delta() == {}
+    aus._clean()
+
+    aus.v = 1
+    assert await aus._get_resolved_delta() == {
+        aus.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
+    }
+    aus._clean()
+    assert await aus._get_resolved_delta() == {}
 
 
 def test_computed_var_depends_on_parent_non_cached():
@@ -3579,17 +3729,21 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
     child_state2 = new_test_state.get_substate((ChildState2.get_name(),))
     child_state2.value = "set_c2_value"
 
-    assert new_test_state.get_delta() == {
+    expected_delta = {
         ChildState2.get_full_name(): {
             "value" + FIELD_MARKER: "set_c2_value",
         },
         GrandchildState2.get_full_name(): {
             "cached" + FIELD_MARKER: "set_c2_value",
         },
-        GrandchildState3.get_full_name(): {
-            "computed" + FIELD_MARKER: "",
-        },
     }
+    if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
+        # With redis this is a fresh instance which has not sent the uncached
+        # GrandchildState3.computed yet; in memory it was sent by the delta above.
+        expected_delta[GrandchildState3.get_full_name()] = {
+            "computed" + FIELD_MARKER: "",
+        }
+    assert new_test_state.get_delta() == expected_delta
 
 
 @pytest.mark.asyncio
