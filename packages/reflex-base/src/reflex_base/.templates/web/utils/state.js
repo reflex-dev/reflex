@@ -21,6 +21,10 @@ import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
+// Re-exported for backwards compatibility: the generated context.js and
+// downstream code import applyDelta from this module.
+export { applyDelta } from "$/utils/helpers/delta";
+
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 
@@ -154,15 +158,6 @@ export const isStateful = () => {
     return false;
   }
   return event_queue.some((event) => event.name.startsWith("reflex___state"));
-};
-
-/**
- * Apply a delta to the state.
- * @param state The state to apply the delta to.
- * @param delta The delta to apply.
- */
-export const applyDelta = (state, delta) => {
-  return { ...state, ...delta };
 };
 
 /**
