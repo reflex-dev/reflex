@@ -767,7 +767,7 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if cls is not None and is_union(cls):
+    if is_union(cls):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
             for arg in get_args(cls)
