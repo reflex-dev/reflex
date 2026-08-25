@@ -303,6 +303,7 @@ class TestRedisTokenManager:
             f"token_manager_socket_record_{token}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=False,
         )
         assert manager.token_to_socket[token].sid == sid
         assert manager.sid_to_token[sid] == token
@@ -350,6 +351,7 @@ class TestRedisTokenManager:
             f"token_manager_socket_record_{result}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=False,
         )
         assert manager.token_to_sid[result] == sid
         assert manager.sid_to_token[sid] == result
@@ -488,7 +490,10 @@ class TestRedisTokenManager:
         assert manager.token_to_socket[token] == record
         assert manager.sid_to_token[sid] == token
         mock_redis.set.assert_called_once_with(
-            f"token_manager_socket_record_{token}", pickle.dumps(record), ex=3600
+            f"token_manager_socket_record_{token}",
+            pickle.dumps(record),
+            ex=3600,
+            nx=True,
         )
 
     async def test_socket_record_del_drops_foreign_cache(self, manager, mock_redis):
@@ -788,6 +793,39 @@ async def _wait_for_call_count_positive(mock: Mock, timeout: float = 5.0):
     deadline = time.monotonic() + timeout
     while mock.call_count == 0 and time.monotonic() < deadline:  # noqa: ASYNC110
         await asyncio.sleep(0.1)
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_restore_does_not_clobber_new_owner(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """A late keep-alive restore must not overwrite another instance's record.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    event_namespace2 = event_namespace_factory()
+
+    manager1 = event_namespace1._token_manager
+    manager2 = event_namespace2._token_manager
+    assert isinstance(manager1, RedisTokenManager)
+    assert isinstance(manager2, RedisTokenManager)
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    # Stop the live subscriber so the deletion notification is handled manually.
+    assert manager1._socket_record_task is not None
+    manager1._socket_record_task.cancel()
+    # The record expires and another instance claims the token.
+    await manager1.redis.delete(manager1._get_redis_key("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token1"))
+    # The first instance processes the expiration notification late.
+    await manager1._handle_socket_record_del("token1")
+
+    assert await manager2._get_token_owner("token1", refresh=True) == (
+        manager2.instance_id
+    )
 
 
 @pytest.mark.usefixtures("redis_url")

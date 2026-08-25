@@ -266,7 +266,9 @@ class RedisTokenManager(LocalTokenManager):
         if (socket_record := self.token_to_socket.get(token)) is None:
             return
         if socket_record.instance_id == self.instance_id:
-            await self._store_socket_record(token, socket_record)
+            # Restore only if the key is still absent: a newer record (a
+            # relink here or a claim by another instance) must win.
+            await self._store_socket_record(token, socket_record, nx=True)
         else:
             self.token_to_socket.pop(token, None)
 
@@ -347,19 +349,21 @@ class RedisTokenManager(LocalTokenManager):
         return new_token
 
     async def _store_socket_record(
-        self, token: str, socket_record: SocketRecord
+        self, token: str, socket_record: SocketRecord, nx: bool = False
     ) -> None:
         """Store a socket record in Redis, logging errors instead of raising.
 
         Args:
             token: The client token.
             socket_record: The record to store.
+            nx: Only store the record if the key does not already exist.
         """
         try:
             await self.redis.set(
                 self._get_redis_key(token),
                 pickle.dumps(socket_record),
                 ex=self.token_expiration,
+                nx=nx,
             )
         except Exception as e:
             logger.error(f"Redis error storing token: {e}")
