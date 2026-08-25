@@ -269,3 +269,25 @@ def test_fallback_console_helpers(capsys):
     assert "a@b.com" in out
     assert "email" in out
     assert "a rule" in out
+
+
+def test_fallback_progress_bars(capsys):
+    """Both progress bars build without reflex-base and render their tasks.
+
+    transfer_progress drives the deploy upload, so it has to work on the reflex
+    versions that predate reflex-base like everything else here.
+    """
+    with _without_reflex_base() as (_, fallback_log, fallback_console):
+        # JSON output is a reflex-base pipeline feature; without it there is
+        # nothing to stay quiet for, so the bars are never disabled.
+        assert fallback_log.is_json_mode() is False
+
+        with fallback_console.progress() as bar:
+            bar.add_task("stepping", total=2)
+        with fallback_console.transfer_progress() as transfer:
+            task = transfer.add_task("uploading", total=1024)
+            transfer.update(task, advance=512)
+
+    out = capsys.readouterr().out
+    assert "stepping" in out
+    assert "uploading" in out

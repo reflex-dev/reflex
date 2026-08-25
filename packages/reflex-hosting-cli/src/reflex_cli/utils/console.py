@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from typing import overload
 
 from reflex_cli.constants.base import LogLevel
-from reflex_cli.utils.log import HAS_REFLEX_BASE
+from reflex_cli.utils.log import HAS_REFLEX_BASE, is_json_mode
 from reflex_cli.utils.log import set_log_level as _set_log_level
 
 if HAS_REFLEX_BASE:
@@ -142,3 +142,32 @@ def set_log_level(log_level: LogLevel | str):
     if isinstance(log_level, str):
         log_level = LogLevel.from_string(log_level) or LogLevel.INFO
     _set_log_level(log_level)
+
+
+def transfer_progress():
+    """Create a progress bar measured in bytes rather than in steps.
+
+    Lives here rather than beside ``progress`` in reflex-base because only the
+    deploy upload wants it, and the CLI has to render it whether or not
+    reflex-base is installed.
+
+    Returns:
+        A new progress bar, sized and paced for a file transfer.
+    """
+    from rich.progress import (
+        BarColumn,
+        DownloadColumn,
+        Progress,
+        TextColumn,
+        TimeElapsedColumn,
+        TransferSpeedColumn,
+    )
+
+    return Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        DownloadColumn(),
+        TransferSpeedColumn(),
+        TimeElapsedColumn(),
+        disable=is_json_mode(),
+    )

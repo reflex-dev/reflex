@@ -15,6 +15,7 @@ from reflex_cli.constants.base import LogLevel
 
 try:
     from reflex_base.utils.log import SUCCESS as SUCCESS
+    from reflex_base.utils.log import is_json_mode as is_json_mode
     from reflex_base.utils.log import set_log_level as set_log_level
 
     HAS_REFLEX_BASE = True
@@ -45,6 +46,15 @@ except ImportError:
     _EXC_FORMATTER = logging.Formatter()
 
     _CLI_LOGGER = logging.getLogger("reflex_cli")
+
+    def is_json_mode() -> bool:
+        """Check whether logs should be emitted as JSON records.
+
+        Returns:
+            False: machine-readable output is a reflex-base feature, driven by
+            REFLEX_LOG_JSON, and there is no pipeline here to emit it.
+        """
+        return False
 
     def _style_for_level(levelno: int) -> tuple[str, str]:
         """Resolve the rich style and message prefix for a log level.
