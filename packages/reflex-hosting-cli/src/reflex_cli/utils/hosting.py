@@ -13,11 +13,14 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 import webbrowser
-from collections.abc import Mapping
+from collections.abc import Callable, Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
+from functools import partial
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, TypedDict
@@ -31,6 +34,7 @@ from reflex_cli.core.config import Config, RegionOption
 from reflex_cli.utils import console, dependency
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
+    ArchiveUploadError,
     GetAppError,
     NotAuthenticatedError,
     ResponseError,
@@ -41,6 +45,26 @@ from reflex_cli.utils.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+# The reserve endpoint's key for each of a build's archives, and the file it
+# signs a destination for.
+ARCHIVES = {"backend": "backend.zip", "frontend": "frontend.zip"}
+
+# Read size for a streamed archive PUT: small enough that the progress bar moves
+# on a slow uplink, large enough not to syscall per kilobyte.
+UPLOAD_CHUNK_SIZE = 256 * 1024
+
+# Per socket operation, not per upload. A link that cannot move one chunk in
+# this long -- roughly 17 kbps -- cannot finish an upload inside the window its
+# signature was issued for either, and hanging on it tells the user nothing.
+UPLOAD_CONNECT_TIMEOUT = 30.0
+UPLOAD_IO_TIMEOUT = 120.0
+
+# A signature that lapsed mid-upload is recovered by reserving again, and a
+# fresh reservation mints a fresh deployment id -- so the retry re-uploads both
+# archives under the new prefix rather than resuming the one that expired. Past
+# two signed windows the link is the problem, and saying so beats looping.
+UPLOAD_ATTEMPTS = 2
 
 
 class ScaleType(str, Enum):
@@ -1966,6 +1990,268 @@ def validate_deployment_args(
     return "success"
 
 
+def _response_detail(response: Any, fallback: str) -> str:
+    """Read the server's explanation for a refusal out of its body.
+
+    Args:
+        response: The refused response.
+        fallback: What to say when the body does not carry an explanation.
+
+    Returns:
+        What the server said, or the fallback.
+
+    """
+    try:
+        detail = response.json()["detail"]
+    except (ValueError, KeyError, TypeError):
+        detail = None
+    # Every refusal this CLI can provoke carries a sentence. A body shaped some
+    # other way -- a validation report, an HTML error page from something in
+    # front of the service -- is not one, and pasting its repr at the user is
+    # worse than the fallback.
+    return detail if isinstance(detail, str) else fallback
+
+
+def reserve_archive_upload(
+    app_id: str, sizes: dict[str, int], client: AuthenticatedClient
+) -> dict[str, Any] | None:
+    """Ask the control plane where to put a build's archives.
+
+    Nothing this endpoint itself refuses with is a 404 -- an unknown app, a
+    missing permission and an out-of-range size are all 400 or 403 -- so a 404
+    means the route is not there, on a control plane older than it. The caller
+    relays the archives through it instead.
+
+    Args:
+        app_id: The app the build belongs to.
+        sizes: Each archive's exact byte count, keyed as in ``ARCHIVES``. The
+            count is signed into the URL, so a build that changes afterwards
+            needs a new reservation rather than a retry of the same upload.
+        client: The authenticated client.
+
+    Returns:
+        A deployment id with a signed target for each archive, or None if this
+        control plane cannot hand one out.
+
+    """
+    import httpx
+
+    response = httpx.post(
+        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments/reserve"),
+        json={
+            "app_id": app_id,
+            "backend_size": sizes["backend"],
+            "frontend_size": sizes["frontend"],
+        },
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    if response.status_code == HTTPStatus.NOT_FOUND:
+        return None
+    response.raise_for_status()
+    return response.json()
+
+
+class _UploadAbandonedError(Exception):
+    """The other archive's upload failed, so finishing this one buys nothing."""
+
+
+def _archive_chunks(
+    path: Path, advance: Callable[[int], None], abandoned: threading.Event
+) -> Iterator[bytes]:
+    """Read an archive in chunks, reporting each one once it is on the wire.
+
+    Args:
+        path: The archive to read.
+        advance: Called with a chunk's size after it has been written out.
+        abandoned: Set once the other archive's upload has failed.
+
+    Yields:
+        Successive chunks of the archive.
+
+    Raises:
+        _UploadAbandonedError: The other archive's upload failed partway through.
+
+    """
+    with path.open("rb") as archive:
+        while chunk := archive.read(UPLOAD_CHUNK_SIZE):
+            if abandoned.is_set():
+                raise _UploadAbandonedError
+            yield chunk
+            advance(len(chunk))
+
+
+def presigned_put(target: dict[str, Any], content: Any, size: int) -> None:
+    """Upload a body to the presigned key it was signed for.
+
+    Content-Length is set here rather than left to httpx, and that is the whole
+    reason this is one function. The signature pins the exact byte count, so the
+    request has to carry it: for a bytes body httpx would derive the same value
+    anyway, but for a stream it cannot, and falls back to a chunked body that
+    the signature does not match. Getting that wrong is silent until storage
+    refuses the upload.
+
+    No authorization header goes with it. The signature is the credential, and
+    the destination is not ours to authenticate against.
+
+    Args:
+        target: The ``url`` and any required ``headers`` from the signing call.
+        content: The body, as bytes or as an iterator of byte chunks.
+        size: The body's exact byte count, as signed.
+
+    """
+    import httpx
+
+    response = httpx.put(
+        target["url"],
+        headers={**target.get("headers", {}), "Content-Length": str(size)},
+        content=content,
+        timeout=httpx.Timeout(
+            connect=UPLOAD_CONNECT_TIMEOUT,
+            read=UPLOAD_IO_TIMEOUT,
+            write=UPLOAD_IO_TIMEOUT,
+            pool=UPLOAD_CONNECT_TIMEOUT,
+        ),
+    )
+    response.raise_for_status()
+
+
+def _put_archive(
+    path: Path,
+    target: dict[str, Any],
+    size: int,
+    advance: Callable[[int], None],
+    abandoned: threading.Event,
+) -> None:
+    """Stream one archive to the key it was signed for.
+
+    Args:
+        path: The archive to upload.
+        target: The ``url`` and required ``headers`` from the reservation.
+        size: The archive's byte count, as reserved.
+        advance: Called with a chunk's size after it has been written out.
+        abandoned: Set once the other archive's upload has failed.
+
+    """
+    presigned_put(target, _archive_chunks(path, advance, abandoned), size)
+
+
+def _put_reserved_archives(
+    zip_dir: Path, reservation: dict[str, Any], sizes: dict[str, int]
+) -> None:
+    """Upload both of a build's archives to their signed keys, concurrently.
+
+    They are independent objects under the same prefix, so nothing orders them.
+    But neither is worth finishing alone: this build submits under one id, and
+    if the other archive never lands there is nothing to submit. So the first
+    failure abandons its sibling mid-stream rather than leaving the user
+    watching a large upload complete into a deployment that cannot happen.
+
+    Whatever the first archive to genuinely fail raised comes back out of here.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        reservation: The response from ``reserve_archive_upload``.
+        sizes: Each archive's byte count, keyed as in ``ARCHIVES``.
+
+    """
+    abandoned = threading.Event()
+
+    def upload(
+        filename: str,
+        target: dict[str, Any],
+        size: int,
+        advance: Callable[[int], None],
+    ) -> None:
+        try:
+            _put_archive(zip_dir / filename, target, size, advance, abandoned)
+        except _UploadAbandonedError:
+            # Stopping on purpose is not a failure of its own, and it never
+            # sets the flag: the archive that did fail is holding the reason,
+            # and its future is the one that should carry it out of here.
+            pass
+        except BaseException:
+            abandoned.set()
+            raise
+
+    with (
+        console.transfer_progress() as progress,
+        ThreadPoolExecutor(max_workers=len(ARCHIVES)) as pool,
+    ):
+        uploads = []
+        for key, filename in ARCHIVES.items():
+            task = progress.add_task(filename, total=sizes[key])
+            uploads.append(
+                pool.submit(
+                    upload,
+                    filename,
+                    reservation[key],
+                    sizes[key],
+                    partial(progress.advance, task),
+                )
+            )
+        for future in uploads:
+            future.result()
+
+
+def upload_archives(
+    zip_dir: Path, app_id: str, sizes: dict[str, int], client: AuthenticatedClient
+) -> str | None:
+    """Push a build's archives straight to storage, without relaying them.
+
+    A 403 on a PUT is a lapsed signature, and the recovery is a new reservation.
+    That mints a new deployment id naming a new prefix, so both archives go up
+    again under it -- the one that succeeded under the old id is not somewhere
+    the new deployment will look.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        app_id: The app the build belongs to.
+        sizes: Each archive's byte count, keyed as in ``ARCHIVES``.
+        client: The authenticated client.
+
+    Returns:
+        The deployment id the archives now live under, or None if this control
+        plane has no reserve endpoint and they have to be relayed instead.
+
+    Raises:
+        ArchiveUploadError: The archives could not be put where they belong.
+
+    """
+    import httpx
+
+    for attempt in range(UPLOAD_ATTEMPTS):
+        try:
+            reservation = reserve_archive_upload(app_id, sizes, client)
+        except httpx.HTTPStatusError as ex:
+            raise ArchiveUploadError(
+                _response_detail(ex.response, f"HTTP {ex.response.status_code}")
+            ) from ex
+        except httpx.HTTPError as ex:
+            raise ArchiveUploadError(
+                f"could not reach the deployment service: {ex}"
+            ) from ex
+        if reservation is None:
+            return None
+        try:
+            _put_reserved_archives(zip_dir, reservation, sizes)
+        except httpx.HTTPStatusError as ex:
+            if ex.response.status_code != HTTPStatus.FORBIDDEN:
+                raise ArchiveUploadError(
+                    f"could not upload the build to storage: HTTP {ex.response.status_code}"
+                ) from ex
+            if attempt < UPLOAD_ATTEMPTS - 1:
+                console.warn("the upload window expired; reserving another one")
+        except httpx.HTTPError as ex:
+            raise ArchiveUploadError(f"could not upload the build: {ex}") from ex
+        else:
+            return reservation["deployment_id"]
+    raise ArchiveUploadError(
+        "the upload did not finish before its window closed; this usually means "
+        "the connection is too slow for the size of the build"
+    )
+
+
 def create_deployment(
     zip_dir: Path,
     client: AuthenticatedClient,
@@ -2009,22 +2295,6 @@ def create_deployment(
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
     cli_version = importlib.metadata.version("reflex-hosting-cli")
-    zips = [
-        (
-            "files",
-            (
-                "backend.zip",
-                (zip_dir / "backend.zip").open("rb"),
-            ),
-        ),
-        (
-            "files",
-            (
-                "frontend.zip",
-                (zip_dir / "frontend.zip").open("rb"),
-            ),
-        ),
-    ]
     payload: dict[str, Any] = {
         "app_id": app_id,
         "app_name": app_name,
@@ -2050,13 +2320,34 @@ def create_deployment(
     if description:
         payload["description"] = description
 
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
-        data=payload,
-        files=zips,
-        headers=authorization_header(client.token),
-        timeout=55,
-    )
+    # The archives go straight to storage where the control plane can sign for
+    # them, and only their id is submitted here. Relaying them through it is the
+    # fallback for a control plane that cannot, and for a caller with no app id
+    # to reserve against.
+    stored_build_id = None
+    if app_id is not None:
+        sizes = {key: (zip_dir / name).stat().st_size for key, name in ARCHIVES.items()}
+        try:
+            stored_build_id = upload_archives(zip_dir, app_id, sizes, client)
+        except ArchiveUploadError as ex:
+            return f"deployment failed: {ex}"
+
+    with contextlib.ExitStack() as archives:
+        zips = None
+        if stored_build_id is not None:
+            payload["stored_build_id"] = stored_build_id
+        else:
+            zips = [
+                ("files", (name, archives.enter_context((zip_dir / name).open("rb"))))
+                for name in ARCHIVES.values()
+            ]
+        response = httpx.post(
+            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
+            data=payload,
+            files=zips,
+            headers=authorization_header(client.token),
+            timeout=55,
+        )
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError as ex:
@@ -2093,10 +2384,7 @@ def _security_review_detail(response: Any) -> str:
         a JSON object with a ``detail`` field.
 
     """
-    try:
-        return str(response.json()["detail"])
-    except (ValueError, TypeError, KeyError):
-        return "internal server error"
+    return _response_detail(response, "internal server error")
 
 
 def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str:
@@ -2140,17 +2428,9 @@ def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str
         raise SecurityReviewError(_security_review_detail(ex.response)) from ex
     upload = upload_url_response.json()
 
-    # 2. Upload the bytes to storage. The presigned URL pins the content length
-    #    and type, so send the returned headers verbatim and let httpx derive
-    #    Content-Length from the body — setting it manually breaks the signature.
-    put_response = httpx.put(
-        upload["url"],
-        content=zip_bytes,
-        headers=upload.get("headers", {}),
-        timeout=120,
-    )
+    # 2. Upload the bytes to storage, under the length and type the URL pins.
     try:
-        put_response.raise_for_status()
+        presigned_put(upload, zip_bytes, len(zip_bytes))
     except httpx.HTTPStatusError as ex:
         raise SecurityReviewError("failed to upload app source for review") from ex
 
