@@ -1848,9 +1848,9 @@ def _encode_deterministic(value: Any, out: bytearray, hasher: Any | None) -> Non
         for k, v in sorted(value.items(), key=operator.itemgetter(0)):
             _encode_deterministic(k, out, hasher)
             _encode_deterministic(v, out, hasher)
-        if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
-            hasher.update(out)
-            del out[:]
+            if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
+                hasher.update(out)
+                del out[:]
     elif value_type is ImportVar:
         encoded = _hash_import_var_encodings.get(value)
         if encoded is None:
@@ -1868,9 +1868,9 @@ def _encode_deterministic(value: Any, out: bytearray, hasher: Any | None) -> Non
         out += len(value).to_bytes(8, "little")
         for item in value:
             _encode_deterministic(item, out, hasher)
-        if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
-            hasher.update(out)
-            del out[:]
+            if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
+                hasher.update(out)
+                del out[:]
     elif value is None:
         out += b"N"
     elif value_type is int or value_type is float:
@@ -1984,8 +1984,10 @@ def _update_component_artifacts_hash(
 
     Two components can render identical JSX and still compile to different
     modules -- the classic case is a differing ``on_mount``, which ``_render``
-    omits but which shows up as a lifecycle hook -- so the imports, hooks,
-    custom code, and app-wrap components have to be part of the hash too.
+    omits but which shows up as a lifecycle hook -- so everything else
+    :func:`~reflex.compiler.utils.compile_experimental_component_memo` puts in
+    the body has to be part of the hash too: imports, hooks, custom code,
+    dynamic imports, and app-wrap components.
 
     Everything is encoded into one shared buffer rather than a hasher update
     per artifact.
@@ -1999,11 +2001,22 @@ def _update_component_artifacts_hash(
             artifacts identify the body.
     """
     buffer = bytearray()
+    # Two classes can emit byte-identical bodies and still need separate memo
+    # modules -- the tag prefix already keeps them apart by qualname, so keep
+    # the digest consistent with that and include the defining module, which
+    # the prefix omits. Folding it in here rather than into the prefix avoids
+    # stretching every generated module filename by a dotted module path.
+    cls = type(component)
+    _encode_deterministic(f"{cls.__module__}.{cls.__qualname__}", buffer, hasher)
     if recursive:
         _encode_deterministic(component._get_all_imports(), buffer, hasher)
         _encode_deterministic(component._get_all_hooks_internal(), buffer, hasher)
         _encode_deterministic(component._get_all_hooks(), buffer, hasher)
         _encode_deterministic(component._get_all_custom_code(), buffer, hasher)
+        # A set: sort it so the encoding does not ride on iteration order.
+        _encode_deterministic(
+            sorted(component._get_all_dynamic_imports()), buffer, hasher
+        )
         _encode_deterministic(component._get_all_app_wrap_components(), buffer, hasher)
     else:
         _encode_deterministic(component._get_imports(), buffer, hasher)
@@ -2017,6 +2030,7 @@ def _update_component_artifacts_hash(
         # collided on a tag.
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             _encode_deterministic(clz.add_custom_code(component), buffer, hasher)
+        _encode_deterministic(component._get_dynamic_imports(), buffer, hasher)
         _encode_deterministic(component._get_app_wrap_components(), buffer, hasher)
     hasher.update(buffer)
 

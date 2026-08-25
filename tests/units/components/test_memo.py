@@ -1883,6 +1883,22 @@ def test_self_referencing_var_memo():
     assert "recursive_count" in str(invoked)
 
 
+@pytest.fixture
+def clean_hash_caches():
+    """Isolate a test from the module-level memo-naming caches.
+
+    Tests that fill these caches would otherwise leave their probe values in
+    place for the rest of the session, and tests run in random order, so a test
+    that reads cache state has to start from a known one.
+
+    Yields:
+        None, with the caches empty on entry and on exit.
+    """
+    clear_hash_caches()
+    yield
+    clear_hash_caches()
+
+
 def test_deterministic_hash_is_stable():
     """The same value must hash identically across calls and dict orderings."""
     value = {"b": [1, "x"], "a": {"k": None}}
@@ -1949,7 +1965,7 @@ def test_deterministic_hash_long_strings():
     assert _deterministic_hash(long_a) != _deterministic_hash(long_b)
 
 
-def test_deterministic_hash_beyond_string_cache_capacity():
+def test_deterministic_hash_beyond_string_cache_capacity(clean_hash_caches: None):
     """Strings that arrive after the encoding cache fills still hash correctly."""
     values = [f"cache_capacity_probe_{i}" for i in range(_HASH_MAX_CACHE_ENTRIES + 500)]
     digests = [_deterministic_hash(value) for value in values]
@@ -2048,6 +2064,72 @@ def test_component_hash_recursive_covers_descendant_artifacts():
     )
 
 
+class _DynamicImportProbe(Component):
+    """One class whose dynamic import varies with a prop ``_render`` drops."""
+
+    library = "dynamic-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_dynamic_imports(self) -> str:
+        """Emit a marker-dependent dynamic import.
+
+        Returns:
+            The dynamic import statement.
+        """
+        return f"const EXTRA = await import({self.marker!s});"
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the dynamic import differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dynamic_imports():
+    """Dynamic imports are emitted into the memo body, so they must be hashed.
+
+    Same class, same rendered JSX, different dynamic import: a collision here
+    would drop one of the two import statements from the compiled output.
+    """
+    a = _DynamicImportProbe.create(marker="alpha")
+    b = _DynamicImportProbe.create(marker="beta")
+
+    assert type(a) is type(b)
+    assert a.render() == b.render()
+    assert a._get_dynamic_imports() != b._get_dynamic_imports()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_same_named_classes_from_different_modules():
+    """Two modules defining an identical component must not share a memo tag.
+
+    ``__qualname__`` alone does not distinguish them -- both are ``Probe`` -- so
+    the defining module has to reach the digest.
+    """
+    probes = []
+    for module_name in ("_memo_tag_module_a", "_memo_tag_module_b"):
+        namespace = {"Component": Component, "__name__": module_name}
+        exec(
+            "class Probe(Component):\n    tag = 'Probe'\n    library = 'probe-lib'\n",
+            namespace,
+        )
+        probes.append(namespace["Probe"].create())
+
+    a, b = probes
+    assert type(a) is not type(b)
+    assert type(a).__qualname__ == type(b).__qualname__
+    assert a.render() == b.render()
+    assert memo_tag(a) != memo_tag(b)
+
+
 def test_memo_tag_separates_identically_rendering_classes():
     """Distinct classes that render alike must not collide on a tag."""
 
@@ -2063,7 +2145,7 @@ def test_memo_tag_separates_identically_rendering_classes():
     assert memo_tag(alpha) != memo_tag(beta)
 
 
-def test_clear_hash_caches_drops_every_cache():
+def test_clear_hash_caches_drops_every_cache(clean_hash_caches: None):
     """The compile-scoped encoding caches must all be released together.
 
     Nothing asks for these values after a compile, and a dataclass type defined
