@@ -9,7 +9,7 @@ from typing import ClassVar
 from typing_extensions import Self
 
 
-@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True, eq=False)
 class BaseContext:
     """Base context class that acts as an async context manager to set the context var."""
 
@@ -67,7 +67,7 @@ class BaseContext:
 
     def __exit__(self, *exc_info):
         """Exit the context."""
-        if (token := self._attached_context_token.pop(self)) is not None:
+        if (token := self._attached_context_token.pop(self, None)) is not None:
             self._context_var.reset(token)
 
     def ensure_context_attached(self):

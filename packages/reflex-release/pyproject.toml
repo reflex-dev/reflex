@@ -1,0 +1,36 @@
+[project]
+name = "reflex-release"
+dynamic = ["version"]
+description = "Changelog-driven release automation: towncrier news fragments, GitHub Actions workflows and human-gated PyPI publishing for single-package repos and monorepos."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+keywords = ["release", "changelog", "towncrier", "github-actions", "pypi"]
+requires-python = ">=3.10"
+dependencies = [
+  "packaging >=24.2,<27",
+  "towncrier >=24.8.0,<26",
+  "tomli >=2.0.1; python_version < '3.11'",
+  "tzdata >=2024.1; sys_platform == 'win32'",
+]
+
+[project.scripts]
+reflex-release = "reflex_release.cli:main"
+
+[project.urls]
+Repository = "https://github.com/reflex-dev/reflex"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-release-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reflex_release"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

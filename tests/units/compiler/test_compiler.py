@@ -10,6 +10,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
@@ -1170,12 +1171,15 @@ def test_register_plugin_routes_rejects_stale_dynamic_arg_type_from_prior_app():
     first_app = rx.App(_state=RouteState)
     compiler._register_plugin_routes(first_app, [ScalarPlugin()])
 
-    second_app = rx.App(_state=RouteState)
-    with pytest.raises(
-        RouteValueError,
-        match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
-    ):
-        compiler._register_plugin_routes(second_app, [ListPlugin()])
+    # A context only allows one App; fork (as an app reload does) to create the
+    # second one while preserving the shared RouteState registration.
+    with RegistrationContext.get().fork():
+        second_app = rx.App(_state=RouteState)
+        with pytest.raises(
+            RouteValueError,
+            match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
+        ):
+            compiler._register_plugin_routes(second_app, [ListPlugin()])
 
     assert second_app._unevaluated_pages == {}
     assert not second_app._plugin_routes_registered
@@ -1383,3 +1387,41 @@ def test_register_plugin_routes_preserves_component_source_module():
     compiler._register_plugin_routes(app, [ComponentPlugin()])
 
     assert app._unevaluated_pages["component-page"]._source_module == __name__
+
+
+@pytest.mark.parametrize("disable_owner_stacks", [True, False])
+def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
+    """The owner-stack pin is emitted only when asked for, and only for the browser.
+
+    The snippet mutates shared React internals, so it must never run in the
+    server renderer, and it must disappear entirely when owner stacks are
+    requested (REFLEX_REACT_OWNER_STACKS=1) or in production builds.
+
+    Args:
+        disable_owner_stacks: Whether the pin should be emitted.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        disable_react_owner_stacks=disable_owner_stacks,
+    )
+
+    if not disable_owner_stacks:
+        assert "recentlyCreatedOwnerStacks" not in rendered
+        # React is only imported for the pin; without it the import is dead weight.
+        assert not rendered.startswith("import React,")
+        return
+
+    assert "recentlyCreatedOwnerStacks" in rendered
+    assert rendered.startswith("import React,")
+    # Browser-only: the guard must wrap the mutation, not merely precede it.
+    pin_at = rendered.index("recentlyCreatedOwnerStacks")
+    guard_at = rendered.index('typeof window !== "undefined"')
+    assert guard_at < pin_at
+    assert "Object.defineProperty" in rendered
+    # The documented escape hatch must be discoverable from the generated code.
+    assert "REFLEX_REACT_OWNER_STACKS" in rendered
+    # The trade-off must be stated where a reader of the output will see it.
+    assert "captureOwnerStack" in rendered

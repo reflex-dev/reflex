@@ -139,6 +139,7 @@ config = rx.Config(
     plugins=[
         rx.plugins.SitemapPlugin(),
         rx.plugins.TailwindV4Plugin(),
+        rx.plugins.RadixThemesPlugin(),
     ]
 )"""
 
@@ -276,6 +277,7 @@ def context_template(
     initial_state: dict[str, Any] | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
+    disable_react_owner_stacks: bool = False,
 ):
     """Template for the context file.
 
@@ -285,6 +287,9 @@ def context_template(
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
+        disable_react_owner_stacks: Whether to emit the snippet that disables
+            React's dev-build owner-stack capture (an Error() constructed per
+            created element, whose cost grows with render depth).
 
     Returns:
         Rendered context file content as string.
@@ -357,10 +362,38 @@ export const initialEvents = () => []
         for state_name in initial_state
     )
 
-    return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    disable_owner_stacks_str = (
+        r"""
+// Disable React dev-build owner-stack capture: the per-element Error()
+// dominates dev-mode render CPU on large pages. Costs owner frames in
+// `React.captureOwnerStack()`; set REFLEX_REACT_OWNER_STACKS=1 to restore.
+// Full context: https://github.com/reflex-dev/reflex/pull/6905
+if (typeof window !== "undefined") {
+  try {
+    const reactInternals =
+      React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
+    if (
+      reactInternals &&
+      typeof reactInternals[ownerStackCounterKey] === "number"
+    ) {
+      Object.defineProperty(reactInternals, ownerStackCounterKey, {
+        get: () => 1e9,
+        set: () => {},
+        configurable: true,
+      });
+    }
+  } catch {}
+}
+"""
+        if disable_react_owner_stacks
+        else ""
+    )
+
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ jsx }} from "@emotion/react";
-
+{disable_owner_stacks_str}
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
@@ -680,6 +713,13 @@ export default defineConfig((config) => ({{
         "**/.web/reflex.install_frontend_packages.cached",
       ],
     }},
+  }},
+  // react-router prerenders by fetching pages from a `vite preview` server
+  // started with this config. Pin an IPv4 loopback address so the bound
+  // socket and the fetched URL cannot resolve `localhost` to different
+  // address families (which refuses the connection, e.g. in docker).
+  preview: {{
+    host: "127.0.0.1",
   }},
   resolve: {{
     mainFields: ["browser", "module", "jsnext"],

@@ -1,6 +1,7 @@
 """This module provides utilities for managing Reflex app templates."""
 
 import dataclasses
+import logging
 import shutil
 import tempfile
 import zipfile
@@ -8,10 +9,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.config import get_config
+from reflex_base.config import reload_config
 
 from reflex.utils import console, net, path_ops, redir
 from reflex.utils.rename import rename_imports_and_app_name
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -31,7 +34,7 @@ def create_config(app_name: str):
     # Import here to avoid circular imports.
     from reflex.compiler import templates
 
-    console.debug(f"Creating {constants.Config.FILE}")
+    logger.debug(f"Creating {constants.Config.FILE}")
     constants.Config.FILE.write_text(templates.rxconfig_template(app_name=app_name))
 
 
@@ -52,12 +55,12 @@ def initialize_app_directory(
     Raises:
         SystemExit: If template_name, template_code_dir_name, template_dir combination is not supported.
     """
-    console.log("Initializing the app directory.")
+    logger.info("Initializing the app directory.")
 
     # By default, use the blank template from local assets.
     if template_name == constants.Templates.DEFAULT:
         if template_code_dir_name is not None or template_dir is not None:
-            console.error(
+            logger.error(
                 f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
             )
             raise SystemExit(1)
@@ -65,12 +68,12 @@ def initialize_app_directory(
         template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
     else:
         if template_code_dir_name is None or template_dir is None:
-            console.error(
+            logger.error(
                 f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
             )
             raise SystemExit(1)
 
-    console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
+    logger.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
     # Remove __pycache__ dirs in template directory and current directory.
     for pycache_dir in [
@@ -125,7 +128,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     try:
         temp_dir = tempfile.mkdtemp()
     except OSError as ose:
-        console.error(f"Failed to create temp directory for download: {ose}")
+        logger.error(f"Failed to create temp directory for download: {ose}")
         raise SystemExit(1) from None
 
     # Use httpx GET with redirects to download the zip file.
@@ -133,23 +136,23 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
         response = net.get(template_url, follow_redirects=True)
-        console.debug(f"Server responded download request: {response}")
+        logger.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
-        console.error(f"Failed to download the template: {he}")
+        logger.error(f"Failed to download the template: {he}")
         raise SystemExit(1) from None
     try:
         zip_file_path.write_bytes(response.content)
-        console.debug(f"Downloaded the zip to {zip_file_path}")
+        logger.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
-        console.error(f"Unable to write the downloaded zip to disk {ose}")
+        logger.error(f"Unable to write the downloaded zip to disk {ose}")
         raise SystemExit(1) from None
 
     # Create a temp directory for the zip extraction.
     try:
         unzip_dir = Path(tempfile.mkdtemp())
     except OSError as ose:
-        console.error(f"Failed to create temp directory for extracting zip: {ose}")
+        logger.error(f"Failed to create temp directory for extracting zip: {ose}")
         raise SystemExit(1) from None
 
     try:
@@ -157,19 +160,19 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         # The zip file downloaded from github looks like:
         # repo-name-branch/**/*, so we need to remove the top level directory.
     except Exception as uze:
-        console.error(f"Failed to unzip the template: {uze}")
+        logger.error(f"Failed to unzip the template: {uze}")
         raise SystemExit(1) from None
 
     if len(subdirs := list(unzip_dir.iterdir())) != 1:
-        console.error(f"Expected one directory in the zip, found {subdirs}")
+        logger.error(f"Expected one directory in the zip, found {subdirs}")
         raise SystemExit(1)
 
     template_dir = unzip_dir / subdirs[0]
-    console.debug(f"Template folder is located at {template_dir}")
+    logger.debug(f"Template folder is located at {template_dir}")
 
     # Move the rxconfig file here first.
     path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
-    new_config = get_config(reload=True)
+    new_config = reload_config()
 
     # Get the template app's name from rxconfig in case it is different than
     # the source code repo name on github.
@@ -187,11 +190,11 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     pyproject_file = Path(constants.PyprojectToml.FILE)
     req_file = Path(constants.RequirementsTxt.FILE)
     if pyproject_file.exists():
-        console.info(
+        logger.info(
             "Run `uv sync` to install the required Python packages for this template."
         )
     elif req_file.exists() and len(req_file.read_text().splitlines()) > 1:
-        console.info(
+        logger.info(
             "Run `uv pip install -r requirements.txt` to install the required Python packages for this template."
         )
     #  Clean up the temp directories.
@@ -215,7 +218,7 @@ def validate_and_create_app_using_remote_template(app_name: str, template: str):
         path = template_parsed_url.path.strip("/").removesuffix(".git")
         template_url = f"https://github.com/{path}/archive/main.zip"
     else:
-        console.error(f"Template `{template}` not found or invalid.")
+        logger.error(f"Template `{template}` not found or invalid.")
         raise SystemExit(1)
 
     create_config_init_app_from_remote_template(
@@ -250,17 +253,17 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     )
 
     if not template:
-        console.error("No template selected.")
+        logger.error("No template selected.")
         raise SystemExit(1)
 
     try:
         template_index = int(template)
     except ValueError:
-        console.error("Invalid template selected.")
+        logger.error("Invalid template selected.")
         raise SystemExit(1) from None
 
     if template_index < 0 or template_index >= len(templates):
-        console.error("Invalid template selected.")
+        logger.error("Invalid template selected.")
         raise SystemExit(1)
 
     # Return the template.

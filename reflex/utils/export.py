@@ -1,5 +1,6 @@
 """Export utilities."""
 
+import logging
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -12,6 +13,8 @@ from reflex_base.utils import console
 
 from reflex.utils import build, exec, prerequisites, telemetry
 
+logger = logging.getLogger(__name__)
+
 
 def export(
     zipping: bool = True,
@@ -22,7 +25,7 @@ def export(
     api_url: str | None = None,
     deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
-    loglevel: constants.LogLevel = console._LOG_LEVEL,
+    loglevel: constants.LogLevel | None = None,
     backend_excluded_dirs: tuple[Path, ...] = (),
     prerender_routes: bool = True,
 ):
@@ -37,7 +40,7 @@ def export(
         api_url: The API URL to use. Defaults to None.
         deploy_url: The deploy URL to use. Defaults to None.
         env: The environment to use. Defaults to constants.Env.PROD.
-        loglevel: The log level to use. Defaults to console._LOG_LEVEL.
+        loglevel: The log level to use. Defaults to the current log level.
         backend_excluded_dirs: A tuple of files or directories to exclude from the backend zip.  Defaults to ().
         prerender_routes: Whether to prerender the routes. Defaults to True.
     """
@@ -52,10 +55,10 @@ def export(
     # Override the config url values if provided.
     if api_url is not None:
         config._set_persistent(api_url=str(api_url))
-        console.debug(f"overriding API URL: {config.api_url}")
+        logger.debug(f"overriding API URL: {config.api_url}")
     if deploy_url is not None:
         config._set_persistent(deploy_url=str(deploy_url))
-        console.debug(f"overriding deploy URL: {config.deploy_url}")
+        logger.debug(f"overriding deploy URL: {config.deploy_url}")
 
     # Show system info
     exec.output_system_info()

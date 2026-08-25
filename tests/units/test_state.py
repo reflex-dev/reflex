@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import functools
 import json
+import logging
 import math
 import os
 import sys
@@ -41,21 +42,14 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, _FrozenDictStrStr
+from reflex.istate.data import HeaderData, RouterData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import StateProxy
-from reflex.state import (
-    BaseState,
-    ImmutableStateError,
-    MutableProxy,
-    OnLoadInternalState,
-    RouterData,
-    State,
-)
+from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
@@ -1862,7 +1856,7 @@ async def test_state_manager_modify_state(
 
         # separate instances should NOT share locks
         sm2 = type(state_manager)()
-        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert sm2._state_manager_lock is not state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
@@ -1922,17 +1916,16 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    import reflex_base.utils.console as _base_console
-
-    from reflex.istate.manager import token as _token_mod
-
-    console = _token_mod.console
+    from reflex_base.utils import console as _base_console
 
     from reflex.state import State
+    from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
 
     def _clear_dedupe():
+        # console.deprecate keeps its own emitted-warnings set; clear the
+        # entries for this feature so every block below re-emits.
         _base_console._EMITTED_DEPRECATION_WARNINGS -= {
             k
             for k in _base_console._EMITTED_DEPRECATION_WARNINGS
@@ -1981,7 +1974,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         mock_deprecate.assert_called()
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
@@ -2143,7 +2136,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: BaseStateToken,
-    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -2151,10 +2144,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         state_manager_redis: A state manager instance.
         token: A token.
         substate_token_redis: A token + substate name for looking up in state manager.
-        mocker: Pytest mocker object.
+        caplog: Pytest log capture fixture.
     """
-    console_warn = mocker.patch("reflex_base.utils.console.warn")
-
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
@@ -2170,12 +2161,16 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
+    lock_warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "was held too long" in r.getMessage()
+    ]
     if environment.REFLEX_OPLOCK_ENABLED.get():
         # When Oplock is enabled, we don't warn when lock is held too long.
-        console_warn.assert_not_called()
+        assert not lock_warnings
     else:
-        console_warn.assert_called()
-        assert console_warn.call_count == 7
+        assert len(lock_warnings) == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -3365,7 +3360,6 @@ async def test_preprocess(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3429,7 +3423,6 @@ async def test_preprocess_multiple_load_events(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3880,7 +3873,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3916,7 +3909,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -3941,7 +3934,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -3965,7 +3958,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -3992,7 +3985,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -4032,7 +4025,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # Must not raise (previously raised AttributeError mid-import).
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         del sys.modules[constants.Config.MODULE]
 
 
@@ -4061,7 +4054,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
         assert "set_n" in state_cls.event_handlers
         del sys.modules[constants.Config.MODULE]
@@ -4087,7 +4080,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
         assert list(state_cls.event_handlers) == ["setvar"]
         del sys.modules[constants.Config.MODULE]
@@ -4109,7 +4102,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
 
     with chdir(proj_root):
         rxconfig_path.write_text(dedent(off_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class ReloadOffState(State):
@@ -4118,7 +4111,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
         assert list(ReloadOffState.event_handlers) == ["setvar"]
 
         rxconfig_path.write_text(dedent(on_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         class ReloadOnState(State):
             num: int = 0

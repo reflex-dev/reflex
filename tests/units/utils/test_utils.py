@@ -1,3 +1,4 @@
+import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
@@ -14,6 +15,7 @@ from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_base.vars.base import Var
 
 from reflex.environment import environment
+from reflex.plugins import RadixThemesPlugin
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
@@ -361,6 +363,11 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
+    # The default template must declare RadixThemesPlugin explicitly. The blank
+    # app renders Radix Themes components, so without an explicit plugin the
+    # compiler falls back to implicit enablement and emits a deprecation warning
+    # on the first `reflex run` of a freshly scaffolded app (issue #6483).
+    assert any(isinstance(plugin, RadixThemesPlugin) for plugin in config.plugins)
 
 
 class DataFrame:
@@ -528,20 +535,20 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
     )
 
 
-def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker):
+def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker, caplog):
     """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
     import httpx
 
     agents_file = tmp_path / "AGENTS.md"
     claude_file = tmp_path / "CLAUDE.md"
     mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
-    warn = mocker.patch("reflex.utils.console.warn")
 
     frontend_skeleton.initialize_agents_md(
         agents_file=agents_file, claude_file=claude_file
     )
 
-    warn.assert_called_once()
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
     assert not agents_file.exists()
     assert not claude_file.exists()
 
@@ -780,7 +787,7 @@ def test_output_system_info(mocker: MockerFixture):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex_base.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex_base.utils.log._log_level", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 
@@ -856,6 +863,26 @@ def test_vite_config_template_minify(minify: bool) -> None:
     assert f"minify: {expected}," in config
     # CSS minification follows the JS minify flag.
     assert f"cssMinify: {expected}," in config
+
+
+def test_vite_config_template_pins_preview_host() -> None:
+    """The vite config pins the preview server to an IPv4 loopback address.
+
+    react-router prerenders by fetching pages from a `vite preview` server;
+    without a pinned host, the bound socket and the fetched `localhost` URL
+    can resolve to different address families and refuse the connection.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "preview: {" in config
+    assert 'host: "127.0.0.1",' in config
 
 
 @pytest.mark.parametrize("minify", [True, False])
