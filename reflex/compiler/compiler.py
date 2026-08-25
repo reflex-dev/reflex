@@ -214,6 +214,9 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
         The compiled context file.
     """
     default_color_mode = str(LiteralVar.create(_resolve_default_color_mode(theme)))
+    disable_react_owner_stacks = (
+        not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
+    )
 
     return (
         templates.context_template(
@@ -222,11 +225,13 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
     )
 
