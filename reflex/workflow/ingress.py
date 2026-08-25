@@ -22,7 +22,7 @@ from reflex.workflow.validation import canonical_payload, missing_args, mistyped
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine, Mapping
 
-    from reflex_base.workflow import WebhookTrigger
+    from reflex_base.workflow import Signal, WebhookTrigger
 
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
     from reflex.workflow.runtime import WorkflowRuntime
@@ -33,32 +33,38 @@ WEBHOOK_ROUTE = "/_workflow/webhook/{topic:path}"
 
 
 class WebhookRoute:
-    """One workflow root reachable over HTTP.
+    """One webhook topic reachable over HTTP: a root to start or a channel
+    to deliver into.
 
     Attributes:
-        definition: The workflow definition owning the root.
-        handler: The root handler started by this topic.
+        definition: The workflow definition owning the target.
+        handler: The root handler started by this topic, for a root route.
         trigger: The webhook trigger declaring the topic and its verification.
+        channel: The signal channel this topic delivers into, for a channel
+            route.
     """
 
-    __slots__ = ("definition", "handler", "trigger")
+    __slots__ = ("channel", "definition", "handler", "trigger")
 
     def __init__(
         self,
         definition: WorkflowDefinition,
-        handler: HandlerDefinition,
+        handler: HandlerDefinition | None,
         trigger: WebhookTrigger,
+        channel: Signal | None = None,
     ):
         """Initialize the route.
 
         Args:
-            definition: The workflow definition owning the root.
-            handler: The root handler started by this topic.
+            definition: The workflow definition owning the target.
+            handler: The root handler started by this topic, or None.
             trigger: The webhook trigger declaring the topic.
+            channel: The signal channel this topic delivers into, or None.
         """
         self.definition = definition
         self.handler = handler
         self.trigger = trigger
+        self.channel = channel
 
 
 def collect_webhook_routes(
@@ -80,22 +86,52 @@ def collect_webhook_routes(
     from reflex_base.workflow import WebhookTrigger
 
     routes: dict[str, WebhookRoute] = {}
+
+    def claim(topic: str, route: WebhookRoute, target: str) -> None:
+        """Claim a topic, refusing a second claimant.
+
+        Args:
+            topic: The provider topic.
+            route: The route claiming it.
+            target: Human name of the claimant, for the error.
+
+        Raises:
+            WorkflowDefinitionError: If the topic is already claimed.
+        """
+        existing = routes.get(topic)
+        if existing is not None:
+            held_by = (
+                f"{existing.definition.workflow_id}.{existing.handler.id}"
+                if existing.handler is not None
+                else f"{existing.definition.workflow_id}."
+                f"{existing.channel.name if existing.channel else '?'}"
+            )
+            msg = (
+                f"Webhook topic {topic!r} is claimed by both {held_by} and "
+                f"{target}; a topic must identify exactly one target."
+            )
+            raise WorkflowDefinitionError(msg)
+        routes[topic] = route
+
     for definition in definitions:
         for handler_id in definition.roots:
             handler = definition.handlers[handler_id]
             trigger = handler.trigger
             if not isinstance(trigger, WebhookTrigger):
                 continue
-            existing = routes.get(trigger.topic)
-            if existing is not None:
-                msg = (
-                    f"Webhook topic {trigger.topic!r} is claimed by both "
-                    f"{existing.definition.workflow_id}.{existing.handler.id} and "
-                    f"{definition.workflow_id}.{handler.id}; a topic must "
-                    "identify exactly one root."
-                )
-                raise WorkflowDefinitionError(msg)
-            routes[trigger.topic] = WebhookRoute(definition, handler, trigger)
+            claim(
+                trigger.topic,
+                WebhookRoute(definition, handler, trigger),
+                f"{definition.workflow_id}.{handler.id}",
+            )
+        for channel in definition.channels.values():
+            if channel.trigger is None:
+                continue
+            claim(
+                channel.trigger.topic,
+                WebhookRoute(definition, None, channel.trigger, channel),
+                f"{definition.workflow_id}.{channel.name}",
+            )
     return routes
 
 
@@ -117,7 +153,22 @@ def _identity_value(
         The identity, or None when the declared source is absent.
     """
     assert trigger.dedupe_by is not None
-    source = trigger.dedupe_by
+    return _extract_identity(trigger.dedupe_by, payload, headers)
+
+
+def _extract_identity(
+    source: str, payload: Any, headers: Mapping[str, str]
+) -> str | None:
+    """Extract one identity value from a payload field or a header.
+
+    Args:
+        source: A payload field path, or ``"header:Name"``.
+        payload: The decoded request payload.
+        headers: The request headers.
+
+    Returns:
+        The identity, or None when the declared source is absent.
+    """
     if source.startswith("header:"):
         name = source[len("header:") :]
         value = headers.get(name.lower()) or headers.get(name)
@@ -218,6 +269,62 @@ def _root_args(handler: HandlerDefinition, payload: Any) -> dict[str, Any]:
     return {name: payload[name] for name in handler.params if name in payload}
 
 
+async def _ingest_channel(
+    runtime: WorkflowRuntime,
+    route: WebhookRoute,
+    payload: Any,
+    headers: Mapping[str, str],
+) -> JSONResponse:
+    """Route a verified channel delivery into the durable channel inbox.
+
+    Args:
+        runtime: The workflow runtime.
+        route: The channel route the topic resolved to.
+        payload: The canonical payload.
+        headers: The request headers, for header-sourced identities.
+
+    Returns:
+        The acknowledgement. Every durable outcome is a 202: once the row is
+        committed the provider must stop retrying, whether the payload
+        landed, parked, deduplicated, or died visibly for an operator.
+    """
+    assert route.channel is not None
+    trigger = route.trigger
+    dedupe = _extract_identity(trigger.dedupe_by or "", payload, headers)
+    if dedupe is None:
+        return JSONResponse(
+            {
+                "error": (
+                    f"delivery carries no {trigger.dedupe_by!r}, which this "
+                    "channel deduplicates by"
+                )
+            },
+            status_code=400,
+        )
+    correlation = _extract_identity(trigger.correlate_by or "", payload, headers)
+    if correlation is None:
+        # Without the business key there is no run to route to and no key to
+        # park under; accepting it would create a dead letter for a sender
+        # error a 400 would have fixed.
+        return JSONResponse(
+            {
+                "error": (
+                    f"delivery carries no {trigger.correlate_by!r}, which this "
+                    "channel correlates by"
+                )
+            },
+            status_code=400,
+        )
+    disposition = await runtime.kernel.ingest_channel(
+        route.definition.workflow_id,
+        route.channel.name,
+        str(correlation),
+        str(dedupe),
+        payload,
+    )
+    return JSONResponse({"disposition": disposition}, status_code=202)
+
+
 def webhook_endpoint(
     runtime: WorkflowRuntime,
 ) -> Callable[[Request], Coroutine[Any, Any, JSONResponse]]:
@@ -272,18 +379,25 @@ def webhook_endpoint(
         except ValueError:
             return JSONResponse({"error": "payload is not JSON"}, status_code=400)
 
-        if route.trigger.model is not None:
+        model = route.trigger.model or (
+            route.channel.model if route.channel is not None else None
+        )
+        if model is not None:
             try:
                 # The canonical form -- coercions applied, defaults filled --
                 # is what goes onward. Validating and then passing the raw
                 # payload threw the validation away.
-                payload = canonical_payload(route.trigger.model, payload)
+                payload = canonical_payload(model, payload)
             except ValidationError:
                 return JSONResponse(
                     {"error": "payload does not match the declared model"},
                     status_code=400,
                 )
 
+        if route.channel is not None:
+            return await _ingest_channel(runtime, route, payload, headers)
+
+        assert route.handler is not None
         spec = getattr(route.definition.state_cls, route.handler.name)
         if len(route.handler.params) > 1 and not isinstance(payload, dict):
             # Several named parameters can only be filled from an object.

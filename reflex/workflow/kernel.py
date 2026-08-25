@@ -85,6 +85,13 @@ LEASE_RENEW_FRACTION = 1 / 3
 RECOVERY_INTERVAL_FRACTION = 1 / 2
 
 MAX_SCHEDULE_CATCHUP = 10
+PARKED_DELIVERY_TTL = 30 * 86_400.0
+"""Seconds a parked channel delivery waits for its run before dead-lettering.
+
+Thirty days matches the longest provider retry horizons with room to spare:
+a delivery still unclaimed after a month is a correlation nobody is coming
+for, and an operator should see it rather than the table growing forever.
+"""
 
 
 class _HandlerCancelledError(Exception):
@@ -1001,6 +1008,50 @@ class WorkflowKernel:
         return await self._store.find_by_request_key(
             self._workflow_id_of(workflow), request_key
         )
+
+    async def ingest_channel(
+        self,
+        workflow_id: str,
+        channel_name: str,
+        correlation_key: str,
+        dedupe_key: str,
+        payload: Any,
+    ) -> DeliveryDisposition:
+        """Durably accept a correlated webhook delivery for a channel.
+
+        Args:
+            workflow_id: The workflow whose channel the event addresses.
+            channel_name: The channel name.
+            correlation_key: The business key naming the target run.
+            dedupe_key: The provider's event identity.
+            payload: The canonical event payload.
+
+        Returns:
+            The routing outcome.
+
+        Raises:
+            WorkflowDefinitionError: If the workflow is registered here and
+                does not declare the channel.
+        """
+        defn = self._definitions.get(workflow_id)
+        if defn is not None and channel_name not in defn.channels:
+            declared = sorted(defn.channels) or ["<none>"]
+            msg = (
+                f"Workflow {workflow_id!r} declares no channel "
+                f"{channel_name!r}; declared channels: {', '.join(declared)}."
+            )
+            raise WorkflowDefinitionError(msg)
+        disposition = await self._store.ingest_channel_delivery(
+            workflow_id,
+            channel_name,
+            correlation_key,
+            dedupe_key,
+            to_run_data({"value": payload})["value"],
+            self._clock(),
+        )
+        if disposition == "resolved":
+            self._wakeup.set()
+        return disposition
 
     async def signal_by_key(
         self,
@@ -3116,6 +3167,14 @@ class WorkflowKernel:
             self._started_at = self._clock()
         await self._renew_leases()
         now = self._clock()
+        swept = await self._store.sweep_parked(now, PARKED_DELIVERY_TTL)
+        if swept:
+            console.warn(
+                f"{swept} parked channel deliver{'y' if swept == 1 else 'ies'} "
+                "went unclaimed past the TTL and became dead letters; "
+                "list them with the store's list_parked and replay any that "
+                "matter."
+            )
         self._next_recovery_at = now + self._recovery_interval
         recovered, failed = await self._store.recover_orphans(now, self._max_recoveries)
         for run_id in failed:

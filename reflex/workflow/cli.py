@@ -1416,6 +1416,75 @@ def serve(
 
 @workflows.command()
 @database_option
+@click.option(
+    "--status",
+    type=click.Choice(["pending", "delivered", "dead"]),
+    default=None,
+    help="Show only deliveries in this state; default shows dead letters.",
+)
+@click.option("--all", "show_all", is_flag=True, help="Show every delivery state.")
+@click.option(
+    "--replay",
+    "replay_id",
+    default=None,
+    help="Re-attempt routing of one delivery by its id.",
+)
+def deadletters(
+    database: str | None,
+    status: str | None,
+    show_all: bool,
+    replay_id: str | None,
+):
+    """Inspect and replay correlated webhook deliveries.
+
+    A delivery that arrived before its run waits PENDING; one nothing can
+    take is DEAD with a reason. Replay routes a delivery again with the same
+    event-id idempotency, so replaying one that already landed is a no-op.
+    """
+    from reflex.workflow.records import ParkedStatus
+
+    async def act(store: RunStore):
+        """Run the inspection or replay.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            The rows to render, or the replay disposition.
+        """
+        if replay_id is not None:
+            return await store.replay_parked(replay_id, time.time())
+        chosen = (
+            None
+            if show_all
+            else ParkedStatus(status.upper())
+            if status
+            else ParkedStatus.DEAD
+        )
+        return await store.list_parked(status=chosen)
+
+    import time
+
+    result = _with_store(database, act)
+    if replay_id is not None:
+        console.print(f"Replay: {result}")
+        raise click.exceptions.Exit(
+            0 if result in ("resolved", "buffered", "duplicate") else 1
+        )
+    if not result:
+        console.print("No matching deliveries.")
+        return
+    for row in result:
+        target = row.run_id or f"key={row.correlation_key!r}"
+        detail = f" reason={row.reason}" if row.reason else ""
+        console.print(
+            f"{row.parked_id}  {row.status.value:<9} {row.workflow_id}."
+            f"{row.channel}  {target}{detail}"
+        )
+
+
+@workflows.command()
+@database_option
 @click.argument("run_id")
 def cancel(database: str | None, run_id: str):
     """Request cancellation of a run.

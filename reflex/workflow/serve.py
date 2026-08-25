@@ -372,6 +372,96 @@ def key_signal_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
     return endpoint
 
 
+def deadletters_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that lists correlated webhook deliveries.
+
+    Args:
+        runtime: The runtime owning the store.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("read")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """List deliveries, dead letters by default.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The delivery rows.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        from reflex.workflow.records import ParkedStatus
+
+        raw = request.query_params.get("status", "dead")
+        if raw == "all":
+            chosen = None
+        else:
+            try:
+                chosen = ParkedStatus(raw.upper())
+            except ValueError:
+                return JSONResponse(
+                    {"error": f"unknown status {raw!r}"}, status_code=400
+                )
+        rows = await runtime.kernel._store.list_parked(status=chosen)  # pyright: ignore[reportPrivateUsage]
+        return JSONResponse({
+            "deliveries": [
+                {
+                    "parked_id": row.parked_id,
+                    "workflow": row.workflow_id,
+                    "channel": row.channel,
+                    "correlation_key": row.correlation_key,
+                    "status": row.status.value,
+                    "reason": row.reason,
+                    "run_id": row.run_id,
+                    "created_at": row.created_at,
+                }
+                for row in rows
+            ]
+        })
+
+    return endpoint
+
+
+def deadletter_replay_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that replays one delivery.
+
+    Args:
+        runtime: The runtime owning the store.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("operate")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """Route the delivery again, with the same event-id idempotency.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The routing outcome.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        disposition = await runtime.kernel._store.replay_parked(  # pyright: ignore[reportPrivateUsage]
+            request.path_params["parked_id"],
+            runtime.kernel._clock(),  # pyright: ignore[reportPrivateUsage]
+        )
+        status = {"unknown_key": 404, "dead_letter": 409}.get(disposition, 202)
+        return JSONResponse({"disposition": disposition}, status_code=status)
+
+    return endpoint
+
+
 def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: str):
     """Build one operator action endpoint.
 
@@ -573,6 +663,18 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                         "responses": {"202": {"description": "Delivered"}},
                     }
                 },
+                "/deadletters": {
+                    "get": {
+                        "summary": ("List correlated webhook deliveries (scope: read)"),
+                        "responses": {"200": {"description": "The deliveries"}},
+                    }
+                },
+                "/deadletters/{parked_id}/replay": {
+                    "post": {
+                        "summary": "Replay a delivery (scope: operate)",
+                        "responses": {"202": {"description": "Routed"}},
+                    }
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -693,6 +795,16 @@ def build_app(
             Route(
                 "/workflows/{workflow_id}/keys/{request_key}/signals/{channel}",
                 key_signal_endpoint(runtime, tokens),
+                methods=["POST"],
+            ),
+            Route(
+                "/deadletters",
+                deadletters_endpoint(runtime, tokens),
+                methods=["GET"],
+            ),
+            Route(
+                "/deadletters/{parked_id}/replay",
+                deadletter_replay_endpoint(runtime, tokens),
                 methods=["POST"],
             ),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a

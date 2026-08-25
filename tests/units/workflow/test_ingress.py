@@ -656,3 +656,154 @@ async def test_github_form_encoded_deliveries_are_understood(
         "receives its field, not the enclosing object"
     )
     await runtime.shutdown()
+
+
+class Fulfil(rx.State):
+    """A workflow whose channel is fed by a correlated provider webhook."""
+
+    __workflow__ = WorkflowConfig(id="ingress.fulfil")
+
+    shipped = rx.Signal(
+        trigger=webhook(
+            "carrier_shipped",
+            dedupe_by="event_id",
+            correlate_by="order_id",
+            verify=hmac_signature(
+                secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+            ),
+        )
+    )
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        """Wait for the shipment.
+
+        Returns:
+            The wait.
+        """
+        return rx.wait_for(Fulfil.shipped, then=Fulfil.close, timeout=rx.never)
+
+    @rx.event(durable=True, effect="none")
+    def close(self, shipment):
+        """Finish with the shipment.
+
+        Args:
+            shipment: The delivered payload.
+
+        Returns:
+            Completion.
+        """
+        return rx.complete(result=shipment)
+
+
+async def test_a_correlated_webhook_reaches_its_run_exactly_once(
+    monkeypatch, forked_registration_context
+):
+    """Early delivery, three sends, late run: one signal, over real HTTP.
+
+    Args:
+        monkeypatch: Used to install the webhook secret.
+        forked_registration_context: Isolated state registry.
+    """
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+    runtime = WorkflowRuntime(MemoryRunStore())
+    runtime.register(Fulfil)
+    await runtime.startup(start_worker=False)
+    app = Starlette(
+        routes=[Route(WEBHOOK_ROUTE, webhook_endpoint(runtime), methods=["POST"])]
+    )
+    body = json.dumps({
+        "event_id": "evt_7",
+        "order_id": "ord_7",
+        "parcel": "P-7",
+    }).encode()
+    with TestClient(app) as client:
+        first = client.post(
+            "/_workflow/webhook/carrier_shipped",
+            content=body,
+            headers={"x-signature": _sign(body)},
+        )
+        assert first.status_code == 202, first.text
+        assert first.json()["disposition"] == "parked"
+        for _ in range(2):
+            again = client.post(
+                "/_workflow/webhook/carrier_shipped",
+                content=body,
+                headers={"x-signature": _sign(body)},
+            )
+            assert again.status_code == 202
+            assert again.json()["disposition"] == "duplicate"
+
+        keyless = json.dumps({"event_id": "evt_8", "parcel": "P-8"}).encode()
+        refused = client.post(
+            "/_workflow/webhook/carrier_shipped",
+            content=keyless,
+            headers={"x-signature": _sign(keyless)},
+        )
+        assert refused.status_code == 400
+        assert "order_id" in refused.json()["error"]
+
+    started = await runtime.kernel.start(Fulfil.begin(), request_key="ord_7")
+    assert started.run_id is not None
+    await runtime.kernel.run_until_idle()
+    snapshot = await runtime.kernel.get_run(started.run_id)
+    assert snapshot is not None
+    assert snapshot.status is RunStatus.COMPLETED
+    assert snapshot.result == {
+        "event_id": "evt_7",
+        "order_id": "ord_7",
+        "parcel": "P-7",
+    }
+    parked = await runtime.kernel._store.list_parked()  # pyright: ignore[reportPrivateUsage]
+    assert len(parked) == 1
+    assert parked[0].status.value == "DELIVERED"
+    await runtime.shutdown()
+
+
+def test_a_channel_topic_cannot_collide_with_a_root_topic(
+    monkeypatch, forked_registration_context
+):
+    """One topic, one target: a root and a channel cannot share it.
+
+    Args:
+        monkeypatch: Used to install the webhook secret.
+        forked_registration_context: Isolated state registry.
+    """
+    from reflex.workflow.definition import compile_workflow
+    from reflex.workflow.ingress import collect_webhook_routes
+
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", SECRET)
+
+    class Both(rx.State):
+        __workflow__ = WorkflowConfig(id="ingress.both")
+
+        colliding = rx.Signal(
+            trigger=webhook(
+                "shipped",
+                dedupe_by="id",
+                correlate_by="order",
+                verify=hmac_signature(
+                    secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+                ),
+            )
+        )
+
+        @rx.event(
+            durable=True,
+            effect="none",
+            trigger=webhook(
+                "shipped",
+                verify=hmac_signature(
+                    secret_env="STRIPE_WEBHOOK_SECRET", header="X-Signature"
+                ),
+            ),
+        )
+        def on_shipped(self, event: dict):
+            """Claim the same topic as the channel.
+
+            Args:
+                event: The payload.
+            """
+
+    with pytest.raises(WorkflowDefinitionError, match="shipped"):
+        collect_webhook_routes((compile_workflow(Both),))

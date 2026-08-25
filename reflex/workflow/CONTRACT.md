@@ -260,6 +260,34 @@ Checked in this order at start:
    refuses its signal rather than letting it resolve a later wait on the
    same channel.
 
+### Correlated webhook delivery
+
+A signal channel can be fed directly by a provider:
+`rx.Signal(Model, trigger=rx.webhook(topic, verify=..., dedupe_by="event_id",
+correlate_by="order_id"))`. Root webhooks start runs; channel webhooks locate
+them: `correlate_by` names the payload field carrying the business key,
+matched against runs' request keys (§6), and `dedupe_by` names the
+provider's event identity. Both are required on a channel trigger, and one
+topic identifies exactly one target — root or channel, never both.
+
+The delivery is durable from the moment it is acknowledged. Ingest writes
+the channel-inbox row keyed by the event id and routes it in the **same
+transaction**: to the run when the correlation key admitted one, to
+`PENDING` when none exists yet, to a `DEAD` letter when the run is terminal
+or past its deadline. Admission — through either door, plain or policy —
+flushes `PENDING` rows for its request key inside the admitting
+transaction, so a crash cannot separate "the run exists" from "its early
+mail reached it". A `PENDING` row unclaimed past the TTL (30 days) becomes
+a `DEAD` letter with reason `unclaimed`, swept by recovery and warned about.
+
+Dead letters are never silent: they list with their reason
+(`reflex workflows deadletters`, `GET /deadletters`) and replay
+(`--replay`, `POST /deadletters/{id}/replay`) through the same routing with
+the same event-id idempotency — replaying a delivered row is a `duplicate`,
+never a second signal. The acceptance shape, held by a real SIGKILL test:
+delivery before the run, killed after the ack, redelivered twice, run
+started later — exactly one signal arrives.
+
 ### Business-key addressing
 
 The request key is a durable unique index per workflow (`§6`), so it doubles

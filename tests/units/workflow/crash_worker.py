@@ -185,17 +185,70 @@ def _read_run_id() -> str:
     return Path(sys.argv[2] + ".runid").read_text().strip()
 
 
+class Order(rx.State):
+    """A run that waits for a correlated shipment event."""
+
+    __workflow__ = WorkflowConfig(id="crash.order")
+
+    shipped = rx.Signal()
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        """Wait for the shipment.
+
+        Returns:
+            The wait.
+        """
+        return rx.wait_for(Order.shipped, then=Order.close, timeout=rx.never)
+
+    @rx.event(durable=True, effect="none", retry=Retry(max_attempts=1))
+    def close(self, shipment):
+        """Handle the shipment; the ledger is the exactly-once evidence.
+
+        Args:
+            shipment: The delivered payload.
+
+        Returns:
+            Completion.
+        """
+        record("shipped-handled")
+        return rx.complete(result=shipment)
+
+
 async def main() -> None:
     """Drive one phase of a crash scenario against a shared SQLite store."""
     db, _, phase = sys.argv[1], sys.argv[2], sys.argv[3]
     store = SqliteRunStore(Path(db))
     runtime = WorkflowRuntime(store, lease_duration=1.0)
-    for workflow_cls in (Charge, Region, Rollout):
+    for workflow_cls in (Charge, Region, Rollout, Order):
         runtime.register(workflow_cls)
     await runtime.startup(start_worker=False)
     kernel = runtime.kernel
 
-    if phase in ("unguarded", "guarded"):
+    if phase == "ingest_shipment":
+        # The provider's first delivery: durable, acked, then the process is
+        # killed with nothing else done -- the crash-after-ack window.
+        disposition = await kernel.ingest_channel(
+            "crash.order", "shipped", "order_1", "evt_1", {"parcel": "P-1"}
+        )
+        assert disposition == "parked", disposition
+        record("acked")
+        die_at("after_ack")
+    elif phase == "redeliver":
+        # The provider retries twice from a fresh process; both must collapse
+        # into the durable row the crashed process left behind.
+        for _ in range(2):
+            disposition = await kernel.ingest_channel(
+                "crash.order", "shipped", "order_1", "evt_1", {"parcel": "P-1"}
+            )
+            assert disposition == "duplicate", disposition
+            record("redelivered")
+    elif phase == "start_order":
+        started = await kernel.start(Order.begin(), request_key="order_1")
+        assert started.run_id is not None
+        _write_run_id(started.run_id)
+        await kernel.run_until_idle()
+    elif phase in ("unguarded", "guarded"):
         await kernel.start(getattr(Charge, phase)())
         await kernel.recover()
         await kernel.run_until_idle()

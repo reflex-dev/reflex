@@ -205,3 +205,51 @@ def test_a_parent_closed_and_killed_still_stops_its_branches(crash):
     assert crash("recover").returncode == 0
     assert effects(crash.ledger) == [], "a cancelled rollout must never deploy"
     assert sorted(runs(crash.db).values()) == ["CANCELLED"] * 3
+
+
+def test_a_shipment_acked_then_crashed_lands_exactly_once(crash):
+    """The correlated-delivery acceptance, with a real kill in the window.
+
+    The shipment webhook arrives before the order workflow exists and the
+    process is SIGKILLed immediately after acknowledging it. The provider
+    then redelivers twice. The order workflow starts later. Exactly one
+    signal must reach it -- the ledger records the handler running, and the
+    run's inbox holds exactly one row for the channel, read straight from
+    the database.
+
+    Args:
+        crash: The subprocess runner.
+    """
+    first = crash("ingest_shipment", "after_ack")
+    assert first.returncode == -9, (
+        f"expected SIGKILL, got {first.returncode}: {first.stderr.decode()[-800:]}"
+    )
+    assert effects(crash.ledger) == ["acked"], "the ack must be durable pre-crash"
+
+    redelivered = crash("redeliver")
+    assert redelivered.returncode == 0, redelivered.stderr.decode()[-800:]
+    started = crash("start_order")
+    assert started.returncode == 0, started.stderr.decode()[-800:]
+
+    ledger = effects(crash.ledger)
+    assert ledger.count("shipped-handled") == 1, ledger
+    assert ledger.count("redelivered") == 2, ledger
+
+    import sqlite3
+
+    connection = sqlite3.connect(crash.db)
+    try:
+        (inbox_rows,) = connection.execute(
+            "SELECT COUNT(*) FROM workflow_inbox WHERE wait_key = 'sig:shipped'"
+        ).fetchone()
+        (channel_rows,) = connection.execute(
+            "SELECT COUNT(*) FROM workflow_channel_inbox"
+        ).fetchone()
+        (delivered_rows,) = connection.execute(
+            "SELECT COUNT(*) FROM workflow_channel_inbox WHERE status = 'DELIVERED'"
+        ).fetchone()
+    finally:
+        connection.close()
+    assert inbox_rows == 1, "exactly one signal reached the run"
+    assert channel_rows == 1, "three deliveries are one durable event"
+    assert delivered_rows == 1

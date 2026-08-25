@@ -438,3 +438,88 @@ def test_business_keys_address_runs_without_run_ids(service):
         "/workflows/serve.nope/keys/order_123", headers=_auth("tk_read")
     )
     assert unknown_workflow.status_code == 404
+
+
+def test_dead_letters_are_visible_and_replayable_over_http(
+    forked_registration_context,
+):
+    """The operator's dead-letter loop over serve: park, list, replay.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+
+    class Freight(rx.State):
+        __workflow__ = WorkflowConfig(id="serve.freight")
+
+        arrived = Signal(
+            trigger=webhook(
+                "freight_arrived",
+                dedupe_by="event_id",
+                correlate_by="shipment_id",
+                allow_unverified=True,
+                unverified_reason="test-only channel",
+            )
+        )
+
+        @rx.event(durable=True, effect="none", trigger=manual())
+        def begin(self):
+            """Wait for arrival.
+
+            Returns:
+                The wait.
+            """
+            return rx.wait_for(Freight.arrived, then=Freight.close, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def close(self, event):
+            """Finish.
+
+            Args:
+                event: The delivered payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=event)
+
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Freight)
+    app = build_app(
+        runtime,
+        worker=False,
+        drain=0,
+        tokens=_tokens(tk_read="read", tk_operate="operate"),
+    )
+    with TestClient(app) as client:
+        assert (
+            client.get("/deadletters?status=all", headers=_auth("tk_read")).json()[
+                "deliveries"
+            ]
+            == []
+        )
+        parked = client.post(
+            "/_workflow/webhook/freight_arrived",
+            json={"event_id": "evt_d", "shipment_id": "ship_9"},
+        )
+        assert parked.status_code == 202, parked.text
+        assert parked.json()["disposition"] == "parked"
+
+        rows = client.get(
+            "/deadletters?status=pending", headers=_auth("tk_read")
+        ).json()["deliveries"]
+        assert len(rows) == 1
+        assert rows[0]["correlation_key"] == "ship_9"
+        parked_id = rows[0]["parked_id"]
+
+        forbidden = client.post(
+            f"/deadletters/{parked_id}/replay", headers=_auth("tk_read")
+        )
+        assert forbidden.status_code == 403
+        replayed = client.post(
+            f"/deadletters/{parked_id}/replay", headers=_auth("tk_operate")
+        )
+        assert replayed.status_code == 202
+        assert replayed.json()["disposition"] == "parked", "still no run to take it"
+        missing = client.post("/deadletters/nope/replay", headers=_auth("tk_operate"))
+        assert missing.status_code == 404
