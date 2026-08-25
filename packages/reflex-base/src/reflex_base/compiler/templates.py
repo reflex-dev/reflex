@@ -531,8 +531,13 @@ def page_template(
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
+    route: str,
 ):
     """Template for a single react page.
+
+    Every page compiles to a component named ``Component``, so the route is
+    carried in its ``displayName`` — otherwise React DevTools shows the same
+    ``Component`` label for whichever page is mounted.
 
     Args:
         imports: List of import statements.
@@ -540,6 +545,7 @@ def page_template(
         custom_codes: List of custom code snippets.
         hooks: Dictionary of hooks.
         render: Render function for the component.
+        route: The route this page is compiled for, used as its display name.
 
     Returns:
         Rendered React page component as string.
@@ -561,7 +567,9 @@ export default function Component() {{
   return (
     {_RenderUtils.render(render)}
   )
-}}"""
+}}
+Component.displayName = {json.dumps(f"Component({route})")};
+"""
 
 
 def package_json_template(

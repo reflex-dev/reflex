@@ -1479,6 +1479,29 @@ def test_context_template_client_side_component_is_named():
     assert "return ClientSideComponent;" in rendered
 
 
+def test_page_template_display_name_carries_the_route():
+    """Every page compiles to ``Component``; its route is in the display name."""
+    from reflex_base.compiler.templates import page_template
+
+    rendered = page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+        route="test/[dynamic]",
+    )
+
+    assert 'Component.displayName = "Component(test/[dynamic])";' in rendered
+
+
+def test_compile_page_passes_its_route_to_the_template():
+    """The route reaches the template through the legacy page compile path."""
+    _, code = compiler.compile_page("about", rx.el.div("hi"))
+
+    assert 'Component.displayName = "Component(about)";' in code
+
+
 def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
     """A client-only component passes its tag through to the wrapper's name."""
     from reflex_components_plotly.plotly import Plotly
