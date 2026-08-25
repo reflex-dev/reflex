@@ -30,6 +30,7 @@ def MemoApp():
         last_value: str = ""
         order: list[str] = ["row-a", "row-b", "row-c"]
         grid: list[list[str]] = [["a0", "a1"], ["b0", "b1"]]
+        mutable: list[str] = ["a", "b", "c"]
         tree: TreeNode = TreeNode(
             name="root",
             children=[
@@ -55,6 +56,10 @@ def MemoApp():
         @rx.event
         def reverse_order(self):
             self.order = list(reversed(self.order))
+
+        @rx.event
+        def replace_mutable(self):
+            self.mutable = ["d", "e", "f"]
 
         @rx.event
         def record_submit(self, item: str, position: int):
@@ -139,6 +144,35 @@ def MemoApp():
             id="nested-grid",
         )
 
+    def mutable_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        # Three things that could go stale when the list content changes, with
+        # the loop keyed by position (the default -- no `key=` here).
+        seeded = rx.client_state(item, prefix="seeded")
+        fixed = rx.client_state("untouched", prefix="fixed")
+        return rx.hstack(
+            rx.text(item, id=f"mut-item-{index}"),
+            rx.text(index, id=f"mut-index-{index}"),
+            rx.text(seeded.value, id=f"mut-seeded-{index}"),
+            rx.text(fixed.value, id=f"mut-fixed-{index}"),
+            rx.el.button(
+                "mark",
+                id=f"mut-mark-{index}",
+                on_click=fixed.set("marked"),
+            ),
+        )
+
+    def mutable_list() -> rx.Component:
+        return rx.box(rx.foreach(MemoState.mutable, mutable_row), id="mutable-list")
+
+    def identity_keyed_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        seeded = rx.client_state(item, prefix="keyedseed")
+        return rx.text(seeded.value, id=f"keyed-seeded-{index}", key=item)
+
+    def keyed_list() -> rx.Component:
+        return rx.box(
+            rx.foreach(MemoState.mutable, identity_keyed_row), id="keyed-list"
+        )
+
     def shadowed_grid() -> rx.Component:
         # Both loops name their arg the same. Python shadows the outer binding
         # inside the inner lambda, and the compiled output has to shadow it the
@@ -185,6 +219,11 @@ def MemoApp():
             ),
             nested_grid(),
             shadowed_grid(),
+            rx.el.button(
+                "replace", id="replace-mutable", on_click=MemoState.replace_mutable
+            ),
+            mutable_list(),
+            keyed_list(),
         )
 
     app = rx.App()
@@ -452,3 +491,92 @@ def test_nested_foreach_with_shadowed_names_renders_each_level(
         "b0",
         "b1",
     ])
+
+
+def test_mutating_a_list_updates_the_rendered_loop_values(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Replacing a list's contents updates what each row renders.
+
+    The loop keys by position here (no ``key=``), so React re-renders the
+    existing rows rather than mounting new ones. The item and index still have
+    to follow the data: they resolve through the scope the loop provides on
+    every render, not from anything captured at mount.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-item-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-index-{index}")).to_have_text(str(index))
+
+    page.click("#replace-mutable")
+
+    for index, item in enumerate(("d", "e", "f")):
+        expect(page.locator(f"#mut-item-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-index-{index}")).to_have_text(str(index))
+
+
+def test_positionally_keyed_row_keeps_its_client_state_across_a_list_change(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A row's client state belongs to the position when the loop keys by position.
+
+    This is ``useState`` semantics: the default seeds the slot when the row
+    first claims it and is not re-read afterwards, and a positional key means
+    the row never unmounts, so nothing re-claims. Both the state a row was
+    given (``fixed``) and a state seeded from the item (``seeded``) therefore
+    survive the list being replaced.
+
+    Asserted rather than assumed, because the alternative -- re-seeding when the
+    default changes -- would silently discard whatever the user had put in the
+    row. ``key=`` is the way to tie state to the item instead; the next test
+    covers that.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-seeded-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-fixed-{index}")).to_have_text("untouched")
+
+    page.click("#mut-mark-1")
+    expect(page.locator("#mut-fixed-1")).to_have_text("marked")
+
+    page.click("#replace-mutable")
+
+    # The rows now show d/e/f (previous test), but their state stayed put.
+    expect(page.locator("#mut-item-1")).to_have_text("e")
+    expect(page.locator("#mut-fixed-1")).to_have_text("marked")
+    for index, seed in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-seeded-{index}")).to_have_text(seed)
+
+
+def test_identity_keyed_row_reseeds_its_client_state_from_the_new_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """``key=`` on the item ties a row's state to the item, not the position.
+
+    Keying by identity unmounts the old rows when the list is replaced, which
+    releases their scopes, so the new rows claim fresh slots and a state seeded
+    from the item reflects the new item.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#keyed-seeded-{index}")).to_have_text(item)
+
+    page.click("#replace-mutable")
+
+    for index, item in enumerate(("d", "e", "f")):
+        expect(page.locator(f"#keyed-seeded-{index}")).to_have_text(item)
