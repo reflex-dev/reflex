@@ -369,15 +369,16 @@ class RedisTokenManager(LocalTokenManager):
             and socket_record.sid == sid
             and socket_record.instance_id == self.instance_id
         ):
-            # Clean up Redis
+            # Drop the local mapping before the redis round-trip so the
+            # locally-owned fast paths stop treating the token as connected
+            # while the delete is in flight.
+            await super().disconnect_token(token, sid)
+
             redis_key = self._get_redis_key(token)
             try:
                 await self.redis.delete(redis_key)
             except Exception as e:
                 logger.error(f"Redis error deleting token: {e}")
-
-            # Clean up local dicts (always do this)
-            await super().disconnect_token(token, sid)
 
     @staticmethod
     def _get_lost_and_found_key(instance_id: str) -> str:
@@ -452,19 +453,28 @@ class RedisTokenManager(LocalTokenManager):
     async def _fetch_socket_record(self, token: str) -> SocketRecord | None:
         """Fetch the socket record for a token from redis and cache it.
 
-        Unlike _get_token_owner, redis errors propagate to the caller so it
-        can distinguish a lookup failure from an absent record.
+        Redis errors propagate to the caller so it can distinguish a lookup
+        failure from an absent record. This instance is authoritative for its
+        own sockets: a record claiming this instance without a live local
+        link is a stale leftover of a disconnected socket (its delete is
+        still in flight or failed) and is treated as absent.
 
         Args:
             token: The client token.
 
         Returns:
-            The refreshed socket record, or None if the token has none.
+            The refreshed socket record, or None if the token has no live socket.
         """
         record_pkl = await self.redis.get(self._get_redis_key(token))
         if not record_pkl:
             return None
         socket_record = pickle.loads(record_pkl)
+        # Stale leftover of one of this instance's own disconnected sockets.
+        if (
+            socket_record.instance_id == self.instance_id
+            and self.sid_to_token.get(socket_record.sid) != token
+        ):
+            return None
         # Drop the reverse mapping of a superseded record (client moved sids).
         if (
             (previous := self.token_to_socket.get(token)) is not None
@@ -480,10 +490,8 @@ class RedisTokenManager(LocalTokenManager):
         """Whether the token has a connected client socket on any instance.
 
         A record owned by this instance is authoritative. A cached record
-        from another instance may be stale (the client may have reconnected
-        elsewhere), so the socket record is refreshed from redis instead,
-        and dropped from the local cache if the client is gone. If the
-        refresh fails, the cached record is preserved and trusted.
+        from another instance may be stale, so it is refreshed from redis
+        (dropped if the client is gone) and trusted as-is if the refresh fails.
 
         Args:
             token: The client token.

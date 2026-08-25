@@ -427,6 +427,53 @@ class TestRedisTokenManager:
 
         mock_redis.delete.assert_not_called()
 
+    async def test_disconnect_token_clears_local_before_redis_delete(
+        self, manager, mock_redis
+    ):
+        """Local mappings are dropped before the redis delete round-trip starts."""
+        token, sid = "token1", "sid1"
+        manager.token_to_socket[token] = SocketRecord(
+            instance_id=manager.instance_id, sid=sid
+        )
+        manager.sid_to_token[sid] = token
+
+        cached_at_delete = {}
+
+        def delete(key):
+            cached_at_delete["token"] = token in manager.token_to_socket
+            cached_at_delete["sid"] = sid in manager.sid_to_token
+
+        mock_redis.delete.side_effect = delete
+
+        await manager.disconnect_token(token, sid)
+
+        mock_redis.delete.assert_called_once_with(
+            f"token_manager_socket_record_{token}"
+        )
+        assert cached_at_delete == {"token": False, "sid": False}
+
+    async def test_is_token_connected_ignores_stale_own_record(
+        self, manager, mock_redis
+    ):
+        """A redis record claiming this instance without a live local link is stale."""
+        stale = SocketRecord(instance_id=manager.instance_id, sid="sid1")
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(stale))
+
+        assert not await manager.is_token_connected("token1")
+        assert "token1" not in manager.token_to_socket
+        assert "sid1" not in manager.sid_to_token
+
+    async def test_fetch_socket_record_own_record_with_live_link(
+        self, manager, mock_redis
+    ):
+        """A redis record claiming this instance with a live local link is cached."""
+        record = SocketRecord(instance_id=manager.instance_id, sid="sid1")
+        manager.sid_to_token["sid1"] = "token1"
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(record))
+
+        assert await manager._fetch_socket_record("token1") == record
+        assert manager.token_to_socket["token1"] == record
+
     async def test_disconnect_token_redis_error(self, manager, mock_redis):
         """Test disconnect continues with local cleanup even if Redis fails.
 
