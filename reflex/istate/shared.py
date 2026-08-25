@@ -3,10 +3,12 @@
 import asyncio
 import contextlib
 import logging
+import time
 from collections.abc import AsyncIterator
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from reflex_base.constants import ROUTER_DATA
+from reflex_base.environment import environment
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
@@ -15,9 +17,13 @@ from typing_extensions import Self
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState, State, _override_base_method
 
+if TYPE_CHECKING:
+    from reflex.app import App
+
 logger = logging.getLogger(__name__)
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
+DISCONNECT_REAP_TASKS: dict[str, asyncio.Task] = {}
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
 
 
@@ -71,12 +77,94 @@ def _do_update_other_tokens(
             pass
 
     for affected_token in affected_tokens:
-        # TODO: remove disconnected clients after some time.
+        # Disconnected clients are removed by schedule_disconnect_reap after
+        # the reconnect grace; until then the connectivity check above skips
+        # them.
         t = asyncio.create_task(_update_client(affected_token))
         UPDATE_OTHER_CLIENT_TASKS.add(t)
         t.add_done_callback(_log_update_client_errors)
         tasks.append(t)
     return tasks
+
+
+def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
+    """Schedule unsubscribing a disconnected client from its linked shared states.
+
+    Called on client disconnect. The reap runs after a grace period
+    (REFLEX_SHARED_STATE_DISCONNECT_GRACE) so brief reconnects (page reloads,
+    network blips) are no-ops; a client reaped too eagerly re-subscribes on its
+    next event through _internal_patch_linked_state. A new disconnect for the
+    same token restarts the grace.
+
+    Args:
+        app: The application object.
+        token: The client token that disconnected.
+
+    Returns:
+        The scheduled reap task, or None when reaping is disabled.
+    """
+    grace = environment.REFLEX_SHARED_STATE_DISCONNECT_GRACE.get()
+    if grace <= 0 or app._state is None:
+        return None
+    if (previous := DISCONNECT_REAP_TASKS.pop(token, None)) is not None:
+        previous.cancel()
+
+    task = asyncio.create_task(
+        _reap_disconnected_client(app, token, grace),
+        name=f"reflex_shared_state_reap|{token}|{time.time()}",
+    )
+    DISCONNECT_REAP_TASKS[token] = task
+
+    def _on_done(task: asyncio.Task) -> None:
+        if DISCONNECT_REAP_TASKS.get(token) is task:
+            DISCONNECT_REAP_TASKS.pop(token, None)
+        if not task.cancelled() and (exc := task.exception()) is not None:
+            logger.warning(f"Error reaping disconnected shared state client: {exc}")
+
+    task.add_done_callback(_on_done)
+    return task
+
+
+async def _reap_disconnected_client(app: "App", token: str, grace: float) -> None:
+    """Unsubscribe a client from its linked shared states unless it reconnected.
+
+    Args:
+        app: The application object.
+        token: The client token that disconnected.
+        grace: Seconds to wait for a reconnect before unsubscribing.
+    """
+    await asyncio.sleep(grace)
+    if (event_namespace := app.event_namespace) is None:
+        return
+    if await event_namespace._token_manager.is_token_connected(token):
+        # The client reconnected, possibly to another instance.
+        return
+    if app._state is None:
+        return
+    # Read-only peek at the client's links; racing a concurrent event is fine,
+    # since any later event through the link re-adds the client anyway.
+    root_state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=app._state)
+    )
+    if not isinstance(root_state, State):
+        return
+    links = dict(root_state._reflex_internal_links or {})
+    for state_name, linked_token in links.items():
+        try:
+            state_cls = app._state.get_class_substate(state_name)
+            async with app.modify_state(
+                BaseStateToken(ident=linked_token, cls=state_cls)
+            ) as shared_root:
+                shared = await shared_root.get_state(state_cls)
+                if (
+                    not isinstance(shared, SharedState)
+                    or token not in shared._linked_from
+                ):
+                    continue
+                shared._linked_from.discard(token)
+                await shared._on_subscriber_disconnected(token)
+        except Exception as e:
+            logger.warning(f"Error unsubscribing disconnected shared state client: {e}")
 
 
 @contextlib.asynccontextmanager
@@ -505,6 +593,18 @@ class SharedState(SharedStateBaseInternal, mixin=True):
     _linked_from: set[str] = set()
     _linked_to: str = ""
     _previous_dirty_vars: set[str] = set()
+
+    async def _on_subscriber_disconnected(self, client_token: str) -> None:
+        """Hook called when a subscribed client is unsubscribed after disconnecting.
+
+        Override to clean up per-client data kept on the shared state (e.g.
+        presence bookkeeping). Runs with the shared token's state locked, after
+        the client token was removed from the subscriber set; mutations
+        propagate to the remaining linked clients.
+
+        Args:
+            client_token: The client token that was unsubscribed.
+        """
 
     @classmethod
     def __init_subclass__(cls, **kwargs):

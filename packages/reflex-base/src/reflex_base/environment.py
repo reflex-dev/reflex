@@ -688,6 +688,10 @@ class EnvironmentVariables:
     # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
     REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
 
+    # Seconds a disconnected client may reconnect before it is unsubscribed
+    # from the shared states it was linked to. 0 disables the unsubscription.
+    REFLEX_SHARED_STATE_DISCONNECT_GRACE: EnvVar[int] = env_var(30)
+
     # Maximum size of the message in the websocket server in bytes.
     REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
         constants.POLLING_MAX_HTTP_BUFFER_SIZE
