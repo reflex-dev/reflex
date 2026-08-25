@@ -2,12 +2,13 @@
 
 import threading
 import typing
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import EvenMoreBasicBaseState, Var, field
-from reflex_base.vars.sequence import StringVar
+from reflex_base.vars.object import ObjectVar
+from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType
 
 from reflex.state import State
@@ -117,6 +118,32 @@ def test_guess_type_resolves_type_alias(alias_cls: type) -> None:
 
     optional_var = Var(_js_expr="key", _var_type=alias | None).guess_type()
     assert isinstance(optional_var, StringVar)
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_guess_type_resolves_parameterized_type_alias(alias_cls: type) -> None:
+    """A subscripted generic alias (``type Keys[T] = list[T]``) resolves.
+
+    The subscription keeps the TypeAliasType as the origin, so resolution has
+    to substitute the alias's type parameters into its value.
+    """
+    t = TypeVar("t")
+    keys = alias_cls("Keys", list[t], type_params=(t,))  # pyright: ignore[reportGeneralTypeIssues]
+
+    var = Var(_js_expr="keys", _var_type=keys[str]).guess_type()
+    assert isinstance(var, ArrayVar)
+    assert var._var_type == list[str]
+
+    optional_var = Var(_js_expr="keys", _var_type=keys[str] | None).guess_type()
+    assert isinstance(optional_var, ArrayVar)
+
+    k = TypeVar("k")
+    v = TypeVar("v")
+    # value's __parameters__ order (v, k) differs from type_params (k, v)
+    pair = alias_cls("Pair", dict[v, k], type_params=(k, v))  # pyright: ignore[reportGeneralTypeIssues]
+    pair_var = Var(_js_expr="pair", _var_type=pair[str, int]).guess_type()
+    assert isinstance(pair_var, ObjectVar)
+    assert pair_var._var_type == dict[int, str]
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

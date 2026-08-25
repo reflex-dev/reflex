@@ -364,7 +364,9 @@ def is_classvar(a_type: Any) -> bool:
 def resolve_type_alias(cls: GenericType) -> GenericType:
     """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
 
-    Aliases appearing as members of a union are resolved as well.
+    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
+    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    alias value), and aliases appearing as members of a union.
 
     Args:
         cls: The type to resolve.
@@ -374,10 +376,27 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     """
     while isinstance(cls, TypeAliasTypes):
         cls = cls.__value__
+    origin = get_origin(cls)
+    if isinstance(origin, TypeAliasTypes):
+        value = resolve_type_alias(origin.__value__)
+        if params := getattr(value, "__parameters__", ()):
+            # Map via the alias's type parameters: the value's __parameters__
+            # are in appearance order, which may differ.
+            substitution = dict(
+                zip(origin.__type_params__, get_args(cls), strict=False)
+            )
+            value = value[  # pyright: ignore[reportIndexIssue]
+                tuple(substitution.get(param, param) for param in params)
+            ]
+        return resolve_type_alias(value)
     if is_union(cls):
         args = get_args(cls)
-        if any(isinstance(arg, TypeAliasTypes) for arg in args):
-            return unionize(*(resolve_type_alias(arg) for arg in args))
+        resolved_args = tuple(resolve_type_alias(arg) for arg in args)
+        if any(
+            resolved is not arg
+            for resolved, arg in zip(resolved_args, args, strict=True)
+        ):
+            return unionize(*resolved_args)
     return cls
 
 
