@@ -367,7 +367,7 @@ class ClientStateVar(Var):
 
     @property
     def value(self) -> Var:
-        """Get a placeholder for the Var.
+        """A placeholder for the Var.
 
         This property can only be rendered on the frontend.
 
