@@ -1479,20 +1479,52 @@ def test_context_template_client_side_component_is_named():
     assert "return ClientSideComponent;" in rendered
 
 
-def test_page_template_display_name_carries_the_route():
-    """Every page compiles to ``Component``; its route is in the display name."""
+def _render_page_template(route: str = "test/[dynamic]") -> str:
+    """Render the page template for ``route``.
+
+    Args:
+        route: The route to compile the page for.
+
+    Returns:
+        The rendered page module source.
+    """
     from reflex_base.compiler.templates import page_template
 
-    rendered = page_template(
+    return page_template(
         imports=[],
         dynamic_imports=[],
         custom_codes=[],
         hooks={},
         render=rx.el.div("hi").render(),
-        route="test/[dynamic]",
+        route=route,
     )
 
-    assert 'Component.displayName = "Component(test/[dynamic])";' in rendered
+
+def test_page_template_display_name_carries_the_route():
+    """Every page compiles to ``Component``; its route is in the display name."""
+    assert (
+        'Component.displayName = "Component(test/[dynamic])";'
+        in _render_page_template()
+    )
+
+
+def test_page_template_exports_the_component_binding_separately():
+    """The page component is declared and named before it is exported.
+
+    React Router rewrites an exported function *declaration* into a function
+    *expression* wrapped in ``UNSAFE_withComponentProps``
+    (``decorateComponentExportsWithProps``), which leaves no module-scope
+    binding behind. A trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads,
+    breaking every page. Exporting the identifier keeps the declaration intact.
+    """
+    rendered = _render_page_template()
+
+    assert "export default function Component" not in rendered
+    assert "\nfunction Component() {" in rendered
+    assert rendered.index("Component.displayName") < rendered.index(
+        "export default Component;"
+    )
 
 
 def test_compile_page_passes_its_route_to_the_template():

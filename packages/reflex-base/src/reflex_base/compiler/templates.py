@@ -539,6 +539,15 @@ def page_template(
     carried in its ``displayName`` — otherwise React DevTools shows the same
     ``Component`` label for whichever page is mounted.
 
+    The function is declared, named, and only then exported. React Router's
+    ``decorateComponentExportsWithProps`` rewrites an exported function
+    *declaration* into a function *expression* wrapped in
+    ``UNSAFE_withComponentProps``, leaving no module-scope binding behind: a
+    trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads.
+    Exporting the identifier instead keeps the declaration in module scope, and
+    the wrapper renders ``Component`` as a child, so the name still shows.
+
     Args:
         imports: List of import statements.
         dynamic_imports: List of dynamic import statements.
@@ -561,7 +570,7 @@ def page_template(
 
 {custom_code_str}
 
-export default function Component() {{
+function Component() {{
 {hooks_str}
 
   return (
@@ -569,6 +578,8 @@ export default function Component() {{
   )
 }}
 Component.displayName = {json.dumps(f"Component({route})")};
+
+export default Component;
 """
 
 
