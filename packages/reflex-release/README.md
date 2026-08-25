@@ -241,10 +241,16 @@ uvx reflex-release create 1234.feature.md                        # root package
 uvx reflex-release create --package widget-core 1234.bugfix.md   # sub-package
 ```
 
-Before you know the PR number, use an orphan fragment (`+something.feature.md`)
-and rename it later. CI requires a fragment for every package whose source the
-PR touches; the `skip-changelog` label waives that for changes that genuinely
-are not user-facing.
+Before you know the PR number, use an orphan fragment (`+something.feature.md`).
+Renaming it once the PR exists is nice but optional: when the release
+materializes the changelog, every orphan fragment left over is renamed after the
+pull request whose commit added it — read out of that commit's subject, which
+GitHub writes as `Merge pull request #N ...` or `... (#N)` — so its entry gets
+the usual link. A fragment whose commit
+landed outside a pull request keeps its orphan name and its entry gets no link,
+with a warning in the job log. CI requires a fragment for every package whose
+source the PR touches; the `skip-changelog` label waives that for changes that
+genuinely are not user-facing.
 
 ## Adding sub-packages
 
@@ -596,7 +602,10 @@ jobs:
 
       # The dynamic-versioning backend reads the version off the newest tag, so
       # tagging the local checkout is what makes the wheels carry `version`.
+      # `shell: bash` because a Windows leg would otherwise run this under
+      # PowerShell, where `$TAG` is not the environment variable.
       - run: git tag "$TAG"
+        shell: bash
         env:
           TAG: ${{ inputs.tag }}
 
@@ -764,7 +773,7 @@ a flag for running the same command by hand.
 | `create [--package P] NAME` | Create a news fragment. |
 | `packages` | List releasable packages. |
 | `plan` | Compute the next version of each selected package. |
-| `materialize` | Run towncrier and (for `release-from-prerelease`) collapse alphas. |
+| `materialize` | Name orphan fragments after their PR, run towncrier and (for `release-from-prerelease`) collapse alphas. |
 | `open-release-pr` / `push-prerelease` | Commit the changelogs and deliver them. |
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
@@ -810,6 +819,10 @@ a flag for running the same command by hand.
 - **Detection fails closed.** A broken lockstep pair, a version the branch may
   not publish, or a `*.dev` pin stops the batch rather than shipping something
   uninstallable.
+- **Every step names its shell.** The generated `run:` steps declare `shell:
+  bash`, so a `defaults.run.shell` added to one of these files — or a runner
+  whose default is not bash — cannot change how a release-critical script is
+  interpreted, or drop the `-e`/`-o pipefail` a failing step relies on.
 
 ## License
 
