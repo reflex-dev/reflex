@@ -324,6 +324,11 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # The name React DevTools shows for this memo. ``export_name`` (derived
+    # from the decorated function) is already readable for ``@rx.memo``, but
+    # auto-memoized wrappers carry a hash-suffixed tag, so the plugin sets this
+    # to the wrapped component's Python class name instead.
+    display_name: str | None = None
 
     @property
     def component(self) -> Component:
@@ -1849,13 +1854,14 @@ def create_passthrough_component_memo(
     passthrough.__module__ = __name__
 
     definition = _create_component_definition(passthrough, Component, source_module)
-    replacements: dict[str, Any] = {}
+    # ``export_name`` is the content-hashed tag, which reads as noise in the
+    # React DevTools tree. Name the memo after the Python class it wraps.
+    replacements: dict[str, Any] = {"display_name": type(component).__qualname__}
     if definition.export_name != tag:
         replacements["export_name"] = tag
     if captured_hole_child:
         replacements["passthrough_hole_child"] = captured_hole_child[0]
-    if replacements:
-        definition = dataclasses.replace(definition, **replacements)
+    definition = dataclasses.replace(definition, **replacements)
 
     return _create_component_wrapper(definition), definition
 

@@ -376,7 +376,7 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     return f"""
 const {name} = ClientSide(() =>
     {library_import}{mod_import}
-)
+, "{name}")
 """
 
 

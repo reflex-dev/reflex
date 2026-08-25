@@ -1425,3 +1425,62 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
+
+
+def test_context_template_names_contexts_for_devtools():
+    """Every context in the generated module carries a ``displayName``.
+
+    React DevTools labels a provider from its context's ``displayName``;
+    without one the whole provider stack renders as ``Context.Provider``.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {},
+            "reflex___state____state.demo_state": {},
+        },
+        state_name="reflex___state____state",
+    )
+
+    for context_name in (
+        "ColorModeContext",
+        "UploadFilesContext",
+        "DispatchContext",
+        "EventLoopContext",
+    ):
+        assert f'{context_name}.displayName = "{context_name}";' in rendered
+
+    # State contexts are named for the Python state they carry, using the
+    # dotted state name rather than the mangled JS identifier.
+    assert (
+        "StateContexts.reflex___state____state.displayName = "
+        '"StateContext(reflex___state____state)";' in rendered
+    )
+    assert (
+        "StateContexts.reflex___state____state__demo_state.displayName = "
+        '"StateContext(reflex___state____state.demo_state)";' in rendered
+    )
+
+
+def test_context_template_client_side_component_is_named():
+    """``ClientSide`` returns a named component, not an anonymous arrow."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(is_dev_mode=True, default_color_mode='"light"')
+
+    assert "function ClientSideComponent({ children, ...props })" in rendered
+    assert (
+        "ClientSideComponent.displayName = name ? `ClientSide(${name})` : "
+        '"ClientSide";' in rendered
+    )
+    assert "return ClientSideComponent;" in rendered
+
+
+def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
+    """A client-only component passes its tag through to the wrapper's name."""
+    from reflex_components_plotly.plotly import Plotly
+
+    assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
