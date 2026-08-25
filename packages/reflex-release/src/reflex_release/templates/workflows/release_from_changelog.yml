@@ -58,6 +58,7 @@ jobs:
       - id: detect
         env:
           REF_NAME: ${{ github.ref_name }}
+        shell: bash
         run: @@CLI@@ detect
 
   publish:
@@ -122,6 +123,7 @@ jobs:
           PUBLISH: ${{ needs.publish.result }}
           PUBLISH_LAST: ${{ needs.publish-last.result }}
           ANY_LAST: ${{ needs.detect.outputs.any_last }}
+        shell: bash
         run: |
           set -euo pipefail
           echo "detect: $DETECT, publish: $PUBLISH, publish-last: $PUBLISH_LAST"
