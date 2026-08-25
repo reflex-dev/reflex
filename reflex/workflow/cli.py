@@ -50,6 +50,24 @@ def webhook_root_names(definitions: Iterable[WorkflowDefinition]) -> list[str]:
     )
 
 
+def _cli_attribution(reason: str | None) -> dict[str, str]:
+    """Who is running this command, and why, for the run's history.
+
+    Args:
+        reason: The operator's stated reason, if any.
+
+    Returns:
+        The attribution mapping.
+    """
+    import getpass
+
+    actor = os.environ.get("REFLEX_ACTOR") or getpass.getuser()
+    payload = {"actor": actor}
+    if reason:
+        payload["reason"] = reason
+    return payload
+
+
 def _operator_action(database: str | None, run_id: str, action: str, **extra):
     """Apply one operator action to a run, reporting what happened.
 
@@ -1557,7 +1575,8 @@ def deadletters(
 @workflows.command()
 @database_option
 @click.argument("run_id")
-def cancel(database: str | None, run_id: str):
+@click.option("--reason", default=None, help="Why, recorded in the run's history.")
+def cancel(database: str | None, run_id: str, reason: str | None):
     """Request cancellation of a run.
 
     The running worker finalizes it; if no worker is running, it is cancelled
@@ -1575,7 +1594,9 @@ def cancel(database: str | None, run_id: str):
             Whether intent was recorded.
         """
         return await store.request_cancel(
-            await _resolve_run_id(store, run_id), time.time()
+            await _resolve_run_id(store, run_id),
+            time.time(),
+            _cli_attribution(reason),
         )
 
     recorded = _with_store(database, request)
@@ -1588,25 +1609,31 @@ def cancel(database: str | None, run_id: str):
 @workflows.command()
 @database_option
 @click.argument("run_id")
-def retry(database: str | None, run_id: str):
+@click.option("--reason", default=None, help="Why, recorded in the run's history.")
+def retry(database: str | None, run_id: str, reason: str | None):
     """Re-open a failed run at the step that failed.
 
     The step runs again with a fresh attempt budget; the original failure
     stays in the run's history.
     """
-    _operator_action(database, run_id, "retry_run")
+    _operator_action(
+        database, run_id, "retry_run", attribution=_cli_attribution(reason)
+    )
 
 
 @workflows.command()
 @database_option
 @click.argument("run_id")
-def skip(database: str | None, run_id: str):
+@click.option("--reason", default=None, help="Why, recorded in the run's history.")
+def skip(database: str | None, run_id: str, reason: str | None):
     """Skip the step blocking a stopped run and let it continue.
 
     For a step that cannot succeed and is not worth failing the run over. It
     is recorded as an operator decision, not as an outcome.
     """
-    _operator_action(database, run_id, "skip_step")
+    _operator_action(
+        database, run_id, "skip_step", attribution=_cli_attribution(reason)
+    )
 
 
 def _finalize(
@@ -1616,6 +1643,7 @@ def _finalize(
     *,
     result: Any = None,
     error: dict[str, Any] | None = None,
+    reason: str | None = None,
 ):
     """End a run by operator decision.
 
@@ -1630,6 +1658,7 @@ def _finalize(
         status: The terminal status to record.
         result: Result to record when completing.
         error: Error payload to record when failing.
+        reason: Why, recorded in the run's history.
 
     Raises:
         Exit: When the run is unknown, already finished, or has a claimed step.
@@ -1650,6 +1679,8 @@ def _finalize(
             status=status,
             result=result,
             error=error,
+            actor=_cli_attribution(None)["actor"],
+            reason=reason,
         )
 
     finalized = _with_store(database, finish)
@@ -1665,10 +1696,16 @@ def _finalize(
 @workflows.command()
 @database_option
 @click.argument("run_id")
+@click.option("--reason", default=None, help="Why, recorded in the run's history.")
 @click.option(
     "--result", "result_json", default=None, help="Result to record, as JSON."
 )
-def complete(database: str | None, run_id: str, result_json: str | None):
+def complete(
+    database: str | None,
+    run_id: str,
+    result_json: str | None,
+    reason: str | None,
+):
     """End a run as completed by operator decision.
 
     For a run no code path will finish: a wait nobody will answer, a branch
@@ -1683,7 +1720,7 @@ def complete(database: str | None, run_id: str, result_json: str | None):
         except json.JSONDecodeError as err:
             console.error(f"--result is not JSON: {err}")
             raise click.exceptions.Exit(1) from None
-    _finalize(database, run_id, RunStatus.COMPLETED, result=result)
+    _finalize(database, run_id, RunStatus.COMPLETED, result=result, reason=reason)
 
 
 @workflows.command()
@@ -1696,13 +1733,16 @@ def fail(database: str | None, run_id: str, reason: str):
     The reason is recorded on the run, so the history says a person decided
     this rather than leaving a failure with no explanation.
     """
-    _finalize(database, run_id, RunStatus.FAILED, error={"reason": reason})
+    _finalize(
+        database, run_id, RunStatus.FAILED, error={"reason": reason}, reason=reason
+    )
 
 
 @workflows.command()
 @database_option
 @click.argument("run_id")
-def resume(database: str | None, run_id: str):
+@click.option("--reason", default=None, help="Why, recorded in the run's history.")
+def resume(database: str | None, run_id: str, reason: str | None):
     """Re-open a run suspended for operator attention."""
     import time
 
@@ -1715,7 +1755,11 @@ def resume(database: str | None, run_id: str):
         Returns:
             Whether a suspended run was re-opened.
         """
-        return await store.resume_run(await _resolve_run_id(store, run_id), time.time())
+        return await store.resume_run(
+            await _resolve_run_id(store, run_id),
+            time.time(),
+            _cli_attribution(reason),
+        )
 
     resumed = _with_store(database, reopen)
     if not resumed:

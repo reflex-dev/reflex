@@ -952,7 +952,29 @@ class WorkflowKernel:
         self._wakeup.set()
         return StartResult(disposition="started", run_id=authoritative_run_id)
 
-    async def cancel(self, run_id: str) -> bool:
+    @staticmethod
+    def _attribution(actor: str | None, reason: str | None) -> dict[str, str] | None:
+        """Build the who-and-why payload an operator event carries.
+
+        Args:
+            actor: Who asked, if known.
+            reason: Why, if given.
+
+        Returns:
+            The attribution mapping, or None when neither is known.
+        """
+        payload = {
+            key: value for key, value in (("actor", actor), ("reason", reason)) if value
+        }
+        return payload or None
+
+    async def cancel(
+        self,
+        run_id: str,
+        *,
+        actor: str | None = None,
+        reason: str | None = None,
+    ) -> bool:
         """Request cancellation of a run.
 
         The in-flight attempt, if any, is cancelled cooperatively; the run is
@@ -960,14 +982,18 @@ class WorkflowKernel:
 
         Args:
             run_id: The run to cancel.
+            actor: Who asked, recorded in the run's history.
+            reason: Why, recorded alongside.
 
         Returns:
             True if intent was recorded on a nonterminal run.
         """
-        recorded = await self._store.request_cancel(run_id, self._clock())
+        attribution = self._attribution(actor, reason)
+        recorded = await self._store.request_cancel(run_id, self._clock(), attribution)
         if recorded:
             await self._notify_run(
-                run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),)
+                run_id,
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, dict(attribution or {})),),
             )
             task = self._inflight.get(run_id)
             if task is not None:
@@ -1184,31 +1210,59 @@ class WorkflowKernel:
             )
         return disposition
 
-    async def resume(self, run_id: str) -> bool:
+    async def resume(
+        self,
+        run_id: str,
+        *,
+        actor: str | None = None,
+        reason: str | None = None,
+    ) -> bool:
         """Re-open a run that is suspended for operator attention.
 
         Args:
             run_id: The run to resume.
+            actor: Who asked, recorded in the run's history.
+            reason: Why, recorded alongside.
 
         Returns:
             True if a suspended run was re-opened.
         """
-        resumed = await self._store.resume_run(run_id, self._clock())
+        resumed = await self._store.resume_run(
+            run_id, self._clock(), self._attribution(actor, reason)
+        )
         if resumed:
-            await self._notify_run(run_id, ((HistoryEventType.RUN_RESUMED, {}),))
+            await self._notify_run(
+                run_id,
+                (
+                    (
+                        HistoryEventType.RUN_RESUMED,
+                        dict(self._attribution(actor, reason) or {}),
+                    ),
+                ),
+            )
             self._wakeup.set()
         return resumed
 
-    async def retry(self, run_id: str) -> bool:
+    async def retry(
+        self,
+        run_id: str,
+        *,
+        actor: str | None = None,
+        reason: str | None = None,
+    ) -> bool:
         """Re-open a failed run at the step that failed.
 
         Args:
             run_id: The run to retry.
+            actor: Who asked, recorded in the run's history.
+            reason: Why, recorded alongside.
 
         Returns:
             True if a failed run was re-opened.
         """
-        retried = await self._store.retry_run(run_id, self._clock())
+        retried = await self._store.retry_run(
+            run_id, self._clock(), self._attribution(actor, reason)
+        )
         if retried:
             await self._notify_run(
                 run_id, ((HistoryEventType.RUN_RESUMED, {"origin": "retry"}),)
@@ -1216,16 +1270,26 @@ class WorkflowKernel:
             self._wakeup.set()
         return retried
 
-    async def skip(self, run_id: str) -> bool:
+    async def skip(
+        self,
+        run_id: str,
+        *,
+        actor: str | None = None,
+        reason: str | None = None,
+    ) -> bool:
         """Skip the step blocking a stopped run and let it continue.
 
         Args:
             run_id: The run to unstick.
+            actor: Who asked, recorded in the run's history.
+            reason: Why, recorded alongside.
 
         Returns:
             True if a blocking step was skipped.
         """
-        skipped = await self._store.skip_step(run_id, self._clock())
+        skipped = await self._store.skip_step(
+            run_id, self._clock(), self._attribution(actor, reason)
+        )
         if skipped:
             await self._notify_run(
                 run_id, ((HistoryEventType.STEP_SKIPPED, {"origin": "operator"}),)
@@ -1240,6 +1304,8 @@ class WorkflowKernel:
         status: RunStatus,
         result: Any = None,
         error: dict[str, Any] | None = None,
+        actor: str | None = None,
+        reason: str | None = None,
     ) -> bool:
         """End a run by operator decision, tombstoning what it had open.
 
@@ -1250,6 +1316,8 @@ class WorkflowKernel:
 
         Args:
             run_id: The run to finalize.
+            actor: Who asked, recorded in the run's history.
+            reason: Why, recorded alongside.
             status: The terminal status to record.
             result: Result to record when completing.
             error: Error payload to record when failing.
@@ -1285,6 +1353,7 @@ class WorkflowKernel:
             now=now,
             result=result,
             parent_arrival=self._arrival_for(run, status, result, error),
+            attribution=self._attribution(actor, reason),
         )
         if finalized:
             self._notify(run, ((event, {"origin": "operator"}),))

@@ -523,3 +523,43 @@ def test_dead_letters_are_visible_and_replayable_over_http(
         assert replayed.json()["disposition"] == "parked", "still no run to take it"
         missing = client.post("/deadletters/nope/replay", headers=_auth("tk_operate"))
         assert missing.status_code == 404
+
+
+def test_operator_actions_record_who_and_why(forked_registration_context):
+    """X-Actor and the body's reason land in the run's history.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+    from reflex.workflow.records import HistoryEventType
+
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Orders)
+    app = build_app(runtime, worker=False, drain=0, tokens=_tokens(tk="all"))
+    with TestClient(app) as client:
+        started = client.post(
+            "/runs",
+            json={
+                "workflow": "serve.orders",
+                "handler": "place",
+                "args": {"order_id": "o-audit"},
+            },
+            headers=_auth("tk"),
+        )
+        run_id = started.json()["run_id"]
+        cancelled = client.post(
+            f"/runs/{run_id}/cancel",
+            json={"reason": "duplicate order"},
+            headers={**_auth("tk"), "X-Actor": "ops@example.com"},
+        )
+        assert cancelled.status_code == 202
+        assert client.portal is not None
+        events = client.portal.call(  # pyright: ignore[reportAttributeAccessIssue]
+            runtime.kernel._store.get_history,  # pyright: ignore[reportPrivateUsage]
+            run_id,
+        )
+    cancel_event = next(
+        event for event in events if event.type is HistoryEventType.RUN_CANCEL_REQUESTED
+    )
+    assert cancel_event.data["actor"] == "ops@example.com"
+    assert cancel_event.data["reason"] == "duplicate order"

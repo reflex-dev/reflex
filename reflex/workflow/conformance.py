@@ -1927,6 +1927,77 @@ async def check_release_counts_answer_the_retirement_question(
     ), "nothing pins to a release that admitted nothing"
 
 
+async def check_operator_actions_carry_attribution(store: RunStore) -> None:
+    """Every operator mutation records who asked and why, in the run's story.
+
+    An audit that lives outside the history would drift from it; attribution
+    rides the same events, in the same transactions, so "who did this" is
+    answered by the record that already answers "what happened".
+    """
+    who = {"actor": "alex", "reason": "customer asked"}
+
+    await store.admit(make_run(), make_step(due_at=0.0), _ADMITTED)
+    assert await store.request_cancel("run1", NOW, who)
+    events = await store.get_history("run1")
+    cancel_event = next(
+        event for event in events if event.type is HistoryEventType.RUN_CANCEL_REQUESTED
+    )
+    assert cancel_event.data["actor"] == "alex"
+    assert cancel_event.data["reason"] == "customer asked"
+
+    await store.admit(
+        make_run("fail1", status=RunStatus.FAILED, error={"reason": "boom"}),
+        make_step("fail1", status=StepStatus.FAILED, error={"reason": "boom"}),
+        _ADMITTED,
+    )
+    assert await store.retry_run("fail1", NOW, who)
+    events = await store.get_history("fail1")
+    resumed = next(
+        event for event in events if event.type is HistoryEventType.RUN_RESUMED
+    )
+    assert resumed.data["actor"] == "alex"
+
+    await store.admit(
+        make_run("skip1", status=RunStatus.FAILED, error={"reason": "boom"}),
+        make_step("skip1", status=StepStatus.FAILED, error={"reason": "boom"}),
+        _ADMITTED,
+    )
+    assert await store.skip_step("skip1", NOW, who)
+    events = await store.get_history("skip1")
+    skipped = next(
+        event for event in events if event.type is HistoryEventType.STEP_SKIPPED
+    )
+    assert skipped.data["reason"] == "customer asked"
+
+    await store.admit(
+        make_run("sus1", status=RunStatus.NEEDS_ATTENTION),
+        make_step("sus1", status=StepStatus.NEEDS_ATTENTION),
+        _ADMITTED,
+    )
+    assert await store.resume_run("sus1", NOW, who)
+    events = await store.get_history("sus1")
+    reopened = next(
+        event for event in events if event.type is HistoryEventType.RUN_RESUMED
+    )
+    assert reopened.data["actor"] == "alex"
+
+    await store.admit(make_run("fin1"), make_step("fin1", due_at=0.0), _ADMITTED)
+    assert await store.finalize_run(
+        "fin1",
+        status=RunStatus.FAILED,
+        error={"reason": "manual"},
+        event=HistoryEventType.RUN_FAILED,
+        now=NOW,
+        attribution=who,
+    )
+    events = await store.get_history("fin1")
+    failed = next(
+        event for event in events if event.type is HistoryEventType.RUN_FAILED
+    )
+    assert failed.data["actor"] == "alex"
+    assert failed.data["reason"] == "customer asked"
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1952,6 +2023,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_a_pinned_run_drains_only_on_its_release,
     check_worker_registry_roundtrip,
     check_release_counts_answer_the_retirement_question,
+    check_operator_actions_carry_attribution,
     check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,

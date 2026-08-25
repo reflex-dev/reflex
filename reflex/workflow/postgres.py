@@ -2153,12 +2153,20 @@ class PostgresRunStore:
             )
             return cursor.rowcount > 0
 
-    async def request_cancel(self, run_id: str, now: float) -> bool:
+    async def request_cancel(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Record cancellation intent on a run.
 
         Args:
             run_id: The run to cancel.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if intent was recorded on a nonterminal run.
@@ -2173,7 +2181,10 @@ class PostgresRunStore:
             if cursor.rowcount == 0:
                 return False
             await self._append_events(
-                conn, run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),), now
+                conn,
+                run_id,
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, dict(attribution or {})),),
+                now,
             )
         return True
 
@@ -2208,6 +2219,7 @@ class PostgresRunStore:
         now: float,
         result: Any = None,
         parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
+        attribution: Mapping[str, str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -2217,6 +2229,9 @@ class PostgresRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
             result: Result to record, for an operator forcing completion.
             parent_arrival: When this run is a child, the arrival to deliver
                 to its parent's join, applied in this same transaction.
@@ -2261,19 +2276,30 @@ class PostgresRunStore:
                 (HistoryEventType.STEP_TOMBSTONED, {"ordinal": open_row["ordinal"]})
                 for open_row in open_rows
             ]
-            events.append((event, {} if error is None else dict(error)))
+            events.append((
+                event,
+                {**({} if error is None else dict(error)), **(attribution or {})},
+            ))
             await self._append_events(conn, run_id, events, now)
             await self._close_children(conn, now, locked_children)
             if parent_arrival is not None:
                 await self._apply_arrival(conn, *parent_arrival, now)
         return True
 
-    async def resume_run(self, run_id: str, now: float) -> bool:
+    async def resume_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a suspended run so its frontier step runs again.
 
         Args:
             run_id: The run to resume.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a suspended run was re-opened.
@@ -2300,7 +2326,10 @@ class PostgresRunStore:
                 ),
             )
             await self._append_events(
-                conn, run_id, ((HistoryEventType.RUN_RESUMED, {}),), now
+                conn,
+                run_id,
+                ((HistoryEventType.RUN_RESUMED, dict(attribution or {})),),
+                now,
             )
         return True
 
@@ -2341,12 +2370,20 @@ class PostgresRunStore:
         )
         return sorted(row["ordinal"] for row in await cursor.fetchall())
 
-    async def retry_run(self, run_id: str, now: float) -> bool:
+    async def retry_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a failed run at the step that failed.
 
         Args:
             run_id: The run to retry.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a failed run was re-opened.
@@ -2378,7 +2415,10 @@ class PostgresRunStore:
                 conn,
                 run_id,
                 (
-                    (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                    (
+                        HistoryEventType.RUN_RESUMED,
+                        {"origin": "retry", **(attribution or {})},
+                    ),
                     *(
                         (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                         for ordinal in restored
@@ -2388,12 +2428,20 @@ class PostgresRunStore:
             )
         return True
 
-    async def skip_step(self, run_id: str, now: float) -> bool:
+    async def skip_step(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Give up on a stuck step and let the run carry on past it.
 
         Args:
             run_id: The run to unstick.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a blocking step was skipped.
@@ -2447,7 +2495,10 @@ class PostgresRunStore:
                 ),
             )
             events = [
-                (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]}),
+                (
+                    HistoryEventType.STEP_SKIPPED,
+                    {"ordinal": row["ordinal"], **(attribution or {})},
+                ),
                 *(
                     (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                     for ordinal in restored

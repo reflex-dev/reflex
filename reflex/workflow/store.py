@@ -676,12 +676,20 @@ class RunStore(Protocol):
         """
         ...
 
-    async def request_cancel(self, run_id: str, now: float) -> bool:
+    async def request_cancel(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Record cancellation intent on a run.
 
         Args:
             run_id: The run to cancel.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if intent was recorded on a nonterminal run.
@@ -712,6 +720,7 @@ class RunStore(Protocol):
         now: float,
         result: Any = None,
         parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
+        attribution: Mapping[str, str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -721,6 +730,9 @@ class RunStore(Protocol):
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
             result: Result to record, for an operator forcing completion.
             parent_arrival: When this run is a child, the arrival to deliver
                 to its parent's join, applied in this same transaction.
@@ -731,7 +743,12 @@ class RunStore(Protocol):
         """
         ...
 
-    async def skip_step(self, run_id: str, now: float) -> bool:
+    async def skip_step(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Give up on a stuck step and let the run carry on past it.
 
         The operator's answer to a step that cannot succeed and is not worth
@@ -744,13 +761,21 @@ class RunStore(Protocol):
         Args:
             run_id: The run to unstick.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a blocking step was skipped.
         """
         ...
 
-    async def retry_run(self, run_id: str, now: float) -> bool:
+    async def retry_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a failed run at the step that failed.
 
         The operator's answer to a run that failed for a reason now fixed: the
@@ -760,13 +785,21 @@ class RunStore(Protocol):
         Args:
             run_id: The run to retry.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a failed run was re-opened.
         """
         ...
 
-    async def resume_run(self, run_id: str, now: float) -> bool:
+    async def resume_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a suspended run so its frontier step runs again.
 
         Suspension is an operator state, not an outcome: the run waits for a
@@ -777,6 +810,9 @@ class RunStore(Protocol):
         Args:
             run_id: The run to resume.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a suspended run was re-opened.
@@ -2144,12 +2180,20 @@ class MemoryRunStore:
             steps[0] = dataclasses.replace(steps[0], due_at=due_at, updated_at=now)
             return True
 
-    async def request_cancel(self, run_id: str, now: float) -> bool:
+    async def request_cancel(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Record cancellation intent on a run.
 
         Args:
             run_id: The run to cancel.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if intent was recorded on a nonterminal run.
@@ -2165,7 +2209,9 @@ class MemoryRunStore:
                 updated_at=now,
             )
             self._append_events(
-                run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),), now
+                run_id,
+                ((HistoryEventType.RUN_CANCEL_REQUESTED, dict(attribution or {})),),
+                now,
             )
             return True
 
@@ -2245,6 +2291,7 @@ class MemoryRunStore:
         now: float,
         result: Any = None,
         parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
+        attribution: Mapping[str, str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -2254,6 +2301,9 @@ class MemoryRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
             result: Result to record, for an operator forcing completion.
             parent_arrival: When this run is a child, the arrival to deliver
                 to its parent's join, applied in this same transaction.
@@ -2285,14 +2335,22 @@ class MemoryRunStore:
                 result=result if result is not None else run.result,
                 updated_at=now,
             )
-            events.append((event, {} if error is None else dict(error)))
+            events.append((
+                event,
+                {**({} if error is None else dict(error)), **(attribution or {})},
+            ))
             self._append_events(run_id, events, now)
             self._close_children(run_id, now)
             if parent_arrival is not None:
                 self._apply_arrival(*parent_arrival, now)
             return True
 
-    async def skip_step(self, run_id: str, now: float) -> bool:
+    async def skip_step(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Give up on a stuck step and let the run carry on past it.
 
         The operator's answer to a step that cannot succeed and is not worth
@@ -2305,6 +2363,9 @@ class MemoryRunStore:
         Args:
             run_id: The run to unstick.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a blocking step was skipped.
@@ -2337,7 +2398,10 @@ class MemoryRunStore:
                         other.status not in TERMINAL_STEP_STATUSES for other in steps
                     )
                     events = [
-                        (HistoryEventType.STEP_SKIPPED, {"ordinal": step.ordinal}),
+                        (
+                            HistoryEventType.STEP_SKIPPED,
+                            {"ordinal": step.ordinal, **(attribution or {})},
+                        ),
                         *(
                             (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                             for ordinal in restored
@@ -2376,7 +2440,12 @@ class MemoryRunStore:
                     return True
             return False
 
-    async def retry_run(self, run_id: str, now: float) -> bool:
+    async def retry_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a failed run at the step that failed.
 
         The operator's answer to a run that failed for a reason now fixed: the
@@ -2386,6 +2455,9 @@ class MemoryRunStore:
         Args:
             run_id: The run to retry.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a failed run was re-opened.
@@ -2418,7 +2490,10 @@ class MemoryRunStore:
             self._append_events(
                 run_id,
                 (
-                    (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                    (
+                        HistoryEventType.RUN_RESUMED,
+                        {"origin": "retry", **(attribution or {})},
+                    ),
                     *(
                         (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                         for ordinal in restored
@@ -2472,12 +2547,20 @@ class MemoryRunStore:
                 restored.append(step.ordinal)
         return restored
 
-    async def resume_run(self, run_id: str, now: float) -> bool:
+    async def resume_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a suspended run so its frontier step runs again.
 
         Args:
             run_id: The run to resume.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a suspended run was re-opened.
@@ -2501,7 +2584,9 @@ class MemoryRunStore:
             self._runs[run_id] = dataclasses.replace(
                 run, status=RunStatus.PENDING, error=None, updated_at=now
             )
-            self._append_events(run_id, ((HistoryEventType.RUN_RESUMED, {}),), now)
+            self._append_events(
+                run_id, ((HistoryEventType.RUN_RESUMED, dict(attribution or {})),), now
+            )
             return True
 
     async def recover_orphans(
@@ -5082,12 +5167,20 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def request_cancel(self, run_id: str, now: float) -> bool:
+    async def request_cancel(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Record cancellation intent on a run.
 
         Args:
             run_id: The run to cancel.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if intent was recorded on a nonterminal run.
@@ -5113,7 +5206,14 @@ class SqliteRunStore:
                         self._db.execute("ROLLBACK")
                         return False
                     self._append_events(
-                        run_id, ((HistoryEventType.RUN_CANCEL_REQUESTED, {}),), now
+                        run_id,
+                        (
+                            (
+                                HistoryEventType.RUN_CANCEL_REQUESTED,
+                                dict(attribution or {}),
+                            ),
+                        ),
+                        now,
                     )
                     self._db.execute("COMMIT")
                 except BaseException:
@@ -5163,6 +5263,7 @@ class SqliteRunStore:
         now: float,
         result: Any = None,
         parent_arrival: tuple[str, int, dict[str, Any], str] | None = None,
+        attribution: Mapping[str, str] | None = None,
     ) -> bool:
         """Terminate a drained run and tombstone its unresolved slots.
 
@@ -5172,6 +5273,9 @@ class SqliteRunStore:
             error: Error payload recorded on the run.
             event: The terminal history event type.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
             result: Result to record, for an operator forcing completion.
             parent_arrival: When this run is a child, the arrival to deliver
                 to its parent's join, applied in this same transaction.
@@ -5226,7 +5330,13 @@ class SqliteRunStore:
                         (HistoryEventType.STEP_TOMBSTONED, {"ordinal": row["ordinal"]})
                         for row in open_rows
                     ]
-                    events.append((event, {} if error is None else dict(error)))
+                    events.append((
+                        event,
+                        {
+                            **({} if error is None else dict(error)),
+                            **(attribution or {}),
+                        },
+                    ))
                     self._append_events(run_id, events, now)
                     self._close_children_sql(run_id, now)
                     if parent_arrival is not None:
@@ -5239,7 +5349,12 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def skip_step(self, run_id: str, now: float) -> bool:
+    async def skip_step(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Give up on a stuck step and let the run carry on past it.
 
         The operator's answer to a step that cannot succeed and is not worth
@@ -5252,6 +5367,9 @@ class SqliteRunStore:
         Args:
             run_id: The run to unstick.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a blocking step was skipped.
@@ -5338,7 +5456,10 @@ class SqliteRunStore:
                         ),
                     )
                     events = [
-                        (HistoryEventType.STEP_SKIPPED, {"ordinal": row["ordinal"]}),
+                        (
+                            HistoryEventType.STEP_SKIPPED,
+                            {"ordinal": row["ordinal"], **(attribution or {})},
+                        ),
                         *(
                             (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                             for ordinal in restored
@@ -5379,7 +5500,12 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def retry_run(self, run_id: str, now: float) -> bool:
+    async def retry_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a failed run at the step that failed.
 
         The operator's answer to a run that failed for a reason now fixed: the
@@ -5389,6 +5515,9 @@ class SqliteRunStore:
         Args:
             run_id: The run to retry.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a failed run was re-opened.
@@ -5456,7 +5585,10 @@ class SqliteRunStore:
                     self._append_events(
                         run_id,
                         (
-                            (HistoryEventType.RUN_RESUMED, {"origin": "retry"}),
+                            (
+                                HistoryEventType.RUN_RESUMED,
+                                {"origin": "retry", **(attribution or {})},
+                            ),
                             *(
                                 (HistoryEventType.STEP_RESTORED, {"ordinal": ordinal})
                                 for ordinal in restored
@@ -5472,12 +5604,20 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def resume_run(self, run_id: str, now: float) -> bool:
+    async def resume_run(
+        self,
+        run_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> bool:
         """Re-open a suspended run so its frontier step runs again.
 
         Args:
             run_id: The run to resume.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, e.g. ``{"actor": ..., "reason":
+                ...}``, merged into the operator-facing history event so the
+                run's own story answers "who did this".
 
         Returns:
             True if a suspended run was re-opened.
@@ -5518,7 +5658,9 @@ class SqliteRunStore:
                         ),
                     )
                     self._append_events(
-                        run_id, ((HistoryEventType.RUN_RESUMED, {}),), now
+                        run_id,
+                        ((HistoryEventType.RUN_RESUMED, dict(attribution or {})),),
+                        now,
                     )
                     self._db.execute("COMMIT")
                 except BaseException:

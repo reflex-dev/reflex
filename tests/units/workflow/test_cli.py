@@ -353,3 +353,95 @@ def test_operator_actions_take_a_prefix_too(seeded):
     run = _load_run(database, suspended_id)
     assert run is not None
     assert run.status is not RunStatus.NEEDS_ATTENTION
+
+
+def test_cancel_records_the_operator_and_their_reason(tmp_path, monkeypatch):
+    """`--reason` and the invoking user land in the run's history.
+
+    Args:
+        tmp_path: Working directory for the database.
+        monkeypatch: Used to pin the actor.
+    """
+    import asyncio
+    import json as jsonlib
+    import sqlite3
+    import subprocess
+    import sys
+    import time
+
+    from reflex.workflow.records import (
+        HistoryEventType,
+        RunRecord,
+        RunStatus,
+        StepRecord,
+        StepStatus,
+    )
+    from reflex.workflow.store import SqliteRunStore
+
+    db = tmp_path / "attr.db"
+    now = time.time()
+
+    async def seed() -> None:
+        """Admit one long-waiting run."""
+        store = SqliteRunStore(db)
+        await store.admit(
+            RunRecord(
+                run_id="auditrun1",
+                workflow_id="cli.audit",
+                definition_digest="d",
+                status=RunStatus.WAITING,
+                state={},
+                state_version=1,
+                next_ordinal=2,
+                created_at=now,
+                updated_at=now,
+            ),
+            StepRecord(
+                run_id="auditrun1",
+                ordinal=0,
+                handler_id="go",
+                status=StepStatus.READY,
+                args={},
+                due_at=now + 86_400,
+                origin="root",
+                created_at=now,
+                updated_at=now,
+            ),
+            ((HistoryEventType.RUN_ADMITTED, {}),),
+        )
+        store.close()
+
+    asyncio.run(seed())
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex.workflow.cli import workflows; workflows()",
+            "cancel",
+            "auditrun1",
+            "--reason",
+            "fat-fingered order",
+            "-d",
+            str(db),
+        ],
+        env={**__import__("os").environ, "REFLEX_ACTOR": "alek"},
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr[-500:]
+
+    connection = sqlite3.connect(db)
+    try:
+        rows = [
+            jsonlib.loads(row[0])
+            for row in connection.execute(
+                "SELECT data FROM workflow_history WHERE run_id = 'auditrun1'"
+                " AND type = ?",
+                (HistoryEventType.RUN_CANCEL_REQUESTED.value,),
+            ).fetchall()
+        ]
+    finally:
+        connection.close()
+    assert rows == [{"actor": "alek", "reason": "fat-fingered order"}]

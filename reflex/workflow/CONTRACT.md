@@ -502,6 +502,14 @@ follow-up).
 
 ## 9. Operator actions
 
+Every operator mutation records **who asked and why** when the surface
+knows: the CLI stamps the invoking user (`REFLEX_ACTOR` overrides) and its
+`--reason`; the HTTP API records the caller's `X-Actor` claim (default
+`api` — tokens are anonymous, and an authenticating proxy can stamp the
+header) and the body's `reason`. Attribution rides the same history events,
+in the same transactions, as the mutations they describe — the record that
+answers "what happened" answers "who did this", and cannot drift from it.
+
 Every action is legal only from the states listed; anything else is a refused
 no-op with a reason.
 

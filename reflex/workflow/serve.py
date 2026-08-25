@@ -491,7 +491,17 @@ def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: st
         run_id = request.path_params["run_id"]
         if await runtime.kernel.get_run(run_id) is None:
             return JSONResponse({"error": "unknown run"}, status_code=404)
-        applied = await getattr(runtime.kernel, action)(run_id)
+        payload, bad = await _read_json(request)
+        if bad is not None:
+            return bad
+        reason = payload.get("reason") if isinstance(payload, dict) else None
+        # Tokens are anonymous; X-Actor is the caller's claim of identity,
+        # recorded as given. An audit that names "api" beats one that names
+        # nobody, and a proxy that authenticates people can stamp the header.
+        actor = request.headers.get("x-actor") or "api"
+        applied = await getattr(runtime.kernel, action)(
+            run_id, actor=actor, reason=reason
+        )
         if not applied:
             # The run exists but is not in a state this action accepts --
             # retrying a healthy run, resuming one that is not suspended.
