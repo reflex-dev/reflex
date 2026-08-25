@@ -427,13 +427,12 @@ def compile_experimental_component_memo(
     rest_param = next(
         (p for p in definition.params if p.kind is MemoParamKind.REST), None
     )
-    rest_name = (
-        rest_param.placeholder_name
-        if rest_param is not None
-        else "rest"
-        if definition.forward_root_props
-        else None
-    )
+    if rest_param is not None:
+        rest_name = rest_param.placeholder_name
+    elif definition.forward_root_props:
+        rest_name = "rest"
+    else:
+        rest_name = None
 
     if definition.forward_root_props:
         # Make the wrapper transparent: merge the runtime-injected props with

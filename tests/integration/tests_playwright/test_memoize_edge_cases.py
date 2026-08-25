@@ -620,6 +620,16 @@ def test_slot_transparency_adds_no_rerenders(memo_app: AppHarness, page: Page) -
         page: Playwright page.
     """
     assert memo_app.frontend_url is not None
+
+    # Both probes must actually compile into transparent memo wrappers —
+    # otherwise the render counts below would be measuring nothing.
+    wrapper_sources = "\n".join(
+        path.read_text() for path in (memo_app.app_path / ".web").rglob("*.jsx")
+    )
+    assert wrapper_sources.count("jsx(RenderProbe,{...mergeSlotProps(rest, ({") == 2, (
+        "both RenderProbe call sites must compile to transparent memo wrappers"
+    )
+
     page.goto(memo_app.frontend_url)
 
     slot_probe = page.locator("[data-probe='slot']")
