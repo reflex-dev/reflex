@@ -383,6 +383,7 @@ def _custom_dev_pin_step(config: Config) -> str:
         f"          {_selects_package(packages)}",
         "        env:",
         "          PACKAGE: ${{ inputs.package }}",
+        "        shell: bash",
         f'        run: {config.cli_command} check-dev-pins "$PACKAGE"',
     ])
 
@@ -440,6 +441,7 @@ POST_RELEASE_STEP = """
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: @@CLI@@ post-release"""
 
 

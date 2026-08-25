@@ -343,8 +343,7 @@ def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
         )
         raise UploadTypeError(msg)
 
-    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
-    for name, annotation in get_type_hints(func).items():
+    for name, annotation in handler._get_type_hints().items():
         if name == "return" or get_origin(annotation) is not list:
             continue
         args = get_args(annotation)
@@ -380,8 +379,7 @@ def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, ty
         msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
         raise UploadTypeError(msg)
 
-    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
-    for name, annotation in get_type_hints(func).items():
+    for name, annotation in handler._get_type_hints().items():
         if name == "return":
             continue
         if annotation is UploadChunkIterator:
@@ -489,6 +487,39 @@ class EventHandler(EventActionsMixin):
     fn: Any = dataclasses.field(default=None)
 
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
+
+    _type_hints: dict[str, Any] | None = dataclasses.field(
+        default=None, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        """Resolve handler annotations while the state class is stable."""
+        if self.state is not None:
+            self._get_type_hints()
+
+    def _get_type_hints(self) -> dict[str, Any]:
+        """Get and cache the type hints for the handler function.
+
+        Caching successful resolution at handler creation avoids deferred
+        annotation evaluation observing attributes assigned to the owning
+        state class after the handler was registered.
+
+        Returns:
+            The resolved type hints, or an empty mapping when forward references
+            cannot be resolved yet.
+        """
+        if self._type_hints is not None:
+            return self._type_hints
+        if self.fn is None:
+            object.__setattr__(self, "_type_hints", {})
+            return {}
+        func = self.fn.func if isinstance(self.fn, partial) else self.fn
+        try:
+            type_hints = get_type_hints(func)
+        except NameError:
+            return {}
+        object.__setattr__(self, "_type_hints", type_hints)
+        return type_hints
 
     @property
     def state_full_name(self) -> str:
@@ -2035,10 +2066,7 @@ def call_event_handler(
 
         event_callback_spec_args = list(parameters)
 
-        try:
-            type_hints_of_provided_callback = get_type_hints(event_callback.handler.fn)
-        except NameError:
-            type_hints_of_provided_callback = {}
+        type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
@@ -2073,10 +2101,7 @@ def call_event_handler(
     if event_spec_return_types:
         event_callback_spec_args = list(parameters)
 
-        try:
-            type_hints_of_provided_callback = get_type_hints(event_callback.fn)
-        except NameError:
-            type_hints_of_provided_callback = {}
+        type_hints_of_provided_callback = event_callback._get_type_hints()
 
         _check_event_args_subclass_of_callback(
             event_callback_spec_args[n_self_args:],

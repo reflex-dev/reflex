@@ -213,7 +213,12 @@ async def chain_updates(
     ctx = EventContext.get()
 
     if root_state is not None:
-        # Emit deltas first, so any frontend events are processed with the latest state.
+        # Emit deltas first, so any frontend events are processed with the
+        # latest state. The clean deliberately runs after resolution: the
+        # SharedState fan-out captures its dirty vars at clean time, and
+        # resolving the delta is what re-marks linked vars through the patch
+        # machinery, so cleaning earlier would fan out a stale set (see
+        # tests/integration/test_linked_state.py).
         try:
             delta = await root_state._get_resolved_delta()
             if delta:
@@ -228,11 +233,38 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
+def ensure_locked(
+    state: BaseState | StateProxy, root_state: BaseState | None
+) -> BaseState | None:
+    """The root to flush deltas from, only while the state lock is held.
+
+    Foreground handlers pass the locked root in. A background handler
+    yielding from inside ``async with self`` is suspended while its proxy
+    still holds the lock, so flushing through the proxy's root keeps the
+    documented ordering: deltas reach the frontend before the yielded event.
+    Outside the proxy context there is no lock, and flushing there is the
+    unlocked snapshot/clean that discards concurrent writes. Evaluated per
+    yield: a generator can move between inside and outside the context.
+
+    Args:
+        state: The state the handler runs against, possibly a StateProxy.
+        root_state: The locked root passed by foreground callers, if any.
+
+    Returns:
+        The root state to flush, or None when the lock is not held.
+    """
+    if root_state is not None:
+        return root_state
+    if isinstance(state, StateProxy) and state._is_mutable():
+        return state.__wrapped__._get_root_state()
+    return None
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
-    root_state: BaseState,
+    root_state: BaseState | None,
 ):
     """Process event.
 
@@ -240,7 +272,12 @@ async def process_event(
         handler: EventHandler to process.
         payload: The event payload.
         state: State to process the handler.
-        root_state: The root state of the app, used for emitting deltas.
+        root_state: The root state of the app, used for emitting deltas. Pass
+            None when the caller does not hold the state lock (background
+            tasks): computing and cleaning a delta on an unlocked root races
+            concurrent events on a shared state tree, and background state
+            changes are emitted by the ``async with self`` context exits
+            instead.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -269,28 +306,44 @@ async def process_event(
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
-            await chain_updates(event, root_state=root_state, handler_name=handler_name)
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+            await chain_updates(
+                event,
+                root_state=ensure_locked(state, root_state),
+                handler_name=handler_name,
+            )
+        await chain_updates(
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+        )
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
         try:
             while True:
                 await chain_updates(
-                    next(events), root_state=root_state, handler_name=handler_name
+                    next(events),
+                    root_state=ensure_locked(state, root_state),
+                    handler_name=handler_name,
                 )
         except StopIteration as si:
             # the "return" value of the generator is not available
             # in the loop, we must catch StopIteration to access it
             if si.value is not None:
                 await chain_updates(
-                    si.value, root_state=root_state, handler_name=handler_name
+                    si.value,
+                    root_state=ensure_locked(state, root_state),
+                    handler_name=handler_name,
                 )
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+        )
 
     # Handle regular event chains.
     else:
-        await chain_updates(events, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            events,
+            root_state=ensure_locked(state, root_state),
+            handler_name=handler_name,
+        )
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -395,13 +448,38 @@ class BaseStateEventProcessor(EventProcessor):
                     root_state=root_state,
                 )
                 return
-        # Otherwise drop the state lock and start processing the background task with a proxy state.
+        # Otherwise drop the state lock and start processing the background task
+        # with a proxy state. No root_state: the lock is no longer held, and
+        # under a shared state tree (opportunistic locking, in-memory manager)
+        # computing a delta here races whatever event holds the lock now -- a
+        # foreground write landing between this task's dirty-var snapshot and
+        # its _clean() would be discarded before any delta carries it. A
+        # background task's own state changes are emitted (and cleaned) by its
+        # `async with self` context exits, which re-acquire the lock.
+        proxy = StateProxy(substate)
         await process_event(
             handler=registered_handler.handler,
-            state=StateProxy(substate),
+            state=proxy,
             payload=event.payload,
-            root_state=root_state,
+            root_state=None,
         )
+        if not proxy._self_entered_context:
+            # A handler that never entered `async with self` emitted nothing,
+            # but every background event used to flush a delta (refreshing
+            # uncached computed vars, and any dirty vars the preamble left,
+            # like router_data). Preserve that, under the lock this time.
+            async with ctx.state_manager.modify_state_with_links(
+                BaseStateToken(
+                    ident=ctx.token,
+                    cls=registered_handler.states[0],
+                ),
+                event=event,
+            ) as flush_state:
+                await chain_updates(
+                    None,
+                    root_state=flush_state._get_root_state(),
+                    handler_name=registered_handler.handler.fn.__qualname__,
+                )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
