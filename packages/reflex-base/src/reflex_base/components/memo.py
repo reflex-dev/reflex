@@ -1414,6 +1414,7 @@ def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
     source_module: str | None = None,
+    params: tuple[MemoParam, ...] | None = None,
 ) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
@@ -1421,6 +1422,10 @@ def _create_component_definition(
         fn: The function to analyze.
         return_annotation: The return annotation.
         source_module: The user-app Python module that defined the memo.
+        params: Already-analyzed parameters for ``fn``. Analyzing them resolves
+            type hints, which is a measurable share of compile time, so a caller
+            that has already done it for the same function passes them through
+            rather than paying twice.
 
     Returns:
         The component memo definition.
@@ -1428,7 +1433,8 @@ def _create_component_definition(
     Raises:
         TypeError: If the function does not return a component.
     """
-    params = _analyze_params(fn, for_component=True)
+    if params is None:
+        params = _analyze_params(fn, for_component=True)
     return MemoComponentDefinition(
         fn=fn,
         python_name=fn.__name__,
@@ -1836,9 +1842,11 @@ def create_passthrough_component_memo(
         return new_component
 
     # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` evaluates again internally; that second
-    # pass appends another, identical hole to ``captured_hole_child``, and the
-    # ``captured_hole_child[0]`` read below picks up the first.
+    # ``_create_component_definition`` evaluates the body again internally; that
+    # second pass appends another, identical hole to ``captured_hole_child``, and
+    # the ``captured_hole_child[0]`` read below picks up the first. The analyzed
+    # params are shared with it, since resolving type hints twice for one
+    # function is pure waste.
     params = _analyze_params(passthrough, for_component=True)
     preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
     if preview is None:
@@ -1853,7 +1861,9 @@ def create_passthrough_component_memo(
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component, source_module)
+    definition = _create_component_definition(
+        passthrough, Component, source_module, params=params
+    )
     replacements: dict[str, Any] = {}
     if definition.export_name != tag:
         replacements["export_name"] = tag
