@@ -240,6 +240,7 @@ def run_endpoint(
             "run_id": snapshot.run_id,
             "workflow": snapshot.workflow_id,
             "status": snapshot.status.value,
+            "release": snapshot.release_id,
             "result": snapshot.result,
             "error": snapshot.error,
             "steps": [

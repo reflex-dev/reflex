@@ -14,6 +14,7 @@ import asyncio
 import contextlib
 import dataclasses
 import operator
+import os
 import random
 import time
 import traceback
@@ -55,6 +56,7 @@ from reflex.workflow.records import (
     StartResult,
     StepRecord,
     StepStatus,
+    WorkerRecord,
 )
 from reflex.workflow.serde import to_run_data
 from reflex.workflow.steps import SubstepJournal, bind_journal, unbind_journal
@@ -462,6 +464,7 @@ class WorkflowKernel:
         observer: WorkflowObserver | None = None,
         max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
         queues: Iterable[str] | None = None,
+        release: str | None = None,
     ):
         """Initialize the kernel.
 
@@ -483,6 +486,10 @@ class WorkflowKernel:
             max_concurrency: How many attempts this kernel runs at once. Each
                 belongs to a different run, so a run's own steps stay serial.
             queues: Queues this kernel's worker serves; None serves them all.
+            release: The deployed artifact identity this worker runs, read
+                from ``REFLEX_RELEASE_ID`` when omitted. Runs admitted here
+                pin to it, and this worker never claims a run pinned to a
+                different release.
                 Steps land on the queue their handler declared, "default"
                 otherwise, so a deployment can dedicate processes to slow or
                 sensitive work.
@@ -563,6 +570,9 @@ class WorkflowKernel:
         self._worker_id = uuid.uuid4().hex
         self._observer = observer
         self._queues = tuple(queues) if queues is not None else None
+        self._release = (
+            release if release is not None else os.environ.get("REFLEX_RELEASE_ID")
+        ) or None
         self._wakeup = asyncio.Event()
         self._closing = False
         self._worker: asyncio.Task | None = None
@@ -873,6 +883,7 @@ class WorkflowKernel:
             flow_key=flow_key,
             request_key=request_key,
             labels=labels,
+            release_id=self._release,
             deadline=(now + defn.run_timeout) if defn.run_timeout is not None else None,
             created_at=now,
             updated_at=now,
@@ -1334,6 +1345,7 @@ class WorkflowKernel:
             result=run.result,
             error=run.error,
             steps=steps,
+            release_id=run.release_id,
         )
 
     def _adapter(self, defn: WorkflowDefinition, field_name: str) -> TypeAdapter:
@@ -2250,6 +2262,11 @@ class WorkflowKernel:
         """
         for lease in list(self._leases.values()):
             await self._renew(lease)
+        if self._worker is not None:
+            # The same cadence that proves claims alive proves the worker
+            # alive; a heartbeat needing its own timer would drift from the
+            # one signal operators actually watch.
+            await self._store.heartbeat_worker(self._worker_id, self._clock())
 
     async def _cancel_requested(self, run_id: str) -> bool:
         """Whether a run carries cancellation intent.
@@ -2698,6 +2715,7 @@ class WorkflowKernel:
                     status=RunStatus.PENDING,
                     state={field.name: field.default for field in defn.fields},
                     state_version=0,
+                    release_id=self._release,
                     next_ordinal=1,
                     parent_run_id=claim.run.run_id,
                     parent_ordinal=join_ordinal,
@@ -3050,7 +3068,10 @@ class WorkflowKernel:
         started: list[asyncio.Task] = []
         while len(self._inflight) < self._max_concurrency:
             claim = await self._store.claim_next(
-                now, lease_duration=self._lease_duration, queues=self._queues
+                now,
+                lease_duration=self._lease_duration,
+                queues=self._queues,
+                release=self._release,
             )
             if claim is None:
                 break
@@ -3275,6 +3296,20 @@ class WorkflowKernel:
             return
         self._closing = False
         await self.recover()
+        now = self._clock()
+        # Registered after the first recovery so the clock is store-synced;
+        # the fleet surface is how a deploy gate can see who runs which
+        # release, at what capacity, and how recently they proved alive.
+        await self._store.register_worker(
+            WorkerRecord(
+                worker_id=self._worker_id,
+                release_id=self._release,
+                queues=self._queues or (),
+                capacity=self._max_concurrency,
+                started_at=now,
+                heartbeat_at=now,
+            )
+        )
         self._worker = asyncio.create_task(self._worker_loop())
 
     async def aclose(self, drain: float = 0.0) -> None:
@@ -3304,6 +3339,10 @@ class WorkflowKernel:
         with contextlib.suppress(asyncio.CancelledError):
             await self._worker
         self._worker = None
+        # A clean shutdown removes the registration; a crash leaves it with a
+        # stale heartbeat, which is exactly what a fleet page should show.
+        with contextlib.suppress(Exception):
+            await self._store.deregister_worker(self._worker_id)
         if self._inflight and self._draining:
             await asyncio.wait(set(self._inflight.values()), timeout=drain)
         self._draining = False

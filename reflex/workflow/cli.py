@@ -1417,6 +1417,77 @@ def serve(
 @workflows.command()
 @database_option
 @click.option(
+    "--can-retire",
+    "retire_release",
+    default=None,
+    help=(
+        "Exit 0 when no active run is pinned to this release, 1 otherwise; "
+        "the gate a deploy runs before stopping that release's workers."
+    ),
+)
+def fleet(database: str | None, retire_release: str | None):
+    """Show registered workers and the runs each release still owns.
+
+    A worker that stopped cleanly disappears; one that crashed stays listed
+    with a stale heartbeat, which is exactly what this page should show.
+    """
+    import time
+
+    from reflex.workflow.records import TERMINAL_RUN_STATUSES, RunQuery, RunStatus
+
+    active = tuple(s for s in RunStatus if s not in TERMINAL_RUN_STATUSES)
+
+    async def read(store: RunStore):
+        """Collect workers and per-release active counts.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            The workers, the release counts, and the gate answer.
+        """
+        workers = await store.list_workers()
+        releases = sorted({w.release_id for w in workers if w.release_id is not None})
+        if retire_release is not None and retire_release not in releases:
+            releases.append(retire_release)
+        counts = {
+            release: await store.count_runs(
+                RunQuery(release_id=release, statuses=active)
+            )
+            for release in releases
+        }
+        return workers, counts
+
+    workers, counts = _with_store(database, read)
+    if retire_release is not None:
+        held = counts.get(retire_release, 0)
+        if held:
+            console.error(
+                f"Release {retire_release!r} still owns {held} active "
+                f"run{'s' if held != 1 else ''}; retiring its workers now "
+                "would strand them until their leases lapse."
+            )
+            raise click.exceptions.Exit(1)
+        console.print(f"Release {retire_release!r} owns no active runs.")
+        return
+    if not workers:
+        console.print("No workers registered.")
+    now = time.time()
+    for worker in workers:
+        age = now - worker.heartbeat_at
+        queues = ", ".join(worker.queues) or "all queues"
+        console.print(
+            f"{worker.worker_id[:12]}  release={worker.release_id or '-'}  "
+            f"{queues}  capacity={worker.capacity}  "
+            f"heartbeat {age:.0f}s ago"
+        )
+    for release, held in counts.items():
+        console.print(f"release {release}: {held} active run(s)")
+
+
+@workflows.command()
+@database_option
+@click.option(
     "--status",
     type=click.Choice(["pending", "delivered", "dead"]),
     default=None,

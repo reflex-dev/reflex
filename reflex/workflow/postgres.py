@@ -34,6 +34,7 @@ from reflex.workflow.records import (
     RunStatus,
     StepRecord,
     StepStatus,
+    WorkerRecord,
 )
 from reflex.workflow.store import (
     Claim,
@@ -89,6 +90,7 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     labels JSONB,
     deadline DOUBLE PRECISION,
     cancel_requested BOOLEAN NOT NULL DEFAULT FALSE,
+    release_id TEXT,
     created_at DOUBLE PRECISION NOT NULL,
     updated_at DOUBLE PRECISION NOT NULL
 );
@@ -139,6 +141,15 @@ CREATE TABLE IF NOT EXISTS workflow_substeps (
     created_at DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (run_id, ordinal, key)
 );
+CREATE TABLE IF NOT EXISTS workflow_workers (
+    worker_id TEXT PRIMARY KEY,
+    release_id TEXT,
+    queues JSONB NOT NULL,
+    capacity INTEGER NOT NULL,
+    started_at DOUBLE PRECISION NOT NULL,
+    heartbeat_at DOUBLE PRECISION NOT NULL
+);
+ALTER TABLE workflow_runs ADD COLUMN IF NOT EXISTS release_id TEXT;
 CREATE TABLE IF NOT EXISTS workflow_channel_inbox (
     parked_id TEXT PRIMARY KEY,
     workflow_id TEXT NOT NULL,
@@ -203,6 +214,8 @@ _RUNNABLE_PREDICATE: Final = (
     "NOT (r.status = ANY(%(terminal_runs)s)) AND r.status <> 'NEEDS_ATTENTION'"
     " AND NOT r.cancel_requested"
     " AND (r.deadline IS NULL OR r.deadline > %(now)s)"
+    " AND (r.release_id IS NULL OR %(release)s::text IS NULL"
+    " OR r.release_id = %(release)s)"
 )
 
 
@@ -282,6 +295,7 @@ def _run_from_row(row: Mapping[str, Any]) -> RunRecord:
         parent_close=row["parent_close"] or "cancel",
         request_key=row["request_key"],
         labels=row["labels"],
+        release_id=row["release_id"],
         deadline=row["deadline"],
         cancel_requested=row["cancel_requested"],
         created_at=row["created_at"],
@@ -340,6 +354,9 @@ def _run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
     if query.definition_digest is not None:
         clauses.append("definition_digest = %s")
         params.append(query.definition_digest)
+    if query.release_id is not None:
+        clauses.append("release_id = %s")
+        params.append(query.release_id)
     if query.statuses:
         clauses.append("status = ANY(%s)")
         params.append([status.value for status in query.statuses])
@@ -568,9 +585,9 @@ class PostgresRunStore:
             " status, state, state_version, next_ordinal, result, error,"
             " flow_key, parent_run_id, parent_ordinal, parent_close,"
             " request_key, labels,"
-            " deadline, cancel_requested, created_at, updated_at)"
+            " deadline, cancel_requested, release_id, created_at, updated_at)"
             " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
-            " %s, %s, %s, %s, %s)",
+            " %s, %s, %s, %s, %s, %s)",
             (
                 run.run_id,
                 run.workflow_id,
@@ -589,6 +606,7 @@ class PostgresRunStore:
                 _json(run.labels),
                 run.deadline,
                 run.cancel_requested,
+                run.release_id,
                 run.created_at,
                 run.updated_at,
             ),
@@ -966,6 +984,7 @@ class PostgresRunStore:
         *,
         lease_duration: float = DEFAULT_LEASE_DURATION,
         queues: tuple[str, ...] | None = None,
+        release: str | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -978,6 +997,9 @@ class PostgresRunStore:
             lease_duration: Seconds of renewal silence tolerated before the
                 claim is treated as orphaned.
             queues: Queues this worker serves; None serves every queue.
+            release: The claiming worker's release identity. A run pinned to
+                a different release is skipped: it drains on the release that
+                admitted it, so one run never mixes two releases' code.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -989,6 +1011,7 @@ class PostgresRunStore:
             "terminal_steps": _TERMINAL_STEPS,
             "claimable": _CLAIMABLE_STEPS,
             "queues": list(queues) if queues is not None else None,
+            "release": release,
         }
         async with pool.connection() as conn, conn.transaction():
             cursor = await conn.execute(
@@ -1502,6 +1525,82 @@ class PostgresRunStore:
             ),
         )
         return disposition if delivered else "dead_letter"
+
+    async def register_worker(self, worker: WorkerRecord) -> None:
+        """Record (or refresh) a worker's registration.
+
+        Args:
+            worker: The worker's identity, release, queues, and capacity.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            await conn.execute(
+                "INSERT INTO workflow_workers (worker_id, release_id, queues,"
+                " capacity, started_at, heartbeat_at)"
+                " VALUES (%s, %s, %s, %s, %s, %s)"
+                " ON CONFLICT (worker_id) DO UPDATE SET release_id ="
+                " excluded.release_id, queues = excluded.queues,"
+                " capacity = excluded.capacity,"
+                " heartbeat_at = excluded.heartbeat_at",
+                (
+                    worker.worker_id,
+                    worker.release_id,
+                    Jsonb(list(worker.queues)),
+                    worker.capacity,
+                    worker.started_at,
+                    worker.heartbeat_at,
+                ),
+            )
+
+    async def heartbeat_worker(self, worker_id: str, now: float) -> None:
+        """Refresh a worker's sign of life.
+
+        Args:
+            worker_id: The worker.
+            now: Current time in epoch seconds.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            await conn.execute(
+                "UPDATE workflow_workers SET heartbeat_at = %s WHERE worker_id = %s",
+                (now, worker_id),
+            )
+
+    async def deregister_worker(self, worker_id: str) -> None:
+        """Remove a worker that shut down cleanly.
+
+        Args:
+            worker_id: The worker.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            await conn.execute(
+                "DELETE FROM workflow_workers WHERE worker_id = %s",
+                (worker_id,),
+            )
+
+    async def list_workers(self) -> tuple[WorkerRecord, ...]:
+        """List registered workers, most recently started first.
+
+        Returns:
+            The registrations.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM workflow_workers ORDER BY started_at DESC"
+            )
+            return tuple(
+                WorkerRecord(
+                    worker_id=row["worker_id"],
+                    release_id=row["release_id"],
+                    queues=tuple(row["queues"]),
+                    capacity=row["capacity"],
+                    started_at=row["started_at"],
+                    heartbeat_at=row["heartbeat_at"],
+                )
+                for row in await cursor.fetchall()
+            )
 
     async def ingest_channel_delivery(
         self,
@@ -2846,6 +2945,9 @@ class PostgresRunStore:
             "terminal_steps": _TERMINAL_STEPS,
             "claimable": _CLAIMABLE_STEPS,
             "queues": list(queues) if queues is not None else None,
+            # next_due bounds the sleep for every runnable run; release
+            # pinning shapes who claims, not when the fleet wakes.
+            "release": None,
         }
         async with pool.connection() as conn:
             cursor = await conn.execute(

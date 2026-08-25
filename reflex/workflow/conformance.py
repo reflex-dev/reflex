@@ -31,6 +31,7 @@ from reflex.workflow.records import (
     RunStatus,
     StepRecord,
     StepStatus,
+    WorkerRecord,
 )
 from reflex.workflow.store import StaleClaimError, StepCompletion
 
@@ -1843,6 +1844,89 @@ async def check_policy_admission_also_flushes_parked_mail(store: RunStore) -> No
     assert rows[0].status is ParkedStatus.DELIVERED
 
 
+async def check_a_pinned_run_drains_only_on_its_release(store: RunStore) -> None:
+    """Release routing: a run never mixes two releases' code.
+
+    A v2 worker must not claim a run v1 admitted -- the run drains on the
+    release whose code recorded its payloads. An unpinned run (admitted
+    before releases were declared) is claimable by anyone, and a worker with
+    no declared release (dev, tests) claims anything: pinning constrains
+    only when both sides declare.
+    """
+    await store.admit(make_run(release_id="v1"), make_step(due_at=0.0), _ADMITTED)
+    assert await store.claim_next(NOW, release="v2") is None, (
+        "a v2 worker claimed a v1-pinned run"
+    )
+    claim = await store.claim_next(NOW, release="v1")
+    assert claim is not None
+    assert claim.run.release_id == "v1"
+    await store.release_claim(claim, status=StepStatus.READY, events=(), now=NOW)
+
+    claim = await store.claim_next(NOW, release=None)
+    assert claim is not None, "an undeclared worker serves every release"
+    await store.release_claim(claim, status=StepStatus.READY, events=(), now=NOW)
+
+    await store.admit(make_run("free1"), make_step("free1", due_at=0.0), _ADMITTED)
+    claim = await store.claim_next(NOW, release="v2")
+    assert claim is not None
+    assert claim.run.run_id == "free1", "an unpinned run is anyone's to run"
+
+
+async def check_worker_registry_roundtrip(store: RunStore) -> None:
+    """The fleet surface: register, heartbeat, list, deregister."""
+    await store.register_worker(
+        WorkerRecord(
+            worker_id="w1",
+            release_id="v1",
+            queues=("default",),
+            capacity=8,
+            started_at=NOW,
+            heartbeat_at=NOW,
+        )
+    )
+    await store.register_worker(
+        WorkerRecord(
+            worker_id="w2",
+            release_id=None,
+            queues=(),
+            capacity=4,
+            started_at=NOW + 1,
+            heartbeat_at=NOW + 1,
+        )
+    )
+    workers = await store.list_workers()
+    assert [worker.worker_id for worker in workers] == ["w2", "w1"]
+    assert workers[1].queues == ("default",)
+
+    await store.heartbeat_worker("w1", NOW + 60)
+    workers = await store.list_workers()
+    beat = next(worker for worker in workers if worker.worker_id == "w1")
+    assert beat.heartbeat_at == pytest.approx(NOW + 60)
+
+    await store.deregister_worker("w2")
+    workers = await store.list_workers()
+    assert [worker.worker_id for worker in workers] == ["w1"]
+
+
+async def check_release_counts_answer_the_retirement_question(
+    store: RunStore,
+) -> None:
+    """Count what still runs the release being replaced; zero means retire."""
+    await store.admit(make_run(release_id="v1"), make_step(due_at=0.0), _ADMITTED)
+    await store.admit(
+        make_run("done1", release_id="v1", status=RunStatus.COMPLETED),
+        make_step("done1", status=StepStatus.SUCCEEDED),
+        _ADMITTED,
+    )
+    active = [status for status in RunStatus if status not in TERMINAL_RUN_STATUSES]
+    assert (
+        await store.count_runs(RunQuery(release_id="v1", statuses=tuple(active))) == 1
+    )
+    assert (
+        await store.count_runs(RunQuery(release_id="v2", statuses=tuple(active))) == 0
+    ), "nothing pins to a release that admitted nothing"
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1865,6 +1949,9 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_a_dead_letter_is_visible_and_replayable,
     check_unclaimed_deliveries_become_dead_letters,
     check_policy_admission_also_flushes_parked_mail,
+    check_a_pinned_run_drains_only_on_its_release,
+    check_worker_registry_roundtrip,
+    check_release_counts_answer_the_retirement_question,
     check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,

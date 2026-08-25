@@ -43,6 +43,7 @@ from reflex.workflow.records import (
     RunStatus,
     StepRecord,
     StepStatus,
+    WorkerRecord,
     step_claimable_at,
     step_wake_at,
 )
@@ -242,6 +243,7 @@ class RunStore(Protocol):
         *,
         lease_duration: float = DEFAULT_LEASE_DURATION,
         queues: tuple[str, ...] | None = None,
+        release: str | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -256,6 +258,9 @@ class RunStore(Protocol):
             queues: Queues this worker serves; None serves every queue. A run
                 whose frontier sits on an unserved queue is skipped whole,
                 because claiming a later slot would break its ordering.
+            release: The claiming worker's release identity. A run pinned
+                to a different release is skipped: it drains on the release
+                that admitted it, so one run never mixes two releases' code.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -380,6 +385,43 @@ class RunStore(Protocol):
             runs: The child run records paired with their root slots.
             events: History events to append to the parent.
             now: Current time in epoch seconds.
+        """
+        ...
+
+    async def register_worker(self, worker: WorkerRecord) -> None:
+        """Record (or refresh) a worker's registration.
+
+        Args:
+            worker: The worker's identity, release, queues, and capacity.
+        """
+        ...
+
+    async def heartbeat_worker(self, worker_id: str, now: float) -> None:
+        """Refresh a worker's sign of life.
+
+        Args:
+            worker_id: The worker.
+            now: Current time in epoch seconds.
+        """
+        ...
+
+    async def deregister_worker(self, worker_id: str) -> None:
+        """Remove a worker that shut down cleanly.
+
+        Args:
+            worker_id: The worker.
+        """
+        ...
+
+    async def list_workers(self) -> tuple[WorkerRecord, ...]:
+        """List registered workers, most recently started first.
+
+        A worker that died without deregistering stays listed with a stale
+        heartbeat; staleness is the reader's judgement, because only the
+        reader knows what cadence it expects.
+
+        Returns:
+            The registrations.
         """
         ...
 
@@ -1008,6 +1050,8 @@ def _matches_query(run: RunRecord, query: RunQuery) -> bool:
         and run.definition_digest != query.definition_digest
     ):
         return False
+    if query.release_id is not None and run.release_id != query.release_id:
+        return False
     if query.statuses and run.status not in query.statuses:
         return False
     if query.created_before is not None and (run.created_at, run.run_id) >= (
@@ -1074,6 +1118,7 @@ class MemoryRunStore:
         self._substeps: dict[tuple[str, int], dict[str, Any]] = {}
         self._schedule_cursors: dict[str, float] = {}
         self._parked: list[ParkedDelivery] = []
+        self._workers: dict[str, WorkerRecord] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
         self._inbox: dict[str, dict[tuple[str, str, str], bool]] = {}
@@ -1182,6 +1227,51 @@ class MemoryRunStore:
                     reason=disposition,
                     updated_at=now,
                 )
+
+    async def register_worker(self, worker: WorkerRecord) -> None:
+        """Record (or refresh) a worker's registration.
+
+        Args:
+            worker: The worker's identity, release, queues, and capacity.
+        """
+        async with self._lock:
+            self._workers[worker.worker_id] = worker
+
+    async def heartbeat_worker(self, worker_id: str, now: float) -> None:
+        """Refresh a worker's sign of life.
+
+        Args:
+            worker_id: The worker.
+            now: Current time in epoch seconds.
+        """
+        async with self._lock:
+            worker = self._workers.get(worker_id)
+            if worker is not None:
+                self._workers[worker_id] = dataclasses.replace(worker, heartbeat_at=now)
+
+    async def deregister_worker(self, worker_id: str) -> None:
+        """Remove a worker that shut down cleanly.
+
+        Args:
+            worker_id: The worker.
+        """
+        async with self._lock:
+            self._workers.pop(worker_id, None)
+
+    async def list_workers(self) -> tuple[WorkerRecord, ...]:
+        """List registered workers, most recently started first.
+
+        Returns:
+            The registrations.
+        """
+        async with self._lock:
+            return tuple(
+                sorted(
+                    self._workers.values(),
+                    key=lambda worker: worker.started_at,
+                    reverse=True,
+                )
+            )
 
     async def ingest_channel_delivery(
         self,
@@ -1344,6 +1434,7 @@ class MemoryRunStore:
         *,
         lease_duration: float = DEFAULT_LEASE_DURATION,
         queues: tuple[str, ...] | None = None,
+        release: str | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -1354,6 +1445,9 @@ class MemoryRunStore:
             queues: Queues this worker serves; None serves every queue. A run
                 whose frontier sits on an unserved queue is skipped whole,
                 because claiming a later slot would break its ordering.
+            release: The claiming worker's release identity. A run pinned to
+                a different release is skipped: it drains on the release that
+                admitted it, so one run never mixes two releases' code.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -1365,6 +1459,14 @@ class MemoryRunStore:
                 steps = self._steps[run.run_id]
                 frontier = _frontier(steps)
                 if frontier is None or not step_claimable_at(frontier, now):
+                    continue
+                if (
+                    release is not None
+                    and run.release_id is not None
+                    and run.release_id != release
+                ):
+                    # Pinned to another release: it drains on the workers
+                    # that admitted it, never on this one.
                     continue
                 if queues is not None and frontier.queue not in queues:
                     continue
@@ -2750,7 +2852,7 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
-SCHEMA_VERSION: Final = 4
+SCHEMA_VERSION: Final = 5
 """Stamped into PRAGMA user_version; bump when _SCHEMA or migrations change."""
 
 DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
@@ -2805,8 +2907,17 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     labels TEXT,
     deadline REAL,
     cancel_requested INTEGER NOT NULL DEFAULT 0,
+    release_id TEXT,
     created_at REAL NOT NULL,
     updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS workflow_workers (
+    worker_id TEXT PRIMARY KEY,
+    release_id TEXT,
+    queues TEXT NOT NULL,
+    capacity INTEGER NOT NULL,
+    started_at REAL NOT NULL,
+    heartbeat_at REAL NOT NULL
 );
 CREATE TABLE IF NOT EXISTS workflow_steps (
     run_id TEXT NOT NULL,
@@ -2909,6 +3020,7 @@ _STEP_MIGRATIONS: Final = (
 )
 
 _RUN_MIGRATIONS: Final = (
+    ("release_id", "ALTER TABLE workflow_runs ADD COLUMN release_id TEXT"),
     ("flow_key", "ALTER TABLE workflow_runs ADD COLUMN flow_key TEXT"),
     ("parent_run_id", "ALTER TABLE workflow_runs ADD COLUMN parent_run_id TEXT"),
     ("parent_ordinal", "ALTER TABLE workflow_runs ADD COLUMN parent_ordinal INTEGER"),
@@ -2971,6 +3083,7 @@ def _run_from_row(row: sqlite3.Row) -> RunRecord:
         parent_ordinal=row["parent_ordinal"],
         request_key=row["request_key"],
         labels=_load(row["labels"]),
+        release_id=row["release_id"],
         deadline=row["deadline"],
         cancel_requested=bool(row["cancel_requested"]),
         created_at=row["created_at"],
@@ -3089,6 +3202,7 @@ def _sqlite_frontier_query(
     due_only: bool,
     order: str,
     limit: int,
+    release: str | None = None,
 ) -> tuple[str, tuple[Any, ...]]:
     """Build the query for claimable-or-waking frontier steps.
 
@@ -3108,6 +3222,8 @@ def _sqlite_frontier_query(
             clock event alone can make claimable, however far out.
         order: ORDER BY expression.
         limit: Maximum rows.
+        release: The claiming worker's release; a run pinned to a different
+            release is skipped, never claimed.
 
     Returns:
         The SQL and its parameters.
@@ -3129,6 +3245,10 @@ def _sqlite_frontier_query(
         waking_params = (*claimable, StepStatus.BLOCKED.value)
     queue_sql = f" AND s.queue IN ({marks(queues)})" if queues is not None else ""
     queue_params = tuple(queues) if queues is not None else ()
+    release_sql = (
+        " AND (r.release_id IS NULL OR r.release_id = ?)" if release is not None else ""
+    )
+    release_params = (release,) if release is not None else ()
     sql = (
         f"SELECT {select} FROM workflow_steps s"
         " JOIN workflow_runs r ON r.run_id = s.run_id"
@@ -3136,6 +3256,7 @@ def _sqlite_frontier_query(
         f" AND r.status NOT IN ({marks(terminal_runs)})"
         " AND r.status != ? AND r.cancel_requested = 0"
         " AND (r.deadline IS NULL OR r.deadline > ?)"
+        f"{release_sql}"
         " AND NOT EXISTS (SELECT 1 FROM workflow_steps x"
         " WHERE x.run_id = s.run_id AND x.ordinal < s.ordinal"
         f" AND x.status NOT IN ({marks(terminal_steps)}))"
@@ -3146,6 +3267,7 @@ def _sqlite_frontier_query(
         *terminal_runs,
         RunStatus.NEEDS_ATTENTION.value,
         now,
+        *release_params,
         *terminal_steps,
         *queue_params,
     )
@@ -3172,6 +3294,9 @@ def _sqlite_run_filters(query: RunQuery) -> tuple[str, tuple[Any, ...]]:
     if query.definition_digest is not None:
         clauses.append("definition_digest = ?")
         params.append(query.definition_digest)
+    if query.release_id is not None:
+        clauses.append("release_id = ?")
+        params.append(query.release_id)
     if query.statuses:
         placeholders = ",".join("?" * len(query.statuses))
         clauses.append(f"status IN ({placeholders})")
@@ -3309,9 +3434,9 @@ class SqliteRunStore:
             "INSERT INTO workflow_runs (run_id, workflow_id, definition_digest,"
             " status, state, state_version, next_ordinal, result, error,"
             " flow_key, parent_run_id, parent_ordinal, parent_close,"
-            " request_key, labels, deadline, cancel_requested, created_at,"
-            " updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " request_key, labels, deadline, cancel_requested, release_id,"
+            " created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 run.run_id,
                 run.workflow_id,
@@ -3330,6 +3455,7 @@ class SqliteRunStore:
                 _dump(run.labels),
                 run.deadline,
                 int(run.cancel_requested),
+                run.release_id,
                 run.created_at,
                 run.updated_at,
             ),
@@ -3561,6 +3687,102 @@ class SqliteRunStore:
             ),
         )
         return disposition if delivered else "dead_letter"
+
+    async def register_worker(self, worker: WorkerRecord) -> None:
+        """Record (or refresh) a worker's registration.
+
+        Args:
+            worker: The worker's identity, release, queues, and capacity.
+        """
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute(
+                    "INSERT INTO workflow_workers (worker_id, release_id,"
+                    " queues, capacity, started_at, heartbeat_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?)"
+                    " ON CONFLICT (worker_id) DO UPDATE SET release_id ="
+                    " excluded.release_id, queues = excluded.queues,"
+                    " capacity = excluded.capacity,"
+                    " heartbeat_at = excluded.heartbeat_at",
+                    (
+                        worker.worker_id,
+                        worker.release_id,
+                        json.dumps(list(worker.queues)),
+                        worker.capacity,
+                        worker.started_at,
+                        worker.heartbeat_at,
+                    ),
+                )
+
+        await asyncio.to_thread(work)
+
+    async def heartbeat_worker(self, worker_id: str, now: float) -> None:
+        """Refresh a worker's sign of life.
+
+        Args:
+            worker_id: The worker.
+            now: Current time in epoch seconds.
+        """
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute(
+                    "UPDATE workflow_workers SET heartbeat_at = ? WHERE worker_id = ?",
+                    (now, worker_id),
+                )
+
+        await asyncio.to_thread(work)
+
+    async def deregister_worker(self, worker_id: str) -> None:
+        """Remove a worker that shut down cleanly.
+
+        Args:
+            worker_id: The worker.
+        """
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute(
+                    "DELETE FROM workflow_workers WHERE worker_id = ?",
+                    (worker_id,),
+                )
+
+        await asyncio.to_thread(work)
+
+    async def list_workers(self) -> tuple[WorkerRecord, ...]:
+        """List registered workers, most recently started first.
+
+        Returns:
+            The registrations.
+        """
+
+        def work() -> tuple[WorkerRecord, ...]:
+            """Run the operation on the worker thread.
+
+            Returns:
+                The registrations.
+            """
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT * FROM workflow_workers ORDER BY started_at DESC"
+                ).fetchall()
+            return tuple(
+                WorkerRecord(
+                    worker_id=row["worker_id"],
+                    release_id=row["release_id"],
+                    queues=tuple(json.loads(row["queues"])),
+                    capacity=row["capacity"],
+                    started_at=row["started_at"],
+                    heartbeat_at=row["heartbeat_at"],
+                )
+                for row in rows
+            )
+
+        return await asyncio.to_thread(work)
 
     async def ingest_channel_delivery(
         self,
@@ -3956,6 +4178,7 @@ class SqliteRunStore:
         *,
         lease_duration: float = DEFAULT_LEASE_DURATION,
         queues: tuple[str, ...] | None = None,
+        release: str | None = None,
     ) -> Claim | None:
         """Claim the due frontier step of some runnable run.
 
@@ -3966,6 +4189,9 @@ class SqliteRunStore:
             queues: Queues this worker serves; None serves every queue. A run
                 whose frontier sits on an unserved queue is skipped whole,
                 because claiming a later slot would break its ordering.
+            release: The claiming worker's release identity. A run pinned to
+                a different release is skipped: it drains on the release that
+                admitted it, so one run never mixes two releases' code.
 
         Returns:
             A fenced claim, or None when nothing is claimable right now.
@@ -3993,6 +4219,7 @@ class SqliteRunStore:
                         due_only=True,
                         order="s.due_at, s.run_id",
                         limit=1,
+                        release=release,
                     )
                     row = self._db.execute(sql, params).fetchone()
                     if row is not None:

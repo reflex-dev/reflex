@@ -196,7 +196,30 @@ asking the engine to keep old code alive. That routing is not built yet; when
 it is, it constrains which workers exist, and every rule above still holds
 underneath it.
 
-## 5. Cancellation, deadlines, and children
+### Release-pinned execution
+
+Two identities per run, doing different jobs. The **definition digest**
+(structural) decides whether code *can* run a payload — mismatches suspend
+at dispatch (§8). The **release id** (identity of the deployed artifact,
+from `REFLEX_RELEASE_ID` or `WorkflowRuntime(release=...)`) decides whether
+code *may*: a run pins to the release that admitted it, children included,
+and a worker of a different release never claims it — the run drains on the
+code that recorded its payloads, so one run never silently mixes two
+releases. A run or worker with no declared release is unconstrained (dev,
+tests, pre-release deployments): pinning binds only when both sides declare.
+
+Workers register their identity — release, queues, capacity — at startup,
+heartbeat on the lease-renewal cadence, and deregister on clean shutdown;
+a crashed worker stays listed with a stale heartbeat, which is what a
+fleet page should show (`reflex workflows fleet`, `RunStore.list_workers`).
+Rolling deploys are then reads, not ceremonies: new admissions carry the
+new release the moment its workers start; the old release's workers drain
+what they own; rollback is starting old-release workers again; and the
+retirement gate is a count — `reflex workflows fleet --can-retire R` exits
+nonzero while any active run is pinned to R, because stopping R's workers
+early strands those runs until their leases lapse.
+
+## 5. Cancellation, deadlines, and children## 5. Cancellation, deadlines, and children
 
 - `cancel(run_id)` records intent and cancels any in-flight attempt
   cooperatively. The run finalizes `CANCELLED` only once no step is claimed

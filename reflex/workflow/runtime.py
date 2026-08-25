@@ -74,6 +74,7 @@ class WorkflowRuntime:
         max_recoveries: int = DEFAULT_MAX_RECOVERIES,
         max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
         queues: Iterable[str] | None = None,
+        release: str | None = None,
     ):
         """Initialize the runtime.
 
@@ -91,6 +92,8 @@ class WorkflowRuntime:
             max_recoveries: Infrastructure recovery budget per logical step.
             max_concurrency: How many attempts run at once.
             queues: Queues this process's worker serves; None serves all.
+            release: The deployed artifact identity this runtime's worker
+                runs, read from REFLEX_RELEASE_ID by the kernel when omitted.
         """
         self._store = store
         self._clock = clock
@@ -111,6 +114,7 @@ class WorkflowRuntime:
         self._max_recoveries = max_recoveries
         self._max_concurrency = max_concurrency
         self._queues = tuple(queues) if queues is not None else None
+        self._release = release
         self._definitions: dict[str, WorkflowDefinition] = {}
         self._classes: dict[type, str] = {}
         self._kernel: WorkflowKernel | None = None
@@ -222,6 +226,7 @@ class WorkflowRuntime:
             max_recoveries=self._max_recoveries,
             max_concurrency=self._max_concurrency,
             queues=self._queues,
+            release=self._release,
         )
         if start_worker:
             await self._kernel.start_worker()

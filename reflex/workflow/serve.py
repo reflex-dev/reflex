@@ -216,6 +216,7 @@ def list_runs_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
                     "workflow": run.workflow_id,
                     "status": run.status.value,
                     "labels": run.labels or {},
+                    "release": run.release_id,
                     "created_at": run.created_at,
                     "updated_at": run.updated_at,
                 }

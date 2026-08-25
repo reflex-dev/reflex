@@ -187,6 +187,10 @@ class RunRecord:
             terminal state: ``"cancel"`` or ``"abandon"``.
         request_key: Idempotent admission key, if one was supplied.
         labels: Server-derived indexing labels.
+        release_id: Immutable identity of the deployed artifact that admitted
+            this run. Runs pin to their admitting release: a worker of a
+            different release does not claim them, so one run never silently
+            mixes two releases' code.
         deadline: Absolute run deadline in epoch seconds, if configured.
         cancel_requested: Whether cancellation intent has been recorded.
         created_at: Admission time in epoch seconds.
@@ -208,6 +212,7 @@ class RunRecord:
     parent_close: str = "cancel"
     request_key: str | None = None
     labels: dict[str, str] | None = None
+    release_id: str | None = None
     deadline: float | None = None
     cancel_requested: bool = False
     created_at: float = 0.0
@@ -312,6 +317,27 @@ class StartResult:
     retry_after: float | None = None
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class WorkerRecord:
+    """One live worker's registration, as the fleet surface reads it.
+
+    Attributes:
+        worker_id: The worker's unique identity.
+        release_id: The deployed artifact this worker runs, if declared.
+        queues: The queues this worker serves; empty means every queue.
+        capacity: Concurrent attempts this worker runs at most.
+        started_at: When the worker registered, in epoch seconds.
+        heartbeat_at: The worker's last sign of life, in epoch seconds.
+    """
+
+    worker_id: str
+    release_id: str | None
+    queues: tuple[str, ...]
+    capacity: int
+    started_at: float
+    heartbeat_at: float
+
+
 class ParkedStatus(str, enum.Enum):
     """Lifecycle of a correlated webhook delivery in the channel inbox."""
 
@@ -367,6 +393,9 @@ class RunQuery:
             definition. This is what answers "is anything still running the
             release I am replacing", which a deploy gate and an operator
             watching a rollout both need.
+        release_id: Restrict to runs pinned to one release — with
+            non-terminal ``statuses``, the "can this release's workers
+            retire" question.
         statuses: Restrict to these run statuses; empty means any.
         labels: Require every one of these server-derived label values.
         created_before: Pagination cursor, as the ``(created_at, run_id)`` of
@@ -378,6 +407,7 @@ class RunQuery:
 
     workflow_id: str | None = None
     definition_digest: str | None = None
+    release_id: str | None = None
     statuses: tuple[RunStatus, ...] = ()
     labels: Mapping[str, str] | None = None
     created_before: tuple[float, str] | None = None
@@ -396,6 +426,7 @@ class RunSnapshot:
         state_version: Committed state version.
         result: Run result, if completed with one.
         error: Terminal or suspension error payload.
+        release_id: The release that admitted the run and drains it, if any.
         steps: All mailbox slots in ordinal order.
     """
 
@@ -407,3 +438,4 @@ class RunSnapshot:
     result: Any
     error: dict[str, Any] | None
     steps: tuple[StepRecord, ...]
+    release_id: str | None = None
