@@ -614,65 +614,202 @@ def _hash_str(value: str) -> str:
     return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
 
 
-def _update_deterministic_hash(hasher: Any, value: object) -> None:
-    """Feed ``value`` into ``hasher`` using a self-delimiting, type-tagged encoding.
+_HASH_BUFFER_FLUSH_SIZE = 1 << 16
+_HASH_MAX_CACHED_STR = 128
+_HASH_MAX_CACHE_ENTRIES = 4096
 
-    Each branch writes a distinct type tag plus length-prefixed payload, which
-    keeps the encoding injective without building intermediate strings — the
-    nested ``str([...])`` approach this replaces was the dominant cost of
-    ``_deterministic_hash`` (~4x speedup on synthetic, ~2x on real renders).
+# Encoded forms of the values that recur across every component hashed during a
+# compile: short strings (dict keys, tags, module paths) and ``ImportVar``
+# instances, which make up the bulk of what ``_get_component_hash`` feeds in.
+# ``ImportVar`` is a frozen dataclass whose fields are all ``str``/``bool``/
+# ``None``, so its generated equality means exactly "same encoding" and is safe
+# to key a cache on. Both caches stop admitting new entries at
+# ``_HASH_MAX_CACHE_ENTRIES`` so an app rendering many one-off strings can't
+# grow them without bound; the recurring values get in first and stay.
+_hash_str_encodings: dict[str, bytes] = {}
+_hash_import_var_encodings: dict[ImportVar, bytes] = {}
+_hash_dataclass_layouts: dict[type, tuple[bytes, tuple[tuple[bytes, str], ...]]] = {}
+
+
+def _hash_dataclass_layout(cls: type) -> tuple[bytes, tuple[tuple[bytes, str], ...]]:
+    """Get the cached type tag and pre-encoded field names for a dataclass.
 
     Args:
-        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
-        value: The value to fold into the hasher.
+        cls: The dataclass type to describe.
+
+    Returns:
+        The type tag plus field count, and each field's encoded and plain name.
+    """
+    layout = _hash_dataclass_layouts.get(cls)
+    if layout is None:
+        fields = dataclasses.fields(cls)  # pyright: ignore [reportArgumentType]
+        layout = (
+            b"D" + len(fields).to_bytes(8, "little"),
+            tuple((field.name.encode(), field.name) for field in fields),
+        )
+        _hash_dataclass_layouts[cls] = layout
+    return layout
+
+
+def _encode_str_for_hash(value: str) -> bytes:
+    """Encode a string as a type-tagged, length-prefixed payload.
+
+    Args:
+        value: The string to encode.
+
+    Returns:
+        The encoded string.
+    """
+    encoded = value.encode()
+    return b"s" + len(encoded).to_bytes(8, "little") + encoded
+
+
+def _encode_deterministic(value: Any, out: bytearray, hasher: Any | None) -> None:
+    """Append ``value``'s self-delimiting encoding to ``out``.
+
+    Dispatch is on the exact type so the common leaves (strings, bools,
+    containers, imports) skip the ``isinstance`` ladder in
+    :func:`_encode_deterministic_subclass`, which handles everything else.
+    ``out`` is flushed into ``hasher`` at container boundaries once it grows
+    past ``_HASH_BUFFER_FLUSH_SIZE``, so encoding a large subtree never
+    buffers the whole thing.
+
+    Args:
+        value: The value to encode.
+        out: The buffer to append the encoding to.
+        hasher: The hasher ``out`` is flushed into when it grows too large, or
+            ``None`` when ``out`` is a sub-buffer whose full contents the caller
+            needs and so must not be drained mid-encoding.
+    """
+    value_type = type(value)
+    if value_type is str:
+        encoded = _hash_str_encodings.get(value)
+        if encoded is None:
+            encoded = _encode_str_for_hash(value)
+            if (
+                len(value) <= _HASH_MAX_CACHED_STR
+                and len(_hash_str_encodings) < _HASH_MAX_CACHE_ENTRIES
+            ):
+                _hash_str_encodings[value] = encoded
+        out += encoded
+    elif value_type is bool:
+        out += b"T" if value else b"F"
+    elif value_type is dict:
+        out += b"d"
+        out += len(value).to_bytes(8, "little")
+        for k, v in sorted(value.items(), key=operator.itemgetter(0)):
+            _encode_deterministic(k, out, hasher)
+            _encode_deterministic(v, out, hasher)
+        if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
+            hasher.update(out)
+            del out[:]
+    elif value_type is ImportVar:
+        encoded = _hash_import_var_encodings.get(value)
+        if encoded is None:
+            header, fields = _hash_dataclass_layout(ImportVar)
+            buffer = bytearray(header)
+            for encoded_name, name in fields:
+                buffer += encoded_name
+                _encode_deterministic(getattr(value, name), buffer, None)
+            encoded = bytes(buffer)
+            if len(_hash_import_var_encodings) < _HASH_MAX_CACHE_ENTRIES:
+                _hash_import_var_encodings[value] = encoded
+        out += encoded
+    elif value_type is list or value_type is tuple:
+        out += b"l"
+        out += len(value).to_bytes(8, "little")
+        for item in value:
+            _encode_deterministic(item, out, hasher)
+        if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
+            hasher.update(out)
+            del out[:]
+    elif value is None:
+        out += b"N"
+    elif value_type is int or value_type is float:
+        out += b"n"
+        out += str(value).encode()
+    else:
+        _encode_deterministic_subclass(value, out, hasher)
+
+
+def _encode_deterministic_subclass(
+    value: Any, out: bytearray, hasher: Any | None
+) -> None:
+    """Append the encoding of a value whose exact type has no fast path.
+
+    Covers subclasses of the fast-path types — notably ``str``-based enums,
+    which must encode as enums rather than as strings — plus ``Var``,
+    dataclasses, and components.
+
+    Args:
+        value: The value to encode.
+        out: The buffer to append the encoding to.
+        hasher: The hasher ``out`` is flushed into when it grows too large, or
+            ``None`` when ``out`` must not be drained mid-encoding.
 
     Raises:
         TypeError: If the value is not hashable.
     """
-    if value is None:
-        hasher.update(b"N")
-    elif isinstance(value, bool):
-        hasher.update(b"T" if value else b"F")
+    if isinstance(value, bool):
+        out += b"T" if value else b"F"
     elif isinstance(value, (int, float, enum.Enum)):
-        hasher.update(b"n")
-        hasher.update(str(value).encode())
+        out += b"n"
+        out += str(value).encode()
     elif isinstance(value, str):
-        encoded = value.encode()
-        hasher.update(b"s")
-        hasher.update(len(encoded).to_bytes(8, "little"))
-        hasher.update(encoded)
+        out += _encode_str_for_hash(value)
     elif isinstance(value, dict):
-        items = sorted(value.items(), key=operator.itemgetter(0))
-        hasher.update(b"d")
-        hasher.update(len(items).to_bytes(8, "little"))
-        for k, v in items:
-            _update_deterministic_hash(hasher, k)
-            _update_deterministic_hash(hasher, v)
+        out += b"d"
+        out += len(value).to_bytes(8, "little")
+        for k, v in sorted(value.items(), key=operator.itemgetter(0)):
+            _encode_deterministic(k, out, hasher)
+            _encode_deterministic(v, out, hasher)
     elif isinstance(value, (tuple, list)):
-        hasher.update(b"l")
-        hasher.update(len(value).to_bytes(8, "little"))
+        out += b"l"
+        out += len(value).to_bytes(8, "little")
         for item in value:
-            _update_deterministic_hash(hasher, item)
+            _encode_deterministic(item, out, hasher)
     elif isinstance(value, Var):
-        hasher.update(b"v")
-        _update_deterministic_hash(hasher, value._js_expr)
-        _update_deterministic_hash(hasher, value._get_all_var_data())
+        out += b"v"
+        _encode_deterministic(value._js_expr, out, hasher)
+        _encode_deterministic(value._get_all_var_data(), out, hasher)
     elif dataclasses.is_dataclass(value):
-        fields = dataclasses.fields(value)
-        hasher.update(b"D")
-        hasher.update(len(fields).to_bytes(8, "little"))
-        for field in fields:
-            hasher.update(field.name.encode())
-            _update_deterministic_hash(hasher, getattr(value, field.name))
+        header, fields = _hash_dataclass_layout(
+            value if isinstance(value, type) else type(value)
+        )
+        out += header
+        for encoded_name, name in fields:
+            out += encoded_name
+            _encode_deterministic(getattr(value, name), out, hasher)
     elif isinstance(value, BaseComponent):
-        hasher.update(b"C")
-        _update_deterministic_hash(hasher, value.render())
+        out += b"C"
+        _encode_deterministic(value.render(), out, hasher)
     else:
         msg = (
             f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
             "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
         )
         raise TypeError(msg)
+    if len(out) > _HASH_BUFFER_FLUSH_SIZE and hasher is not None:
+        hasher.update(out)
+        del out[:]
+
+
+def _update_deterministic_hash(hasher: Any, value: object) -> None:
+    """Feed ``value`` into ``hasher`` using a self-delimiting, type-tagged encoding.
+
+    Each branch writes a distinct type tag plus length-prefixed payload, which
+    keeps the encoding injective without building intermediate strings. The
+    encoding is buffered in a ``bytearray`` and handed to the hasher in large
+    chunks instead of one ``update`` per node, since a single component hash
+    covers tens of thousands of nodes.
+
+    Args:
+        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
+        value: The value to fold into the hasher.
+    """
+    buffer = bytearray()
+    _encode_deterministic(value, buffer, hasher)
+    hasher.update(buffer)
 
 
 def _deterministic_hash(value: object) -> str:
