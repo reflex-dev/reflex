@@ -9,7 +9,7 @@ from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import EvenMoreBasicBaseState, Var, field
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
 
 from reflex.state import State
 
@@ -144,6 +144,31 @@ def test_guess_type_resolves_parameterized_type_alias(alias_cls: type) -> None:
     pair_var = Var(_js_expr="pair", _var_type=pair[str, int]).guess_type()
     assert isinstance(pair_var, ObjectVar)
     assert pair_var._var_type == dict[int, str]
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_guess_type_resolves_variadic_type_alias(alias_cls: type) -> None:
+    """A variadic alias (``type Tup[*Ts] = tuple[*Ts]``) keeps all arguments.
+
+    The TypeVarTuple must absorb every remaining subscription argument, not
+    just the one a plain positional zip would pair it with.
+    """
+    ts = TypeVarTuple("ts")
+    tup = alias_cls("Tup", tuple[Unpack[ts]], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
+    var = Var(_js_expr="t", _var_type=tup[str, int]).guess_type()
+    assert isinstance(var, ArrayVar)
+    assert var._var_type == tuple[str, int]
+
+    t = TypeVar("t")
+    prefixed = alias_cls("Prefixed", dict[t, tuple[Unpack[ts]]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
+    prefixed_var = Var(_js_expr="p", _var_type=prefixed[str, int, float]).guess_type()
+    assert isinstance(prefixed_var, ObjectVar)
+    assert prefixed_var._var_type == dict[str, tuple[int, float]]
+
+    suffixed = alias_cls("Suffixed", dict[t, tuple[Unpack[ts]]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
+    suffixed_var = Var(_js_expr="s", _var_type=suffixed[int, float, str]).guess_type()
+    assert isinstance(suffixed_var, ObjectVar)
+    assert suffixed_var._var_type == dict[str, tuple[int, float]]
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

@@ -37,7 +37,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 from typing_extensions import Self as Self
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -57,6 +57,14 @@ TypeAliasTypes: tuple[type, ...] = (
     (TypeAliasType, typing.TypeAliasType)
     if sys.version_info >= (3, 12)
     else (TypeAliasType,)
+)
+
+# Potential TypeVarTuple classes for isinstance checks (native on 3.11+,
+# typing_extensions backport otherwise).
+TypeVarTuples: tuple[type, ...] = (
+    (TypeVarTuple, typing.TypeVarTuple)
+    if sys.version_info >= (3, 11)
+    else (TypeVarTuple,)
 )
 
 # Union of generic types.
@@ -361,6 +369,36 @@ def is_classvar(a_type: Any) -> bool:
     )
 
 
+def _match_type_args(
+    type_params: tuple[Any, ...], args: tuple[Any, ...]
+) -> dict[Any, Any]:
+    """Match subscription arguments to type parameters.
+
+    A TypeVarTuple absorbs the middle arguments (mapped to a tuple); plain
+    parameters before and after it match positionally from either end.
+
+    Args:
+        type_params: The alias's type parameters.
+        args: The subscription arguments.
+
+    Returns:
+        A mapping from each type parameter to its argument(s).
+    """
+    tvt_index = next(
+        (i for i, p in enumerate(type_params) if isinstance(p, TypeVarTuples)), None
+    )
+    if tvt_index is None:
+        return dict(zip(type_params, args, strict=False))
+    n_after = len(type_params) - tvt_index - 1
+    substitution: dict[Any, Any] = dict(
+        zip(type_params[:tvt_index], args[:tvt_index], strict=False)
+    )
+    substitution[type_params[tvt_index]] = args[tvt_index : len(args) - n_after]
+    if n_after:
+        substitution.update(zip(type_params[-n_after:], args[-n_after:], strict=False))
+    return substitution
+
+
 def resolve_type_alias(cls: GenericType) -> GenericType:
     """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
 
@@ -382,12 +420,14 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
         if params := getattr(value, "__parameters__", ()):
             # Map via the alias's type parameters: the value's __parameters__
             # are in appearance order, which may differ.
-            substitution = dict(
-                zip(origin.__type_params__, get_args(cls), strict=False)
-            )
-            value = value[  # pyright: ignore[reportIndexIssue]
-                tuple(substitution.get(param, param) for param in params)
-            ]
+            substitution = _match_type_args(origin.__type_params__, get_args(cls))
+            flattened: list[Any] = []
+            for param in params:
+                if isinstance(param, TypeVarTuples):
+                    flattened.extend(substitution.get(param, (param,)))
+                else:
+                    flattened.append(substitution.get(param, param))
+            value = value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
         return resolve_type_alias(value)
     if is_union(cls):
         args = get_args(cls)
