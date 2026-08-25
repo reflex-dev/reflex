@@ -1,3 +1,15 @@
+## v0.1.0a3 (2026-08-25)
+
+### Features
+
+- Materializing a changelog now names leftover orphan news fragments (`+something.feature.md`) after the pull request whose commit added them, so their entries get the usual `#`-link instead of shipping unlinked.
+
+### Miscellaneous
+
+- Every `run:` step in the generated release workflows now declares `shell: bash`, so a `defaults.run.shell` added to one of those files — or a runner whose default shell is not bash — cannot change how a release-critical script is interpreted, or silently drop the `-e`/`-o pipefail` a failing step relies on. ([#6926](https://github.com/reflex-dev/reflex/issues/6926))
+- Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`).
+
+
 ## v0.1.0a2 (2026-08-17)
 
 ### Features
