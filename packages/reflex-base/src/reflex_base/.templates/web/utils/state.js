@@ -17,6 +17,7 @@ import {
   state_name,
   exception_state_name,
 } from "$/utils/context";
+import { CLIENT_STATE_REF } from "$/utils/client_state";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
@@ -377,11 +378,10 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Client state is reached through `refs` rather than an import: `client_state.js`
-  // imports `refs` from here, so importing it back would be a cycle. The key must
-  // stay in sync with CLIENT_STATE_REF in `$/utils/client_state`.
+  // The store is reached through `refs` rather than by importing the provider:
+  // this runs outside the React tree, so there is no context to read.
   if (event.name == "_client_state_set") {
-    const store = refs["__client_state"];
+    const store = refs[CLIENT_STATE_REF];
     if (store === undefined) {
       console.error(
         `Cannot set client state "${event.payload.var_name}": no ClientStateProvider is mounted.`,
@@ -393,7 +393,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name == "_client_state_get") {
-    const store = refs["__client_state"];
+    const store = refs[CLIENT_STATE_REF];
     if (store === undefined) {
       // Still call back, with undefined: the handler awaiting this result would
       // otherwise wait for a value that is never coming.

@@ -230,3 +230,93 @@ def test_writing_one_var_leaves_other_readers_untouched(page: Page) -> None:
 
     expect(page.locator("#shared-a")).to_have_text("churn")
     expect(page.locator("#other-value")).to_have_text("untouched")
+
+
+def ClientStateLateMountApp():
+    """App exercising a consumer that mounts after the value has moved."""
+    import asyncio
+
+    import reflex as rx
+
+    flag = rx.client_state("", name="flag")
+
+    class LateMountState(rx.State):
+        mounted: bool = False
+
+        @rx.event(background=True)
+        async def go(self):
+            async with self:
+                self.mounted = False
+            yield flag.push("busy")
+            await asyncio.sleep(0.2)
+            async with self:
+                self.mounted = True
+            await asyncio.sleep(0.2)
+            yield flag.push("")
+
+    def index() -> rx.Component:
+        return rx.el.div(
+            rx.input(
+                value=LateMountState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.el.button("go", on_click=LateMountState.go, id="go"),
+            rx.el.div(flag.value, id="always"),
+            rx.cond(LateMountState.mounted, rx.el.div(flag.value, id="late")),
+        )
+
+    app = rx.App()
+    app.add_page(index, route="/")
+
+
+@pytest.fixture(scope="module")
+def client_state_late_mount_app(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Generator[AppHarness, None, None]:
+    """Run the late-mount app.
+
+    Args:
+        tmp_path_factory: Pytest fixture for creating temporary directories.
+
+    Yields:
+        The running harness.
+    """
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("client_state_late_mount_app"),
+        app_source=ClientStateLateMountApp,
+    ) as harness:
+        yield harness
+
+
+def test_late_mounted_consumer_reads_the_current_value(
+    client_state_late_mount_app: AppHarness, page: Page
+) -> None:
+    """A consumer mounting after a push reads the live value, not the default.
+
+    Ported from reflex-dev/reflex#6824 (issue #6823). Under the old design every
+    consumer held its own ``useState(default)``, so one that mounted after a
+    push initialized to the default and then *stayed* there: pushing the value
+    back to the default was a no-op for its setter, leaving it permanently out
+    of sync. There is now one slot per name, and a late consumer binds to it
+    rather than seeding a copy, so this holds by construction.
+
+    Args:
+        client_state_late_mount_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_late_mount_app.frontend_url is not None
+    page.goto(client_state_late_mount_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    expect(page.locator("#always")).to_have_text("")
+    expect(page.locator("#late")).to_have_count(0)
+
+    page.click("#go")
+
+    # The late consumer appears already holding the pushed value ...
+    expect(page.locator("#always")).to_have_text("busy")
+    expect(page.locator("#late")).to_have_text("busy")
+    # ... and follows the push back to the default.
+    expect(page.locator("#always")).to_have_text("")
+    expect(page.locator("#late")).to_have_text("")

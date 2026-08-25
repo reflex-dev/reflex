@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import itertools
+import json
 import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -14,6 +15,7 @@ from reflex_base.constants import Dirs
 from reflex_base.constants.state import (
     CAMEL_CASE_CLIENT_STATE_MARKER,
     CAMEL_CASE_MEMO_MARKER,
+    CLIENT_STATE_REF,
     FIELD_MARKER,
 )
 from reflex_base.event import (
@@ -70,10 +72,9 @@ _VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
 
 # The store's entry point on the global `refs` object. This is the only binding
 # reachable from the scope `run_script` code is evaluated in, and doubles as the
-# devtools handle for inspecting client state. Must match CLIENT_STATE_REF in
-# `$/utils/client_state`.
+# devtools handle for inspecting client state.
 _client_state_store_ref = Var(
-    _js_expr='refs["__client_state"]',
+    _js_expr=f"refs[{json.dumps(CLIENT_STATE_REF)}]",
     _var_data=VarData(
         imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
     ),

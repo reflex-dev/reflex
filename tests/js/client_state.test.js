@@ -695,10 +695,23 @@ describe("scoped values", () => {
   });
 });
 
-test("CLIENT_STATE_REF matches the key state.js reads", () => {
-  // The runtime reaches the store through the object it is handed, so the key
-  // is duplicated on the reading side and has to stay in sync.
+test("CLIENT_STATE_REF matches the Python constant", () => {
+  // The key has exactly two definitions -- this one and the Python constant the
+  // compiler emits `refs[...]` from -- because neither language can import the
+  // other's. Everything else on either side references its own, so this is the
+  // only seam left where a rename can drift.
+  const constantsPy = readFileSync(__PY_CONSTANTS__, "utf8");
+  const declared = constantsPy.match(/^CLIENT_STATE_REF = "(.*)"$/m);
+
+  expect(declared, "no CLIENT_STATE_REF in constants/state.py").not.toBeNull();
+  expect(declared[1]).toBe(CLIENT_STATE_REF);
+});
+
+test("state.js reads the store through the shared constant", () => {
+  // Guards a regression back to a hardcoded copy: the reader outside the React
+  // tree has to go through the constant, not re-spell the key.
   const stateJs = readFileSync(`${__WEB_ROOT__}utils/state.js`, "utf8");
 
-  expect(stateJs).toContain(`refs["${CLIENT_STATE_REF}"]`);
+  expect(stateJs).toContain("refs[CLIENT_STATE_REF]");
+  expect(stateJs).not.toContain(`"${CLIENT_STATE_REF}"`);
 });
