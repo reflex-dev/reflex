@@ -12,6 +12,7 @@ from reflex_release.config import Config, load_config
 from reflex_release.devpins import (
     LOCK_FILE,
     PinUpgrade,
+    blocker_advice,
     blocking_pins,
     check_dev_pins,
     parse_requirement,
@@ -241,12 +242,19 @@ def test_upgrade_dev_pins_rewrites_the_pyproject(repo: Path) -> None:
     check_dev_pins(reloaded, ["mypkg"])
 
 
-def stub_uv_lock(monkeypatch: pytest.MonkeyPatch, returncode: int) -> list[list[str]]:
+def stub_uv_lock(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int,
+    lock: Path | None = None,
+) -> list[list[str]]:
     """Answer ``uv lock`` with a fixed status, letting git run for real.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
         returncode: The status ``uv lock`` should report.
+        lock: A lock file the stubbed run should rewrite, standing in for a
+            re-resolution that actually moves it. Left alone when None, which is
+            what a uv workspace does for a sibling pin.
 
     Returns:
         The list the intercepted commands are recorded in.
@@ -258,6 +266,8 @@ def stub_uv_lock(monkeypatch: pytest.MonkeyPatch, returncode: int) -> list[list[
         if cmd[:2] != ["uv", "lock"]:
             return real_run(cmd, **kwargs)
         recorded.append(cmd)
+        if lock is not None:
+            lock.write_text("version = 2\n", encoding="utf-8")
         return subprocess.CompletedProcess(cmd, returncode)
 
     monkeypatch.setattr(subprocess, "run", run)
@@ -269,11 +279,28 @@ def test_upgrade_dev_pins_refreshes_the_lock_file(
 ) -> None:
     reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
     git(repo, "tag", "widget-core-v0.2.0")
-    (repo / LOCK_FILE).write_text("version = 1\n", encoding="utf-8")
-    recorded = stub_uv_lock(monkeypatch, 0)
+    lock = repo / LOCK_FILE
+    lock.write_text("version = 1\n", encoding="utf-8")
+    recorded = stub_uv_lock(monkeypatch, 0, lock=lock)
     assert upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False) == [
         "pyproject.toml",
         LOCK_FILE,
+    ]
+    assert recorded == [["uv", "lock"]]
+
+
+def test_upgrade_dev_pins_omits_a_lock_file_the_pins_did_not_move(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A uv workspace records siblings with no specifier, so a sibling pin
+    cannot move the lock — reporting it would stage an unrelated diff.
+    """
+    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    (repo / LOCK_FILE).write_text("version = 1\n", encoding="utf-8")
+    recorded = stub_uv_lock(monkeypatch, 0)
+    assert upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False) == [
+        "pyproject.toml"
     ]
     assert recorded == [["uv", "lock"]]
 
@@ -302,8 +329,8 @@ def test_upgrade_dev_pins_is_a_no_op_without_pins(repo: Path) -> None:
     assert (repo / "pyproject.toml").read_text(encoding="utf-8") == before
 
 
-def test_upgrade_dev_pins_refuses_an_ambiguous_requirement(repo: Path) -> None:
-    """The same string twice gives the rewrite nowhere unambiguous to land."""
+def test_upgrade_dev_pins_lifts_every_published_copy(repo: Path) -> None:
+    """The same pin in `dependencies` and in an extra is published twice."""
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
         pyproject.read_text(encoding="utf-8").replace(
@@ -315,8 +342,31 @@ def test_upgrade_dev_pins_refuses_an_ambiguous_requirement(repo: Path) -> None:
     )
     reloaded = load_config(repo)
     git(repo, "tag", "widget-core-v0.2.0")
-    with pytest.raises(ReleaseError, match="expected exactly one quoted"):
-        upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+    upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+    text = pyproject.read_text(encoding="utf-8")
+    assert text.count('"widget-core >= 0.2.0"') == 2
+    assert "0.2.0.dev1" not in text
+
+
+def test_upgrade_dev_pins_ignores_an_unpublished_copy(repo: Path) -> None:
+    """`[dependency-groups]` is development-only, so it is neither counted nor
+    rewritten — the same rule `check_dev_pins` applies.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'dependencies = ["widget-core >= 0.1.0"]',
+            'dependencies = ["widget-core >= 0.2.0.dev1"]',
+        )
+        + '\n[dependency-groups]\ndev = ["widget-core >= 0.2.0.dev1"]\n',
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    git(repo, "tag", "widget-core-v0.2.0")
+    upgrade_dev_pins(reloaded, ["mypkg"], allow_prereleases=False)
+    text = pyproject.read_text(encoding="utf-8")
+    assert 'dependencies = ["widget-core >= 0.2.0"]' in text
+    assert 'dev = ["widget-core >= 0.2.0.dev1"]' in text
 
 
 def test_pin_upgrade_relaxes_a_strict_floor(repo: Path) -> None:
@@ -392,20 +442,49 @@ def test_upgrade_dev_pins_rolls_back_an_earlier_package(repo: Path) -> None:
     reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
     git(repo, "tag", "widget-core-v0.2.0")
     git(repo, "tag", "v1.0")
-    # The sibling's own pin resolves, but names the same requirement twice, so
-    # rewriting it is ambiguous — and it is rewritten after the root package's.
+    # The sibling's own pin resolves, but is spelled with an escape, so the
+    # parsed value cannot be found in the file — and it is rewritten after the
+    # root package's.
     sub = repo / "packages" / "widget-core" / "pyproject.toml"
     sub.write_text(
         sub.read_text(encoding="utf-8")
-        + 'dependencies = ["mypkg >= 1.0.dev1"]\n'
-        + '[project.optional-dependencies]\nextra = ["mypkg >= 1.0.dev1"]\n',
+        + 'dependencies = ["mypkg \\u003E= 1.0.dev1"]\n',
         encoding="utf-8",
     )
     reloaded = load_config(repo)
     root = repo / "pyproject.toml"
     before = root.read_text(encoding="utf-8")
 
-    with pytest.raises(ReleaseError, match="expected exactly one quoted"):
+    with pytest.raises(ReleaseError, match="published copy"):
         upgrade_dev_pins(reloaded, ["mypkg", "widget-core"], allow_prereleases=False)
 
     assert root.read_text(encoding="utf-8") == before
+
+
+def test_pin_upgrades_calls_an_exact_dev_pin_a_dead_end(repo: Path) -> None:
+    """No release can satisfy `== 0.2.0.dev1`, so "release it first" is a circle."""
+    reloaded = set_root_dependency(repo, "widget-core == 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.3.0")
+    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
+    assert upgrade.resolved is None
+    assert upgrade.exact
+    assert "re-pin it by hand" in upgrade.reason
+    # The tags say nothing useful here, so the reason must not cite them.
+    assert "newest tagged" not in upgrade.reason
+
+
+def test_blocker_advice_matches_what_can_be_waited_for(repo: Path) -> None:
+    waitable = PinUpgrade("mypkg", "a >= 1.dev1", "a", ("1.dev1",), None, "r")
+    dead_end = PinUpgrade(
+        "mypkg", "b == 1.dev1", "b", ("1.dev1",), None, "r", exact=True
+    )
+
+    assert "lifts those pins automatically" in blocker_advice({"mypkg": [waitable]})
+    assert "re-pin it by hand" in blocker_advice({"mypkg": [dead_end]})
+
+    only_exact = blocker_advice({"mypkg": [dead_end]})
+    assert "Release the depended-on package(s) first" not in only_exact
+
+    mixed = blocker_advice({"mypkg": [waitable, dead_end]})
+    assert "lifts those pins automatically" in mixed
+    assert "re-pin it by hand" in mixed

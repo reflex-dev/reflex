@@ -217,18 +217,36 @@ satisfies the whole requirement**:
 "Published" means **tagged**: tags are created only after a successful upload,
 so the repository's own tags are its record of what is on PyPI — which is why
 the release workflows check out with full history and tags. The rewritten
-`pyproject.toml` files and the re-resolved `uv.lock` are part of the release
-commit, so they land through the same review as the changelog bump; nothing else
-is staged, not even an unrelated edit to a file the upgrade happened not to
-touch.
+`pyproject.toml` files are part of the release commit, so they land through the
+same review as the changelog bump; a package's `pyproject.toml` is staged only
+when a pin in it actually moved, and only the copies of a requirement that are
+*published* are rewritten — a `[dependency-groups]` entry is left alone, the
+same way `check-dev-pins` ignores it.
 
 The lifted floor is always one the resolved version satisfies — a strict
 `> 0.2.0.dev1` becomes `>= 0.2.0`, since `> 0.2.0` would exclude the very
 release it resolved to — and the rewrite is verified against the resolved
-version before it is written. Pins and lock file move together: if `uv lock`
-cannot follow the new pins, the `pyproject.toml` rewrites are rolled back, so a
-re-run has the same work to do rather than finding the pins already lifted and
-skipping the lock.
+version before it is written. An **exact** floor (`== 0.2.0.dev1`) is a dead
+end rather than a wait: no published version can equal it, so the package is
+held back with a note to re-pin it by hand.
+
+### The lock file
+
+If the repository has a `uv.lock`, it is re-resolved after the pins move, and
+staged with them **when the re-resolution actually changes it**. In a uv
+workspace that is usually never: the lock records a workspace member as
+`{ name = "mypkg-base", editable = "packages/mypkg-base" }`, with no version
+specifier for a lifted pin to show up in. The re-lock matters for the other
+layout — where the sibling resolves from an index and the lock does carry its
+specifier.
+
+Two consequences worth knowing. `uv lock` re-resolves against the index, so if
+the lock was *already* out of date on the main branch, catching it up is part of
+the same commit — the release PR then carries resolution churn that has nothing
+to do with the release. And pins and lock move together: if `uv lock` cannot
+follow the new pins, the `pyproject.toml` rewrites are rolled back, so a re-run
+has the same work to do rather than finding the pins already lifted and skipping
+the lock.
 
 A floor nothing published satisfies has nowhere to go, and the package is
 **held back** rather than materialized into a version that could never be

@@ -43,6 +43,10 @@ from .gitutil import tag_versions
 # (``!=``) leaves the requirement resolvable from PyPI, so it is not a dev pin.
 _LOWER_BOUND_OPERATORS = frozenset({"===", "==", "~=", ">=", ">"})
 
+# Operators that admit exactly one version, so a floor under one of them cannot
+# be lifted onto anything: releasing the dependency never helps.
+_EXACT_OPERATORS = frozenset({"===", "=="})
+
 #: The lock file re-resolved after a pin upgrade, and the tool that rewrites it.
 LOCK_FILE = "uv.lock"
 
@@ -53,6 +57,10 @@ LOCK_FILE = "uv.lock"
 _SPECIFIER_RE = re.compile(
     r"(?P<op>===|==|~=|>=|>)(?P<space>\s*)(?P<version>[^\s,;\]]+)"
 )
+
+# A TOML table header at the start of a line, which is what bounds the region a
+# requirement rewrite is allowed to touch.
+_TABLE_HEADER_RE = re.compile(r"^\[\[?(?P<name>[^\]]+)\]\]?", re.MULTILINE)
 
 
 def _unshippable_bounds(
@@ -83,6 +91,24 @@ def _unshippable_bounds(
         if bound.is_devrelease or (bound.is_prerelease and not allow_prereleases):
             bounds.append(specifier.version)
     return tuple(bounds)
+
+
+def _is_exact_pin(parsed: Requirement, bounds: tuple[str, ...]) -> bool:
+    """Return whether every offending bound of a requirement is an exact pin.
+
+    Args:
+        parsed: The parsed requirement.
+        bounds: The offending versions, as returned by :func:`_unshippable_bounds`.
+
+    Returns:
+        True when each one appears only under ``==`` or ``===``, which no
+        published version other than the pinned one can ever satisfy.
+    """
+    return all(
+        specifier.operator in _EXACT_OPERATORS
+        for specifier in parsed.specifier
+        if specifier.version in bounds
+    )
 
 
 def parse_requirement(requirement: str) -> tuple[str, bool]:
@@ -170,6 +196,9 @@ class PinUpgrade:
             or None when no published version does — which disqualifies the
             package from the release.
         reason: Why no published version satisfies it (empty when one does).
+        exact: Whether the offending bounds are exact pins (``==``/``===``), for
+            which no published version can ever qualify — so the advice is to
+            re-pin by hand rather than to release the dependency first.
     """
 
     package: str
@@ -178,6 +207,7 @@ class PinUpgrade:
     bounds: tuple[str, ...]
     resolved: Version | None
     reason: str = ""
+    exact: bool = False
 
     def rewritten(self) -> str:
         """Return the requirement with its offending bounds lifted.
@@ -276,6 +306,24 @@ def _pin_upgrades(
         # is unpublishable whoever owns the dependency, so it always counts.
         bounds = _unshippable_bounds(parsed, allow_prereleases or sibling is None)
         if not bounds:
+            continue
+        # An exact pin on an unshippable version is a dead end, not a wait: no
+        # published version equals it, so no release of the dependency will ever
+        # make it satisfiable. Say so instead of sending the operator in a
+        # circle, and do not bother consulting the tags.
+        if _is_exact_pin(parsed, bounds):
+            upgrades.append(
+                PinUpgrade(
+                    package,
+                    requirement,
+                    name,
+                    bounds,
+                    None,
+                    "an exact pin on an unpublished version can never be "
+                    "satisfied by a release; re-pin it by hand",
+                    exact=True,
+                )
+            )
             continue
         if sibling is None:
             upgrades.append(
@@ -404,6 +452,32 @@ def describe_blockers(blocked: dict[str, list[PinUpgrade]]) -> list[str]:
     ]
 
 
+def blocker_advice(blocked: dict[str, list[PinUpgrade]]) -> str:
+    """Return what to do about a set of unresolvable pins.
+
+    Args:
+        blocked: The mapping returned by :func:`blocking_pins`.
+
+    Returns:
+        The closing sentence(s) for the failure message. Waiting for a release
+        only helps a pin a future version could satisfy; an exact pin has to be
+        rewritten by hand, so saying otherwise sends the operator in a circle.
+    """
+    upgrades = [upgrade for entries in blocked.values() for upgrade in entries]
+    advice: list[str] = []
+    if any(not upgrade.exact for upgrade in upgrades):
+        advice.append(
+            "Release the depended-on package(s) first; the next release lifts "
+            "those pins automatically."
+        )
+    if any(upgrade.exact for upgrade in upgrades):
+        advice.append(
+            "An exact pin has no published version to move to, whatever is "
+            "released: re-pin it by hand."
+        )
+    return " ".join(advice)
+
+
 def _toml_basic(value: str) -> str:
     """Render a string as a TOML basic (double-quoted) value.
 
@@ -420,8 +494,34 @@ def _toml_basic(value: str) -> str:
     return f'"{escaped}"'
 
 
-def _replace_requirement(text: str, original: str, replacement: str) -> str:
-    """Replace one quoted requirement string in a ``pyproject.toml``.
+def _project_regions(text: str) -> list[tuple[int, int]]:
+    """Return the spans of the ``[project]`` table and its subtables.
+
+    Args:
+        text: A ``pyproject.toml`` document.
+
+    Returns:
+        ``(start, end)`` offsets covering the tables that hold published
+        requirements. Everything else — ``[dependency-groups]`` above all, which
+        :func:`published_dependencies` deliberately ignores — is outside, so a
+        copy of a requirement that is never published is neither counted nor
+        rewritten.
+    """
+    headers = list(_TABLE_HEADER_RE.finditer(text))
+    regions: list[tuple[int, int]] = []
+    for index, header in enumerate(headers):
+        name = header["name"].strip()
+        if name != "project" and not name.startswith("project."):
+            continue
+        end = headers[index + 1].start() if index + 1 < len(headers) else len(text)
+        regions.append((header.end(), end))
+    return regions
+
+
+def _replace_requirement(
+    text: str, original: str, replacement: str, expected: int
+) -> str:
+    """Rewrite a package's published copies of one requirement string.
 
     The requirement is matched as the whole quoted TOML value it was read from,
     so nothing else that happens to contain the same substring is touched. Both
@@ -432,6 +532,9 @@ def _replace_requirement(text: str, original: str, replacement: str) -> str:
         text: The file content.
         original: The requirement as parsed from the file.
         replacement: The requirement to write instead.
+        expected: How many published copies the parser found — the same string
+            in ``dependencies`` and in an optional-dependency group is two
+            requirements, and both are published, so both are rewritten.
 
     Returns:
         The updated file content.
@@ -440,16 +543,23 @@ def _replace_requirement(text: str, original: str, replacement: str) -> str:
         (_toml_basic(original), _toml_basic(replacement)),
         (f"'{original}'", f"'{replacement}'"),
     ]
-    counts = [text.count(needle) for needle, _ in spellings]
-    if sum(counts) != 1:
+    pieces: list[str] = []
+    cursor = found = 0
+    for start, end in _project_regions(text):
+        pieces.append(text[cursor:start])
+        chunk = text[start:end]
+        for needle, substitute in spellings:
+            found += chunk.count(needle)
+            chunk = chunk.replace(needle, substitute)
+        pieces.append(chunk)
+        cursor = end
+    pieces.append(text[cursor:])
+    if found != expected:
         fail(
-            f"expected exactly one quoted {original!r} requirement to upgrade, "
-            f"found {sum(counts)}; re-pin it by hand"
+            f"expected {expected} published copy(ies) of the requirement "
+            f"{original!r} to upgrade, found {found}; re-pin it by hand"
         )
-    needle, substitute = next(
-        pair for pair, count in zip(spellings, counts, strict=True) if count == 1
-    )
-    return text.replace(needle, substitute, 1)
+    return "".join(pieces)
 
 
 def apply_pin_upgrades(config: Config, upgrades: list[PinUpgrade]) -> list[str]:
@@ -462,18 +572,24 @@ def apply_pin_upgrades(config: Config, upgrades: list[PinUpgrade]) -> list[str]:
     Returns:
         The repo-relative paths that were rewritten.
     """
-    by_package: dict[str, list[PinUpgrade]] = {}
+    # Grouped by requirement as well as by package: the same string declared in
+    # both ``dependencies`` and an optional-dependency group is two published
+    # requirements and one piece of text to rewrite, so the rewrite is told how
+    # many copies to expect rather than insisting on one.
+    by_package: dict[str, dict[str, list[PinUpgrade]]] = {}
     for upgrade in upgrades:
-        by_package.setdefault(upgrade.package, []).append(upgrade)
+        by_package.setdefault(upgrade.package, {}).setdefault(
+            upgrade.requirement, []
+        ).append(upgrade)
 
     changed: list[str] = []
-    for package, entries in by_package.items():
+    for package, requirements in by_package.items():
         pyproject = config.package_path(package) / "pyproject.toml"
         text = pyproject.read_text(encoding="utf-8")
-        for entry in entries:
-            rewritten = entry.rewritten()
-            text = _replace_requirement(text, entry.requirement, rewritten)
-            echo(f"{package}: {entry.requirement} -> {rewritten}")
+        for requirement, entries in requirements.items():
+            rewritten = entries[0].rewritten()
+            text = _replace_requirement(text, requirement, rewritten, len(entries))
+            echo(f"{package}: {requirement} -> {rewritten}")
         pyproject.write_text(text, encoding="utf-8")
         changed.append(pyproject.relative_to(config.root).as_posix())
     return changed
@@ -482,20 +598,31 @@ def apply_pin_upgrades(config: Config, upgrades: list[PinUpgrade]) -> list[str]:
 def refresh_lock_file(config: Config) -> str | None:
     """Re-resolve the repository lock file after a dependency pin changed.
 
+    A uv workspace records its own members with no version specifier at all
+    (``{ name = "mypkg-base", editable = "packages/mypkg-base" }``), so lifting
+    a *sibling* pin leaves the lock file byte-identical; only a layout where the
+    dependency resolves from an index has a specifier for the lock to follow.
+
     Args:
         config: The repository configuration.
 
     Returns:
-        The repo-relative lock file path, or None when the repository has none.
+        The repo-relative lock file path when the re-lock changed it, or None
+        when the repository has no lock file or the lock did not move.
     """
-    if not (config.root / LOCK_FILE).is_file():
+    lock = config.root / LOCK_FILE
+    if not lock.is_file():
         return None
+    before = lock.read_bytes()
     echo(f"$ uv lock  # {LOCK_FILE} follows the upgraded pins")
     if subprocess.run(["uv", "lock"], cwd=config.root, check=False).returncode != 0:
         fail(
             f"`uv lock` failed after upgrading dependency pins; {LOCK_FILE} would "
             "be left describing the old pins"
         )
+    if lock.read_bytes() == before:
+        echo(f"{LOCK_FILE} is unchanged by the lifted pins.")
+        return None
     return LOCK_FILE
 
 
@@ -511,7 +638,7 @@ def upgrade_dev_pins(
 
     Returns:
         The repo-relative paths that changed — the rewritten ``pyproject.toml``
-        files, plus the lock file when the repository has one.
+        files, plus the lock file when the re-lock moved it.
     """
     upgrades = _upgrades_for(config, packages, allow_prereleases)
     blocked: dict[str, list[PinUpgrade]] = {}
@@ -522,8 +649,7 @@ def upgrade_dev_pins(
         listing = "\n".join(f"  {line}" for line in describe_blockers(blocked))
         fail(
             "dependency pins that no published version satisfies cannot be "
-            f"materialized into a release:\n{listing}\n\nRelease the depended-on "
-            "package(s) first; the next release lifts these pins automatically."
+            f"materialized into a release:\n{listing}\n\n{blocker_advice(blocked)}"
         )
     if not upgrades:
         return []

@@ -33,7 +33,13 @@ from .changelog import (
     parse_sections,
 )
 from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
-from .devpins import blocking_pins, describe_blockers, upgrade_dev_pins
+from .devpins import (
+    LOCK_FILE,
+    blocker_advice,
+    blocking_pins,
+    describe_blockers,
+    upgrade_dev_pins,
+)
 from .discovery import (
     alpha_train_packages,
     associate_orphan_fragments,
@@ -275,8 +281,7 @@ def _drop_unpublishable_pins(
         listing = "\n".join(f"  {line}" for line in reasons)
         fail(
             "the selected package(s) declare dependency pins that no published "
-            f"version satisfies:\n{listing}\n\nRelease the depended-on package(s) "
-            "first; the next release lifts these pins automatically."
+            f"version satisfies:\n{listing}\n\n{blocker_advice(blocked)}"
         )
 
     held = {
@@ -872,6 +877,25 @@ def _commit_materialized(
     git_run(["add", "--", *changelogs, *repinned], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
+
+    # A lifted pin that does not reach the commit is the failure this whole
+    # feature exists to remove, arriving later and with more to unwind: the
+    # branch would go out with the old pin and die at the publish-time gate. It
+    # happens when the workflow predates the `repinned` output, so name that.
+    owned = {
+        LOCK_FILE,
+        *(f"{config.path_prefix(r['package'])}pyproject.toml" for r in releases),
+    }
+    if stranded := sorted(
+        owned.intersection(git(["diff", "--name-only"], config.root).split())
+    ):
+        fail(
+            f"materialization left {', '.join(stranded)} modified but unstaged. "
+            "If the scaffolded workflow predates the `repinned` output of "
+            "`materialize`, re-run `reflex-release sync` and dispatch again; "
+            "otherwise the working tree holds changes materialization did not "
+            "make, and a release must not carry them."
+        )
     git_run(["commit", "-m", message], config.root)
 
 

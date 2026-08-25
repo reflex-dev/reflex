@@ -1114,7 +1114,7 @@ def test_release_commit_carries_the_lifted_pins(
     ]
 
 
-def test_release_commit_leaves_an_unrepinned_pyproject_alone(
+def test_release_commit_stages_no_pyproject_when_no_pin_moved(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
     """Only what the pin upgrade actually rewrote is staged beside the changelogs."""
@@ -1124,21 +1124,32 @@ def test_release_commit_leaves_an_unrepinned_pyproject_alone(
     commands.cmd_materialize(config, "release-minor", outputs()["releases"])
     assert json.loads(outputs()["repinned"]) == []
 
-    # A human mid-way through an unrelated edit to the same tracked file.
-    pyproject = repo / "pyproject.toml"
-    pyproject.write_text(
-        pyproject.read_text(encoding="utf-8") + "\n# work in progress\n",
-        encoding="utf-8",
-    )
     commands._commit_materialized(
-        config,
-        [{"package": "mypkg", "next": "0.1.0"}],
-        json.loads(outputs()["repinned"]),
-        "Materialize",
+        config, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
     )
 
     assert (
         "pyproject.toml"
         not in git(repo, "show", "--name-only", "--format=", "HEAD").split()
     )
-    assert "# work in progress" in pyproject.read_text(encoding="utf-8")
+
+
+def test_release_commit_refuses_to_strand_a_lifted_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A workflow that predates the `repinned` output would otherwise commit the
+    changelog bump with the old pin, and die at the publish-time gate.
+    """
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "7.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
+
+    # The delivery step of an un-synced workflow passes nothing through.
+    with pytest.raises(ReleaseError, match="modified but unstaged"):
+        commands._commit_materialized(
+            reloaded, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
+        )
