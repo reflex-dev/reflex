@@ -741,6 +741,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             ValueError: If the app has not been initialized.
         """
+        from reflex_base.components.memo import clear_hash_caches
         from reflex_base.vars.base import GLOBAL_CACHE
 
         from reflex.assets import remove_stale_external_asset_symlinks
@@ -776,6 +777,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # We will not be making more vars, so we can clear the global cache to free up memory.
         GLOBAL_CACHE.clear()
+        # Auto-memoization named every wrapper it is going to name during the
+        # compile above, so its encoding caches are dead weight from here.
+        clear_hash_caches()
 
         if not self._api:
             msg = "The app has not been initialized."

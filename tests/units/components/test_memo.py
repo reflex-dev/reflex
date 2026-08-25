@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from types import SimpleNamespace
 from typing import Any, cast
@@ -22,9 +23,13 @@ from reflex_base.components.memo import (
     MemoParamKind,
     _analyze_params,
     _deterministic_hash,
+    _hash_dataclass_layouts,
+    _hash_import_var_encodings,
+    _hash_str_encodings,
     _LazyBody,
     _MemoCallBinding,
     _strip_optional,
+    clear_hash_caches,
     component_hash,
     memo_tag,
 )
@@ -2056,3 +2061,35 @@ def test_memo_tag_separates_identically_rendering_classes():
 
     assert alpha.render() == beta.render()
     assert memo_tag(alpha) != memo_tag(beta)
+
+
+def test_clear_hash_caches_drops_every_cache():
+    """The compile-scoped encoding caches must all be released together.
+
+    Nothing asks for these values after a compile, and a dataclass type defined
+    inside a function body is a fresh class object each time -- so a cache left
+    behind would pin one per compile for the life of the process.
+    """
+    ephemeral = dataclasses.make_dataclass("Ephemeral", [("v", str)])
+    before = _deterministic_hash({
+        "prop": ephemeral(v="x"),
+        "imports": (ImportVar(tag="useCacheProbe"),),
+    })
+
+    assert _hash_dataclass_layouts
+    assert _hash_str_encodings
+    assert _hash_import_var_encodings
+
+    clear_hash_caches()
+
+    assert not _hash_dataclass_layouts
+    assert not _hash_str_encodings
+    assert not _hash_import_var_encodings
+    # Hashing rebuilds them from scratch and must land on the same digest.
+    assert (
+        _deterministic_hash({
+            "prop": ephemeral(v="x"),
+            "imports": (ImportVar(tag="useCacheProbe"),),
+        })
+        == before
+    )

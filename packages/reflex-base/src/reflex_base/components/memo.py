@@ -1770,9 +1770,10 @@ _HASH_MAX_CACHE_ENTRIES = 4096
 # instances, which make up the bulk of what a component hash feeds in.
 # ``ImportVar`` is a frozen dataclass whose fields are all ``str``/``bool``/
 # ``None``, so its generated equality means exactly "same encoding" and is safe
-# to key a cache on. Both caches stop admitting new entries at
-# ``_HASH_MAX_CACHE_ENTRIES`` so an app rendering many one-off strings can't
-# grow them without bound; the recurring values get in first and stay.
+# to key a cache on. All three are dropped by :func:`clear_hash_caches` once a
+# compile is done. Within a compile, the two value caches stop admitting new
+# entries at ``_HASH_MAX_CACHE_ENTRIES`` so a page rendering many one-off
+# strings can't balloon them; the recurring values get in first and stay.
 _hash_str_encodings: dict[str, bytes] = {}
 _hash_import_var_encodings: dict[ImportVar, bytes] = {}
 _hash_dataclass_layouts: dict[type, tuple[bytes, tuple[tuple[bytes, str], ...]]] = {}
@@ -2035,6 +2036,19 @@ def component_hash(component: Component, *, recursive: bool) -> str:
     _update_deterministic_hash(hasher, component.render())
     _update_component_artifacts_hash(hasher, component, recursive=recursive)
     return hasher.hexdigest()
+
+
+def clear_hash_caches() -> None:
+    """Drop the memo-naming encoding caches.
+
+    Every component that auto-memoization names is named during compilation, so
+    once a compile finishes these caches hold values nothing will ask for
+    again -- including, in the pathological case, dataclass types defined inside
+    a function body, one fresh class object per compile.
+    """
+    _hash_str_encodings.clear()
+    _hash_import_var_encodings.clear()
+    _hash_dataclass_layouts.clear()
 
 
 def memo_tag(component: Component) -> str:
