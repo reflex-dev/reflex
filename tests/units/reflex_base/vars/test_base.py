@@ -1,10 +1,16 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
 import threading
-from typing import Any
+import typing
+from typing import Any, Literal
 
+import pytest
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, field
+from reflex_base.vars.base import EvenMoreBasicBaseState, Var, field
+from reflex_base.vars.sequence import StringVar
+from typing_extensions import TypeAliasType
+
+from reflex.state import State
 
 _MARKER_ATTR = "_marker"
 
@@ -87,3 +93,39 @@ def test_custom_attr_is_carried_by_reference():
 
     rebuilt = MyState.get_fields()["name"]
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _type_alias_types() -> list[type]:
+    native = getattr(typing, "TypeAliasType", None)
+    return (
+        [TypeAliasType] if native in (None, TypeAliasType) else [TypeAliasType, native]
+    )
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_guess_type_resolves_type_alias(alias_cls: type) -> None:
+    """A TypeAliasType (PEP 695 ``type`` statement) resolves to its value.
+
+    State var annotations like ``type Key = Literal[...]`` reach guess_type as
+    a TypeAliasType, which must be unwrapped instead of raising TypeError.
+    """
+    alias = alias_cls("ChartKey", Literal["day", "week"])
+
+    var = Var(_js_expr="key", _var_type=alias).guess_type()
+    assert isinstance(var, StringVar)
+    assert var._var_type == Literal["day", "week"]
+
+    optional_var = Var(_js_expr="key", _var_type=alias | None).guess_type()
+    assert isinstance(optional_var, StringVar)
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_state_var_type_alias(alias_cls: type) -> None:
+    """A state var annotated with a TypeAliasType compiles."""
+    chart_key = alias_cls("ChartKey", Literal["day", "week"])
+
+    class TypeAliasState(State):
+        key: chart_key = "day"  # pyright: ignore[reportInvalidTypeForm]
+
+    assert isinstance(TypeAliasState.key, StringVar)
+    assert TypeAliasState.key._var_type == Literal["day", "week"]
