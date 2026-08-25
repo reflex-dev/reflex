@@ -10,6 +10,7 @@ from unittest.mock import patch
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
+    _HASH_MAX_CACHE_ENTRIES,
     _SPECS,
     DEFAULT_MEMO_WRAPPER,
     EMPTY_VAR_COMPONENT,
@@ -20,10 +21,14 @@ from reflex_base.components.memo import (
     MemoParam,
     MemoParamKind,
     _analyze_params,
+    _deterministic_hash,
     _LazyBody,
     _MemoCallBinding,
     _strip_optional,
+    component_hash,
+    memo_tag,
 )
+from reflex_base.constants import Hooks
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -35,6 +40,8 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -1869,3 +1876,183 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+def test_deterministic_hash_is_stable():
+    """The same value must hash identically across calls and dict orderings."""
+    value = {"b": [1, "x"], "a": {"k": None}}
+    reordered = {"a": {"k": None}, "b": [1, "x"]}
+
+    assert _deterministic_hash(value) == _deterministic_hash(value)
+    assert _deterministic_hash(value) == _deterministic_hash(reordered)
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # Type tags must keep values of different types apart.
+        ("1", 1),
+        (1, True),
+        (0, False),
+        (None, "None"),
+        ({"a": "b"}, [["a", "b"]]),
+        # Length prefixes must keep concatenations apart.
+        (["ab", "c"], ["a", "bc"]),
+        ([[], []], [[[]]]),
+        ({"a": "", "b": ""}, {"ab": ""}),
+        # Nested containers must not flatten into their contents.
+        ([1, [2]], [1, 2]),
+        # str-keyed enums encode as enums, not as their string value.
+        (Hooks.HookPosition.PRE_TRIGGER, Hooks.HookPosition.PRE_TRIGGER.value),
+        # Dataclasses of the same shape but different types stay distinct.
+        (ImportVar(tag="a"), ImportVar(tag="a", alias="a")),
+    ],
+)
+def test_deterministic_hash_distinguishes(left: Any, right: Any):
+    """Distinct values must not collide under the type-tagged encoding."""
+    assert _deterministic_hash(left) != _deterministic_hash(right)
+
+
+def test_deterministic_hash_treats_lists_and_tuples_alike():
+    """Sequences share one type tag, so a list and tuple of equal items match."""
+    assert _deterministic_hash([1, "a"]) == _deterministic_hash((1, "a"))
+
+
+def test_deterministic_hash_import_var_cache_is_by_value():
+    """Equal ``ImportVar`` instances hash the same; unequal ones do not.
+
+    ``ImportVar`` encodings are cached by value, so a stale or over-eager cache
+    entry would show up as two unequal imports hashing alike.
+    """
+    a = ImportVar(tag="useState", is_default=False, install=True)
+    b = ImportVar(tag="useState", is_default=False, install=True)
+    c = ImportVar(tag="useState", is_default=True, install=True)
+
+    assert _deterministic_hash(a) == _deterministic_hash(b)
+    assert _deterministic_hash(a) != _deterministic_hash(c)
+    assert _deterministic_hash({"react": (a, c)}) != _deterministic_hash({
+        "react": (c, a)
+    })
+
+
+def test_deterministic_hash_long_strings():
+    """Strings past the encoding cache's size limit still hash correctly."""
+    long_a = "a" * 10_000
+    long_b = "a" * 9_999 + "b"
+
+    assert _deterministic_hash(long_a) == _deterministic_hash("a" * 10_000)
+    assert _deterministic_hash(long_a) != _deterministic_hash(long_b)
+
+
+def test_deterministic_hash_beyond_string_cache_capacity():
+    """Strings that arrive after the encoding cache fills still hash correctly."""
+    values = [f"cache_capacity_probe_{i}" for i in range(_HASH_MAX_CACHE_ENTRIES + 500)]
+    digests = [_deterministic_hash(value) for value in values]
+
+    assert len(set(digests)) == len(values)
+    assert [_deterministic_hash(value) for value in values] == digests
+
+
+def test_deterministic_hash_flushes_large_payloads():
+    """A payload larger than the buffer flush size hashes deterministically."""
+    payload = {f"key_{i}": "v" * 200 for i in range(2000)}
+
+    assert _deterministic_hash(payload) == _deterministic_hash(dict(payload))
+    mutated = {**payload, "key_0": "w" * 200}
+    assert _deterministic_hash(payload) != _deterministic_hash(mutated)
+
+
+def test_deterministic_hash_components_and_vars():
+    """Components and Vars hash by rendered content, not by identity."""
+    assert _deterministic_hash(Bare.create(contents="a")) == _deterministic_hash(
+        Bare.create(contents="a")
+    )
+    assert _deterministic_hash(Bare.create(contents="a")) != _deterministic_hash(
+        Bare.create(contents="b")
+    )
+    assert _deterministic_hash(Var("a")) == _deterministic_hash(Var("a"))
+    assert _deterministic_hash(Var("a")) != _deterministic_hash(Var("b"))
+    # A Var and the bare string it renders to must not collide.
+    assert _deterministic_hash(Var("a")) != _deterministic_hash("a")
+
+
+def test_deterministic_hash_rejects_unsupported_types():
+    """Values with no encoding raise rather than hashing to a shared digest."""
+    with pytest.raises(TypeError):
+        _deterministic_hash(object())
+
+
+class _CustomCodeProbe(Component):
+    """A component whose only per-instance artifact is its custom code."""
+
+    library = "custom-code-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def add_custom_code(self) -> list[str]:
+        """Emit a marker-dependent module-level constant.
+
+        Returns:
+            The custom code lines.
+        """
+        return [f"const PROBE = {self.marker!s};"]
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only custom code differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_add_custom_code():
+    """``add_custom_code`` output must reach the own-node hash.
+
+    Two bodies that render identically and differ only in the module-level code
+    they emit compile to different modules, so they must not share a tag — a
+    collision would drop one of the two constants.
+    """
+    a = _CustomCodeProbe.create(marker="alpha")
+    b = _CustomCodeProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_component_hash_recursive_covers_descendant_artifacts():
+    """A recursive hash must see artifacts that a descendant's JSX omits."""
+    inner_a = Box.create(Bare.create(contents="x"), on_mount=rx.console_log("x"))
+    inner_b = Box.create(Bare.create(contents="x"))
+    outer_a, outer_b = Box.create(inner_a), Box.create(inner_b)
+
+    # ``on_mount`` lives in a lifecycle hook, not in the rendered props.
+    assert outer_a.render() == outer_b.render()
+    assert component_hash(outer_a, recursive=True) != component_hash(
+        outer_b, recursive=True
+    )
+    # The passthrough form deliberately ignores descendants: they render at the
+    # call site behind the ``{children}`` hole, not inside the memo body.
+    assert component_hash(outer_a, recursive=False) == component_hash(
+        outer_b, recursive=False
+    )
+
+
+def test_memo_tag_separates_identically_rendering_classes():
+    """Distinct classes that render alike must not collide on a tag."""
+
+    class _AlphaProbe(Component):
+        tag = "Same"
+
+    class _BetaProbe(Component):
+        tag = "Same"
+
+    alpha, beta = _AlphaProbe.create(), _BetaProbe.create()
+
+    assert alpha.render() == beta.render()
+    assert memo_tag(alpha) != memo_tag(beta)
