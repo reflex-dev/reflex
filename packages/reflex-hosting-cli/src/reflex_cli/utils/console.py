@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from reflex_base.constants.base import LogLevel
+from reflex_base.utils import log as _log
 from reflex_base.utils.console import PoorProgress as PoorProgress
 from reflex_base.utils.console import ask as ask
 from reflex_base.utils.console import debug as debug
@@ -31,3 +32,32 @@ def set_log_level(log_level: LogLevel | str):
     if isinstance(log_level, str):
         log_level = LogLevel.from_string(log_level) or LogLevel.INFO
     _set_log_level(log_level)
+
+
+def transfer_progress():
+    """Create a progress bar measured in bytes rather than in steps.
+
+    Lives here rather than beside ``progress`` in reflex-base because only the
+    deploy upload wants it: a new name over there would raise this package's
+    reflex-base floor, and the CLI is released on its own schedule.
+
+    Returns:
+        A new progress bar, sized and paced for a file transfer.
+    """
+    from rich.progress import (
+        BarColumn,
+        DownloadColumn,
+        Progress,
+        TextColumn,
+        TimeElapsedColumn,
+        TransferSpeedColumn,
+    )
+
+    return Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        DownloadColumn(),
+        TransferSpeedColumn(),
+        TimeElapsedColumn(),
+        disable=_log.is_json_mode(),
+    )
