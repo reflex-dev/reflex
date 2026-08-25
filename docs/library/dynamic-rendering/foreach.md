@@ -285,12 +285,19 @@ rx.foreach(
 ```
 
 By default each item is keyed by its position in the list. Pass `key=` on the
-item to key by identity instead, which is what preserves a row's DOM state
-(a typed-in value, focus, an in-flight animation) when the list is reordered:
+item to key by identity instead:
 
 ```python
 rx.foreach(TodoState.items, lambda item: todo_row(item, key=item))
 ```
+
+The key decides what a row's state belongs to. Under the default positional
+keys, changing the list re-renders the existing rows in place rather than
+mounting new ones, so anything a row is holding -- a typed-in value, focus, an
+in-flight animation, a `rx.client_state` var -- stays with the *position*. Row 3
+of the old list keeps its expanded/selected state as row 3 of the new one. Key
+by identity and the old rows unmount instead, releasing their state, and a row
+that reappears starts fresh.
 
 ## API Reference
 

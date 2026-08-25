@@ -39,6 +39,13 @@ const mount = (element, { strict = false } = {}) => {
   });
   return {
     container,
+    // Re-render into the same root, so React reconciles rather than remounting
+    // -- which is what the tests about list churn need to observe.
+    rerender: (next) => {
+      act(() => {
+        root.render(strict ? createElement(StrictMode, null, next) : next);
+      });
+    },
     unmount: () => {
       act(() => root.unmount());
       container.remove();
@@ -46,11 +53,26 @@ const mount = (element, { strict = false } = {}) => {
   };
 };
 
+/** Values every rendered `ItemState` has reported, oldest first. */
+const itemValues = [];
+
+/** Setter belonging to the most recently rendered `ItemState`. */
+let lastItemSetter;
+
+/** An unnamed client state var, as a loop body would declare one. */
+const ItemState = () => {
+  const [value, set] = useClientState("default", "item_cs0");
+  itemValues.push(value);
+  lastItemSetter = set;
+  return null;
+};
+
 /** A stand-in for the global object the app publishes the store on. */
 let registry;
 
 beforeEach(() => {
   registry = {};
+  itemValues.length = 0;
 });
 
 describe("store slots", () => {
@@ -690,6 +712,123 @@ describe("scoped values", () => {
 
     expect(first.seen.at(-1)).toBe("a");
     expect(second.seen.at(-1)).toBe("b");
+
+    unmount();
+  });
+});
+
+describe("slot lifetime", () => {
+  test("a consumer unsubscribes from its slot when it unmounts", () => {
+    // Root-scope slots live for the page, so a listener that outlived its
+    // component would pin that component's React internals forever.
+    const slot = getClientStore().root.own("lifetime_global", "seed");
+    let live = 0;
+    const realSubscribe = slot.subscribe;
+    slot.subscribe = (onStoreChange) => {
+      live += 1;
+      const off = realSubscribe(onStoreChange);
+      return () => {
+        live -= 1;
+        off();
+      };
+    };
+
+    const Reader = () => {
+      useClientState("seed", "lifetime_global", true);
+      return null;
+    };
+    const { unmount } = mount(
+      createElement(ClientStateProvider, { registry }, createElement(Reader)),
+    );
+
+    expect(live).toBe(1);
+
+    unmount();
+
+    expect(live).toBe(0);
+    slot.subscribe = realSubscribe;
+  });
+
+  test("per-item state is claimed in the item's scope, never at the root", () => {
+    // Otherwise a loop would append a root entry per rendered item and the
+    // store would grow without bound as the list churned.
+    const root = getClientStore().root;
+    const before = root.owned.size;
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item) =>
+          createElement(
+            ScopedValues,
+            { key: item, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    expect(root.owned.size).toBe(before);
+
+    rerender(rows(["d", "e", "f"]));
+    expect(root.owned.size).toBe(before);
+
+    unmount();
+    expect(root.owned.size).toBe(before);
+  });
+
+  test("an item's state is released once that item unmounts", () => {
+    // Keying by identity means a changed list unmounts the old rows, so their
+    // scopes -- and the slots those scopes own -- become unreachable. A new row
+    // reaching the same name has to start from the default, not inherit.
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item) =>
+          createElement(
+            ScopedValues,
+            { key: item, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    act(() => lastItemSetter("written"));
+    expect(itemValues.at(-1)).toBe("written");
+
+    itemValues.length = 0;
+    rerender(rows(["d", "e", "f"]));
+
+    expect(itemValues).toEqual(["default", "default", "default"]);
+
+    unmount();
+  });
+
+  test("under positional keys an item keeps its state across a list change", () => {
+    // The counterpart, and the reason `key=` matters now that a loop item can
+    // hold state: index keys reuse the component, so nothing unmounts and the
+    // state stays with the position rather than the item.
+    const rows = (list) =>
+      createElement(
+        ClientStateProvider,
+        { registry },
+        ...list.map((item, index) =>
+          createElement(
+            ScopedValues,
+            { key: index, values: { item0: item } },
+            createElement(ItemState),
+          ),
+        ),
+      );
+    const { rerender, unmount } = mount(rows(["a", "b", "c"]));
+
+    act(() => lastItemSetter("written"));
+    itemValues.length = 0;
+    rerender(rows(["d", "e", "f"]));
+
+    expect(itemValues).toEqual(["default", "default", "written"]);
 
     unmount();
   });
