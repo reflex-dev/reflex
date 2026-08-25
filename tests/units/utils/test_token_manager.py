@@ -474,6 +474,53 @@ class TestRedisTokenManager:
         assert await manager._fetch_socket_record("token1") == record
         assert manager.token_to_socket["token1"] == record
 
+    async def test_socket_record_del_keeps_live_local_mapping(
+        self, manager, mock_redis
+    ):
+        """A late redis del notification must not drop a live local mapping."""
+        token, sid = "token1", "sid2"
+        record = SocketRecord(instance_id=manager.instance_id, sid=sid)
+        manager.token_to_socket[token] = record
+        manager.sid_to_token[sid] = token
+
+        await manager._handle_socket_record_del(token)
+
+        assert manager.token_to_socket[token] == record
+        assert manager.sid_to_token[sid] == token
+        mock_redis.set.assert_called_once_with(
+            f"token_manager_socket_record_{token}", pickle.dumps(record), ex=3600
+        )
+
+    async def test_socket_record_del_drops_foreign_cache(self, manager, mock_redis):
+        """A del notification drops a cached foreign record."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="other-instance", sid="sid9"
+        )
+
+        await manager._handle_socket_record_del("token1")
+
+        assert "token1" not in manager.token_to_socket
+        mock_redis.set.assert_not_called()
+
+    async def test_is_token_connected_after_late_disconnect_notification(
+        self, manager, mock_redis
+    ):
+        """A late del notification for a relinked token must not break delivery."""
+        token = "token1"
+        mock_redis.exists.return_value = False
+        await manager.link_token_to_sid(token, "sid1")
+        # Old socket disconnects; the client relinks before the notification arrives.
+        await manager.disconnect_token(token, "sid1")
+        await manager.link_token_to_sid(token, "sid2")
+        # The keyspace notification for the old delete arrives late.
+        await manager._handle_socket_record_del(token)
+
+        record = manager.token_to_socket.get(token)
+        mock_redis.get = AsyncMock(
+            return_value=pickle.dumps(record) if record else None
+        )
+        assert await manager.is_token_connected(token)
+
     async def test_disconnect_token_redis_error(self, manager, mock_redis):
         """Test disconnect continues with local cleanup even if Redis fails.
 
