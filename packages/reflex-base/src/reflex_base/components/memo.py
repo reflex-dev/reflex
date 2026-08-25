@@ -1871,9 +1871,10 @@ def create_passthrough_component_memo(
     # the wrapper's destructured signature. This holds for passthrough and
     # snapshot bodies alike — both render ``component`` as the outermost
     # element. Untagged roots (``Bare``, ``Cond``, ``Match``, ``Foreach``)
-    # render no element to attach to, and ``Fragment`` accepts neither props
-    # nor refs.
-    if component.tag is not None and not isinstance(component, Fragment):
+    # render no element to attach to; an empty tag (``Upload``) and
+    # ``Fragment`` both render a ``Fragment``, which accepts neither props nor
+    # refs.
+    if component.tag and not isinstance(component, Fragment):
         replacements["forward_root_props"] = True
     if replacements:
         definition = dataclasses.replace(definition, **replacements)

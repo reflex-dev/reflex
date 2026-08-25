@@ -13,6 +13,7 @@ from reflex_base.components.component import field as component_field
 from reflex_base.components.memo import (
     MemoComponent,
     MemoComponentDefinition,
+    MemoParamKind,
     create_passthrough_component_memo,
 )
 from reflex_base.components.memoize_helpers import (
@@ -2555,3 +2556,67 @@ def test_user_memo_definition_does_not_forward_ref() -> None:
     assert "mergeSlotProps" not in str(render_dict["render"]), (
         "User memo bodies must not merge injected props onto their root"
     )
+
+
+def test_empty_tag_memo_root_does_not_forward_props() -> None:
+    """A root with an empty tag renders a Fragment, which takes no props.
+
+    ``render_tag`` falls back to ``Fragment`` when the rendered name is
+    falsy, so ``Upload``'s empty tag reaches React as a real ``Fragment``.
+    Spreading injected props (or a ref) onto one is a React error, and the
+    injections would be dropped anyway — the element the parent means to
+    address is the dropzone ``<div>`` nested inside the body, not the root.
+    """
+    from reflex_components_core.core.upload import Upload
+
+    _factory, definition = create_passthrough_component_memo(
+        Upload.create(Bare.create(STATE_VAR))
+    )
+    assert not definition.forward_root_props, (
+        "an empty tag renders a Fragment and must not forward props/refs"
+    )
+
+    ctx, _page_ctx = _compile_single_page(lambda: rx.upload(rx.text(STATE_VAR)))
+    memo_code = _compile_memo_module_text(ctx)
+    assert "mergeSlotProps" not in memo_code, (
+        f"Fragment-rendering root must not merge injected props: {memo_code[:2000]}"
+    )
+    assert "...rest" not in memo_code, (
+        f"Fragment-rendering root must not take a rest param: {memo_code[:2000]}"
+    )
+
+
+def test_forwarded_props_use_the_definitions_rest_param_name() -> None:
+    """The merge call and the signature always name the same rest binding.
+
+    A transparent wrapper synthesizes ``rest``, but a definition that already
+    declares its own rest param owns the name — emitting a hardcoded ``rest``
+    into the merge would be a ``ReferenceError`` at render time.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    @rx.memo
+    def memo_with_rest(
+        children: rx.Var[rx.Component], extra: rx.RestProp
+    ) -> rx.Component:
+        return Plain.create(children, extra)
+
+    definition = dataclasses.replace(
+        memo_with_rest._definition, forward_root_props=True
+    )
+    rest_param = next(p for p in definition.params if p.kind is MemoParamKind.REST)
+    assert rest_param.placeholder_name == "extra"
+
+    render_dict, imports = compiler_utils.compile_experimental_component_memo(
+        definition
+    )
+
+    assert f"...mergeSlotProps({rest_param.placeholder_name}," in str(
+        render_dict["render"]
+    ), render_dict["render"]
+    assert f"...{rest_param.placeholder_name}" in render_dict["signature"], render_dict[
+        "signature"
+    ]
+    assert any(
+        tag.tag == "mergeSlotProps" for tag in imports.get("$/utils/state", [])
+    ), imports

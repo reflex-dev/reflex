@@ -420,16 +420,30 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
+    # The rest param collects everything the parent passes but the signature
+    # does not name — including ``ref``, a regular prop under React 19. A
+    # definition that declares its own rest param owns the name; a transparent
+    # wrapper that doesn't gets one synthesized for the merge below.
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
+    rest_name = (
+        rest_param.placeholder_name
+        if rest_param is not None
+        else "rest"
+        if definition.forward_root_props
+        else None
+    )
+
     if definition.forward_root_props:
-        # Make the wrapper transparent: merge runtime-injected props
-        # (``...rest`` from the destructured signature, which includes ``ref``
-        # via React 19 ref-as-prop) with the root's compiled-in props.
-        # ``mergeSlotProps`` applies Radix ``Slot`` semantics — own props win,
-        # ``on*`` handlers compose, refs compose, ``className`` concatenates,
-        # object-valued props deep-merge — so a Slot parent cloning the
-        # wrapper behaves as if it had cloned the root element directly.
+        # Make the wrapper transparent: merge the runtime-injected props with
+        # the root's compiled-in props. ``mergeSlotProps`` applies Radix
+        # ``Slot`` semantics — own props win, ``on*`` handlers compose, refs
+        # compose, ``className`` concatenates, object-valued props deep-merge
+        # — so a Slot parent cloning the wrapper behaves as if it had cloned
+        # the root element directly.
         rendered["props"] = [
-            f"...mergeSlotProps(rest, ({{ {', '.join(rendered['props'])} }}))"
+            f"...mergeSlotProps({rest_name}, ({{ {', '.join(rendered['props'])} }}))"
         ]
 
     # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
@@ -465,14 +479,6 @@ def compile_experimental_component_memo(
 
     if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
-
-    rest_param = next(
-        (p for p in definition.params if p.kind is MemoParamKind.REST), None
-    )
-    if rest_param is not None:
-        rest_name = rest_param.placeholder_name
-    else:
-        rest_name = "rest" if definition.forward_root_props else None
 
     return (
         {

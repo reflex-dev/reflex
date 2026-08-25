@@ -1349,31 +1349,46 @@ export const mergeRefs =
     };
   };
 
-// Composed callback refs keyed by (own ref, injected ref) identity. When a
-// mounted wrapper rerenders with stable inputs, the same composed callback is
-// reused, so React does not detach and reattach the underlying refs (running
-// callback cleanup or transiently nulling object refs) for an unchanged node.
-const composedRefsCache = new WeakMap();
+// Composed refs and event handlers, keyed by the identity of the (own,
+// injected) pair they were built from. A mounted wrapper rerendering with
+// stable inputs gets the same composed function back, so React sees an
+// unchanged prop: refs are not detached and reattached (no callback cleanup,
+// no transient nulling of object refs) and a memoized root keeps its bailout.
+// Both levels are weak, so an entry dies with whichever input dies first.
+const composedRefCache = new WeakMap();
+const composedHandlerCache = new WeakMap();
 
 const canWeakKey = (value) =>
   value !== null && (typeof value === "object" || typeof value === "function");
 
-const composeRefsCached = (own, injected) => {
+const composeCached = (cache, own, injected, compose) => {
   if (!canWeakKey(own) || !canWeakKey(injected)) {
-    return mergeRefs(own, injected);
+    return compose(own, injected);
   }
-  let byInjected = composedRefsCache.get(own);
+  let byInjected = cache.get(own);
   if (byInjected === undefined) {
     byInjected = new WeakMap();
-    composedRefsCache.set(own, byInjected);
+    cache.set(own, byInjected);
   }
   let composed = byInjected.get(injected);
   if (composed === undefined) {
-    composed = mergeRefs(own, injected);
+    composed = compose(own, injected);
     byInjected.set(injected, composed);
   }
   return composed;
 };
+
+const composeHandlers =
+  (own, injected) =>
+  (...args) => {
+    own(...args);
+    injected(...args);
+  };
+
+// Props named `on` followed by an uppercase letter are event handlers and get
+// composed rather than overridden. Hoisted because evaluating a regex literal
+// allocates a new RegExp every time.
+const EVENT_HANDLER_PROP = /^on[A-Z]/;
 
 // Whether a prop value can be deeply merged: plain objects only — never
 // arrays, React elements (tagged with $$typeof), or class instances.
@@ -1395,10 +1410,16 @@ const isPlainObjectProp = (value) => {
  *
  * Follows Radix Slot semantics with the own props in the child role: own
  * props win for plain props, `on*` event handlers compose (own handler first,
- * then the injected one), refs compose via `mergeRefs` (with a stable
- * identity across rerenders), `className` strings concatenate, and
- * object-valued props (e.g. `style`) merge deeply via `mergician` with own
- * keys winning.
+ * then the injected one), refs compose via `mergeRefs`, `className` strings
+ * concatenate, and object-valued props (e.g. `style`) merge deeply via
+ * `mergician` with own keys winning. A prop the own side declares but leaves
+ * valueless falls through to the injected value.
+ *
+ * Composed refs and handlers keep a stable identity for as long as the props
+ * they were composed from do, so merging never re-triggers a ref attach or
+ * defeats a memoized root's bailout. With nothing injected the own props
+ * object is returned unchanged, so the common (non-Slot) call site renders
+ * exactly as it did before.
  * @param injectedProps The props injected by the parent at runtime.
  * @param ownProps The component's own compiled-in props.
  * @returns The merged props object.
@@ -1419,17 +1440,27 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
       continue;
     }
     const own = ownProps[propName];
-    if (/^on[A-Z]/.test(propName)) {
-      merged[propName] = own
-        ? (...args) => {
-            own(...args);
-            injected(...args);
-          }
-        : injected;
+    if (own == null) {
+      // The own side has no value for this prop, so the spread above
+      // shadowed the injection with null/undefined. Keep the injection.
+      merged[propName] = injected;
+    } else if (EVENT_HANDLER_PROP.test(propName)) {
+      merged[propName] = composeCached(
+        composedHandlerCache,
+        own,
+        injected,
+        composeHandlers,
+      );
     } else if (propName === "ref") {
-      merged[propName] = composeRefsCached(own, injected);
+      merged[propName] = composeCached(
+        composedRefCache,
+        own,
+        injected,
+        mergeRefs,
+      );
     } else if (propName === "className") {
-      merged[propName] = [injected, own].filter(Boolean).join(" ");
+      merged[propName] =
+        own && injected ? injected + " " + own : own || injected;
     } else if (isPlainObjectProp(injected) && isPlainObjectProp(own)) {
       merged[propName] = mergician(injected, own);
     }
