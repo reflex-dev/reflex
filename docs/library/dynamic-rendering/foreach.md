@@ -267,10 +267,35 @@ def counter_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
     )
 ```
 
-A default is a *seed*: it is read once, when the row first claims the slot, so a
-later change to the var does not reset a row that has already been edited. To
-push a new value in, set it explicitly -- `on_mount=count.set(index)`, or on a
-`rx.fragment(key=..., on_mount=...)` when you want the reset keyed to something.
+A default is a *seed*, read once when the row first claims the slot. It is not a
+binding: a later change to the var does not reset a row, which is what keeps a
+row from losing what the user typed into it every time the list re-renders.
+
+That has a consequence worth knowing before you reach for it, and it is the same
+one `useState(props.value)` has in React. Rows are keyed by position by default
+(see below), so replacing the list's contents re-renders the existing rows
+instead of mounting new ones -- and a state seeded from the item keeps the *old*
+item's seed:
+
+```python
+rx.foreach(State.items, lambda item: rx.text(rx.client_state(item).value))
+# State.items: ["a", "b", "c"] -> ["d", "e", "f"]
+#   rx.text(item)                  renders d, e, f   <- follows the data
+#   rx.client_state(item).value    renders a, b, c   <- seeded once, per position
+```
+
+The item itself always follows the data; only the seeded state lags. Pass `key=`
+on the item when you want the state to belong to the item, so replacing the list
+unmounts the old rows and the new ones seed themselves:
+
+```python
+rx.foreach(State.items, lambda item: row(item, key=item))
+```
+
+If you want a row's state to track a var while staying editable in between, seed
+it and then push updates explicitly with `on_mount=count.set(index)`, or on a
+`rx.fragment(key=..., on_mount=...)` to tie the reset to something of your own
+choosing.
 
 Loops nest, and each level gets its own scope. A nested body can read an
 *enclosing* loop's item and index, as long as it does not reuse their names --
@@ -298,6 +323,14 @@ in-flight animation, a `rx.client_state` var -- stays with the *position*. Row 3
 of the old list keeps its expanded/selected state as row 3 of the new one. Key
 by identity and the old rows unmount instead, releasing their state, and a row
 that reappears starts fresh.
+
+Neither is the right default for every list, which is why the choice is yours.
+Positional keys suit a list whose rows are interchangeable slots, where you want
+"row 3 is expanded" to persist as the data flows through. Identity keys suit a
+list of distinct things each carrying its own state, where a row's state should
+travel with its item across reorders and disappear with it. Identity keys need
+the key expression to be unique within the list -- duplicate keys make React
+reconcile the wrong rows together.
 
 ## API Reference
 

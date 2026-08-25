@@ -184,8 +184,13 @@ rx.foreach(State.items, row)
 ```
 
 A default is read once, when the scope first claims the name, so it seeds the state
-rather than tracking the var. Set the value explicitly (`on_mount=count.set(index)`)
-when you need it to follow.
+rather than tracking the var. That means a row seeded from its item keeps the *old*
+seed when the list's contents change, because `rx.foreach` keys rows by position and
+a row that does not unmount never re-claims its slot. The item itself still follows
+the data -- only the seeded state lags. Pass `key=` on the item to tie a row's state
+to the item instead, or set the value explicitly (`on_mount=count.set(index)`) when
+you want it to follow. See
+[foreach](/docs/library/dynamic-rendering/foreach) for the worked example.
 
 Pass `prefix=` to make generated names readable in the compiled output:
 `rx.client_state(0, prefix="counter")`.
