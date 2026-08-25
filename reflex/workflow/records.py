@@ -312,6 +312,51 @@ class StartResult:
     retry_after: float | None = None
 
 
+class ParkedStatus(str, enum.Enum):
+    """Lifecycle of a correlated webhook delivery in the channel inbox."""
+
+    PENDING = "PENDING"
+    DELIVERED = "DELIVERED"
+    DEAD = "DEAD"
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ParkedDelivery:
+    """One correlated provider event, durable from the moment it was acked.
+
+    The channel inbox is what makes webhook-to-signal delivery exactly-once:
+    the row's identity is the provider's event id, so redelivery and
+    crash-after-ack replays collapse into it, and a delivery that arrives
+    before its run exists waits here instead of being dropped.
+
+    Attributes:
+        parked_id: Stable identity of this delivery record.
+        workflow_id: The workflow whose channel the event addresses.
+        channel: The channel name.
+        correlation_key: The business key naming the target run.
+        dedupe_key: The provider's event identity.
+        payload: The canonical event payload.
+        status: Where the delivery is in its lifecycle.
+        reason: Why a DEAD delivery died, e.g. ``run_terminal``, ``expired``,
+            or ``unclaimed``.
+        run_id: The run the delivery reached, once DELIVERED.
+        created_at: When the delivery was first acknowledged.
+        updated_at: Last transition time.
+    """
+
+    parked_id: str
+    workflow_id: str
+    channel: str
+    correlation_key: str
+    dedupe_key: str
+    payload: Any
+    status: ParkedStatus
+    reason: str | None
+    run_id: str | None
+    created_at: float
+    updated_at: float
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class RunQuery:
     """Filters for listing runs in an operator surface.

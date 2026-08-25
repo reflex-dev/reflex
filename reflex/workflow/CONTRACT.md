@@ -528,7 +528,15 @@ it under a lease), `RETRY_WAIT` (business retry scheduled), `RECOVERY_WAIT`
 **Delivery disposition** — what the store did with a signal or arrival:
 `resolved`, `buffered` (arrived before its wait was armed), `counted` (a join
 arrival that is not the last), `duplicate` (repeated sender key),
-`expired` (run past its deadline), `unknown_run`, `run_terminal`.
+`expired` (run past its deadline), `unknown_run`, `run_terminal`,
+`unknown_key` (a business key that admitted nothing), `parked` (a correlated
+webhook delivery accepted before its run exists — durable in the channel
+inbox, flushed inside the admitting transaction when the run arrives), and
+`dead_letter` (a correlated delivery nothing can take: its run is terminal or
+past deadline, or the parked delivery went unclaimed past its TTL; visible
+via the channel inbox and replayable by an operator with the same event-id
+idempotency, so a replay of a delivered row is a `duplicate`, never a second
+signal).
 
 **History events.** Append-only, one run's whole story:
 

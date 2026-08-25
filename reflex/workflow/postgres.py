@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import uuid
 from typing import TYPE_CHECKING, Any, Final
 
 from reflex_base.utils.exceptions import WorkflowRuntimeError
@@ -27,6 +28,8 @@ from reflex.workflow.records import (
     TERMINAL_STEP_STATUSES,
     HistoryEvent,
     HistoryEventType,
+    ParkedDelivery,
+    ParkedStatus,
     RunRecord,
     RunStatus,
     StepRecord,
@@ -136,6 +139,22 @@ CREATE TABLE IF NOT EXISTS workflow_substeps (
     created_at DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (run_id, ordinal, key)
 );
+CREATE TABLE IF NOT EXISTS workflow_channel_inbox (
+    parked_id TEXT PRIMARY KEY,
+    workflow_id TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    correlation_key TEXT NOT NULL,
+    dedupe_key TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    status TEXT NOT NULL,
+    reason TEXT,
+    run_id TEXT,
+    created_at DOUBLE PRECISION NOT NULL,
+    updated_at DOUBLE PRECISION NOT NULL,
+    UNIQUE (workflow_id, channel, correlation_key, dedupe_key)
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_channel_inbox_route
+    ON workflow_channel_inbox (workflow_id, correlation_key, status);
 CREATE TABLE IF NOT EXISTS workflow_inbox (
     run_id TEXT NOT NULL,
     wait_key TEXT NOT NULL,
@@ -212,6 +231,30 @@ def _json(value: Any) -> Any:
         The wrapped value, or None.
     """
     return None if value is None else Jsonb(value)
+
+
+def _parked_from_row(row: Mapping[str, Any]) -> ParkedDelivery:
+    """Build a parked-delivery record from a database row.
+
+    Args:
+        row: The ``workflow_channel_inbox`` row.
+
+    Returns:
+        The record.
+    """
+    return ParkedDelivery(
+        parked_id=row["parked_id"],
+        workflow_id=row["workflow_id"],
+        channel=row["channel"],
+        correlation_key=row["correlation_key"],
+        dedupe_key=row["dedupe_key"],
+        payload=row["payload"],
+        status=ParkedStatus(row["status"]),
+        reason=row["reason"],
+        run_id=row["run_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 def _run_from_row(row: Mapping[str, Any]) -> RunRecord:
@@ -676,6 +719,9 @@ class PostgresRunStore:
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
             if run.request_key is not None:
+                # Channel-inbox rows before the run: ingest locks its row and
+                # then the run, so admission takes them in the same order.
+                await self._lock_parked_conn(conn, run.workflow_id, run.request_key)
                 cursor = await conn.execute(
                     "INSERT INTO workflow_dedupe (workflow_id, request_key, run_id)"
                     " VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING run_id",
@@ -693,6 +739,17 @@ class PostgresRunStore:
             await self._insert_run(conn, run)
             await self._insert_step(conn, root_step)
             await self._append_events(conn, run.run_id, events, run.created_at)
+            if run.request_key is not None:
+                # Deliveries that arrived before this run did, flushed inside
+                # the admitting transaction: a crash cannot separate "the run
+                # exists" from "its early mail reached it".
+                await self._flush_parked_conn(
+                    conn,
+                    run.workflow_id,
+                    run.request_key,
+                    run.run_id,
+                    run.created_at,
+                )
         return True, run.run_id
 
     async def admit_flow(
@@ -825,9 +882,23 @@ class PostgresRunStore:
                     if cursor.rowcount:
                         return FlowAdmission("coalesced", active[0]["run_id"])
                 due_at = now + gate.debounce
+            if run.request_key is not None:
+                # Channel-inbox rows before the run row, matching ingest's
+                # order.
+                await self._lock_parked_conn(conn, run.workflow_id, run.request_key)
             await self._insert_run(conn, run)
             await self._insert_step(conn, dataclasses.replace(root_step, due_at=due_at))
             await self._append_events(conn, run.run_id, events, run.created_at)
+            if run.request_key is not None:
+                # Policy admission is still admission: early mail flushes on
+                # this door exactly as on the plain one.
+                await self._flush_parked_conn(
+                    conn,
+                    run.workflow_id,
+                    run.request_key,
+                    run.run_id,
+                    run.created_at,
+                )
         return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
     async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
@@ -1200,92 +1271,376 @@ class PostgresRunStore:
         """
         pool = await self._open()
         async with pool.connection() as conn, conn.transaction():
-            cursor = await conn.execute(
-                "SELECT status, deadline FROM workflow_runs WHERE run_id = %s"
-                " FOR UPDATE",
-                (run_id,),
+            return await self._deliver_with(
+                conn, run_id, wait_key, dedupe_key, payload, now
             )
-            row = await cursor.fetchone()
-            if row is None:
-                return "unknown_run"
-            if row["status"] in _TERMINAL_RUNS:
-                return "run_terminal"
-            if row["deadline"] is not None and row["deadline"] <= now:
-                # Claims exclude past-deadline runs and the sweep is about to
-                # finalize this one TIMED_OUT, so "resolved" would tell the
-                # sender -- often a person clicking approve -- that their
-                # decision landed, moments before it is discarded.
-                return "expired"
-            cursor = await conn.execute(
-                "SELECT 1 FROM workflow_inbox"
-                " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
-                (run_id, wait_key, dedupe_key),
+
+    async def _deliver_with(
+        self,
+        conn: Any,
+        run_id: str,
+        wait_key: str,
+        dedupe_key: str,
+        payload: Any,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Deliver inside the caller's open transaction.
+
+        Takes the run row here, so a caller holding channel-inbox rows keeps
+        the canonical channel-before-run lock order. Refusal branches write
+        nothing, so the caller's transaction stays committable.
+
+        Args:
+            conn: The connection inside an open transaction.
+            run_id: The receiving run.
+            wait_key: The address the waiting slot declared.
+            dedupe_key: Sender-supplied identity, making redelivery a no-op.
+            payload: JSON-compatible payload to hand the resuming handler.
+            now: Current time in epoch seconds.
+
+        Returns:
+            What the store did with the delivery.
+        """
+        cursor = await conn.execute(
+            "SELECT status, deadline FROM workflow_runs WHERE run_id = %s FOR UPDATE",
+            (run_id,),
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return "unknown_run"
+        if row["status"] in _TERMINAL_RUNS:
+            return "run_terminal"
+        if row["deadline"] is not None and row["deadline"] <= now:
+            # Claims exclude past-deadline runs and the sweep is about to
+            # finalize this one TIMED_OUT, so "resolved" would tell the
+            # sender -- often a person clicking approve -- that their
+            # decision landed, moments before it is discarded.
+            return "expired"
+        cursor = await conn.execute(
+            "SELECT 1 FROM workflow_inbox"
+            " WHERE run_id = %s AND wait_key = %s AND dedupe_key = %s",
+            (run_id, wait_key, dedupe_key),
+        )
+        if await cursor.fetchone() is not None:
+            await self._append_events(
+                conn,
+                run_id,
+                ((HistoryEventType.SIGNAL_DUPLICATE, {"wait_key": wait_key}),),
+                now,
             )
-            if await cursor.fetchone() is not None:
-                await self._append_events(
-                    conn,
-                    run_id,
-                    ((HistoryEventType.SIGNAL_DUPLICATE, {"wait_key": wait_key}),),
-                    now,
-                )
-                return "duplicate"
-            frontier = await self._frontier(conn, run_id)
-            if (
-                frontier is not None
-                and frontier.status is StepStatus.BLOCKED
-                and 0.0 < frontier.due_at <= now
-            ):
-                return "expired"
-            resolves = (
-                frontier is not None
-                and frontier.status is StepStatus.BLOCKED
-                and frontier.wait_key == wait_key
-            )
+            return "duplicate"
+        frontier = await self._frontier(conn, run_id)
+        if (
+            frontier is not None
+            and frontier.status is StepStatus.BLOCKED
+            and 0.0 < frontier.due_at <= now
+        ):
+            return "expired"
+        resolves = (
+            frontier is not None
+            and frontier.status is StepStatus.BLOCKED
+            and frontier.wait_key == wait_key
+        )
+        await conn.execute(
+            "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
+            " payload, status, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (
+                run_id,
+                wait_key,
+                dedupe_key,
+                await self._next_inbox_seq(conn, run_id),
+                Jsonb(payload),
+                "CONSUMED" if resolves else "PENDING",
+                now,
+            ),
+        )
+        if resolves and frontier is not None:
             await conn.execute(
-                "INSERT INTO workflow_inbox (run_id, wait_key, dedupe_key, seq,"
-                " payload, status, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                "UPDATE workflow_steps SET status = %s, due_at = %s, args = %s,"
+                " updated_at = %s WHERE run_id = %s AND ordinal = %s",
                 (
+                    StepStatus.READY.value,
+                    now,
+                    _json({**frontier.args, "__payload__": payload}),
+                    now,
                     run_id,
-                    wait_key,
+                    frontier.ordinal,
+                ),
+            )
+            await self._append_events(
+                conn,
+                run_id,
+                (
+                    (
+                        HistoryEventType.WAIT_RESOLVED,
+                        {"ordinal": frontier.ordinal, "wait_key": wait_key},
+                    ),
+                ),
+                now,
+            )
+        else:
+            await self._append_events(
+                conn,
+                run_id,
+                ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
+                now,
+            )
+        return "resolved" if resolves else "buffered"
+
+    async def _flush_parked_conn(
+        self, conn: Any, workflow_id: str, request_key: str, run_id: str, now: float
+    ) -> None:
+        """Deliver PENDING channel-inbox rows to a freshly admitted run.
+
+        The caller must have locked these rows (``_lock_parked_conn``)
+        before creating the run, keeping the canonical channel-before-run
+        order.
+
+        Args:
+            conn: The connection inside the admitting transaction.
+            workflow_id: The workflow identity.
+            request_key: The admission key, matched against correlation keys.
+            run_id: The run that now exists.
+            now: Current time in epoch seconds.
+        """
+        cursor = await conn.execute(
+            "SELECT parked_id, channel, dedupe_key, payload FROM"
+            " workflow_channel_inbox WHERE workflow_id = %s AND"
+            " correlation_key = %s AND status = %s ORDER BY created_at",
+            (workflow_id, request_key, ParkedStatus.PENDING.value),
+        )
+        for row in await cursor.fetchall():
+            disposition = await self._deliver_with(
+                conn,
+                run_id,
+                f"sig:{row['channel']}",
+                row["dedupe_key"],
+                row["payload"],
+                now,
+            )
+            delivered = disposition in ("resolved", "buffered", "duplicate")
+            await conn.execute(
+                "UPDATE workflow_channel_inbox SET status = %s, reason = %s,"
+                " run_id = %s, updated_at = %s WHERE parked_id = %s",
+                (
+                    ParkedStatus.DELIVERED.value
+                    if delivered
+                    else ParkedStatus.DEAD.value,
+                    None if delivered else disposition,
+                    run_id if delivered else None,
+                    now,
+                    row["parked_id"],
+                ),
+            )
+
+    async def _lock_parked_conn(
+        self, conn: Any, workflow_id: str, request_key: str
+    ) -> None:
+        """Take the PENDING channel-inbox rows an admission will flush.
+
+        Before the run row exists: ingest locks its channel row and then the
+        run, so admission must also take channel rows first or the two paths
+        meet on the same rows in opposite orders.
+
+        Args:
+            conn: The connection inside the admitting transaction.
+            workflow_id: The workflow identity.
+            request_key: The admission key.
+        """
+        await conn.execute(
+            "SELECT parked_id FROM workflow_channel_inbox WHERE workflow_id = %s"
+            " AND correlation_key = %s AND status = %s ORDER BY parked_id"
+            " FOR UPDATE",
+            (workflow_id, request_key, ParkedStatus.PENDING.value),
+        )
+
+    async def _route_parked_conn(
+        self, conn: Any, parked_id: str, now: float
+    ) -> DeliveryDisposition:
+        """Route one PENDING channel-inbox row inside an open transaction.
+
+        Args:
+            conn: The connection, already holding the row.
+            parked_id: The row to route.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The routing outcome.
+        """
+        cursor = await conn.execute(
+            "SELECT workflow_id, channel, correlation_key, dedupe_key, payload"
+            " FROM workflow_channel_inbox WHERE parked_id = %s",
+            (parked_id,),
+        )
+        row = await cursor.fetchone()
+        cursor = await conn.execute(
+            "SELECT run_id FROM workflow_dedupe WHERE workflow_id = %s"
+            " AND request_key = %s",
+            (row["workflow_id"], row["correlation_key"]),
+        )
+        target = await cursor.fetchone()
+        if target is None:
+            return "parked"
+        disposition = await self._deliver_with(
+            conn,
+            target["run_id"],
+            f"sig:{row['channel']}",
+            row["dedupe_key"],
+            row["payload"],
+            now,
+        )
+        delivered = disposition in ("resolved", "buffered", "duplicate")
+        await conn.execute(
+            "UPDATE workflow_channel_inbox SET status = %s, reason = %s,"
+            " run_id = %s, updated_at = %s WHERE parked_id = %s",
+            (
+                ParkedStatus.DELIVERED.value if delivered else ParkedStatus.DEAD.value,
+                None if delivered else disposition,
+                target["run_id"] if delivered else None,
+                now,
+                parked_id,
+            ),
+        )
+        return disposition if delivered else "dead_letter"
+
+    async def ingest_channel_delivery(
+        self,
+        workflow_id: str,
+        channel: str,
+        correlation_key: str,
+        dedupe_key: str,
+        payload: Any,
+        now: float,
+    ) -> DeliveryDisposition:
+        """Durably accept a correlated provider event, exactly once.
+
+        Args:
+            workflow_id: The workflow whose channel the event addresses.
+            channel: The channel name.
+            correlation_key: The business key naming the target run.
+            dedupe_key: The provider's event identity.
+            payload: The canonical event payload.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The routing outcome.
+        """
+        pool = await self._open()
+        parked_id = uuid.uuid4().hex
+        async with pool.connection() as conn, conn.transaction():
+            cursor = await conn.execute(
+                "INSERT INTO workflow_channel_inbox (parked_id, workflow_id,"
+                " channel, correlation_key, dedupe_key, payload, status,"
+                " created_at, updated_at)"
+                " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                " ON CONFLICT DO NOTHING RETURNING parked_id",
+                (
+                    parked_id,
+                    workflow_id,
+                    channel,
+                    correlation_key,
                     dedupe_key,
-                    await self._next_inbox_seq(conn, run_id),
                     Jsonb(payload),
-                    "CONSUMED" if resolves else "PENDING",
+                    ParkedStatus.PENDING.value,
+                    now,
                     now,
                 ),
             )
-            if resolves and frontier is not None:
-                await conn.execute(
-                    "UPDATE workflow_steps SET status = %s, due_at = %s, args = %s,"
-                    " updated_at = %s WHERE run_id = %s AND ordinal = %s",
-                    (
-                        StepStatus.READY.value,
-                        now,
-                        _json({**frontier.args, "__payload__": payload}),
-                        now,
-                        run_id,
-                        frontier.ordinal,
-                    ),
-                )
-                await self._append_events(
-                    conn,
-                    run_id,
-                    (
-                        (
-                            HistoryEventType.WAIT_RESOLVED,
-                            {"ordinal": frontier.ordinal, "wait_key": wait_key},
-                        ),
-                    ),
+            if await cursor.fetchone() is None:
+                # The event id is the identity: a provider redelivery and a
+                # crash-after-ack replay both land here.
+                return "duplicate"
+            return await self._route_parked_conn(conn, parked_id, now)
+
+    async def list_parked(
+        self,
+        *,
+        workflow_id: str | None = None,
+        status: ParkedStatus | None = None,
+        limit: int = 100,
+    ) -> tuple[ParkedDelivery, ...]:
+        """List channel-inbox deliveries, newest first.
+
+        Args:
+            workflow_id: Restrict to one workflow.
+            status: Restrict to one lifecycle state.
+            limit: Maximum rows.
+
+        Returns:
+            The matching deliveries.
+        """
+        clauses, params = [], []
+        if workflow_id is not None:
+            clauses.append("workflow_id = %s")
+            params.append(workflow_id)
+        if status is not None:
+            clauses.append("status = %s")
+            params.append(status.value)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                f"SELECT * FROM workflow_channel_inbox{where}"
+                " ORDER BY created_at DESC LIMIT %s",
+                (*params, limit),
+            )
+            return tuple(_parked_from_row(row) for row in await cursor.fetchall())
+
+    async def replay_parked(self, parked_id: str, now: float) -> DeliveryDisposition:
+        """Re-attempt routing of a parked or dead delivery.
+
+        Args:
+            parked_id: The delivery to replay.
+            now: Current time in epoch seconds.
+
+        Returns:
+            The routing outcome, or ``unknown_key`` if no such delivery.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            cursor = await conn.execute(
+                "SELECT status FROM workflow_channel_inbox WHERE parked_id = %s"
+                " FOR UPDATE",
+                (parked_id,),
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                return "unknown_key"
+            if row["status"] == ParkedStatus.DELIVERED.value:
+                # Replaying what already reached its run must never signal
+                # twice.
+                return "duplicate"
+            await conn.execute(
+                "UPDATE workflow_channel_inbox SET status = %s, reason = NULL,"
+                " updated_at = %s WHERE parked_id = %s",
+                (ParkedStatus.PENDING.value, now, parked_id),
+            )
+            return await self._route_parked_conn(conn, parked_id, now)
+
+    async def sweep_parked(self, now: float, ttl: float) -> int:
+        """Turn PENDING deliveries older than a ttl into DEAD letters.
+
+        Args:
+            now: Current time in epoch seconds.
+            ttl: Age in seconds beyond which PENDING is unclaimed.
+
+        Returns:
+            How many deliveries became dead letters.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "UPDATE workflow_channel_inbox SET status = %s,"
+                " reason = 'unclaimed', updated_at = %s"
+                " WHERE status = %s AND created_at < %s",
+                (
+                    ParkedStatus.DEAD.value,
                     now,
-                )
-            else:
-                await self._append_events(
-                    conn,
-                    run_id,
-                    ((HistoryEventType.SIGNAL_BUFFERED, {"wait_key": wait_key}),),
-                    now,
-                )
-        return "resolved" if resolves else "buffered"
+                    ParkedStatus.PENDING.value,
+                    now - ttl,
+                ),
+            )
+            return cursor.rowcount
 
     async def admit_children(
         self,

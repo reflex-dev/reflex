@@ -267,6 +267,11 @@ class WebhookTrigger(Trigger):
             request genuinely came from the provider.
         dedupe_by: Payload field used as the ingress deduplication key, so a
             provider redelivering an event does not start a second run.
+        correlate_by: Payload field carrying the business key of the run this
+            delivery belongs to. Only meaningful on a channel trigger: the
+            value is matched against runs' request keys, so
+            ``correlate_by="order_id"`` routes a shipment event to the order
+            run started under ``request_key="order_123"``.
         allow_unverified: Acknowledge that this endpoint accepts anonymous
             traffic. Only valid with a non-empty ``unverified_reason``.
         unverified_reason: Why anonymous traffic is acceptable here.
@@ -278,6 +283,7 @@ class WebhookTrigger(Trigger):
     model: type | None = None
     verify: WebhookVerifier | None = None
     dedupe_by: str | None = None
+    correlate_by: str | None = None
     allow_unverified: bool = False
     unverified_reason: str = ""
 
@@ -354,10 +360,11 @@ def webhook(
     model: type | None = None,
     verify: WebhookVerifier | None = None,
     dedupe_by: str | None = None,
+    correlate_by: str | None = None,
     allow_unverified: bool = False,
     unverified_reason: str = "",
 ) -> WebhookTrigger:
-    """Create a webhook trigger for a workflow root handler.
+    """Create a webhook trigger for a root handler or a signal channel.
 
     Args:
         topic: Stable provider event topic.
@@ -365,6 +372,9 @@ def webhook(
         verify: Callable given the raw body and headers that returns whether the
             request genuinely came from the provider.
         dedupe_by: Payload field used as the ingress deduplication key.
+        correlate_by: Payload field carrying the business key of the run the
+            delivery belongs to; used by channel triggers to route the event
+            to the run started under that request key.
         allow_unverified: Acknowledge that this endpoint accepts anonymous traffic.
         unverified_reason: Why anonymous traffic is acceptable here.
 
@@ -376,6 +386,7 @@ def webhook(
         model=model,
         verify=verify,
         dedupe_by=dedupe_by,
+        correlate_by=correlate_by,
         allow_unverified=allow_unverified,
         unverified_reason=unverified_reason,
     )
@@ -980,15 +991,44 @@ class Signal:
         name: The channel name, defaulting to the attribute name.
     """
 
-    def __init__(self, model: type | None = None, *, name: str | None = None):
+    def __init__(
+        self,
+        model: type | None = None,
+        *,
+        name: str | None = None,
+        trigger: WebhookTrigger | None = None,
+    ):
         """Declare a channel.
 
         Args:
             model: The payload model deliveries must satisfy.
             name: Explicit channel name; defaults to the attribute name.
+            trigger: A webhook that delivers into this channel. It must name
+                both identities a correlated delivery needs: ``correlate_by``
+                for which run, ``dedupe_by`` for which event.
+
+        Raises:
+            WorkflowDefinitionError: If a trigger is given without
+                ``correlate_by`` and ``dedupe_by``, or is not a webhook.
         """
         self.model = model
         self.name = name or ""
+        self.trigger = trigger
+        if trigger is not None:
+            if not isinstance(trigger, WebhookTrigger):
+                msg = (
+                    "rx.Signal(trigger=...) takes rx.webhook(...); a channel "
+                    "is delivered into, so no other trigger kind can feed it."
+                )
+                raise WorkflowDefinitionError(msg)
+            if trigger.correlate_by is None or trigger.dedupe_by is None:
+                msg = (
+                    f"Channel webhook {trigger.topic!r} needs correlate_by "
+                    "(which run this event belongs to) and dedupe_by (which "
+                    "event this delivery is); without both, a delivery "
+                    "cannot be routed exactly once."
+                )
+                raise WorkflowDefinitionError(msg)
 
     def __set_name__(self, owner: type, name: str) -> None:
         """Adopt the attribute name as the channel name.

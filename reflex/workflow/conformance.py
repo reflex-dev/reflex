@@ -25,6 +25,7 @@ import pytest
 from reflex.workflow.records import (
     TERMINAL_RUN_STATUSES,
     HistoryEventType,
+    ParkedStatus,
     RunQuery,
     RunRecord,
     RunStatus,
@@ -1709,6 +1710,139 @@ async def check_none_is_a_legal_payload_everywhere(store: RunStore) -> None:
     assert await store.get_substeps("sub1", 0) == {"notify": None}
 
 
+async def check_a_delivery_before_its_run_lands_exactly_once(
+    store: RunStore,
+) -> None:
+    """The Phase 2 acceptance flow, minus the crash: park, redeliver, admit.
+
+    A shipment event arrives before the order workflow exists, the provider
+    sends it three times, and the run starts later. Exactly one signal must
+    reach the run -- the channel-inbox row keyed by the provider's event id
+    is what collapses redelivery and crash-after-ack replays into one fact.
+    """
+    first = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_1", "evt_1", {"parcel": "P1"}, NOW
+    )
+    assert first == "parked", "no run exists yet; the delivery must wait"
+    for _ in range(2):
+        again = await store.ingest_channel_delivery(
+            "conformance.flow", "shipped", "order_1", "evt_1", {"parcel": "P1"}, NOW
+        )
+        assert again == "duplicate", "a redelivery is the same event"
+
+    await store.admit(
+        make_run(request_key="order_1"),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:shipped", due_at=0.0),
+        _ADMITTED,
+    )
+    steps = await store.get_steps("run1")
+    assert steps[0].status is StepStatus.READY, "the parked payload resolved it"
+    assert steps[0].args["__payload__"] == {"parcel": "P1"}
+
+    late = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_1", "evt_1", {"parcel": "P1"}, NOW + 1
+    )
+    assert late == "duplicate", "the event id survives delivery"
+    rows = await store.list_parked(workflow_id="conformance.flow")
+    assert len(rows) == 1
+    assert rows[0].status is ParkedStatus.DELIVERED
+    assert rows[0].run_id == "run1"
+
+
+async def check_a_delivery_to_a_live_run_lands_immediately(store: RunStore) -> None:
+    """With the run already waiting, ingest is an ordinary delivery.
+
+    The channel-inbox row is still written -- it is the event-id dedupe for
+    every later redelivery -- but the payload goes straight through.
+    """
+    await store.admit(
+        make_run(request_key="order_2"),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:shipped", due_at=0.0),
+        _ADMITTED,
+    )
+    landed = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_2", "evt_2", {"n": 2}, NOW
+    )
+    assert landed == "resolved"
+    again = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_2", "evt_2", {"n": 2}, NOW
+    )
+    assert again == "duplicate"
+    steps = await store.get_steps("run1")
+    assert steps[0].args["__payload__"] == {"n": 2}
+
+
+async def check_a_dead_letter_is_visible_and_replayable(store: RunStore) -> None:
+    """A delivery nothing can take becomes an operator's problem, loudly.
+
+    The run is terminal, so the payload can never land -- but silence would
+    read as delivered. The row dies visibly, and after the operator revives
+    the run, replay routes the same row with the same idempotency.
+    """
+    await store.admit(
+        make_run(request_key="order_3", status=RunStatus.FAILED),
+        make_step(status=StepStatus.FAILED, error={"reason": "boom"}),
+        _ADMITTED,
+    )
+    dead = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_3", "evt_3", {"n": 3}, NOW
+    )
+    assert dead == "dead_letter"
+    rows = await store.list_parked(status=ParkedStatus.DEAD)
+    assert len(rows) == 1
+    assert rows[0].reason == "run_terminal"
+
+    assert await store.retry_run("run1", NOW + 1)
+    replayed = await store.replay_parked(rows[0].parked_id, NOW + 2)
+    assert replayed == "buffered", "the revived run has no wait open yet"
+    rows = await store.list_parked(workflow_id="conformance.flow")
+    assert rows[0].status is ParkedStatus.DELIVERED
+    assert await store.replay_parked(rows[0].parked_id, NOW + 3) == "duplicate", (
+        "replaying a delivered row must never signal twice"
+    )
+    assert await store.replay_parked("missing", NOW) == "unknown_key"
+
+
+async def check_unclaimed_deliveries_become_dead_letters(store: RunStore) -> None:
+    """A parked delivery whose run never arrives surfaces, not lingers."""
+    await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_4", "evt_4", {"n": 4}, NOW
+    )
+    assert await store.sweep_parked(NOW + 100, ttl=3600) == 0, "not yet unclaimed"
+    assert await store.sweep_parked(NOW + 4000, ttl=3600) == 1
+    rows = await store.list_parked(status=ParkedStatus.DEAD)
+    assert len(rows) == 1
+    assert rows[0].reason == "unclaimed"
+    assert await store.sweep_parked(NOW + 5000, ttl=3600) == 0, "dead rows stay dead"
+
+
+async def check_policy_admission_also_flushes_parked_mail(store: RunStore) -> None:
+    """A run admitted through a start policy still receives its early mail.
+
+    Policy admission is a second door into existence; a delivery parked
+    before the run must not depend on which door the run came through.
+    """
+    from reflex.workflow.store import FlowGate
+
+    parked = await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_5", "evt_5", {"n": 5}, NOW
+    )
+    assert parked == "parked"
+    admission = await store.admit_flow(
+        make_run(request_key="order_5", flow_key="order_5"),
+        make_step(status=StepStatus.BLOCKED, wait_key="sig:shipped", due_at=0.0),
+        _ADMITTED,
+        FlowGate(),
+        NOW,
+    )
+    assert admission.disposition == "started"
+    steps = await store.get_steps(admission.run_id or "run1")
+    assert steps[0].status is StepStatus.READY
+    assert steps[0].args["__payload__"] == {"n": 5}
+    rows = await store.list_parked(workflow_id="conformance.flow")
+    assert rows[0].status is ParkedStatus.DELIVERED
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -1726,6 +1860,11 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_delivery_resolves_a_matching_wait,
     check_delivery_never_touches_run_state,
     check_duplicate_deliveries_are_ignored,
+    check_a_delivery_before_its_run_lands_exactly_once,
+    check_a_delivery_to_a_live_run_lands_immediately,
+    check_a_dead_letter_is_visible_and_replayable,
+    check_unclaimed_deliveries_become_dead_letters,
+    check_policy_admission_also_flushes_parked_mail,
     check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,
