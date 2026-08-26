@@ -2,7 +2,9 @@
 
 import json
 import logging
+from typing import cast
 
+import click
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
@@ -15,8 +17,12 @@ from reflex_cli.v2.deployments import hosting_cli
 from typer import Typer
 from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
+# deployments._patch_typer wraps the click group in a fake Typer when typer is
+# installed; get_command unwraps it back to the underlying click group. The
+# cast bridges typer's vendored-click annotations, which pyright rejects.
+hosting_cli = cast(
+    "click.Group",
+    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli,
 )
 
 runner = CliRunner()
