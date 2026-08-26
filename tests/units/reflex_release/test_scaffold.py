@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -943,3 +945,90 @@ def test_a_custom_build_and_a_post_release_workflow_coexist(
     assert step["name"] == "Trigger the post-release workflow"
     assert step["env"]["TAG"] == "${{ needs.prepare.outputs.tag }}"
     assert "prepare" in jobs["tag-and-release"]["needs"]
+
+
+def test_the_gate_survives_the_build_path_that_is_always_skipped(
+    config: Config, repo: Path
+) -> None:
+    """A skipped ancestor must not skip the upload.
+
+    GitHub's implicit success() — the one a job gets when its ``if`` names no
+    status function — is evaluated over the transitive dependency closure, so
+    the build path that never runs would otherwise skip the upload straight
+    through the ``collect`` that was written to absorb it.
+    """
+    write_custom_build(repo)
+    jobs = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"]
+    condition = jobs["publish"]["if"]
+    assert "needs.collect.result == 'success'" in condition
+    assert "!cancelled()" in condition
+    assert "needs.prepare.outputs.skipped != 'true'" in condition
+
+
+def test_the_tag_is_pushed_only_after_a_successful_upload(
+    config: Config, repo: Path
+) -> None:
+    """`!failure()` would not do: a skipped publish is neither failed nor cancelled."""
+    write_custom_build(repo)
+    condition = yaml.safe_load(render("publish.yml", load_config(repo)))["jobs"][
+        "tag-and-release"
+    ]["if"]
+    assert "needs.publish.result == 'success'" in condition
+    assert "!cancelled()" in condition
+    assert "!failure()" not in condition
+
+
+def _report_script(config: Config) -> str:
+    """Return the shell of the release-batch report step.
+
+    Args:
+        config: The repository configuration.
+
+    Returns:
+        The step's ``run`` script.
+    """
+    document = yaml.safe_load(render("release_from_changelog.yml", config))
+    return document["jobs"]["report"]["steps"][0]["run"]
+
+
+@pytest.mark.parametrize(
+    ("detect", "publish", "publish_last", "any_", "any_last", "expected"),
+    [
+        # Nothing to release: every leg is legitimately skipped.
+        ("success", "skipped", "skipped", "false", "false", 0),
+        ("success", "success", "skipped", "true", "false", 0),
+        ("success", "success", "success", "true", "true", 0),
+        # Detect found packages, yet the leg that publishes them never ran.
+        ("success", "skipped", "skipped", "true", "false", 1),
+        # A lockstep package held back is a partial release, not a no-op.
+        ("success", "success", "skipped", "true", "true", 1),
+        ("success", "failure", "skipped", "true", "false", 1),
+        ("failure", "skipped", "skipped", "", "", 1),
+        ("success", "cancelled", "skipped", "true", "false", 1),
+    ],
+)
+def test_the_report_is_red_when_a_leg_with_work_did_not_publish(
+    config: Config,
+    detect: str,
+    publish: str,
+    publish_last: str,
+    any_: str,
+    any_last: str,
+    expected: int,
+) -> None:
+    """A skipped leg is only healthy when detect found nothing for it to do."""
+    result = subprocess.run(
+        ["bash", "-c", _report_script(config)],
+        env={
+            "PATH": os.environ["PATH"],
+            "DETECT": detect,
+            "PUBLISH": publish,
+            "PUBLISH_LAST": publish_last,
+            "ANY": any_,
+            "ANY_LAST": any_last,
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == expected, result.stdout + result.stderr
