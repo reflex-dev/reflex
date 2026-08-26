@@ -68,6 +68,17 @@ def index():
     )
 ```
 
+Binding state to a prop at the call site does not pull the state into the page.
+The compiler moves that call into a generated wrapper component that holds the
+state hooks the prop needs, so the page itself keeps no dependency on the state.
+When the state changes, the wrapper re-renders and React's `memo` stops there
+unless the prop's value actually changed — the rest of the page never re-renders
+at all.
+
+That makes the call site the place to punch a single dependency through to an
+expensive component: pass exactly the Vars it needs, and it re-renders for those
+and nothing else, however much the rest of the state churns.
+
 ## Using with `rx.foreach`
 
 To render a memoized component for each item of a list Var, wrap the call in a
