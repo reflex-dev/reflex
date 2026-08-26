@@ -160,7 +160,12 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         origin = self._origin
         while origin is not None and not origin._bound:
             origin = origin._origin
-        target = (origin._name or name) if origin is not None else name
+        if origin is not None:
+            target = origin._name or name
+        else:
+            # No origin ever bound: a decorator redeclaring the property's
+            # name replaced it in the class body, so find that copy instead.
+            target = self._find_sibling_name(owner) or name
         self._name = target
         self._bound = True
         if target == name:
@@ -179,8 +184,44 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             bound._var = self._var if self._var is not None else existing._var
             bound._name = target
             bound._bound = True
+            # Keep the chain intact so later aliased copies still find this one.
+            bound._origin = self._origin
         setattr(owner, target, bound)
         delattr(owner, name)
+
+    def _find_sibling_name(self, owner: type) -> str | None:
+        """Find the attribute name of a copy sharing this property's origin chain.
+
+        The redeclared name keeps the origin's class-body position, so its copy
+        binds before any aliased accessor and is found here already in place.
+
+        Args:
+            owner: The class the property is defined on.
+
+        Returns:
+            The sibling copy's attribute name, or None if there is none.
+        """
+        chain: set[HybridProperty[Any, Any, Any]] = {self}
+        node = self._origin
+        while node is not None:
+            chain.add(node)
+            node = node._origin
+        for attr, existing in owner.__dict__.items():
+            if (
+                existing is self
+                or not isinstance(existing, HybridProperty)
+                # Only a copy already bound under its own name is the target;
+                # an alias that has not bound yet rebinds itself later.
+                or not existing._bound
+                or existing._name != attr
+            ):
+                continue
+            node = existing
+            while node is not None:
+                if node in chain:
+                    return attr
+                node = node._origin
+        return None
 
     @property
     def _property_name(self) -> str:

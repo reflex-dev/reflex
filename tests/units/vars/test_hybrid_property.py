@@ -412,6 +412,69 @@ def test_hybrid_property_unchained_setter_and_deleter():
     assert seen == ["deleted"]
 
 
+def test_hybrid_property_alias_accessors_survive_redeclared_var():
+    """Aliased accessors survive a later var decorator that redeclares the name."""
+    seen: list[str] = []
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @hybrid_property
+        def value(self) -> str:  # pyright: ignore[reportRedeclaration]
+            return self._v
+
+        @value.setter
+        def _value_setter(self, new: str) -> None:
+            self._v = new
+
+        @value.deleter
+        def _value_deleter(self) -> None:
+            seen.append("deleted")
+
+        @value.var
+        @classmethod
+        def value(cls) -> Var[str]:
+            return Var.create("frontend")
+
+    assert "_value_setter" not in Holder.__dict__
+    assert "_value_deleter" not in Holder.__dict__
+    assert Holder.__dict__["value"]._var is not None
+    holder = Holder()
+    assert holder.value == "a"
+    holder.value = "b"
+    assert holder.value == "b"
+    del holder.value
+    assert seen == ["deleted"]
+
+
+def test_hybrid_property_alias_setter_chained_redeclared_var_removes_alias():
+    """A var decorator chained off an aliased setter still removes the alias."""
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @hybrid_property
+        def value(self) -> str:  # pyright: ignore[reportRedeclaration]
+            return self._v
+
+        @value.setter
+        def _value_setter(self, new: str) -> None:
+            self._v = new
+
+        @_value_setter.var
+        @classmethod
+        def value(cls) -> Var[str]:
+            return Var.create("frontend")
+
+    assert "_value_setter" not in Holder.__dict__
+    assert Holder.__dict__["value"]._var is not None
+    holder = Holder()
+    holder.value = "b"
+    assert holder.value == "b"
+
+
 def test_hybrid_property_in_pydantic_model():
     """A hybrid property may be declared directly in a pydantic model body."""
     pytest.importorskip("pydantic")
