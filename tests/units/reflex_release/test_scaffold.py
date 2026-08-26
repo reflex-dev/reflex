@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -978,6 +980,18 @@ def test_the_tag_is_pushed_only_after_a_successful_upload(
     assert "!failure()" not in condition
 
 
+# The report step is a bash script pinned to `shell: bash` on ubuntu-latest, so
+# running it needs a POSIX bash. On Windows `bash` on PATH is the WSL launcher,
+# which exits non-zero when no distribution is installed; Git for Windows ships
+# a real one next to the git the runners already have.
+_GIT_BASH = Path(os.environ.get("PROGRAMFILES", "C:/Program Files"), "Git/bin/bash.exe")
+BASH = (
+    (str(_GIT_BASH) if _GIT_BASH.is_file() else None)
+    if sys.platform == "win32"
+    else shutil.which("bash")
+)
+
+
 def _report_script(config: Config) -> str:
     """Return the shell of the release-batch report step.
 
@@ -1007,6 +1021,7 @@ def _report_script(config: Config) -> str:
         ("success", "cancelled", "skipped", "true", "false", 1),
     ],
 )
+@pytest.mark.skipif(BASH is None, reason="no POSIX bash to run the step with")
 def test_the_report_is_red_when_a_leg_with_work_did_not_publish(
     config: Config,
     detect: str,
@@ -1017,10 +1032,11 @@ def test_the_report_is_red_when_a_leg_with_work_did_not_publish(
     expected: int,
 ) -> None:
     """A skipped leg is only healthy when detect found nothing for it to do."""
+    assert BASH is not None
     result = subprocess.run(
-        ["bash", "-c", _report_script(config)],
+        [BASH, "-c", _report_script(config)],
         env={
-            "PATH": os.environ["PATH"],
+            **os.environ,
             "DETECT": detect,
             "PUBLISH": publish,
             "PUBLISH_LAST": publish_last,
