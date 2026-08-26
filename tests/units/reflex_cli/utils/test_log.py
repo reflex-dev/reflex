@@ -90,7 +90,6 @@ def test_reflex_base_adopts_the_cli_logger_without_being_imported():
     [
         "reflex_cli.utils.hosting",
         "reflex_cli.v2.apps",
-        "reflex_cli.v2.auth",
         "reflex_cli.v2.cli",
         "reflex_cli.v2.deployments",
         "reflex_cli.v2.gcp",
