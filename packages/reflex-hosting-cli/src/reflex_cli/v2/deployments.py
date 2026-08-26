@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.metadata
+import logging
 from importlib.util import find_spec
 from typing import TYPE_CHECKING
 
@@ -10,14 +12,16 @@ import click
 from packaging import version
 
 from reflex_cli import constants
-from reflex_cli.utils import console
 from reflex_cli.v2.apps import apps_cli
+from reflex_cli.v2.auth import token_command, whoami_command
 from reflex_cli.v2.gcp import deploy_command as gcp_deploy_command
 from reflex_cli.v2.project import project_cli
 from reflex_cli.v2.providers import providers_cli
 from reflex_cli.v2.scan import scan_command
 from reflex_cli.v2.secrets import secrets_cli
 from reflex_cli.v2.vmtypes_regions import vm_types_regions_cli
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import typer
@@ -40,7 +44,7 @@ def hosting_cli(ctx: click.Context) -> None:
             f"Please upgrade Reflex to at least version {constants.ReflexHostingCli.MINIMUM_REFLEX_VERSION}."
         )
     if _reflex_version < constants.ReflexHostingCli.RECOMMENDED_REFLEX_VERSION:
-        console.warn(
+        logger.warning(
             f"Support for Reflex version {_reflex_version} in reflex-hosting-cli is deprecated. "
             f"Please upgrade Reflex to at least version {constants.ReflexHostingCli.RECOMMENDED_REFLEX_VERSION}."
         )
@@ -73,11 +77,31 @@ hosting_cli.add_command(
 )
 hosting_cli.add_command(
     gcp_deploy_command,
+    name="gcp-standalone",
+)
+# The name it shipped under. Inside `reflex cloud`, "deploy" meant the
+# standalone gcloud script runner while `reflex deploy` meant the managed
+# platform deploy -- one namespace apart, opposite semantics. Kept working, and
+# hidden, so existing scripts keep running while the help only offers the name
+# that says what it does; the command itself warns when reached this way.
+_legacy_gcp_deploy_command = copy.copy(gcp_deploy_command)
+_legacy_gcp_deploy_command.name = "deploy"
+_legacy_gcp_deploy_command.hidden = True
+hosting_cli.add_command(
+    _legacy_gcp_deploy_command,
     name="deploy",
 )
 hosting_cli.add_command(
     scan_command,
     name="scan",
+)
+hosting_cli.add_command(
+    whoami_command,
+    name="whoami",
+)
+hosting_cli.add_command(
+    token_command,
+    name="token",
 )
 for name, command in vm_types_regions_cli.commands.items():
     # Add the command to the hosting CLI
@@ -144,7 +168,7 @@ def check_version():
         latest_version = response.json()["info"]["version"]
 
         if version.parse(installed_version) < version.parse(latest_version):
-            console.error(
+            logger.error(
                 f"Warning: You are using {package_name} version {installed_version}. "
                 f"A newer version {latest_version} is available. "
                 f"Upgrade using: pip install --upgrade {package_name}"

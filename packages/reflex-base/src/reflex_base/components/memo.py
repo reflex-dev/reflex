@@ -29,7 +29,6 @@ from reflex_components_core.base.fragment import Fragment
 
 from reflex_base import constants
 from reflex_base.components.component import Component
-from reflex_base.components.dynamic import bundled_libraries
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     get_memoization_strategy,
@@ -41,6 +40,7 @@ from reflex_base.constants.compiler import (
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
@@ -762,6 +762,7 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
         )
         raise TypeError(msg)
 
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
     for lib in dict(var_data.imports):
         if not lib:
             continue

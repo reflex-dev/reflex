@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import logging
 import pickle
 import uuid
 from abc import ABC, abstractmethod
@@ -14,8 +15,10 @@ from typing import TYPE_CHECKING, ClassVar
 
 from reflex.istate.manager.redis import enable_keyspace_notifications
 from reflex.state import StateUpdate
-from reflex.utils import console, prerequisites
+from reflex.utils import prerequisites
 from reflex.utils.tasks import ensure_task
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -315,7 +318,7 @@ class RedisTokenManager(LocalTokenManager):
         try:
             token_exists_in_redis = await self.redis.exists(redis_key)
         except Exception as e:
-            console.error(f"Redis error checking token existence: {e}")
+            logger.error(f"Redis error checking token existence: {e}")
             return await super().link_token_to_sid(token, sid)
 
         new_token = None
@@ -338,7 +341,7 @@ class RedisTokenManager(LocalTokenManager):
                 ex=self.token_expiration,
             )
         except Exception as e:
-            console.error(f"Redis error storing token: {e}")
+            logger.error(f"Redis error storing token: {e}")
         # Return the new token if one was generated
         return new_token
 
@@ -360,7 +363,7 @@ class RedisTokenManager(LocalTokenManager):
             try:
                 await self.redis.delete(redis_key)
             except Exception as e:
-                console.error(f"Redis error deleting token: {e}")
+                logger.error(f"Redis error deleting token: {e}")
 
             # Clean up local dicts (always do this)
             await super().disconnect_token(token, sid)
@@ -437,7 +440,7 @@ class RedisTokenManager(LocalTokenManager):
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
         except Exception as e:
-            console.error(f"Redis error getting token owner: {e}")
+            logger.error(f"Redis error getting token owner: {e}")
         return None
 
     async def emit_lost_and_found(
@@ -465,7 +468,7 @@ class RedisTokenManager(LocalTokenManager):
                 pickle.dumps(record),
             )
         except Exception as e:
-            console.error(f"Redis error publishing lost and found delta: {e}")
+            logger.error(f"Redis error publishing lost and found delta: {e}")
         else:
             return True
         return False

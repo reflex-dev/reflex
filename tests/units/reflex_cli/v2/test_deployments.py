@@ -1,4 +1,5 @@
 import importlib.metadata
+import logging
 from unittest.mock import MagicMock
 
 import click
@@ -20,6 +21,7 @@ def test_check_version(
     installed_version: str,
     latest_version: str,
     should_exit: bool,
+    caplog: pytest.LogCaptureFixture,
 ):
     mocker.patch(
         "importlib.metadata.version",
@@ -28,18 +30,19 @@ def test_check_version(
     mock_response = MagicMock()
     mock_response.json.return_value = {"info": {"version": latest_version}}
     mocker.patch("httpx.get", return_value=mock_response)
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     if should_exit:
         with pytest.raises(click.exceptions.Exit) as excinfo:
             check_version()
         assert excinfo.value.exit_code == 1
-        mock_console_error.assert_called_once_with(
+        errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+        assert errors == [
             "Warning: You are using reflex-hosting-cli version 1.0.0. A newer version 2.0.0 is available. Upgrade using: pip install --upgrade reflex-hosting-cli"
-        )
+        ]
     else:
         check_version()
-        mock_console_error.assert_not_called()
+        errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+        assert errors == []
 
 
 def test_check_version_distribution_not_found(mocker: MockFixture):

@@ -19,8 +19,9 @@ declare -A MAP=(
   [reflex_docgen]=reflex-docgen
   [reflex_hosting_cli]=reflex-hosting-cli
   [reflex_i18n]=reflex-i18n
+  [reflex_release]=reflex-release
 )
-ORDER=(hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli reflex_i18n)
+ORDER=(hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli reflex_i18n reflex_release)
 
 PACKAGES=()
 for key in "${ORDER[@]}"; do

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
 import re
 from collections.abc import Iterable, Sequence
@@ -20,6 +21,8 @@ from typing import TYPE_CHECKING
 from reflex_base import constants
 
 from .base import Plugin
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
@@ -155,11 +158,10 @@ def _format_attrs(attrs: dict[str, str]) -> str:
 
 
 def _render_dev_host_html(mount_target: str) -> str:
-    from reflex_base.utils import console
 
     attrs, ok = _mount_attrs_for_selector(mount_target)
     if not ok:
-        console.warn(
+        logger.warning(
             f"EmbedPlugin: dev_preview cannot synthesize an element for "
             f"selector {mount_target!r}; using id={_DEV_HOST_FALLBACK_ID!r} "
             "instead. Open a hand-written host page if your selector matches "

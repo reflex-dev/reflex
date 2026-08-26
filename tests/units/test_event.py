@@ -131,7 +131,6 @@ def test_call_event_handler_partial():
     assert (
         format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
-
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
     assert len(event_spec2.args) == 2
@@ -143,6 +142,50 @@ def test_call_event_handler_partial():
         format.format_event(event_spec2)
         == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
+
+
+def test_state_event_handler_type_hints_are_stable_after_class_patch():
+    """Runtime state-class patches must not change handler annotations."""
+
+    class S(BaseState):
+        @event
+        def on_event(self, event: dict):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._get_type_hints()["event"] is dict
+
+    # Python 3.14 evaluates deferred method annotations in the owning class
+    # namespace, so this assignment would shadow the builtin ``dict``.
+    type.__setattr__(S, "dict", lambda self: {})
+
+    def args_spec(value: Var[dict]) -> list[Var[dict]]:
+        return [value]
+
+    call_event_handler(handler(), args_spec)
+    assert handler.prevent_default._type_hints is handler._type_hints
+
+
+def test_state_event_handler_caches_unresolved_type_hints():
+    """Unresolved annotations should be retried after their type is defined."""
+
+    class S(BaseState):
+        @event
+        def on_event(
+            self,
+            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        ):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._type_hints is None
+    assert handler._get_type_hints() == {}
+
+    globals()["_LateBoundEventType"] = dict
+    try:
+        assert handler._get_type_hints()["event"] is dict
+    finally:
+        del globals()["_LateBoundEventType"]
 
 
 @pytest.mark.parametrize(
@@ -734,7 +777,7 @@ def test_event_decorator_with_event_actions():
     # Test background + event actions work together
     bg_temporal_handler = MyTestState.handle_background_temporal
     assert bg_temporal_handler.event_actions == {"temporal": True}
-    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Test no event actions (existing behavior preserved)
     no_actions_handler = MyTestState.handle_no_actions
@@ -809,12 +852,12 @@ def test_event_decorator_backward_compatibility():
     old_handler = MyTestState.handle_old_style
     assert isinstance(old_handler, EventHandler)
     assert old_handler.event_actions == {}
-    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Old background parameter should work unchanged
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
-    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
 
 
 def test_event_var_in_rx_cond():
