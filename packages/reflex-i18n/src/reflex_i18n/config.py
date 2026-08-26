@@ -76,11 +76,17 @@ def set_active_i18n_config(config: I18nConfig | None) -> None:
     Args:
         config: The configuration to activate, or None to deactivate.
     """
+    # Inline to avoid a circular import; runtime imports from this module.
+    from .runtime import clear_translations_cache
+
     global _active_config, _active_catalog_dir
     _active_config = config
     _active_catalog_dir = (
         (Path.cwd() / config.catalog_dir).resolve() if config is not None else None
     )
+    # Drop translators built from the previous catalog dir (or from catalogs
+    # edited before a dev hot reload re-activated the config).
+    clear_translations_cache()
 
 
 def get_active_i18n_config() -> I18nConfig | None:

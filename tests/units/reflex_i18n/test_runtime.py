@@ -60,6 +60,21 @@ def test_gettext_translates_active_locale(tmp_path: Path, monkeypatch):
     assert gettext("Hello") == "Hello"
 
 
+def test_set_active_config_drops_stale_translators(tmp_path: Path, monkeypatch):
+    """Re-activating a config (hot reload) picks up edited .po catalogs."""
+    monkeypatch.chdir(tmp_path)
+    config = I18nConfig(locales=["en", "de"], default_locale="en")
+    _write_po(tmp_path / "locales", "de", 'msgid "Hello"\nmsgstr "Hallo"\n')
+    set_active_i18n_config(config)
+    with use_locale("de"):
+        assert gettext("Hello") == "Hallo"
+
+    _write_po(tmp_path / "locales", "de", 'msgid "Hello"\nmsgstr "Servus"\n')
+    set_active_i18n_config(config)
+    with use_locale("de"):
+        assert gettext("Hello") == "Servus"
+
+
 def test_gettext_missing_translation_falls_back(tmp_path: Path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     _write_po(tmp_path / "locales", "de", 'msgid "Hello"\nmsgstr "Hallo"\n')
