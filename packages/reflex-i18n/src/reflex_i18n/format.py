@@ -332,4 +332,5 @@ def _locale_var() -> StringVar:
     Returns:
         A StringVar resolving to the active locale code.
     """
+    _require_config()
     return Var(_js_expr="i18nLocale", _var_data=_locale_var_data()).to(str)

@@ -185,15 +185,17 @@ def negotiate_locale(
     Returns:
         The best matching supported locale, or ``default``.
     """
-    supported_set = set(supported)
+    # RFC 5646 language tags are case-insensitive: match lowercased but return
+    # the configured spelling.
+    by_tag = {locale.lower(): locale for locale in supported}
     by_language: dict[str, str] = {}
     for locale in supported:
-        by_language.setdefault(locale.split("-")[0], locale)
+        by_language.setdefault(locale.split("-")[0].lower(), locale)
 
     ranked: list[tuple[float, int, str]] = []
     for index, entry in enumerate(accept_language.split(",")):
         tag, _, params = entry.strip().partition(";")
-        tag = tag.strip().replace("_", "-")
+        tag = tag.strip().replace("_", "-").lower()
         if not tag or tag == "*":
             continue
         quality = 1.0
@@ -209,11 +211,10 @@ def negotiate_locale(
         ranked.append((-quality, index, tag))
 
     for _, _, tag in sorted(ranked):
-        if tag in supported_set:
-            return tag
-        language = tag.split("-")[0]
-        if language in by_language:
-            return by_language[language]
+        if (exact := by_tag.get(tag)) is not None:
+            return exact
+        if (language_match := by_language.get(tag.split("-")[0])) is not None:
+            return language_match
     return default
 
 

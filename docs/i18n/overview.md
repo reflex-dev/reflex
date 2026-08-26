@@ -309,8 +309,8 @@ reflex i18n extract
 # Create a fresh catalog for a new locale.
 reflex i18n init es
 
-# Fail (non-zero exit) if any locale has untranslated or fuzzy messages.
-# Useful as a CI check.
+# Fail (non-zero exit) if any non-default locale has untranslated or fuzzy
+# messages (the default locale holds the source msgids). Useful as a CI check.
 reflex i18n check
 ```
 

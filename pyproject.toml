@@ -293,6 +293,7 @@ source = [
   "reflex_components_recharts",
   "reflex_components_sonner",
   "reflex_base",
+  "reflex_i18n",
   "reflex_docgen",
   "reflex_release",
   "reflex_site_shared",

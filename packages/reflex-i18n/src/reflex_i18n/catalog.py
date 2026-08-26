@@ -118,7 +118,9 @@ def _lookup_translation(
     if catalog is None:
         return None
     message = catalog.get(key.msgid, key.context)
-    if message is None:
+    # A fuzzy entry carries a stale translation; fall back to the source text
+    # (the server side already excludes fuzzy via write_mo).
+    if message is None or message.fuzzy:
         return None
     strings = message.string
     if key.plural is None:

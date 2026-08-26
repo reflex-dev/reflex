@@ -1,11 +1,15 @@
 """Tests for the reflex i18n CLI helpers and command discovery."""
 
+import sys
+import types
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from babel.messages.pofile import read_po, write_po
 from reflex_i18n.cli import (
     LocaleStats,
+    _app_source_dir,
     _catalog_stats,
     check_command,
     extract_catalog,
@@ -125,3 +129,32 @@ def test_commands_are_click_commands(command):
     import click
 
     assert isinstance(command, click.Command)
+
+
+def test_app_source_dir_resolves_from_imported_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # An app_module_import / src layout scans the imported package, not
+    # <cwd>/<app_name>.
+    pkg_dir = tmp_path / "src" / "mypkg"
+    pkg_dir.mkdir(parents=True)
+    module = types.ModuleType("mypkg")
+    module.__path__ = [str(pkg_dir)]
+    monkeypatch.setitem(sys.modules, "mypkg", module)
+    monkeypatch.setattr(
+        "reflex_i18n.cli.get_config",
+        lambda: SimpleNamespace(module="mypkg.app", app_name="otherdir"),
+    )
+    assert _app_source_dir() == pkg_dir
+
+
+def test_app_source_dir_falls_back_to_app_name(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "missingmod", raising=False)
+    monkeypatch.setattr(
+        "reflex_i18n.cli.get_config",
+        lambda: SimpleNamespace(module="missingmod.app", app_name="myapp"),
+    )
+    assert _app_source_dir() == tmp_path / "myapp"

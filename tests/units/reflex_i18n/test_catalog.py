@@ -83,3 +83,14 @@ def test_compile_catalog_rejects_malicious_plural_expr():
     module = compile_catalog_module(catalog, [], "de", is_default_locale=False)  # pyright: ignore[reportArgumentType]
     assert "alert" not in module
     assert "export const plural = (n) => Number(n != 1);" in module
+
+
+def test_compile_catalog_skips_fuzzy_entries():
+    # A fuzzy entry carries a stale translation; the client must fall back to
+    # the source msgid (matching the server, where write_mo excludes fuzzy).
+    catalog = Catalog(locale="de")
+    catalog.add("Hello", "Hallo (veraltet)", flags=("fuzzy",))
+    module = compile_catalog_module(
+        catalog, [MessageKey("Hello")], "de", is_default_locale=False
+    )
+    assert "veraltet" not in module

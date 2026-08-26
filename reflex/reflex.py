@@ -1084,6 +1084,14 @@ def _add_plugin_cli_commands() -> None:
                 f"is not a click.Command; skipping."
             )
             continue
+        # A plugin must not (silently) replace a built-in or another plugin's
+        # command.
+        if entry_point.name in cli.commands:
+            console.warn(
+                f"CLI command {entry_point.name!r} from {entry_point.value!r} "
+                f"is already registered; skipping."
+            )
+            continue
         cli.add_command(command, name=entry_point.name)
 
 

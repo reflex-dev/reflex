@@ -135,3 +135,22 @@ def test_helper_method_recursion_detects_dependency():
 
     deps = HelperState.computed_vars["label"]._deps(objclass=HelperState)
     assert deps.get(i18n_name) == {"locale"}
+
+
+def test_inline_imported_helper_gains_locale_dependency():
+    from reflex_i18n import gettext
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((gettext,), lambda: I18nState.locale)
+
+    class InlineImportState(rx.State):
+        @rx.var
+        def greeting(self) -> str:
+            from reflex_i18n import gettext as _
+
+            return _("Hello")
+
+    deps = InlineImportState.computed_vars["greeting"]._deps(objclass=InlineImportState)
+    assert deps.get(I18nState.get_full_name()) == {"locale"}

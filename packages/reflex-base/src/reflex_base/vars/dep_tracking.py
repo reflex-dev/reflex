@@ -462,6 +462,9 @@ class DependencyTracker:
                 )
                 and instruction.argval in self.tracked_locals
             ):
+                # A tracked local may be an inline-imported function that
+                # implies a dependency (e.g. a gettext helper).
+                self._add_implicit_dependency(self.tracked_locals[instruction.argval])
                 # bytecode loaded the class instance to the top of stack, next load instruction
                 # is referencing an attribute on self
                 self.top_of_stack = instruction.argval

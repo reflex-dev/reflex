@@ -121,3 +121,12 @@ def test_formatting_without_plugin_raises():
         number(_num())
     with pytest.raises(RuntimeError, match="requires the i18n plugin"):
         date(Var(_js_expr="state.day"))
+
+
+def test_locale_var_requires_config():
+    # Without the plugin there is no client runtime to import from; emitting
+    # the var anyway would break the frontend build.
+    set_active_i18n_config(None)
+    _locale_var.cache_clear()
+    with pytest.raises(RuntimeError, match="I18nPlugin"):
+        _locale_var()

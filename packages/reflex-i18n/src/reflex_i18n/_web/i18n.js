@@ -125,8 +125,11 @@ export function I18nProvider({ children }) {
       })
       .catch((error) => {
         // A failed chunk load (e.g. a stale hashed chunk after a redeploy)
-        // leaves the previous catalog in place; text falls back to the source
-        // msgids. Surface it instead of an unhandled rejection.
+        // falls back to the source msgids rather than keeping the previous
+        // locale's catalog. Surface it instead of an unhandled rejection.
+        if (!cancelled) {
+          setCatalog(undefined);
+        }
         console.error(
           `Failed to load i18n catalog for locale "${locale}".`,
           error,

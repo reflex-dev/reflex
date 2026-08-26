@@ -6,6 +6,7 @@ Attached to the ``reflex`` CLI via the ``reflex.cli`` entry point.
 from __future__ import annotations
 
 import dataclasses
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -204,10 +205,22 @@ def _report(stats: LocaleStats) -> None:
 def _app_source_dir() -> Path:
     """The app's Python source directory.
 
+    Resolved from the imported app module (the dry compile imported it), so
+    ``app_module_import`` and src layouts scan the real package; falls back to
+    ``<cwd>/<app_name>`` when the module cannot be found.
+
     Returns:
         The directory scanned for gettext calls.
     """
-    return Path.cwd() / get_config().app_name
+    config = get_config()
+    top_module = sys.modules.get(config.module.partition(".")[0])
+    pkg_paths = getattr(top_module, "__path__", None)
+    if pkg_paths:
+        return Path(next(iter(pkg_paths)))
+    module_file = getattr(top_module, "__file__", None)
+    if module_file:
+        return Path(module_file).parent
+    return Path.cwd() / config.app_name
 
 
 @click.group()

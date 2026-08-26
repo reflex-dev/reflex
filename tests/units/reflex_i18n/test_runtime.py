@@ -310,3 +310,11 @@ async def test_format_computed_var_reformats_on_locale_change():
         I18nState._var_dependencies = saved_deps
         I18nState._potentially_dirty_states = saved_dirty
         set_active_i18n_config(None)
+
+
+def test_negotiate_locale_is_case_insensitive():
+    # RFC 5646 language tags are case-insensitive; the configured spelling is
+    # returned regardless of the request's casing.
+    supported = ["en", "de-DE", "de-AT"]
+    assert negotiate_locale("DE-at", supported, "en") == "de-AT"
+    assert negotiate_locale("de-de;q=0.9", supported, "en") == "de-DE"
