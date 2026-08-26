@@ -2840,12 +2840,12 @@ def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
         )
         response.raise_for_status()
         report = response.json()
-    # ValueError rather than json.JSONDecodeError: a 2xx body in an encoding
-    # httpx cannot decode raises UnicodeDecodeError, which is a ValueError and
-    # not a JSONDecodeError. Letting that escape would abort the watch over a
-    # malformed answer to a request whose whole contract is that not getting
-    # an answer costs nothing.
-    except (httpx.RequestError, httpx.HTTPStatusError, ValueError):
+    # Wider than json.JSONDecodeError, because a malformed body has more than
+    # one way to fail: an undecodable encoding raises UnicodeDecodeError (a
+    # ValueError) and a deeply nested document raises RecursionError (a
+    # RuntimeError). Either escaping would abort the watch over an answer this
+    # function is contracted to treat as no answer at all.
+    except (httpx.RequestError, httpx.HTTPStatusError, ValueError, RecursionError):
         return None
     return report if isinstance(report, dict) else None
 

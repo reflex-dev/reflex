@@ -1520,3 +1520,33 @@ def test_a_build_that_stored_no_log_says_nothing_extra(
     assert "could not be read" not in said
     assert "the end of the build log" not in said
     assert "reflex cloud apps build-logs" not in said
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid"),
+        # A deeply nested document: a RuntimeError, so a ValueError catch misses it.
+        RecursionError("maximum recursion depth exceeded"),
+    ],
+)
+def test_a_malformed_body_falls_back_however_it_is_malformed(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, failure: Exception
+):
+    """Not getting an answer costs nothing, whichever way the answer is broken.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        failure: What `.json()` raises on this body.
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = failure
+    mocker.patch("httpx.get", return_value=response)
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "build error" in _log_messages(caplog, logging.WARNING)
