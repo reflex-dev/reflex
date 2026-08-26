@@ -158,14 +158,12 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         # Resolve the target name only now: the origin learns its final name
         # in its own __set_name__, which by class-body order has already run.
         origin = self._origin
-        while origin is not None and not origin._bound:
-            origin = origin._origin
-        if origin is not None:
-            target = origin._name or name
+        if origin is not None and not origin._bound:
+            # An unbound origin was replaced by a redeclaration; its
+            # replacement carries the name. No replacement means it is self.
+            target = self._find_replacement_name(owner, origin) or name
         else:
-            # No origin ever bound: a decorator redeclaring the property's
-            # name replaced it in the class body, so find that copy instead.
-            target = self._find_sibling_name(owner) or name
+            target = (origin._name or name) if origin is not None else name
         self._name = target
         self._bound = True
         if target == name:
@@ -184,41 +182,39 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             bound._var = self._var if self._var is not None else existing._var
             bound._name = target
             bound._bound = True
-            # Keep the chain intact so later aliased copies still find this one.
+            # Keep the chain so later aliased copies still find this one.
             bound._origin = self._origin
         setattr(owner, target, bound)
         delattr(owner, name)
 
-    def _find_sibling_name(self, owner: type) -> str | None:
-        """Find the attribute name of a copy sharing this property's origin chain.
+    def _find_replacement_name(
+        self, owner: type, origin: HybridProperty[Any, Any, Any]
+    ) -> str | None:
+        """Find the name of the bound copy that replaced ``origin`` in the class body.
 
-        The redeclared name keeps the origin's class-body position, so its copy
-        binds before any aliased accessor and is found here already in place.
+        The redeclared name keeps the origin's class-body position, so the
+        replacement has already bound when this runs.
 
         Args:
             owner: The class the property is defined on.
+            origin: The unbound origin this property derives from.
 
         Returns:
-            The sibling copy's attribute name, or None if there is none.
+            The replacing copy's attribute name, or None if this copy itself
+            is the replacement.
         """
-        chain: set[HybridProperty[Any, Any, Any]] = {self}
-        node = self._origin
-        while node is not None:
-            chain.add(node)
-            node = node._origin
         for attr, existing in owner.__dict__.items():
             if (
                 existing is self
                 or not isinstance(existing, HybridProperty)
-                # Only a copy already bound under its own name is the target;
-                # an alias that has not bound yet rebinds itself later.
+                # An alias that has not bound yet rebinds itself later.
                 or not existing._bound
                 or existing._name != attr
             ):
                 continue
-            node = existing
+            node = existing._origin
             while node is not None:
-                if node in chain:
+                if node is origin:
                     return attr
                 node = node._origin
         return None

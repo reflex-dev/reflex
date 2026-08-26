@@ -475,6 +475,39 @@ def test_hybrid_property_alias_setter_chained_redeclared_var_removes_alias():
     assert holder.value == "b"
 
 
+def test_hybrid_property_forked_copy_redeclared_var_keeps_its_name():
+    """A copy forked under a new name keeps that name when its var redeclares it."""
+
+    def _set_b(self, new: str) -> None:
+        self._v = new
+
+    class Holder:
+        def __init__(self) -> None:
+            self._v = "a"
+
+        @hybrid_property
+        def a(self) -> str:
+            return self._v
+
+        b = a.setter(_set_b)  # pyright: ignore[reportAssignmentType]
+
+        @b.var  # pyright: ignore[reportGeneralTypeIssues]
+        @classmethod
+        def b(cls) -> Var[str]:
+            return Var.create("frontend")
+
+    assert "b" in Holder.__dict__
+    assert Holder.__dict__["b"]._var is not None
+    # The fork must not leak its accessors back onto the original.
+    assert Holder.__dict__["a"]._var is None
+    assert Holder.__dict__["a"].fset is None
+    holder = Holder()
+    holder.b = "c"
+    assert holder.a == "c"
+    with pytest.raises(AttributeError, match="no setter"):
+        holder.a = "x"  # pyright: ignore[reportAttributeAccessIssue]
+
+
 def test_hybrid_property_in_pydantic_model():
     """A hybrid property may be declared directly in a pydantic model body."""
     pytest.importorskip("pydantic")
