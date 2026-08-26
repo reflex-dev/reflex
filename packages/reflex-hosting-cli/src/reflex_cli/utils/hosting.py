@@ -7,10 +7,12 @@ import dataclasses
 import importlib.metadata
 import json
 import logging
+import os
 import platform
 import re
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import uuid
@@ -25,11 +27,10 @@ from typing import Any, TypedDict
 from urllib.parse import urljoin
 
 import click
-from reflex_base.utils import log
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, dependency, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
     ArchiveUploadError,
@@ -372,6 +373,47 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
 webbrowser.BackgroundBrowser = SilentBackgroundBrowser
 
 
+class TokenSource(str, Enum):
+    """Where an access token was loaded from."""
+
+    CONFIG = "config file"
+    ENVIRONMENT = "REFLEX_ACCESS_TOKEN environment variable"
+    OPTION = "--token option"
+    NONE = "none"
+
+
+def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
+    """Fetch the access token from the environment or existing config, and say where it came from.
+
+    ``REFLEX_ACCESS_TOKEN`` takes precedence: exporting it is an explicit
+    choice for this invocation, while the config file is ambient state left
+    behind by an earlier ``reflex login``.
+
+    Returns:
+        The access token and the source it was loaded from.
+        If not found, return empty string and ``TokenSource.NONE`` instead.
+
+    """
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
+    logger.debug("Fetching token from existing config...")
+    try:
+        access_token = stored_access_token()
+    except (OSError, ValueError) as ex:
+        logger.debug(
+            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+        )
+        return "", TokenSource.NONE
+
+    if access_token:
+        return access_token, TokenSource.CONFIG
+
+    return "", TokenSource.NONE
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -380,25 +422,7 @@ def get_existing_access_token() -> str:
         If not found, return empty string for it instead.
 
     """
-    import os
-
-    logger.debug("Fetching token from existing config...")
-    access_token = ""
-    try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            access_token = hosting_config.get("access_token", "")
-    except Exception as ex:
-        logger.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
-        )
-
-    if not access_token:
-        access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-        if access_token:
-            logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
-
-    return access_token
+    return get_existing_access_token_with_source()[0]
 
 
 def is_reflex_enterprise_installed() -> bool:
@@ -490,23 +514,95 @@ def validate_token(token: str) -> dict[str, Any]:
         raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
+def _read_hosting_config() -> dict[str, Any]:
+    """Read the hosting config file.
+
+    A config that exists but cannot be read is reported rather than treated as
+    empty, so callers do not overwrite entries they were unable to see.
+
+    Returns:
+        The stored config, or an empty dict if the file does not exist.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold a JSON object.
+
+    """
+    try:
+        with constants.Hosting.HOSTING_JSON.open(encoding="utf-8") as config_file:
+            hosting_config = json.load(config_file)
+    except FileNotFoundError:
+        return {}
+    # Valid JSON is not necessarily the object every caller indexes into.
+    if not isinstance(hosting_config, dict):
+        msg = f"{constants.Hosting.HOSTING_JSON} does not hold a JSON object"
+        raise ValueError(msg)
+    return hosting_config
+
+
+def stored_access_token() -> str:
+    """Read the access token held in the config file.
+
+    Unlike ``get_existing_access_token`` this ignores ``REFLEX_ACCESS_TOKEN``
+    and reports read failures, so callers can tell "no token stored" apart from
+    "cannot tell what is stored".
+
+    Returns:
+        The stored token, or an empty string if the config holds none.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
+
+    """
+    return _read_hosting_config().get("access_token", "")
+
+
+def _write_hosting_config(hosting_config: dict[str, Any]):
+    """Write the hosting config file atomically.
+
+    The config is written to a temporary file alongside the target and moved
+    into place, so a failed or interrupted write leaves the previous
+    credentials intact rather than truncating them.
+
+    Args:
+        hosting_config: The config to persist.
+
+    """
+    target = constants.Hosting.HOSTING_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Close the handle before replacing: Windows cannot rename an open file.
+    temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as config_file:
+            json.dump(hosting_config, config_file)
+            config_file.flush()
+            os.fsync(config_file.fileno())
+        temp_path.replace(target)
+    except BaseException:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
 def delete_token_from_config():
     """Delete the invalid token from the config file if applicable."""
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                hosting_config = json.load(config_file)
+            hosting_config = _read_hosting_config()
             hosting_config.pop("access_token", None)
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-                json.dump(hosting_config, config_file)
+            _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
             logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
-    # Delete the previous hosting service data if present.
-    if constants.Hosting.HOSTING_JSON_V0.exists():
-        constants.Hosting.HOSTING_JSON_V0.unlink()
+    # Delete the previous hosting service data if present. Best efforts, like
+    # the rest of this function: the legacy file holds no token the CLI reads.
+    try:
+        constants.Hosting.HOSTING_JSON_V0.unlink(missing_ok=True)
+    except OSError as ex:
+        logger.debug(f"Unable to remove {constants.Hosting.HOSTING_JSON_V0}: {ex}")
 
 
 def save_token_to_config(token: str):
@@ -517,18 +613,17 @@ def save_token_to_config(token: str):
 
     """
     try:
-        if not Path(constants.Reflex.DIR).exists():
-            Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
-        hosting_config: dict[str, str] = {}
-        if constants.Hosting.HOSTING_JSON.exists():
-            try:
-                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                    hosting_config = json.load(config_file)
-            except (OSError, ValueError):
-                hosting_config = {}
+        try:
+            hosting_config = _read_hosting_config()
+        except (OSError, ValueError) as ex:
+            # An unreadable config must not block re-authenticating; the token
+            # is what makes the file useful, so start over from an empty one.
+            logger.debug(
+                f"Discarding unreadable {constants.Hosting.HOSTING_JSON}: {ex}"
+            )
+            hosting_config = {}
         hosting_config["access_token"] = token
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            json.dump(hosting_config, config_file)
+        _write_hosting_config(hosting_config)
     except Exception as ex:
         logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
@@ -2145,7 +2240,7 @@ def upload_archives(
                     f"could not upload the build to storage: HTTP {ex.response.status_code}"
                 ) from ex
             if attempt < UPLOAD_ATTEMPTS - 1:
-                console.warn("the upload window expired; reserving another one")
+                logger.warning("the upload window expired; reserving another one")
         except httpx.HTTPError as ex:
             raise ArchiveUploadError(f"could not upload the build: {ex}") from ex
         else:
