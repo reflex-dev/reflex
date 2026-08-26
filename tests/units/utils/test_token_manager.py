@@ -496,6 +496,24 @@ class TestRedisTokenManager:
             nx=True,
         )
 
+    async def test_socket_record_del_adopts_newer_record_when_restore_loses(
+        self, manager, mock_redis
+    ):
+        """A rejected NX restore adopts the newer redis record immediately."""
+        token, sid = "token1", "sid1"
+        stale = SocketRecord(instance_id=manager.instance_id, sid=sid)
+        manager.token_to_socket[token] = stale
+        manager.sid_to_token[sid] = token
+        newer = SocketRecord(instance_id="other-instance", sid="sid2")
+        mock_redis.set.return_value = None
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(newer))
+
+        await manager._handle_socket_record_del(token)
+
+        assert manager.token_to_socket[token] == newer
+        assert manager.sid_to_token["sid2"] == token
+        assert sid not in manager.sid_to_token
+
     async def test_socket_record_del_drops_foreign_cache(self, manager, mock_redis):
         """A del notification drops a cached foreign record."""
         manager.token_to_socket["token1"] = SocketRecord(
@@ -826,6 +844,8 @@ async def test_redis_token_manager_restore_does_not_clobber_new_owner(
     assert await manager2._get_token_owner("token1", refresh=True) == (
         manager2.instance_id
     )
+    # The losing restore adopted the newer record locally.
+    assert manager1.token_to_socket["token1"].instance_id == manager2.instance_id
 
 
 @pytest.mark.usefixtures("redis_url")
