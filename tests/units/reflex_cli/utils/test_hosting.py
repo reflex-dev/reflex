@@ -2,18 +2,26 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+from pathlib import Path
+from typing import Any
 from unittest.mock import mock_open
 
 import click
 import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
+from reflex_cli import constants
 from reflex_cli.utils.exceptions import NotAuthenticatedError, TokenValidationError
 from reflex_cli.utils.hosting import (
+    UPLOAD_CHUNK_SIZE,
     AuthenticatedClient,
     ScaleParams,
     ScaleType,
     SecurityReviewError,
+    TokenSource,
+    _archive_chunks,
+    _UploadAbandonedError,
     authenticated_token,
     create_app,
     create_deployment,
@@ -24,6 +32,7 @@ from reflex_cli.utils.hosting import (
     get_auth_request_id,
     get_authenticated_client,
     get_existing_access_token,
+    get_existing_access_token_with_source,
     get_gcp_provider_status,
     get_security_review,
     get_selected_project,
@@ -39,6 +48,7 @@ from reflex_cli.utils.hosting import (
     set_app_full_deploy,
     set_app_provider,
     set_instance_bounds,
+    stored_access_token,
     submit_security_review,
     update_deployment_description,
     validate_token,
@@ -67,53 +77,233 @@ def test_get_existing_access_token(
     assert get_existing_access_token() == ""
 
 
+def test_get_existing_access_token_prefers_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An exported token is an explicit choice; the config file is ambient state.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env_token")
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
+
+    assert get_existing_access_token_with_source() == (
+        "env_token",
+        TokenSource.ENVIRONMENT,
+    )
+
+
+def test_get_existing_access_token_falls_back_to_the_config_file(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Without the environment variable the stored token is used.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
+
+    assert get_existing_access_token_with_source() == (
+        "config_token",
+        TokenSource.CONFIG,
+    )
+
+
+def test_get_existing_access_token_ignores_an_empty_environment_variable(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An empty export is not a token and must not shadow the config file.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "")
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "config_token"}')
+
+    assert get_existing_access_token_with_source() == (
+        "config_token",
+        TokenSource.CONFIG,
+    )
+
+
+def test_get_existing_access_token_with_no_token_anywhere(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    mocker.patch("pathlib.Path.open", side_effect=FileNotFoundError("Test exception"))
+
+    assert get_existing_access_token_with_source() == ("", TokenSource.NONE)
+
+
 @pytest.mark.parametrize(
-    "file_exists, config_content",
+    "config_content, expected",
     [
-        (True, '{"access_token": "valid_token"}'),
-        (True, '{"another_key": "value"}'),
-        (False, ""),
+        ('{"access_token": "valid_token"}', {}),
+        ('{"access_token": "valid_token", "project": "p1"}', {"project": "p1"}),
+        ('{"another_key": "value"}', {"another_key": "value"}),
     ],
 )
-def test_delete_token_from_config(
-    mocker: MockerFixture,
-    file_exists: bool,
-    config_content: str,
-):
-    mocker.patch("pathlib.Path.exists", return_value=file_exists)
-    mock_os_remove = mocker.patch("pathlib.Path.unlink")
+def test_delete_token_from_config(config_content: str, expected: dict):
+    """Only the token is removed; everything else in the config survives.
 
-    mocked_open = mock_open(read_data=config_content)
-    mocker.patch("pathlib.Path.open", mocked_open)
-    mock_json_load = mocker.patch(
-        "json.load", return_value=json.loads(config_content or "{}")
-    )
-    mock_json_dump = mocker.patch("json.dump")
+    Args:
+        config_content: The starting contents of the config file.
+        expected: The config expected to remain afterwards.
+    """
+    constants.Hosting.HOSTING_JSON.write_text(config_content)
 
     delete_token_from_config()
 
-    if file_exists:
-        assert mocked_open.call_count == 2
-        mock_json_load.assert_called_once()
-        mock_json_dump.assert_called_once()
-        assert "access_token" not in mock_json_dump.call_args.args[0]
-        mock_os_remove.assert_called_once()
-    else:
-        mocked_open.assert_not_called()
-        mock_os_remove.assert_not_called()
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == expected
 
 
-def test_save_token_to_config(mocker: MockFixture):
-    mocker.patch("pathlib.Path.exists", return_value=False)
-    mock_makedirs = mocker.patch("pathlib.Path.mkdir")
+def test_delete_token_from_config_without_a_config_file():
+    """Deleting when no config exists is a no-op rather than an error."""
+    assert not constants.Hosting.HOSTING_JSON.exists()
+
+    delete_token_from_config()
+
+    assert not constants.Hosting.HOSTING_JSON.exists()
+
+
+def test_delete_token_from_config_keeps_the_config_when_the_write_fails(
+    mocker: MockerFixture,
+):
+    """A failed delete must leave the existing config readable, not truncated.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    original = '{"access_token": "good_token", "project": "p1"}'
+    constants.Hosting.HOSTING_JSON.write_text(original)
+    mocker.patch("json.dump", side_effect=OSError("disk full"))
+
+    delete_token_from_config()
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == original
+    assert list(constants.Hosting.HOSTING_JSON.parent.iterdir()) == [
+        constants.Hosting.HOSTING_JSON
+    ]
+
+
+def test_delete_token_from_config_keeps_an_unreadable_config(
+    mocker: MockerFixture,
+):
+    """A config that cannot be parsed is left alone rather than replaced.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    malformed = '{"access_token": "good_token", "project": "p1"'
+    constants.Hosting.HOSTING_JSON.write_text(malformed)
+
+    delete_token_from_config()
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == malformed
+
+
+def test_save_token_to_config_recovers_from_an_unreadable_config():
+    """Re-authenticating still works when the config is malformed."""
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "good_token"')
+
+    save_token_to_config("new_token")
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "new_token"
+    }
+
+
+def test_stored_access_token_distinguishes_absent_from_unreadable():
+    """A missing config reads as no token; a malformed one is an error."""
+    assert stored_access_token() == ""
+
+    constants.Hosting.HOSTING_JSON.write_text('{"project": "p1"}')
+    assert stored_access_token() == ""
+
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "tok"}')
+    assert stored_access_token() == "tok"
+
+    constants.Hosting.HOSTING_JSON.write_text("{not json")
+    with pytest.raises(ValueError):
+        stored_access_token()
+
+    # Valid JSON that is not an object is still unusable, not empty.
+    constants.Hosting.HOSTING_JSON.write_text('["not", "an", "object"]')
+    with pytest.raises(ValueError):
+        stored_access_token()
+
+
+def test_delete_token_from_config_tolerates_an_unremovable_legacy_file(
+    mocker: MockerFixture,
+):
+    """The legacy cleanup must not abort the token removal it follows.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "valid_token"}')
+    constants.Hosting.HOSTING_JSON_V0.write_text("{}")
+    mocker.patch("pathlib.Path.unlink", side_effect=PermissionError("denied"))
+
+    delete_token_from_config()
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {}
+
+
+def test_delete_token_from_config_removes_the_legacy_file():
+    """The pre-v1 hosting file is removed alongside the token."""
+    constants.Hosting.HOSTING_JSON.write_text('{"access_token": "valid_token"}')
+    constants.Hosting.HOSTING_JSON_V0.write_text("{}")
+
+    delete_token_from_config()
+
+    assert not constants.Hosting.HOSTING_JSON_V0.exists()
+
+
+def test_save_token_to_config_creates_the_config():
+    """Saving works when neither the directory nor the file exists yet."""
     save_token_to_config("test_token")
-    mock_makedirs.assert_called_once()
 
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mock_json_dump = mocker.patch("json.dump")
-    mocker.patch("pathlib.Path.open", mock_open())
-    save_token_to_config("test_token")
-    mock_json_dump.assert_called_once()
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "test_token"
+    }
+
+
+def test_save_token_to_config_preserves_other_keys():
+    """Saving a token leaves unrelated config entries untouched."""
+    constants.Hosting.HOSTING_JSON.write_text(
+        '{"access_token": "old_token", "project": "p1"}'
+    )
+
+    save_token_to_config("new_token")
+
+    assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+        "access_token": "new_token",
+        "project": "p1",
+    }
+
+
+def test_save_token_to_config_keeps_the_old_token_when_the_write_fails(
+    mocker: MockerFixture,
+):
+    """A failed write must not truncate the credentials already on disk.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    original = '{"access_token": "good_token", "project": "p1"}'
+    constants.Hosting.HOSTING_JSON.write_text(original)
+    mocker.patch("json.dump", side_effect=OSError("disk full"))
+
+    save_token_to_config("new_token")
+
+    assert constants.Hosting.HOSTING_JSON.read_text() == original
+    # The temporary file used for the atomic replace is cleaned up.
+    assert list(constants.Hosting.HOSTING_JSON.parent.iterdir()) == [
+        constants.Hosting.HOSTING_JSON
+    ]
 
 
 def test_authenticated_token_found_and_valid(mocker: MockFixture):
@@ -292,10 +482,14 @@ def test_submit_security_review_uploads_then_submits(mocker: MockerFixture):
         "content_length": len(b"zip-bytes"),
         "content_type": "application/zip",
     }
-    # Bytes PUT straight to storage with the returned headers, no auth header.
+    # Bytes PUT straight to storage with the returned headers, no auth header,
+    # carrying the exact length the signature pins.
     assert mock_put.call_args.args[0] == "https://bucket.s3/abc?sig=1"
     assert mock_put.call_args.kwargs["content"] == b"zip-bytes"
-    assert mock_put.call_args.kwargs["headers"] == {"Content-Type": "application/zip"}
+    assert mock_put.call_args.kwargs["headers"] == {
+        "Content-Type": "application/zip",
+        "Content-Length": str(len(b"zip-bytes")),
+    }
     assert "X-API-TOKEN" not in mock_put.call_args.kwargs["headers"]
     # Job submitted by key, not by raw bytes.
     assert (
@@ -687,58 +881,371 @@ def test_create_app_omits_provider_when_none(mocker: MockerFixture):
     assert "provider" not in mock_post.call_args.kwargs["json"]
 
 
-def test_create_deployment_forwards_description(mocker: MockerFixture):
-    """A per-deployment note is sent as the multipart description field."""
-    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+def _reservation(deployment_id: str, suffix: str = "") -> dict[str, Any]:
+    """Build a ``/deployments/reserve`` response body.
+
+    Args:
+        deployment_id: The id the reservation minted.
+        suffix: Appended to both signed URLs, to tell one reservation's targets
+            from another's within a test.
+
+    Returns:
+        The response body the reserve endpoint would return.
+    """
+    return {
+        "deployment_id": deployment_id,
+        "backend": {
+            "url": f"https://storage.invalid/backend{suffix}",
+            "headers": {"Content-Type": "application/zip"},
+        },
+        "frontend": {
+            "url": f"https://storage.invalid/frontend{suffix}",
+            "headers": {"Content-Type": "application/zip"},
+        },
+        "expires_in": 1800,
+    }
+
+
+def _put_response(mocker: MockerFixture, status_code: int):
+    """Build a mock storage response for a signed archive PUT.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        status_code: The status the storage service answered with.
+
+    Returns:
+        A mock response, raising on ``raise_for_status`` when it is a refusal.
+    """
+    response = mocker.Mock()
+    response.status_code = status_code
+    if status_code >= 400:
+        response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "refused", request=mocker.Mock(), response=response
+        )
+    else:
+        response.raise_for_status.return_value = None
+    return response
+
+
+@pytest.fixture
+def zip_dir(tmp_path: Path) -> Path:
+    """A directory holding a build's two archives.
+
+    Args:
+        tmp_path: The pytest temporary directory.
+
+    Returns:
+        The directory, with ``backend.zip`` and ``frontend.zip`` written.
+    """
+    (tmp_path / "backend.zip").write_bytes(b"backend archive " * 300)
+    (tmp_path / "frontend.zip").write_bytes(b"frontend archive " * 5000)
+    return tmp_path
+
+
+def _deploy(zip_dir: Path, app_id: str | None = "app-1", **kwargs: Any) -> str:
+    """Run ``create_deployment`` over ``zip_dir`` with the boilerplate filled in.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        app_id: The app to deploy, or None to leave the CLI without one.
+        **kwargs: Overrides for any other ``create_deployment`` argument.
+
+    Returns:
+        Whatever ``create_deployment`` returned.
+    """
+    return create_deployment(**{
+        "zip_dir": zip_dir,
+        "client": _CLIENT,
+        "app_name": "n",
+        "project_id": None,
+        "regions": None,
+        "hostname": None,
+        "vmtype": None,
+        "secrets": None,
+        "packages": None,
+        "strategy": None,
+        "app_id": app_id,
+        **kwargs,
+    })
+
+
+def _capturing_put(
+    mocker: MockerFixture, uploaded: dict[str, bytes], expired: str = ""
+) -> Any:
+    """A stand-in for httpx.put that drains the streamed body it is handed.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        uploaded: Filled in with each URL's uploaded bytes.
+        expired: URLs *not* containing this marker answer 403, the way a
+            presigned URL past its window does. Empty means every URL works.
+
+    Returns:
+        A side effect for a patched ``httpx.put``.
+    """
+
+    def put(url: str, **kwargs: Any):
+        body = b"".join(kwargs["content"])
+        if expired and expired not in url:
+            return _put_response(mocker, 403)
+        uploaded[url] = body
+        return _put_response(mocker, 200)
+
+    return put
+
+
+@pytest.fixture
+def deploy_env(mocker: MockerFixture):
+    """Pin the version strings ``create_deployment`` stamps onto a submission.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
     mocker.patch("importlib.metadata.version", return_value="0.1.99")
     mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
-    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
-    from pathlib import Path
 
-    create_deployment(
-        zip_dir=Path("/tmp"),
-        client=_CLIENT,
-        app_name="n",
-        project_id=None,
-        regions=None,
-        hostname=None,
-        vmtype=None,
-        secrets=None,
-        packages=None,
-        strategy=None,
-        app_id="app-1",
-        description="my note",
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_forwards_description(mocker: MockerFixture, zip_dir: Path):
+    """A per-deployment note is sent as the submit description field."""
+    mock_post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
     )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}))
+
+    _deploy(zip_dir, description="my note")
+
     assert mock_post.call_args.kwargs["data"]["description"] == "my note"
 
 
+@pytest.mark.usefixtures("deploy_env")
 @pytest.mark.parametrize("vmtype", ["c2m2", None])
-def test_create_deployment_forwards_vmtype(mocker: MockerFixture, vmtype: str | None):
+def test_create_deployment_forwards_vmtype(
+    mocker: MockerFixture, zip_dir: Path, vmtype: str | None
+):
     """A requested VM type reaches the submit body; nothing is sent otherwise."""
-    mock_post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
-    mocker.patch("importlib.metadata.version", return_value="0.1.99")
-    mocker.patch("reflex_cli.utils.dependency.get_reflex_version", return_value="1.0")
-    mocker.patch("pathlib.Path.open", mock_open(read_data=b"zip"))
-    from pathlib import Path
-
-    create_deployment(
-        zip_dir=Path("/tmp"),
-        client=_CLIENT,
-        app_name="n",
-        project_id=None,
-        regions=None,
-        hostname=None,
-        vmtype=vmtype,
-        secrets=None,
-        packages=None,
-        strategy=None,
-        app_id="app-1",
+    mock_post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
     )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}))
+
+    _deploy(zip_dir, vmtype=vmtype)
+
     data = mock_post.call_args.kwargs["data"]
     if vmtype is None:
         assert "vm_type" not in data
     else:
         assert data["vm_type"] == vmtype
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_uploads_archives_directly(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """The archives go straight to storage and only their id is submitted."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, "dep-1"),
+        ],
+    )
+    uploaded: dict[str, bytes] = {}
+    put = mocker.patch("httpx.put", side_effect=_capturing_put(mocker, uploaded))
+
+    assert _deploy(zip_dir) == "dep-1"
+
+    reserve = post.call_args_list[0]
+    assert reserve.args[0].endswith("/api/v1/deployments/reserve")
+    assert reserve.kwargs["json"] == {
+        "app_id": "app-1",
+        "backend_size": (zip_dir / "backend.zip").stat().st_size,
+        "frontend_size": (zip_dir / "frontend.zip").stat().st_size,
+    }
+
+    # Every byte, and only those bytes: the size is signed into the URL, so a
+    # body that does not match it exactly is a signature the store will refuse.
+    assert uploaded == {
+        "https://storage.invalid/backend": (zip_dir / "backend.zip").read_bytes(),
+        "https://storage.invalid/frontend": (zip_dir / "frontend.zip").read_bytes(),
+    }
+    for call in put.call_args_list:
+        name = call.args[0].rsplit("/", 1)[-1] + ".zip"
+        assert call.kwargs["headers"] == {
+            "Content-Type": "application/zip",
+            "Content-Length": str((zip_dir / name).stat().st_size),
+        }
+
+    submit = post.call_args_list[1]
+    assert submit.args[0].endswith("/api/v1/deployments")
+    assert submit.kwargs["data"]["stored_build_id"] == "dep-1"
+    assert submit.kwargs["files"] is None
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_reserves_again_when_the_window_expires(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A lapsed signature is recovered by reserving, and re-uploading both."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, _reservation("dep-2", suffix="-retry")),
+            _ok_body(mocker, "dep-2"),
+        ],
+    )
+    uploaded: dict[str, bytes] = {}
+    mocker.patch(
+        "httpx.put", side_effect=_capturing_put(mocker, uploaded, expired="-retry")
+    )
+
+    assert _deploy(zip_dir) == "dep-2"
+
+    # The second reservation minted a new id naming a new prefix, so both
+    # archives went up under it -- not just the one whose PUT expired.
+    assert set(uploaded) == {
+        "https://storage.invalid/backend-retry",
+        "https://storage.invalid/frontend-retry",
+    }
+    assert post.call_args_list[2].kwargs["data"]["stored_build_id"] == "dep-2"
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_gives_up_after_one_more_window(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """Past two signed windows the link is the problem, and the user is told."""
+    post = mocker.patch(
+        "httpx.post",
+        side_effect=[
+            _ok_body(mocker, _reservation("dep-1")),
+            _ok_body(mocker, _reservation("dep-2", suffix="-retry")),
+        ],
+    )
+    mocker.patch("httpx.put", side_effect=_capturing_put(mocker, {}, expired="never"))
+
+    result = _deploy(zip_dir)
+
+    assert "deployment failed" in result
+    assert "too slow" in result
+    # Two reservations and no submission: nothing was ever in the bucket.
+    assert post.call_count == 2
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_relays_when_the_control_plane_cannot_reserve(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A 404 is the route being absent, so the archives are relayed instead."""
+    missing = mocker.Mock()
+    missing.status_code = 404
+    post = mocker.patch("httpx.post", side_effect=[missing, _ok_body(mocker, "dep-1")])
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir) == "dep-1"
+
+    put.assert_not_called()
+    submit = post.call_args_list[1]
+    assert "stored_build_id" not in submit.kwargs["data"]
+    assert [name for _, (name, _) in submit.kwargs["files"]] == [
+        "backend.zip",
+        "frontend.zip",
+    ]
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_relays_without_an_app_id(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """With no app id there is nothing to reserve against, so nothing is."""
+    post = mocker.patch("httpx.post", return_value=_ok_body(mocker, "dep-1"))
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir, app_id=None) == "dep-1"
+
+    put.assert_not_called()
+    post.assert_called_once()
+    assert post.call_args.kwargs["files"] is not None
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_surfaces_a_refused_reservation(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """What the control plane said about the refusal is what the user reads."""
+    detail = "backend.zip is 0 bytes; an archive must be between 1 byte and 5 GiB"
+    post = mocker.patch("httpx.post", return_value=_error(mocker, 400, detail))
+    put = mocker.patch("httpx.put")
+
+    assert _deploy(zip_dir) == f"deployment failed: {detail}"
+
+    put.assert_not_called()
+    post.assert_called_once()
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_create_deployment_surfaces_an_unreachable_control_plane(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """A reserve that never gets an answer is reported, not raised at the user."""
+    mocker.patch("httpx.post", side_effect=httpx.ConnectError("no route to host"))
+    put = mocker.patch("httpx.put")
+
+    result = _deploy(zip_dir)
+
+    assert result.startswith(
+        "deployment failed: could not reach the deployment service"
+    )
+    put.assert_not_called()
+
+
+def test_archive_chunks_stop_once_the_other_upload_failed(tmp_path: Path):
+    """The stream ends at the next chunk boundary, not at the end of the file."""
+    archive = tmp_path / "frontend.zip"
+    archive.write_bytes(b"f" * (4 * UPLOAD_CHUNK_SIZE))
+    abandoned = threading.Event()
+
+    chunks = _archive_chunks(archive, lambda _n: None, abandoned)
+    first = next(chunks)
+    abandoned.set()
+    with pytest.raises(_UploadAbandonedError):
+        next(chunks)
+
+    # One chunk off disk, not the other three: the point of abandoning is the
+    # bytes that never go up.
+    assert len(first) == UPLOAD_CHUNK_SIZE
+
+
+@pytest.mark.usefixtures("deploy_env")
+def test_an_abandoned_archive_does_not_mask_the_real_failure(
+    mocker: MockerFixture, zip_dir: Path
+):
+    """The archive that actually failed is the one whose error reaches the user."""
+    mocker.patch("httpx.post", return_value=_ok_body(mocker, _reservation("dep-1")))
+
+    def put(url: str, **kwargs: Any):
+        if "backend" in url:
+            return _put_response(mocker, 500)
+        # What the frontend's stream does once the backend has set the flag.
+        # Raised here rather than raced into, so the assertion below does not
+        # depend on which thread the scheduler runs first.
+        raise _UploadAbandonedError
+
+    mocker.patch("httpx.put", side_effect=put)
+
+    assert (
+        _deploy(zip_dir)
+        == "deployment failed: could not upload the build to storage: HTTP 500"
+    )
 
 
 def test_get_app_history_includes_description_and_can_rollback(mocker: MockerFixture):
