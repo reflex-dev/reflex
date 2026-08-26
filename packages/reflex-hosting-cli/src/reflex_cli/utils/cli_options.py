@@ -1,13 +1,14 @@
-"""Shared click options for the reflex CLIs."""
+"""Shared click options for the hosting CLI commands."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import click
+from reflex_base.utils import log
 
-from reflex_base import constants
-from reflex_base.utils import console, log
+from reflex_cli import constants
+from reflex_cli.utils import console
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,8 +23,7 @@ def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
         value: The log level to set.
     """
     if value is not None:
-        loglevel = constants.LogLevel.from_string(value)
-        console.set_log_level(loglevel)
+        console.set_log_level(value)
 
 
 loglevel_option = click.option(

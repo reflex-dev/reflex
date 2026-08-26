@@ -42,7 +42,7 @@ def test_hosting_cli_deploy_imports_without_the_framework():
     """The deploy module imports with the reflex framework unavailable.
 
     `reflex` is deliberately not a dependency of reflex-hosting-cli, so anything
-    the module needs at import time must come from reflex_base instead.
+    the module needs at import time must come from the hosting CLI itself.
     """
     probe = """
 import sys
@@ -67,6 +67,12 @@ def test_deploy_flag_surface_unchanged():
         param.name for param in deploy.params if param.expose_value and param.name
     }
     assert param_names == EXPECTED_DEPLOY_PARAMS
+
+
+def test_deploy_keeps_log_options():
+    """The shared logging flags stay on the command after the cli_options move."""
+    option_names = {opt for param in deploy.params for opt in param.opts}
+    assert {"--loglevel", "--log-level", "--json"} <= option_names
 
 
 def test_deploy_help():

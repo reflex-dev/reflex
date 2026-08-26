@@ -3811,7 +3811,6 @@ dev = [
 name = "reflex-base"
 source = { editable = "packages/reflex-base" }
 dependencies = [
-    { name = "click" },
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "rich" },
@@ -3825,7 +3824,6 @@ pydantic = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = ">=8.2" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },

@@ -15,10 +15,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import click
-from reflex_base import constants
-from reflex_base.config import get_config
-from reflex_base.environment import environment
-from reflex_base.utils.cli_options import log_options
+
+from reflex_cli.utils.cli_options import log_options
 
 
 @click.command(name="deploy")
@@ -163,6 +161,9 @@ def deploy(
     ssr: bool = True,
 ):
     """Deploy the app to the Reflex hosting service."""
+    from reflex import constants
+    from reflex.config import get_config
+    from reflex.environment import environment
     from reflex.reflex import _init
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites

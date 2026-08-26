@@ -12,9 +12,9 @@ from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log
-from reflex_base.utils.cli_options import log_options
 
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.utils.cli_options import log_options
 
 logger = logging.getLogger(__name__)
 
