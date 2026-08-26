@@ -1456,3 +1456,58 @@ def test_a_non_string_excerpt_is_ignored(
 
     assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
     assert "the end of the build log" not in capsys.readouterr().out
+
+
+def test_an_unreadable_log_is_reported_rather_than_passed_over(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A log the server could not read is not a build that produced none.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt=None,
+            build_log_unreadable=True,
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    warnings = " ".join(_log_messages(caplog, logging.WARNING))
+    assert "could not be read" in warnings
+    assert "reflex cloud apps build-logs dep-1" in warnings
+
+
+def test_a_build_that_stored_no_log_says_nothing_extra(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Absence is not an outage, and must not be reported as one.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt=None,
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "could not be read" not in " ".join(_log_messages(caplog, logging.WARNING))

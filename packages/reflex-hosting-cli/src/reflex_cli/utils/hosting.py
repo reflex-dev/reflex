@@ -2892,6 +2892,13 @@ def _report_deployment_failure(
     # self-hosted ones, so a non-string here would raise in the sanitiser and
     # take down a report that had already read fine.
     if not excerpt or not isinstance(excerpt, str):
+        # A log the server holds but could not read is not a build that
+        # produced none, and saying nothing here reads as the latter.
+        if report.get("build_log_unreadable"):
+            logger.warning(
+                "the build log could not be read right now; try again with:\n"
+                f" reflex cloud apps build-logs {deployment_id}"
+            )
         return
     # Raw build output: paths, versions and tracebacks, all of which rich would
     # read as markup given the chance, plus whatever escape sequences the
