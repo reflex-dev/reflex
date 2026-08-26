@@ -2772,6 +2772,89 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
     return response.json()
 
 
+def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
+    """Why a deployment failed, in fields, or None when that cannot be had.
+
+    None covers every way of not getting an answer, and they are one case to
+    the caller: a control plane predating this endpoint 404s, an older
+    self-hosted one may not route it at all, and the network may simply be
+    down. All three mean the same thing here -- report the failure the way the
+    CLI always has, from the status string.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+
+    Returns:
+        The failure report, or None if it could not be read.
+
+    """
+    import httpx
+
+    try:
+        response = httpx.get(
+            urljoin(
+                constants.Hosting.HOSTING_SERVICE,
+                f"/api/v1/deployments/{deployment_id}/failure",
+            ),
+            headers=authorization_header(token),
+            timeout=constants.Hosting.TIMEOUT,
+        )
+        response.raise_for_status()
+        report = response.json()
+    except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError):
+        return None
+    return report if isinstance(report, dict) else None
+
+
+def _report_deployment_failure(
+    deployment_id: str,
+    token: str,
+    status: str,
+    *,
+    offer_build_logs: bool,
+) -> None:
+    """Tell the user why their deploy failed and what to do about it.
+
+    The build log is offered only where the control plane says it is the
+    answer. A failure in our pipeline reported as a build failure sends
+    somebody hunting for a bug in an app that does not have one, which is the
+    more expensive of the two mistakes and the reason the fault is asked about
+    at all.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+        status: The status string the watch loop ended on.
+        offer_build_logs: Whether to point at the build log when no structured
+            report can be read, preserving what this arm printed before.
+
+    """
+    report = _get_deployment_failure(deployment_id, token)
+    if report is None:
+        logger.warning(status)
+        if offer_build_logs:
+            logger.warning(
+                f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+
+    logger.error(report.get("reason") or status)
+    if guidance := report.get("guidance"):
+        logger.warning(guidance)
+
+    excerpt = report.get("build_log_excerpt")
+    if not excerpt:
+        return
+    # Raw build output: paths, versions and tracebacks, all of which rich would
+    # read as markup given the chance.
+    console.print("\nthe end of the build log:")
+    console.print(excerpt, markup=False)
+    console.print(
+        f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
+    )
+
+
 def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
     """Continuously watch the status of a specific deployment.
 
@@ -2805,16 +2888,19 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 )
                 break
             if "build error" in status:
-                logger.warning(status)
-                logger.warning(
-                    f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=True
                 )
                 return False
             if "unable to find status for given id" in status:
+                # Not a failed deployment but an id that resolves to nothing,
+                # so there is no row to report on and nothing to ask for.
                 logger.error(status)
                 return False
             if "error" in status:
-                logger.warning(status)
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=False
+                )
                 return False
             if "bad response" in status:
                 logger.warning(status)
