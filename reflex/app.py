@@ -741,7 +741,6 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             ValueError: If the app has not been initialized.
         """
-        from reflex_base.components.memo import clear_hash_caches
         from reflex_base.vars.base import GLOBAL_CACHE
 
         from reflex.assets import remove_stale_external_asset_symlinks
@@ -777,9 +776,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # We will not be making more vars, so we can clear the global cache to free up memory.
         GLOBAL_CACHE.clear()
-        # Auto-memoization named every wrapper it is going to name during the
-        # compile above, so its encoding caches are dead weight from here.
-        clear_hash_caches()
 
         if not self._api:
             msg = "The app has not been initialized."
@@ -1654,32 +1650,43 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.components.memo import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
-            try:
-                did_real_compile = compiler.compile_app(
+        ctx = TelemetryContext.start(trigger=trigger)
+        try:
+            if ctx is None:
+                compiler.compile_app(
                     self,
                     prerender_routes=prerender_routes,
                     dry_run=dry_run,
                     use_rich=use_rich,
                 )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
-            finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                return
+
+            with ctx:
+                did_real_compile = False
+                try:
+                    did_real_compile = compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                except Exception as exc:
+                    ctx.set_exception(exc)
+                    did_real_compile = True
+                    raise
+                finally:
+                    if did_real_compile:
+                        telemetry_accounting.record_compile(self, ctx)
+        finally:
+            # Auto-memoization named every wrapper it will ever name during the
+            # compile, so its encoding caches are dead weight from here. This is
+            # the single funnel every compile goes through -- the CLI and export
+            # paths reach it via ``get_compiled_app`` and never touch
+            # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+            # from leaving them behind.
+            clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
