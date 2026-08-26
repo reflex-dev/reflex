@@ -72,7 +72,7 @@ class RegistrationContext(BaseContext):
 
     @property
     def app(self) -> App:
-        """Get the App instance associated with this context.
+        """The App instance associated with this context.
 
         Returns:
             The App instance.
@@ -87,7 +87,7 @@ class RegistrationContext(BaseContext):
 
     @property
     def config(self) -> Config:
-        """Get the Config associated with this context.
+        """The Config associated with this context.
 
         Returns:
             The Config instance.
