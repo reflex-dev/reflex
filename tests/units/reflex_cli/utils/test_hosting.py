@@ -20,6 +20,7 @@ from reflex_cli.utils.hosting import (
     SecurityReviewError,
     _archive_chunks,
     _report_deployment_failure,
+    _strip_terminal_controls,
     _UploadAbandonedError,
     authenticated_token,
     create_app,
@@ -1180,7 +1181,15 @@ def _log_messages(caplog: pytest.LogCaptureFixture, level: int) -> list[str]:
 
 
 def _failure_report(mocker: MockerFixture, **fields: object):
-    """A mock 2xx /failure response carrying the given report fields."""
+    """A mock 2xx /failure response carrying the given report fields.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        **fields: Failure-report fields to override on the default report.
+
+    Returns:
+        A mocked successful HTTP response containing the failure report.
+    """
     report = {
         "status": "Failed",
         "code": None,
@@ -1313,3 +1322,68 @@ def test_failure_report_falls_back_to_the_status_when_no_reason_was_recorded(
     )
 
     assert "deployment error" in _log_messages(caplog, logging.ERROR)
+
+
+@pytest.mark.parametrize(
+    "hostile, banned",
+    [
+        # OSC 52: writes the reader's clipboard.
+        ("\x1b]52;c;bWFsaWNpb3Vz\x07error: build failed", "\x1b]52"),
+        # OSC 8: renders as one destination and links to another.
+        ("\x1b]8;;https://evil.example\x07docs\x1b]8;;\x07", "\x1b]8"),
+        # CSI: erases the lines above it, hiding what really happened.
+        ("done\x1b[2J\x1b[1;1Hbuild succeeded", "\x1b["),
+        # A carriage return overwrites the line in place.
+        ("real error\rbuild succeeded", "\r"),
+    ],
+)
+def test_a_build_log_cannot_drive_the_terminal(hostile: str, banned: str):
+    """Build output is the app's own dependencies, printed without being asked for.
+
+    Args:
+        hostile: Build output carrying a terminal control sequence.
+        banned: The sequence that must not survive.
+    """
+    cleaned = _strip_terminal_controls(hostile)
+
+    assert banned not in cleaned
+    assert "\x1b" not in cleaned
+
+
+def test_stripping_keeps_the_text_worth_reading():
+    """Colour is dropped; the words, newlines and tabs that carry the answer stay."""
+    log = "\x1b[31mERROR\x1b[0m: no matching distribution\n\tfor pandas==9.9\n"
+
+    assert (
+        _strip_terminal_controls(log)
+        == "ERROR: no matching distribution\n\tfor pandas==9.9\n"
+    )
+
+
+def test_the_printed_excerpt_is_stripped(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """The sanitiser is actually on the path the excerpt takes to the terminal.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt="\x1b]52;c;cHduZWQ=\x07ERROR: \x1b[31mno such package\x1b[0m",
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    printed = capsys.readouterr().out
+    assert "ERROR: no such package" in printed
+    assert "\x1b" not in printed

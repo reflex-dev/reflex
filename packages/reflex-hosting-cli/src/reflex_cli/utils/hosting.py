@@ -2772,6 +2772,41 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
     return response.json()
 
 
+# Terminal control sequences, which a build log is not entitled to emit into
+# somebody's terminal. Ordered so a full sequence is consumed before the bare
+# ESC that starts it: OSC first (it runs until its own terminator and is the
+# one that writes the clipboard and forges hyperlinks), then CSI, then the
+# two-character escapes, then anything left over.
+_TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
+    r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
+    r"|\x1b[@-Z\\-_]"  # two-character escapes
+    r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """*text* with terminal control sequences removed.
+
+    A build log is the output of building the user's own app, dependencies
+    included, and this excerpt is printed without anyone asking for it -- on
+    any failed deploy, rather than only when `reflex cloud apps build-logs` is
+    run. Colour is not worth carrying for that: the same sequences let the
+    output erase the lines above it, forge a hyperlink, or write the
+    clipboard, and none of that should be reachable from a dependency's build
+    script. `markup=False` stops rich reading the text as its own markup and
+    does nothing about escape sequences.
+
+    Args:
+        text: The text to strip.
+
+    Returns:
+        The text with terminal control sequences removed.
+
+    """
+    return _TERMINAL_CONTROL_RE.sub("", text)
+
+
 def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
     """Why a deployment failed, in fields, or None when that cannot be had.
 
@@ -2847,9 +2882,10 @@ def _report_deployment_failure(
     if not excerpt:
         return
     # Raw build output: paths, versions and tracebacks, all of which rich would
-    # read as markup given the chance.
+    # read as markup given the chance, plus whatever escape sequences the
+    # build printed.
     console.print("\nthe end of the build log:")
-    console.print(excerpt, markup=False)
+    console.print(_strip_terminal_controls(excerpt), markup=False)
     console.print(
         f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
     )
