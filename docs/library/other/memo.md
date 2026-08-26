@@ -72,8 +72,9 @@ Binding state to a prop at the call site does not pull the state into the page.
 The compiler moves that call into a generated wrapper component that holds the
 state hooks the prop needs, so the page itself keeps no dependency on the state.
 When the state changes, the wrapper re-renders and React's `memo` stops there
-unless the prop's value actually changed — the rest of the page never re-renders
-at all.
+unless the prop's value actually changed. The page function itself never re-runs,
+so nothing in it re-renders except the components that read the changed state
+themselves — each inside its own wrapper, the `rx.input` above included.
 
 That makes the call site the place to punch a single dependency through to an
 expensive component: pass exactly the Vars it needs, and it re-renders for those
