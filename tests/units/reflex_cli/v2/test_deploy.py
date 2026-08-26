@@ -1,5 +1,7 @@
 """Tests for the `reflex deploy` command hosted in reflex_cli.v2.deploy."""
 
+import ast
+import inspect
 import subprocess
 import sys
 
@@ -73,6 +75,30 @@ def test_deploy_keeps_log_options():
     """The shared logging flags stay on the command after the cli_options move."""
     option_names = {opt for param in deploy.params for opt in param.opts}
     assert {"--loglevel", "--log-level", "--json"} <= option_names
+
+
+def test_deploy_uses_only_the_supported_framework_interface():
+    """The command imports the framework only through `reflex.hosting`.
+
+    That module is the interface reflex explicitly supports for the hosting
+    CLI; anything else is a reflex internal that may change without notice.
+    """
+    import reflex_cli.v2.deploy as deploy_module
+
+    tree = ast.parse(inspect.getsource(deploy_module))
+    framework_imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if module == "reflex" or module.startswith("reflex."):
+                framework_imports.add(module)
+        elif isinstance(node, ast.Import):
+            framework_imports.update(
+                alias.name
+                for alias in node.names
+                if alias.name == "reflex" or alias.name.startswith("reflex.")
+            )
+    assert framework_imports == {"reflex.hosting"}
 
 
 def test_deploy_help():

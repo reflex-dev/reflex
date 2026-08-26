@@ -4,10 +4,11 @@ This module hosts the managed-platform deploy command. The `reflex` CLI imports
 it and registers it as `reflex deploy`.
 
 The command body needs the reflex framework to compile and export the app, but
-`reflex` is deliberately not a dependency of reflex-hosting-cli. Those imports
-therefore stay inside the command body, which only ever runs under the reflex
-CLI. Nothing at module scope may import `reflex`, so that this package stays
-importable on its own.
+`reflex` is deliberately not a dependency of reflex-hosting-cli. Everything it
+needs from the framework comes through `reflex.hosting`, the interface reflex
+supports for this package, imported inside the command body, which only ever
+runs under the reflex CLI. Nothing at module scope may import `reflex`, so
+that this package stays importable on its own.
 """
 
 from __future__ import annotations
@@ -161,57 +162,35 @@ def deploy(
     ssr: bool = True,
 ):
     """Deploy the app to the Reflex hosting service."""
-    from reflex import constants
-    from reflex.config import get_config
-    from reflex.environment import environment
-    from reflex.reflex import _init
-    from reflex.utils import export as export_utils
-    from reflex.utils import prerequisites
+    from reflex.hosting import export_for_deploy, prepare_deploy
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.v2.deployments import check_version
 
-    config = get_config()
-
-    app_name = app_name or config.app_name
-
     check_version()
-
-    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
-
-    if not environment.REFLEX_SSR.is_set():
-        environment.REFLEX_SSR.set(ssr)
-    elif environment.REFLEX_SSR.get() != ssr:
-        ssr = environment.REFLEX_SSR.get()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
     if interactive:
         dependency.check_requirements()
 
-    prerequisites.assert_in_reflex_dir()
-
-    # Check if we are set up.
-    if prerequisites.needs_reinit():
-        _init(name=config.app_name)
-    prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
+    prep = prepare_deploy(ssr=ssr)
 
     hosting_cli.deploy(
-        app_name=app_name,
+        app_name=app_name or prep.app_name,
         app_id=app_id,
         export_fn=(
             lambda zip_dest_dir, api_url, deploy_url, frontend, backend, upload_db, zipping: (
-                export_utils.export(
+                export_for_deploy(
                     zip_dest_dir=zip_dest_dir,
                     api_url=api_url,
                     deploy_url=deploy_url,
                     frontend=frontend,
                     backend=backend,
-                    zipping=zipping,
-                    loglevel=config.loglevel.subprocess_level(),
                     upload_db_file=upload_db,
+                    zipping=zipping,
                     backend_excluded_dirs=backend_excluded_dirs,
-                    prerender_routes=ssr,
+                    prerender_routes=prep.ssr,
                 )
             )
         ),
@@ -223,7 +202,7 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=config.loglevel,
+        loglevel=prep.loglevel,
         token=token,
         project=project,
         project_name=project_name,

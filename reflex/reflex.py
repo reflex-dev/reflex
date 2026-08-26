@@ -662,11 +662,9 @@ def export(
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+    from reflex.utils.exec import arbitrate_ssr
 
-    if not environment.REFLEX_SSR.is_set():
-        environment.REFLEX_SSR.set(ssr)
-    elif environment.REFLEX_SSR.get() != ssr:
-        ssr = environment.REFLEX_SSR.get()
+    ssr = arbitrate_ssr(ssr)
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
