@@ -418,6 +418,28 @@ def _stateful_page():
     )
 
 
+N_DUPLICATED_ROWS = 200
+
+
+def _duplicated_row(i: int):
+    return rx.hstack(
+        rx.text(BenchmarkState.counter),
+        rx.button(f"Row {i}", on_click=BenchmarkState.increment),
+    )
+
+
+def _duplicated_rows_page():
+    """A page of many identical stateful rows.
+
+    Every row yields the same auto-memoize tag, so this stresses the
+    compiler's memo-definition dedup path.
+
+    Returns:
+        The page component.
+    """
+    return rx.vstack(*[_duplicated_row(i) for i in range(N_DUPLICATED_ROWS)])
+
+
 @pytest.fixture(params=[_complicated_page, _stateful_page])
 def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
