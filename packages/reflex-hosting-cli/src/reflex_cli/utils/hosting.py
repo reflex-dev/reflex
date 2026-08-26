@@ -25,11 +25,10 @@ from typing import Any, TypedDict
 from urllib.parse import urljoin
 
 import click
-from reflex_base.utils import log
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, dependency, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
     ArchiveUploadError,
@@ -2145,7 +2144,7 @@ def upload_archives(
                     f"could not upload the build to storage: HTTP {ex.response.status_code}"
                 ) from ex
             if attempt < UPLOAD_ATTEMPTS - 1:
-                console.warn("the upload window expired; reserving another one")
+                logger.warning("the upload window expired; reserving another one")
         except httpx.HTTPError as ex:
             raise ArchiveUploadError(f"could not upload the build: {ex}") from ex
         else:
