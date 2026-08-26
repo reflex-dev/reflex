@@ -6,23 +6,12 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
 
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
-
-
-@pytest.fixture
-def mock_console(mocker: MockFixture):
-    """Fixture to mock console.print and console.error."""
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-    return mock_print, mock_error
 
 
 def test_get_vm_types_success(mocker: MockFixture):

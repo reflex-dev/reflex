@@ -7,11 +7,11 @@ from datetime import date, datetime
 from typing import Any, Literal, TypeVar
 
 from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.number import BooleanVar
 
 from .base import (
     CustomVarOperationReturn,
-    ImportVar,
     LiteralVar,
     Var,
     VarData,

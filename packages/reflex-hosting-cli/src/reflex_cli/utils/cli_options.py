@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import click
-from reflex_base.utils import log
 
-from reflex_cli import constants
+from reflex_cli.constants.base import LogLevel
 from reflex_cli.utils import console
 
 if TYPE_CHECKING:
@@ -31,7 +30,7 @@ loglevel_option = click.option(
     "--log-level",
     "loglevel",
     type=click.Choice(
-        [loglevel.value for loglevel in constants.LogLevel],
+        [loglevel.value for loglevel in LogLevel],
         case_sensitive=False,
     ),
     is_eager=True,
@@ -50,7 +49,13 @@ def set_log_json(ctx: click.Context, self: click.Parameter, value: bool):
         value: Whether --json was passed.
     """
     if value:
-        log.set_json_mode(True)
+        try:
+            from reflex_base.utils.log import set_json_mode
+        except ImportError:
+            # JSON records are a reflex-base feature; without it there is no
+            # pipeline to switch, matching reflex_cli.utils.log.is_json_mode.
+            return
+        set_json_mode(True)
 
 
 json_option = click.option(

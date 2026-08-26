@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn, cast
 
 import click
 from reflex_base import constants
@@ -887,10 +887,18 @@ else:
         import typer  # pyright: ignore[reportMissingImports]
 
         if isinstance(hosting_cli, typer.Typer):
-            hosting_cli = typer.main.get_command(hosting_cli)
+            # typer >=0.27 vendors click, so its commands are structurally but
+            # not nominally click commands.
+            hosting_cli_command = cast(
+                "click.Command", typer.main.get_command(hosting_cli)
+            )
+        else:
+            hosting_cli_command = hosting_cli
+    else:
+        hosting_cli_command = hosting_cli
 
     cli.add_command(deploy, name="deploy")
-    cli.add_command(hosting_cli, name="cloud")
+    cli.add_command(hosting_cli_command, name="cloud")
 
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")

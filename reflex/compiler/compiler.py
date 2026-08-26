@@ -10,7 +10,7 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants
 from reflex_base.components.component import (
@@ -214,6 +214,9 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
         The compiled context file.
     """
     default_color_mode = str(LiteralVar.create(_resolve_default_color_mode(theme)))
+    disable_react_owner_stacks = (
+        not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
+    )
 
     return (
         templates.context_template(
@@ -222,11 +225,13 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
     )
 
@@ -392,9 +397,13 @@ def _compile_root_stylesheet(
                 from sass import compile as sass_compile
 
                 target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
+                    # libsass is untyped; compiling from a filename returns the CSS.
+                    data=cast(
+                        "str",
+                        sass_compile(
+                            filename=str(stylesheet),
+                            output_style="compressed",
+                        ),
                     ),
                     encoding="utf8",
                 )

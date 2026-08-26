@@ -41,7 +41,7 @@ class NumberFieldBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the number field component."""
+        """The import variable for the number field component."""
         return ImportVar(tag="NumberField", package_path="", install=False)
 
 
