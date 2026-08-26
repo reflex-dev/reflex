@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import click
 from reflex_base import constants
@@ -1044,7 +1044,9 @@ if find_spec("typer") and find_spec("typer.main"):
     import typer  # pyright: ignore[reportMissingImports]
 
     if isinstance(hosting_cli, typer.Typer):
-        hosting_cli_command = typer.main.get_command(hosting_cli)
+        # typer >=0.27 vendors click, so its commands are structurally but not
+        # nominally click commands.
+        hosting_cli_command = cast("click.Command", typer.main.get_command(hosting_cli))
     else:
         hosting_cli_command = hosting_cli
 else:
