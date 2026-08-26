@@ -154,3 +154,45 @@ def test_inline_imported_helper_gains_locale_dependency():
 
     deps = InlineImportState.computed_vars["greeting"]._deps(objclass=InlineImportState)
     assert deps.get(I18nState.get_full_name()) == {"locale"}
+
+
+def test_combined_load_helper_gains_locale_dependency():
+    # Python 3.13+ fuses consecutive LOAD_FASTs; a helper passed as a value
+    # next to `self` (or any local) arrives in a combined opcode.
+    from reflex_i18n import gettext
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((gettext,), lambda: I18nState.locale)
+
+    class CombinedLoadState(rx.State):
+        tags: list[str] = []
+
+        @rx.var
+        def translated_tags(self) -> str:
+            from reflex_i18n import gettext as _
+
+            return ", ".join(map(_, self.tags))
+
+        @rx.var
+        def translated_first(self) -> str:
+            from reflex_i18n import gettext as _
+
+            items = self.tags
+            return next(map(_, items), "")
+
+    i18n_name = I18nState.get_full_name()
+    own_name = CombinedLoadState.get_full_name()
+
+    deps = CombinedLoadState.computed_vars["translated_tags"]._deps(
+        objclass=CombinedLoadState
+    )
+    assert deps.get(i18n_name) == {"locale"}
+    assert "tags" in deps[own_name]
+
+    # The helper fused with an untracked plain local (not `self`).
+    first_deps = CombinedLoadState.computed_vars["translated_first"]._deps(
+        objclass=CombinedLoadState
+    )
+    assert first_deps.get(i18n_name) == {"locale"}

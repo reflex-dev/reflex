@@ -13,7 +13,6 @@ try:
     from reflex_i18n import (
         I18nConfig,
         I18nPlugin,
-        LocaleRouting,
         PathPrefixRouting,
         currency,
         format_currency,
@@ -60,7 +59,6 @@ __all__ = [
     "I18nConfig",
     "I18nPlugin",
     "I18nState",
-    "LocaleRouting",
     "PathPrefixRouting",
     "currency",
     "format_currency",

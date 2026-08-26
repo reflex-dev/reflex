@@ -3,7 +3,11 @@
 import dataclasses
 
 from babel.messages.catalog import Catalog
-from reflex_i18n.catalog import compile_catalog_module, compile_index_module
+from reflex_i18n.catalog import (
+    compile_catalog_module,
+    compile_index_module,
+    default_plural_expr_js,
+)
 from reflex_i18n.config import I18nConfig
 from reflex_i18n.registry import MessageKey
 
@@ -94,3 +98,24 @@ def test_compile_catalog_skips_fuzzy_entries():
         catalog, [MessageKey("Hello")], "de", is_default_locale=False
     )
     assert "veraltet" not in module
+
+
+def test_compile_index_emits_default_plural_expr():
+    config = I18nConfig(locales=["en", "de"], default_locale="en")
+    module = compile_index_module(config, default_plural_expr="(n > 1)")
+    assert "export const defaultPlural = (n) => Number((n > 1));" in module
+
+
+def test_default_plural_expr_from_babel_table():
+    # No default catalog: the expression comes from Babel's CLDR table.
+    assert default_plural_expr_js(None, "fr") == "(n > 1)"
+    assert default_plural_expr_js(None, "en") == "(n != 1)"
+
+
+def test_default_plural_expr_prefers_catalog_header():
+    catalog = Catalog(locale="fr")
+    assert default_plural_expr_js(catalog, "fr") == "(n > 1)"
+
+
+def test_default_plural_expr_invalid_locale_falls_back():
+    assert default_plural_expr_js(None, "not a locale") == "n != 1"

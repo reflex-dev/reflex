@@ -76,3 +76,15 @@ def test_plugin_missing_catalog_file_still_emits_module(tmp_path: Path, monkeypa
     # de.js exists but is empty (falls back to source text at runtime).
     assert "i18n/de.js" in outputs
     assert "export const messages" in outputs["i18n/de.js"]
+
+
+def test_plugin_emits_default_plural_in_index(tmp_path: Path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    # French source locale without a catalog: the client fallback rule comes
+    # from Babel's CLDR table, not the English (n != 1) default.
+    plugin = I18nPlugin(locales=["fr", "en"], default_locale="fr")
+    outputs = dict(plugin._compile_catalogs())
+    assert (
+        "export const defaultPlural = (n) => Number((n > 1));"
+        in outputs["i18n/index.js"]
+    )

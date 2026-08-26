@@ -142,3 +142,42 @@ def test_compile_page_noop_without_routing():
     page_ctx = types.SimpleNamespace(route="index", app_wrap_components={})
     plugin.compile_page(page_ctx)  # pyright: ignore[reportArgumentType]
     assert page_ctx.app_wrap_components == {}
+
+
+def test_plugin_rejects_custom_routing():
+    from reflex_i18n.routing import LocaleRouting
+
+    class DomainRouting(LocaleRouting):
+        def localize(self, path, locale, default_locale):
+            return path
+
+        def delocalize(self, path, locales):
+            return path
+
+        def locale_of(self, path, locales, default_locale):
+            return default_locale
+
+    with pytest.raises(TypeError, match="PathPrefixRouting"):
+        I18nPlugin(locales=LOCALES, routing=DomainRouting())  # pyright: ignore[reportArgumentType]
+
+
+def test_expand_routes_rejects_locale_prefixed_app_route():
+    from reflex_base.utils.exceptions import RouteValueError
+
+    plugin = I18nPlugin(
+        locales=LOCALES, default_locale="en", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([_page("de/pricing")])
+    with pytest.raises(RouteValueError, match="reserved"):
+        plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+
+
+def test_expand_routes_rejects_bare_locale_app_route():
+    from reflex_base.utils.exceptions import RouteValueError
+
+    plugin = I18nPlugin(
+        locales=LOCALES, default_locale="en", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([_page("fr")])
+    with pytest.raises(RouteValueError, match="reserved"):
+        plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]

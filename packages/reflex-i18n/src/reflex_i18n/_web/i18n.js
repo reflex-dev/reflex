@@ -7,12 +7,13 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import {
   cookieName,
   defaultAtRoot,
   defaultLocale,
+  defaultPlural,
   deployUrl,
   loaders,
   locales,
@@ -105,15 +106,34 @@ export function switchLocale(locale) {
 }
 
 export function I18nProvider({ children }) {
-  // Start from the default locale so the server/first render is
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // Cookie mode starts from the default locale so the server/first render is
   // deterministic and never touches document/navigator; the cookie- and
   // browser-based locale is resolved client-side in the effect below.
-  const [locale, setLocaleState] = useState(defaultLocale);
+  const [cookieLocale, setCookieLocale] = useState(defaultLocale);
+  // With URL routing the path is authoritative (mirroring the server), so
+  // the cookie and browser preferences never override what the URL names.
+  const locale = urlRouting
+    ? (pathLocale(pathname) ?? defaultLocale)
+    : cookieLocale;
   const [catalog, setCatalog] = useState(undefined);
 
   useEffect(() => {
-    setLocaleState(initialLocale());
+    if (!urlRouting) {
+      setCookieLocale(initialLocale());
+    }
   }, []);
+
+  // When every locale is prefixed (defaultAtRoot off), an unprefixed URL has
+  // no locale of its own; send it to its default-locale address.
+  useEffect(() => {
+    if (urlRouting && !defaultAtRoot && pathLocale(pathname) === undefined) {
+      navigate(localizePath(delocalizePath(pathname), defaultLocale), {
+        replace: true,
+      });
+    }
+  }, [pathname, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,32 +155,39 @@ export function I18nProvider({ children }) {
           error,
         );
       });
-    // With URL-based routing the per-route LocaleRoute owns <html lang>/dir
-    // (its locale is authoritative); only manage it here in cookie mode to
-    // avoid the two fighting over the document element.
-    if (!urlRouting) {
-      const root = document.documentElement;
-      root.lang = locale;
-      root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
-    }
+    // In URL mode this locale equals the route's, so setting <html lang>/dir
+    // here agrees with LocaleRoute and also covers unwrapped (default-at-root)
+    // pages.
+    const root = document.documentElement;
+    root.lang = locale;
+    root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
     return () => {
       cancelled = true;
     };
   }, [locale]);
 
-  const setLocale = useCallback((nextLocale) => {
-    if (!locales.includes(nextLocale)) {
-      console.error(
-        `Invalid locale "${nextLocale}". Supported locales: ${locales.join(", ")}.`,
-      );
-      return;
-    }
-    // The cookie is the source of truth for a chosen locale; only an
-    // explicit choice writes it, so browser-preference changes keep
-    // applying for users who never picked a language.
-    writeCookie(cookieName, nextLocale);
-    setLocaleState(nextLocale);
-  }, []);
+  const setLocale = useCallback(
+    (nextLocale) => {
+      if (!locales.includes(nextLocale)) {
+        console.error(
+          `Invalid locale "${nextLocale}". Supported locales: ${locales.join(", ")}.`,
+        );
+        return;
+      }
+      if (urlRouting) {
+        // The URL owns the locale in this mode: switch by navigating to the
+        // localized address (the cookie is not consulted).
+        navigate(localizePath(delocalizePath(pathname), nextLocale));
+        return;
+      }
+      // The cookie is the source of truth for a chosen locale; only an
+      // explicit choice writes it, so browser-preference changes keep
+      // applying for users who never picked a language.
+      writeCookie(cookieName, nextLocale);
+      setCookieLocale(nextLocale);
+    },
+    [pathname, navigate],
+  );
 
   useEffect(() => {
     _switchLocale = setLocale;
@@ -255,9 +282,11 @@ export function useTranslation() {
   const tp_ = useCallback(
     (key, pluralMessage, count, params) => {
       const entry = catalog?.messages[key];
+      // Uncataloged messages fall back to the two source strings, picked by
+      // the DEFAULT locale's plural rule (they are written in that language).
       const message = Array.isArray(entry)
         ? (entry[catalog.plural(count)] ?? entry[entry.length - 1])
-        : count === 1
+        : defaultPlural(count) === 0
           ? stripContext(key)
           : pluralMessage;
       return interpolate(message, params);
@@ -287,6 +316,11 @@ export function LocaleRoute({ locale, catalog, children }) {
 }
 
 // Path-prefix helpers (mirror reflex_i18n.routing.PathPrefixRouting).
+const pathLocale = (pathname) => {
+  const head = pathname.replace(/^\//, "").split("/")[0];
+  return locales.includes(head) ? head : undefined;
+};
+
 const delocalizePath = (pathname) => {
   const [head, ...rest] = pathname.replace(/^\//, "").split("/");
   if (locales.includes(head)) {
@@ -331,7 +365,12 @@ export function HreflangLinks({ children }) {
     createElement("link", {
       key: "canonical",
       rel: "canonical",
-      href: absoluteUrl(pathname),
+      // The localized URL for the page's own locale: identical to pathname
+      // except for an unprefixed page when every locale is prefixed, whose
+      // canonical is its default-locale address.
+      href: absoluteUrl(
+        localizePath(base, pathLocale(pathname) ?? defaultLocale),
+      ),
     }),
   );
   // This is an app-wrap: render the links AND pass the app content through.

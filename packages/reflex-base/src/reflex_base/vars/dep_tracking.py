@@ -469,19 +469,23 @@ class DependencyTracker:
                 # is referencing an attribute on self
                 self.top_of_stack = instruction.argval
                 self.scan_status = ScanStatus.GETTING_ATTR
-            elif (
-                instruction.opname
-                in (
-                    "LOAD_FAST_LOAD_FAST",
-                    "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
-                    "STORE_FAST_LOAD_FAST",
-                )
-                and instruction.argval[-1] in self.tracked_locals
+            elif instruction.opname in (
+                "LOAD_FAST_LOAD_FAST",
+                "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
+                "STORE_FAST_LOAD_FAST",
             ):
-                # Double LOAD_FAST family instructions load multiple values onto the stack,
-                # the last value in the argval list is the top of the stack.
-                self.top_of_stack = instruction.argval[-1]
-                self.scan_status = ScanStatus.GETTING_ATTR
+                # Every loaded name (the first one is a store, not a load, in
+                # STORE_FAST_LOAD_FAST) may be an inline-imported function
+                # that implies a dependency, same as the single-load case.
+                loaded_from = 1 if instruction.opname == "STORE_FAST_LOAD_FAST" else 0
+                for name in instruction.argval[loaded_from:]:
+                    if name in self.tracked_locals:
+                        self._add_implicit_dependency(self.tracked_locals[name])
+                if instruction.argval[-1] in self.tracked_locals:
+                    # Double LOAD_FAST family instructions load multiple values onto the stack,
+                    # the last value in the argval list is the top of the stack.
+                    self.top_of_stack = instruction.argval[-1]
+                    self.scan_status = ScanStatus.GETTING_ATTR
             elif self.scan_status == ScanStatus.GETTING_ATTR and instruction.opname in (
                 "LOAD_ATTR",
                 "LOAD_METHOD",

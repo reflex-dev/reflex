@@ -268,8 +268,12 @@ Notes:
   per-route titles if that matters.
 - `default_at_root=True` (the default) is recommended for SEO: the default
   locale keeps clean canonical URLs (`/pricing`). With `default_at_root=False`
-  the unprefixed path and the prefixed default (`/pricing` and `/en/pricing`)
-  both exist — add a redirect from the unprefixed path if you use that mode.
+  every locale is prefixed; visiting an unprefixed path redirects to its
+  default-locale address (`/pricing` → `/en/pricing`), and its canonical link
+  points there.
+- App routes must not start with a configured locale (e.g. a `/de/...` page of
+  your own while `de` is configured): those URLs are reserved for the generated
+  locale routes, and compilation fails with a clear error.
 
 ## Translation catalogs
 

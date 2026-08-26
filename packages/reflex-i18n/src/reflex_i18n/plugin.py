@@ -15,15 +15,21 @@ from reflex_base.plugins.base import (
     PreCompileContext,
 )
 from reflex_base.utils import console
+from reflex_base.utils.exceptions import RouteValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
 from typing_extensions import Unpack
 
-from .catalog import compile_catalog_module, compile_index_module, read_po_catalog
+from .catalog import (
+    compile_catalog_module,
+    compile_index_module,
+    default_plural_expr_js,
+    read_po_catalog,
+)
 from .component import HreflangLinks, LocaleRoute
 from .config import I18nConfig, set_active_i18n_config
 from .registry import collected_messages
-from .routing import LocaleRouting
+from .routing import PathPrefixRouting
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -104,15 +110,15 @@ class I18nPlugin(Plugin):
     """Enables ``rx.t`` translations and compiles per-locale catalogs.
 
     Add to ``rx.Config(plugins=[I18nPlugin(locales=[...])])``. Set ``routing``
-    to a :class:`~reflex_i18n.routing.LocaleRouting` (e.g. ``PathPrefixRouting``)
-    for opt-in URL-based locales + ``hreflang`` (SEO); omit it for the default
-    cookie-based, single-URL behavior.
+    to a :class:`~reflex_i18n.routing.PathPrefixRouting` for opt-in URL-based
+    locales + ``hreflang`` (SEO); omit it for the default cookie-based,
+    single-URL behavior.
     """
 
     locales: Sequence[str]
     default_locale: str = "en"
     catalog_dir: str = "locales"
-    routing: LocaleRouting | None = None
+    routing: PathPrefixRouting | None = None
 
     def _config(self) -> I18nConfig:
         """Build the i18n configuration from the plugin's fields.
@@ -127,9 +133,22 @@ class I18nPlugin(Plugin):
         )
 
     def __post_init__(self):
-        """Activate the i18n config and register framework state."""
+        """Activate the i18n config and register framework state.
+
+        Raises:
+            TypeError: If ``routing`` is not a PathPrefixRouting.
+        """
         from reflex_base.registry import RegistrationContext
 
+        if self.routing is not None and not isinstance(self.routing, PathPrefixRouting):
+            # The shipped client runtime (hreflang, language switcher, locale
+            # detection) only understands path-prefix URLs.
+            msg = (
+                "I18nPlugin.routing must be a PathPrefixRouting (or None); "
+                f"got {type(self.routing).__name__}. Custom locale-routing "
+                "strategies are not supported by the client runtime yet."
+            )
+            raise TypeError(msg)
         set_active_i18n_config(self._config())
         # Registers I18nState (substate) and the event-scope locale provider.
         # Imported here rather than at module top so an app opting in triggers
@@ -166,12 +185,25 @@ class I18nPlugin(Plugin):
 
         Args:
             context: The route-expansion context.
+
+        Raises:
+            RouteValueError: If an app route starts with a configured locale.
         """
         if self.routing is None:
             return
         add_page = context["add_page"]
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
+            head = base_path.lstrip("/").partition("/")[0]
+            if head in self.locales:
+                # Such a route would be indistinguishable from the localized
+                # URLs this plugin generates (and shadow or collide with them).
+                msg = (
+                    f"App route {base_path!r} starts with configured locale "
+                    f"{head!r}; locale-prefixed URLs are reserved by "
+                    f"I18nPlugin routing. Rename the route or drop the locale."
+                )
+                raise RouteValueError(msg)
             for locale in self.locales:
                 localized = self.routing.localize(
                     base_path, locale, self.default_locale
@@ -225,6 +257,9 @@ class I18nPlugin(Plugin):
         default_at_root = bool(getattr(self.routing, "default_at_root", True))
         deploy_url = get_config().deploy_url or ""
 
+        default_po = catalog_dir / f"{config.default_locale}.po"
+        default_catalog = read_po_catalog(default_po) if default_po.exists() else None
+
         results: list[tuple[str, str]] = [
             (
                 f"{_I18N_WEB_DIR}/index.js",
@@ -233,17 +268,23 @@ class I18nPlugin(Plugin):
                     url_routing=self.routing is not None,
                     default_at_root=default_at_root,
                     deploy_url=deploy_url,
+                    default_plural_expr=default_plural_expr_js(
+                        default_catalog, config.default_locale
+                    ),
                 ),
             )
         ]
         for locale in config.locales:
-            po_path = catalog_dir / f"{locale}.po"
-            catalog = read_po_catalog(po_path) if po_path.exists() else None
-            if catalog is None and locale != config.default_locale:
-                console.warn(
-                    f"No translation catalog found for locale {locale!r} "
-                    f"(expected {po_path})."
-                )
+            if locale == config.default_locale:
+                catalog = default_catalog
+            else:
+                po_path = catalog_dir / f"{locale}.po"
+                catalog = read_po_catalog(po_path) if po_path.exists() else None
+                if catalog is None:
+                    console.warn(
+                        f"No translation catalog found for locale {locale!r} "
+                        f"(expected {po_path})."
+                    )
             results.append((
                 f"{_I18N_WEB_DIR}/{locale}.js",
                 compile_catalog_module(

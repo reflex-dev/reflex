@@ -132,12 +132,34 @@ def _lookup_translation(
     return list(strings)
 
 
+def default_plural_expr_js(catalog: Catalog | None, locale: str) -> str:
+    """The default locale's plural expression for the client-side fallback.
+
+    Args:
+        catalog: The default locale's catalog, if one exists.
+        locale: The default locale.
+
+    Returns:
+        A validated JS plural expression over the variable ``n``.
+    """
+    if catalog is None:
+        from babel.messages.catalog import Catalog as BabelCatalog
+
+        try:
+            # Babel's built-in CLDR plural table for the locale.
+            catalog = BabelCatalog(locale=locale.replace("-", "_"))
+        except ValueError:
+            return _FALLBACK_PLURAL_EXPR
+    return _plural_expr_js(catalog, locale)
+
+
 def compile_index_module(
     config: I18nConfig,
     *,
     url_routing: bool = False,
     default_at_root: bool = True,
     deploy_url: str = "",
+    default_plural_expr: str = _FALLBACK_PLURAL_EXPR,
 ) -> str:
     """Render the JS module describing the app's locales and catalog loaders.
 
@@ -152,6 +174,9 @@ def compile_index_module(
             unprefixed path (used by the hreflang helper).
         deploy_url: Absolute site URL for building absolute hreflang hrefs, or
             empty to emit relative hrefs.
+        default_plural_expr: The default locale's plural expression, used
+            client-side to pick between the two source strings of a plural
+            message that has no catalog entry.
 
     Returns:
         The JS module source code.
@@ -168,5 +193,6 @@ def compile_index_module(
         f"export const urlRouting = {json.dumps(url_routing)};\n"
         f"export const defaultAtRoot = {json.dumps(default_at_root)};\n"
         f"export const deployUrl = {json.dumps(deploy_url)};\n"
+        f"export const defaultPlural = (n) => Number({default_plural_expr});\n"
         f"export const loaders = {{\n{loaders}\n}};\n"
     )

@@ -19,7 +19,7 @@ from .format import datetime as datetime
 from .format import time as time
 from .nav import language_switcher, locale_url
 from .plugin import I18nPlugin
-from .routing import LocaleRouting, PathPrefixRouting
+from .routing import PathPrefixRouting
 from .runtime import (
     format_currency,
     format_date,
@@ -53,7 +53,6 @@ __all__ = [
     "I18nConfig",
     "I18nPlugin",
     "I18nState",
-    "LocaleRouting",
     "PathPrefixRouting",
     "currency",
     "format_currency",

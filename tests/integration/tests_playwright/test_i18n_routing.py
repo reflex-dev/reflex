@@ -130,3 +130,28 @@ def test_url_locale_routing(i18n_url_app: AppHarness, page: Page):
         "els => els.map(e => e.getAttribute('hreflang'))",
     )
     assert {"en", "de", "x-default"} <= set(alternates)
+
+
+def test_url_locale_wins_over_cookie(i18n_url_app: AppHarness, page: Page):
+    """With URL routing, the URL names the locale; a stored cookie never does.
+
+    Regression: the provider used to apply the cookie/browser locale on the
+    default-at-root page, so `/` rendered German for a visitor with a stored
+    `de` preference even though the URL says default locale.
+
+    Args:
+        i18n_url_app: Running harness for the URL-routing app.
+        page: Playwright page.
+    """
+    base = i18n_url_app.frontend_url
+    assert base is not None
+
+    page.context.add_cookies([{"name": "reflex_locale", "value": "de", "url": base}])
+    page.goto(base)
+    expect(page.locator("#static")).to_have_text("Hello")
+    expect(page.locator("#locale")).to_have_text("en")
+    expect(page.locator("html")).to_have_attribute("lang", "en")
+
+    # The canonical link points at the page's own URL.
+    canonical = page.locator("link[rel=canonical]")
+    expect(canonical).to_have_attribute("href", "https://example.com/")
