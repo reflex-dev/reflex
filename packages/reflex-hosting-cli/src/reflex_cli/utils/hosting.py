@@ -2780,7 +2780,11 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
 _TERMINAL_CONTROL_RE = re.compile(
     r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
     r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
-    r"|\x1b[@-Z\\-_]"  # two-character escapes
+    # Every other escape sequence, in the general ECMA-48 shape: optional
+    # intermediates then one final byte in 0x30-0x7E. Narrower classes leave
+    # the final byte behind once the catch-all below eats the ESC -- `\x1b7`
+    # (DECSC) printing a stray "7", `\x1bc` (full terminal reset) a stray "c".
+    r"|\x1b[ -/]*[0-~]"
     r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
 )
 
@@ -2837,7 +2841,12 @@ def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
         )
         response.raise_for_status()
         report = response.json()
-    except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError):
+    # ValueError rather than json.JSONDecodeError: a 2xx body in an encoding
+    # httpx cannot decode raises UnicodeDecodeError, which is a ValueError and
+    # not a JSONDecodeError. Letting that escape would abort the watch over a
+    # malformed answer to a request whose whole contract is that not getting
+    # an answer costs nothing.
+    except (httpx.RequestError, httpx.HTTPStatusError, ValueError):
         return None
     return report if isinstance(report, dict) else None
 
@@ -2879,7 +2888,11 @@ def _report_deployment_failure(
         logger.warning(guidance)
 
     excerpt = report.get("build_log_excerpt")
-    if not excerpt:
+    # Typed as a string by the endpoint, checked because this one is not ours:
+    # the CLI is versioned apart from the control plane and talks to
+    # self-hosted ones, so a non-string here would raise in the sanitiser and
+    # take down a report that had already read fine.
+    if not excerpt or not isinstance(excerpt, str):
         return
     # Raw build output: paths, versions and tracebacks, all of which rich would
     # read as markup given the chance, plus whatever escape sequences the

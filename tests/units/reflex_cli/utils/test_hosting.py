@@ -1387,3 +1387,72 @@ def test_the_printed_excerpt_is_stripped(
     printed = capsys.readouterr().out
     assert "ERROR: no such package" in printed
     assert "\x1b" not in printed
+
+
+@pytest.mark.parametrize(
+    "hostile",
+    [
+        "A\x1b7B",  # DECSC: final byte 0x37, outside the CSI and OSC shapes
+        "A\x1b=B",  # DECKPAM
+        "A\x1bcB",  # RIS: a full terminal reset
+        "A\x1b(0B",  # a designator with an intermediate byte
+    ],
+)
+def test_a_two_character_escape_leaves_no_stray_byte(hostile: str):
+    """The final byte goes with the ESC, rather than printing as garbage.
+
+    Args:
+        hostile: Build output carrying a non-CSI escape sequence.
+    """
+    cleaned = _strip_terminal_controls(hostile)
+
+    assert cleaned == "AB"
+
+
+def test_an_undecodable_body_falls_back_rather_than_raising(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A 2xx body httpx cannot decode is not an answer, and must not end the watch.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")
+    mocker.patch("httpx.get", return_value=response)
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "build error" in _log_messages(caplog, logging.WARNING)
+
+
+def test_a_non_string_excerpt_is_ignored(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """The CLI ships apart from the server, so the excerpt's type is not a given.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt={"unexpected": "shape"},
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
+    assert "the end of the build log" not in capsys.readouterr().out
