@@ -1488,13 +1488,18 @@ def test_an_unreadable_log_is_reported_rather_than_passed_over(
 
 
 def test_a_build_that_stored_no_log_says_nothing_extra(
-    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
 ):
-    """Absence is not an outage, and must not be reported as one.
+    """Absence is not an outage, and there is nothing to send the reader to.
+
+    The reason stands alone: no excerpt, no header over one, and no command to
+    go and fetch a log that was never stored. The command is what separates
+    this path from the unreadable one, which does offer it.
 
     Args:
         mocker: Pytest mocker fixture.
         caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
     """
     mocker.patch(
         "httpx.get",
@@ -1510,4 +1515,8 @@ def test_a_build_that_stored_no_log_says_nothing_extra(
         "dep-1", "fake-token", "build error", offer_build_logs=True
     )
 
-    assert "could not be read" not in " ".join(_log_messages(caplog, logging.WARNING))
+    assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
+    said = " ".join(_log_messages(caplog, logging.WARNING)) + capsys.readouterr().out
+    assert "could not be read" not in said
+    assert "the end of the build log" not in said
+    assert "reflex cloud apps build-logs" not in said
