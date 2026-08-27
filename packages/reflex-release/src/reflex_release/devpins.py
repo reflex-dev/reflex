@@ -158,7 +158,13 @@ def check_dev_pins(config: Config, packages: list[str]) -> None:
     """
     for package in packages:
         config.require_known(package)
-    targets = packages or config.all_packages()
+    # A package that never ships cannot publish an unusable pin, and holding
+    # it to the gate would fail the sweep over metadata nobody installs.
+    targets = packages or [
+        package
+        for package in config.all_packages()
+        if not config.is_never_published(package)
+    ]
 
     offenders: list[tuple[str, str]] = []
     for package in targets:

@@ -81,6 +81,14 @@ single-package repository usually needs no more than the first two keys.
 # from; bump it and re-run `sync` to upgrade.
 cli-command = "uvx reflex-release@0.1.0"
 
+# The uv and Python the generated workflows install, written into every one of
+# them verbatim so the release path is reproducible. Both default to a version
+# this tool pins, so upgrading reflex-release moves them too — and `sync
+# --check` reports that as drift until you regenerate. Set either one to keep
+# your own cadence, or to "" to install whatever setup-uv defaults to.
+uv-version = "0.12.5"
+python-version = "3.14.7"
+
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
 # who can release, and one of them can carry a release through end to end. Set
@@ -129,8 +137,15 @@ latest-release-package = "mypkg"
 # touches them, with no changelog and no news fragments.
 internal-packages = []
 
-# Packages excluded from the pull-request news-fragment requirement.
+# Packages excluded from the pull-request news-fragment requirement. They are
+# still releasable — use never-publish-packages for one that never ships.
 changelog-exempt-packages = []
+
+# Packages the repository builds but never releases: an app, a docs bundle, a
+# fixture. They get no release checkbox, are never auto-selected, are ignored by
+# changelog detection even if one has a CHANGELOG.md, need no news fragment, and
+# publishing one is refused.
+never-publish-packages = []
 
 # A workflow of your own to run after every published tag. Omit it (or leave it
 # empty) to dispatch nothing. See "Post-release workflow".
@@ -138,7 +153,7 @@ post-release-workflow = "docs_publish.yml"
 
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
-# checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
+# checkboxes while they fit under GitHub's twenty-input workflow_dispatch limit,
 # free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
@@ -525,6 +540,10 @@ job this design keeps free of everything but the upload.
 
 ### Supply chain
 
+Every generated workflow installs uv and Python at the exact versions
+`uv-version` and `python-version` name, so the toolchain the release path runs
+on does not move on its own.
+
 The workflows run `uvx reflex-release@<pinned version>`. A published PyPI
 version is immutable, so the pinned tool cannot change under you — but its
 dependencies (`packaging`, `towncrier`) resolve fresh on every run, and the tool
@@ -563,9 +582,10 @@ Selecting nothing auto-selects: packages with pending news fragments, or — for
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
-package. The pull-request drift check catches it if you forget. Past ten
-packages (GitHub's `workflow_dispatch` input limit) the form falls back to a
-comma-separated text field; see `dispatch-package-inputs`.
+package. The pull-request drift check catches it if you forget. Past twenty
+packages (GitHub's `workflow_dispatch` input limit, one of which the release
+action takes) the form falls back to a comma-separated text field; see
+`dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |
@@ -595,6 +615,30 @@ To pull new work into a running prerelease train, merge `main` into the
 Hotfixes: branch `r/hotfix/1.2` from the tag, dispatch on that branch, and both
 alphas and final versions publish directly from it. A hotfix of an older line is
 not marked "Latest" on GitHub.
+
+## Packages that never publish
+
+A directory under `packages-dir` with a `pyproject.toml` is a package, and by
+default every package is releasable. That is wrong for the ones a repository
+builds for itself — an application, a docs bundle, a test fixture — which
+`never-publish-packages` takes out of the release paths entirely:
+
+```toml
+[tool.reflex-release]
+never-publish-packages = ["docs-bundle"]
+```
+
+`changelog-exempt-packages` does **not** do this: it only waives the
+news-fragment requirement, leaving the package selectable in *Dispatch release*
+and publishable by hand. A listed package instead gets no checkbox, is never
+auto-selected, is skipped by changelog detection even if it has a `CHANGELOG.md`,
+needs no news fragment, and is refused by `publish.yml` — so a manual dispatch
+fails in the first unprivileged job rather than at `verify-dist`.
+
+Being unreleasable, it cannot be a lockstep member, a `custom-build` package,
+`latest-release-package`, or internal; each is rejected when the configuration
+loads. Adding or removing one changes the *Dispatch release* checkboxes, so
+re-run `reflex-release sync`.
 
 ## Internal packages
 

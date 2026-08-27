@@ -327,6 +327,11 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
                 f"{package} is an internal package: it releases by patch-bumping "
                 "its newest tag, not from a changelog"
             )
+        if config.is_never_published(package):
+            fail(
+                f"{package} is listed in never-publish-packages: this repository "
+                "builds it but does not release it"
+            )
 
     how = "explicit"
     if not packages:
@@ -488,6 +493,14 @@ def cmd_prepare_publish(
         ref_name: The branch being published from.
     """
     config.require_known(package)
+    # Checked before anything else: this is the last gate a manual dispatch of
+    # the publish workflow passes through, and the only one for a package no
+    # release selection would ever have offered.
+    if config.is_never_published(package):
+        fail(
+            f"{package} is listed in never-publish-packages: this repository "
+            "builds it but does not release it"
+        )
     raw_version = raw_version.strip().removeprefix("v")
     path = config.changelog_path(package)
 
