@@ -9,6 +9,7 @@ so the difference is the framing and dispatch layer. Socket.IO runs with
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from typing import Any
 from unittest import mock
@@ -16,7 +17,6 @@ from unittest import mock
 import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
-from reflex_base.utils import format
 
 from reflex.event_namespace import WebsocketEventNamespace
 from reflex.state import StateUpdate
@@ -131,26 +131,21 @@ async def websocket_inbound():  # noqa: RUF029 - async so it runs on the benchma
         yield run
 
 
-@pytest_asyncio.fixture
-async def socketio_inbound():  # noqa: RUF029 - async so it runs on the benchmark loop
-    """Runner delivering NUM_MESSAGES event packets over Socket.IO.
+def _make_socketio_transport() -> tuple[Any, Any, SimpleNamespace]:
+    """Build a Socket.IO server and namespace over an app double.
+
+    The server runs with inline dispatch and a discarding writer, so a
+    benchmark measures framing and dispatch rather than the network.
 
     Returns:
-        An async callable running one full connection lifecycle.
+        The (server, namespace, app double) triple.
     """
     pytest.importorskip("socketio")
     from socketio import AsyncServer
 
-    from reflex.socketio_namespace import EventNamespace
+    from reflex.socketio_namespace import _SOCKET_JSON_CODEC, EventNamespace
 
-    sio = AsyncServer(
-        async_mode="asgi",
-        async_handlers=False,
-        json=SimpleNamespace(
-            dumps=staticmethod(format.json_dumps),
-            loads=staticmethod(json.loads),
-        ),
-    )
+    sio = AsyncServer(async_mode="asgi", async_handlers=False, json=_SOCKET_JSON_CODEC)
     with mock.patch("reflex.utils.prerequisites.check_redis_used", return_value=False):
         app = _make_app(sio=sio)
         namespace = EventNamespace(NAMESPACE, app)  # pyright: ignore[reportArgumentType]
@@ -160,6 +155,17 @@ async def socketio_inbound():  # noqa: RUF029 - async so it runs on the benchmar
         pass
 
     sio.eio.send = eio_send
+    return sio, namespace, app
+
+
+@pytest_asyncio.fixture
+async def socketio_inbound():  # noqa: RUF029 - async so it runs on the benchmark loop
+    """Runner delivering NUM_MESSAGES event packets over Socket.IO.
+
+    Returns:
+        An async callable running one full connection lifecycle.
+    """
+    sio, _namespace, app = _make_socketio_transport()
     event_packet = "2" + NAMESPACE + "," + json.dumps(["event", _EVENT_FIELDS])
     counter = 0
 
@@ -211,28 +217,7 @@ async def socketio_outbound():
     Returns:
         An async callable emitting the updates.
     """
-    pytest.importorskip("socketio")
-    from socketio import AsyncServer
-
-    from reflex.socketio_namespace import EventNamespace
-
-    sio = AsyncServer(
-        async_mode="asgi",
-        async_handlers=False,
-        json=SimpleNamespace(
-            dumps=staticmethod(format.json_dumps),
-            loads=staticmethod(json.loads),
-        ),
-    )
-    with mock.patch("reflex.utils.prerequisites.check_redis_used", return_value=False):
-        app = _make_app(sio=sio)
-        namespace = EventNamespace(NAMESPACE, app)  # pyright: ignore[reportArgumentType]
-        sio.register_namespace(namespace)
-
-    async def eio_send(_eio_sid: str, _data: str) -> None:
-        pass
-
-    sio.eio.send = eio_send
+    sio, namespace, _app = _make_socketio_transport()
 
     async def run() -> None:
         for _ in range(NUM_MESSAGES):
@@ -249,37 +234,37 @@ async def socketio_outbound():
     return run
 
 
-def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixture):
-    """Benchmark inbound event handling on the plain WebSocket transport."""
+def _benchmark_runner(
+    benchmark: BenchmarkFixture, runner: Callable[[], Awaitable[None]]
+):
+    """Benchmark one full run of an async transport runner.
+
+    Args:
+        benchmark: The benchmark fixture.
+        runner: The async callable to measure.
+    """
     loop = asyncio.get_event_loop()
 
     @benchmark
     def _():
-        loop.run_until_complete(websocket_inbound())
+        loop.run_until_complete(runner())
+
+
+def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixture):
+    """Benchmark inbound event handling on the plain WebSocket transport."""
+    _benchmark_runner(benchmark, websocket_inbound)
 
 
 def test_transport_inbound_socketio(socketio_inbound, benchmark: BenchmarkFixture):
     """Benchmark inbound event handling on the Socket.IO transport."""
-    loop = asyncio.get_event_loop()
-
-    @benchmark
-    def _():
-        loop.run_until_complete(socketio_inbound())
+    _benchmark_runner(benchmark, socketio_inbound)
 
 
 def test_transport_outbound_websocket(websocket_outbound, benchmark: BenchmarkFixture):
     """Benchmark emitting state updates on the plain WebSocket transport."""
-    loop = asyncio.get_event_loop()
-
-    @benchmark
-    def _():
-        loop.run_until_complete(websocket_outbound())
+    _benchmark_runner(benchmark, websocket_outbound)
 
 
 def test_transport_outbound_socketio(socketio_outbound, benchmark: BenchmarkFixture):
     """Benchmark emitting state updates on the Socket.IO transport."""
-    loop = asyncio.get_event_loop()
-
-    @benchmark
-    def _():
-        loop.run_until_complete(socketio_outbound())
+    _benchmark_runner(benchmark, socketio_outbound)

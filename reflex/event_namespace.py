@@ -459,6 +459,80 @@ class WebsocketEventNamespace(BaseEventNamespace):
         allowed_origins = get_config().cors_allowed_origins
         return "*" in allowed_origins or origin in allowed_origins
 
+    async def _handle_frame(
+        self, sid: str, text: str, scope: MutableMapping[str, Any], max_size: int
+    ) -> int | None:
+        """Validate and dispatch one inbound text frame.
+
+        Args:
+            sid: The session id.
+            text: The raw frame text.
+            scope: The ASGI scope of the client connection.
+            max_size: The message size limit in bytes.
+
+        Returns:
+            The websocket close code the session must end with, or None to
+            keep serving it.
+        """
+        # ASGI delivers complete messages, so the server has already buffered
+        # the frame; its protocol-level caps (enforced during frame
+        # reassembly) bound that allocation. This check applies the Reflex
+        # policy limit on top.
+        # The limit is in bytes; UTF-8 encodes 1-4 bytes per character, so
+        # more characters than the limit is certainly over, and a quarter or
+        # fewer certainly under -- only encode to count the exact bytes in
+        # between (bounding the copy to 4x the limit).
+        text_length = len(text)
+        if text_length > max_size or (
+            text_length * 4 > max_size and len(text.encode("utf-8")) > max_size
+        ):
+            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
+            return 1009
+        try:
+            message = json.loads(text)
+        except json.JSONDecodeError:
+            message = None
+        if (
+            not isinstance(message, list)
+            or not message
+            or not isinstance(message[0], str)
+        ):
+            # A Reflex client never sends malformed frames; close instead of
+            # logging per frame, which a hostile client could use to flood
+            # the logs.
+            logger.debug(f"Closing session {sid}: malformed frame.")
+            return 1002
+        event = message[0]
+        data = message[1] if len(message) > 1 else None
+        try:
+            # Ordered by frequency: events are the hot path, heartbeat pongs
+            # arrive once per ping interval.
+            if event == _EVENT:
+                await self.handle_event(sid, data, scope)
+            elif event == PONG_MESSAGE:
+                # Receiving it already refreshed the liveness deadline.
+                pass
+            elif event == _PING:
+                await self.handle_ping(sid)
+            elif event == _CLIENT_ERROR:
+                await self.handle_client_error(sid, data)
+            else:
+                logger.debug(
+                    f"Ignoring unknown socket event {event!r} from session {sid}."
+                )
+        except exceptions.EventDeserializationError:
+            # Client-controlled input a Reflex client never sends; close
+            # instead of logging per frame.
+            logger.debug(f"Closing session {sid}: undeserializable event.")
+            return 1002
+        except Exception:
+            # A failing handler is a server-side bug: log it loudly; the
+            # connection survives.
+            logger.exception(
+                f"Error handling socket event {event!r} for session {sid}."
+            )
+        return None
+
     async def handle_websocket(self, websocket: WebSocket) -> None:
         """Serve one client websocket connection for its full lifetime.
 
@@ -523,70 +597,14 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 if text is None:
                     # Binary frame; not part of the protocol.
                     logger.debug(f"Closing session {sid}: received a binary frame.")
-                    await websocket.close(code=1003)
-                    break
-                # ASGI delivers complete messages, so the server has already
-                # buffered the frame; its protocol-level caps (enforced during
-                # frame reassembly) bound that allocation. This check applies
-                # the Reflex policy limit on top.
-                # The limit is in bytes; UTF-8 encodes 1-4 bytes per character,
-                # so more characters than the limit is certainly over, and a
-                # quarter or fewer certainly under -- only encode to count the
-                # exact bytes in between (bounding the copy to 4x the limit).
-                text_length = len(text)
-                if text_length > max_message_size or (
-                    text_length * 4 > max_message_size
-                    and len(text.encode("utf-8")) > max_message_size
-                ):
-                    logger.debug(
-                        f"Closing session {sid}: message over {max_message_size} bytes."
+                    close_code = 1003
+                else:
+                    close_code = await self._handle_frame(
+                        sid, text, websocket.scope, max_message_size
                     )
-                    await websocket.close(code=1009)
+                if close_code is not None:
+                    await websocket.close(code=close_code)
                     break
-                try:
-                    message = json.loads(text)
-                except json.JSONDecodeError:
-                    message = None
-                if (
-                    not isinstance(message, list)
-                    or not message
-                    or not isinstance(message[0], str)
-                ):
-                    # A Reflex client never sends malformed frames; close
-                    # instead of logging per frame, which a hostile client
-                    # could use to flood the logs.
-                    logger.debug(f"Closing session {sid}: malformed frame.")
-                    await websocket.close(code=1002)
-                    break
-                event = message[0]
-                data = message[1] if len(message) > 1 else None
-                try:
-                    # Ordered by frequency: events are the hot path, heartbeat
-                    # pongs arrive once per ping interval.
-                    if event == _EVENT:
-                        await self.handle_event(sid, data, websocket.scope)
-                    elif event == PONG_MESSAGE:
-                        continue
-                    elif event == _PING:
-                        await self.handle_ping(sid)
-                    elif event == _CLIENT_ERROR:
-                        await self.handle_client_error(sid, data)
-                    else:
-                        logger.debug(
-                            f"Ignoring unknown socket event {event!r} from session {sid}."
-                        )
-                except exceptions.EventDeserializationError:
-                    # Client-controlled input a Reflex client never sends;
-                    # close instead of logging per frame.
-                    logger.debug(f"Closing session {sid}: undeserializable event.")
-                    await websocket.close(code=1002)
-                    break
-                except Exception:
-                    # A failing handler is a server-side bug: log it loudly;
-                    # the connection survives.
-                    logger.exception(
-                        f"Error handling socket event {event!r} for session {sid}."
-                    )
         except WebSocketDisconnect:
             pass
         finally:

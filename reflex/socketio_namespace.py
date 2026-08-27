@@ -22,6 +22,15 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
+# The JSON codec socket.io serializes packets with: Reflex's dumps (which
+# emits the non-finite float tokens the frontend revives) and the stdlib
+# loads for client-supplied data.
+_SOCKET_JSON_CODEC = SimpleNamespace(
+    dumps=staticmethod(format.json_dumps),
+    loads=staticmethod(json.loads),
+)
+
+
 class EventNamespace(AsyncNamespace, BaseEventNamespace):
     """The Socket.IO event namespace."""
 
@@ -170,10 +179,7 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
             max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
             ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
             ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
-            json=SimpleNamespace(
-                dumps=staticmethod(format.json_dumps),
-                loads=staticmethod(json.loads),
-            ),
+            json=_SOCKET_JSON_CODEC,
             allow_upgrades=False,
             transports=["polling" if config.transport == "polling" else "websocket"],
         )

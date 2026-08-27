@@ -92,18 +92,28 @@ class _EmbeddedServer:
             host: the address to bind to.
             port: the port to bind to; 0 picks a free port immediately.
         """
-        if port == 0:
-            with socket.socket() as probe:
-                probe.bind((host, 0))
-                port = probe.getsockname()[1]
         self.app = app
         self.host = host
-        self.port = port
+        self.port = port or self._pick_free_port(host)
         # Monkeypatchable async shutdown hook, mirroring uvicorn.Server.shutdown.
         self.shutdown: Callable[..., Coroutine[Any, Any, None]] = self._noop_shutdown
         self._should_exit = threading.Event()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._server: Any = None
+
+    @staticmethod
+    def _pick_free_port(host: str) -> int:
+        """Ask the OS for a free port and release it again.
+
+        Args:
+            host: the address the port has to be free on.
+
+        Returns:
+            The port number.
+        """
+        with socket.socket() as probe:
+            probe.bind((host, 0))
+            return probe.getsockname()[1]
 
     @staticmethod
     async def _noop_shutdown(*args, **kwargs) -> None:
@@ -204,9 +214,7 @@ class _EmbeddedServer:
                     logger.warning(
                         f"Port {self.port} unavailable ({ex}); retrying on a fresh port."
                     )
-                    with socket.socket() as probe:
-                        probe.bind((self.host, 0))
-                        self.port = probe.getsockname()[1]
+                    self.port = self._pick_free_port(self.host)
                     continue
                 # serve() returned: shutdown, or a server failure after
                 # startup -- never restart on a different port.

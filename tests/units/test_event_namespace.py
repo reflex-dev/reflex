@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import re
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -11,11 +13,17 @@ from starlette.routing import WebSocketRoute
 from reflex.app import App
 from reflex.event_namespace import (
     HANDSHAKE_MESSAGE,
+    PING_MESSAGE,
     PONG_MESSAGE,
     WebsocketEventNamespace,
 )
 
 _DISCONNECT = object()
+
+WEBSOCKET_JS_TEMPLATE = (
+    Path(__file__).parents[2]
+    / "packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/websocket.js"
+)
 
 
 class FakeWebSocket:
@@ -442,3 +450,25 @@ def test_app_event_namespace_reexport():
     assert reflex.app.EventNamespace is EventNamespace
     with pytest.raises(AttributeError):
         _ = reflex.app.DoesNotExist
+
+
+def test_protocol_message_names_match_the_client():
+    """The client speaks the same protocol message names as the server.
+
+    Both ends declare these independently, and a rename on one side is
+    invisible until a browser fails to connect: the client would never
+    answer a heartbeat, so every session would be dropped on ping timeout.
+    """
+    declarations = dict(
+        re.findall(
+            r'^const (\w+_MESSAGE) = "([^"]+)";$',
+            WEBSOCKET_JS_TEMPLATE.read_text(),
+            re.MULTILINE,
+        )
+    )
+
+    assert declarations == {
+        "HANDSHAKE_MESSAGE": HANDSHAKE_MESSAGE,
+        "PING_MESSAGE": PING_MESSAGE,
+        "PONG_MESSAGE": PONG_MESSAGE,
+    }
