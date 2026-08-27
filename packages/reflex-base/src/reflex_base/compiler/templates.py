@@ -300,6 +300,15 @@ def context_template(
         for state_name in initial_state
     ])
 
+    # React DevTools labels a context provider from the context's
+    # ``displayName``; without it every state provider in the tree renders as
+    # ``Context.Provider``. Name each one after the Python state it carries.
+    state_context_display_names_str = "\n".join(
+        f"StateContexts.{format_state_name(state_name)}.displayName = "
+        f'"StateContext({state_name})";'
+        for state_name in initial_state
+    )
+
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -409,6 +418,12 @@ export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
+ColorModeContext.displayName = "ColorModeContext";
+UploadFilesContext.displayName = "UploadFilesContext";
+DispatchContext.displayName = "DispatchContext";
+EventLoopContext.displayName = "EventLoopContext";
+{state_context_display_names_str}
+
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
@@ -445,8 +460,10 @@ export function UploadFilesProvider({{ children }}) {{
   );
 }}
 
-export function ClientSide(component) {{
-  return ({{ children, ...props }}) => {{
+// ``displayName`` is what React DevTools shows for the wrapper; without it
+// every client-only component in the tree renders as ``Anonymous``.
+export function ClientSide(component, name) {{
+  function ClientSideComponent({{ children, ...props }}) {{
     const [Component, setComponent] = useState(null);
     useEffect(() => {{
       async function load() {{
@@ -456,7 +473,9 @@ export function ClientSide(component) {{
       load();
     }}, []);
     return Component ? jsx(Component, props, children) : null;
-  }};
+  }}
+  ClientSideComponent.displayName = name ? `ClientSide(${{name}})` : "ClientSide";
+  return ClientSideComponent;
 }}
 
 export function EventLoopProvider({{ children }}) {{
@@ -512,8 +531,22 @@ def page_template(
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
+    route: str = "",
 ):
     """Template for a single react page.
+
+    Every page compiles to a component named ``Component``, so the route is
+    carried in its ``displayName`` — otherwise React DevTools shows the same
+    ``Component`` label for whichever page is mounted.
+
+    The function is declared, named, and only then exported. React Router's
+    ``decorateComponentExportsWithProps`` rewrites an exported function
+    *declaration* into a function *expression* wrapped in
+    ``UNSAFE_withComponentProps``, leaving no module-scope binding behind: a
+    trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads.
+    Exporting the identifier instead keeps the declaration in module scope, and
+    the wrapper renders ``Component`` as a child, so the name still shows.
 
     Args:
         imports: List of import statements.
@@ -521,6 +554,11 @@ def page_template(
         custom_codes: List of custom code snippets.
         hooks: Dictionary of hooks.
         render: Render function for the component.
+        route: The route this page is compiled for, used as its display name.
+            Defaults to empty, which omits the ``displayName`` assignment
+            entirely — ``page_template`` ships in ``reflex-base``, so an
+            out-of-tree caller predating the parameter keeps working and gets
+            the pre-existing unnamed ``Component``.
 
     Returns:
         Rendered React page component as string.
@@ -530,19 +568,27 @@ def page_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    display_name_str = (
+        f"Component.displayName = {json.dumps(f'Component({route})')};\n"
+        if route
+        else ""
+    )
     return f"""{imports_str}
 
 {dynamic_imports_str}
 
 {custom_code_str}
 
-export default function Component() {{
+function Component() {{
 {hooks_str}
 
   return (
     {_RenderUtils.render(render)}
   )
-}}"""
+}}
+{display_name_str}
+export default Component;
+"""
 
 
 def package_json_template(
@@ -790,10 +836,16 @@ _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
+    The exported symbol carries a ``displayName`` so React DevTools labels the
+    memo with the name of the Python component it came from. Without it, the
+    wrapped arrow function is anonymous and every memo in the tree shows up as
+    ``Anonymous``; ``memo()`` also drops the inferred name of the function it
+    wraps, so the assignment is needed even for readable symbols.
+
     Args:
-        component: The component render dict (name, signature, render, hooks,
-            and the optional ``wrapper`` JS expression the function component
-            is wrapped in).
+        component: The component render dict (name, display_name, signature,
+            render, hooks, and the optional ``wrapper`` JS expression the
+            function component is wrapped in).
 
     Returns:
         Rendered component export as string.
@@ -808,7 +860,15 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
         wrapper = f"({wrapper})"
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
-    return f"\nexport const {component['name']} = {export_expr};\n"
+    name = component["name"]
+    # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
+    # which is the layer that knows the memo's clean export name — the JS symbol
+    # here carries a module hash and would make a poor label.
+    display_name = json.dumps(component["display_name"])
+    return (
+        f"\nexport const {name} = {export_expr};\n"
+        f"{name}.displayName = {display_name};\n"
+    )
 
 
 def memo_components_template(
