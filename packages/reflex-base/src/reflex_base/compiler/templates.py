@@ -664,9 +664,6 @@ function alwaysUseReactDomServerNode() {{
     enforce: "pre",
 
     resolveId: {{
-      // Without this filter, the hook runs for every import in the graph
-      // (tens of thousands of calls); only "react-dom/server" specifiers
-      // imported by the node server entry are of interest here.
       filter: {{ id: /react-dom\/server/ }},
       handler(source, importer) {{
         if (
