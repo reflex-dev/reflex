@@ -81,6 +81,17 @@ class TokenManager(ABC):
         for token in self.token_to_socket:
             yield token
 
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket.
+        """
+        return token in self.token_to_socket
+
     @abstractmethod
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID.
@@ -431,17 +442,72 @@ class RedisTokenManager(LocalTokenManager):
         ):
             return socket_record.instance_id
 
-        redis_key = self._get_redis_key(token)
         try:
-            record_pkl = await self.redis.get(redis_key)
-            if record_pkl:
-                socket_record = pickle.loads(record_pkl)
-                self.token_to_socket[token] = socket_record
-                self.sid_to_token[socket_record.sid] = token
-                return socket_record.instance_id
+            socket_record = await self._fetch_socket_record(token)
         except Exception as e:
             logger.error(f"Redis error getting token owner: {e}")
-        return None
+            return None
+        return socket_record.instance_id if socket_record is not None else None
+
+    async def _fetch_socket_record(self, token: str) -> SocketRecord | None:
+        """Fetch the socket record for a token from redis and cache it.
+
+        Unlike _get_token_owner, redis errors propagate to the caller so it
+        can distinguish a lookup failure from an absent record.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            The refreshed socket record, or None if the token has none.
+        """
+        record_pkl = await self.redis.get(self._get_redis_key(token))
+        if not record_pkl:
+            return None
+        socket_record = pickle.loads(record_pkl)
+        # Drop the reverse mapping of a superseded record (client moved sids).
+        if (
+            (previous := self.token_to_socket.get(token)) is not None
+            and previous.sid != socket_record.sid
+            and self.sid_to_token.get(previous.sid) == token
+        ):
+            self.sid_to_token.pop(previous.sid, None)
+        self.token_to_socket[token] = socket_record
+        self.sid_to_token[socket_record.sid] = token
+        return socket_record
+
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        A record owned by this instance is authoritative. A cached record
+        from another instance may be stale (the client may have reconnected
+        elsewhere), so the socket record is refreshed from redis instead,
+        and dropped from the local cache if the client is gone. If the
+        refresh fails, the cached record is preserved and trusted.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket on any instance.
+        """
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and socket_record.instance_id == self.instance_id:
+            return True
+        try:
+            if await self._fetch_socket_record(token) is not None:
+                return True
+        except Exception as e:
+            logger.warning(f"Redis error checking token connection: {e}")
+            return socket_record is not None
+        if (
+            socket_record is not None
+            and self.token_to_socket.get(token) is socket_record
+        ):
+            self.token_to_socket.pop(token, None)
+            self.sid_to_token.pop(socket_record.sid, None)
+        return False
 
     async def emit_lost_and_found(
         self,

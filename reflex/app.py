@@ -2010,10 +2010,15 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        from reflex.istate.shared import schedule_disconnect_reap
+
         self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            # Unsubscribe the client from its linked shared states unless it
+            # reconnects within the grace period.
+            schedule_disconnect_reap(self.app, disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
