@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import enum
 import functools
+import json
 import logging
 import operator
 import typing
@@ -2344,7 +2345,7 @@ class NoSSRComponent(Component):
             f"const {name} = ClientSide(() => "
             + library_import
             + mod_import
-            + f', "{name}")'
+            + f", {json.dumps(name)})"
         )
 
 

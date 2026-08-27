@@ -531,7 +531,7 @@ def page_template(
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
-    route: str,
+    route: str = "",
 ):
     """Template for a single react page.
 
@@ -555,6 +555,10 @@ def page_template(
         hooks: Dictionary of hooks.
         render: Render function for the component.
         route: The route this page is compiled for, used as its display name.
+            Defaults to empty, which omits the ``displayName`` assignment
+            entirely — ``page_template`` ships in ``reflex-base``, so an
+            out-of-tree caller predating the parameter keeps working and gets
+            the pre-existing unnamed ``Component``.
 
     Returns:
         Rendered React page component as string.
@@ -564,6 +568,11 @@ def page_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    display_name_str = (
+        f"Component.displayName = {json.dumps(f'Component({route})')};\n"
+        if route
+        else ""
+    )
     return f"""{imports_str}
 
 {dynamic_imports_str}
@@ -577,8 +586,7 @@ function Component() {{
     {_RenderUtils.render(render)}
   )
 }}
-Component.displayName = {json.dumps(f"Component({route})")};
-
+{display_name_str}
 export default Component;
 """
 
@@ -853,7 +861,10 @@ def _render_memo_component(component: dict[str, Any]) -> str:
         wrapper = f"({wrapper})"
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     name = component["name"]
-    display_name = json.dumps(component.get("display_name") or name)
+    # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
+    # which is the layer that knows the memo's clean export name — the JS symbol
+    # here carries a module hash and would make a poor label.
+    display_name = json.dumps(component["display_name"])
     return (
         f"\nexport const {name} = {export_expr};\n"
         f"{name}.displayName = {display_name};\n"

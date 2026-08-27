@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
@@ -376,7 +377,7 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     return f"""
 const {name} = ClientSide(() =>
     {library_import}{mod_import}
-, "{name}")
+, {json.dumps(name)})
 """
 
 

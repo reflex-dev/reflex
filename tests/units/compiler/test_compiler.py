@@ -1508,6 +1508,28 @@ def test_page_template_display_name_carries_the_route():
     )
 
 
+def test_page_template_without_a_route_omits_the_display_name():
+    """``route`` is optional so out-of-tree callers of the shipped template work.
+
+    ``page_template`` is a public symbol in ``reflex-base``; a downstream
+    compiler plugin that predates the parameter must keep working. Without a
+    route there is no name worth showing, so the assignment is skipped entirely
+    rather than emitting a contentless ``Component()`` label.
+    """
+    from reflex_base.compiler.templates import page_template
+
+    rendered = page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+    )
+
+    assert "displayName" not in rendered
+    assert "export default Component;" in rendered
+
+
 def test_page_template_exports_the_component_binding_separately():
     """The page component is declared and named before it is exported.
 
