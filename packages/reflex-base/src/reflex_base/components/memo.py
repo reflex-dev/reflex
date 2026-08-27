@@ -333,6 +333,11 @@ class MemoComponentDefinition(MemoDefinition):
     # auto-memoized wrappers carry a hash-suffixed tag, so the plugin sets this
     # to the wrapped component's Python class name instead.
     display_name: str | None = None
+    # Field names of the component(s) the body spreads an ``rx.RestProp`` onto,
+    # populated as a side effect of evaluating the body (``_lift_rest_props``).
+    # A forwarded prop that is not one of these is a CSS prop, so the call site
+    # routes it into ``css`` exactly like a non-memo component would.
+    _rest_target_fields: set[str] = dataclasses.field(default_factory=set)
 
     @property
     def component(self) -> Component:
@@ -342,6 +347,18 @@ class MemoComponentDefinition(MemoDefinition):
             The compiled ``Component`` for this memo.
         """
         return self._component.get()
+
+    def rest_target_field_names(self) -> set[str]:
+        """Field names of the body's ``rx.RestProp`` target(s).
+
+        Forces body evaluation so the set is populated before the first call
+        site needs it.
+
+        Returns:
+            The union of the rest target components' declared field names.
+        """
+        self._component.get()
+        return self._rest_target_fields
 
 
 class MemoComponent(Component):
@@ -394,7 +411,11 @@ class MemoComponent(Component):
             param.bind_call_value(binding)
 
         has_rest = _get_rest_param(definition.params) is not None
-        rest_props = binding.take_rest(self.get_fields()) if has_rest else {}
+        rest_props = (
+            binding.take_rest(self.get_fields(), definition.rest_target_field_names())
+            if has_rest
+            else {}
+        )
 
         super()._post_init(**binding.build_super_kwargs())
 
@@ -1074,14 +1095,24 @@ class _MemoCallBinding:
             value=value, args_spec=args_spec, key=js_prop_name
         )
 
-    def take_rest(self, component_fields: Mapping[str, Any]) -> dict[str, Any]:
+    def take_rest(
+        self, component_fields: Mapping[str, Any], rest_target_fields: set[str]
+    ) -> dict[str, Any]:
         rest: dict[str, Any] = {}
         for key in list(self.raw_kwargs):
-            if key in component_fields or SpecialAttributes.is_special(key):
-                continue
-            rest[format.to_camel_case(key)] = LiteralVar.create(
-                self.raw_kwargs.pop(key)
-            )
+            if (
+                key in rest_target_fields
+                and key not in component_fields
+                and not SpecialAttributes.is_special(key)
+            ):
+                rest[format.to_camel_case(key)] = LiteralVar.create(
+                    self.raw_kwargs.pop(key)
+                )
+        # Every other leftover kwarg stays in ``raw_kwargs``, so
+        # ``Component._post_init`` folds it into ``style`` — the same rule that
+        # turns ``rx.el.div(background_color="red")`` into emotion ``css``.
+        # Emitting a ``css`` prop here instead would be dropped by
+        # ``Component._render``, which applies ``_get_style()`` last.
         return rest
 
     def build_super_kwargs(self) -> dict[str, Any]:
@@ -1165,11 +1196,14 @@ def _normalize_component_return(value: Any) -> Component | None:
     return None
 
 
-def _lift_rest_props(component: Component) -> Component:
+def _lift_rest_props(component: Component, rest_target_fields: set[str]) -> Component:
     """Convert RestProp children into special props.
 
     Args:
         component: The component tree to rewrite.
+        rest_target_fields: Accumulator that gathers the declared field names of
+            every component a ``RestProp`` is spread onto, so the call site can
+            tell forwarded props apart from CSS props.
 
     Returns:
         The rewritten component tree.
@@ -1182,10 +1216,11 @@ def _lift_rest_props(component: Component) -> Component:
     for child in component.children:
         if isinstance(child, Bare) and isinstance(child.contents, RestProp):
             special_props.append(child.contents)
+            rest_target_fields.update(component.get_fields())
             continue
 
         if isinstance(child, Component):
-            child = _lift_rest_props(child)
+            child = _lift_rest_props(child, rest_target_fields)
 
         rewritten_children.append(child)
 
@@ -1393,6 +1428,7 @@ def _build_args_function(
 def _evaluate_component_body(
     fn: Callable[..., Any],
     params: tuple[MemoParam, ...],
+    rest_target_fields: set[str],
     runtime_values: Mapping[str, Any] | None = None,
 ) -> Component:
     """Run a component memo's body and return its compiled component.
@@ -1400,6 +1436,8 @@ def _evaluate_component_body(
     Args:
         fn: The decorated function.
         params: The analyzed memo parameters.
+        rest_target_fields: Accumulator populated with the field names of the
+            component(s) the body spreads an ``rx.RestProp`` onto.
         runtime_values: Optional runtime values keyed by parameter name.
 
     Returns:
@@ -1417,7 +1455,7 @@ def _evaluate_component_body(
             "`rx.Component` or `rx.Var[rx.Component]`."
         )
         raise TypeError(msg)
-    return _lift_rest_props(body)
+    return _lift_rest_props(body, rest_target_fields)
 
 
 def _evaluate_function_body(
@@ -1456,13 +1494,17 @@ def _create_component_definition(
         TypeError: If the function does not return a component.
     """
     params = _analyze_params(fn, for_component=True)
+    rest_target_fields: set[str] = set()
     return MemoComponentDefinition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
         source_module=source_module,
         export_name=format.to_title_case(fn.__name__),
-        _component=_LazyBody.ready(_evaluate_component_body(fn, params)),
+        _component=_LazyBody.ready(
+            _evaluate_component_body(fn, params, rest_target_fields)
+        ),
+        _rest_target_fields=rest_target_fields,
     )
 
 
@@ -1735,6 +1777,7 @@ class _MemoComponentWrapper:
                 lambda: _evaluate_component_body(
                     definition.fn,
                     definition.params,
+                    definition._rest_target_fields,
                     runtime_values,
                 )
             )
@@ -2044,6 +2087,7 @@ def _memo_impl(
     definition: MemoComponentDefinition | MemoFunctionDefinition
     memo_callable: _MemoComponentWrapper | _MemoFunctionWrapper
     if is_component:
+        rest_target_fields: set[str] = set()
         definition = MemoComponentDefinition(
             fn=fn,
             python_name=fn.__name__,
@@ -2051,9 +2095,10 @@ def _memo_impl(
             source_module=source_module,
             export_name=format.to_title_case(fn.__name__),
             _component=_LazyBody(
-                lambda: _evaluate_component_body(fn, params),
+                lambda: _evaluate_component_body(fn, params, rest_target_fields),
                 placeholder=Fragment.create(),
             ),
+            _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
         )
