@@ -404,6 +404,34 @@ def test_event_window_alert():
     )
 
 
+def test_call_function_client_state_setter_accepts_optional_chain_var():
+    """Client state setters should use the event object as the function arg."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    last_x = ClientStateVar.create("last_x", default=0)
+    spec = rx.call_function(last_x.set_value(Var("_event?.clientX")))
+
+    assert (
+        format.format_event(spec)
+        == 'ReflexEvent("_call_function", {function:((_event) => '
+        "(refs['_client_state_setLast_x'](_event?.clientX))),callback:null})"
+    )
+
+
+def test_call_function_client_state_setter_accepts_unicode_event_var():
+    """Client state setters should preserve unicode event argument names."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    last_x = ClientStateVar.create("last_x", default=0)
+    spec = rx.call_function(last_x.set_value(Var("_événement?.clientX")))
+
+    assert (
+        format.format_event(spec)
+        == 'ReflexEvent("_call_function", {function:((_événement) => '
+        "(refs['_client_state_setLast_x'](_événement?.clientX))),callback:null})"
+    )
+
+
 @pytest.mark.parametrize(
     ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
 )
