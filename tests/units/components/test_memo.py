@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from types import SimpleNamespace
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
 
