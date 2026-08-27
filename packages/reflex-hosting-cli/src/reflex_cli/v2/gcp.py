@@ -34,10 +34,9 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import click
-from reflex_base.utils import log
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 
 logger = logging.getLogger(__name__)
 

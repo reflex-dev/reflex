@@ -31,7 +31,7 @@ import sys
 import time
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -354,7 +354,8 @@ def log_file_stream() -> TextIO:
     Returns:
         The writable stream of the full-logging file.
     """
-    return _file_handler().stream
+    # The handler opens eagerly (delay=False), so its stream is never None.
+    return cast("TextIO", _file_handler().stream)
 
 
 @once

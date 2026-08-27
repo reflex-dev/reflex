@@ -81,6 +81,14 @@ single-package repository usually needs no more than the first two keys.
 # from; bump it and re-run `sync` to upgrade.
 cli-command = "uvx reflex-release@0.1.0"
 
+# The uv and Python the generated workflows install, written into every one of
+# them verbatim so the release path is reproducible. Both default to a version
+# this tool pins, so upgrading reflex-release moves them too — and `sync
+# --check` reports that as drift until you regenerate. Set either one to keep
+# your own cadence, or to "" to install whatever setup-uv defaults to.
+uv-version = "0.12.5"
+python-version = "3.14.7"
+
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
 # who can release, and one of them can carry a release through end to end. Set
@@ -129,8 +137,15 @@ latest-release-package = "mypkg"
 # touches them, with no changelog and no news fragments.
 internal-packages = []
 
-# Packages excluded from the pull-request news-fragment requirement.
+# Packages excluded from the pull-request news-fragment requirement. They are
+# still releasable — use never-publish-packages for one that never ships.
 changelog-exempt-packages = []
+
+# Packages the repository builds but never releases: an app, a docs bundle, a
+# fixture. They get no release checkbox, are never auto-selected, are ignored by
+# changelog detection even if one has a CHANGELOG.md, need no news fragment, and
+# publishing one is refused.
+never-publish-packages = []
 
 # A workflow of your own to run after every published tag. Omit it (or leave it
 # empty) to dispatch nothing. See "Post-release workflow".
@@ -138,7 +153,7 @@ post-release-workflow = "docs_publish.yml"
 
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
-# checkboxes while they fit under GitHub's ten-input workflow_dispatch limit,
+# checkboxes while they fit under GitHub's twenty-input workflow_dispatch limit,
 # free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
@@ -193,6 +208,74 @@ This gives you, for free:
 
 `pin-exact` rewrites the requirement in the publishing package's
 `pyproject.toml` at build time only; it is never committed.
+
+### Dependency pins across a release
+
+A package that depends on a sibling it is waiting for pins the unreleased
+version — `widget-core >= 0.2.0.dev1` — so the workspace resolves while the
+sibling is still unpublished. That pin cannot be published: `*.dev` versions
+never reach PyPI, so the metadata would be uninstallable. `check-dev-pins`
+rejects it at build time, which means someone has to remember to lift it once
+the sibling is out.
+
+Materialization does it instead. When *Dispatch release* plans a release, each
+selected package's published dependencies are checked for a floor the release
+cannot ship, and the floor is lifted to the **earliest published version that
+satisfies the whole requirement**:
+
+| Floor | Materializing a prerelease | Materializing a final version |
+| --- | --- | --- |
+| `>= 0.2.0.dev1` | earliest published `0.2.0a1`, `0.2.0`, … | earliest published *final* `0.2.0`, … |
+| `>= 0.2.0a1` | left alone — an alpha may ship it | lifted to the earliest published final |
+| `>= 0.2.0` | left alone | left alone |
+
+"Published" means **tagged**: tags are created only after a successful upload,
+so the repository's own tags are its record of what is on PyPI — which is why
+the release workflows check out with full history and tags. The rewritten
+`pyproject.toml` files are part of the release commit, so they land through the
+same review as the changelog bump; a package's `pyproject.toml` is staged only
+when a pin in it actually moved, and only the copies of a requirement that are
+*published* are rewritten — a `[dependency-groups]` entry is left alone, the
+same way `check-dev-pins` ignores it.
+
+The lifted floor is always one the resolved version satisfies — a strict
+`> 0.2.0.dev1` becomes `>= 0.2.0`, since `> 0.2.0` would exclude the very
+release it resolved to — and the rewrite is verified against the resolved
+version before it is written. An **exact** floor (`== 0.2.0.dev1`) is a dead
+end rather than a wait: no published version can equal it, so the package is
+held back with a note to re-pin it by hand.
+
+### The lock file
+
+If the repository has a `uv.lock`, it is re-resolved after the pins move, and
+staged with them **when the re-resolution actually changes it**. In a uv
+workspace that is usually never: the lock records a workspace member as
+`{ name = "mypkg-base", editable = "packages/mypkg-base" }`, with no version
+specifier for a lifted pin to show up in. The re-lock matters for the other
+layout — where the sibling resolves from an index and the lock does carry its
+specifier.
+
+Two consequences worth knowing. `uv lock` re-resolves against the index, so if
+the lock was *already* out of date on the main branch, catching it up is part of
+the same commit — the release PR then carries resolution churn that has nothing
+to do with the release. And pins and lock move together: if `uv lock` cannot
+follow the new pins, the `pyproject.toml` rewrites are rolled back, so a re-run
+has the same work to do rather than finding the pins already lifted and skipping
+the lock.
+
+A floor nothing published satisfies has nowhere to go, and the package is
+**held back** rather than materialized into a version that could never be
+published — auto-selected packages are dropped from the batch (a lockstep group
+whole, since its members only release together) and listed in the run summary;
+an explicitly selected one fails the dispatch. Release the depended-on package
+first and the next release lifts the pin by itself.
+
+Two things are deliberately left alone: a floor on a lockstep sibling that
+`pin-exact` rewrites at build time anyway, and a *prerelease* floor on a
+dependency outside the repository, whose releases are not recorded here and
+whose pin is somebody's deliberate choice. A `*.dev` floor on an outside
+dependency still holds the package back — that pin is unpublishable whoever
+owns it.
 
 ## Adding towncrier
 
@@ -457,6 +540,10 @@ job this design keeps free of everything but the upload.
 
 ### Supply chain
 
+Every generated workflow installs uv and Python at the exact versions
+`uv-version` and `python-version` name, so the toolchain the release path runs
+on does not move on its own.
+
 The workflows run `uvx reflex-release@<pinned version>`. A published PyPI
 version is immutable, so the pinned tool cannot change under you — but its
 dependencies (`packaging`, `towncrier`) resolve fresh on every run, and the tool
@@ -495,9 +582,10 @@ Selecting nothing auto-selects: packages with pending news fragments, or — for
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
-package. The pull-request drift check catches it if you forget. Past ten
-packages (GitHub's `workflow_dispatch` input limit) the form falls back to a
-comma-separated text field; see `dispatch-package-inputs`.
+package. The pull-request drift check catches it if you forget. Past twenty
+packages (GitHub's `workflow_dispatch` input limit, one of which the release
+action takes) the form falls back to a comma-separated text field; see
+`dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |
@@ -506,6 +594,10 @@ comma-separated text field; see `dispatch-package-inputs`.
 | `release-from-prerelease` | Turns the train into its final version and collapses every alpha section into one — alpha headings never ship in a final changelog. Opens a PR. |
 | `release-patch` / `-minor` / `-major` | Final version straight from `main`. Opens a PR. |
 | `release-post` | `1.2.3.post1`, for packaging-only fixes. Opens a PR. |
+
+A package whose dependency pins no published version satisfies is held back and
+listed in the run summary — see
+[Dependency pins across a release](#dependency-pins-across-a-release).
 
 Release actions open a pull request; **merging it is what publishes.** The push
 to `main` triggers `release_from_changelog`, which builds every untagged
@@ -523,6 +615,30 @@ To pull new work into a running prerelease train, merge `main` into the
 Hotfixes: branch `r/hotfix/1.2` from the tag, dispatch on that branch, and both
 alphas and final versions publish directly from it. A hotfix of an older line is
 not marked "Latest" on GitHub.
+
+## Packages that never publish
+
+A directory under `packages-dir` with a `pyproject.toml` is a package, and by
+default every package is releasable. That is wrong for the ones a repository
+builds for itself — an application, a docs bundle, a test fixture — which
+`never-publish-packages` takes out of the release paths entirely:
+
+```toml
+[tool.reflex-release]
+never-publish-packages = ["docs-bundle"]
+```
+
+`changelog-exempt-packages` does **not** do this: it only waives the
+news-fragment requirement, leaving the package selectable in *Dispatch release*
+and publishable by hand. A listed package instead gets no checkbox, is never
+auto-selected, is skipped by changelog detection even if it has a `CHANGELOG.md`,
+needs no news fragment, and is refused by `publish.yml` — so a manual dispatch
+fails in the first unprivileged job rather than at `verify-dist`.
+
+Being unreleasable, it cannot be a lockstep member, a `custom-build` package,
+`latest-release-package`, or internal; each is rejected when the configuration
+loads. Adding or removing one changes the *Dispatch release* checkboxes, so
+re-run `reflex-release sync`.
 
 ## Internal packages
 
@@ -773,7 +889,7 @@ a flag for running the same command by hand.
 | `create [--package P] NAME` | Create a news fragment. |
 | `packages` | List releasable packages. |
 | `plan` | Compute the next version of each selected package. |
-| `materialize` | Name orphan fragments after their PR, run towncrier and (for `release-from-prerelease`) collapse alphas. |
+| `materialize` | Name orphan fragments after their PR, run towncrier, lift unshippable dependency pins, collapse alphas. |
 | `open-release-pr` / `push-prerelease` | Commit the changelogs and deliver them. |
 | `detect` | List packages whose newest changelog version has no tag. |
 | `prepare-publish` | Validate a package/version and emit build metadata. |
@@ -818,7 +934,8 @@ a flag for running the same command by hand.
   artifact that was built and validated before the approval.
 - **Detection fails closed.** A broken lockstep pair, a version the branch may
   not publish, or a `*.dev` pin stops the batch rather than shipping something
-  uninstallable.
+  uninstallable. A pin a published version *can* satisfy is lifted in the
+  release commit instead, so the same rule does not turn into busywork.
 - **Every step names its shell.** The generated `run:` steps declare `shell:
   bash`, so a `defaults.run.shell` added to one of these files — or a runner
   whose default is not bash — cannot change how a release-critical script is
