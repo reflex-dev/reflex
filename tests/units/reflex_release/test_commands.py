@@ -49,6 +49,27 @@ def make_internal(repo: Path, package: str) -> Config:
     return load_config(repo)
 
 
+def make_never_published(repo: Path, package: str) -> Config:
+    """Mark a package as never published and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``never-publish-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\nnever-publish-packages = ["{package}"]',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
 def fragment(config: Config, package: str, name: str, text: str = "Something.") -> None:
     """Write a news fragment for a package.
 
@@ -225,6 +246,36 @@ def test_plan_rejects_internal_packages(
     reloaded = make_internal(repo, "widget-core")
     with pytest.raises(ReleaseError, match="internal package"):
         commands.cmd_plan(reloaded, "release-minor", "widget-core")
+
+
+def test_plan_rejects_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_plan(reloaded, "release-minor", "widget-core")
+
+
+def test_prepare_publish_refuses_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A manual publish dispatch is the only way to reach one, so it must fail.
+
+    No release selection offers a never-published package and changelog
+    detection skips it, which leaves typing it into the publish workflow's
+    package field — refused here, in the first unprivileged job, rather than at
+    verify-dist after a build.
+    """
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_prepare_publish(reloaded, "widget-core", "1.0.0", "main")
+
+
+def test_packages_omits_never_published_packages(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture
+) -> None:
+    commands.cmd_packages(make_never_published(repo, "widget-core"))
+    assert capsys.readouterr().out.split() == ["mypkg"]
 
 
 def test_materialize_writes_the_changelog(
