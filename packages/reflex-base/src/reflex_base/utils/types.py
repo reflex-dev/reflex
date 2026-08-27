@@ -67,6 +67,10 @@ TypeVarTuples: tuple[type, ...] = (
     else (TypeVarTuple,)
 )
 
+# Potential type parameter classes for isinstance checks. The typing_extensions
+# ParamSpec instantiates the native class, so it needs no separate entry.
+TypeParams: tuple[type, ...] = (TypeVar, typing.ParamSpec, *TypeVarTuples)
+
 # Union of generic types.
 GenericType = type | _GenericAlias
 
@@ -426,7 +430,7 @@ def _substitute_type_params(
     Returns:
         The type with its parameters replaced.
     """
-    if isinstance(cls, (TypeVar, *TypeVarTuples)):
+    if isinstance(cls, TypeParams):
         return substitution.get(cls, cls)
     if not getattr(cls, "__parameters__", ()):
         return cls
@@ -456,19 +460,18 @@ def _apply_type_params(
     Returns:
         The type with its parameters replaced.
     """
-    if sys.version_info < (3, 11) and any(
-        isinstance(param, TypeVarTuples) for param in params
-    ):
-        # Python 3.10 subscription predates PEP 646 and rejects unpacked
-        # TypeVarTuples, so substitute by hand.
-        return _substitute_type_params(value, substitution)
     flattened: list[Any] = []
     for param in params:
         if isinstance(param, TypeVarTuples):
             flattened.extend(substitution.get(param, (param,)))
         else:
             flattened.append(substitution.get(param, param))
-    return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+    try:
+        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+    except TypeError:
+        # Python 3.10 subscription predates PEP 646, and 3.11 rejects a ParamSpec
+        # next to an unpacked TypeVarTuple, so substitute by hand instead.
+        return _substitute_type_params(value, substitution)
 
 
 def resolve_type_alias(cls: GenericType) -> GenericType:
