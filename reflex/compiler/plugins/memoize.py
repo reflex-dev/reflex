@@ -134,6 +134,12 @@ def _should_memoize(component: Component) -> bool:
     are evaluated from their own props/triggers; descendants are visited
     independently by the walker.
 
+    Explicitly memoized (``@rx.memo``) components are no exception: React's
+    ``memo`` only spares their own subtree, so state bound at the call site
+    still needs a wrapper to keep the hooks out of the page module. The
+    wrappers this pass generates are themselves memo components and opt out
+    via ``MemoizationDisposition.NEVER``.
+
     Args:
         component: The candidate component.
 
