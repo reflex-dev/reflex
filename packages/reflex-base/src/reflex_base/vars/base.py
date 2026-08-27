@@ -2529,7 +2529,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _last_delta_key_attr(self) -> str:
-        """Get the attribute used to store the key of the last value sent in a delta.
+        """The attribute used to store the key of the last value sent in a delta.
 
         Returns:
             An attribute name.
