@@ -783,8 +783,6 @@ class EventProcessor:
         Args:
             task: The task that finished.
         """
-        from reflex.utils import telemetry
-
         if sys.version_info < (3, 12):
             # py3.11 compat
             task_ctx = task._event_ctx  # type: ignore[attr-defined]
@@ -800,44 +798,63 @@ class EventProcessor:
             else:
                 del self._token_queues[task_ctx.token]
         future = self._futures.get(task_ctx.txid)
-        if task.done():
-            try:
-                result = task.result()
-            except asyncio.CancelledError:
-                if future is not None and not future.done():
-                    future.cancel()
-            except Exception as ex:
-                if future is not None and not future.done():
-                    future.set_exception(ex)
-                    with contextlib.suppress(BaseException):
-                        # Trigger the future to avoid warnings if the caller didn't wait.
-                        future.result()
-                telemetry.send_error(ex, context="backend")
-                if (
-                    not task.get_name().startswith("reflex_backend_exception_handler|")
-                    and self.backend_exception_handler is not None
-                ):
-                    # Create a new task in the same context to invoke the exception handler.
-                    t = self._tasks[task_ctx.txid] = asyncio.create_task(
-                        self._handle_backend_exception(ex, ev_ctx=task_ctx),
-                        name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
-                    )
-                    if sys.version_info < (3, 12):
-                        t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
-                    t.add_done_callback(self._finish_task)
-                    return
-                logger.exception(
-                    rich.markup.escape(
-                        f"Error in {task.get_name()} [txid={task_ctx.txid}]:"
-                    )
-                )
-            else:
-                if future is not None and not future.done():
-                    future.set_result(result)
+        if task.done() and self._resolve_future(task, task_ctx, future):
+            return
         if future is not None:
             # The task is gone; clean up now in case the future resolved
             # earlier (e.g. external cancellation) and cleanup was deferred.
             self._try_clean_future(future)
+
+    def _resolve_future(
+        self, task: asyncio.Task, task_ctx: EventContext, future: EventFuture | None
+    ) -> bool:
+        """Propagate a finished task's outcome to its tracked future.
+
+        Args:
+            task: The finished task.
+            task_ctx: The event context the task ran in.
+            future: The future tracking the task, if still registered.
+
+        Returns:
+            True if a backend exception handler task was spawned and now owns
+            the future's lifecycle, False otherwise.
+        """
+        from reflex.utils import telemetry
+
+        try:
+            result = task.result()
+        except asyncio.CancelledError:
+            if future is not None and not future.done():
+                future.cancel()
+        except Exception as ex:
+            if future is not None and not future.done():
+                future.set_exception(ex)
+                with contextlib.suppress(BaseException):
+                    # Trigger the future to avoid warnings if the caller didn't wait.
+                    future.result()
+            telemetry.send_error(ex, context="backend")
+            if (
+                not task.get_name().startswith("reflex_backend_exception_handler|")
+                and self.backend_exception_handler is not None
+            ):
+                # Create a new task in the same context to invoke the exception handler.
+                t = self._tasks[task_ctx.txid] = asyncio.create_task(
+                    self._handle_backend_exception(ex, ev_ctx=task_ctx),
+                    name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
+                )
+                if sys.version_info < (3, 12):
+                    t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
+                t.add_done_callback(self._finish_task)
+                return True
+            logger.exception(
+                rich.markup.escape(
+                    f"Error in {task.get_name()} [txid={task_ctx.txid}]:"
+                )
+            )
+        else:
+            if future is not None and not future.done():
+                future.set_result(result)
+        return False
 
 
 __all__ = [
