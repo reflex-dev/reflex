@@ -62,7 +62,7 @@ class MenuBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the menu component."""
+        """The import variable for the menu component."""
         return ImportVar(tag="Menu", package_path="", install=False)
 
 
