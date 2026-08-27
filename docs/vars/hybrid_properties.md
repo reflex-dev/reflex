@@ -129,6 +129,30 @@ value on that class, for example when it depends on configuration the class does
 enable. Class-level access then yields `None` instead of a var, and reaching the property
 through an object var raises an error.
 
+## Setters and Deleters
+
+Like a plain property, a hybrid property accepts a `setter` and a `deleter`. They are
+**backend-only** — the frontend value is derived from other vars, so there is nothing to
+assign to on the client:
+
+```python
+class NameState(rx.State):
+    first_name: str = "Jane"
+    last_name: str = "Doe"
+
+    @hybrid_property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+    @full_name.setter
+    def _set_full_name(self, value: str):
+        self.first_name, self.last_name = value.split(" ", 1)
+```
+
+Inside an event handler, `self.full_name = "Ada Lovelace"` now runs that setter, which
+updates `first_name` and `last_name` — and those, being real vars, are what the frontend
+re-renders from.
+
 ## Nested Objects
 
 Hybrid properties also work when defined on a dataclass, Pydantic model, or SQLAlchemy

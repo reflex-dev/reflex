@@ -4374,6 +4374,41 @@ def test_assignment_to_undeclared_vars():
     state.handle_non_var()
 
 
+def test_assignment_through_property_setter():
+    """A property's setter runs instead of the undeclared-var guard."""
+
+    class PropertyState(BaseState):
+        first: str = "Jane"
+        last: str = "Doe"
+
+        @property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+        @full.setter
+        def full(self, value: str) -> None:
+            self.first, self.last = value.split(" ", 1)
+
+        @full.deleter
+        def full(self) -> None:
+            self.first = self.last = ""
+
+    state = PropertyState()  # pyright: ignore [reportCallIssue]
+    state.full = "Ada Lovelace"
+    assert (state.first, state.last) == ("Ada", "Lovelace")
+    del state.full
+    assert (state.first, state.last) == ("", "")
+
+    # a read-only property still reports the missing setter, not a missing var
+    class ReadOnlyState(BaseState):
+        @property
+        def derived(self) -> str:
+            return ""
+
+    with pytest.raises(AttributeError, match="no setter"):
+        ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+
+
 @pytest.mark.asyncio
 async def test_deserialize_gc_state_disk(token):
     """Test that a state can be deserialized from disk with a grandchild state.

@@ -273,6 +273,39 @@ def test_hybrid_property_setter_and_deleter():
     assert seen == ["deleted"]
 
 
+def test_hybrid_property_setter_on_state():
+    """setter/deleter also work on a state, whose __setattr__ guards unknown names."""
+
+    class NameState(rx.State):
+        first: str = "Jane"
+        last: str = "Doe"
+
+        @hybrid_property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+        @full.setter
+        def _full_setter(self, value: str) -> None:
+            self.first, self.last = value.split(" ", 1)
+
+        @_full_setter.deleter
+        def _full_deleter(self) -> None:
+            self.first = self.last = ""
+
+    state = NameState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state.full = "Ada Lovelace"  # pyright: ignore[reportAttributeAccessIssue]
+    assert (state.first, state.last) == ("Ada", "Lovelace")
+    assert state.full == "Ada Lovelace"
+    # the assignment marks the vars the setter touched, not the property
+    assert {"first", "last"} <= state.dirty_vars
+    del state.full  # pyright: ignore[reportAttributeAccessIssue]
+    assert (state.first, state.last) == ("", "")
+    # the frontend value still comes from the getter
+    assert str(Var.create(NameState.full)) == str(
+        Var.create(f"{NameState.first} {NameState.last}")
+    )
+
+
 def test_hybrid_property_var_fn_as_classmethod():
     """A var function may be declared a classmethod, which types its first parameter."""
 
