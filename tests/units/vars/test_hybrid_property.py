@@ -1,11 +1,32 @@
 """Unit tests for reflex_base.vars.hybrid_property."""
 
+from collections.abc import Generator
+
 import pytest
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import HybridPropertyError
+from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.experimental import hybrid_property
 from reflex.vars import Var
+
+
+@pytest.fixture(autouse=True)
+def _isolate_state_registrations() -> Generator[None, None, None]:
+    """Discard the state classes each test declares instead of leaking them.
+
+    Every state defined here would otherwise stay in the shared registry and be
+    instantiated by every later test that builds the state tree.
+
+    Yields:
+        None.
+    """
+    token = RegistrationContext.set(RegistrationContext.ensure_context().fork())
+    try:
+        yield
+    finally:
+        RegistrationContext.reset(token)
 
 
 def test_hybrid_property_getter_backend_var_access_raises():
@@ -40,6 +61,29 @@ def test_hybrid_property_var_fn_backend_var_access_raises():
 
     with pytest.raises(HybridPropertyError, match="_secret"):
         _ = VarFnBackendState.value
+
+
+def test_hybrid_property_var_fn_sees_state_dunders():
+    """The backend-var guard forwards dunder names to the state class too."""
+    seen: dict[str, str] = {}
+
+    class DunderState(rx.State):
+        name: str = "pub"
+        _secret: str = "hidden"
+
+        @hybrid_property
+        def value(self) -> str:
+            return self.name
+
+        @value.var
+        @classmethod
+        def _value_var(cls) -> Var[str]:
+            seen["name"] = cls.__name__
+            seen["module"] = cls.__module__
+            return cls.name  # pyright: ignore[reportReturnType]
+
+    _ = DunderState.value
+    assert seen == {"name": "DunderState", "module": DunderState.__module__}
 
 
 def test_hybrid_property_frontend_var_access_ok():
@@ -368,6 +412,8 @@ def test_hybrid_property_getterless_getter_decorator():
         def value(self) -> str:
             return "got"
 
+    # the added getter also types the property's value
+    _ = assert_type(Holder().value, str)
     assert Holder().value == "got"
 
 
@@ -538,6 +584,29 @@ def test_hybrid_property_backend_var_not_resolved_during_class_creation():
         _foo: int  # pyright: ignore[reportIncompatibleVariableOverride]
 
     assert calls == []
+    # The annotation must not shadow the inherited descriptor with storage.
+    assert "_foo" not in GuardState.backend_vars
+    assert GuardState(_reflex_internal_init=True)._foo == 1  # pyright: ignore[reportCallIssue]
+    assert calls == ["getter ran"]
+
+
+def test_hybrid_property_inherited_annotated_name_keeps_descriptor():
+    """An annotation on a name a base provides as a hybrid property stays a descriptor."""
+
+    class HybridBase:
+        @hybrid_property
+        def doubled(self) -> int:
+            return self.count * 2  # pyright: ignore[reportAttributeAccessIssue]
+
+    class InheritedState(HybridBase, rx.State):
+        count: int = 3
+        doubled: int  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert "doubled" not in InheritedState.get_fields()
+    assert InheritedState(_reflex_internal_init=True).doubled == 6  # pyright: ignore[reportCallIssue]
+    assert str(Var.create(InheritedState.doubled)) == str(
+        Var.create(InheritedState.count * 2)
+    )
 
 
 def test_hybrid_property_annotated_name_keeps_descriptor():

@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from .sequence import ArrayVar, StringVar
 
 _T = TypeVar("_T")
+# the new value type when `getter` replaces the getter
+_T2 = TypeVar("_T2")
 _O = TypeVar("_O")
 # the getter's return type, for resolving class-level access to a var type
 _INT = TypeVar("_INT", bound=int)
@@ -47,11 +49,15 @@ class _StateBackendVarGuard:
             state_cls: The state class the hybrid property is defined on.
             property_name: The name of the hybrid property (for error messages).
         """
-        self.__state_cls = state_cls
-        self.__property_name = property_name
+        self._state_cls = state_cls
+        self._property_name = property_name
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattribute__(self, name: str) -> Any:
         """Forward attribute access to the state class, blocking backend vars.
+
+        Overrides `__getattribute__` rather than `__getattr__` so that names the
+        guard itself carries (`__doc__`, `__module__`, `__class__`, ...) resolve
+        on the state class too.
 
         Args:
             name: The attribute accessed on the state inside the hybrid property.
@@ -62,15 +68,16 @@ class _StateBackendVarGuard:
         Raises:
             HybridPropertyError: If a backend (underscore-prefixed) var is accessed.
         """
-        state_cls = self.__state_cls
+        state_cls = object.__getattribute__(self, "_state_cls")
         if name in state_cls.backend_vars:
+            property_name = object.__getattribute__(self, "_property_name")
             msg = (
-                f"Hybrid property '{self.__property_name}' of state "
+                f"Hybrid property '{property_name}' of state "
                 f"'{state_cls.__name__}' accessed backend-only var '{name}' while "
                 f"building its frontend value. Backend vars (prefixed with '_') exist "
                 f"only on the server and cannot be referenced from a hybrid property's "
                 f"frontend logic. Use a regular var, or provide a separate frontend "
-                f"implementation with '@{self.__property_name}.var'."
+                f"implementation with '@{property_name}.var'."
             )
             raise HybridPropertyError(msg)
         return getattr(state_cls, name)
@@ -137,21 +144,22 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         self._bound: bool = False
         # Derivation source and decorated-function name, set by `_derive`.
         self._origin: HybridProperty[Any, Any, Any] | None = None
-        self._alias: str | None = None
+        self._decl_name: str | None = None
 
     def __set_name__(self, owner: type, name: str, /) -> None:
         """Bind the property under its final attribute name.
 
-        A derived copy defined under an alias name rebinds itself under its
-        origin's name, removing the alias and merging in accessors an earlier
-        copy already bound there.
+        A derived copy still carrying the name its decorated function was
+        declared under rebinds itself to its origin's name, dropping that
+        declaration and merging in accessors an earlier copy bound there.
+        Assigning a copy to a name of its own (``b = a.setter(f)``) forks it.
 
         Args:
             owner: The class the property is defined on.
             name: The attribute name the property is assigned to.
         """
-        alias, self._alias = self._alias, None
-        if alias is None or name != alias:
+        decl_name, self._decl_name = self._decl_name, None
+        if decl_name is None or name != decl_name:
             self._name = name
             self._bound = True
             return
@@ -182,7 +190,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             bound._var = self._var if self._var is not None else existing._var
             bound._name = target
             bound._bound = True
-            # Keep the chain so later aliased copies still find this one.
+            # Keep the chain so later copies still find this one.
             bound._origin = self._origin
         setattr(owner, target, bound)
         delattr(owner, name)
@@ -207,7 +215,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             if (
                 existing is self
                 or not isinstance(existing, HybridProperty)
-                # An alias that has not bound yet rebinds itself later.
+                # A copy that has not bound yet rebinds itself later.
                 or not existing._bound
                 or existing._name != attr
             ):
@@ -231,13 +239,14 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
     def _derive(
         self,
         func: Callable[..., Any],
-        fget: Callable[[_O], _T] | None = None,
+        fget: Callable[[_O], Any] | None = None,
         fset: Callable[[_O, _T], None] | None = None,
         fdel: Callable[[_O], None] | None = None,
     ) -> Self:
         """Copy the property, so each class gets its own descriptor.
 
-        The copy records its origin and ``func``'s name for `__set_name__`.
+        The copy records its origin and ``func``'s name for `__set_name__`. A
+        replacement getter may retype the value, so `getter` types its result.
 
         Args:
             func: The function the deriving decorator was applied to.
@@ -254,7 +263,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         new._var = self._var
         new._name = self._name
         new._origin = self
-        new._alias = getattr(func, "__name__", None)
+        new._decl_name = getattr(func, "__name__", None)
         return new
 
     def _get_var(self, owner: Any) -> Var[Any] | None:
@@ -459,8 +468,11 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
             raise AttributeError(msg)
         self.fdel(instance)
 
-    def getter(self, fget: Callable[[_O], _T]) -> HybridProperty[_T, _O, _V]:
+    def getter(self, fget: Callable[[_O], _T2]) -> HybridProperty[_T2, _O, _V]:
         """Set the getter function of the property.
+
+        The new getter's return type becomes the property's value type, so a
+        getter-less property gets its type from the getter added here.
 
         Args:
             fget: The getter function to set.
@@ -470,8 +482,8 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         """
         new = self._derive(fget, fget=fget)
         if new._name is None:
-            new._name = new._alias
-        return new
+            new._name = new._decl_name
+        return cast("HybridProperty[_T2, _O, _V]", new)
 
     def setter(self, fset: Callable[[_O, _T], None]) -> HybridProperty[_T, _O, _V]:
         """Set the setter function of the property.

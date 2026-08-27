@@ -3733,6 +3733,23 @@ def field(
     )
 
 
+def _inherited_value(bases: tuple[type, ...], name: str) -> Any:
+    """Look up a class attribute on the bases without running descriptors.
+
+    Args:
+        bases: The bases of the class being created.
+        name: The attribute name to look up.
+
+    Returns:
+        The first value found along the bases' MROs, or MISSING.
+    """
+    for base in bases:
+        for klass in base.__mro__:
+            if name in klass.__dict__:
+                return klass.__dict__[name]
+    return MISSING
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
@@ -3832,9 +3849,10 @@ class BaseStateMeta(ABCMeta):
                 # If the annotation is a classvar, skip it.
                 continue
 
-            if isinstance(value, property):
-                # A (hybrid) property assigned under an annotated name stays a
-                # descriptor; wrapping it into a field default would destroy it.
+            declared = value if value is not MISSING else _inherited_value(bases, key)
+            if isinstance(declared, property):
+                # A (hybrid) property under an annotated name stays a descriptor,
+                # here or on a base; a field would shadow it with a stored value.
                 continue
 
             if value is MISSING:
