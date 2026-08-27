@@ -84,7 +84,7 @@ class BaseEventNamespace(ABC):
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Get token to SID mapping for backward compatibility.
+        """Token to SID mapping for backward compatibility.
 
         Note: this mapping is read-only.
 
@@ -96,7 +96,7 @@ class BaseEventNamespace(ABC):
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """Get SID to token mapping for backward compatibility.
+        """SID to token mapping for backward compatibility.
 
         Returns:
             The SID to token mapping dict.
@@ -189,11 +189,12 @@ class BaseEventNamespace(ABC):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(_EVENT, update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Awaiting a task wrapping the emit blocks just the same, so await it
+        # directly and skip the task overhead.
+        await self.emit(_EVENT, update, to=socket_record.sid)
+        # The emit only queues the packet; yield a tick so the writer can flush
+        # it before the caller potentially blocks the loop.
+        await asyncio.sleep(0)
 
     async def handle_event(
         self, sid: str, data: Any, asgi_scope: MutableMapping[str, Any]

@@ -682,7 +682,7 @@ class Config(BaseConfig):
 
     @property
     def app_module(self) -> ModuleType | None:
-        """Return the app module if `app_module_import` is set.
+        """The app module if `app_module_import` is set.
 
         Returns:
             The app module.
@@ -695,7 +695,7 @@ class Config(BaseConfig):
 
     @property
     def module(self) -> str:
-        """Get the module name of the app.
+        """The module name of the app.
 
         Returns:
             The module name.

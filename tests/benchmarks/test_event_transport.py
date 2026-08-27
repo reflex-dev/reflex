@@ -135,7 +135,7 @@ async def websocket_inbound():  # noqa: RUF029 - async so it runs on the benchma
 async def socketio_inbound():  # noqa: RUF029 - async so it runs on the benchmark loop
     """Runner delivering NUM_MESSAGES event packets over Socket.IO.
 
-    Yields:
+    Returns:
         An async callable running one full connection lifecycle.
     """
     pytest.importorskip("socketio")
@@ -180,7 +180,7 @@ async def socketio_inbound():  # noqa: RUF029 - async so it runs on the benchmar
             await asyncio.sleep(0)
         assert len(app.enqueued) >= NUM_MESSAGES
 
-    yield run
+    return run
 
 
 @pytest_asyncio.fixture
@@ -208,7 +208,7 @@ async def websocket_outbound():
 async def socketio_outbound():
     """Runner emitting NUM_MESSAGES state updates over Socket.IO.
 
-    Yields:
+    Returns:
         An async callable emitting the updates.
     """
     pytest.importorskip("socketio")
@@ -246,7 +246,7 @@ async def socketio_outbound():
     await sio._handle_eio_message(eio_sid, "0" + NAMESPACE + ",")
     assert TOKEN in namespace.token_to_sid
 
-    yield run
+    return run
 
 
 def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixture):

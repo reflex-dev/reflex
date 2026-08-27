@@ -286,12 +286,16 @@ def changelog_packages(config: Config) -> list[str]:
 
     Returns:
         Package names in repository order. Internal packages are excluded: they
-        release by patch-bumping their newest tag, not from a changelog.
+        release by patch-bumping their newest tag, not from a changelog. So are
+        never-published ones — a stray changelog in a package that does not ship
+        must not become a publish trigger.
     """
     return [
         package
         for package in config.all_packages()
-        if not config.is_internal(package) and config.changelog_path(package).is_file()
+        if not config.is_internal(package)
+        and not config.is_never_published(package)
+        and config.changelog_path(package).is_file()
     ]
 
 
@@ -302,10 +306,13 @@ def releasable_packages(config: Config) -> list[str]:
         config: The repository configuration.
 
     Returns:
-        Every package except the internal ones.
+        Every package except the internal ones, which release on every push,
+        and the never-published ones, which release at all.
     """
     return [
-        package for package in config.all_packages() if not config.is_internal(package)
+        package
+        for package in config.all_packages()
+        if not config.is_internal(package) and not config.is_never_published(package)
     ]
 
 
