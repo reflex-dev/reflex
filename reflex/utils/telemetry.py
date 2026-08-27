@@ -527,6 +527,12 @@ def _run_suppressed(
     Telemetry must never break the app, so any error (including a failed send)
     is reported at debug level and otherwise discarded.
 
+    Caveat: a job submitted before any context exists runs without one, so a
+    config lookup inside it attaches a context of the worker's own that later
+    context-less jobs then reuse. Harmless for a Reflex app (one app, one config
+    per process), and once the app's context has loaded its config, every
+    subsequent send carries that context in and overrides the worker's.
+
     Args:
         registration_context: The submitter's RegistrationContext, or None when
             it had none attached.
