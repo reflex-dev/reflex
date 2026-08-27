@@ -885,6 +885,43 @@ def test_vite_config_template_pins_preview_host() -> None:
     assert 'host: "127.0.0.1",' in config
 
 
+def test_vite_config_template_imports_plugin_with_extension() -> None:
+    """Local plugin imports carry a file extension.
+
+    Vite's native config loader (planned to become the default) cannot resolve
+    extensionless relative imports and warns about them today.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert 'from "./vite-plugin-safari-cachebust.js"' in config
+
+
+def test_vite_config_template_filters_react_dom_server_resolve_hook() -> None:
+    """The react-dom/server resolveId hook declares a hook filter.
+
+    Without a filter, rolldown calls the hook for every import in the module
+    graph, which dominates build time on large apps.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "filter: { id: /react-dom\\/server/ }," in config
+    assert "handler(source, importer) {" in config
+
+
 @pytest.mark.parametrize("minify", [True, False])
 def test_compile_vite_config_reads_minify_env(
     minify: bool, monkeypatch: pytest.MonkeyPatch

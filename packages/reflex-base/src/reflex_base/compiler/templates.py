@@ -655,7 +655,7 @@ def vite_config_template(
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -663,17 +663,22 @@ function alwaysUseReactDomServerNode() {{
     name: "vite-plugin-always-use-react-dom-server-node",
     enforce: "pre",
 
-    resolveId(source, importer) {{
-      if (
-        typeof importer === "string" &&
-        importer.endsWith("/entry.server.node.tsx") &&
-        source.includes("react-dom/server")
-      ) {{
-        return this.resolve("react-dom/server.node", importer, {{
-          skipSelf: true,
-        }});
-      }}
-      return null;
+    resolveId: {{
+      // Without this filter, the hook runs for every import in the graph
+      // (tens of thousands of calls); only "react-dom/server" specifiers
+      // imported by the node server entry are of interest here.
+      filter: {{ id: /react-dom\/server/ }},
+      handler(source, importer) {{
+        if (
+          typeof importer === "string" &&
+          importer.endsWith("/entry.server.node.tsx")
+        ) {{
+          return this.resolve("react-dom/server.node", importer, {{
+            skipSelf: true,
+          }});
+        }}
+        return null;
+      }},
     }},
   }};
 }}
