@@ -6,6 +6,7 @@ import dataclasses
 import logging
 import sys
 import types
+import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
@@ -36,7 +37,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 from typing_extensions import Self as Self
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -48,6 +49,27 @@ GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
+
+# Potential TypeAliasType classes for isinstance checks. On 3.12+ the native
+# typing.TypeAliasType (produced by the `type` statement) and the
+# typing_extensions backport are distinct classes.
+TypeAliasTypes: tuple[type, ...] = (
+    (TypeAliasType, typing.TypeAliasType)
+    if sys.version_info >= (3, 12)
+    else (TypeAliasType,)
+)
+
+# Potential TypeVarTuple classes for isinstance checks (native on 3.11+,
+# typing_extensions backport otherwise).
+TypeVarTuples: tuple[type, ...] = (
+    (TypeVarTuple, typing.TypeVarTuple)
+    if sys.version_info >= (3, 11)
+    else (TypeVarTuple,)
+)
+
+# Potential type parameter classes for isinstance checks. The typing_extensions
+# ParamSpec instantiates the native class, so it needs no separate entry.
+TypeParams: tuple[type, ...] = (TypeVar, typing.ParamSpec, *TypeVarTuples)
 
 # Union of generic types.
 GenericType = type | _GenericAlias
@@ -349,6 +371,146 @@ def is_classvar(a_type: Any) -> bool:
             type(a_type) is ForwardRef and a_type.__forward_arg__.startswith("ClassVar")
         )
     )
+
+
+def _match_type_args(
+    type_params: tuple[Any, ...], args: tuple[Any, ...]
+) -> dict[Any, Any]:
+    """Match subscription arguments to type parameters.
+
+    A TypeVarTuple absorbs the middle arguments (mapped to a tuple); plain
+    parameters before and after it match positionally from either end.
+
+    Args:
+        type_params: The alias's type parameters.
+        args: The subscription arguments.
+
+    Returns:
+        A mapping from each type parameter to its argument(s).
+    """
+    tvt_index = next(
+        (i for i, p in enumerate(type_params) if isinstance(p, TypeVarTuples)), None
+    )
+    if tvt_index is None:
+        return dict(zip(type_params, args, strict=False))
+    n_after = len(type_params) - tvt_index - 1
+    substitution: dict[Any, Any] = dict(
+        zip(type_params[:tvt_index], args[:tvt_index], strict=False)
+    )
+    substitution[type_params[tvt_index]] = args[tvt_index : len(args) - n_after]
+    if n_after:
+        substitution.update(zip(type_params[-n_after:], args[-n_after:], strict=False))
+    return substitution
+
+
+def _unpacked_type_var_tuple(arg: Any) -> Any | None:
+    """Get the TypeVarTuple an unpacked argument (``*Ts``) refers to.
+
+    Args:
+        arg: The argument to inspect.
+
+    Returns:
+        The TypeVarTuple, or None if the argument does not unpack one.
+    """
+    if isinstance(arg, TypeVarTuples):
+        return arg
+    args = get_args(arg)
+    return args[0] if len(args) == 1 and isinstance(args[0], TypeVarTuples) else None
+
+
+def _substitute_type_params(
+    cls: GenericType, substitution: dict[Any, Any]
+) -> GenericType:
+    """Substitute type parameters by rebuilding the type, expanding unpacked TypeVarTuples.
+
+    Args:
+        cls: The type to substitute into.
+        substitution: Mapping from type parameter to argument(s).
+
+    Returns:
+        The type with its parameters replaced.
+    """
+    if isinstance(cls, TypeParams):
+        return substitution.get(cls, cls)
+    if not getattr(cls, "__parameters__", ()):
+        return cls
+    args: list[Any] = []
+    for arg in get_args(cls):
+        if (tvt := _unpacked_type_var_tuple(arg)) is not None:
+            args.extend(substitution.get(tvt, (arg,)))
+        elif isinstance(arg, list):  # a Callable's parameter list
+            args.append([_substitute_type_params(a, substitution) for a in arg])
+        else:
+            args.append(_substitute_type_params(arg, substitution))
+    if is_union(cls):
+        return unionize(*args)
+    return get_origin(cls)[tuple(args)]
+
+
+def _apply_type_params(
+    value: GenericType, params: tuple[Any, ...], substitution: dict[Any, Any]
+) -> GenericType:
+    """Replace the type parameters of a generic type with their arguments.
+
+    Args:
+        value: The generic type to subscript.
+        params: The parameters of value, in appearance order.
+        substitution: Mapping from type parameter to argument(s).
+
+    Returns:
+        The type with its parameters replaced.
+    """
+    flattened: list[Any] = []
+    for param in params:
+        if isinstance(param, TypeVarTuples):
+            flattened.extend(substitution.get(param, (param,)))
+        else:
+            flattened.append(substitution.get(param, param))
+    try:
+        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+    except TypeError:
+        # Python 3.10 subscription predates PEP 646, and 3.11 rejects a ParamSpec
+        # next to an unpacked TypeVarTuple, so substitute by hand instead.
+        return _substitute_type_params(value, substitution)
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+
+    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
+    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    alias value), and aliases appearing as members of a union.
+
+    Args:
+        cls: The type to resolve.
+
+    Returns:
+        The resolved type, or the original type if it contains no alias.
+    """
+    origin = get_origin(cls)
+    # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
+    # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
+    # check against TypeAliasType and would lose its arguments.
+    if isinstance(origin, TypeAliasTypes):
+        value = resolve_type_alias(origin.__value__)
+        if params := getattr(value, "__parameters__", ()):
+            value = _apply_type_params(
+                value,
+                params,
+                _match_type_args(origin.__type_params__, get_args(cls)),
+            )
+        return resolve_type_alias(value)
+    if isinstance(cls, TypeAliasTypes):
+        return resolve_type_alias(cls.__value__)
+    if is_union(cls):
+        args = get_args(cls)
+        resolved_args = tuple(resolve_type_alias(arg) for arg in args)
+        if any(
+            resolved is not arg
+            for resolved, arg in zip(resolved_args, args, strict=True)
+        ):
+            return unionize(*resolved_args)
+    return cls
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:

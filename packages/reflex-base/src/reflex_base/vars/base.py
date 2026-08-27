@@ -1077,6 +1077,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if var_type is NoReturn:
             return self.to(Any)
 
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
+
         var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
