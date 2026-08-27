@@ -7,10 +7,12 @@ import dataclasses
 import importlib.metadata
 import json
 import logging
+import os
 import platform
 import re
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import uuid
@@ -25,11 +27,10 @@ from typing import Any, TypedDict
 from urllib.parse import urljoin
 
 import click
-from reflex_base.utils import log
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, dependency, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
     ArchiveUploadError,
@@ -372,6 +373,47 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
 webbrowser.BackgroundBrowser = SilentBackgroundBrowser
 
 
+class TokenSource(str, Enum):
+    """Where an access token was loaded from."""
+
+    CONFIG = "config file"
+    ENVIRONMENT = "REFLEX_ACCESS_TOKEN environment variable"
+    OPTION = "--token option"
+    NONE = "none"
+
+
+def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
+    """Fetch the access token from the environment or existing config, and say where it came from.
+
+    ``REFLEX_ACCESS_TOKEN`` takes precedence: exporting it is an explicit
+    choice for this invocation, while the config file is ambient state left
+    behind by an earlier ``reflex login``.
+
+    Returns:
+        The access token and the source it was loaded from.
+        If not found, return empty string and ``TokenSource.NONE`` instead.
+
+    """
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
+    logger.debug("Fetching token from existing config...")
+    try:
+        access_token = stored_access_token()
+    except (OSError, ValueError) as ex:
+        logger.debug(
+            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+        )
+        return "", TokenSource.NONE
+
+    if access_token:
+        return access_token, TokenSource.CONFIG
+
+    return "", TokenSource.NONE
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -380,25 +422,7 @@ def get_existing_access_token() -> str:
         If not found, return empty string for it instead.
 
     """
-    import os
-
-    logger.debug("Fetching token from existing config...")
-    access_token = ""
-    try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            access_token = hosting_config.get("access_token", "")
-    except Exception as ex:
-        logger.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
-        )
-
-    if not access_token:
-        access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-        if access_token:
-            logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
-
-    return access_token
+    return get_existing_access_token_with_source()[0]
 
 
 def is_reflex_enterprise_installed() -> bool:
@@ -490,23 +514,95 @@ def validate_token(token: str) -> dict[str, Any]:
         raise TokenValidationError("internal errors", request_id=request_id) from ex
 
 
+def _read_hosting_config() -> dict[str, Any]:
+    """Read the hosting config file.
+
+    A config that exists but cannot be read is reported rather than treated as
+    empty, so callers do not overwrite entries they were unable to see.
+
+    Returns:
+        The stored config, or an empty dict if the file does not exist.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold a JSON object.
+
+    """
+    try:
+        with constants.Hosting.HOSTING_JSON.open(encoding="utf-8") as config_file:
+            hosting_config = json.load(config_file)
+    except FileNotFoundError:
+        return {}
+    # Valid JSON is not necessarily the object every caller indexes into.
+    if not isinstance(hosting_config, dict):
+        msg = f"{constants.Hosting.HOSTING_JSON} does not hold a JSON object"
+        raise ValueError(msg)
+    return hosting_config
+
+
+def stored_access_token() -> str:
+    """Read the access token held in the config file.
+
+    Unlike ``get_existing_access_token`` this ignores ``REFLEX_ACCESS_TOKEN``
+    and reports read failures, so callers can tell "no token stored" apart from
+    "cannot tell what is stored".
+
+    Returns:
+        The stored token, or an empty string if the config holds none.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
+
+    """
+    return _read_hosting_config().get("access_token", "")
+
+
+def _write_hosting_config(hosting_config: dict[str, Any]):
+    """Write the hosting config file atomically.
+
+    The config is written to a temporary file alongside the target and moved
+    into place, so a failed or interrupted write leaves the previous
+    credentials intact rather than truncating them.
+
+    Args:
+        hosting_config: The config to persist.
+
+    """
+    target = constants.Hosting.HOSTING_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Close the handle before replacing: Windows cannot rename an open file.
+    temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as config_file:
+            json.dump(hosting_config, config_file)
+            config_file.flush()
+            os.fsync(config_file.fileno())
+        temp_path.replace(target)
+    except BaseException:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
 def delete_token_from_config():
     """Delete the invalid token from the config file if applicable."""
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                hosting_config = json.load(config_file)
+            hosting_config = _read_hosting_config()
             hosting_config.pop("access_token", None)
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-                json.dump(hosting_config, config_file)
+            _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
             logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
-    # Delete the previous hosting service data if present.
-    if constants.Hosting.HOSTING_JSON_V0.exists():
-        constants.Hosting.HOSTING_JSON_V0.unlink()
+    # Delete the previous hosting service data if present. Best efforts, like
+    # the rest of this function: the legacy file holds no token the CLI reads.
+    try:
+        constants.Hosting.HOSTING_JSON_V0.unlink(missing_ok=True)
+    except OSError as ex:
+        logger.debug(f"Unable to remove {constants.Hosting.HOSTING_JSON_V0}: {ex}")
 
 
 def save_token_to_config(token: str):
@@ -517,18 +613,17 @@ def save_token_to_config(token: str):
 
     """
     try:
-        if not Path(constants.Reflex.DIR).exists():
-            Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
-        hosting_config: dict[str, str] = {}
-        if constants.Hosting.HOSTING_JSON.exists():
-            try:
-                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                    hosting_config = json.load(config_file)
-            except (OSError, ValueError):
-                hosting_config = {}
+        try:
+            hosting_config = _read_hosting_config()
+        except (OSError, ValueError) as ex:
+            # An unreadable config must not block re-authenticating; the token
+            # is what makes the file useful, so start over from an empty one.
+            logger.debug(
+                f"Discarding unreadable {constants.Hosting.HOSTING_JSON}: {ex}"
+            )
+            hosting_config = {}
         hosting_config["access_token"] = token
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            json.dump(hosting_config, config_file)
+        _write_hosting_config(hosting_config)
     except Exception as ex:
         logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
@@ -2145,7 +2240,7 @@ def upload_archives(
                     f"could not upload the build to storage: HTTP {ex.response.status_code}"
                 ) from ex
             if attempt < UPLOAD_ATTEMPTS - 1:
-                console.warn("the upload window expired; reserving another one")
+                logger.warning("the upload window expired; reserving another one")
         except httpx.HTTPError as ex:
             raise ArchiveUploadError(f"could not upload the build: {ex}") from ex
         else:
@@ -2772,6 +2867,145 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
     return response.json()
 
 
+# Terminal control sequences, which a build log is not entitled to emit into
+# somebody's terminal. Ordered so a full sequence is consumed before the bare
+# ESC that starts it: OSC first (it runs until its own terminator and is the
+# one that writes the clipboard and forges hyperlinks), then CSI, then the
+# two-character escapes, then anything left over.
+_TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
+    r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
+    # Every other escape sequence, in the general ECMA-48 shape: optional
+    # intermediates then one final byte in 0x30-0x7E. Narrower classes leave
+    # the final byte behind once the catch-all below eats the ESC -- `\x1b7`
+    # (DECSC) printing a stray "7", `\x1bc` (full terminal reset) a stray "c".
+    r"|\x1b[ -/]*[0-~]"
+    r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """*text* with terminal control sequences removed.
+
+    A build log is the output of building the user's own app, dependencies
+    included, and this excerpt is printed without anyone asking for it -- on
+    any failed deploy, rather than only when `reflex cloud apps build-logs` is
+    run. Colour is not worth carrying for that: the same sequences let the
+    output erase the lines above it, forge a hyperlink, or write the
+    clipboard, and none of that should be reachable from a dependency's build
+    script. `markup=False` stops rich reading the text as its own markup and
+    does nothing about escape sequences.
+
+    Args:
+        text: The text to strip.
+
+    Returns:
+        The text with terminal control sequences removed.
+
+    """
+    return _TERMINAL_CONTROL_RE.sub("", text)
+
+
+def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
+    """Why a deployment failed, in fields, or None when that cannot be had.
+
+    None covers every way of not getting an answer, and they are one case to
+    the caller: a control plane predating this endpoint 404s, an older
+    self-hosted one may not route it at all, and the network may simply be
+    down. All three mean the same thing here -- report the failure the way the
+    CLI always has, from the status string.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+
+    Returns:
+        The failure report, or None if it could not be read.
+
+    """
+    import httpx
+
+    try:
+        response = httpx.get(
+            urljoin(
+                constants.Hosting.HOSTING_SERVICE,
+                f"/api/v1/deployments/{deployment_id}/failure",
+            ),
+            headers=authorization_header(token),
+            timeout=constants.Hosting.TIMEOUT,
+        )
+        response.raise_for_status()
+        report = response.json()
+    # Wider than json.JSONDecodeError, because a malformed body has more than
+    # one way to fail: an undecodable encoding raises UnicodeDecodeError (a
+    # ValueError) and a deeply nested document raises RecursionError (a
+    # RuntimeError). Either escaping would abort the watch over an answer this
+    # function is contracted to treat as no answer at all.
+    except (httpx.RequestError, httpx.HTTPStatusError, ValueError, RecursionError):
+        return None
+    return report if isinstance(report, dict) else None
+
+
+def _report_deployment_failure(
+    deployment_id: str,
+    token: str,
+    status: str,
+    *,
+    offer_build_logs: bool,
+) -> None:
+    """Tell the user why their deploy failed and what to do about it.
+
+    The build log is offered only where the control plane says it is the
+    answer. A failure in our pipeline reported as a build failure sends
+    somebody hunting for a bug in an app that does not have one, which is the
+    more expensive of the two mistakes and the reason the fault is asked about
+    at all.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+        status: The status string the watch loop ended on.
+        offer_build_logs: Whether to point at the build log when no structured
+            report can be read, preserving what this arm printed before.
+
+    """
+    report = _get_deployment_failure(deployment_id, token)
+    if report is None:
+        logger.warning(status)
+        if offer_build_logs:
+            logger.warning(
+                f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+
+    logger.error(report.get("reason") or status)
+    if guidance := report.get("guidance"):
+        logger.warning(guidance)
+
+    excerpt = report.get("build_log_excerpt")
+    # Typed as a string by the endpoint, checked because this one is not ours:
+    # the CLI is versioned apart from the control plane and talks to
+    # self-hosted ones, so a non-string here would raise in the sanitiser and
+    # take down a report that had already read fine.
+    if not excerpt or not isinstance(excerpt, str):
+        # A log the server holds but could not read is not a build that
+        # produced none, and saying nothing here reads as the latter.
+        if report.get("build_log_unreadable"):
+            logger.warning(
+                "the build log could not be read right now; try again with:\n"
+                f" reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+    # Raw build output: paths, versions and tracebacks, all of which rich would
+    # read as markup given the chance, plus whatever escape sequences the
+    # build printed.
+    console.print("\nthe end of the build log:")
+    console.print(_strip_terminal_controls(excerpt), markup=False)
+    console.print(
+        f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
+    )
+
+
 def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
     """Continuously watch the status of a specific deployment.
 
@@ -2805,16 +3039,19 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 )
                 break
             if "build error" in status:
-                logger.warning(status)
-                logger.warning(
-                    f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=True
                 )
                 return False
             if "unable to find status for given id" in status:
+                # Not a failed deployment but an id that resolves to nothing,
+                # so there is no row to report on and nothing to ask for.
                 logger.error(status)
                 return False
             if "error" in status:
-                logger.warning(status)
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=False
+                )
                 return False
             if "bad response" in status:
                 logger.warning(status)
