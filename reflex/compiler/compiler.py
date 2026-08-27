@@ -236,11 +236,12 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     )
 
 
-def _compile_page(component: BaseComponent) -> str:
+def _compile_page(component: BaseComponent, route: str) -> str:
     """Compile the component.
 
     Args:
         component: The component to compile.
+        route: The route the page is compiled for.
 
     Returns:
         The compiled component.
@@ -256,6 +257,7 @@ def _compile_page(component: BaseComponent) -> str:
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
+        route=route,
     )
 
 
@@ -741,7 +743,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component)
+    code = _compile_page(component, path)
     return output_path, code
 
 
@@ -769,6 +771,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         custom_codes=page_ctx.custom_code_dict(),
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
+        route=page_ctx.route,
     )
     return output_path, code
 
