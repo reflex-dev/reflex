@@ -57,7 +57,7 @@ class UploadFile(StarletteUploadFile):
 
     @property
     def filename(self) -> str | None:
-        """Get the name of the uploaded file.
+        """The name of the uploaded file.
 
         Returns:
             The name of the uploaded file.
@@ -66,7 +66,7 @@ class UploadFile(StarletteUploadFile):
 
     @property
     def name(self) -> str | None:
-        """Get the name of the uploaded file.
+        """The name of the uploaded file.
 
         Returns:
             The name of the uploaded file.

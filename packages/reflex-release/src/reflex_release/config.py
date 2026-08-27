@@ -111,7 +111,7 @@ class CustomBuild:
 
     @property
     def job_id(self) -> str:
-        """Return the publish-workflow job id that calls this workflow.
+        """The publish-workflow job id that calls this workflow.
 
         Returns:
             The workflow filename reduced to the characters GitHub allows in a

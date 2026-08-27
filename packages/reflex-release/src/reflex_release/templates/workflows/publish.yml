@@ -299,7 +299,14 @@ jobs:
   # dependencies — it only uploads the artifact collected above.
   publish:
     needs: [prepare, collect]
-    if: needs.prepare.outputs.skipped != 'true'
+    # The status function is load-bearing. With none, GitHub applies an
+    # implicit success() evaluated over the whole transitive dependency
+    # closure rather than the direct needs — and exactly one build path ever
+    # runs, so the skipped one reaches this job straight through the `collect`
+    # written to absorb it and the upload silently never happens.
+    if: >-
+      !cancelled() && needs.collect.result == 'success' &&
+      needs.prepare.outputs.skipped != 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -375,6 +382,12 @@ jobs:
 
   tag-and-release:
     needs: [prepare, publish]
+    # The same transitive implicit success() reaches this job through
+    # `publish`, so it needs a status function of its own. Not `!failure()`:
+    # a skipped publish is neither failed nor cancelled, and tolerating it
+    # would push the tag for a release that uploaded nothing.
+    if: >-
+      !cancelled() && needs.publish.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
