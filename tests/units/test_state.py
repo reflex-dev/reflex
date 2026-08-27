@@ -4399,14 +4399,16 @@ def test_assignment_through_property_setter():
     del state.full
     assert (state.first, state.last) == ("", "")
 
-    # a read-only property still reports the missing setter, not a missing var
+    # a read-only property raises its own error, not the undeclared-var guard
     class ReadOnlyState(BaseState):
         @property
         def derived(self) -> str:
             return ""
 
-    with pytest.raises(AttributeError, match="no setter"):
+    with pytest.raises(AttributeError) as exc_info:
         ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+    # SetUndefinedStateVarError is itself an AttributeError, so exclude it by type
+    assert not isinstance(exc_info.value, SetUndefinedStateVarError)
 
 
 @pytest.mark.asyncio
