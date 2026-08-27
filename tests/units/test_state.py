@@ -2186,7 +2186,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         mock_deprecate.assert_called()
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
