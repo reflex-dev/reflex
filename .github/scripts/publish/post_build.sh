@@ -15,5 +15,5 @@ set -euo pipefail
 #
 # Located relative to this hook rather than to the working directory, which is
 # what DIST_DIR is relative to.
-exec uv run --no-project python \
+exec uv run --no-config --script \
   "$(dirname "$0")/../../../scripts/verify_pyi.py"

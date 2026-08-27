@@ -16,6 +16,16 @@ than listed here, so a package that starts or stops generating them is covered
 without touching this script.
 """
 
+# Inline dependencies, so `uv run --script` provisions the tomllib backport on the
+# interpreters that lack it: the hook runs outside the project environment and can
+# only rely on what this block declares.
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "tomli; python_version < '3.11'",
+# ]
+# ///
+
 from __future__ import annotations
 
 import os
