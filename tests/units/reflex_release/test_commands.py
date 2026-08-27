@@ -247,6 +247,56 @@ def test_materialize_writes_the_changelog(
     assert not (config.news_dir("widget-core") / "7.feature.md").exists()
 
 
+def test_materialize_associates_orphan_fragments_with_their_pull_request(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """An orphan fragment that landed is linked to the PR that merged it."""
+    fragment(config, "widget-core", "+a-widget.feature.md", "A new widget.")
+    commit_all(repo, "feat: a new widget (#4242)")
+    releases = json.dumps([
+        {
+            "package": "widget-core",
+            "current": "",
+            "next": "0.2.0",
+            "tag": "widget-core-v0.2.0",
+        }
+    ])
+
+    commands.cmd_materialize(config, "release-minor", releases)
+
+    text = config.changelog_path("widget-core").read_text(encoding="utf-8")
+    assert "A new widget. ([#4242]" in text
+    news = config.news_dir("widget-core")
+    assert not (news / "+a-widget.feature.md").exists()
+    assert not (news / "4242.feature.md").exists()
+    # towncrier consumed the renamed fragment, so the orphan is gone for good.
+    assert git(repo, "status", "--porcelain", "--", str(news)).split() == [
+        "D",
+        "packages/widget-core/news/+a-widget.feature.md",
+    ]
+
+
+def test_materialize_keeps_an_unassociated_orphan_entry(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    fragment(config, "widget-core", "+a-widget.feature.md", "A new widget.")
+    commit_all(repo, "a commit with no pull request")
+    releases = json.dumps([
+        {
+            "package": "widget-core",
+            "current": "",
+            "next": "0.2.0",
+            "tag": "widget-core-v0.2.0",
+        }
+    ])
+
+    commands.cmd_materialize(config, "release-minor", releases)
+
+    text = config.changelog_path("widget-core").read_text(encoding="utf-8")
+    assert "A new widget." in text
+    assert "#" not in text.split("### Features")[1]
+
+
 def test_materialize_collapses_a_prerelease_train(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
