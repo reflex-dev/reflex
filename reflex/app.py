@@ -1388,22 +1388,29 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
+        replaced_new_route = replace_brackets_with_keywords(new_route)
         for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
                     return route, r, nr
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
         return None
 
     def _setup_admin_dash(self):
