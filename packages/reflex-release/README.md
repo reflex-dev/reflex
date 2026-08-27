@@ -805,6 +805,64 @@ a flag for running the same command by hand.
   changelog, `release-minor` produces `0.1.0`. Publishing it still needs an
   explicit version: only `internal-packages` may publish without a changelog.
 
+## Troubleshooting
+
+### A stray tag blocks the next version
+
+*Dispatch release* refuses to plan a version whose tag already exists — a tag
+means "this is on PyPI", so republishing over it would fail at upload anyway:
+
+```
+tag v0.0.7a1 already exists
+```
+
+A hand-pushed alpha tag can also surface as the baseline itself, for a package
+that has no changelog yet:
+
+```
+new-prerelease-* would abandon the in-progress 0.0.7a1 train for mypkg
+```
+
+Both come from the same place: a tag that was pushed by hand — before the
+pipeline was adopted, or by an aborted release — for a version that was never
+uploaded. There is deliberately no version override on the dispatch form: the
+changelog and the tags are the only inputs to the next version, so the fix is to
+correct whichever of the two is wrong.
+
+**The version was never uploaded.** Delete the tag; nothing else refers to it.
+
+```bash
+git push origin :refs/tags/v0.0.7a1
+git tag -d v0.0.7a1
+gh release delete v0.0.7a1 --yes   # only if a GitHub release exists for it
+```
+
+Dispatch the same action again — it plans the same version, this time with
+nothing in the way.
+
+**The version really is on PyPI.** That number is spent, so the changelog has to
+say so before the train can move past it. On the train's `r/pre-*` branch —
+create it from the main branch if there is no train yet — add the section by
+hand at the top of the package's `CHANGELOG.md`, matching towncrier's heading
+format:
+
+```markdown
+## 0.0.7a1 (2026-08-25)
+
+No significant changes.
+```
+
+Push that commit straight to the `r/pre-*` branch: the hand-written-heading
+guard runs only on pull requests, so going through one would additionally need
+the `changelog-version-edit` label. The push starts `release_from_changelog`,
+which finds the tag, reports "already tagged" and publishes nothing. Then
+dispatch `continued-prerelease` on that branch — the baseline is now the alpha
+you seeded, so it plans `0.0.7a2` and consumes the pending news fragments into
+it.
+
+The same shape recovers a final version: seed `## 1.2.3 (<date>)` and dispatch
+`release-patch` to land on `1.2.4`.
+
 ## Why the pipeline is shaped this way
 
 - **Changelog as the trigger.** The artifact humans review (the changelog bump)
