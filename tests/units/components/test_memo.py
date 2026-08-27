@@ -1168,6 +1168,61 @@ def test_component_memo_inline_function_wrapper_is_parenthesized():
     )
 
 
+def test_component_memo_sets_display_name_from_python_name():
+    """A ``@rx.memo`` component is labelled with its Python function name.
+
+    ``memo()`` erases the name JS would otherwise infer from the assignment,
+    so React DevTools shows ``Anonymous`` without an explicit ``displayName``.
+    """
+
+    @rx.memo
+    def named_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["NamedWidget", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("NamedWidget", __name__)
+    assert f'{sym}.displayName = "NamedWidget";' in code
+
+
+def test_component_memo_display_name_survives_custom_wrapper():
+    """The ``displayName`` is assigned on the exported symbol, whatever wraps it."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=track_render)
+    def wrapped_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    files, _ = compiler.compile_memo_components((MEMOS["WrappedWidget", __name__],))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("WrappedWidget", __name__)
+    assert f"export const {sym} = trackRender((" in code
+    assert f'{sym}.displayName = "WrappedWidget";' in code
+
+
+def test_component_memo_display_name_is_escaped():
+    """A display name is emitted as a JS string literal, never raw."""
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="quoted",
+        params=(),
+        export_name="Quoted",
+        _component=_LazyBody.ready(rx.text("hi")),
+        passthrough_hole_child=None,
+        display_name='Weird"Name',
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert 'Quoted.displayName = "Weird\\"Name";' in code
+
+
 def test_component_memo_wrapper_none_in_unmirrored_module():
     """The per-name fallback module honors ``wrapper=None`` too."""
     definition = MemoComponentDefinition(

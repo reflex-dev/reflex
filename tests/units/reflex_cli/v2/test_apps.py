@@ -14,11 +14,10 @@ from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import GetAppError
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
-from typer.main import Typer, get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
