@@ -226,6 +226,27 @@ def add_packages(repo: Path, *names: str) -> Config:
     return load_config(repo)
 
 
+def test_never_published_packages_get_no_dispatch_checkbox(
+    config: Config, repo: Path
+) -> None:
+    assert [entry.packages for entry in dispatch_inputs(config)] == [
+        ("mypkg",),
+        ("widget-core",),
+    ]
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\nnever-publish-packages = ["widget-core"]',
+        ),
+        encoding="utf-8",
+    )
+    reloaded = load_config(repo)
+    assert [entry.packages for entry in dispatch_inputs(reloaded)] == [("mypkg",)]
+    rendered = render("dispatch_release.yml", reloaded)
+    assert "widget-core" not in rendered
+
+
 @pytest.mark.parametrize("mode", ["checkboxes", "text"])
 def test_rendered_workflows_are_valid_yaml(
     config: Config, repo: Path, mode: str

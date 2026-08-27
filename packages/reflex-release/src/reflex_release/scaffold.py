@@ -959,7 +959,7 @@ def init(root: Path, pin: str | None, force: bool) -> None:
 
     config = load_config(root)
     for package in config.all_packages():
-        if config.is_internal(package):
+        if config.is_internal(package) or config.is_never_published(package):
             continue
         news = config.news_dir(package)
         news.mkdir(parents=True, exist_ok=True)

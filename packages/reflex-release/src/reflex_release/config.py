@@ -64,6 +64,7 @@ _KNOWN_KEYS = frozenset({
     "release-timezone",
     "uv-version",
     "main-branch",
+    "never-publish-packages",
     "prerelease-branch-prefix",
     "hotfix-branch-prefix",
     "release-branch-prefix",
@@ -151,10 +152,6 @@ class Config:
             self-review, so every upload needs a second person.
         cli_command: How the scaffolded workflows invoke this tool. ``init``
             writes it pinned to the version that generated them.
-        uv_version: The uv release the generated workflows install, pinned
-            verbatim; empty installs whatever setup-uv defaults to.
-        python_version: The Python those workflows run uv with, pinned the same
-            way; empty leaves the choice to uv.
         dispatch_package_inputs: How the Dispatch release workflow asks which
             packages to release — ``checkboxes``, a free-text ``text`` field, or
             ``auto`` (checkboxes while they fit under the GitHub input limit).
@@ -190,13 +187,18 @@ class Config:
             nothing.
         lockstep: The lockstep groups.
         custom_build: The repository-supplied build workflows.
+        uv_version: The uv release the generated workflows install, pinned
+            verbatim; empty installs whatever setup-uv defaults to.
+        python_version: The Python those workflows run uv with, pinned the same
+            way; empty leaves the choice to uv.
+        never_publish_packages: Packages this repository builds but never
+            releases. They are excluded from every release path rather than
+            merely exempt from the changelog.
     """
 
     root: Path
     allow_self_review: bool = True
     cli_command: str = "uvx reflex-release"
-    uv_version: str = DEFAULT_UV_VERSION
-    python_version: str = DEFAULT_PYTHON_VERSION
     dispatch_package_inputs: str = "auto"
     news_directory: str = "news"
     changelog_filename: str = "CHANGELOG.md"
@@ -216,6 +218,12 @@ class Config:
     post_release_workflow: str | None = None
     lockstep: tuple[LockstepGroup, ...] = ()
     custom_build: tuple[CustomBuild, ...] = ()
+    # Appended rather than grouped with the settings they belong beside:
+    # these are positional parameters of a constructor other code calls, so
+    # a new field goes at the end.
+    uv_version: str = DEFAULT_UV_VERSION
+    python_version: str = DEFAULT_PYTHON_VERSION
+    never_publish_packages: tuple[str, ...] = ()
 
     def package_dir(self, package: str) -> str:
         """Return the repo-relative directory of a package.
@@ -370,6 +378,19 @@ class Config:
         """
         return package in self.internal_packages
 
+    def is_never_published(self, package: str) -> bool:
+        """Return whether a package is excluded from every release path.
+
+        Args:
+            package: The package name.
+
+        Returns:
+            True when the package is listed in ``never-publish-packages``: it
+            gets no release selection, is not detected from a changelog, and
+            publishing it is refused.
+        """
+        return package in self.never_publish_packages
+
     def requires_fragments(self, package: str) -> bool:
         """Return whether pull requests touching a package need a news fragment.
 
@@ -377,10 +398,13 @@ class Config:
             package: The package name.
 
         Returns:
-            False for internal and explicitly exempt packages.
+            False for internal, never-published and explicitly exempt packages.
+            A package that never ships has no release notes to carry a
+            fragment, so the requirement would have nowhere to land.
         """
         return (
             not self.is_internal(package)
+            and not self.is_never_published(package)
             and package not in self.changelog_exempt_packages
         )
 
@@ -896,6 +920,7 @@ def load_config(root: Path) -> Config:
         latest_release_package=latest_release_package or None,
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
+        never_publish_packages=_string_list(table, "never-publish-packages"),
         # The documented opt-out is leaving the key out; an empty string is the
         # same thing rather than a workflow named "".
         post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
@@ -947,7 +972,11 @@ def load_config(root: Path) -> Config:
             f"[tool.{TOOL_TABLE}] describes no packages: set root-package and/or "
             "create a packages directory"
         )
-    for key in ("internal-packages", "changelog-exempt-packages"):
+    for key in (
+        "internal-packages",
+        "changelog-exempt-packages",
+        "never-publish-packages",
+    ):
         for name in _string_list(table, key):
             if name not in packages:
                 fail(f"[tool.{TOOL_TABLE}] {key} lists unknown package {name!r}")
@@ -955,7 +984,43 @@ def load_config(root: Path) -> Config:
     if latest is not None and latest not in packages:
         fail(f"[tool.{TOOL_TABLE}] latest-release-package is unknown: {latest!r}")
 
+    # A package cannot both never publish and publish on every push, and one
+    # that never publishes cannot be the release GitHub marks "Latest".
+    if both := sorted(
+        set(config.never_publish_packages) & set(config.internal_packages)
+    ):
+        fail(
+            f"[tool.{TOOL_TABLE}] {', '.join(both)} is listed in both "
+            "never-publish-packages and internal-packages; internal packages "
+            "release on every push that touches them"
+        )
+    if latest is not None and config.is_never_published(latest):
+        fail(
+            f"[tool.{TOOL_TABLE}] latest-release-package is {latest!r}, which is "
+            "listed in never-publish-packages, so it has no release to mark; "
+            "name a package that publishes, or leave it empty to never mark one"
+        )
+
     # Custom builds are validated against the lockstep groups, so they load
     # onto a configuration that already carries them.
     config = dataclasses.replace(config, lockstep=_load_lockstep(table, packages))
-    return dataclasses.replace(config, custom_build=_load_custom_build(table, config))
+    config = dataclasses.replace(config, custom_build=_load_custom_build(table, config))
+
+    # Both features exist to get a package published, so naming one that never
+    # publishes is a contradiction rather than a harmless no-op.
+    for label, named in (
+        (
+            _LOCKSTEP_LABEL,
+            {name for group in config.lockstep for name in group.members},
+        ),
+        (
+            CUSTOM_BUILD_LABEL,
+            {name for entry in config.custom_build for name in entry.packages},
+        ),
+    ):
+        if unpublished := sorted(named & set(config.never_publish_packages)):
+            fail(
+                f"{label} names {', '.join(unpublished)}, which is listed in "
+                "never-publish-packages and so never reaches a release"
+            )
+    return config

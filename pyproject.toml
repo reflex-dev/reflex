@@ -353,9 +353,9 @@ release-timezone = "America/Los_Angeles"
 # No changelog, no news fragments: patch-released on every push to main that
 # touches them.
 internal-packages = ["reflex-components-internal", "reflex-site-shared"]
-# Ships inside the docs site rather than to PyPI, so pull requests touching it
-# need no news fragment.
-changelog-exempt-packages = ["integrations-docs"]
+# Built for the docs site rather than published to PyPI: no release checkbox, no
+# changelog detection, no news fragment, and publish refuses it.
+never-publish-packages = ["integrations-docs"]
 
 # reflex's metadata pins reflex-base exactly, so the two always release together
 # at one version and reflex uploads only after reflex-base is on PyPI.
