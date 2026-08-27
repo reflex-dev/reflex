@@ -8,7 +8,9 @@ authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
-    "reflex-base >= 0.9.0",
+    # The unversioned "mergician" import resolves against the pin in
+    # reflex-base's PackageJson.DEPENDENCIES.
+    "reflex-base >= 0.9.8.post63.dev0",
     "reflex-components-core >= 0.9.0",
 ]
 
