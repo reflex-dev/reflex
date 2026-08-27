@@ -328,6 +328,11 @@ class MemoComponentDefinition(MemoDefinition):
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
     auto_memo_wrapper: bool = False
+    # The name React DevTools shows for this memo. ``export_name`` (derived
+    # from the decorated function) is already readable for ``@rx.memo``, but
+    # auto-memoized wrappers carry a hash-suffixed tag, so the plugin sets this
+    # to the wrapped component's Python class name instead.
+    display_name: str | None = None
 
     @property
     def component(self) -> Component:
@@ -1877,7 +1882,12 @@ def create_passthrough_component_memo(
     passthrough.__module__ = __name__
 
     definition = _create_component_definition(passthrough, Component, source_module)
-    replacements: dict[str, Any] = {"auto_memo_wrapper": True}
+    # ``export_name`` is the content-hashed tag, which reads as noise in the
+    # React DevTools tree. Name the memo after the Python class it wraps.
+    replacements: dict[str, Any] = {
+        "auto_memo_wrapper": True,
+        "display_name": type(component).__qualname__,
+    }
     if definition.export_name != tag:
         replacements["export_name"] = tag
     if captured_hole_child:

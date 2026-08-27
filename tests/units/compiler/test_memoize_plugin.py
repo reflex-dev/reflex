@@ -798,6 +798,28 @@ def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     assert wrapper.render()["name"] == tag
 
 
+def test_auto_memo_display_name_is_the_wrapped_python_class() -> None:
+    """Auto-memo wrappers are labelled with the class they wrap, not their tag.
+
+    ``export_name`` carries a content hash so identically-rendering subtrees
+    collapse to one module; that name is unreadable in the React DevTools tree,
+    so the memo's ``displayName`` names the Python component instead.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _ = _compile_single_page(
+        lambda: Fragment.create(WithProp.create(label=STATE_VAR))
+    )
+
+    definitions = list(ctx.auto_memo_components.values())
+    assert [definition.display_name for definition in definitions] == ["WithProp"]
+
+    memo_code = "\n".join(
+        code for _, code in compile_memo_components(memos=tuple(definitions))[0]
+    )
+    assert f'{definitions[0].export_name}.displayName = "WithProp";' in memo_code
+
+
 def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> None:
     """Repeated tags across compiles rebuild their passthrough definitions.
 
