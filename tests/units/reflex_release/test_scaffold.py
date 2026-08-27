@@ -484,13 +484,66 @@ def test_the_heading_guard_covers_every_publishing_branch(config: Config) -> Non
     assert publishing <= guarded
 
 
+def _changelog_step(config: Config, name: str) -> dict:
+    """Return one step of the generated changelog workflow, by name.
+
+    Args:
+        config: The repository configuration.
+        name: The step's ``name``.
+
+    Returns:
+        The step mapping.
+    """
+    steps = yaml.safe_load(render("changelog.yml", config))["jobs"]["changelog"][
+        "steps"
+    ]
+    return next(step for step in steps if step.get("name") == name)
+
+
 def test_release_branch_exemption_requires_the_bot_author(config: Config) -> None:
     """A contributor picks their branch name; they cannot pick the PR author."""
-    rendered = render("changelog.yml", config)
-    step = yaml.safe_load(rendered)["jobs"]["changelog"]["steps"][2]
-    assert step["name"] == "Reject manual changelog version headings"
+    step = _changelog_step(config, "Reject manual changelog version headings")
     assert "startsWith(github.head_ref, 'release/')" in step["if"]
     assert "github.event.pull_request.user.login == 'github-actions[bot]'" in step["if"]
+
+
+def test_the_changelog_check_reruns_when_labels_change(config: Config) -> None:
+    """A verdict is only valid for the label set it was computed under.
+
+    Both waiver labels are applied and removed after the last push, so the
+    trigger has to cover label events — and every run has to compute the real
+    verdict, since a job skipped by `if` reports a check branch protection
+    counts as passing.
+    """
+    document = yaml.safe_load(render("changelog.yml", config))
+    assert {"labeled", "unlabeled"} <= set(document[True]["pull_request"]["types"])
+    # Nothing gates the job itself, so no run can report green without checking.
+    assert "if" not in document["jobs"]["changelog"]
+
+
+def test_the_changelog_check_reads_labels_from_the_api(config: Config) -> None:
+    """A re-run replays the original event payload, where a new label is absent.
+
+    Reading `github.event.pull_request.labels` would therefore keep failing a
+    re-run until someone pushed, which is the whole reason the labels come from
+    the API instead.
+    """
+    document = yaml.safe_load(render("changelog.yml", config))
+    # Round-tripped so the comment explaining the choice is not what passes.
+    assert "github.event.pull_request.labels" not in yaml.safe_dump(document)
+    assert document["permissions"]["pull-requests"] == "read"
+    labels = document["jobs"]["changelog"]["steps"][0]
+    assert labels["id"] == "labels"
+    # Before the checkout: the step needs `gh` and nothing from the tree.
+    assert "gh api" in labels["run"]
+    for name, output in (
+        ("Reject manual changelog version headings", "version_edit"),
+        ("Check for news fragments", "skip"),
+    ):
+        assert (
+            f"steps.labels.outputs.{output} != 'true'"
+            in _changelog_step(config, name)["if"]
+        )
 
 
 def test_dev_pin_gate_runs_after_the_lockstep_pin(config: Config) -> None:
