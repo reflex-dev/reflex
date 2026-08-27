@@ -1509,31 +1509,93 @@ def test_uncached_computed_var_unchanged_omitted_from_delta():
     assert ucs.get_delta() == {}
 
 
-def test_uncached_computed_var_records_last_value_for_redis():
-    """Recording a new value for an uncached var marks the state as touched."""
+def test_uncached_computed_var_scalar_key_distinguishes_types():
+    """Python-equal but JSON-distinct scalars are not suppressed as unchanged."""
+    values = iter([1, True, 1.0])
 
-    class UncachedTouchedState(BaseState):
-        _v: int = 0
-
+    class ScalarState(BaseState):
         @rx.var(cache=False)
-        def no_cache_v(self) -> int:
-            return self._v
+        def v(self) -> int | float:
+            return next(values)
 
-    ucs = UncachedTouchedState()
-    assert ucs._was_touched is False
-    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
-    assert ucs._was_touched is True
+    ss = ScalarState()
+    key = "v" + FIELD_MARKER
+    # 1, True and 1.0 are all Python-equal, but the client would receive 1,
+    # true and 1.0, so each one has to be sent.
+    for expected_type in (int, bool, float):
+        assert type(ss.get_delta()[ss.get_name()][key]) is expected_type
+        ss._clean()
 
-    # The recorded (client token, key) is part of the instance dict, so it
-    # reaches redis.
-    cvar = UncachedTouchedState.computed_vars["no_cache_v"]
-    assert ucs.__getstate__()[cvar._last_delta_key_attr] == ("", 0)
 
-    # Recomputing an unchanged value does not force another redis write.
-    ucs._clean()
-    ucs._was_touched = False
-    assert ucs.get_delta() == {}
-    assert ucs._was_touched is False
+def test_uncached_computed_var_nan_value_not_resent():
+    """NaN is keyed by its serialized form, so an unchanged NaN is not resent."""
+
+    class NanState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> float:
+            return float("nan")
+
+    ns = NanState()
+    assert math.isnan(ns.get_delta()[ns.get_name()]["v" + FIELD_MARKER])
+    ns._clean()
+    assert ns.get_delta() == {}
+
+
+class UncachedRedisState(BaseState):
+    """A state with uncached computed vars, defined at module level to be picklable."""
+
+    _v: int = 0
+
+    @rx.var(cache=False)
+    def scalar_v(self) -> int:
+        """An uncached var with an atomic value.
+
+        Returns:
+            The backend var value.
+        """
+        return self._v
+
+    @rx.var(cache=False)
+    def list_v(self) -> list[int]:
+        """An uncached var with a value keyed by a digest.
+
+        Returns:
+            A list holding the backend var value.
+        """
+        return [self._v]
+
+
+def test_uncached_computed_var_records_last_value_for_redis():
+    """Recorded delta keys mark the state touched and survive serialization."""
+    urs = UncachedRedisState()
+    assert urs._was_touched is False
+    assert urs.get_delta() == {
+        urs.get_name(): {
+            "scalar_v" + FIELD_MARKER: 0,
+            "list_v" + FIELD_MARKER: [0],
+        }
+    }
+    # The recorded keys have to reach redis, so the state counts as touched.
+    assert urs._was_touched is True
+
+    # Recomputing unchanged values does not force another redis write.
+    urs._clean()
+    urs._was_touched = False
+    assert urs.get_delta() == {}
+    assert urs._was_touched is False
+
+    # A state restored from its serialized form still knows what was sent.
+    restored = BaseState._deserialize(urs._serialize())
+    assert isinstance(restored, UncachedRedisState)
+    assert restored.get_delta() == {}
+
+    restored._v = 1
+    assert restored.get_delta() == {
+        restored.get_name(): {
+            "scalar_v" + FIELD_MARKER: 1,
+            "list_v" + FIELD_MARKER: [1],
+        }
+    }
 
 
 def test_uncached_computed_var_mutable_value_mutated_in_place():

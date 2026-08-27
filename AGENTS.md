@@ -90,6 +90,26 @@ Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. 
 
 When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `pyi_hashes.json` (not `.pyi` files). If the diff removes many modules, run `uv sync`, delete `.pyi_generator_last_run`, and regenerate.
 
+## Changelog fragments
+
+Every PR that changes packaged source needs a news fragment **per affected
+package** — one fragment in each package's own `news/` directory, not one for
+the whole PR. Affected packages are decided by changed path: `reflex/**` -> root
+`news/`; `packages/<name>/src/**` -> `packages/<name>/news/`. A change spanning
+`reflex/` and `packages/reflex-base/src/` needs a fragment in both. Tests, docs,
+CI and scripts need none on their own.
+
+Name it `<pr-number>.<type>.md`, or `+<slug>.<type>.md` when the PR number is not
+known yet. `<type>` is one of `breaking`, `deprecation`, `feature`, `bugfix`,
+`performance`, `docs`, `misc`. Write one or two sentences for users reading
+release notes. Verify with the same command CI uses, once per affected package:
+
+```
+uv run towncrier check --config pyproject.toml --dir <pkg-dir> --compare-with origin/main
+```
+
+See CONTRIBUTING.md for the full rules.
+
 ## Breaking changes and deprecation
 
 Reflex has downstream users — don't break them. Provide a fallback path during deprecation.
@@ -128,3 +148,4 @@ Before submitting:
 4. `pyi_hashes.json` updated if components changed
 5. Documentation updated if user-facing behavior changed
 6. Deprecation warnings added if breaking changes introduced
+7. A news fragment added for **each** affected package (see Changelog fragments)

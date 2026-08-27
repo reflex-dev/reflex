@@ -2252,8 +2252,10 @@ class FakeComputedVarBaseClass(property):
 # on a state instance, so it is safe from serialization round trips.
 _UNKEYABLE_VALUE: Final = object()
 
-# Types whose instances are immutable and are their own delta key.
-_ATOMIC_DELTA_VALUE_TYPES: Final = frozenset({str, int, float, bool, type(None)})
+# Types whose instances are immutable and cheap to compare directly. float is
+# deliberately absent: NaN is not equal to itself, so floats are keyed by their
+# serialized form instead of comparing equal to nothing forever.
+_ATOMIC_DELTA_VALUE_TYPES: Final = frozenset({str, int, bool, type(None)})
 
 # Size of the digest used to key non-atomic delta values.
 _DELTA_VALUE_DIGEST_SIZE: Final = 16
@@ -2262,10 +2264,13 @@ _DELTA_VALUE_DIGEST_SIZE: Final = 16
 def _delta_value_key(value: Any) -> Any:
     """Get a comparable, alias-free key for a value going into a delta.
 
-    Immutable scalars are their own key. Everything else is keyed by a digest of
-    its serialized form: that is exactly what the client receives, it cannot be
-    invalidated by a later in-place mutation of the value, and it stays small no
-    matter how big the value is.
+    Immutable scalars are keyed by themselves, paired with their type so that
+    Python-equal but JSON-distinct values (``1`` and ``True``) do not collide.
+    Everything else is keyed by a digest of its serialized form: that is exactly
+    what the client receives, so a value without a registered serializer keys by
+    the ``null`` the client would get, it cannot be invalidated by a later
+    in-place mutation of the value, and it stays small no matter how big the
+    value is.
 
     Args:
         value: The value to key.
@@ -2273,8 +2278,9 @@ def _delta_value_key(value: Any) -> Any:
     Returns:
         The key, or ``_UNKEYABLE_VALUE`` if the value cannot be serialized.
     """
-    if type(value) in _ATOMIC_DELTA_VALUE_TYPES:
-        return value
+    value_type = type(value)
+    if value_type in _ATOMIC_DELTA_VALUE_TYPES:
+        return (value_type, value)
     try:
         return hashlib.blake2b(
             json_dumps(value).encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
