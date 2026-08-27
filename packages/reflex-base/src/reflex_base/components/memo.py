@@ -41,7 +41,6 @@ from reflex_base.constants.compiler import (
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.registry import RegistrationContext
-from reflex_base.style import convert_dict_to_style_and_format_emotion
 from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
@@ -1100,19 +1099,20 @@ class _MemoCallBinding:
         self, component_fields: Mapping[str, Any], rest_target_fields: set[str]
     ) -> dict[str, Any]:
         rest: dict[str, Any] = {}
-        css: dict[str, Any] = {}
         for key in list(self.raw_kwargs):
-            if key in component_fields or SpecialAttributes.is_special(key):
-                continue
-            value = self.raw_kwargs.pop(key)
-            if key in rest_target_fields:
-                rest[format.to_camel_case(key)] = LiteralVar.create(value)
-            else:
-                css[key] = value
-        if css:
-            rest["css"] = LiteralVar.create(
-                convert_dict_to_style_and_format_emotion(css)
-            )
+            if (
+                key in rest_target_fields
+                and key not in component_fields
+                and not SpecialAttributes.is_special(key)
+            ):
+                rest[format.to_camel_case(key)] = LiteralVar.create(
+                    self.raw_kwargs.pop(key)
+                )
+        # Every other leftover kwarg stays in ``raw_kwargs``, so
+        # ``Component._post_init`` folds it into ``style`` — the same rule that
+        # turns ``rx.el.div(background_color="red")`` into emotion ``css``.
+        # Emitting a ``css`` prop here instead would be dropped by
+        # ``Component._render``, which applies ``_get_style()`` last.
         return rest
 
     def build_super_kwargs(self) -> dict[str, Any]:

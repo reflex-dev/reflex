@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import inspect
+import re
 from types import SimpleNamespace
+from collections.abc import Callable
 from typing import Any, cast
 from unittest.mock import patch
 
@@ -105,9 +107,11 @@ def test_component_returning_memo_with_children_and_rest():
     sym = memo_paths.mirrored_symbol("MyCard", __name__)
     assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
-    # `foo` is not a field of the rest target (`Box`), so it is routed into
-    # `css` just like `rx.box(foo="extra")` would; `className` is a base field.
-    assert component.get_props() == ("title", "css")
+    # `foo` is not a field of the rest target (`Box`), so it joins `style` and
+    # renders as `css` just like `rx.box(foo="extra")` would — via
+    # `Component._get_style()`, so it is not a declared prop. `className` is a
+    # base field and stays out of the rest sweep entirely.
+    assert component.get_props() == ("title",)
     assert type(component) is type(component_again)
     assert type(component).tag == sym
     assert type(component).get_fields()["tag"].default == sym
@@ -497,6 +501,70 @@ def test_memo_rest_prop_keeps_real_target_props_as_props():
     rendered = str(styled_text(weight="bold"))
     assert 'weight:"bold"' in rendered
     assert "css:" not in rendered
+
+
+def test_memo_css_props_merge_with_explicit_style_via_rest_prop():
+    """A forwarded CSS prop merges into an explicit ``style=`` instead of vanishing.
+
+    ``Component._render`` applies ``_get_style()`` (derived from ``style``) *after*
+    the declared props, so a separately-emitted ``css`` prop is overwritten
+    whenever the caller also passes ``style=``. The CSS props therefore have to
+    join ``style`` itself, matching ``rx.el.div(background_color=..., style=...)``,
+    which emits one merged ``css``.
+    """
+
+    @rx.memo
+    def mycomp(children: rx.Var[rx.Component], rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(children, rest)
+
+    rendered = str(
+        mycomp(
+            rx.heading("Hello World!"),
+            background_color="red",
+            style={"padding": "10px", "border-radius": "5px"},
+        )
+    )
+    # One `css` prop carrying both the explicit style and the forwarded CSS prop.
+    assert rendered.count("css:") == 1
+    assert '["padding"] : "10px"' in rendered
+    assert '["borderRadius"] : "5px"' in rendered
+    assert '["backgroundColor"] : "red"' in rendered
+
+
+def test_memo_rest_prop_css_matches_plain_component_shape():
+    """Forwarded CSS props compile to the same ``css`` a plain component emits.
+
+    The classification rule the fix implements is `Component._post_init`'s own:
+    a kwarg that is not a declared field joins ``style``. Pinning the memo's
+    output to the non-memo component's keeps the two from drifting.
+    """
+
+    @rx.memo
+    def mycomp(rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(rest)
+
+    # Each case is applied to the memo and to a bare `div`; both must render the
+    # same `css`. `make` is untyped so one lambda can call either signature.
+    cases: tuple[Callable[[Any], rx.Component], ...] = (
+        lambda make: make(background_color="red"),
+        lambda make: make(background_color="red", style={"padding": "10px"}),
+        lambda make: make(style={"padding": "10px"}),
+    )
+    for case in cases:
+        assert _css_prop(str(case(mycomp))) == _css_prop(str(case(rx.el.div)))
+
+
+def _css_prop(rendered: str) -> str | None:
+    """Extract the ``css`` prop's source text from a rendered component.
+
+    Args:
+        rendered: The compiled JSX for a single component.
+
+    Returns:
+        The ``css`` prop text, or ``None`` when the component has no ``css``.
+    """
+    match = re.search(r"css:\((.*?)\)(?:,|\})", rendered)
+    return match.group(1) if match else None
 
 
 def test_memo_component_still_rejects_unknown_props_without_rest():
@@ -1813,16 +1881,17 @@ def test_bind_children_and_rest_are_noops_at_the_param_level():
     assert binding._event_triggers == {}
 
 
-def test_take_rest_forwards_target_fields_and_routes_remainder_to_css():
-    """take_rest forwards declared target fields and sweeps the rest into ``css``.
+def test_take_rest_forwards_target_fields_and_leaves_css_props_behind():
+    """take_rest claims declared target fields and leaves the remainder in place.
 
-    Keys that are fields of the rest target are forwarded as camelCased plain
-    props; everything else is a CSS prop, collected under a single ``css`` key.
+    Keys that are fields of the rest target are popped and forwarded as
+    camelCased plain props. Everything else is a CSS prop, left in
+    ``raw_kwargs`` for ``Component._post_init`` to fold into ``style``.
     """
     binding = _MemoCallBinding({"foo_bar": "x", "font_weight": "bold"})
     rest = binding.take_rest(component_fields={}, rest_target_fields={"foo_bar"})
-    assert set(rest) == {"fooBar", "css"}
-    assert binding.raw_kwargs == {}
+    assert set(rest) == {"fooBar"}
+    assert binding.raw_kwargs == {"font_weight": "bold"}
 
 
 @pytest.mark.parametrize(
