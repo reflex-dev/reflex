@@ -1,11 +1,12 @@
 ---
 components:
   - rx.data_editor
+meta_description: "Build an editable data grid in Python with Reflex. The rx.data_editor component is a fast, spreadsheet-like data grid based on Glide Data Grid for editing tabular data — all in pure Python."
 ---
 
 # Data Editor
 
-A datagrid editor based on [Glide Data Grid](https://grid.glideapps.com/)
+The Reflex data editor (`rx.data_editor`) is a fast, editable data grid based on [Glide Data Grid](https://grid.glideapps.com/). Use it for spreadsheet-like editing of tabular data in pure Python — add, edit, and format cells across many rows and columns.
 
 ```python exec
 import reflex as rx
@@ -222,7 +223,7 @@ class DataEditorState_HP(rx.State):
 Here we define a State, as shown below, that allows us to print the location of the cell as a heading when we click on it, using the `on_cell_clicked` `event trigger`. Check out all the other `event triggers` that you can use with datatable at the bottom of this page. We also define a `group` with a label `Data`. This groups all the columns with this `group` label under a larger group `Data` as seen in the table below.
 
 ```python demo box
-rx.heading(DataEditorState_HP.clicked_data)
+rx.heading(DataEditorState_HP.clicked_data, as_="h2")
 ```
 
 ```python demo box
@@ -453,3 +454,11 @@ rx.data_editor(
     height="30vh",
 )
 ```
+
+## Related
+
+Explore the other ways to work with tabular data in Reflex, all in pure Python:
+
+- [Data Table](/docs/library/tables-and-data-grids/data-table)
+- [Table](/docs/library/tables-and-data-grids/table)
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/)

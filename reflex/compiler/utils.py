@@ -5,9 +5,12 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
+import json
 import operator
+import os
+import tempfile
 import traceback
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TypedDict
@@ -21,8 +24,9 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports
+from reflex_base.utils import format, imports, memo_paths
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -366,12 +370,8 @@ def _app_style() -> ComponentStyle | Style:
     Returns:
         The app-level style map.
     """
-    try:
-        from reflex.utils.prerequisites import get_and_validate_app
-
-        return get_and_validate_app().app.style
-    except Exception:
-        return {}
+    app = RegistrationContext.ensure_context()._app
+    return app.style if app is not None else {}
 
 
 def compile_experimental_component_memo(
@@ -420,15 +420,23 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each memo lives in ``web/utils/components/<name>.jsx`` and is imported
-    # from ``$/utils/components/<name>``. Strip a self-import so a memo body
-    # that references the wrapper's own module specifier doesn't recurse.
-    self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
+    # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
+    # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
+    # body that references its own specifier doesn't recurse.
+    self_module = memo_paths.unmirrored_library_specifier(definition.export_name)
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
     }
 
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
+    # The wrapper import (``memo`` from React by default) rides on the wrapper
+    # var itself, so a custom wrapper brings its own imports and ``None``
+    # pulls in nothing.
+    wrapper = definition.wrapper
+    if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
+        for lib, fields in wrapper_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
 
     signature_fields = [
         field
@@ -446,11 +454,15 @@ def compile_experimental_component_memo(
     return (
         {
             "kind": "component",
-            "name": definition.export_name,
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.export_name
+            )[1],
+            "display_name": definition.display_name or definition.export_name,
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
+            "wrapper": str(wrapper) if wrapper is not None else None,
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -529,9 +541,9 @@ def compile_experimental_function_memo(
     # Reading ``.function`` evaluates a deferred function-memo body on first use.
     function = definition.function
     if var_data := function._get_all_var_data():
-        # Per-file memo modules live at ``$/utils/components/<name>``; strip
-        # only a self-import to this function memo's own module.
-        self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.python_name}"
+        # Un-mirrored per-file memo modules live at ``$/utils/components/<name>``;
+        # strip only a self-import to this function memo's own module.
+        self_module = memo_paths.unmirrored_library_specifier(definition.python_name)
         imports = {
             lib: list(fields)
             for lib, fields in dict(var_data.imports).items()
@@ -541,7 +553,9 @@ def compile_experimental_function_memo(
     return (
         {
             "kind": "function",
-            "name": definition.python_name,
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.python_name
+            )[1],
             "function": str(function),
         },
         imports,
@@ -552,6 +566,7 @@ def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> Component:
     """Create the document root.
 
@@ -559,6 +574,8 @@ def create_document_root(
         head_components: The components to add to the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The document root.
@@ -606,7 +623,7 @@ def create_document_root(
         )
 
     # Add theme preload script as the very first component to prevent FOUC
-    theme_preload_components = [preload_color_theme()]
+    theme_preload_components = [preload_color_theme(default_color_mode)]
 
     head_components = [
         *theme_preload_components,
@@ -744,15 +761,26 @@ def get_context_path() -> str:
 
 
 def get_memo_components_dir() -> str:
-    """Get the directory that holds per-memo module files.
+    """Get the directory that holds un-mirrored per-memo module files.
 
     Returns:
-        The directory used for per-memo ``.jsx`` modules. Pages import each
-        wrapper directly from ``$/utils/components/<name>``.
+        The directory used for memos that can't be mirrored to a source module.
+        Pages import each wrapper directly from ``$/utils/components/<name>``.
     """
-    return str(
-        get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,
-    )
+    return str(get_web_dir() / constants.Dirs.COMPONENTS_PATH)
+
+
+def get_memo_module_path(segments: tuple[str, ...]) -> str:
+    """Get the on-disk path for a memo module mirrored from a Python module.
+
+    Args:
+        segments: Mirrored path segments produced by
+            :func:`reflex_base.utils.memo_paths.module_to_mirrored_segments`.
+
+    Returns:
+        The absolute path the compiler should write the combined memo file to.
+    """
+    return str(memo_paths.mirrored_jsx_path(get_web_dir(), segments))
 
 
 def add_meta(
@@ -817,6 +845,96 @@ def write_file(path: str | Path, code: str):
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
     path.write_text(code, encoding="utf-8")
+
+
+_MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+
+
+def _read_memo_manifest(web_dir: Path) -> set[str]:
+    """Read the previous compile's memo file manifest.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+
+    Returns:
+        The set of paths (relative to ``.web``) recorded by the previous
+        compile, or an empty set if the manifest is absent or invalid.
+    """
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    if not manifest_path.exists():
+        return set()
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    if not isinstance(data, list):
+        return set()
+    return {entry for entry in data if isinstance(entry, str)}
+
+
+def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
+    """Atomically write the new memo file manifest.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+        relative_paths: Paths emitted this run, relative to ``.web``.
+    """
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    web_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
+    )
+    # Close the raw fd immediately and reopen the file by path. Wrapping the
+    # fd via os.fdopen() would leak it if the wrap itself raised.
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+    try:
+        with tmp_path.open("w", encoding="utf-8") as fh:
+            json.dump(sorted(relative_paths), fh)
+        tmp_path.replace(manifest_path)
+    except Exception:
+        # Best-effort cleanup; manifest write is recoverable on the next run.
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
+    """Delete memo files written previously that this compile no longer emits.
+
+    Only paths that appear in the previous manifest are considered for
+    deletion — never a fresh filesystem walk — so files this code did not
+    emit are never touched. Empty parent directories created by mirrored
+    output are removed up to (but not including) the ``.web`` root.
+
+    Args:
+        emitted_paths: Paths the current compile produced for the memo
+            pipeline, as built by joining :func:`get_web_dir` (so they share
+            its prefix — relative by default, absolute when overridden).
+    """
+    web_dir = get_web_dir()
+
+    # Emitted paths are built by joining ``web_dir`` (see Args), so each is
+    # always under it — no need to guard ``relative_to``.
+    emitted_relative = {
+        str(Path(path).relative_to(web_dir)).replace(os.sep, "/")
+        for path in emitted_paths
+    }
+
+    previous = _read_memo_manifest(web_dir)
+    for relative in previous - emitted_relative:
+        target = web_dir / relative
+        if target.is_file():
+            target.unlink()
+            parent = target.parent
+            while parent != web_dir and parent.is_relative_to(web_dir):
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
+
+    if emitted_relative != previous:
+        _write_memo_manifest(web_dir, emitted_relative)
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

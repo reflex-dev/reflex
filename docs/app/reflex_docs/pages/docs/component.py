@@ -19,6 +19,7 @@ from reflex_docgen import (
     PropDocumentation,
     generate_documentation,
 )
+from reflex_site_shared.components.docs_api import docs_api_cell, docs_api_table
 
 from reflex_docs.docgen_pipeline import (
     get_docgen_toc,
@@ -26,7 +27,8 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
-from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
+from reflex_docs.pages.docs.metadata import truncate_meta_description
+from reflex_docs.templates.docpage import docpage, h2_comp
 
 
 def get_code_style(color: str):
@@ -98,10 +100,6 @@ _PILL_BTN_ACTIVE_CLASS = (
     "border border-secondary-8 bg-secondary-3 px-2.5 text-sm font-medium text-secondary-12 "
     "shadow-[inset_0_0_0_1px_var(--secondary-6)] transition-colors "
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
-)
-_PROPS_TABLE_CELL_CLASS = "min-w-0 px-4 py-3 align-top"
-_PROPS_TABLE_HEADER_CLASS = (
-    "px-4 py-3 text-left text-xs font-semibold text-secondary-11"
 )
 _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "cell-content max-h-[4.25rem] overflow-hidden "
@@ -362,7 +360,7 @@ def prop_docs(
     # Return the docs for the prop.
     return (
         [
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     rx.el.div(
                         rx.code(
@@ -384,9 +382,9 @@ def prop_docs(
                     ),
                     class_name=cell_content_class,
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[20%]"),
+                "w-[20%]",
             ),
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     rx.box(
                         rx.box(
@@ -433,9 +431,9 @@ def prop_docs(
                     ),
                     class_name="flex flex-row items-start gap-2",
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[25%]"),
+                "w-[25%]",
             ),
-            rx.el.td(
+            docs_api_cell(
                 rx.box(
                     render_inline_markdown(
                         description,
@@ -443,7 +441,7 @@ def prop_docs(
                     ),
                     class_name=cell_content_class,
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[55%]"),
+                "w-[55%]",
             ),
         ],
         is_long_row,
@@ -506,6 +504,13 @@ def generate_props(
     }
     skip_props = per_component_skip.get(component.__name__, set())
 
+    # Default props to apply to a component's interactive preview when the user
+    # hasn't overridden them via a control. E.g. rx.heading defaults to <h1>;
+    # force <h2> so the Heading docs page keeps a single (title) <h1> for SEO.
+    preview_prop_defaults = {
+        "Heading": {"as_": "h2"},
+    }
+
     interactive_controls: list[tuple[PropDocumentation, rx.Component]] = []
     if is_interactive:
         for prop in prop_list:
@@ -537,8 +542,6 @@ def generate_props(
             )
         )
 
-    body = rx.el.tbody(*rows, class_name="bg-secondary-1")
-
     comp: rx.Component
     try:
         if component.__name__ in previews:
@@ -549,7 +552,10 @@ def generate_props(
 
         else:
             try:
-                comp = rx.vstack(component.create("Preview", **prop_dict))
+                defaults = preview_prop_defaults.get(component.__name__, {})
+                # prop_dict (user-selected controls) wins over defaults.
+                preview_props = {**defaults, **prop_dict}
+                comp = rx.vstack(component.create("Preview", **preview_props))
             except Exception:
                 comp = rx.fragment()
             if "data" in component.__name__.lower():
@@ -759,30 +765,7 @@ def generate_props(
             as_="h3",
             class_name="font-large text-secondary-12 mt-4 mb-2 text-left self-start",
         ),
-        rx.box(
-            rx.el.table(
-                rx.el.thead(
-                    rx.el.tr(
-                        rx.el.th(
-                            "Prop",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[20%]"),
-                        ),
-                        rx.el.th(
-                            "Type",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[25%]"),
-                        ),
-                        rx.el.th(
-                            "Description",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[55%]"),
-                        ),
-                    ),
-                    class_name="border-b border-secondary-4 bg-secondary-2",
-                ),
-                body,
-                class_name="w-full table-fixed border-collapse text-left",
-            ),
-            class_name="mb-4 w-full min-w-0 overflow-hidden rounded-xl border border-secondary-4 bg-secondary-1 shadow-small",
-        ),
+        docs_api_table(*rows),
     )
 
 
@@ -902,9 +885,7 @@ def component_docs(
 
     return rx.box(
         h2_comp(text=comp_display_name),
-        rx.box(
-            render_markdown(textwrap.dedent(doc.description or "")), class_name="pb-2"
-        ),
+        rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
         children,
         triggers,
@@ -919,7 +900,10 @@ def multi_docs(
     previews: dict[str, str],
     component_list: list,
     title: str,
+    description: str | None = None,
+    image: str | None = None,
     ll_component_list: list | None = None,
+    source: str | None = None,
 ):
     components = [
         component_docs(component_tuple, previews)
@@ -980,10 +964,15 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title)
+    @docpage(set_path=path, t=title, description=description, image=image)
     def out():
         toc = get_docgen_toc(actual_path)
-        doc_content = Path(actual_path).read_text(encoding="utf-8")
+        # Reuse the source already read by the caller to avoid a second read.
+        doc_content = (
+            source
+            if source is not None
+            else Path(actual_path).read_text(encoding="utf-8")
+        )
         # Append API Reference headings for the component list
         if components:
             toc.append((1, "API Reference"))
@@ -991,7 +980,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*components, class_name="flex flex-col"),
             ]
             if components
@@ -1008,7 +997,22 @@ def multi_docs(
             class_name="flex flex-col w-full",
         )
 
-    @docpage(set_path=path + "low", t=title + " (Low Level)")
+    # Differentiate the low-level page's meta description so search engines
+    # don't see it as a duplicate of the high-level page's description. Truncate
+    # the base first so the differentiating suffix always survives the cap.
+    ll_suffix = " (low-level API reference)"
+    ll_description = (
+        f"{truncate_meta_description(description, max_len=155 - len(ll_suffix))}{ll_suffix}"
+        if description
+        else None
+    )
+
+    @docpage(
+        set_path=path + "low",
+        t=title + " (Low Level)",
+        description=ll_description,
+        image=image,
+    )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
@@ -1019,7 +1023,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*ll_components, class_name="flex flex-col"),
             ]
             if ll_components

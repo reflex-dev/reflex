@@ -8,7 +8,7 @@ Top banners are used to highlight important information or features at the top o
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 class TopBannerBasic(rx.ComponentState):
     hide: bool = False
 
@@ -75,7 +75,7 @@ top_banner_basic = TopBannerBasic.create
 
 ## Sign up
 
-```python demo exec toggle
+```python demo exec
 class TopBannerSignup(rx.ComponentState):
     hide: bool = False
 
@@ -90,6 +90,7 @@ class TopBannerSignup(rx.ComponentState):
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2em",
                     height="auto",
                     border_radius="25%",
@@ -142,7 +143,7 @@ top_banner_signup = TopBannerSignup.create
 
 ## Gradient
 
-```python demo exec toggle
+```python demo exec
 class TopBannerGradient(rx.ComponentState):
     hide: bool = False
 
@@ -202,7 +203,7 @@ top_banner_gradient = TopBannerGradient.create
 
 ## Newsletter
 
-```python demo exec toggle
+```python demo exec
 class TopBannerNewsletter(rx.ComponentState):
     hide: bool = False
 

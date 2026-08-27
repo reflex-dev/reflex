@@ -15,7 +15,7 @@ from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
     FORUM_URL,
-    GITHUB_URL,
+    GITHUB_ORG_URL,
     LINKEDIN_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_URL,
@@ -139,7 +139,7 @@ def menu_socials() -> rx.Component:
     """
     return rx.el.div(
         social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
-        social_menu_item("github_navbar", GITHUB_URL, "Github"),
+        social_menu_item("github_navbar", GITHUB_ORG_URL, "Github"),
         social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
         social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
         social_menu_item("forum_footer", FORUM_URL, "Forum"),
@@ -264,35 +264,36 @@ def footer_index(
                                 footer_link("AI Builder", REFLEX_BUILD_URL),
                                 footer_link(
                                     "Agent Toolkit",
-                                    "/docs/ai/integrations/overview/",
+                                    "/docs/ai/integrations/agent-toolkit/",
                                 ),
                                 footer_link(
                                     "Enterprise",
                                     "/docs/enterprise/overview/",
                                 ),
-                                footer_link("App Management", "/hosting"),
-                                footer_link("Pricing", "/pricing"),
+                                footer_link("App Management", "/hosting/"),
+                                footer_link("Pricing", "/pricing/"),
                             ],
                         ),
                         footer_link_flex(
                             "Solutions",
                             [
-                                footer_link("Enterprise", "/use-cases"),
-                                footer_link("Finance", "/use-cases/finance"),
-                                footer_link("Healthcare", "/use-cases/healthcare"),
-                                footer_link("Consulting", "/use-cases/consulting"),
-                                footer_link("Government", "/use-cases/government"),
+                                footer_link("Enterprise", "/use-cases/"),
+                                footer_link("Finance", "/use-cases/finance/"),
+                                footer_link("Healthcare", "/use-cases/healthcare/"),
+                                footer_link("Consulting", "/use-cases/consulting/"),
+                                footer_link("Government", "/use-cases/government/"),
                             ],
                         ),
                         footer_link_flex(
                             "Resources",
                             [
-                                footer_link("Blog", "/blog"),
-                                footer_link("Templates", "/templates"),
+                                footer_link("Blog", "/blog/"),
+                                footer_link("Templates", "/templates/"),
                                 footer_link(
                                     "Integrations",
                                     "/docs/ai/integrations/overview/",
                                 ),
+                                footer_link("FAQ", "/faq/"),
                             ],
                         ),
                         footer_link_flex(
@@ -313,15 +314,15 @@ def footer_index(
                         footer_link_flex(
                             "Developers",
                             [
-                                footer_link("Documentation", "/docs"),
+                                footer_link("Documentation", "/docs/"),
                                 footer_link("Changelog", CHANGELOG_URL),
-                                footer_link("Common Errors", "/errors"),
+                                footer_link("Common Errors", "/errors/"),
                             ],
                         ),
                         footer_link_flex(
                             "Company",
                             [
-                                footer_link("About", "/about"),
+                                footer_link("About", "/about/"),
                                 footer_link(
                                     "Careers",
                                     "https://www.ycombinator.com/companies/reflex/jobs",

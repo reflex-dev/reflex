@@ -8,7 +8,7 @@ A footer bar is a common UI element located at the bottom of a webpage. It typic
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 
@@ -65,11 +65,12 @@ def footer() -> rx.Component:
                     rx.hstack(
                         rx.image(
                             src="https://web.reflex-assets.dev/other/logo.jpg",
+                            alt="Reflex logo",
                             width="2.25em",
                             height="auto",
                             border_radius="25%",
                         ),
-                        rx.heading("Reflex", size="7", weight="bold"),
+                        rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                         align_items="center",
                     ),
                     rx.text(
@@ -110,7 +111,7 @@ def footer() -> rx.Component:
 
 ## Newsletter form
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 
@@ -192,6 +193,7 @@ def footer_newsletter() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -221,7 +223,7 @@ def footer_newsletter() -> rx.Component:
 
 ## Three columns
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 
@@ -301,6 +303,7 @@ def footer_three_columns() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",

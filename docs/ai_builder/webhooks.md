@@ -1,44 +1,43 @@
+---
+tags: AI Builder
+description: Send app events to an external service through an incoming webhook without exposing its URL in client-side code or logs.
+---
+
 # Webhooks
 
-Webhooks allow your app to **send data to external services** in real time. You provide the AI Builder with a **webhook URL** created in another platform, and it can **automatically send payloads** to that URL when workflows are triggered.
+Use an outgoing webhook when an event in your app should send data to a service that provides an incoming webhook URL.
 
-This is a simple and powerful way to integrate with services that support incoming webhooks, even if there’s no first-class integration.
+## Create and store the webhook
 
-## What You Can Do
+1. Create an incoming webhook in the destination service.
+2. Copy its URL.
+3. Store the URL in [Secrets](/docs/ai/features/secrets/) with a descriptive name such as `SIGNUP_WEBHOOK_URL`.
 
-With outgoing webhooks, your app can:
+Treat the URL as a credential. Do not paste it into chat, source code, logs, screenshots, or client-side code.
 
-* **Send structured payloads** to any service that supports incoming webhooks (e.g., Slack, Zapier, Make, Discord).
-* **Trigger external workflows** when events happen in your app.
-* **Push real-time updates** to third-party systems without writing custom backend code.
-* Chain webhook calls with other integrations or AI actions.
+## Describe the event and payload
 
-## Step 1: Create a Webhook in the External Service
+Tell the agent when to send the webhook, which fields to include, and how to handle failures:
 
-1. Go to the external service you want to connect (e.g., Slack, Zapier, Discord, Make).
-2. Create a new **incoming webhook** in that service.
-3. Copy the **webhook URL** it provides.
+```text
+After a user completes signup, POST their internal user ID, plan name, and
+signup timestamp to the URL in SIGNUP_WEBHOOK_URL. Do not include passwords,
+tokens, or profile fields. Use the destination's documented JSON format.
+```
 
+Specify whether a failed webhook should block the user action, retry in the background, or only record an error. For important events, request idempotency or another duplicate-delivery safeguard supported by the destination.
 
-## Step 2: Add the Webhook URL to AI Builder
+## Test the webhook
 
-1. In the AI Builder chat paste the **webhook URL** you created in the external service.
-2. You can then instruct the AI to **send data to this URL** whenever a workflow is triggered.
-3. Optionally define the **payload structure** (e.g., JSON body) and when it should be sent.
+Use test credentials and non-sensitive sample data first. Verify:
 
-> 💡 Example: “Send user signup data to this webhook whenever a user signs up.”
+- The event sends exactly once under normal conditions.
+- The payload matches the destination's expected schema.
+- Timeouts and non-success responses are handled without exposing the URL.
+- Retries do not create duplicate records or notifications.
 
-## Step 3: Sending Payloads
+## Related
 
-* The AI Builder will write the code to send a `POST` request to the webhook URL with the payload you define.
-* The payload can include **dynamic data** from your app — such as user info, state variables, or model outputs.
-* You can trigger these webhook calls from buttons, events, workflows, or automations.
-
-
-## Step 4: Notes
-
-* **Security:** Only use webhook URLs from trusted services — they will receive your data as-is.
-* **Formatting:** Make sure the payload matches the expected format of the external service.
-* **Chaining:** You can use multiple webhooks or combine them with other integrations.
-* **Use cases:** Slack alerts, CRM updates, triggering automations in Zapier or Make, notifying custom systems.
-
+- [Call an External API](/docs/ai/apis/) — implement a request-and-response API workflow.
+- [Custom Integration](/docs/ai/features/integration-shortcut/#custom-integration) — store reusable context for a service.
+- [Testing](/docs/ai/features/automated-testing/) — cover the app behavior that triggers the webhook.

@@ -16,7 +16,7 @@ Having a clear and consistent navigation structure can greatly improve the user 
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -28,11 +28,12 @@ def navbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -52,11 +53,12 @@ def navbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -84,7 +86,7 @@ def navbar() -> rx.Component:
 
 ## Dropdown
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -96,11 +98,12 @@ def navbar_dropdown() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -135,11 +138,12 @@ def navbar_dropdown() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -175,7 +179,7 @@ def navbar_dropdown() -> rx.Component:
 
 ## Search bar
 
-```python demo exec toggle
+```python demo exec
 def navbar_searchbar() -> rx.Component:
     return rx.box(
         rx.desktop_only(
@@ -183,11 +187,12 @@ def navbar_searchbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.input(
@@ -206,11 +211,12 @@ def navbar_searchbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.input(
@@ -235,7 +241,7 @@ def navbar_searchbar() -> rx.Component:
 
 ## Icons
 
-```python demo exec toggle
+```python demo exec
 def navbar_icons_item(text: str, icon: str, url: str) -> rx.Component:
     return rx.link(
         rx.hstack(rx.icon(icon), rx.text(text, size="4", weight="medium")), href=url
@@ -256,11 +262,12 @@ def navbar_icons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -279,11 +286,12 @@ def navbar_icons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -311,7 +319,7 @@ def navbar_icons() -> rx.Component:
 
 ## Buttons
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -323,11 +331,12 @@ def navbar_buttons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -352,11 +361,12 @@ def navbar_buttons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -387,7 +397,7 @@ def navbar_buttons() -> rx.Component:
 
 ## User profile
 
-```python demo exec toggle
+```python demo exec
 def navbar_link(text: str, url: str) -> rx.Component:
     return rx.link(rx.text(text, size="4", weight="medium"), href=url)
 
@@ -399,11 +409,12 @@ def navbar_user() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -434,11 +445,12 @@ def navbar_user() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(

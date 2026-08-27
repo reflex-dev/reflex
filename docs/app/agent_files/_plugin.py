@@ -9,14 +9,18 @@ from typing import Any, Literal, Union, get_args, get_origin
 from reflex.constants import Dirs
 from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
+from reflex_site_shared.utils.url import public_url
 from typing_extensions import Unpack
 
 MCP_DOC_PATHS = {
     "ai/integrations/mcp-installation.md",
     "ai/integrations/mcp-overview.md",
 }
-AI_ONBOARDING_DOC_PATHS = {
-    "ai/integrations/ai-onboarding.md",
+AGENT_TOOLKIT_DOC_PATHS = {
+    "ai/integrations/agent-toolkit.md",
+}
+LEGACY_MARKDOWN_ALIASES = {
+    Path("ai/integrations/ai-onboarding.md"): Path("ai/integrations/agent-toolkit.md"),
 }
 MCP_DOC_ORDER = {
     "ai/integrations/mcp-overview.md": 0,
@@ -113,29 +117,12 @@ def _extract_markdown_title(source: str) -> str | None:
 
 def _llms_url_for_path(url_path: Path) -> str:
     """Return the public URL for a generated markdown asset."""
-    config = get_config()
-    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
-    frontend_path = (config.frontend_path or "").strip("/")
-    base_url = deploy_url
-    if frontend_path:
-        base_url = f"{base_url}/{frontend_path}" if base_url else f"/{frontend_path}"
-    return (
-        f"{base_url}/{url_path.as_posix()}" if base_url else f"/{url_path.as_posix()}"
-    )
+    return public_url(f"/{url_path.as_posix()}")
 
 
 def _docs_home_url() -> str:
     """Return the public URL for the docs home."""
-    config = get_config()
-    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
-    frontend_path = (config.frontend_path or "").strip("/")
-    if deploy_url and frontend_path:
-        return f"{deploy_url}/{frontend_path}/"
-    if deploy_url:
-        return f"{deploy_url}/"
-    if frontend_path:
-        return f"/{frontend_path}/"
-    return "/"
+    return public_url("/")
 
 
 def _strip_first_heading(source: str) -> str:
@@ -187,7 +174,7 @@ def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
-        or path in AI_ONBOARDING_DOC_PATHS
+        or path in AGENT_TOOLKIT_DOC_PATHS
         or path in SKILLS_DOC_PATHS
         or not path.startswith("ai/")
         or path.startswith("ai/overview/")
@@ -197,15 +184,15 @@ def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
 def _section_for_path(url_path: Path) -> str:
     """Return the llms.txt section for a generated markdown asset."""
     path = url_path.as_posix()
-    if path in AI_ONBOARDING_DOC_PATHS:
-        return "AI Onboarding"
+    if path in AGENT_TOOLKIT_DOC_PATHS:
+        return "Agent Toolkit"
     if path in MCP_DOC_PATHS:
         return "MCP"
     if path in SKILLS_DOC_PATHS:
         return "Skills"
     if path.startswith("ai/"):
         return "AI Builder"
-    return _format_title(path.split("/", maxsplit=1)[0])
+    return _format_title(path.split("/", maxsplit=1)[0].removesuffix(".md"))
 
 
 def _ordered_sections(
@@ -216,10 +203,10 @@ def _ordered_sections(
     if "AI Builder" in sections and "MCP" in sections:
         ordered_sections.remove("MCP")
         ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "MCP")
-    if "AI Builder" in sections and "AI Onboarding" in sections:
-        ordered_sections.remove("AI Onboarding")
+    if "AI Builder" in sections and "Agent Toolkit" in sections:
+        ordered_sections.remove("Agent Toolkit")
         ordered_sections.insert(
-            ordered_sections.index("AI Builder") + 1, "AI Onboarding"
+            ordered_sections.index("AI Builder") + 1, "Agent Toolkit"
         )
     if "MCP" in sections and "Skills" in sections:
         ordered_sections.remove("Skills")
@@ -492,6 +479,7 @@ def generate_api_reference_markdown_content(
     class_fields: Sequence[tuple[str, str, str]],
     fields: Sequence[tuple[str, str, str]],
     methods: Sequence[tuple[str, str]],
+    env_var_prefix: str | None = None,
 ) -> str:
     """Generate markdown content for a dynamic API reference page.
 
@@ -502,6 +490,8 @@ def generate_api_reference_markdown_content(
         class_fields: The class field rows as name, type, description.
         fields: The field rows as name, type, description.
         methods: The method rows as signature, description.
+        env_var_prefix: If set, add a column listing the environment variable
+            (prefix + field name in uppercase) that overrides each field.
 
     Returns:
         The generated markdown content.
@@ -520,16 +510,26 @@ def generate_api_reference_markdown_content(
         ("Class Fields", class_fields),
         ("Fields", fields),
     ):
-        table = _markdown_table(
-            ["Prop", "Description"],
-            [
+        if env_var_prefix is not None and heading == "Fields":
+            headers = ["Prop", "Environment Variable", "Description"]
+            rows = [
+                (
+                    f"`{name}: {type_display}`",
+                    f"`{env_var_prefix}{name.upper()}`",
+                    field_description,
+                )
+                for name, type_display, field_description in field_rows
+            ]
+        else:
+            headers = ["Prop", "Description"]
+            rows = [
                 (
                     f"`{name}: {type_display}`",
                     field_description,
                 )
                 for name, type_display, field_description in field_rows
-            ],
-        )
+            ]
+        table = _markdown_table(headers, rows)
         if table:
             lines.extend([f"## {heading}", "", *table, ""])
 
@@ -554,7 +554,7 @@ def generate_class_api_reference_markdown(
     url_path: Path,
     title: str,
     cls: type,
-    extra_fields: Sequence[object] = (),
+    env_var_prefix: str | None = None,
 ) -> tuple[Path, str]:
     """Generate a dynamic class API reference markdown asset.
 
@@ -562,18 +562,15 @@ def generate_class_api_reference_markdown(
         url_path: The public markdown asset path.
         title: The page title.
         cls: The class to document.
-        extra_fields: Extra docgen fields to include.
+        env_var_prefix: If set, list the environment variable that overrides
+            each field (prefix + field name in uppercase).
 
     Returns:
         The public path and generated markdown content.
     """
-    from reflex_docgen import FieldDocumentation, generate_class_documentation
+    from reflex_docgen import generate_class_documentation
 
     doc = generate_class_documentation(cls)
-    fields = (
-        *doc.fields,
-        *(field for field in extra_fields if isinstance(field, FieldDocumentation)),
-    )
     return (
         url_path,
         generate_api_reference_markdown_content(
@@ -586,12 +583,13 @@ def generate_class_api_reference_markdown(
             ),
             fields=tuple(
                 (field.name, field.type_display, field.description or "")
-                for field in fields
+                for field in doc.fields
             ),
             methods=tuple(
                 (method.name + method.signature, method.description or "")
                 for method in doc.methods
             ),
+            env_var_prefix=env_var_prefix,
         ),
     )
 
@@ -654,7 +652,7 @@ def generate_environment_variables_markdown() -> tuple[Path, str]:
         "Reflex provides a number of environment variables that can be used to configure the behavior of your application.",
         "These environment variables can be set in your shell environment or in a `.env` file.",
         "",
-        "This page documents all available environment variables in Reflex.",
+        "This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).",
         "",
         "## Environment Variables",
         "",
@@ -676,36 +674,33 @@ def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
     import reflex as rx
     from reflex.istate.manager import StateManager
     from reflex.utils.imports import ImportVar
-    from reflex_docgen import generate_class_documentation
 
     modules = [
         rx.App,
         rx.Component,
         rx.ComponentState,
-        (rx.Config, rx.config.BaseConfig),
+        rx.Config,
         rx.event.Event,
         rx.event.EventHandler,
         rx.event.EventSpec,
-        rx.Model,
+        # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
         StateManager,
         rx.State,
         ImportVar,
         rx.Var,
     ]
+    # Classes whose fields can be overridden via prefixed environment variables;
+    # the fields table gets an extra column listing each generated env var name.
+    env_var_prefixes = {rx.Config: "REFLEX_"}
     files = []
     for module in modules:
-        extra_fields: list[object] = []
-        if isinstance(module, tuple):
-            module, *extra_modules = module
-            for extra_module in extra_modules:
-                extra_fields.extend(generate_class_documentation(extra_module).fields)
         slug = module.__name__.lower()
         files.append(
             generate_class_api_reference_markdown(
                 url_path=Path(f"api-reference/{slug}.md"),
                 title=_format_title(slug),
                 cls=module,
-                extra_fields=tuple(extra_fields),
+                env_var_prefix=env_var_prefixes.get(module),
             )
         )
     files.append(generate_environment_variables_markdown())
@@ -844,9 +839,16 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
         (entry.url_path, generate_markdown_file_content(entry))
         for entry in markdown_file_entries
     )
+    markdown_files_by_path = dict(markdown_files)
+    legacy_markdown_files = tuple(
+        (legacy_path, markdown_files_by_path[target_path])
+        for legacy_path, target_path in LEGACY_MARKDOWN_ALIASES.items()
+        if target_path in markdown_files_by_path
+    )
 
     all_markdown_files = [
         *markdown_files,
+        *legacy_markdown_files,
         *dynamic_api_reference_files,
     ]
 

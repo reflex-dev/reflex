@@ -1,17 +1,19 @@
 """Namespace for experimental features."""
 
+import logging
 from types import SimpleNamespace
 from typing import Any
 
 from reflex_base.components.memo import memo as _memo
-from reflex_base.utils.console import warn
+from reflex_base.vars.hybrid_property import hybrid_property as hybrid_property
 from reflex_components_code.shiki_code_block import code_block as code_block
 
 from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
-from .hybrid_property import hybrid_property as hybrid_property
+
+logger = logging.getLogger(__name__)
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -26,9 +28,9 @@ class ExperimentalNamespace(SimpleNamespace):
         Returns:
             The attribute.
         """
-        warn(
+        logger.warning(
             "`rx._x` contains experimental features and might be removed at any time in the future.",
-            dedupe=True,
+            extra={"dedupe": True},
         )
         return super().__getattribute__(item)
 
@@ -62,9 +64,9 @@ class ExperimentalNamespace(SimpleNamespace):
         Args:
             component_name: name of the component.
         """
-        warn(
+        logger.warning(
             f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.",
-            dedupe=True,
+            extra={"dedupe": True},
         )
 
 

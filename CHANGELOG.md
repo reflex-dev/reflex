@@ -1,3 +1,67 @@
+## v0.9.8 (2026-08-04)
+
+### Features
+
+- Added content-hash cache busting to `rx.asset` URLs. ([#6550](https://github.com/reflex-dev/reflex/issues/6550))
+- Add a `preview` run mode (`reflex run --env preview`) that hot reloads like `dev` but serves a freshly built, un-minified frontend bundle mounted into the backend instead of running the Vite dev server. Minification, CSS minification, autoprefixer, and sourcemaps are disabled by default for faster rebuilds and readable output (each overridable via `VITE_MINIFY`, `REFLEX_NO_AUTOPREFIXER`, and `VITE_SOURCEMAP`). ([#6663](https://github.com/reflex-dev/reflex/issues/6663))
+- Support using mutable state proxies as async context managers. ([#6689](https://github.com/reflex-dev/reflex/issues/6689))
+- Run plugins' staged `register_route` hooks once per app before page evaluation so plugins can contribute pages atomically, and invalidate the cached route resolver when a page is added after it was first built. ([#6728](https://github.com/reflex-dev/reflex/issues/6728))
+- `reflex deploy` now accepts `--provider` (deploy to Reflex Cloud or a GCP account connected to your organization) and `--description` (record an optional changelog note on the deployment, shown in `reflex cloud apps history`).
+
+### Bug Fixes
+
+- Fix `reflex component build` crashing with `AttributeError` on Python 3.10 and 3.11 by delegating recursive stub generation to the Python 3.10-compatible `PyiGenerator` scanner. ([#6760](https://github.com/reflex-dev/reflex/issues/6760))
+- Fixed `reflex rename` corrupting or failing on source files on non-UTF-8 platform locales while preserving declared Python source encodings and line endings. ([#6761](https://github.com/reflex-dev/reflex/issues/6761))
+- Fixed nested/subfolder stylesheets failing to load on Windows because the generated CSS `@import` used backslash path separators (which CSS treats as escape sequences); the import URL is now always POSIX-normalized. ([#6762](https://github.com/reflex-dev/reflex/issues/6762))
+- Process persisted package.json files before mirroring them into the web directory. ([#6765](https://github.com/reflex-dev/reflex/issues/6765))
+- Fix production frontend hydration on Windows when the system MIME registry maps JavaScript files to `text/plain`. ([#6831](https://github.com/reflex-dev/reflex/issues/6831))
+- Fixed `reflex run` failing with `error: lockfile had changes, but lockfile is frozen` after upgrading to a Reflex version that adds a `package.json` override. Overrides are now applied after the lockfile saved in `reflex.lock/` has been installed, so it is no longer treated as out of date. ([#6844](https://github.com/reflex-dev/reflex/issues/6844))
+
+### Miscellaneous
+
+- Update dev pin Pillow==12.3.0 to avoid various CVE reports ([#6836](https://github.com/reflex-dev/reflex/issues/6836))
+- Update locked `aiohttp==3.14.3` and `cryptography==50.0.0`, clearing CVE-2026-59881, CVE-2026-69243, CVE-2026-69244 and CVE-2026-69247. Both are transitive development dependencies of the docs app and are not installed with Reflex. ([#6837](https://github.com/reflex-dev/reflex/issues/6837))
+
+
+## v0.9.7 (2026-07-15)
+
+### Features
+
+- Added `default_color_mode` to `rx.Config` (`"system"`, `"light"`, or `"dark"`, also settable via `REFLEX_DEFAULT_COLOR_MODE`), so apps can set the initial color mode — and use the built-in color mode switcher and `rx.color_mode_cond` — without pulling in the large Radix themes CSS. The value drives both the compiled `ThemeProvider` default and the pre-hydration preload script, so there is no flash of the wrong theme on first paint. An explicit `rx.theme(appearance=...)` still takes precedence. ([#6716](https://github.com/reflex-dev/reflex/issues/6716))
+- `@rx.memo` components now compile with a configurable JS wrapper: React's `memo` remains the default, `wrapper=` swaps in a custom function `Var` whose imports ride along into the generated module, and `wrapper=None` emits the bare function component. ([#6730](https://github.com/reflex-dev/reflex/issues/6730))
+- The new `frozen_lockfile` config option is now honored during frontend package installation: when enabled (the default), bun's initial install runs with `--frozen-lockfile` so a lockfile out of sync with `package.json` fails fast. Set `frozen_lockfile=False` to let the lockfile update in place instead. npm has no equivalent install flag today, so the option is a no-op there. ([#6763](https://github.com/reflex-dev/reflex/issues/6763))
+
+### Bug Fixes
+
+- Fix stateful pages being evaluated twice in one process (forked prod workers and same-process export+serve), which created duplicate `ComponentState` classes and broke frontend hydration (`TypeError: d is not a function`). ([#6710](https://github.com/reflex-dev/reflex/issues/6710))
+- Reset the disk state manager write queue task after close. ([#6715](https://github.com/reflex-dev/reflex/issues/6715))
+- Close the `RedisTokenManager` redis client and cancel its pub/sub background tasks on app shutdown, fixing leaked redis connections (`ResourceWarning: unclosed Connection`) when the server stops. ([#6724](https://github.com/reflex-dev/reflex/issues/6724))
+- Event handlers and computed vars inherited from a state mixin now preserve the source function's custom attributes and keyword-only defaults. ([#6725](https://github.com/reflex-dev/reflex/issues/6725))
+
+### Performance
+
+- Run anonymous telemetry collection and delivery on a dedicated single-worker background thread instead of inline on the asyncio event loop. The blocking syscalls, subprocess calls and synchronous HTTP request used to gather and post an event no longer stall the event loop — notably when reporting backend errors at a high rate. Delivery is best-effort and any failure is suppressed, so telemetry can never affect the running app. ([#6626](https://github.com/reflex-dev/reflex/issues/6626))
+- Event chaining (`yield OtherState.handler(rows)`) no longer deep-copies payload values that are not attached to any state: only state-bound `MutableProxy` subtrees are copied, making proxy-free payloads ~5x faster to chain. ([#6739](https://github.com/reflex-dev/reflex/issues/6739))
+- `Var.to()` and `Var.guess_type()` resolve their target Var subclass through cached registry lookups instead of scanning the full registry with `safe_issubclass` on every call. ([#6742](https://github.com/reflex-dev/reflex/issues/6742))
+
+
+## v0.9.6 (2026-06-25)
+
+### Features
+
+- Auto-memoized (`rx.memo`) components now compile to `.web/app_components/` output paths that mirror their defining Python source module (using the real package name, including framework packages) instead of being bundled into a single shared `components.jsx`. The compiler's auto-memo registry is scoped per source module, so identical-rendering subtrees in different modules each emit their own output instead of one silently overwriting another, hot-reloads of a module refresh the correct output, and stale memo files are cleaned up when their source changes. Memos whose module can't be mirrored (`__main__`, unsafe names) fall back to one file per memo at `.web/utils/components/<name>.jsx`. Each mirrored memo's generated export name also carries a stable per-module suffix, so two memos that share a name in different modules compile to distinct symbols and can be used together on one page without colliding. ([#6457](https://github.com/reflex-dev/reflex/issues/6457))
+- `rx._x.hybrid_property` now works on dataclasses, pydantic models and SQLAlchemy models, not just `State` classes. Accessing the property through an object var on the frontend (e.g. `State.info.a_b`) renders it as a var, using the same code you already use on the backend. ([#6617](https://github.com/reflex-dev/reflex/issues/6617))
+- `reflex init` now writes a Reflex-managed section into `AGENTS.md` (fetched from the canonical source and delimited by markers that preserve surrounding user content), and bridges it for Claude Code by creating a `CLAUDE.md` importing `@AGENTS.md` — or, if a `CLAUDE.md` exists without the import, managing the section there directly. ([#6620](https://github.com/reflex-dev/reflex/issues/6620))
+- `rx._x.hybrid_property` now raises a clear error when its frontend logic reads a backend (underscore-prefixed) state var, instead of silently baking the var's server-side default into the frontend. Reference a regular var, or provide a separate frontend implementation with `@<name>.var`. ([#6621](https://github.com/reflex-dev/reflex/issues/6621))
+
+### Bug Fixes
+
+- Sync `reflex.lock/package.json` to `.web/package.json` before installing packages to ensure lock file and package.json are aligned. ([#6658](https://github.com/reflex-dev/reflex/issues/6658))
+- Avoid re-entering config loading when a `State` subclass is defined in `rxconfig.py`. ([#6662](https://github.com/reflex-dev/reflex/issues/6662))
+- Raise minimum dependency versions to pull in security fixes: `starlette>=1.3.1` (Host-header path poisoning, `request.form()` DoS, and UNC-path SSRF), `python-multipart>=0.0.32` (quadratic-time querystring DoS, unbounded header field size, and negative `Content-Length` buffering in `parse_form`), and `granian>=2.7.4` (WSGI and WebSocket header-panic DoS). ([#6665](https://github.com/reflex-dev/reflex/issues/6665))
+- Fixed `modify_state` to rebind `EventContext.token` to the token being modified, so delta resolution and computed vars inside shared-state fan-out tasks observe the correct client token rather than the triggering event's inherited context. ([#6673](https://github.com/reflex-dev/reflex/issues/6673))
+
+
 ## v0.9.5.post2 (2026-06-10)
 
 ### Bug Fixes

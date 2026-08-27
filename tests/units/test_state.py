@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import functools
 import json
+import logging
 import math
 import os
 import sys
@@ -41,22 +42,14 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, _FrozenDictStrStr
+from reflex.istate.data import HeaderData, RouterData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import StateProxy
-from reflex.state import (
-    BaseState,
-    ImmutableMutableProxy,
-    ImmutableStateError,
-    MutableProxy,
-    OnLoadInternalState,
-    RouterData,
-    State,
-)
+from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
@@ -1863,7 +1856,7 @@ async def test_state_manager_modify_state(
 
         # separate instances should NOT share locks
         sm2 = type(state_manager)()
-        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert sm2._state_manager_lock is not state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
@@ -1923,17 +1916,16 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    import reflex_base.utils.console as _base_console
-
-    from reflex.istate.manager import token as _token_mod
-
-    console = _token_mod.console
+    from reflex_base.utils import console as _base_console
 
     from reflex.state import State
+    from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
 
     def _clear_dedupe():
+        # console.deprecate keeps its own emitted-warnings set; clear the
+        # entries for this feature so every block below re-emits.
         _base_console._EMITTED_DEPRECATION_WARNINGS -= {
             k
             for k in _base_console._EMITTED_DEPRECATION_WARNINGS
@@ -1982,7 +1974,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         mock_deprecate.assert_called()
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
@@ -2144,7 +2136,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: BaseStateToken,
-    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -2152,10 +2144,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         state_manager_redis: A state manager instance.
         token: A token.
         substate_token_redis: A token + substate name for looking up in state manager.
-        mocker: Pytest mocker object.
+        caplog: Pytest log capture fixture.
     """
-    console_warn = mocker.patch("reflex_base.utils.console.warn")
-
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
@@ -2171,12 +2161,16 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
+    lock_warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "was held too long" in r.getMessage()
+    ]
     if environment.REFLEX_OPLOCK_ENABLED.get():
         # When Oplock is enabled, we don't warn when lock is held too long.
-        console_warn.assert_not_called()
+        assert not lock_warnings
     else:
-        console_warn.assert_called()
-        assert console_warn.call_count == 7
+        assert len(lock_warnings) == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -3366,7 +3360,6 @@ async def test_preprocess(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3430,7 +3423,6 @@ async def test_preprocess_multiple_load_events(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3881,7 +3873,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3917,7 +3909,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -3942,7 +3934,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -3966,7 +3958,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -3993,7 +3985,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -4003,6 +3995,129 @@ config = rx.Config(
 
         assert "set_num" in TestState.event_handlers
         assert "setvar" in TestState.event_handlers
+
+
+def test_state_defined_in_rxconfig_does_not_crash(tmp_path):
+    """A State subclass defined in rxconfig.py must not crash config loading.
+
+    Regression: _init_var read get_config().state_auto_setters at class-creation
+    time, which re-entered config loading while rxconfig was still importing and
+    raised AttributeError because the rxconfig module had no `config` attribute
+    yet.
+    """
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+
+
+class RxconfigDefinedState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(
+    app_name="project1",
+)
+"""
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # Must not raise (previously raised AttributeError mid-import).
+        reflex_base.config.reload_config()
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_honors_env_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py (pre-config) honors REFLEX_STATE_AUTO_SETTERS.
+
+    During rxconfig import the Config does not exist yet, so the cached value is
+    unset and get_state_auto_setters falls back to the env var.
+    """
+    # Simulate a fresh process where no Config has been built yet.
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.setenv("REFLEX_STATE_AUTO_SETTERS", "true")
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigEnvSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
+        assert "set_n" in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_defaults_to_no_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py gets no auto-setters by default (pre-config)."""
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigNoSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
+        assert list(state_cls.event_handlers) == ["setvar"]
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_auto_setters_cache_tracks_reload(tmp_path):
+    """The cached state_auto_setters value follows config reloads (no stale flag)."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    rxconfig_path = proj_root / "rxconfig.py"
+    off_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=False)
+"""
+    on_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=True)
+"""
+
+    with chdir(proj_root):
+        rxconfig_path.write_text(dedent(off_config))
+        reflex_base.config.reload_config()
+        from reflex.state import State
+
+        class ReloadOffState(State):
+            num: int = 0
+
+        assert list(ReloadOffState.event_handlers) == ["setvar"]
+
+        rxconfig_path.write_text(dedent(on_config))
+        reflex_base.config.reload_config()
+
+        class ReloadOnState(State):
+            num: int = 0
+
+        assert "set_num" in ReloadOnState.event_handlers
+        del sys.modules[constants.Config.MODULE]
 
 
 class MixinState(State, mixin=True):
@@ -4120,6 +4235,73 @@ def test_bare_mixin_state() -> None:
     assert ChildBareMixinState.get_root_state() == State
 
 
+class MarkerMixin(State, mixin=True):
+    """A mixin state with a getter and handler carrying custom function attributes."""
+
+    @rx.var
+    def marked_computed(self) -> str:
+        """A computed var whose getter is tagged with a custom attribute.
+
+        Returns:
+            A static string.
+        """
+        return "marked"
+
+    marked_computed.fget._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+
+    def marked_handler(self):
+        """An event handler tagged with a custom attribute."""
+
+    marked_handler._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+
+    def kwonly_default_handler(self, *, count: int = 1) -> int:
+        """An event handler with a keyword-only default argument.
+
+        Args:
+            count: A keyword-only argument with a default.
+
+        Returns:
+            The count.
+        """
+        return count
+
+
+class UsesMarkerMixin(MarkerMixin, State):
+    """A state that pulls in the marked mixin getter/handler."""
+
+
+def test_copy_fn_preserves_custom_function_attributes() -> None:
+    """Test that _copy_fn preserves arbitrary attributes set on mixin functions."""
+    orig_computed_fget = MarkerMixin.__dict__["marked_computed"].fget
+    copied_computed_fget = UsesMarkerMixin.computed_vars["marked_computed"].fget
+    assert copied_computed_fget is not orig_computed_fget
+    assert (
+        copied_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        is orig_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+    )
+
+    orig_handler_fn = MarkerMixin.__dict__["marked_handler"]
+    copied_handler_fn = UsesMarkerMixin.event_handlers["marked_handler"].fn
+    assert copied_handler_fn is not orig_handler_fn
+    assert (
+        copied_handler_fn._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        is orig_handler_fn._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+    )
+
+    # The copy's __dict__ is independent of the source function's __dict__.
+    assert copied_handler_fn.__dict__ is not orig_handler_fn.__dict__
+    copied_handler_fn.__dict__["_leaked"] = True
+    assert "_leaked" not in orig_handler_fn.__dict__
+
+
+def test_copy_fn_preserves_kwonly_defaults() -> None:
+    """Test that _copy_fn preserves keyword-only default arguments."""
+    handler_fn = UsesMarkerMixin.event_handlers["kwonly_default_handler"].fn
+    assert handler_fn.__kwdefaults__ == {"count": 1}
+    instance = UsesMarkerMixin()
+    assert handler_fn(instance) == 1
+
+
 def test_mixin_event_handler_preserves_event_actions() -> None:
     """Test that event_actions from @rx.event decorator are preserved when inherited from mixins."""
 
@@ -4133,6 +4315,21 @@ def test_mixin_event_handler_preserves_event_actions() -> None:
 
     handler = UsesEventActionsMixin.handle_with_actions
     assert handler.event_actions == {"preventDefault": True, "stopPropagation": True}
+
+
+def test_mixin_event_handler_preserves_background_task_marker() -> None:
+    """Test that the background task marker is preserved when inherited from mixins."""
+
+    class BackgroundTaskMixin(BaseState, mixin=True):
+        @rx.event(background=True)
+        async def handle_in_background(self):
+            pass
+
+    class UsesBackgroundTaskMixin(BackgroundTaskMixin, State):
+        pass
+
+    handler = UsesBackgroundTaskMixin.handle_in_background
+    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_assignment_to_undeclared_vars():
@@ -4212,6 +4409,19 @@ async def test_deserialize_gc_state_disk(token):
     c = await root.get_state(Child)
     assert c.foo == "bar"
     await dsm2.close()
+
+
+@pytest.mark.asyncio
+async def test_state_manager_disk_close_resets_write_queue_task():
+    """Test that closing the disk state manager clears its write queue task."""
+    state_manager = StateManagerDisk()
+    await state_manager._schedule_process_write_queue()
+
+    assert state_manager._write_queue_task is not None
+
+    await state_manager.close()
+
+    assert state_manager._write_queue_task is None
 
 
 class Obj(Base):
@@ -4825,64 +5035,6 @@ async def test_add_dependency_get_state_regression(
     await other_state.fetch_data_state()  # Should not raise exception.
 
 
-class MutableProxyState(BaseState):
-    """A test state with a MutableProxy var."""
-
-    data: dict[str, list[int]] = {"a": [1], "b": [2]}
-
-
-@pytest.mark.asyncio
-async def test_rebind_mutable_proxy(
-    token: str, attached_mock_event_context: EventContext
-) -> None:
-    """Test that previously bound MutableProxy instances can be rebound correctly."""
-    state_manager = attached_mock_event_context.state_manager
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        state.router = RouterData.from_router_data({
-            "query": {},
-            "token": token,
-            "sid": "test_sid",
-        })
-        assert isinstance(state, MutableProxyState)
-        assert isinstance(state.data, MutableProxy)
-        assert not isinstance(state.data, ImmutableMutableProxy)
-        state_proxy = StateProxy(state)
-        assert isinstance(state_proxy.data, ImmutableMutableProxy)
-    async with state_proxy:
-        # This assigns an ImmutableMutableProxy to data["a"].
-        state_proxy.data["a"] = state_proxy.data["b"]
-    assert isinstance(state_proxy.data["a"], ImmutableMutableProxy)
-    assert state_proxy.data["a"] is not state_proxy.data["b"]
-    assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
-
-    # Rebinding with a non-proxy should return a MutableProxy object (not ImmutableMutableProxy).
-    assert isinstance(state_proxy.__wrapped__.data["a"], MutableProxy)
-    assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
-
-    # Flush any oplock.
-    await state_manager.close()
-
-    new_state_proxy = StateProxy(state)
-    assert state_proxy is not new_state_proxy
-    assert new_state_proxy.data["a"]._self_state is new_state_proxy
-    assert state_proxy.data["a"]._self_state is state_proxy
-    assert state_proxy.__wrapped__.data["a"]._self_state is state_proxy.__wrapped__
-
-    async with state_proxy:
-        state_proxy.data["a"].append(3)
-
-    async with state_manager.modify_state(
-        BaseStateToken(ident=token, cls=MutableProxyState)
-    ) as state:
-        assert isinstance(state, MutableProxyState)
-        assert state.data["a"] == [2, 3]
-        # Object identity persists across serialization, so data["b"] is also mutated.
-        assert state.data["b"] == [2, 3]
-
-
 def test_override_base_method_skips_event_handler_wrapping():
     """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
     from reflex.state import _override_base_method
@@ -4985,3 +5137,137 @@ def test_descriptor_overrides_inherited_descriptor():
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
     assert (ChildDescState.get_full_name(), "child_view") in child_deps
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
+
+
+class OnLoadCancelState(State):
+    """A test state whose on_load handler blocks until cancelled."""
+
+    # Signalling gates, populated per-test with loop-local events.
+    _gates: ClassVar[dict[str, asyncio.Event]] = {}
+
+    @rx.event
+    async def slow_handler(self):
+        """Signal start, then block; signal again if cancelled."""
+        type(self)._gates["started"].set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            type(self)._gates["cancelled"].set()
+            raise
+
+
+async def test_on_load_internal_supersedes_previous_navigation(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A newer navigation cancels the previous unfinished on_load chain (#6593).
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+    """
+    assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
+    assert not State.event_handlers["hydrate"].supersedes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=OnLoadCancelState.slow_handler)
+    app._compile_page("index")
+
+    OnLoadCancelState._gates = {
+        "started": asyncio.Event(),
+        "cancelled": asyncio.Event(),
+    }
+    on_load_internal_name = format.format_event_handler(
+        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+    )
+
+    async with mock_base_state_event_processor as processor:
+        stale = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/",
+                    RouteVar.ORIGIN: "/",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["started"].wait(), timeout=5)
+
+        # Navigate to a page without on_load events (fast path).
+        current = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/other",
+                    RouteVar.ORIGIN: "/other",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["cancelled"].wait(), timeout=5)
+        # The fresh navigation completes without waiting behind the stale chain.
+        await asyncio.wait_for(current.wait_all(), timeout=5)
+        assert stale.done()
+
+
+async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
+    """_resolve_delta awaits coroutine values and leaves plain values untouched."""
+    from reflex.state import _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"a": _coro(1), "b": 2}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"a": 1, "b": 2}}
+
+
+async def test_resolve_delta_drops_keys_resolving_to_sentinel():
+    """A coroutine resolving to _DROP_FROM_DELTA removes its key from the delta."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"gone": _coro(_DROP_FROM_DELTA), "stay": _coro("kept"), "plain": 3}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"stay": "kept", "plain": 3}}
+
+
+async def test_resolve_delta_pops_subdict_emptied_by_drops():
+    """A state subdict left empty after dropping all its keys is removed entirely."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"only": _coro(_DROP_FROM_DELTA)}, "s2": {"keep": 1}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}
+
+
+async def test_resolve_delta_pops_subdict_when_all_keys_drop():
+    """A subdict is removed when multiple coroutines all resolve to _DROP_FROM_DELTA."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {
+        "s1": {"a": _coro(_DROP_FROM_DELTA), "b": _coro(_DROP_FROM_DELTA)},
+        "s2": {"keep": 1},
+    }
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}

@@ -1,1 +1,0 @@
-`pyi_hashes.json` entries are now computed from the final `.pyi` content after `ruff format` / `ruff check --fix` post-processing, instead of the intermediate generator output. A pyi_generator change that only affects pre-format output no longer flags hash changes for stubs whose final content is identical.

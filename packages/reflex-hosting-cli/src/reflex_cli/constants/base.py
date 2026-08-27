@@ -2,10 +2,23 @@
 
 from __future__ import annotations
 
-from enum import Enum
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 from platformdirs import PlatformDirs
+
+if TYPE_CHECKING:
+    # The two enums are interchangeable, so the shared one is what gets
+    # type-checked; reflex_cli.constants.log_level is checked on its own.
+    from reflex_base.constants.base import LogLevel as LogLevel
+else:
+    try:
+        # reflex-base only exists from reflex 0.9 on, and the hosting CLI
+        # supports older reflex too, so its LogLevel is shared when available
+        # and forked otherwise.
+        from reflex_base.constants.base import LogLevel as LogLevel
+    except ImportError:
+        from reflex_cli.constants.log_level import LogLevel as LogLevel
 
 
 class Reflex(SimpleNamespace):
@@ -22,33 +35,6 @@ class Reflex(SimpleNamespace):
         # on linux, we use ~/.local/share/reflex.
         PlatformDirs(MODULE_NAME, False).user_data_dir
     )
-
-
-# Log levels
-class LogLevel(str, Enum):
-    """The log levels."""
-
-    DEBUG = "debug"
-    DEFAULT = "default"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-    def __le__(self, other: LogLevel | str) -> bool:
-        """Compare log levels.
-
-        Args:
-            other: The other log level.
-
-        Returns:
-            True if the log level is less than or equal to the other log level.
-
-        """
-        if isinstance(other, str):
-            other = LogLevel(other.lower().strip())
-        levels = list(LogLevel)
-        return levels.index(self) <= levels.index(other)
 
 
 class Dirs(SimpleNamespace):

@@ -43,7 +43,7 @@ class LinkPreventDefaultState(rx.State):
 
 def prevent_default_example():
     return rx.vstack(
-        rx.heading(f"The value is {LinkPreventDefaultState.status}"),
+        rx.heading(f"The value is {LinkPreventDefaultState.status}", as_="h2"),
         rx.link(
             "Toggle Value",
             href="https://reflex.dev/",
@@ -133,7 +133,7 @@ class ThrottleState(rx.State):
 
 def scroll_box():
     return rx.scroll_area(
-        rx.heading("Scroll Me"),
+        rx.heading("Scroll Me", as_="h2"),
         *[rx.text(f"Item {i}") for i in range(100)],
         height="75px",
         width="50%",
@@ -249,8 +249,8 @@ class TemporalState(rx.State):
 
 def temporal_example():
     return rx.vstack(
-        rx.heading("Current Time:"),
-        rx.heading(TemporalState.current_time),
+        rx.heading("Current Time:", as_="h2"),
+        rx.heading(TemporalState.current_time, as_="h2"),
         rx.moment(
             interval=1000,
             on_change=TemporalState.update_time.temporal,

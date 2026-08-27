@@ -48,7 +48,7 @@ rx.link("Example", href="/docs/library/typography/link#example")
 It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special-events).
 ```
 
-# Style
+## Style
 
 ## Size
 

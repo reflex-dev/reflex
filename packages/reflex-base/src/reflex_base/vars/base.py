@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -9,6 +10,7 @@ import datetime
 import functools
 import inspect
 import json
+import logging
 import re
 import string
 import uuid
@@ -42,7 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -70,6 +72,8 @@ from reflex_base.utils.types import (
     safe_issubclass,
     unionize,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -111,6 +115,93 @@ class VarSubclassEntry:
 
 _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
+
+
+@functools.cache
+def _var_subclass_for_conversion(python_type: GenericType) -> VarSubclassEntry | None:
+    """Find the registry entry ``Var.to`` maps a python type to.
+
+    Later-registered entries take priority, matching the reversed scan the
+    cache replaces. The registry only grows at import time; registration
+    clears this cache (see ``Var.__init_subclass__``).
+
+    Args:
+        python_type: The (origin-normalized) python type to look up.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if python_type in var_subclass.python_types or safe_issubclass(
+            python_type, var_subclass.python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_matching_python_types(
+    python_types: tuple[GenericType, ...],
+) -> VarSubclassEntry | None:
+    """Find the registry entry whose python types cover all ``python_types``.
+
+    Used by ``Var.guess_type`` with the (origin-normalized) inner types of
+    the var type — a 1-tuple for plain types, the union members otherwise.
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        python_types: The python types that must all match one entry.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if all(
+            safe_issubclass(python_type, var_subclass.python_types)
+            for python_type in python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_for_var_output(output: type) -> VarSubclassEntry | None:
+    """Find the registry entry for a ``Var``-subclass conversion target.
+
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        output: The ``Var`` subclass passed to ``Var.to``.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if safe_issubclass(output, var_subclass.var_subclass):
+            return var_subclass
+    return None
+
+
+def _clear_var_subclass_lookup_caches() -> None:
+    """Drop cached registry lookups after a new Var subclass registers."""
+    _var_subclass_for_conversion.cache_clear()
+    _var_subclass_matching_python_types.cache_clear()
+    _var_subclass_for_var_output.cache_clear()
+
+
+def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
+    """Register a Var subclass entry and invalidate cached lookups.
+
+    Every append to ``_var_subclasses`` must go through here — including
+    manual registrations like ``ReflexURLVar`` — since a bare append would
+    leave previously cached lookups returning stale results for types the
+    new entry claims.
+
+    Args:
+        entry: The entry to append to the registry.
+    """
+    _var_subclasses.append(entry)
+    _clear_var_subclass_lookup_caches()
 
 
 _AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
@@ -524,7 +615,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return self._js_expr
 
     @property
-    def _var_is_local(self) -> bool:
+    def _var_is_local(self) -> builtins.bool:
         """Whether this is a local javascript variable.
 
         Returns:
@@ -533,7 +624,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return False
 
     @property
-    def _var_is_string(self) -> bool:
+    def _var_is_string(self) -> builtins.bool:
         """Whether the var is a string literal.
 
         Returns:
@@ -586,7 +677,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             )
             ToVarOperation.__name__ = new_to_var_operation_name
 
-            _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
+            _register_var_subclass_entry(
+                VarSubclassEntry(cls, ToVarOperation, python_types)
+            )
 
     def __post_init__(self):
         """Post-initialize the var.
@@ -639,7 +732,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self
 
-    def equals(self, other: Var) -> bool:
+    def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
 
         Args:
@@ -726,7 +819,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
-        value: bool,
+        value: builtins.bool,
         _var_data: VarData | None = None,
     ) -> LiteralBooleanVar: ...
 
@@ -851,7 +944,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def to(self, output: type[str]) -> StringVar: ...  # pyright: ignore[reportOverlappingOverload]
 
     @overload
-    def to(self, output: type[bool]) -> BooleanVar: ...
+    def to(self, output: type[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def to(self, output: type[int]) -> NumberVar[int]: ...
@@ -913,11 +1006,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
-        for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types or safe_issubclass(
-                fixed_output_type, var_subclass.python_types
-            ):
-                return self.to(var_subclass.var_subclass, output)
+        conversion_entry = _var_subclass_for_conversion(fixed_output_type)
+        if conversion_entry is not None:
+            return self.to(conversion_entry.var_subclass, output)
 
         if fixed_output_type is None:
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
@@ -927,16 +1018,16 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return self.to(ObjectVar, output)
 
         if isinstance(output, type):
-            for var_subclass in _var_subclasses[::-1]:
-                if safe_issubclass(output, var_subclass.var_subclass):
-                    current_var_type = self._var_type
-                    if current_var_type is Any:
-                        new_var_type = var_type
-                    else:
-                        new_var_type = var_type or current_var_type
-                    return var_subclass.to_var_subclass.create(  # pyright: ignore [reportReturnType]
-                        value=self, _var_type=new_var_type
-                    )
+            output_entry = _var_subclass_for_var_output(output)
+            if output_entry is not None:
+                current_var_type = self._var_type
+                if current_var_type is Any:
+                    new_var_type = var_type
+                else:
+                    new_var_type = var_type or current_var_type
+                return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
+                    value=self, _var_type=new_var_type
+                )
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not safe_issubclass(output, Var) or var_type is None:
@@ -961,7 +1052,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def guess_type(self: Var[str]) -> StringVar: ...
 
     @overload
-    def guess_type(self: Var[bool]) -> BooleanVar: ...
+    def guess_type(self: Var[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
@@ -986,6 +1077,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if var_type is NoReturn:
             return self.to(Any)
 
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
+
         var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
@@ -1003,12 +1098,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 for inner_type in non_optional_inner_types
             ]
 
-            for var_subclass in _var_subclasses[::-1]:
-                if all(
-                    safe_issubclass(t, var_subclass.python_types)
-                    for t in fixed_inner_types
-                ):
-                    return self.to(var_subclass.var_subclass, self._var_type)
+            union_entry = _var_subclass_matching_python_types(tuple(fixed_inner_types))
+            if union_entry is not None:
+                return self.to(union_entry.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -1026,9 +1118,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if fixed_type is None:
             return self.to(None)
 
-        for var_subclass in _var_subclasses[::-1]:
-            if safe_issubclass(fixed_type, var_subclass.python_types):
-                return self.to(var_subclass.var_subclass, self._var_type)
+        guessed_entry = _var_subclass_matching_python_types((fixed_type,))
+        if guessed_entry is not None:
+            return self.to(guessed_entry.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
@@ -1072,7 +1164,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     value = self._var_type(value)
                     setattr(state, name, value)
                 except ValueError:
-                    console.debug(
+                    logger.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
@@ -1223,7 +1315,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return ~self.bool()
 
-    def to_string(self, use_json: bool = True) -> StringVar:
+    def to_string(self, use_json: builtins.bool = True) -> StringVar:
         """Convert the var to a string.
 
         Args:
@@ -2376,7 +2468,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _cache_attr(self) -> str:
-        """Get the attribute used to cache the value on the instance.
+        """The attribute used to cache the value on the instance.
 
         Returns:
             An attribute name.
@@ -2385,7 +2477,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _last_updated_attr(self) -> str:
-        """Get the attribute used to store the last updated timestamp.
+        """The attribute used to store the last updated timestamp.
 
         Returns:
             An attribute name.
@@ -2519,7 +2611,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
-            console.error(
+            logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
@@ -2568,7 +2660,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 func=obj, state_cls=objclass, dependencies=d
             ).dependencies
         except Exception as e:
-            console.warn(
+            logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
@@ -2636,7 +2728,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def __class__(self) -> type:
-        """Get the class of the var.
+        """The class of the var.
 
         Returns:
             The class of the var.
@@ -2645,7 +2737,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -2781,7 +2873,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -3386,14 +3478,19 @@ if TYPE_CHECKING:
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
+# Custom attrs never copied from a source field: get_field_type duck-types
+# pydantic fields on `.annotation`, so carrying it over would shadow the
+# real class annotation.
+_RESERVED_FIELD_ATTRS = frozenset({"annotation"})
+
 
 class Field(Generic[FIELD_TYPE]):
     """A field for a state."""
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE
-        default_factory: Callable[[], FIELD_TYPE] | None
+        default: FIELD_TYPE | _MISSING_TYPE | None
+        default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
@@ -3402,6 +3499,7 @@ class Field(Generic[FIELD_TYPE]):
         is_var: bool = True,
         annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
         | _MISSING_TYPE = MISSING,
+        source_field: Field | None = None,
     ) -> None:
         """Initialize the field.
 
@@ -3410,6 +3508,9 @@ class Field(Generic[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
             annotated_type: The annotated type for the field.
+            source_field: If given, carry custom (non-reserved) attributes
+                from this field that the new field did not compute itself,
+                by reference.
         """
         self.default = default
         self.default_factory = default_factory
@@ -3423,7 +3524,11 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
-                default_value = types.get_default_value_for_type(annotated_type)
+                # A type with no computed default gets None, even when FIELD_TYPE
+                # itself excludes None; `annotated_type` is widened to match below.
+                default_value: FIELD_TYPE | None = types.get_default_value_for_type(
+                    annotated_type
+                )
                 if default_value is None and not types.is_optional(annotated_type):
                     annotated_type = annotated_type | None
                 if types.is_immutable(default_value):
@@ -3440,8 +3545,17 @@ class Field(Generic[FIELD_TYPE]):
             self.type_ = self.type_origin = type_origin
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
+        if source_field is not None:
+            # Carry custom attrs by reference: the source field is a throwaway
+            # namespace value replaced during class creation, and tag consumers
+            # rely on identity (deep-copying cloned stateful callable markers
+            # and crashed outright on non-copyable values like locks). This
+            # matches how _copy_fn carries a function's __dict__.
+            for key, value in source_field.__dict__.items():
+                if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
+                    self.__dict__[key] = value
 
-    def default_value(self) -> FIELD_TYPE:
+    def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
         Returns:
@@ -3608,7 +3722,7 @@ def field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     if default is not MISSING and not types.is_immutable(default):
-        console.warn(
+        logger.warning(
             "Mutable default values are not recommended. "
             "Use default_factory instead to avoid unexpected behavior."
         )
@@ -3686,12 +3800,14 @@ class BaseStateMeta(ABCMeta):
                         default=value.default,
                         is_var=value.is_var,
                         annotated_type=figure_out_type(value.default),
+                        source_field=value,
                     )
                 else:
                     new_value = Field(
                         default_factory=value.default_factory,
                         is_var=value.is_var,
                         annotated_type=Any,
+                        source_field=value,
                     )
             elif (
                 not key.startswith("__")
@@ -3741,6 +3857,7 @@ class BaseStateMeta(ABCMeta):
                     default_factory=value.default_factory,
                     is_var=value.is_var,
                     annotated_type=annotation,
+                    source_field=value,
                 )
 
             own_fields[key] = value

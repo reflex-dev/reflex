@@ -1,3 +1,26 @@
+## v0.9.8 (2026-08-04)
+
+### Miscellaneous
+
+- Bumped `react-error-boundary` 6.1.1 → 6.1.2. ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+
+
+## v0.9.7 (2026-07-15)
+
+### Miscellaneous
+
+- `rx.upload` internals use `ArrayVar.map` instead of the deprecated `foreach`. ([#6701](https://github.com/reflex-dev/reflex/issues/6701))
+
+
+## v0.9.6 (2026-06-25)
+
+### Bug Fixes
+
+- Deliver extra bound handler arguments to upload handlers, so `on_drop=State.handle_upload(rx.upload_files(...), field)` passes `field` through to the backend instead of raising a missing-argument error. ([#5290](https://github.com/reflex-dev/reflex/issues/5290))
+- Preserve literal string types through `rx.cond`, so `rx.cond(State.flag, "green", "red")` infers `Var[Literal["green", "red"]]` instead of widening to `Var[str]` and tripping Pyright on props typed as `Literal[...] | Var[Literal[...]]` such as Radix `color_scheme`. ([#6545](https://github.com/reflex-dev/reflex/issues/6545))
+- `rx.debounce_input` no longer crashes the page with `ReferenceError: input is not defined` when wrapping a native DOM element such as `rx.el.input` or `rx.el.textarea`. The `element` prop now passes global-scope tags as string literals (`element:"input"`), while library components keep referencing their imported identifiers. ([#6637](https://github.com/reflex-dev/reflex/issues/6637))
+
+
 ## v0.9.5 (2026-06-10)
 
 ### Features

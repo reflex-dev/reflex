@@ -21,20 +21,20 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "click >=8.2",
-  "granian[reload] >=2.5.5",
+  "granian[reload] >=2.7.4",
   "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
-  "python-multipart >=0.0.20,<1.0",
+  "python-multipart >=0.0.32,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=6.4,<8.0",
   "rich >=13,<16",
-  "starlette >=0.47.0",
+  "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
-  "wrapt >=1.17.0,<3.0",
-  "reflex-base >= 0.9.5",
+  "wrapt >=1.17.0,<2.2",
+  "reflex-base >= 0.9.8",
   "reflex-components-code >= 0.9.0",
-  "reflex-components-core >= 0.9.5",
+  "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
   "reflex-components-gridjs >= 0.9.0",
   "reflex-components-lucide >= 0.9.0",
@@ -65,6 +65,7 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
+pydantic = ["reflex-base[pydantic]"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -104,7 +105,10 @@ dev = [
   "pytest-split",
   "pytest",
   "python-dotenv",
+  "pyyaml",
   "reflex-docgen",
+  "reflex-release",
+  "reflex-site-shared",
   "ruff",
   "selenium",
   "sqlalchemy",
@@ -112,6 +116,7 @@ dev = [
   "starlette-admin",
   "toml",
   "towncrier",
+  "ty",
   "typer",
   "uvicorn",
 ]
@@ -148,6 +153,7 @@ extraPaths = [
   "packages/reflex-moment/src",
   "packages/reflex-plotly/src",
   "packages/reflex-radix/src",
+  "packages/reflex-release/src",
   "packages/reflex-react-player/src",
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
@@ -182,6 +188,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Background event handlers hold `async with self` across `yield` by design.
+  "ASYNC119",
   "BLE",
   "C901",
   "COM",
@@ -207,12 +215,18 @@ lint.ignore = [
   "PYI",
   "RUF012",
   "RUF067",
+  # State managers deliberately skip write-back when the `with` body raises.
+  "RUF075",
+  # `noqa` comments stay readable to non-ruff tooling and to older ruff versions.
+  "RUF105",
+  "RUF201",
   "S",
   "SLF",
   "SLOT",
   "TC",
   "TD",
   "TRY0",
+  "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -279,6 +293,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -392,7 +407,15 @@ reflex-components-radix = false
 reflex-components-react-player = false
 reflex-components-recharts = false
 reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
+# Pulled in transitively (docs app -> reflex-enterprise -> joserfc), so there is no floor
+# to pin here; exempt it so security fixes (CVE-2026-69247 shipped in 50.0.0) resolve as
+# soon as they publish instead of waiting out the exclude-newer window.
+cryptography = false
+# Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
+# pinned floor resolves before it ages out of the exclude-newer window.
+starlette = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
@@ -410,6 +433,7 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true

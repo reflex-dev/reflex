@@ -3,18 +3,22 @@
 from .base import (
     APP_HARNESS_FLAG,
     COOKIES,
+    DARK_COLOR_MODE,
     IS_LINUX,
     IS_MACOS,
     IS_WINDOWS,
+    LIGHT_COLOR_MODE,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
     PYTEST_CURRENT_TEST,
     REFLEX_VAR_CLOSING_TAG,
     REFLEX_VAR_OPENING_TAG,
     SESSION_STORAGE,
+    SYSTEM_COLOR_MODE,
     ColorMode,
     Dirs,
     Env,
+    LiteralColorMode,
     LogLevel,
     Ping,
     ReactRouter,
@@ -49,7 +53,7 @@ from .config import (
     UvLock,
 )
 from .custom_components import CustomComponents
-from .event import Endpoint, EventTriggers, SocketEvent
+from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
@@ -68,9 +72,11 @@ __all__ = [
     "ALEMBIC_CONFIG",
     "APP_HARNESS_FLAG",
     "COOKIES",
+    "DARK_COLOR_MODE",
     "IS_LINUX",
     "IS_MACOS",
     "IS_WINDOWS",
+    "LIGHT_COLOR_MODE",
     "LOCAL_STORAGE",
     "NOCOMPILE_FILE",
     "POLLING_MAX_HTTP_BUFFER_SIZE",
@@ -83,8 +89,10 @@ __all__ = [
     "ROUTE_NOT_FOUND",
     "SESSION_STORAGE",
     "SETTER_PREFIX",
+    "SYSTEM_COLOR_MODE",
     "AgentsMd",
     "Bun",
+    "ClientErrorType",
     "ColorMode",
     "CompileContext",
     "CompileVars",
@@ -103,6 +111,7 @@ __all__ = [
     "GitIgnore",
     "Hooks",
     "Imports",
+    "LiteralColorMode",
     "LogLevel",
     "MemoizationDisposition",
     "MemoizationMode",

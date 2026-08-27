@@ -6,6 +6,16 @@ import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
+# Absolute import paths beginning with one of these reserved ``.web``
+# subdirectories are rewritten to ``$``-prefixed module specifiers.
+ABSOLUTE_IMPORT_PREFIXES = (
+    "/utils/",
+    "/components/",
+    "/styles/",
+    "/public/",
+    "/app_components/",
+)
+
 
 def merge_parsed_imports(
     *imports: ImmutableParsedImportDict,
@@ -42,11 +52,7 @@ def merge_imports(
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
         ):
             # If the lib is an absolute path, we need to prefix it with a $
-            lib = (
-                "$" + lib
-                if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
-                else lib
-            )
+            lib = "$" + lib if lib.startswith(ABSOLUTE_IMPORT_PREFIXES) else lib
             if isinstance(fields, (list, tuple, set)):
                 all_imports[lib].extend(
                     ImportVar(field) if isinstance(field, str) else field

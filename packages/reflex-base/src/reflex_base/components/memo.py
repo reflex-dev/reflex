@@ -8,15 +8,17 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from copy import copy
 from enum import Enum
-from functools import cache, update_wrapper
+from functools import cache, partial, update_wrapper
 from types import UnionType
 from typing import (
     Annotated,
     Any,
     ClassVar,
     Generic,
+    Protocol,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
@@ -27,7 +29,6 @@ from reflex_components_core.base.fragment import Fragment
 
 from reflex_base import constants
 from reflex_base.components.component import Component
-from reflex_base.components.dynamic import bundled_libraries
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     get_memoization_strategy,
@@ -39,8 +40,9 @@ from reflex_base.constants.compiler import (
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import convert_dict_to_style_and_format_emotion
-from reflex_base.utils import console, format
+from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
@@ -61,6 +63,15 @@ from reflex_base.vars.object import RestProp
 # in the always-early ``component.py`` would cycle when ``environment`` is the
 # entry point. ``memo.py`` is imported lazily, after ``environment`` is ready.
 EMPTY_VAR_COMPONENT: Var[Component] = LiteralVar.create(Component.create())
+
+# The default JS wrapper applied to a compiled component memo's function
+# definition: React's ``memo``, carrying its own import. ``@rx.memo`` accepts a
+# ``wrapper=`` override to swap it for another helper, or ``None`` to export
+# the bare function component.
+DEFAULT_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
+    "memo",
+    _var_data=VarData(imports={"react": [ImportVar(tag="memo")]}),
+)
 
 # Base ``Component`` props a memo accepts without an ``rx.RestProp`` (with a
 # deprecation warning). Only ``key`` qualifies: React consumes it at the
@@ -219,8 +230,21 @@ class _LazyBody(Generic[_BodyT]):
         body._ready = True
         return body
 
-    def get(self) -> _BodyT:
+    @property
+    def is_ready(self) -> bool:
+        """Whether the body has already been computed.
+
+        Returns:
+            Whether the cached value is ready.
+        """
+        return self._ready
+
+    def get(self, thunk: Callable[[], _BodyT] | None = None) -> _BodyT:
         """Return the body, running and caching ``thunk`` on first read.
+
+        Args:
+            thunk: Optional one-time replacement for the default thunk. Ignored
+                after the body has been computed.
 
         Returns:
             The cached body, or the placeholder when read mid-evaluation.
@@ -240,7 +264,7 @@ class _LazyBody(Generic[_BodyT]):
             return self._placeholder
         self._busy = True
         try:
-            self._value = self._thunk()
+            self._value = (self._thunk if thunk is None else thunk)()
             self._ready = True
         finally:
             self._busy = False
@@ -254,6 +278,12 @@ class MemoDefinition:
     fn: Callable[..., Any]
     python_name: str
     params: tuple[MemoParam, ...]
+    # The Python module that defined this memo. When set, the memo's compiled
+    # JSX is emitted to a path mirroring that module and the page-side import
+    # resolves there instead of the per-name ``utils/components/<name>`` path
+    # used for memos that can't be mirrored. ``kw_only`` so subclasses can keep
+    # their own required fields.
+    source_module: str | None = dataclasses.field(default=None, kw_only=True)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -279,6 +309,9 @@ class MemoComponentDefinition(MemoDefinition):
 
     export_name: str
     _component: _LazyBody[Component]
+    _runtime_inferred_params: frozenset[str] = dataclasses.field(
+        default_factory=frozenset, repr=False, compare=False
+    )
     # For passthrough wrappers built by the auto-memoize plugin: the
     # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
     # body. The ``component`` keeps its ORIGINAL children so compile-time
@@ -287,6 +320,20 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
+    # The JS function the compiled function component is wrapped in — React's
+    # ``memo`` by default. ``None`` exports the bare function component. The
+    # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
+    # its own and ``None`` pulls in nothing.
+    wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Set for definitions the compiler's auto-memoize pass creates (see
+    # ``create_passthrough_component_memo``). Instances of such a definition
+    # are the auto-memo boundary itself, so the pass must not wrap them again.
+    auto_memo_wrapper: bool = False
+    # The name React DevTools shows for this memo. ``export_name`` (derived
+    # from the decorated function) is already readable for ``@rx.memo``, but
+    # auto-memoized wrappers carry a hash-suffixed tag, so the plugin sets this
+    # to the wrapped component's Python class name instead.
+    display_name: str | None = None
     # Field names of the component(s) the body spreads an ``rx.RestProp`` onto,
     # populated as a side effect of evaluating the body (``_lift_rest_props``).
     # A forwarded prop that is not one of these is a CSS prop, so the call site
@@ -316,10 +363,23 @@ class MemoComponentDefinition(MemoDefinition):
 
 
 class MemoComponent(Component):
-    """A rendered instance of a memo component."""
+    """A rendered instance of a memo component.
+
+    Instances take part in compiler auto-memoization like any other component.
+    A call site binding state Vars (or event handlers) to props *must* be
+    wrapped, so those hooks compile into the generated wrapper instead of the
+    page module: otherwise every state change re-renders the whole page, and
+    React's ``memo`` on this component only spares its own subtree. With the
+    wrapper in place, the page holds no state hook, the wrapper absorbs the
+    re-render, and this component re-renders only when a bound prop value
+    actually changes.
+
+    Wrappers the auto-memoize pass generates are themselves ``MemoComponent``
+    instances; they opt out via ``MemoizationDisposition.NEVER`` (see
+    :func:`_get_memo_component_class`) since they already are the boundary.
+    """
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
-    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     # The user-authored component class this wrapper stands in for. Populated
     # on the dynamic subclass by ``_get_memo_component_class`` so
@@ -368,6 +428,8 @@ class MemoComponent(Component):
 def _get_memo_component_class(
     export_name: str,
     wrapped_component_type: type[Component] = Component,
+    source_module: str | None = None,
+    auto_memo_wrapper: bool = False,
 ) -> type[MemoComponent]:
     """Get the component subclass for a memo export.
 
@@ -382,20 +444,32 @@ def _get_memo_component_class(
         wrapped_component_type: The class of the component being memoized.
             Defaults to ``Component`` for memos that don't wrap a user
             component (e.g. function memos, raw passthroughs).
+        source_module: The user-app Python module that defined this memo. When
+            set, the wrapper imports from a path mirroring that module instead
+            of the per-name ``utils/components/<name>`` path.
+        auto_memo_wrapper: Whether the export is a wrapper generated by the
+            compiler's auto-memoize pass. Such wrappers already are the memo
+            boundary, so they opt out of being auto-memoized themselves;
+            user-authored ``@rx.memo`` components do not, so their stateful
+            props land in a generated wrapper instead of the page module.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
     """
+    # With a source module the memo is grouped into a file mirroring its
+    # Python module; otherwise each memo gets its own per-file module so Vite
+    # has distinct module boundaries per memo, enabling code-split by page.
+    library, symbol = memo_paths.library_and_symbol(source_module, export_name)
     attrs: dict[str, Any] = {
         "__module__": __name__,
-        "tag": export_name,
-        # Point each memo at its own per-file module so pages import directly
-        # from ``$/utils/components/<name>`` rather than through the index.
-        # Per-file import paths give Vite distinct module boundaries per
-        # memo, enabling actual code-split by page.
-        "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
+        "tag": symbol,
+        "library": library,
         "_wrapped_component_type": wrapped_component_type,
     }
+    if auto_memo_wrapper:
+        attrs["_memoization_mode"] = MemoizationMode(
+            disposition=MemoizationDisposition.NEVER
+        )
     if (
         wrapped_component_type._get_app_wrap_components
         is not Component._get_app_wrap_components
@@ -404,27 +478,43 @@ def _get_memo_component_class(
             wrapped_component_type._get_app_wrap_components
         )
     return type(
-        f"MemoComponent_{export_name}",
+        f"MemoComponent_{symbol}",
         (MemoComponent,),
         attrs,
     )
 
 
-MEMOS: dict[str, MemoDefinition] = {}
+def reset_memo_component_classes() -> None:
+    """Clear the cached memo wrapper classes.
+
+    Called at the start of each compile so a memo's ``library`` is recomputed
+    from the current module layout. Without this, a module that switches to a
+    package (or back) between hot-reload compiles would keep serving the
+    library specifier resolved on the first compile, pointing pages at an
+    output path the compiler no longer writes.
+    """
+    _get_memo_component_class.cache_clear()
 
 
-def _memo_registry_key(definition: MemoDefinition) -> str:
+MEMOS: dict[tuple[str, str | None], MemoDefinition] = {}
+
+
+def _memo_registry_key(definition: MemoDefinition) -> tuple[str, str | None]:
     """Get the registry key for a memo.
+
+    The key pairs the compiled name with the source module: two memos with the
+    same name in different modules compile to distinct files (and distinct JS
+    symbols), so they must register as separate entries rather than colliding.
 
     Args:
         definition: The memo definition.
 
     Returns:
-        The registry key for the memo.
+        The ``(name, source_module)`` registry key for the memo.
     """
     if isinstance(definition, MemoComponentDefinition):
-        return definition.export_name
-    return definition.python_name
+        return definition.export_name, definition.source_module
+    return definition.python_name, definition.source_module
 
 
 def _is_memo_reregistration(
@@ -462,10 +552,10 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
         not _is_memo_reregistration(existing, definition)
     ):
         msg = (
-            f"Memo name collision for `{key}`: "
+            f"Memo name collision for `{key[0]}`: "
             f"`{existing.fn.__module__}.{existing.python_name}` and "
             f"`{definition.fn.__module__}.{definition.python_name}` both compile "
-            "to the same memo name."
+            "to the same memo name in the same module."
         )
         raise ValueError(msg)
 
@@ -649,42 +739,48 @@ def _get_rest_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
     return next((p for p in params if p.kind is MemoParamKind.REST), None)
 
 
-def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
+def _imported_function_var(
+    name: str, return_type: Any, source_module: str | None = None
+) -> FunctionVar:
     """Create the imported FunctionVar for a memo.
 
     Args:
         name: The exported function name.
         return_type: The return type of the function.
+        source_module: The Python module that defined the memo. When set, the
+            import resolves to the mirrored module file instead of the per-name
+            ``utils/components/<name>`` path.
 
     Returns:
         The imported FunctionVar.
     """
+    library, symbol = memo_paths.library_and_symbol(source_module, name)
     return FunctionStringVar.create(
-        name,
+        symbol,
         _var_type=ReflexCallable[Any, return_type],
-        _var_data=VarData(
-            imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)]
-            }
-        ),
+        _var_data=VarData(imports={library: [ImportVar(tag=symbol)]}),
     )
 
 
-def _component_import_var(name: str) -> Var:
+def _component_import_var(name: str, source_module: str | None = None) -> Var:
     """Create the imported component var for a memo component.
 
     Args:
         name: The exported component name.
+        source_module: The Python module that defined the memo. When set, the
+            import resolves to the mirrored module file instead of the per-name
+            ``utils/components/<name>`` path.
 
     Returns:
         The component var.
     """
+    library, symbol = memo_paths.library_and_symbol(source_module, name)
     return Var(
-        name,
+        symbol,
         _var_type=type[Component],
         _var_data=VarData(
             imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)],
+                library: [ImportVar(tag=symbol)],
                 "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),
@@ -720,6 +816,7 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
         )
         raise TypeError(msg)
 
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
     for lib in dict(var_data.imports):
         if not lib:
             continue
@@ -746,16 +843,28 @@ def _rest_placeholder(name: str) -> RestProp:
     return RestProp(_js_expr=name, _var_type=dict[str, Any])
 
 
-def _var_placeholder(name: str, annotation: Any) -> Var:
+def _var_placeholder(
+    name: str,
+    annotation: Any,
+    runtime_value: Any | None = None,
+) -> Var:
     """Create a placeholder Var for a memo parameter.
 
     Args:
         name: The JavaScript identifier.
         annotation: The parameter annotation.
+        runtime_value: Optional runtime value used to infer unannotated params.
 
     Returns:
         The placeholder Var.
     """
+    if _annotation_inner_type(annotation) is Any and runtime_value is not None:
+        runtime_type = (
+            runtime_value._var_type
+            if isinstance(runtime_value, Var)
+            else LiteralVar.create(runtime_value)._var_type
+        )
+        return Var(_js_expr=name, _var_type=runtime_type).guess_type()
     return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
 
 
@@ -1032,12 +1141,14 @@ class _MemoCallBinding:
 def _evaluate_memo_function(
     fn: Callable[..., Any],
     params: tuple[MemoParam, ...],
+    runtime_values: Mapping[str, Any] | None = None,
 ) -> Any:
     """Evaluate a memo function with placeholder vars.
 
     Args:
         fn: The function to evaluate.
         params: The memo parameters.
+        runtime_values: Optional runtime values keyed by parameter name.
 
     Returns:
         The return value from the function.
@@ -1046,7 +1157,14 @@ def _evaluate_memo_function(
     keyword_args = {}
 
     for param in params:
-        placeholder = param.make_placeholder()
+        if param.kind is MemoParamKind.VALUE:
+            placeholder = _var_placeholder(
+                param.placeholder_name,
+                param.annotation,
+                runtime_values.get(param.name) if runtime_values is not None else None,
+            )
+        else:
+            placeholder = param.make_placeholder()
         if param.parameter_kind in (
             inspect.Parameter.POSITIONAL_ONLY,
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -1117,6 +1235,7 @@ def _analyze_params(
     for_component: bool,
     hints: dict[str, Any] | None = None,
     defaulted_params: list[str] | None = None,
+    missing_params: list[str] | None = None,
 ) -> tuple[MemoParam, ...]:
     """Analyze and validate memo parameters.
 
@@ -1131,6 +1250,9 @@ def _analyze_params(
             a missing annotation, otherwise ``Var[<bare type>]``) and their
             names appended; when ``None`` (strict mode, used by internal
             callers) either case raises ``TypeError``.
+        missing_params: When provided, collects the names of parameters that
+            have no annotation at all (the ``Var[Any]``-coerced subset of
+            ``defaulted_params``, which also holds legacy bare-type params).
 
     Returns:
         The analyzed parameters.
@@ -1174,6 +1296,8 @@ def _analyze_params(
             else:
                 annotation = Var[annotation]
             defaulted_params.append(parameter.name)
+            if is_missing and missing_params is not None:
+                missing_params.append(parameter.name)
 
         # Children parameters by name must match the children kind exactly —
         # otherwise we accept a value-typed `children` and emit confusing JSX.
@@ -1305,6 +1429,7 @@ def _evaluate_component_body(
     fn: Callable[..., Any],
     params: tuple[MemoParam, ...],
     rest_target_fields: set[str],
+    runtime_values: Mapping[str, Any] | None = None,
 ) -> Component:
     """Run a component memo's body and return its compiled component.
 
@@ -1313,6 +1438,7 @@ def _evaluate_component_body(
         params: The analyzed memo parameters.
         rest_target_fields: Accumulator populated with the field names of the
             component(s) the body spreads an ``rx.RestProp`` onto.
+        runtime_values: Optional runtime values keyed by parameter name.
 
     Returns:
         The wrapped component the body returned.
@@ -1320,7 +1446,9 @@ def _evaluate_component_body(
     Raises:
         TypeError: If the body does not return a component.
     """
-    body = _normalize_component_return(_evaluate_memo_function(fn, params))
+    body = _normalize_component_return(
+        _evaluate_memo_function(fn, params, runtime_values)
+    )
     if body is None:
         msg = (
             f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
@@ -1350,12 +1478,14 @@ def _evaluate_function_body(
 def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
+    source_module: str | None = None,
 ) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
     Args:
         fn: The function to analyze.
         return_annotation: The return annotation.
+        source_module: The user-app Python module that defined the memo.
 
     Returns:
         The component memo definition.
@@ -1369,6 +1499,7 @@ def _create_component_definition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
+        source_module=source_module,
         export_name=format.to_title_case(fn.__name__),
         _component=_LazyBody.ready(
             _evaluate_component_body(fn, params, rest_target_fields)
@@ -1636,8 +1767,27 @@ class _MemoComponentWrapper:
 
         # Reading ``component`` materializes the deferred body, so ``type(...)``
         # reflects the real wrapped class rather than the placeholder.
+        if definition._runtime_inferred_params and not definition._component.is_ready:
+            runtime_values = {
+                name: explicit_values[name]
+                for name in definition._runtime_inferred_params
+                if name in explicit_values
+            }
+            component = definition._component.get(
+                lambda: _evaluate_component_body(
+                    definition.fn,
+                    definition.params,
+                    definition._rest_target_fields,
+                    runtime_values,
+                )
+            )
+        else:
+            component = definition.component
         return _get_memo_component_class(
-            definition.export_name, type(definition.component)
+            definition.export_name,
+            type(component),
+            definition.source_module,
+            definition.auto_memo_wrapper,
         )._create(
             children=list(children),
             memo_definition=definition,
@@ -1651,7 +1801,9 @@ class _MemoComponentWrapper:
         Returns:
             The imported component var.
         """
-        return _component_import_var(self._definition.export_name)
+        return _component_import_var(
+            self._definition.export_name, self._definition.source_module
+        )
 
 
 def _create_function_wrapper(
@@ -1684,6 +1836,7 @@ def _create_component_wrapper(
 
 def create_passthrough_component_memo(
     component: Component,
+    source_module: str | None = None,
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -1702,6 +1855,8 @@ def create_passthrough_component_memo(
 
     Args:
         component: The component to wrap.
+        source_module: The user-app Python module that triggered creation of
+            this memo (typically the page that contained the wrapped subtree).
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -1752,9 +1907,9 @@ def create_passthrough_component_memo(
         return new_component
 
     # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` will evaluate again internally; the
-    # second pass overwrites ``captured_hole_child`` but the captured value
-    # is identical.
+    # ``_create_component_definition`` evaluates again internally; that second
+    # pass appends another, identical hole to ``captured_hole_child``, and the
+    # ``captured_hole_child[0]`` read below picks up the first.
     params = _analyze_params(passthrough, for_component=True)
     preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
     if preview is None:
@@ -1769,14 +1924,18 @@ def create_passthrough_component_memo(
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component)
-    replacements: dict[str, Any] = {}
+    definition = _create_component_definition(passthrough, Component, source_module)
+    # ``export_name`` is the content-hashed tag, which reads as noise in the
+    # React DevTools tree. Name the memo after the Python class it wraps.
+    replacements: dict[str, Any] = {
+        "auto_memo_wrapper": True,
+        "display_name": type(component).__qualname__,
+    }
     if definition.export_name != tag:
         replacements["export_name"] = tag
     if captured_hole_child:
         replacements["passthrough_hole_child"] = captured_hole_child[0]
-    if replacements:
-        definition = dataclasses.replace(definition, **replacements)
+    definition = dataclasses.replace(definition, **replacements)
 
     return _create_component_wrapper(definition), definition
 
@@ -1865,31 +2024,23 @@ def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
     )
 
 
-@overload
-def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
-@overload
-def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
-def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper:
-    """Create a memo from a function.
-
-    The decorated function's body is **not** executed here. Only signature-level
-    analysis — return annotation, parameter kinds, name-collision registration,
-    and the deprecation warning for missing annotations — runs at decoration
-    time. The body is compiled lazily on first read of ``.component`` /
-    ``.function`` — when the component wrapper is instantiated, or when the
-    compiler reads the memo (see ``_LazyBody``). Deferring the body keeps
-    ``@rx.memo`` free of import-time side effects, so a memo whose body
-    references another module no longer forces that module to load during
-    import — sidestepping circular-import ordering issues.
+def _memo_impl(
+    fn: Callable[..., Any],
+    wrapper: Var | None,
+) -> _MemoComponentWrapper | _MemoFunctionWrapper:
+    """Analyze and register a memo definition for a decorated function.
 
     Args:
         fn: The function to memoize.
+        wrapper: The JS wrapper for a component-returning memo, or ``None``
+            for no wrapper.
 
     Returns:
         The wrapped function or component factory.
 
     Raises:
-        TypeError: If the return annotation is not supported.
+        TypeError: If the return annotation is not supported, or a non-default
+            ``wrapper`` is given for a var-returning memo.
     """
     hints = get_type_hints(fn, include_extras=True)
     return_annotation = hints.get("return", inspect.Signature.empty)
@@ -1905,14 +2056,25 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
             f"`rx.Var[...]`, got `{return_annotation}`."
         )
         raise TypeError(msg)
+    if not is_component and wrapper is not DEFAULT_MEMO_WRAPPER:
+        msg = (
+            "`@rx.memo` only supports `wrapper=` on component-returning memos; "
+            f"`{fn.__name__}` returns `rx.Var[...]`, which compiles to a plain "
+            "function."
+        )
+        raise TypeError(msg)
 
     defaulted_params: list[str] = []
+    missing_params: list[str] = []
     params = _analyze_params(
         fn,
         for_component=is_component,
         hints=hints,
         defaulted_params=defaulted_params,
+        missing_params=missing_params,
     )
+
+    source_module = memo_paths.capture_source_module(fn)
 
     if missing_return or defaulted_params:
         _warn_missing_annotations(fn.__name__, missing_return, defaulted_params)
@@ -1921,39 +2083,110 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
     # first read of ``.component`` / ``.function`` (see ``_LazyBody``), not here,
     # so decoration has no import-time side effects. The component placeholder
     # stands in for re-entrant reads during a recursive memo's own evaluation,
-    # where the name resolves to ``wrapper`` (already bound by first use).
+    # where the name resolves to ``memo_callable`` (already bound by first use).
     definition: MemoComponentDefinition | MemoFunctionDefinition
+    memo_callable: _MemoComponentWrapper | _MemoFunctionWrapper
     if is_component:
         rest_target_fields: set[str] = set()
         definition = MemoComponentDefinition(
             fn=fn,
             python_name=fn.__name__,
             params=params,
+            source_module=source_module,
             export_name=format.to_title_case(fn.__name__),
             _component=_LazyBody(
                 lambda: _evaluate_component_body(fn, params, rest_target_fields),
                 placeholder=Fragment.create(),
             ),
             _rest_target_fields=rest_target_fields,
+            _runtime_inferred_params=frozenset(missing_params),
+            wrapper=wrapper,
         )
-        wrapper = _create_component_wrapper(definition)
+        memo_callable = _create_component_wrapper(definition)
     else:
         definition = MemoFunctionDefinition(
             fn=fn,
             python_name=fn.__name__,
             params=params,
+            source_module=source_module,
             _function=_LazyBody(lambda: _evaluate_function_body(fn, params)),
             imported_var=_imported_function_var(
-                fn.__name__, _annotation_inner_type(return_annotation)
+                fn.__name__,
+                _annotation_inner_type(return_annotation),
+                source_module=source_module,
             ),
         )
-        wrapper = _create_function_wrapper(definition)
+        memo_callable = _create_function_wrapper(definition)
 
     _register_memo_definition(definition)
-    return wrapper
+    return memo_callable
+
+
+class _MemoDecorator(Protocol):
+    """The decorator returned by ``rx.memo()`` called with no arguments."""
+
+    @overload
+    def __call__(self, fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
+    @overload
+    def __call__(self, fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
+
+
+@overload
+def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
+@overload
+def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
+@overload
+def memo() -> _MemoDecorator: ...
+@overload
+def memo(
+    *, wrapper: Var | None
+) -> Callable[[Callable[..., Component]], _MemoComponentWrapper]: ...
+def memo(
+    fn: Callable[..., Any] | None = None,
+    *,
+    wrapper: Var | None = DEFAULT_MEMO_WRAPPER,
+) -> (
+    _MemoComponentWrapper
+    | _MemoFunctionWrapper
+    | _MemoDecorator
+    | Callable[[Callable[..., Component]], _MemoComponentWrapper]
+):
+    """Create a memo from a function.
+
+    The decorated function's body is **not** executed here. Only signature-level
+    analysis — return annotation, parameter kinds, name-collision registration,
+    and the deprecation warning for missing annotations — runs at decoration
+    time. The body is compiled lazily on first read of ``.component`` /
+    ``.function`` — when the component wrapper is instantiated, or when the
+    compiler reads the memo (see ``_LazyBody``). Deferring the body keeps
+    ``@rx.memo`` free of import-time side effects, so a memo whose body
+    references another module no longer forces that module to load during
+    import — sidestepping circular-import ordering issues.
+
+    Args:
+        fn: The function to memoize. When omitted, returns a decorator that
+            applies the given keyword arguments (``@rx.memo(wrapper=...)``).
+        wrapper: The JS function the compiled function component is wrapped in.
+            Defaults to React's ``memo``; pass another ``Var`` (typically an
+            ``rx.vars.FunctionStringVar`` carrying its own imports) to swap the
+            wrapper, or ``None`` to export the bare function component. Only
+            supported on component-returning memos.
+
+    Returns:
+        The wrapped function or component factory, or — when ``fn`` is omitted
+        — a decorator applying the keyword arguments.
+
+    Raises:
+        TypeError: If the return annotation is not supported, or a non-default
+            ``wrapper`` is given for a var-returning memo.
+    """
+    if fn is None:
+        return cast("_MemoDecorator", partial(_memo_impl, wrapper=wrapper))
+    return _memo_impl(fn, wrapper)
 
 
 __all__ = [
+    "DEFAULT_MEMO_WRAPPER",
     "EMPTY_VAR_COMPONENT",
     "MEMOS",
     "MemoComponent",

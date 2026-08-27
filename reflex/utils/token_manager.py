@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
+import logging
 import pickle
 import uuid
 from abc import ABC, abstractmethod
@@ -11,10 +13,12 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar
 
-from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.redis import enable_keyspace_notifications
 from reflex.state import StateUpdate
-from reflex.utils import console, prerequisites
+from reflex.utils import prerequisites
 from reflex.utils.tasks import ensure_task
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -124,6 +128,10 @@ class TokenManager(ABC):
         for token, sid in token_sid_pairs:
             await self.disconnect_token(token, sid)
 
+    @abstractmethod
+    async def close(self) -> None:
+        """Release any resources held by the token manager."""
+
 
 class LocalTokenManager(TokenManager):
     """Token manager using local in-memory dictionaries (single worker)."""
@@ -170,6 +178,9 @@ class LocalTokenManager(TokenManager):
         # Clean up both mappings
         self.token_to_socket.pop(token, None)
         self.sid_to_token.pop(sid, None)
+
+    async def close(self) -> None:
+        """Release any resources held by the token manager (no-op)."""
 
 
 class RedisTokenManager(LocalTokenManager):
@@ -248,7 +259,7 @@ class RedisTokenManager(LocalTokenManager):
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
-        await StateManagerRedis(redis=self.redis)._enable_keyspace_notifications()
+        await enable_keyspace_notifications(self.redis)
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
         async with self.redis.pubsub() as pubsub:
@@ -307,7 +318,7 @@ class RedisTokenManager(LocalTokenManager):
         try:
             token_exists_in_redis = await self.redis.exists(redis_key)
         except Exception as e:
-            console.error(f"Redis error checking token existence: {e}")
+            logger.error(f"Redis error checking token existence: {e}")
             return await super().link_token_to_sid(token, sid)
 
         new_token = None
@@ -330,7 +341,7 @@ class RedisTokenManager(LocalTokenManager):
                 ex=self.token_expiration,
             )
         except Exception as e:
-            console.error(f"Redis error storing token: {e}")
+            logger.error(f"Redis error storing token: {e}")
         # Return the new token if one was generated
         return new_token
 
@@ -352,7 +363,7 @@ class RedisTokenManager(LocalTokenManager):
             try:
                 await self.redis.delete(redis_key)
             except Exception as e:
-                console.error(f"Redis error deleting token: {e}")
+                logger.error(f"Redis error deleting token: {e}")
 
             # Clean up local dicts (always do this)
             await super().disconnect_token(token, sid)
@@ -429,7 +440,7 @@ class RedisTokenManager(LocalTokenManager):
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
         except Exception as e:
-            console.error(f"Redis error getting token owner: {e}")
+            logger.error(f"Redis error getting token owner: {e}")
         return None
 
     async def emit_lost_and_found(
@@ -457,7 +468,18 @@ class RedisTokenManager(LocalTokenManager):
                 pickle.dumps(record),
             )
         except Exception as e:
-            console.error(f"Redis error publishing lost and found delta: {e}")
+            logger.error(f"Redis error publishing lost and found delta: {e}")
         else:
             return True
         return False
+
+    async def close(self) -> None:
+        """Cancel background pub/sub tasks and close the Redis client."""
+        for task in (self._socket_record_task, self._lost_and_found_task):
+            if task is not None and not task.done():
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+        self._socket_record_task = None
+        self._lost_and_found_task = None
+        await self.redis.aclose()

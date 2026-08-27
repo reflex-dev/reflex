@@ -206,9 +206,10 @@ class AlertDialogState(rx.State):
 def alert_dialog():
     return rx.flex(
         rx.heading(
-            f"Number of times alert dialog opened or closed: {AlertDialogState.num_opens}"
+            f"Number of times alert dialog opened or closed: {AlertDialogState.num_opens}",
+            as_="h2",
         ),
-        rx.heading(f"Alert Dialog open: {AlertDialogState.opened}"),
+        rx.heading(f"Alert Dialog open: {AlertDialogState.opened}", as_="h2"),
         rx.alert_dialog.root(
             rx.alert_dialog.trigger(
                 rx.button("Revoke access", color_scheme="red"),

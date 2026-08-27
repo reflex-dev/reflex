@@ -1,27 +1,17 @@
 import json
+import logging
 
 import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
 
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
-
-
-@pytest.fixture
-def mock_console(mocker: MockFixture):
-    """Fixture to mock console.print and console.error."""
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-    return mock_print, mock_error
 
 
 def test_get_vm_types_success(mocker: MockFixture):
@@ -100,8 +90,13 @@ def test_get_vm_types_invalid_response(mocker: MockFixture):
     )
 
 
-def test_get_vm_types_http_error(mocker: MockFixture):
-    """Test handling of an HTTP error."""
+def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test handling of an HTTP error.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_get = mocker.patch("httpx.get")
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
@@ -110,7 +105,6 @@ def test_get_vm_types_http_error(mocker: MockFixture):
         response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
     )
     mock_get.return_value = mock_response
-    mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -120,14 +114,12 @@ def test_get_vm_types_http_error(mocker: MockFixture):
         return_value={"X-API-TOKEN": "fake_token"},
     )
 
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
     result = runner.invoke(hosting_cli, ["vmtypes"])
 
     assert result.exit_code == 0, result.output
-    mock_console_error.assert_called_once_with(
-        "Unable to get vmtypes due to HTTP Error."
-    )
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Unable to get vmtypes due to HTTP Error."]
     mock_console_print.assert_called_once_with("[]")
 
 
@@ -189,8 +181,15 @@ def test_get_deployment_regions_empty(mocker: MockFixture):
     mock_get_regions.assert_called_once()
 
 
-def test_get_deployment_regions_http_error(mocker: MockerFixture):
-    """Test handling of an HTTP error."""
+def test_get_deployment_regions_http_error(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test handling of an HTTP error.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_get = mocker.patch("httpx.get")
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
@@ -199,7 +198,6 @@ def test_get_deployment_regions_http_error(mocker: MockerFixture):
         response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
     )
     mock_get.return_value = mock_response
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -209,9 +207,8 @@ def test_get_deployment_regions_http_error(mocker: MockerFixture):
         return_value={"X-API-TOKEN": "fake_token"},
     )
 
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-
     result = runner.invoke(hosting_cli, ["regions"])
 
     assert result.exit_code == 0, result.output
-    mock_error.assert_called_once_with("Unable to get regions due to HTTP Error.")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Unable to get regions due to HTTP Error."]

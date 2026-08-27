@@ -81,8 +81,29 @@ def MemoApp():
         # element id so each row is locatable after reordering.
         return rx.input(id=label)
 
+    @rx.memo
+    def framed(title: rx.Var[str], children: rx.Var[rx.Component]) -> rx.Component:
+        # Stateful prop *and* a children slot: the auto-memoize pass wraps the
+        # call site so the state hooks live in the generated wrapper, which
+        # passes the page-rendered children straight through.
+        return rx.vstack(
+            rx.text(title, id="framed-title"),
+            rx.box(children, id="framed-slot"),
+        )
+
+    @rx.memo(wrapper=None)
+    def unwrapped_label(value: rx.Var[str]) -> rx.Component:
+        # Compiled without the React ``memo`` wrapper: a bare function
+        # component that must still render and follow its prop.
+        return rx.text(value, id="unwrapped-label")
+
     def index() -> rx.Component:
         return rx.vstack(
+            rx.input(
+                value=MemoState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
             rx.text(MemoState.last_value, id="memo-last-value"),
             my_memoed_component(
                 some_value="memod_some_value", event=MemoState.set_last_value
@@ -99,6 +120,11 @@ def MemoApp():
                     MemoState.order, lambda item: keyed_row(label=item, key=item)
                 ),
                 id="keyed-rows",
+            ),
+            unwrapped_label(value=MemoState.last_value),
+            framed(
+                rx.text(MemoState.last_value, id="framed-child"),
+                title=MemoState.last_value,
             ),
         )
 
@@ -125,6 +151,21 @@ def memo_app(
         yield harness
 
 
+def _load_page(page: Page, memo_app: AppHarness) -> None:
+    """Navigate to the app and wait until it is hydrated and connected.
+
+    Waits for the client token to appear so that event handlers are attached
+    before the test interacts with the page.
+
+    Args:
+        page: Playwright page.
+        memo_app: Running app harness.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+
 def test_memo_event_handler_partial_application(
     memo_app: AppHarness, page: Page
 ) -> None:
@@ -134,8 +175,7 @@ def test_memo_event_handler_partial_application(
         memo_app: Running app harness.
         page: Playwright page.
     """
-    assert memo_app.frontend_url is not None
-    page.goto(memo_app.frontend_url)
+    _load_page(page, memo_app)
 
     expect(page.locator("#memo-last-value")).to_have_text("")
     page.click("#memo-button")
@@ -149,8 +189,7 @@ def test_memo_event_handler_raw_pass_through(memo_app: AppHarness, page: Page) -
         memo_app: Running app harness.
         page: Playwright page.
     """
-    assert memo_app.frontend_url is not None
-    page.goto(memo_app.frontend_url)
+    _load_page(page, memo_app)
 
     page.locator("#memo-input").fill("typed_value")
     expect(page.locator("#memo-last-value")).to_have_text("typed_value")
@@ -163,8 +202,7 @@ def test_memo_recursive_tree_render(memo_app: AppHarness, page: Page) -> None:
         memo_app: Running app harness.
         page: Playwright page.
     """
-    assert memo_app.frontend_url is not None
-    page.goto(memo_app.frontend_url)
+    _load_page(page, memo_app)
 
     tree_root = page.locator("#tree-root")
     node_names = tree_root.locator(".tree-node-name")
@@ -179,8 +217,7 @@ def test_memo_recursive_tree_reacts_to_state(memo_app: AppHarness, page: Page) -
         memo_app: Running app harness.
         page: Playwright page.
     """
-    assert memo_app.frontend_url is not None
-    page.goto(memo_app.frontend_url)
+    _load_page(page, memo_app)
 
     node_names = page.locator("#tree-root .tree-node-name")
     expect(node_names).to_have_count(4)
@@ -206,8 +243,7 @@ def test_memo_key_preserves_identity_across_reorder(
         memo_app: Running app harness.
         page: Playwright page.
     """
-    assert memo_app.frontend_url is not None
-    page.goto(memo_app.frontend_url)
+    _load_page(page, memo_app)
 
     rows = page.locator("#keyed-rows input")
     expect(rows).to_have_count(3)
@@ -222,3 +258,48 @@ def test_memo_key_preserves_identity_across_reorder(
     # ... while each row kept the value typed into it, by key, not by slot.
     for row_id in ("row-a", "row-b", "row-c"):
         expect(page.locator(f"#{row_id}")).to_have_value(row_id.upper())
+
+
+def test_memo_stateful_prop_and_children_update(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A memo bound to state renders its children and follows state changes.
+
+    The call site binds a state Var to a prop and passes children positionally,
+    so the auto-memoize pass hoists the state hooks into a generated wrapper
+    that feeds both the prop and the page-rendered children.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#framed-title")).to_have_text("")
+    expect(page.locator("#framed-child")).to_have_text("")
+
+    page.locator("#memo-input").fill("framed_update")
+
+    expect(page.locator("#framed-title")).to_have_text("framed_update")
+    expect(page.locator("#framed-slot").locator("#framed-child")).to_have_text(
+        "framed_update"
+    )
+
+
+def test_memo_wrapper_none_renders_and_updates(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A ``wrapper=None`` memo renders as a bare function component.
+
+    The compiled module exports the component without React's ``memo``
+    wrapper; it must still mount and re-render when its prop changes.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#unwrapped-label")).to_have_text("")
+    page.locator("#memo-input").fill("unwrapped_update")
+    expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")

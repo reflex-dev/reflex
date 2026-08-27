@@ -2,6 +2,8 @@
 components:
   - rx.recharts.RadarChart
   - rx.recharts.Radar
+title: Radar Chart
+meta_description: "Build radar (spider) charts in Python with Reflex. Create interactive Recharts radar charts with multiple series, custom polar axes, legends, and tooltips — all in pure Python."
 ---
 
 # Radar Chart
@@ -11,7 +13,7 @@ import reflex as rx
 from typing import Any
 ```
 
-A radar chart shows multivariate data of three or more quantitative variables mapped onto an axis.
+Radar charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A radar chart (also called a spider chart) shows multivariate data of three or more quantitative variables mapped onto an axis.
 
 ## Simple Example
 
@@ -124,7 +126,7 @@ def radar_start_end():
     )
 ```
 
-# Dynamic Data
+## Dynamic Data
 
 Chart data tied to a State var causes the chart to automatically update when the
 state changes, providing a nice way to visualize data in response to user
@@ -194,3 +196,11 @@ def radar_dynamic():
         height="15em",
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Radial Bar Chart](/docs/library/graphing/charts/radialbarchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart)
+- [Line Chart](/docs/library/graphing/charts/linechart)

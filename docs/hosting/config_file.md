@@ -2,19 +2,21 @@
 import reflex as rx
 ```
 
-## What is reflex cloud config?
+# Cloud Config File
 
-The following command:
+## Create `cloud.yml`
+
+Run:
 
 ```bash
 reflex cloud config
 ```
 
-generates a `cloud.yml` configuration file used to deploy your Reflex app to the Reflex cloud platform. This file tells Reflex how and where to run your app in the cloud.
+The command creates `cloud.yml`, which defines how Reflex Cloud should deploy the app.
 
-## Configuration File Structure
+## File structure
 
-The `cloud.yml` file uses YAML format and supports the following structure. **All fields are optional** and will use sensible defaults if not specified:
+Every field is optional:
 
 ```yaml
 # Basic deployment settings
@@ -32,12 +34,17 @@ vmtype: c2m2                       # Optional: defaults to c1m1
 hostname: myapp                    # Optional: myapp.reflex.dev
 envfile: .env.production           # Optional: defaults to .env
 
+# Google Cloud (Enterprise, requires a connected GCP account)
+provider: gcp                      # Optional: defaults to reflex-cloud
+gcp_connection: eu-prod            # Optional: omit to keep the app's current connection
+full_deploy: true                  # Optional: omit to leave the app's hosting mode unchanged
+
 # Additional dependencies
 packages:                          # Optional: empty by default
   - procps
 ```
 
-## Configuration Options Reference
+## Options reference
 
 ```python demo-only
 rx.table.root(
@@ -108,6 +115,27 @@ rx.table.root(
             ("packages", "array", "empty", "Additional system packages", None),
             ("include_db", "boolean", "false", "Include local sqlite", None),
             ("strategy", "string", "auto", "Deployment strategy", None),
+            (
+                "provider",
+                "string",
+                "reflex-cloud",
+                "Where the app deploys: reflex-cloud or gcp",
+                None,
+            ),
+            (
+                "gcp_connection",
+                "string",
+                "unset",
+                "Connected GCP account to deploy through (see below)",
+                None,
+            ),
+            (
+                "full_deploy",
+                "boolean",
+                "unset",
+                "Serve the frontend from the GCP container (see below)",
+                None,
+            ),
         ]
     ]),
     variant="ghost",
@@ -117,9 +145,7 @@ rx.table.root(
 )
 ```
 
-## Configuration Options
-
-For details of specific sections click the links in the table.
+## Configuration details
 
 ### Projects
 
@@ -134,7 +160,7 @@ You can also specify a project uuid instead of name:
 project: 12345678-1234-1234-1234-1234567890ab
 ```
 
-You can go to the homepage of the project in the reflex cloud dashboard to find your project uuid in the url `https://build.reflex.dev/project/uuid`
+Copy the project ID from the project's settings in Reflex Build.
 
 ### Apt Packages
 
@@ -155,7 +181,7 @@ Include local sqlite database:
 include_db: true
 ```
 
-This is not persistent and will be lost on restart. It is recommended to use a database service instead.
+This database is not persistent and is lost when the app restarts. Use a database service for production data.
 
 ### Strategy
 
@@ -169,6 +195,55 @@ Available strategies:
 ```yaml
 strategy: immediate
 ```
+
+### Google Cloud
+
+Deploy to a Google Cloud account connected to your organization instead of
+Reflex Cloud. Requires the Enterprise tier and a GCP account connected under
+Organization → Cloud Providers.
+
+```yaml
+provider: gcp
+```
+
+An organization can connect more than one GCP account. Name which one an app
+deploys through:
+
+```yaml
+gcp_connection: eu-prod
+```
+
+Run `reflex cloud providers connections` to list the connections available to
+you, with the project, region and runtime service account of each.
+
+Leaving `gcp_connection` unset keeps the app on the connection it already uses.
+An app that has never deployed to GCP has no connection yet, so for that first
+deploy the unset value means your organization's default connection — which is
+why the options table above lists no fixed default. A connection can only be
+changed before the app has been deployed; afterwards, switch providers instead
+so the old project is torn down properly.
+
+Two settings are ignored on this target: `regions` (the region comes from the
+connected account) and `hostname`. `vmtype` is honored — it maps onto Cloud Run
+CPU and memory limits.
+
+### Full deploy
+
+By default a GCP-deployed app serves its frontend from Reflex's CDN. In full
+deploy mode the frontend is bundled into the GCP container and served on the
+same origin as the backend, so the whole app runs in your cloud account:
+
+```yaml
+full_deploy: true
+```
+
+GCP only, Enterprise tier, and incompatible with a custom domain or multiple
+environments. Leaving `full_deploy` unset leaves the app's hosting mode
+unchanged — it is deliberately three-valued, so a config file that never
+mentions it does not switch an app out of full deploy. Changing the mode stops
+a running app so the next deploy brings it back up in the new one, and its
+earlier deployments stop being rollback targets: they were built for the mode
+it left.
 
 ## Multi-Environment Setup
 
@@ -212,4 +287,3 @@ reflex deploy
 reflex deploy --config cloud-prod.yml
 reflex deploy --config cloud-staging.yml
 ```
-
