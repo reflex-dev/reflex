@@ -20,7 +20,11 @@ workspace package to an unreleased ``*.dev`` version (e.g. ``reflex-base >= 0.9.
 while that version is still unpublished, which would otherwise make resolution from PyPI
 impossible. For such pins — and only those — the depended-on package is installed editable
 from its local workspace checkout in both environments, so every *non-dev* dependency is
-still required to resolve from PyPI.
+still required to resolve from PyPI. An editable on the command line is invisible to the
+isolated build environment uv creates to build the checked package itself — and the root
+package's build hook re-resolves the runtime dependencies there
+(``require-runtime-dependencies``) — so each dev-pinned sibling is additionally built into
+a local wheel exposed via ``--find-links``, which build-environment resolution does consult.
 
 Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no arguments,
 every checkable package is validated. ``--check-dev-pins [package ...]`` instead scans the
@@ -134,7 +138,9 @@ class Package:
     """Project dirs of sibling workspace packages this package pins to a ``*.dev`` release.
 
     These are installed editable from the local checkout (rather than PyPI) in both
-    resolutions, because the pinned development version is not published.
+    resolutions, because the pinned development version is not published. They are also
+    built into local wheels served via ``--find-links`` so the pin resolves inside the
+    isolated build environment, which cannot see the editables.
     """
 
     def install_target(self) -> str:
@@ -365,12 +371,39 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     return errors
 
 
+def _build_dev_wheels(package: Package, wheel_dir: Path) -> str | None:
+    """Build the package's dev-pinned siblings into wheels for build-env resolution.
+
+    The ``-e`` editables added in :func:`_resolve_and_check` satisfy a ``*.dev`` pin only
+    in the top-level resolution. When the checked package's build hook requires the runtime
+    dependencies (the root package's does, to regenerate ``.pyi`` stubs), uv resolves the
+    pin again inside an isolated build environment that only consults package indexes, so
+    the sibling must also be available as a wheel via ``--find-links``.
+
+    Args:
+        package: The package whose dev-pinned siblings should be built.
+        wheel_dir: Directory to place the built wheels in.
+
+    Returns:
+        ``None`` on success, or the captured build output of the failing wheel build.
+    """
+    for source in package.local_dev_sources:
+        build = _run(
+            ["uv", "build", "--wheel", "--out-dir", str(wheel_dir), str(source)],
+            cwd=REPO_ROOT,
+        )
+        if build.returncode != 0:
+            return build.stdout
+    return None
+
+
 def _resolve_and_check(
     package: Package,
     python_version: str,
     venv: Path,
     config: Path,
     lowest: bool,
+    dev_wheel_dir: Path | None = None,
 ) -> tuple[dict[tuple[str, int, int, str], str] | None, str]:
     """Install a package into an isolated venv and run pyright against its source.
 
@@ -380,6 +413,9 @@ def _resolve_and_check(
         venv: Directory in which to create the virtualenv.
         config: Path to the pyright options config.
         lowest: Whether to pin direct dependencies to their declared minimums.
+        dev_wheel_dir: Directory of prebuilt sibling wheels (see
+            :func:`_build_dev_wheels`), passed via ``--find-links`` so ``*.dev`` pins
+            resolve inside the isolated build environment.
 
     Returns:
         A ``(errors, detail)`` tuple. ``errors`` is the pyright error map, or ``None`` if
@@ -403,10 +439,14 @@ def _resolve_and_check(
         install_cmd += ["--resolution", "lowest-direct"]
     install_cmd += ["-e", package.install_target()]
     # ``--no-sources`` forces every dependency to resolve from PyPI; the lone exception is a
-    # sibling pinned to an unpublished ``*.dev`` release, which is provided here as an explicit
-    # editable from its local checkout so resolution can succeed without reaching PyPI for it.
+    # sibling pinned to an unpublished ``*.dev`` release, provided two ways: as an explicit
+    # editable from its local checkout for the top-level resolution, and as a prebuilt wheel
+    # via ``--find-links`` for the isolated build environment, which re-resolves the pin when
+    # the package's build hook requires the runtime dependencies but cannot see editables.
     for source in package.local_dev_sources:
         install_cmd += ["-e", str(source)]
+    if dev_wheel_dir is not None:
+        install_cmd += ["--find-links", str(dev_wheel_dir)]
     install = _run(install_cmd, cwd=REPO_ROOT)
     if install.returncode != 0:
         return None, install.stdout
@@ -450,8 +490,26 @@ def check_package(package: Package, python_version: str) -> Result:
         config = tmp_path / "pyrightconfig.json"
         config.write_text(json.dumps({"reportIncompatibleMethodOverride": False}))
 
+        dev_wheel_dir: Path | None = None
+        if package.local_dev_sources:
+            dev_wheel_dir = tmp_path / "dev-wheels"
+            dev_wheel_dir.mkdir()
+            detail = _build_dev_wheels(package, dev_wheel_dir)
+            if detail is not None:
+                return Result(
+                    package.name,
+                    False,
+                    "resolution",
+                    f"building wheels for dev-pinned siblings failed:\n{detail}",
+                )
+
         baseline, detail = _resolve_and_check(
-            package, python_version, tmp_path / ".venv-latest", config, lowest=False
+            package,
+            python_version,
+            tmp_path / ".venv-latest",
+            config,
+            lowest=False,
+            dev_wheel_dir=dev_wheel_dir,
         )
         if baseline is None:
             return Result(
@@ -462,7 +520,12 @@ def check_package(package: Package, python_version: str) -> Result:
             )
 
         minimum, detail = _resolve_and_check(
-            package, python_version, tmp_path / ".venv-lowest", config, lowest=True
+            package,
+            python_version,
+            tmp_path / ".venv-lowest",
+            config,
+            lowest=True,
+            dev_wheel_dir=dev_wheel_dir,
         )
         if minimum is None:
             return Result(

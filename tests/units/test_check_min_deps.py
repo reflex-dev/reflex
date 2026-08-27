@@ -243,6 +243,137 @@ def test_resolve_and_check_appends_local_dev_sources_as_editables(
     # ...but the dev-pinned sibling is provided editable from its local checkout.
     assert install.count("-e") == 2
     assert str(dev_source) in install
+    # Without a prebuilt wheel dir there is nothing to serve to the build env.
+    assert "--find-links" not in install
+
+
+def test_resolve_and_check_serves_dev_wheel_dir_via_find_links(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    captured: list[list[str]] = []
+
+    class _Done:
+        returncode = 0
+        stdout = '{"generalDiagnostics": []}'
+
+    monkeypatch.setattr(
+        check_min_deps,
+        "_run",
+        lambda cmd, **kwargs: captured.append([str(c) for c in cmd]) or _Done(),
+    )
+    package = check_min_deps.Package(
+        name="reflex",
+        project_dir=check_min_deps.REPO_ROOT,
+        source_dir=check_min_deps.REPO_ROOT / "reflex",
+        extras=(),
+        local_dev_sources=(check_min_deps.REPO_ROOT / "packages" / "reflex-base",),
+    )
+
+    errors, _ = check_min_deps._resolve_and_check(
+        package,
+        "3.12",
+        tmp_path / "venv",
+        tmp_path / "cfg.json",
+        lowest=False,
+        dev_wheel_dir=tmp_path / "dev-wheels",
+    )
+
+    assert errors == {}
+    install = next(c for c in captured if c[:3] == ["uv", "pip", "install"])
+    assert install[install.index("--find-links") + 1] == str(tmp_path / "dev-wheels")
+
+
+def test_check_package_builds_dev_pinned_siblings_for_the_build_env(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression: a ``*.dev`` pin on the root package must resolve in the build env.
+
+    The root package's hatch hook declares ``require-runtime-dependencies``, so uv
+    re-resolves the runtime deps inside an isolated build environment that cannot see the
+    ``-e`` editables. The check must prebuild each dev-pinned sibling into a wheel and
+    pass the wheel directory to every install via ``--find-links``.
+    """
+    captured: list[list[str]] = []
+
+    class _Done:
+        returncode = 0
+        stdout = '{"generalDiagnostics": []}'
+
+    monkeypatch.setattr(
+        check_min_deps,
+        "_run",
+        lambda cmd, **kwargs: captured.append([str(c) for c in cmd]) or _Done(),
+    )
+    dev_source = check_min_deps.REPO_ROOT / "packages" / "reflex-base"
+    package = check_min_deps.Package(
+        name="reflex",
+        project_dir=check_min_deps.REPO_ROOT,
+        source_dir=check_min_deps.REPO_ROOT / "reflex",
+        extras=(),
+        local_dev_sources=(dev_source,),
+    )
+
+    result = check_min_deps.check_package(package, "3.12")
+
+    assert result.ok
+    build = next(c for c in captured if c[:3] == ["uv", "build", "--wheel"])
+    assert build[-1] == str(dev_source)
+    wheel_dir = build[build.index("--out-dir") + 1]
+    installs = [c for c in captured if c[:3] == ["uv", "pip", "install"]]
+    assert len(installs) == 2
+    for install in installs:
+        assert install[install.index("--find-links") + 1] == wheel_dir
+
+
+def test_check_package_without_dev_pins_builds_no_wheels(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    captured: list[list[str]] = []
+
+    class _Done:
+        returncode = 0
+        stdout = '{"generalDiagnostics": []}'
+
+    monkeypatch.setattr(
+        check_min_deps,
+        "_run",
+        lambda cmd, **kwargs: captured.append([str(c) for c in cmd]) or _Done(),
+    )
+    package = check_min_deps.Package(
+        name="reflex",
+        project_dir=check_min_deps.REPO_ROOT,
+        source_dir=check_min_deps.REPO_ROOT / "reflex",
+        extras=(),
+    )
+
+    assert check_min_deps.check_package(package, "3.12").ok
+    assert not any(c[:2] == ["uv", "build"] for c in captured)
+    assert not any("--find-links" in c for c in captured)
+
+
+def test_check_package_reports_failed_dev_wheel_build(monkeypatch: pytest.MonkeyPatch):
+    class _Failed:
+        returncode = 1
+        stdout = "wheel build exploded"
+
+    def fake_run(cmd: list[str], **kwargs: object) -> _Failed:
+        assert [str(c) for c in cmd[:2]] == ["uv", "build"]
+        return _Failed()
+
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    package = check_min_deps.Package(
+        name="reflex",
+        project_dir=check_min_deps.REPO_ROOT,
+        source_dir=check_min_deps.REPO_ROOT / "reflex",
+        extras=(),
+        local_dev_sources=(check_min_deps.REPO_ROOT / "packages" / "reflex-base",),
+    )
+
+    result = check_min_deps.check_package(package, "3.12")
+
+    assert not result.ok
+    assert result.stage == "resolution"
+    assert "wheel build exploded" in result.detail
 
 
 def _write_pyproject(path: Path, dependencies: list[str], optional: str = "") -> Path:
