@@ -565,10 +565,8 @@ class EventProcessor:
         previous = self._superseded.get(key)
         if previous is not None and not previous.all_done():
             logger.debug(
-                rich.markup.escape(
-                    f"Cancelling the previous unfinished {event.name} chain for token "
-                    f"{token}, superseded by a newer invocation."
-                )
+                f"Cancelling the previous unfinished {event.name} chain for token "
+                f"{token}, superseded by a newer invocation."
             )
             previous.cancel()
         self._superseded[key] = tracked
@@ -846,11 +844,7 @@ class EventProcessor:
                     t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
                 t.add_done_callback(self._finish_task)
                 return True
-            logger.exception(
-                rich.markup.escape(
-                    f"Error in {task.get_name()} [txid={task_ctx.txid}]:"
-                )
-            )
+            logger.exception(f"Error in {task.get_name()} [txid={task_ctx.txid}]:")
         else:
             if future is not None and not future.done():
                 future.set_result(result)
