@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -407,7 +408,13 @@ def _resolve_and_check(
     # editable from its local checkout so resolution can succeed without reaching PyPI for it.
     for source in package.local_dev_sources:
         install_cmd += ["-e", str(source)]
-    install = _run(install_cmd, cwd=REPO_ROOT)
+    # The root package's hatch hook declares ``require-runtime-dependencies``, which would
+    # make the isolated build env resolve every runtime dep from PyPI — including ``*.dev``
+    # pins that only the editable sources above can satisfy. The hook only regenerates
+    # ``.pyi`` stubs, which this check does not need, so disable hooks for the build.
+    install = _run(
+        install_cmd, cwd=REPO_ROOT, env={**os.environ, "HATCH_BUILD_NO_HOOKS": "true"}
+    )
     if install.returncode != 0:
         return None, install.stdout
 
