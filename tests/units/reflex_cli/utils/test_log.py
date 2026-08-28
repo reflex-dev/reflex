@@ -7,6 +7,7 @@ import importlib
 import logging
 import sys
 from collections.abc import Iterator
+from enum import Enum
 from types import ModuleType
 
 import pytest
@@ -76,6 +77,21 @@ def test_reflex_base_is_used_when_installed():
     assert log.HAS_REFLEX_BASE
     assert log.SUCCESS is base_log.SUCCESS
     assert log.set_log_level is base_log.set_log_level
+
+
+def test_current_reflex_base_log_level_is_adopted():
+    """With a current reflex-base installed, the shared enum is what the CLI uses.
+
+    The CLI only adopts reflex-base's LogLevel when it carries the API the CLI
+    calls. Were that probe ever to reject a current reflex-base, the CLI would
+    fork the enum while still forwarding to reflex-base's ``set_log_level``,
+    which type-checks against its own class -- so the mainline path is guarded
+    here as well as the old-reflex one.
+    """
+    from reflex_base.constants.base import LogLevel as BaseLogLevel
+    from reflex_cli.constants.base import LogLevel
+
+    assert LogLevel is BaseLogLevel
 
 
 def test_reflex_base_adopts_the_cli_logger_without_being_imported():
@@ -292,3 +308,195 @@ def test_fallback_progress_bars(capsys):
     out = capsys.readouterr().out
     assert "stepping" in out
     assert "uploading" in out
+
+
+class _OldBaseLogLevel(str, Enum):
+    """reflex-base's LogLevel as reflex 0.9.6 shipped it.
+
+    Predates ``to_logging_level`` and the verbosity-ordered comparisons, so a
+    CLI that adopts it as its own enum ends up calling methods it lacks.
+    """
+
+    DEBUG = "debug"
+    DEFAULT = "default"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+    @classmethod
+    def from_string(cls, level: str | None) -> _OldBaseLogLevel | None:
+        """Convert a string to a log level.
+
+        Args:
+            level: The log level as a string.
+
+        Returns:
+            The log level.
+        """
+        if not level:
+            return None
+        try:
+            return cls[level.upper()]
+        except KeyError:
+            return None
+
+    def __le__(self, other: _OldBaseLogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is less than or equal to the other log level.
+        """
+        levels = list(_OldBaseLogLevel)
+        return levels.index(self) <= levels.index(other)
+
+    def subprocess_level(self) -> _OldBaseLogLevel:
+        """Return the log level for the subprocess.
+
+        Returns:
+            The log level for the subprocess.
+        """
+        return self if self != _OldBaseLogLevel.DEFAULT else _OldBaseLogLevel.WARNING
+
+
+class _ReflexBaseLogBlocker:
+    """Meta path finder that hides ``reflex_base.utils.log`` only."""
+
+    def find_spec(self, fullname: str, path=None, target=None):
+        """Refuse to resolve the reflex-base logging pipeline.
+
+        Args:
+            fullname: The module being imported.
+            path: The parent package's search path.
+            target: The module being reloaded, if any.
+
+        Returns:
+            None for every other module, deferring to the real finders.
+
+        Raises:
+            ImportError: If reflex_base.utils.log is being imported.
+        """
+        if fullname == "reflex_base.utils.log":
+            msg = f"No module named {fullname!r}"
+            raise ImportError(msg)
+        return
+
+
+@contextlib.contextmanager
+def _with_old_reflex_base() -> Iterator[tuple[ModuleType, ModuleType, ModuleType]]:
+    """Import the CLI's logging modules against a reflex 0.9.6 style reflex-base.
+
+    That release ships ``reflex_base.constants.base`` -- so the CLI's optional
+    import of the shared LogLevel succeeds -- but no ``reflex_base.utils.log``,
+    and its LogLevel predates ``to_logging_level``.
+
+    Yields:
+        The freshly imported (constants.base, utils.log, utils.console) modules.
+    """
+    cli_logger = logging.getLogger("reflex_cli")
+    saved_state = (cli_logger.handlers[:], cli_logger.level, cli_logger.propagate)
+    saved_modules = {
+        name: module
+        for name, module in sys.modules.items()
+        if name.startswith(("reflex_cli", "reflex_base"))
+    }
+    for name in saved_modules:
+        del sys.modules[name]
+    blocker = _ReflexBaseLogBlocker()
+    sys.meta_path.insert(0, blocker)
+    old_constants_base = ModuleType("reflex_base.constants.base")
+    old_constants_base.LogLevel = _OldBaseLogLevel  # pyright: ignore[reportAttributeAccessIssue]
+    sys.modules["reflex_base.constants.base"] = old_constants_base
+    try:
+        yield (
+            importlib.import_module("reflex_cli.constants.base"),
+            importlib.import_module("reflex_cli.utils.log"),
+            importlib.import_module("reflex_cli.utils.console"),
+        )
+    finally:
+        sys.meta_path.remove(blocker)
+        for name in list(sys.modules):
+            if name.startswith(("reflex_cli", "reflex_base")):
+                del sys.modules[name]
+        sys.modules.update(saved_modules)
+        cli_logger.handlers, cli_logger.level, cli_logger.propagate = saved_state
+
+
+def test_old_reflex_base_log_level_is_not_adopted():
+    """An enum missing part of the API must not become the CLI's LogLevel.
+
+    reflex 0.9.6 ships a reflex-base whose LogLevel has no
+    ``to_logging_level``; adopting it left the CLI calling a method that does
+    not exist the moment anything set the log level.
+    """
+    with _with_old_reflex_base() as (constants_base, fallback_log, _console):
+        assert not fallback_log.HAS_REFLEX_BASE
+        assert constants_base.LogLevel is not _OldBaseLogLevel
+        assert hasattr(constants_base.LogLevel, "to_logging_level")
+
+
+def test_set_log_level_accepts_an_old_reflex_log_level(capsys):
+    """Old reflex hands its own LogLevel straight to the CLI's entrypoints.
+
+    ``reflex deploy`` on 0.9.6 calls ``hosting_cli.deploy(loglevel=...)`` with a
+    ``reflex.constants.LogLevel``, so the value never passes through click and
+    arrives as a foreign enum rather than a string.
+    """
+    with _with_old_reflex_base() as (_, _fallback_log, fallback_console):
+        fallback_console.set_log_level(_OldBaseLogLevel.WARNING)
+        assert logging.getLogger("reflex_cli").level == logging.WARNING
+
+        cli_logger = logging.getLogger("reflex_cli.test")
+        cli_logger.info("quiet info")
+        cli_logger.warning("loud warning")
+
+    captured = capsys.readouterr().out
+    assert "quiet info" not in captured
+    assert "loud warning" in captured
+
+
+@pytest.mark.parametrize("level", list(_OldBaseLogLevel))
+def test_every_old_reflex_log_level_maps_across(level: _OldBaseLogLevel):
+    """Each member of the old enum resolves to the CLI's own equivalent."""
+    with _with_old_reflex_base() as (constants_base, _fallback_log, fallback_console):
+        fallback_console.set_log_level(level)
+        expected = constants_base.LogLevel(level.value).to_logging_level()
+        assert logging.getLogger("reflex_cli").level == expected
+
+
+def test_loglevel_option_still_offers_every_choice_on_old_reflex_base():
+    """The click layer builds ``--loglevel`` from the same enum the CLI adopts.
+
+    Falling back to the fork must not shrink or rename the choices a command
+    accepts, or old reflex would start rejecting log levels it used to take.
+    """
+    with _with_old_reflex_base() as (_, _fallback_log, _console):
+        cli_options = importlib.import_module("reflex_cli.utils.cli_options")
+        (option,) = cli_options.loglevel_option(lambda: None).__click_params__
+
+        assert list(option.type.choices) == [level.value for level in _OldBaseLogLevel]
+
+
+@pytest.mark.parametrize(
+    "module",
+    [
+        "reflex_cli.utils.hosting",
+        "reflex_cli.v2.apps",
+        "reflex_cli.v2.auth",
+        "reflex_cli.v2.cli",
+        "reflex_cli.v2.deployments",
+        "reflex_cli.v2.gcp",
+        "reflex_cli.v2.project",
+        "reflex_cli.v2.providers",
+        "reflex_cli.v2.scan",
+        "reflex_cli.v2.secrets",
+        "reflex_cli.v2.vmtypes_regions",
+    ],
+)
+def test_cli_imports_with_old_reflex_base(module: str):
+    """Every CLI module imports against a reflex-base that predates its log API."""
+    with _with_old_reflex_base():
+        importlib.import_module(module)
