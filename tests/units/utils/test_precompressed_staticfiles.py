@@ -97,6 +97,14 @@ async def test_precompressed_static_files_supports_html_404_fallback(tmp_path: P
 
 
 def _articles_router(path: str) -> str | None:
+    """Match paths belonging to the dynamic articles route.
+
+    Args:
+        path: The request path with leading slash.
+
+    Returns:
+        The articles route for paths under ``/articles/``, otherwise None.
+    """
     return "articles/[id]" if path.startswith("/articles/") else None
 
 
@@ -122,6 +130,10 @@ async def test_routable_spa_fallback_served_with_200(
     assert response.status_code == 200
     assert str(response.path).endswith("404.html")
     assert response.media_type == "text/html"
+    if encodings:
+        assert response.headers["vary"] == "Accept-Encoding"
+    else:
+        assert "vary" not in response.headers
     assert await _collect_body(response, scope) == b"<html>spa-fallback</html>"
 
 
@@ -145,6 +157,7 @@ async def test_routable_spa_fallback_serves_precompressed_sidecar(tmp_path: Path
     assert response.status_code == 200
     assert str(response.path).endswith("404.html.gz")
     assert response.headers["content-encoding"] == "gzip"
+    assert response.headers["vary"] == "Accept-Encoding"
     assert await _collect_body(response, scope) == b"compressed-fallback"
 
 

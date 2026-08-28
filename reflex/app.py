@@ -1316,7 +1316,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def _page_routes(self) -> list[str]:
-        """Get all registered page routes in registration order.
+        """All registered page routes in registration order.
 
         Returns:
             The deduplicated list of page routes.

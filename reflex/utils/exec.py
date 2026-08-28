@@ -341,6 +341,24 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
+def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
+    """Match a path against the app routes, treating the 404 page as unroutable.
+
+    The compiler registers a synthetic ``404`` page, so a literal ``/404``
+    request would otherwise count as routable and lose its 404 status.
+
+    Args:
+        router: The app route matcher.
+        path: The request path.
+
+    Returns:
+        The matching route, or None when the path matches no route or only the
+        404 page.
+    """
+    route = router(path)
+    return route if route != constants.Page404.SLUG else None
+
+
 def _match_with_frontend_path(
     router: Callable[[str], str | None], path: str
 ) -> str | None:
@@ -392,10 +410,12 @@ def get_frontend_mount(router: Callable[[str], str | None] | None = None):
 
     if router is None:
         router = get_routes_manifest_router()
-    if router is not None and config.frontend_path:
-        # The mount strips the frontend path from request paths, but the route
-        # matcher expects it present (it strips the prefix itself).
-        router = functools.partial(_match_with_frontend_path, router)
+    if router is not None:
+        router = functools.partial(_match_routable_page, router)
+        if config.frontend_path:
+            # The mount strips the frontend path from request paths, but the
+            # route matcher expects it present (it strips the prefix itself).
+            router = functools.partial(_match_with_frontend_path, router)
 
     static_dir = (
         prerequisites.get_web_dir()
