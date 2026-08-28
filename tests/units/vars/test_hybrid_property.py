@@ -642,6 +642,32 @@ def test_hybrid_property_inherited_annotated_name_keeps_descriptor():
     )
 
 
+def test_hybrid_property_shadowed_by_closer_base_stays_a_field():
+    """A base that C3 resolves ahead of the property's owner keeps its field."""
+
+    class Shared:
+        @hybrid_property
+        def value(self) -> int:
+            return 1
+
+    class Plain(Shared):
+        pass
+
+    class Overriding(Shared, rx.State):
+        # overrides the shared base's property with a real var
+        value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    # C3 order is Child, Plain, Overriding, Shared -- the field wins, not the
+    # property Plain reaches through Shared.
+    class Child(Plain, Overriding):
+        value: int  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
+
+    # compare identities: reflex renames state classes that collide by name
+    assert Child.__mro__[:4] == (Child, Plain, Overriding, Shared)
+    assert "value" in Child.get_fields()
+    assert isinstance(Child.value, Var)
+
+
 def test_hybrid_property_annotated_name_keeps_descriptor():
     """An annotation on the property's name must not turn it into a field."""
 

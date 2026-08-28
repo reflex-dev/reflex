@@ -1347,8 +1347,11 @@ class BaseState(EvenMoreBasicBaseState):
                 continue
             value = klass.__dict__[name]
             if isinstance(value, Field):
-                # matches what Field.__get__ returns on class-level access
-                return None
+                try:
+                    return value.default_value()
+                except ValueError:
+                    # the field declares no default; use the annotation's
+                    break
             if hasattr(type(value), "__get__"):
                 # A descriptor provides behavior, not a stored default.
                 break

@@ -116,8 +116,10 @@ the class:
         return rx.cond(cls.name, f"Hello, {cls.name}!", "Hello!")
 ```
 
-Assigning the result to a different name (`short = greeting.var(fn)`) forks an independent
-property under that name rather than binding back to `greeting`.
+What decides between the two is whether the attribute keeps the **function's own name**.
+Assigning the result elsewhere (`short = greeting.var(fn)`) forks an independent property
+under that name instead of binding back to `greeting` — unless `fn` happens to be named
+`short` too, which is indistinguishable from the decorator form.
 
 Because the frontend expression is built only from data that reaches the client, a hybrid
 property's frontend logic may reference regular vars but **not backend-only vars** (those
@@ -149,9 +151,9 @@ class NameState(rx.State):
         self.first_name, self.last_name = value.split(" ", 1)
 ```
 
-Inside an event handler, `self.full_name = "Ada Lovelace"` now runs that setter, which
-updates `first_name` and `last_name` — and those, being real vars, are what the frontend
-re-renders from.
+Inside an event handler, `self.full_name = "Ada Lovelace"` runs that setter, which updates
+`first_name` and `last_name` — and those, being real vars, are what the frontend re-renders
+from.
 
 ## Nested Objects
 
