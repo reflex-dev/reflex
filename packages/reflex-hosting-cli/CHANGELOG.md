@@ -1,3 +1,10 @@
+## v0.1.71a2 (2026-08-28)
+
+### Bug Fixes
+
+- Fix for older reflex versions
+
+
 ## v0.1.71a1 (2026-08-27)
 
 ### Breaking Changes
