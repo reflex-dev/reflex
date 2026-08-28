@@ -14,10 +14,9 @@ import logging
 from typing import Any
 
 import click
-from reflex_base.utils import log
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
 
 logger = logging.getLogger(__name__)
