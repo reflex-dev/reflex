@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import enum
 import functools
+import json
 import logging
 import operator
 import typing
@@ -2463,11 +2464,12 @@ class NoSSRComponent(Component):
             if not self.is_default
             else ".then((mod) => mod.default.default ?? mod.default)"
         )
+        name = self.alias or self.tag
         return (
-            f"const {self.alias or self.tag} = ClientSide(() => "
+            f"const {name} = ClientSide(() => "
             + library_import
             + mod_import
-            + ")"
+            + f", {json.dumps(name)})"
         )
 
 
