@@ -2308,3 +2308,21 @@ def test_computed_var_type_compatibility():
     rx.input(placeholder=ComputedVarTypeState.sync_wrapper)
     rx.input(placeholder=ComputedVarTypeState.async_plain)
     rx.input(placeholder=ComputedVarTypeState.async_wrapper)
+
+
+def test_var_attribute_error_renders_brackets_verbatim():
+    r"""VarAttributeError messages carry no rich-markup escapes.
+
+    The messages end up in plain tracebacks, so escaped brackets would print
+    literally as ``dict\[str, int]``.
+    """
+
+    class Point(typing.TypedDict):
+        x: int
+
+    with pytest.raises(
+        AttributeError, match=r"of type dict\[str, int\] has no attribute"
+    ):
+        _ = Var(_js_expr="x", _var_type=dict[str, int]).foo  # pyright: ignore[reportAttributeAccessIssue]
+    with pytest.raises(AttributeError, match=r"of type .*Point.* has no attribute"):
+        _ = Var(_js_expr="x", _var_type=Point).guess_type().foo  # pyright: ignore[reportAttributeAccessIssue]
