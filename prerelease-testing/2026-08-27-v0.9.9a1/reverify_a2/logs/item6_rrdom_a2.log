@@ -1,0 +1,3 @@
+reflex.__file__: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke2/lib/python3.11/site-packages/reflex/__init__.py
+REJECT react-router-dom (bad): ValueError: The component `BadDomLink` references `react-router-dom`, but React Router 8 removed the `react-router-dom` package and Reflex no longer installs it. Use `library = "react-router"` instead, or `"react-router/dom"` for `RouterProvider`/`HydratedRouter`.
+OK    react-router (good): built+rendered; import keys sample=['react-router']

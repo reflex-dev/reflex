@@ -1,0 +1,6 @@
+OK   : uncalled handler, bare Literal alias (on_change=S.choose)
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (Pair[str, str]) -> () as annotated in S.submit instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+OK   : uncalled handler, parameterized alias (on_submit=S.submit)
+OK   : pre-called handler (on_click=S.choose('a'))
+OK   : lambda wrapper (on_change=lambda v: S.choose(v))
+OK   : lambda wrapper, parameterized alias (on_submit=lambda d: S.submit(d))

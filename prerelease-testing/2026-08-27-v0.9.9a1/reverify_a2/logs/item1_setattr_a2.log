@@ -1,0 +1,5 @@
+OK   : s.name = 'y'
+OK   : s.k = 'b'
+OK   : s.entries = ['z']
+OK   : s.maybe = 'a'
+OK   : s2.pair['c'] = 3 (in-place mutation) -> {'c': 3}

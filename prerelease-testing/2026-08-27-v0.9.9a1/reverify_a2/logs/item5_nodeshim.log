@@ -1,0 +1,7 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────────── Initializing item5app ─────────────────────────────
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 22.12.0

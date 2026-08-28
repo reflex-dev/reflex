@@ -1,0 +1,104 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/a2_312/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='pep695app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/a2_312/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────── Compiling production app and preparing for export. ──────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: transforming...
+Debug: ✓ 591 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             2.73 kB │ 
+gzip:  0.57 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-BVGF6eGS.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-kiP9HKS1.js                 0.41 kB │ 
+gzip:  0.30 kB
+Debug: build/client/assets/_index-Bu3ai9Y1.js                      13.95 kB │ 
+gzip:  4.52 kB
+Debug: build/client/assets/emotion-react.browser.esm-Cwax2nv3.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-DwLBjLGa.js             36.80 kB │ 
+gzip: 12.77 kB
+Debug: build/client/assets/components-BY9SJKTA.js                  83.46 kB │ 
+gzip: 27.74 kB
+Debug: build/client/assets/entry.client-Bu8MaL7R.js               182.33 kB │ 
+gzip: 57.70 kB
+Debug: build/client/assets/root-BiyT5PIn.js                       282.63 kB │ 
+gzip: 60.32 kB
+Debug: build/client/assets/text-field-Bs-CJVR3.js                 338.19 kB │ 
+gzip: 88.69 kB
+Debug: 
+Debug: ✓ built in 2.00s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: transforming...
+Debug: ✓ 21 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-BVGF6eGS.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     39.88 kB │ 
+gzip: 12.45 kB
+Debug: 
+Debug: ✓ built in 757ms
+Debug: SPA Mode: Generated build/client/index.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/reverify_fw/pep695app/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/reverify_fw/pep695app/.web/build/client'), 'gzip']

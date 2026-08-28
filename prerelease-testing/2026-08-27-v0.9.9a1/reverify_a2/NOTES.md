@@ -1,48 +1,83 @@
-# reverify_a2 — reflex 0.9.9a2 enterprise re-verification artifacts
+# 0.9.9a2 framework re-verification — NOTES
 
-Re-verification (2026-08-28) that reflex 0.9.9a2 (PyPI, published 2026-08-28) restores
-reflex-enterprise 0.9.4 compatibility broken on 0.9.9a1, via the deprecation shims from
-PR #6967 (bundled_libraries) and PR #6985 (DECORATED_PAGES, get_config(reload=True)).
-Result: FINDING-021/022/023 all VERIFIED-FIXED; mantine regression sweep clean.
-Full narrative: the "## 0.9.9a2 re-verification (enterprise)" section of ../FINDINGS.md.
+Re-verification of the 0.9.9a1 framework defects against **reflex 0.9.9a2** (PyPI,
+published 2026-08-28). PyPI-only installs; never from the checkout. Every repro
+asserts `reflex.__file__` resolves into a venv `site-packages` before running, and
+all Python was run from a neutral cwd (never `/home/user/reflex`, whose `reflex/`
+shadows site-packages).
 
-## Rerun
+Versions under test: reflex 0.9.9a2, reflex-base 0.9.9a2, reflex-components-core 0.9.9a2.
+Venvs: `$SB/envs/smoke2` (py3.11, prebuilt read-only) and `$SB/envs/a2_312` (py3.12,
+`uv pip install --prerelease=allow 'reflex==0.9.9a2'`). Driver venvs reused:
+`$SB/envs/driver` (Playwright), `$SB/envs/client_error_drv` (python-socketio+aiohttp).
+Chromium at `/opt/pw-browsers/chromium`. Reserved ports frontend 3140-3143 /
+backend 8140-8143.
 
-```bash
-SB=<scratch dir>; mkdir -p $SB/apps/reverify_ent && cd $SB/apps/reverify_ent
-uv venv venv --python 3.11
-uv pip install --python venv/bin/python --prerelease=allow 'reflex==0.9.9a2' 'reflex-enterprise==0.9.4'
+Outcome: **ALL 11 items VERIFIED-FIXED.**
 
-# offline shim probes (FINDING-001/021/022/023 + get_config surface):
-./venv/bin/python probe_shims_a2.py                     # from this dir; exits 0, prints warnings
-./venv/bin/python ../ent_map_dnd/repro_finding001_dnd_can_drop.py   # FINDING-022; exit 0 on a2
+## Environment note (not a framework issue)
+The npm registry tunnel (`registry.npmjs.org`) was heavily congested during this run
+(hundreds of `ws_closed_mid_exchange` failures), so fresh `reflex run` frontend installs
+repeatedly failed/stalled on manifest fetches. Worked around by: (a) retrying (pep695app
+came up on a retry once its bun cache warmed), and (b) reusing pep695app's completed
+`.web/node_modules` for other apps. This is purely an egress-proxy/registry-load artifact,
+not an a2 regression.
 
-# FINDING-021 e2e: copy ../ent_aggrid/minimal, rm -rf reflex.lock .web .states, then
-cd minimal && CI=1 REPRO_LAMBDA=1 REFLEX_TELEMETRY_ENABLED=false ../venv/bin/reflex run \
-    --loglevel debug --frontend-port 3202 --backend-port 8202
-#  drive: <driver-venv>/python drive_minimal_a2.py http://localhost:3202 out.png
+## How to rerun each item (from a neutral cwd, e.g. `$SB/apps/reverify_fw`)
 
-# FINDING-023 e2e: pristine copy of reflex-enterprise/demos/flow (UNMODIFIED), ports 3203/8203,
-#  CI=true; drive with ../ent_misc/drive_flow.py -> 11/11.
-# mantine sweep: pristine demos/mantine, ports 3204/8204; ../ent_misc/drive_mantine.py -> 11/11.
-# ag_grid formatters: copy ../ent_aggrid/demo_098 (the reflex>=0.9.8-fixed demo), install
-#  faker==36.2.2 pandas==2.2.3 aiosqlite greenlet, alembic upgrade head, ports 3205/8205,
-#  CI=1; drive: ../ent_aggrid/drive_aggrid.py <base> <shots> / /formatters
-```
+- **Item 1 (FINDING-002/006, PEP695 alias)** — py3.12 venv.
+  - offline: `$SB/envs/a2_312/bin/python repros/repro_alias_setattr.py`  (all 4 alias setattrs OK)
+  - offline: `$SB/envs/a2_312/bin/python repros/repro_alias_event_arg.py` (uncalled handlers no longer crash)
+  - E2E: run `apps/pep695app` (`reflex run --frontend-port 3140 --backend-port 8140`), then
+    `$SB/envs/driver/bin/python repros/item1_drive_pep695.py http://localhost:3140/ shots/pep695_a2`.
+    The app binds `on_change=AliasState.choose_key` **uncalled** (the exact a1 compile-crash shape).
+- **Item 2 (FINDING-004, client_error no-arg)** — backend-only a2 app at `--loglevel debug`;
+  `$SB/envs/client_error_drv/bin/python repros/item2_client_error.py http://localhost:8140`.
+  Grep the server log: `TypeError|missing 1 required positional|Task exception` must be 0;
+  `malformed client_error payload` debug drops = 5.
+- **Item 3 (FINDING-007, upload all-dots)** —
+  - offline: `$SB/envs/smoke2/bin/python -c "from reflex_components_core.core._upload import _sanitize_upload_filename as s; print(s('..'), s('./../.'), s('/..'))"` → all `upload`.
+  - live: added `upload_probe(files: list[rx.UploadFile])` to pep695app's state and touched
+    `.web/backend/upload_is_used` to register `/_upload` without rendering `rx.upload` (avoids the
+    flaky react-dropzone install); then
+    `$SB/envs/client_error_drv/bin/python repros/item3_upload_dotdot.py http://localhost:8140`.
+    All cases → HTTP 200; disk `uploaded_files/` holds only `upload` + `x.txt`; no `..` escape; 0 server 500s.
+- **Item 4 (FINDING-027, backslash brackets)** —
+  `$SB/envs/smoke2/bin/python repros/item4_compare_onsubmit.py 2>&1 | cat -A`.
+  Warning prints `dict[str, typing.Any]` / `dict[str, str]` with **no** `\[`.
+- **Item 5 (FINDING-011, node-shim hang)** —
+  `apps/item5app` + `fakenode/node` (prints v22.12.0) first on PATH, `REFLEX_USE_NPM=1`,
+  `timeout 90 reflex run ...`. Exits **1s / code 1** with the node-version error (a1: hung to 124).
+- **Item 6 (FINDING-010, react-router-dom)** —
+  `$SB/envs/smoke2/bin/python repros/item6_rrdom.py`. `library="react-router-dom"` raises an
+  actionable `ValueError` naming the migration; `library="react-router"` builds+renders.
+- **Item 7 (FINDING-012/015/019 + 028, vite warnings)** — `reflex export` on the built pep695app
+  (`logs/item7_export.log`). No `Invalid input options`/`jsx`, no `advancedChunks`, no safari-cachebust
+  configLoader warning. Generated `.web/vite.config.js` line 4 imports `./vite-plugin-safari-cachebust.js`
+  (with `.js`), uses `codeSplitting`, no `jsx:` key (all landed via PR #6959, in the a2 changelog).
+- **Item 8 (FINDING-005, granian full logging)** — backend-only with `REFLEX_ENABLE_FULL_LOGGING=1`
+  `REFLEX_LOG_FILE=<f>`; dispatch a worker event via `repros/item8_dispatch.py`. Worker `reflex_base`
+  records land in the file (a1: 0); with `--json` stdout is strictly JSON-lines (a1: non-JSON leaks).
+- **Item 9 (PR #6994 interrupt window)** —
+  `$SB/envs/smoke2/bin/python repros/item9_interrupt_window.py` (adapts the two
+  `tests/units/utils/test_processes.py` regressions). Both PASS: SystemExit propagates in ~0.001s;
+  no stray KeyboardInterrupt after a body exception.
+- **Item 10 (changelog + shims)** — `git show v0.9.9a2:CHANGELOG.md` documents the on_load-bg
+  cancellation (#6593), second-bare-`rx.App()` ReflexRuntimeError (#6382), and DECORATED_PAGES/
+  bundled_libraries deprecation shims (#6985/#6967). Runtime shims verified:
+  `$SB/envs/smoke2/bin/python repros/item10_shims.py` — bundled_libraries, DEFAULT_BUNDLED_LIBRARIES,
+  DECORATED_PAGES, and `get_config(reload=True)` all now return a value + emit a DeprecationWarning
+  (a1: bare AttributeError/TypeError/ImportError).
+- **Item 11 (general smoke)** — `$SB/envs/driver/bin/python repros/item11_smoke_sweep.py
+  http://localhost:3140/ shots/item11` against a running a2 dev app: 0 non-benign console
+  errors/warnings, 0 page errors, 0 failed requests, 0 HTTP≥400; server log 0 tracebacks.
 
-Env notes (same as a1 runs): CI=1 bypasses the rxe login gate in dev; do NOT override the
-ambient NO_PROXY for `reflex run` (bun needs registry.npmjs.org whitelisted); use
-NO_PROXY=localhost,127.0.0.1 only on driver/curl processes.
-
-## Contents
-
-- `probe_shims_a2.py` / `probe_shims_a2.out` — offline probes: dynamic.bundled_libraries,
-  reflex.page.DECORATED_PAGES, LiteralLambdaVar.create bare (designed ValueError, no
-  AttributeError) and after bundle_library. ALL PASS, each shim warns exactly once.
-- `repro_dnd_can_drop_a2.out` — ent_map_dnd minimal trigger on a2: exit 0 (was exit 1 on a1).
-- `drive_minimal_a2.py` — FINDING-021 driver (grid + lambda cell_renderer + tomato color +
-  sort via row-index, since AG Grid reorders rows by transform, not DOM order).
-- `logs/` — full `reflex run --loglevel debug` logs for all four servers.
-- `shots/` — screenshots + report.json per driver run (min_lambda_a2.png matches the 0.9.8
-  baseline ../ent_aggrid/shots_minimal/min_lambda_098.png, including the pre-existing
-  quoted `"John"` cell text).
+## Key evidence (logs/ in this dir)
+- item1_setattr_a2.log, item1_eventarg_a2.log, item1_drive_a2.log
+- item2_backend_debug.log (5 malformed drops, 0 TypeError)
+- item3_backend.log (0 500s) — live upload saved `uploaded_files/{upload,x.txt}` only
+- item4_onsubmit_a2.log (cat -A: no `\[`)
+- item5_nodeshim.log (exit 1, "requires node version 22.22.0")
+- item6_rrdom_a2.log, item7_export.log
+- item8_full.log / item8_full_json.log (worker records present)
+- item9_interrupt_a2.log (ALL-PASS), item10_shims_a2.log, item11_sweep.log (CLEAN)

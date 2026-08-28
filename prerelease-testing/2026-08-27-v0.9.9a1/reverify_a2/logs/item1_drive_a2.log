@@ -1,0 +1,9 @@
+BEFORE      : {'#name': 'name: reflex', '#key': 'key: day', '#union': 'union: none', '#nested': 'nested: none', '#pos': 'pos: [7,"seven"]'}
+AFTER week  : {'#name': 'name: reflex', '#key': 'key: week', '#union': 'union: week', '#nested': 'nested: week', '#pos': 'pos: [7,"seven"]'}
+AFTER name  : {'#name': 'name: renamed-alias', '#key': 'key: week', '#union': 'union: week', '#nested': 'nested: week', '#pos': 'pos: [7,"seven"]'}
+AFTER select: {'#name': 'name: renamed-alias', '#key': 'key: month', '#union': 'union: month', '#nested': 'nested: month', '#pos': 'pos: [7,"seven"]'}
+RESULT key_updated=True union_updated=True name_updated=True select_updated=True
+console errors: []
+page errors: []
+failed reqs: []
+VERDICT: PASS

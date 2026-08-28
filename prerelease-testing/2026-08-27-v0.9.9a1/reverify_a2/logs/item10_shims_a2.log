@@ -1,0 +1,26 @@
+reflex.__file__: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke2/lib/python3.11/site-packages/reflex/__init__.py
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. (repros/item10_shims.py:21)
+OK    dynamic.bundled_libraries: -> list "['react', '@emotion/react', '$/utils/context', '$/utils/stat"
+      warnings(0): []
+DeprecationWarning: reflex_base.components.dynamic.DEFAULT_BUNDLED_LIBRARIES has
+been deprecated in version 0.9.9. Every RegistrationContext starts with these 
+libraries bundled; call reset_bundled_libraries() to restore them on the active 
+context. It will be completely removed in 1.0. (repros/item10_shims.py:23)
+OK    dynamic.DEFAULT_BUNDLED_LIBRARIES: -> list "['react', '@emotion/react', '$/utils/context', '$/utils/stat"
+      warnings(0): []
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(repros/item10_shims.py:26)
+OK    reflex.page.DECORATED_PAGES: -> defaultdict "defaultdict(<class 'list'>, {'': []})"
+      warnings(0): []
+DeprecationWarning: get_config(reload=True) has been deprecated in version 
+0.9.9. Use reload_config() to force a fresh load of the config. It will be 
+completely removed in 1.0. (repros/item10_shims.py:30)
+OK    get_config(reload=True): -> Config "Config(app_name='', app_module_import=None, loglevel=<LogLev"
+      warnings(0): []

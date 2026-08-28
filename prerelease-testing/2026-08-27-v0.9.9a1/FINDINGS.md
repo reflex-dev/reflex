@@ -525,3 +525,49 @@ orthogonal), FINDING-025 (shipped ag_grid demo's stale `$/utils/components` bund
 broken on 0.9.8 too; the a2 runs used the fixed `demo_098` copy), FINDING-026 (cookies/sync
 404 — enterprise-side, both versions), FINDING-029 (console.* deprecation on rxe gate
 paths — still expected, observed benignly in the agdemo log).
+
+
+## 0.9.9a2 re-verification (framework)
+
+Re-verification of the 0.9.9a1 **framework** defects against **reflex 0.9.9a2**
+(reflex 0.9.9a2 / reflex-base 0.9.9a2 / reflex-components-core 0.9.9a2, PyPI,
+published 2026-08-28). PyPI-only installs in isolated venvs (`$SB/envs/smoke2`
+py3.11 prebuilt; `$SB/envs/a2_312` py3.12 built with `--prerelease=allow
+'reflex==0.9.9a2'`); every repro asserted `reflex.__file__` under a venv
+`site-packages` and ran from a neutral cwd (the checkout's `reflex/` shadows the
+install). Real Chromium via Playwright and raw python-socketio / httpx where the
+item needed a live server. Repro scripts + logs + app sources under
+`reverify_a2/` (repros/, logs/, apps/, NOTES.md).
+
+**Result: ALL 11 items VERIFIED-FIXED.**
+
+| # | Finding (a1) | a2 result | Evidence |
+|---|--------------|-----------|----------|
+| 1 | FINDING-002/006 PEP695 alias vars unassignable + uncalled alias handler crashes compile | **VERIFIED-FIXED** | py3.12: all 4 alias setattrs OK (`repro_alias_setattr.py`); all 5 uncalled/called/lambda handler bindings OK (`repro_alias_event_arg.py`), parameterized alias now a non-fatal warning not `EventHandlerArgTypeMismatchError`. E2E (pep695app, `on_change=AliasState.choose_key` bound **uncalled**): page compiles, clicking `week`/select→`month` and typing rename update `key/union/nested/name` in the UI; 0 console/page/net errors; 0 backend tracebacks. |
+| 2 | FINDING-004 client_error no-arg emit → unhandled TypeError log-spam | **VERIFIED-FIXED** | `on_client_error(self, sid, data: Any = None)`; 5 no-arg emits → 5 `Debug: Ignoring malformed client_error payload` and **0** `TypeError`/`missing 1 required positional`/`Task exception` in the server log; unknown-sid dict payloads gated as before. |
+| 3 | FINDING-007 all-dots/traversal upload filename → `..`, 500, dir escape | **VERIFIED-FIXED** | Offline `_sanitize_upload_filename('..')='./../.'='..\\'='/..'='...'='' → 'upload'`, `'../x.txt'→'x.txt'`. Live raw multipart to `/_upload` (marker-forced route + `upload_probe` handler on pep695app): every case HTTP **200** (a1: 500); `uploaded_files/` holds only `upload` + `x.txt`; no `..` in the parent; 0 server 500s/`IsADirectoryError`. |
+| 4 | FINDING-027 console warning prints `dict\[str, ...]` | **VERIFIED-FIXED** | on_submit arg-mismatch warning renders `dict[str, typing.Any]` / `dict[str, str]` — `cat -A` shows no `\[`. |
+| 5 | FINDING-011 `reflex run` hangs forever after fatal node-version error (npm path) | **VERIFIED-FIXED** | fake node v22.12.0 first on PATH + `REFLEX_USE_NPM=1`, `timeout 90`: exits **code 1 in 1s** with "Reflex requires node version 22.22.0 or higher … detected … 22.12.0" (a1: hung to timeout, exit 124). |
+| 6 | FINDING-010 `library="react-router-dom"` silent unpinned RR7 install / cryptic prod break | **VERIFIED-FIXED** | `library="react-router-dom"` now raises an actionable `ValueError`: "React Router 8 removed the `react-router-dom` package … Use `library = "react-router"` … or `"react-router/dom"`". `library="react-router"` builds+renders. (`PROHIBITED_LIBRARY_IMPORTS` + `_check_prohibited_imports` in reflex_base/components/component.py.) |
+| 7 | FINDING-012/015/019 + 028 vite build warnings (`jsx` invalid input, `advancedChunks` deprecated, extensionless safari-cachebust import) | **VERIFIED-FIXED** | `reflex export` of the a2 app: vite v8.2.0 client+ssr builds log **0** `Invalid input options`/`jsx`, **0** `advancedChunks`, **0** safari-cachebust/`configLoader` warnings. Generated `.web/vite.config.js` imports `./vite-plugin-safari-cachebust.js` (with `.js`), uses `codeSplitting`, drops the `jsx:` rollupOptions key. All via PR #6959 (in the a2 changelog). |
+| 8 | FINDING-005 granian full-logging: worker records dropped from file + plain-text leak breaks `--json` | **VERIFIED-FIXED** | `_file_handler` now `mode="a"` (reopens after granian's dictConfig close) and `log_file_stream()` reopens a closed stream. Live backend-only + `REFLEX_ENABLE_FULL_LOGGING=1`, dispatched worker event: `reflex_base` worker records land in the file (a1: 0); plain mode stdout has **0** leaked `[YYYY-…]` file-copy lines; `--json` mode stdout is **0** non-JSON lines (worker record present as valid JSON). |
+| 9 | PR #6994 interrupt-window semantics (reflex/utils/processes.py) | **VERIFIED-FIXED** | Standalone adaptation of the two `test_processes.py` regressions vs the installed package: SystemExit in a task unblocks the blocked with-body and propagates in ~0.001s (<5s); a task failing after the body raised its own exception delivers **no** stray KeyboardInterrupt. Both PASS. |
+| 10 | FINDING-003/009 changelog/docs + deprecation shims | **VERIFIED-FIXED** | `v0.9.9a2:CHANGELOG.md` documents: bg-task on_load cancellation on navigation (#6593, Bug Fixes); second bare `rx.App()` → `ReflexRuntimeError` (#6382, Breaking); and the `DECORATED_PAGES` (#6985) / `get_config(reload)` / `bundled_libraries` + `DEFAULT_BUNDLED_LIBRARIES` (#6967) deprecation shims (Deprecations). Runtime: all four names now return a value **and** emit a DeprecationWarning (a1: bare AttributeError/TypeError/ImportError). |
+| 11 | General smoke | **CLEAN** | a2 dev app in Chromium: 0 non-benign console errors/warnings, 0 page errors, 0 failed requests, 0 HTTP≥400; server log 0 tracebacks/non-benign warnings. |
+
+Notes:
+- Items 1, 2, 3, 11 were confirmed end-to-end against a live a2 server in Chromium /
+  raw socket.io / raw multipart; items 3, 6, 7, 8 additionally confirmed at the a2
+  source level; items 4, 9, 10 are deterministic offline against the installed package.
+- Item 3's live `/_upload` test avoided the (registry-blocked) react-dropzone frontend
+  install by adding a Python-only `upload_probe` state handler and touching
+  `.web/backend/upload_is_used` to register the route — the sanitizer + write path run
+  server-side regardless of whether `rx.upload` is rendered.
+- Environment (not a2): `registry.npmjs.org` egress was heavily congested (hundreds of
+  `ws_closed_mid_exchange`), so fresh frontend installs repeatedly stalled; worked around
+  by retrying and reusing a completed `.web/node_modules`. No a2 install-path regression
+  was implicated — pep695app installed cleanly on a retry once its bun cache warmed.
+- No new framework anomalies observed on a2. The three pre-existing-and-still-present
+  benign lines seen on every run are unchanged and were already known-benign: the default
+  `SitemapPlugin`-not-in-config warning, the implicit-Radix-Themes deprecation, and (in
+  the app that renders them) the standard Radix/Sitemap notices.

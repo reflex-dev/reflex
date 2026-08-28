@@ -1,0 +1,5 @@
+console total=4 errors(non-benign)=0 warnings(non-benign)=0
+page_errors=0
+failed_requests=0
+http>=400 responses=0
+VERDICT: CLEAN

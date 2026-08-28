@@ -1,0 +1,4 @@
+reflex.__file__: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke2/lib/python3.11/site-packages/reflex/__init__.py
+[A] SystemExit propagated=True elapsed=0.001s (<5 required) -> PASS
+[B] body ValueError propagated=True stray_KeyboardInterrupt=False -> PASS
+RESULT: ALL-PASS
