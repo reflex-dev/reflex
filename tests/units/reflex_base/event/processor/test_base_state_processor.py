@@ -2,6 +2,7 @@
 
 import asyncio
 import dataclasses
+import logging
 import traceback
 from collections.abc import Mapping
 from typing import Any
@@ -526,6 +527,74 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
     assert [type(ex) for ex in handled] == [RuntimeError], (
         f"the handler's exception did not reach the backend handler: {handled}"
     )
+
+
+async def test_background_flush_failure_does_not_mask_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failing compat flush must not replace a raised handler's exception.
+
+    Regression: with the flush running after the handler raised, a flush
+    failure (e.g. an uncached computed var throwing during delta
+    resolution) replaced the handler's exception, so the backend exception
+    handler received the flush error instead of the actionable application
+    error. The flush failure is now logged and the handler's exception
+    still propagates.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        caplog: Fixture capturing log records.
+    """
+    handled: list[Exception] = []
+    handler_ran: list[bool] = []
+
+    class MaskingBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            if handler_ran:
+                msg = "flush boom"
+                raise ValueError(msg)
+            return 13
+
+        @event(background=True)
+        async def bg_raises(self):
+            handler_ran.append(True)
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    real_base_state_processor.backend_exception_handler = handled.append
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(MaskingBgState.bg_raises())[0]
+            )
+            with caplog.at_level(
+                logging.ERROR, logger="reflex_base.event.processor.base_state_processor"
+            ):
+                await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(MaskingBgState.get_name())
+
+    assert [type(ex) for ex in handled] == [RuntimeError], (
+        f"the flush failure masked the handler's exception: {handled}"
+    )
+    assert any(
+        record.exc_info and record.exc_info[0] is ValueError
+        for record in caplog.records
+    ), f"the flush failure was not logged: {caplog.records}"
 
 
 async def test_chained_event_keeps_originating_router_data(
