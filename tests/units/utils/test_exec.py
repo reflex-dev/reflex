@@ -127,6 +127,15 @@ def test_get_routes_manifest_router_missing_manifest(
     assert exec_utils.get_routes_manifest_router() is None
 
 
+def test_get_routes_manifest_router_invalid_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Return None when the routes manifest is not valid JSON."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "routes.json").write_text("not valid json{")
+    assert exec_utils.get_routes_manifest_router() is None
+
+
 def test_get_routes_manifest_router_matches_dynamic_routes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
