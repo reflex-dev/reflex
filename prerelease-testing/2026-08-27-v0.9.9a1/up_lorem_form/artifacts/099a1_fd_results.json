@@ -1,0 +1,62 @@
+[
+  {
+    "name": "home page loads with Create/Edit link",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "registration succeeds and redirects to /login",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "login auto-redirects away from /login",
+    "ok": false,
+    "detail": "http://localhost:3221/login"
+  },
+  {
+    "name": "login authenticates (protected editor page renders)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "typing form name creates form and redirects to /edit/form/<id>",
+    "ok": true,
+    "detail": "http://localhost:3221/edit/form/2"
+  },
+  {
+    "name": "text field added and listed on form editor",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "radio field with 2 options added",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "form entry (preview) page renders without error boundary",
+    "ok": false,
+    "detail": "error boundary shown"
+  },
+  {
+    "name": "form entry submits and shows success page",
+    "ok": false,
+    "detail": "entry page crashed"
+  },
+  {
+    "name": "responses page renders without error boundary",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "logout works; protected page redirects to /login",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "re-login shows persisted form",
+    "ok": true,
+    "detail": "name='Form099'"
+  }
+]

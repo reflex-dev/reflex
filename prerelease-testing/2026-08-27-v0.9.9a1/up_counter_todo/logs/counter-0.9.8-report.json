@@ -1,0 +1,106 @@
+{
+  "url": "http://localhost:3100/",
+  "steps": [
+    {
+      "name": "initial_render",
+      "ok": true,
+      "detail": "heading='0'"
+    },
+    {
+      "name": "increment_x2",
+      "ok": true,
+      "detail": "0 -> 1 -> 2"
+    },
+    {
+      "name": "decrement",
+      "ok": true,
+      "detail": "2 -> 1"
+    },
+    {
+      "name": "randomize",
+      "ok": true,
+      "detail": "value=5"
+    },
+    {
+      "name": "decrement_after_random",
+      "ok": true,
+      "detail": "5 -> 4"
+    },
+    {
+      "name": "color_mode_toggle",
+      "ok": true,
+      "detail": "'light' -> 'dark'"
+    },
+    {
+      "name": "reload_rehydrate",
+      "ok": true,
+      "detail": "heading after reload=4"
+    }
+  ],
+  "console": [
+    [
+      "log",
+      "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "log",
+      "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ]
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:3100/?token=mfyTyxmmFmyd"
+    ],
+    [
+      "open",
+      "ws://localhost:8100/_event/?token=465b6d87-d83d-48ff-bab5-79f3307f929e&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:8100/_event/?token=465b6d87-d83d-48ff-bab5-79f3307f929e&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:3100/?token=mfyTyxmmFmyd"
+    ],
+    [
+      "open",
+      "ws://localhost:3100/?token=mfyTyxmmFmyd"
+    ],
+    [
+      "open",
+      "ws://localhost:8100/_event/?token=465b6d87-d83d-48ff-bab5-79f3307f929e&EIO=4&transport=websocket"
+    ]
+  ]
+}

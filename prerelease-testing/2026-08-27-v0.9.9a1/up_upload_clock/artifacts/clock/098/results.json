@@ -1,0 +1,62 @@
+[
+  {
+    "name": "index_renders",
+    "status": "pass",
+    "details": "switch=1 select=1 digital_parts=['5', ':', '49', ':', '05', 'AM']"
+  },
+  {
+    "name": "clock_stopped_on_load",
+    "status": "pass",
+    "details": "before=['5', ':', '49', ':', '05', 'AM'] after=['5', ':', '49', ':', '05', 'AM']"
+  },
+  {
+    "name": "clock_ticks_when_started",
+    "status": "pass",
+    "details": "t1=['5', ':', '49', ':', '12', 'AM'] t2=['5', ':', '49', ':', '15', 'AM']"
+  },
+  {
+    "name": "default_zone_time_correct",
+    "status": "pass",
+    "details": "shown=['5', ':', '49', ':', '15', 'AM'] expected_hour=5 (US/Pacific now=2026-08-28T05:49:15.392079-07:00)"
+  },
+  {
+    "name": "timezone_switch_tokyo",
+    "status": "pass",
+    "details": "shown=['9', ':', '49', ':', '17', 'PM'] expected_hour=9 (Tokyo now=2026-08-28T21:49:17.596184+09:00)"
+  },
+  {
+    "name": "zone_cookie_persists",
+    "status": "pass",
+    "details": "select shows: 'Asia/Tokyo'"
+  },
+  {
+    "name": "clock_stopped_after_reload",
+    "status": "pass",
+    "details": "r1=['9', ':', '49', ':', '17', 'PM'] r2=['9', ':', '49', ':', '17', 'PM']"
+  },
+  {
+    "name": "clock_stops_when_switched_off",
+    "status": "pass",
+    "details": "x1=['9', ':', '49', ':', '24', 'PM'] x2=['9', ':', '49', ':', '24', 'PM']"
+  },
+  {
+    "name": "moment_page_renders",
+    "status": "pass",
+    "details": "text='21:49:31'"
+  },
+  {
+    "name": "moment_tz_from_state_cookie",
+    "status": "pass",
+    "details": "moment shows '21:49:31', Tokyo now 21:49:31"
+  },
+  {
+    "name": "moment_interval_ticks",
+    "status": "pass",
+    "details": "t1='21:49:31' t2='21:49:33'"
+  },
+  {
+    "name": "moment_tz_switch_london",
+    "status": "pass",
+    "details": "moment shows '13:49:35', London now 13:49:36"
+  }
+]

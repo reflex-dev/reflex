@@ -1,0 +1,37 @@
+[
+  {
+    "name": "home page loads with Create/Edit link",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "relogin as existing user succeeds",
+    "ok": true,
+    "detail": "auto-redirect=False"
+  },
+  {
+    "name": "existing form persists after upgrade/restart",
+    "ok": true,
+    "detail": "name='Form098'"
+  },
+  {
+    "name": "existing fields persist (text + radio)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "form entry (preview) page renders without error boundary",
+    "ok": false,
+    "detail": "error boundary shown"
+  },
+  {
+    "name": "form entry submits and shows success page",
+    "ok": false,
+    "detail": "entry page crashed"
+  },
+  {
+    "name": "responses page renders without error boundary",
+    "ok": true,
+    "detail": ""
+  }
+]

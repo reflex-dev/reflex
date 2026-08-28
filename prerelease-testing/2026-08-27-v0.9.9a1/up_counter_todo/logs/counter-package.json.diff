@@ -1,0 +1,19 @@
+10c10
+<     "@react-router/node": "7.18.2",
+---
+>     "@react-router/node": "8.3.0",
+17,18c17
+<     "react-router": "7.18.2",
+<     "react-router-dom": "7.18.2",
+---
+>     "react-router": "8.3.0",
+25,26c24,25
+<     "@react-router/dev": "7.18.2",
+<     "@react-router/fs-routes": "7.18.2",
+---
+>     "@react-router/dev": "8.3.0",
+>     "@react-router/fs-routes": "8.3.0",
+30c29
+<     "vite": "8.0.16"
+---
+>     "vite": "8.2.0"

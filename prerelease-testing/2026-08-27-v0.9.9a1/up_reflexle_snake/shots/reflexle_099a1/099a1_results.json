@@ -1,0 +1,87 @@
+[
+  {
+    "step": "load: grid renders 6 rows x 5 tiles",
+    "status": "pass",
+    "detail": "rows=6"
+  },
+  {
+    "step": "load: grid initially blank",
+    "status": "pass",
+    "detail": "[{\"letter\": \" \", \"bg\": \"rgba(0, 0, 0, 0)\"}, {\"letter\": \" \", \"bg\": \"rgba(0, 0, 0, 0)\"}, {\"letter\": \" \", \"bg\": \"rgba(0, 0, 0, 0)\"}, {\"letter\": \" \", \"bg\": \"rgba(0, 0, 0, 0)\"}, {\"letter\": \" \", \"bg\": \"rgba(0, 0, 0, 0)\"}]"
+  },
+  {
+    "step": "hotkey: keydown reaches backend state",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "type 'crane': tiles echo letters",
+    "status": "pass",
+    "detail": "row0='crane'"
+  },
+  {
+    "step": "submit guess: row0 tiles colored",
+    "status": "pass",
+    "detail": "[[\"c\", \"INCORRECT\"], [\"r\", \"INCORRECT\"], [\"a\", \"INCORRECT\"], [\"n\", \"INCORRECT\"], [\"e\", \"INCORRECT\"]]"
+  },
+  {
+    "step": "keyboard buttons recolored after guess",
+    "status": "pass",
+    "detail": "key 'c' bg=rgba(170, 170, 170, 0.125)"
+  },
+  {
+    "step": "short guess: toast shown",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "invalid word: guess auto-cleared (background task)",
+    "status": "pass",
+    "detail": "row1='     '"
+  },
+  {
+    "step": "backspace removes last letter",
+    "status": "pass",
+    "detail": "row1='a    '"
+  },
+  {
+    "step": "on-screen key click types letter",
+    "status": "pass",
+    "detail": "row1='q    '"
+  },
+  {
+    "step": "on-screen backspace click clears letter",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "high-contrast toggle recolors tiles",
+    "status": "skipped",
+    "detail": "guess had no green/yellow tiles"
+  },
+  {
+    "step": "color mode toggle flips theme class",
+    "status": "pass",
+    "detail": "'light' -> 'dark'"
+  },
+  {
+    "step": "play-again resets grid",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "post-reset guess colored",
+    "status": "pass",
+    "detail": "[[\"s\", \"INCORRECT\"], [\"l\", \"INCORRECT\"], [\"a\", \"INCORRECT\"], [\"t\", \"WRONG_POSITION\"], [\"e\", \"CORRECT\"]]"
+  },
+  {
+    "step": "console: no unexpected errors/warnings",
+    "status": "pass",
+    "detail": "[]"
+  },
+  {
+    "step": "network: no 4xx/5xx/failed requests",
+    "status": "pass",
+    "detail": "[]"
+  }
+]

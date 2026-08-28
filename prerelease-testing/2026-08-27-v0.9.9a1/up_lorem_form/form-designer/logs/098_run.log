@@ -1,0 +1,469 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/reflex_base/
+config.py'
+Debug: Config: Config(app_name='form_designer', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'plugins', 'db_url', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/reflex_base/
+config.py'
+Debug: Config: Config(app_name='form_designer', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'plugins', 'db_url', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────── Initializing form_designer ──────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.044 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+[13:05:19] Initializing the web directory.                        console.py:232
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/reflex_base/.
+templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 12762580803544285487176181040900845712.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized form_designer. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3221
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8221
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3221 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3221 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3221 is not in use.
+Debug: Checking if Backend port: 8221 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8221 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8221 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.91s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:01
+Debug: Applying framework overrides to .web/package.json
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'vite@8.0.16', '@react-router/dev@7.18.2', 'autoprefixer@10.5.4', 
+'postcss-import@16.1.1', 'postcss@8.5.23', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [103]
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@16.1.1
+Debug: installed postcss@8.5.23
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: 
+Debug: 154 packages installed [2.40s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'rehype-unwrap-images@1.0.0', 'react@19.2.8', 'react-router@7.18.2', 
+'react-dom@19.2.8', '@radix-ui/themes@3.3.0', 
+'@radix-ui/react-accordion@1.2.18', 'rehype-katex@7.0.1', 'remark-gfm@4.0.1', 
+'moment@2.30.1', 'universal-cookie@8.1.2', 'react-moment@1.2.2', 
+'socket.io-client@4.8.3', 'react-router-dom@7.18.2', 
+'react-error-boundary@6.1.2', 'react-syntax-highlighter@16.1.1', 
+'react-markdown@10.1.0', 'isbot@5.2.1', 'lucide-react@1.26.0', 
+'react-debounce-input@3.3.0', 'remark-math@6.0.0', '@react-router/node@7.18.2', 
+'rehype-raw@7.0.0', '@radix-ui/react-form@0.1.14', 'react-helmet@6.1.0', 
+'sonner@2.0.7']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [499]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed react@19.2.8
+Debug: installed react-router@7.18.2
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed @radix-ui/react-accordion@1.2.18
+Debug: installed rehype-katex@7.0.1
+Debug: installed remark-gfm@4.0.1
+Debug: installed moment@2.30.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-moment@1.2.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-router-dom@7.18.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed react-markdown@10.1.0
+Debug: installed isbot@5.2.1
+Debug: installed lucide-react@1.26.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed remark-math@6.0.0
+Debug: installed @react-router/node@7.18.2
+Debug: installed rehype-raw@7.0.0
+Debug: installed @radix-ui/react-form@0.1.14
+Debug: installed react-helmet@6.1.0
+Debug: installed sonner@2.0.7
+Debug: 
+Debug: 253 packages installed [4.89s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_lorem_form/form-designer/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 7.32s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/up_lorem_form/form-designer/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/alembic.ini', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/README.md', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/form_designer', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/logs', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/venv', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/tests', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/reflex.db', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/alembic', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/requirements-dev.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_lorem_form/form-designer/rxconfig.py']
+[INFO] Starting granian (main PID: 17194)
+[INFO] Listening at: http://0.0.0.0:8221
+[INFO] Spawning worker-1 with PID: 17242
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug:   ➜  Local:   http://localhost:3221/
+App running at: http://localhost:3221/
+Backend running at: http://0.0.0.0:8221
+Debug:   ➜  Network: http://192.0.2.2:3221/
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `int` - serialized value may not be as expected [field_name='form_id', input_value='1', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `int` - serialized value may not be as expected [field_name='form_id', input_value='1', input_type=str])
+  PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='type_', input_value='text', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_lorem_form/form-designer/venv/lib/python3.11/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='type_', input_value='radio', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+Debug: 1:06:08 PM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linecap`. Did you mean `strokeLinecap`?
+Debug: 1:06:08 PM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linejoin`. Did you mean `strokeLinejoin`?
+Debug: 1:06:08 PM [vite] (client) [console.error] Invalid DOM property 
+`stroke-width`. Did you mean `strokeWidth`?
+Debug: 1:06:08 PM [vite] (client) [console.error] Error: `FormMessage` must be 
+used within `FormField` or specify the `name` prop
+Debug:     at FormMessage 
+(http://localhost:3221/node_modules/.vite/deps/@radix-ui_react-form.js?v=789dd86
+6:287:19)
+Debug:     at Object.react_stack_bottom_frame 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:12
+868:12)
+Debug:     at renderWithHooks 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:42
+13:19)
+Debug:     at updateForwardRef 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:53
+96:16)
+Debug:     at beginWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:62
+04:21)
+Debug:     at runWithFiberInDEV 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:85
+1:66)
+Debug:     at performUnitOfWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:84
+29:92)
+Debug:     at workLoopSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+25:37)
+Debug:     at renderRootSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+09:6)
+Debug:     at performWorkOnRoot 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:79
+94:27)
+[Reflex Frontend Exception]
+ Error: `FormMessage` must be used within `FormField` or specify the `name` prop
+Error: `FormMessage` must be used within `FormField` or specify the `name` prop
+    at FormMessage 
+(http://localhost:3221/node_modules/.vite/deps/@radix-ui_react-form.js?v=789dd86
+6:287:19)
+    at Object.react_stack_bottom_frame 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:12
+868:12)
+    at renderWithHooks 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:42
+13:19)
+    at updateForwardRef 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:53
+96:16)
+    at beginWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:62
+04:21)
+    at runWithFiberInDEV 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:84
+29:92)
+    at workLoopSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+25:37)
+    at renderRootSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+09:6)
+    at performWorkOnRoot 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:79
+94:27)
+
+Debug: 
+Debug: The above error occurred in the <ForwardRef(FormMessage)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, m.
+Debug: 
+Debug: 1:06:28 PM [vite] (client) [console.error] Received `true` for a 
+non-boolean attribute `collapsible`.
+Debug: 
+Debug: If you want to write it to the DOM, pass a string instead: 
+collapsible="true" or collapsible={value.toString()}.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ⚠️  Future Flag Warning: Route middleware support is changing in React Router 
+v8.
+     You can use the `future.v8_middleware` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+  ⚠️  Future Flag Warning: Route module splitting behavior is changing in React 
+Router v8.
+     You can use the `future.v8_splitRouteModules` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+  ⚠️  Future Flag Warning: Vite Environment API usage is changing in React 
+Router v8.
+     You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+  ⚠️  Future Flag Warning: Request handling behavior is changing in React Router
+v8.
+     You can use the `future.v8_passThroughRequests` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+  ⚠️  Future Flag Warning: Data request URL formats are changing in React Router
+v8.
+     You can use the `future.v8_trailingSlashAwareDataRequests` flag to opt in 
+early.
+     -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+  ➜  Local:   http://localhost:3221/
+  ➜  Network: http://192.0.2.2:3221/
+1:06:08 PM  (client)  Invalid DOM property `stroke-linecap`. Did you mean 
+`strokeLinecap`?
+1:06:08 PM  (client)  Invalid DOM property `stroke-linejoin`. Did you mean 
+`strokeLinejoin`?
+1:06:08 PM  (client)  Invalid DOM property `stroke-width`. Did you mean 
+`strokeWidth`?
+1:06:08 PM  (client)  Error: `FormMessage` must be used within `FormField` or 
+specify the `name` prop
+    at FormMessage 
+(http://localhost:3221/node_modules/.vite/deps/@radix-ui_react-form.js?v=789dd86
+6:287:19)
+    at Object.react_stack_bottom_frame 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:12
+868:12)
+    at renderWithHooks 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:42
+13:19)
+    at updateForwardRef 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:53
+96:16)
+    at beginWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:62
+04:21)
+    at runWithFiberInDEV 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:84
+29:92)
+    at workLoopSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+25:37)
+    at renderRootSync 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:83
+09:6)
+    at performWorkOnRoot 
+(http://localhost:3221/node_modules/.vite/deps/react-dom_client.js?v=4bf9aaa1:79
+94:27)
+
+The above error occurred in the <ForwardRef(FormMessage)> component.
+
+React will try to recreate this component tree from scratch using the error 
+boundary you provided, m.
+
+1:06:28 PM  (client)  Received `true` for a non-boolean attribute `collapsible`.
+
+If you want to write it to the DOM, pass a string instead: collapsible="true" or
+collapsible={value.toString()}.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[13:10:25] Reflex app stopped.                                    console.py:232

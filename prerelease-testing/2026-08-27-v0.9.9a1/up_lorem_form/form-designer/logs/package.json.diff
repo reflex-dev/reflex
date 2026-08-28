@@ -1,0 +1,37 @@
+--- logs/package.json.098	2026-08-28 13:11:24.741462921 +0000
++++ logs/package.json.099a1	2026-08-28 13:12:19.541886691 +0000
+@@ -9,7 +9,7 @@
+     "@radix-ui/react-accordion": "1.2.18",
+     "@radix-ui/react-form": "0.1.14",
+     "@radix-ui/themes": "3.3.0",
+-    "@react-router/node": "7.18.2",
++    "@react-router/node": "8.3.0",
+     "isbot": "5.2.1",
+     "lucide-react": "1.26.0",
+     "moment": "2.30.1",
+@@ -20,8 +20,7 @@
+     "react-helmet": "6.1.0",
+     "react-markdown": "10.1.0",
+     "react-moment": "1.2.2",
+-    "react-router": "7.18.2",
+-    "react-router-dom": "7.18.2",
++    "react-router": "8.3.0",
+     "react-syntax-highlighter": "16.1.1",
+     "rehype-katex": "7.0.1",
+     "rehype-raw": "7.0.0",
+@@ -34,12 +33,12 @@
+   },
+   "devDependencies": {
+     "@emotion/react": "11.14.0",
+-    "@react-router/dev": "7.18.2",
+-    "@react-router/fs-routes": "7.18.2",
++    "@react-router/dev": "8.3.0",
++    "@react-router/fs-routes": "8.3.0",
+     "autoprefixer": "10.5.4",
+     "postcss": "8.5.23",
+     "postcss-import": "16.1.1",
+-    "vite": "8.0.16"
++    "vite": "8.2.0"
+   },
+   "overrides": {
+     "postcss": "8.5.23"

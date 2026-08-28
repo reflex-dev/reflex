@@ -1,0 +1,111 @@
+{
+  "url": "http://localhost:3101/",
+  "steps": [
+    {
+      "name": "initial_render",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun']"
+    },
+    {
+      "name": "add_item_button",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk'] input_after='' (reset_on_submit)"
+    },
+    {
+      "name": "add_item_enter",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog']"
+    },
+    {
+      "name": "empty_submit_noop",
+      "ok": true,
+      "detail": "before=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog'] after=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog']"
+    },
+    {
+      "name": "add_item_special_chars",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog', 'Caf\u00e9 <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "finish_middle_item",
+      "ok": true,
+      "detail": "items=['Write Code', 'Have Fun', 'Buy milk', 'Walk dog', 'Caf\u00e9 <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "finish_first_item",
+      "ok": true,
+      "detail": "items=['Have Fun', 'Buy milk', 'Walk dog', 'Caf\u00e9 <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "reload_state",
+      "ok": true,
+      "detail": "pre=['Have Fun', 'Buy milk', 'Walk dog', 'Caf\u00e9 <b>&amp;</b> 50%'] post=['Have Fun', 'Buy milk', 'Walk dog', 'Caf\u00e9 <b>&amp;</b> 50%'] persisted=True"
+    }
+  ],
+  "console": [
+    [
+      "log",
+      "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "log",
+      "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ]
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:3101/?token=n28k0q6AieaS"
+    ],
+    [
+      "open",
+      "ws://localhost:8101/_event/?token=be2eed1d-fe8a-4b79-cb6d-68329a9ac078&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:8101/_event/?token=be2eed1d-fe8a-4b79-cb6d-68329a9ac078&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:3101/?token=n28k0q6AieaS"
+    ],
+    [
+      "open",
+      "ws://localhost:3101/?token=n28k0q6AieaS"
+    ],
+    [
+      "open",
+      "ws://localhost:8101/_event/?token=be2eed1d-fe8a-4b79-cb6d-68329a9ac078&EIO=4&transport=websocket"
+    ]
+  ]
+}

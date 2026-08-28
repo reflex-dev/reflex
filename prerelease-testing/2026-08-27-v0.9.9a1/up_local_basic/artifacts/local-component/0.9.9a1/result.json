@@ -1,0 +1,63 @@
+{
+  "url": "http://localhost:3260/",
+  "steps": [
+    {
+      "name": "initial_render",
+      "ok": true,
+      "detail": "greeting='Hello world!'"
+    },
+    {
+      "name": "popover_edit_submit",
+      "ok": true,
+      "detail": "live_while_typing='Hello Reflex!' after_submit='Hello Reflex!'"
+    },
+    {
+      "name": "context_menu_caps",
+      "ok": true,
+      "detail": "text='HELLO REFLEX!' console_log_count 0->1"
+    },
+    {
+      "name": "color_mode_bg",
+      "ok": true,
+      "detail": "light=rgb(255, 239, 213) dark=rgb(102, 51, 153)"
+    },
+    {
+      "name": "scroll_to",
+      "ok": true,
+      "detail": "scrollY 1335 -> 429"
+    }
+  ],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Yes we pass events through"
+    },
+    {
+      "type": "log",
+      "text": "Yes we pass events through"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    }
+  ],
+  "console_noteworthy": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

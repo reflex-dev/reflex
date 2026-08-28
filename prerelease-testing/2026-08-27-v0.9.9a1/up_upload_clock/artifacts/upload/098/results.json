@@ -1,0 +1,77 @@
+[
+  {
+    "name": "initial_no_files_selected",
+    "status": "pass",
+    "details": "placeholder text visible"
+  },
+  {
+    "name": "selected_files_displayed",
+    "status": "pass",
+    "details": "hello.txt + tiny.png shown after selection"
+  },
+  {
+    "name": "reselect_replaces_selection",
+    "status": "pass",
+    "details": "unicode name shown=True, old selection cleared=True"
+  },
+  {
+    "name": "files_land_on_disk",
+    "status": "pass",
+    "details": "{\"hello.txt\": true, \"tiny.png\": true, \"héllo wörld 测试 файл.txt\": true}"
+  },
+  {
+    "name": "uploaded_content_matches",
+    "status": "pass",
+    "details": "hello.txt content roundtrip"
+  },
+  {
+    "name": "unicode_filename_content_matches",
+    "status": "pass",
+    "details": "héllo wörld 测试 файл.txt content roundtrip"
+  },
+  {
+    "name": "uploaded_files_listed_in_ui",
+    "status": "fail",
+    "details": "listed_without_reload=False, listed_after_reload=False"
+  },
+  {
+    "name": "uploaded_file_served_via_url",
+    "status": "fail",
+    "details": "no link href found for hello.txt"
+  },
+  {
+    "name": "uploading_indicator_shown",
+    "status": "pass",
+    "details": "Uploading... text + cancel link appeared"
+  },
+  {
+    "name": "upload_progress_updates",
+    "status": "pass",
+    "details": "aria-valuenow=8 during throttled upload"
+  },
+  {
+    "name": "cancel_upload_aborts",
+    "status": "pass",
+    "details": "bigfile.bin on disk after cancel: False"
+  },
+  {
+    "name": "upload_after_cancel_works",
+    "status": "pass",
+    "details": "'after cancel ok.txt' (space in name) landed=True"
+  },
+  {
+    "name": "files_listed_fresh_session",
+    "status": "pass",
+    "details": "links for uploads visible in new session=True"
+  },
+  {
+    "name": "upload_url_serves_content",
+    "status": "pass",
+    "details": "href=http://localhost:8140/_upload/hello.txt status=200"
+  },
+  {
+    "name": "unicode_upload_url_serves_content",
+    "status": "pass",
+    "details": "href=http://localhost:8140/_upload/héllo wörld 测试 файл.txt status=200"
+  }
+]

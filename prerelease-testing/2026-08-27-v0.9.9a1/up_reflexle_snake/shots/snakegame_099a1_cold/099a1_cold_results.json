@@ -1,0 +1,97 @@
+[
+  {
+    "step": "load: 19x19 grid renders (361 cells)",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "load: initial stats RATE=10 SCORE=0 MAGIC=1",
+    "status": "pass",
+    "detail": "{\"rate\": \"10\", \"score\": \"0\", \"magic\": \"1\"}"
+  },
+  {
+    "step": "RUN starts game (switch reflects running)",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "game loop draws snake cells",
+    "status": "pass",
+    "detail": "snake=[296]"
+  },
+  {
+    "step": "tick throughput: >=6 board updates in 4s",
+    "status": "pass",
+    "detail": "observed 8 updates (expect ~8)"
+  },
+  {
+    "step": "Escape pauses game",
+    "status": "pass",
+    "detail": "switch_off=True board_frozen=True"
+  },
+  {
+    "step": "Escape resumes game",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "food rendered",
+    "status": "pass",
+    "detail": "food=(5, 5)"
+  },
+  {
+    "step": "ArrowUp steers snake to food row",
+    "status": "pass",
+    "detail": "head=True"
+  },
+  {
+    "step": "ArrowLeft onto food: SCORE increments",
+    "status": "pass",
+    "detail": "{\"rate\": \"12\", \"score\": \"1\", \"magic\": \"2\"}"
+  },
+  {
+    "step": "eating food bumps MAGIC=2 RATE=12",
+    "status": "pass",
+    "detail": "{\"rate\": \"12\", \"score\": \"1\", \"magic\": \"2\"}"
+  },
+  {
+    "step": "queued rel-right turns cause self-collision: Game Over",
+    "status": "pass",
+    "detail": "dead_cells=[101]"
+  },
+  {
+    "step": "dead cell rendered red",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "game stops on death (switch off)",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "RUN after death resets score and restarts",
+    "status": "pass",
+    "detail": "{\"rate\": \"10\", \"score\": \"0\", \"magic\": \"1\"}"
+  },
+  {
+    "step": "snake moving again after restart",
+    "status": "pass",
+    "detail": ""
+  },
+  {
+    "step": "switch click pauses game",
+    "status": "pass",
+    "detail": "switch_off=True board_frozen=True"
+  },
+  {
+    "step": "console: no unexpected errors/warnings",
+    "status": "pass",
+    "detail": "[]"
+  },
+  {
+    "step": "network: no 4xx/5xx/failed requests",
+    "status": "pass",
+    "detail": "[]"
+  }
+]

@@ -1,0 +1,86 @@
+{
+  "url": "http://localhost:3261/",
+  "api": "http://localhost:8261",
+  "steps": [
+    {
+      "name": "initial_render",
+      "ok": true,
+      "detail": "initial count=0"
+    },
+    {
+      "name": "ui_post",
+      "ok": true,
+      "detail": "status='Status: 200' count 0->1"
+    },
+    {
+      "name": "ui_get",
+      "ok": true,
+      "detail": "status='Status: 200' has_UI1=True"
+    },
+    {
+      "name": "ui_put",
+      "ok": true,
+      "detail": "status='Status: 200' renamed_visible=True"
+    },
+    {
+      "name": "ui_delete",
+      "ok": true,
+      "detail": "status='Status: 200' count back to 0"
+    },
+    {
+      "name": "api_ping",
+      "ok": true,
+      "detail": "200 \"pong\""
+    },
+    {
+      "name": "api_post_list",
+      "ok": true,
+      "detail": "post=200 listed=True"
+    },
+    {
+      "name": "api_get_one",
+      "ok": true,
+      "detail": "200 {\"label\":\"api product\",\"code\":\"API1\",\"updated\":\"2026-08-28T13:13:35.217831\",\"ima"
+    },
+    {
+      "name": "api_put",
+      "ok": true,
+      "detail": "put=200 label='api renamed'"
+    },
+    {
+      "name": "api_delete",
+      "ok": true,
+      "detail": "delete=200 gone=True"
+    },
+    {
+      "name": "api_get_missing",
+      "ok": true,
+      "detail": "200 body={\"status_code\":404,\"detail\":\"Not Found\",\"headers\":null}"
+    }
+  ],
+  "console_all": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    }
+  ],
+  "console_noteworthy": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "page loads, New Task button visible",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "3 task cards appear",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "all 3 tasks stream text concurrently (text grows over 2s)",
+    "ok": true,
+    "detail": "lens [56, 101, 69] -> [153, 188, 166]"
+  },
+  {
+    "name": "all 3 tasks run to completion (\ud83d\udd04 restart buttons shown)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "restarting completed task resets text and streams",
+    "ok": true,
+    "detail": "old len 261, new len 64"
+  },
+  {
+    "name": "paused task stops streaming",
+    "ok": true,
+    "detail": "len 84 vs 84"
+  },
+  {
+    "name": "resumed task streams again",
+    "ok": true,
+    "detail": "len 84 -> 166"
+  },
+  {
+    "name": "kill removes a task card",
+    "ok": true,
+    "detail": "3 -> 2"
+  }
+]

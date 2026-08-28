@@ -1,0 +1,1066 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/venv/lib/python3.11/site-packages/reflex_base/c
+onfig.py'
+Debug: Config: Config(app_name='reflexle', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'app_name', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/venv/lib/python3.11/site-packages/reflex_base/c
+onfig.py'
+Debug: Config: Config(app_name='reflexle', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'app_name', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing reflexle ─────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.056 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+[12:50:25] Initializing the web directory.                        console.py:232
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/venv/lib/python3.11/site-packages/reflex_base/.t
+emplates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 291806930670746843714196998333116878852.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized reflexle. Install dependencies from `requirements.txt` with
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3180
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8180
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.044 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3180 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3180 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3180 is not in use.
+Debug: Checking if Backend port: 8180 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8180 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8180 is not in use.
+DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `letter`, 
+`correctness`, `index`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:287)
+DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:350)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.09s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Applying framework overrides to .web/package.json
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'vite@8.0.16', '@react-router/dev@7.18.2', '@emotion/react@11.14.0', 
+'postcss-import@16.1.1', 'postcss@8.5.23', 'autoprefixer@10.5.4', 
+'@react-router/fs-routes@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [31]
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@16.1.1
+Debug: installed postcss@8.5.23
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: 
+Debug: 154 packages installed [1171.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'lucide-react@1.26.0', 'isbot@5.2.1', '@react-router/node@7.18.2', 
+'react-dom@19.2.8', 'sonner@2.0.7', 'socket.io-client@4.8.3', 
+'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 'react-router-dom@7.18.2', 
+'react-error-boundary@6.1.2', 'react-router@7.18.2', 'react@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.1
+Debug: installed @react-router/node@7.18.2
+Debug: installed react-dom@19.2.8
+Debug: installed sonner@2.0.7
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router-dom@7.18.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-router@7.18.2
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: 99 packages installed [89.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 1.28s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/up_reflexle_snake/reflexle/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/venv', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/reflexle', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/up_reflexle_snake/reflexle/rxconfig.py']
+[INFO] Starting granian (main PID: 14001)
+[INFO] Listening at: http://0.0.0.0:8180
+[INFO] Spawning worker-1 with PID: 14033
+DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `letter`, 
+`correctness`, `index`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:287)
+DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:350)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug:   ➜  Local:   http://localhost:3180/
+App running at: http://localhost:3180/
+Backend running at: http://0.0.0.0:8180
+Debug:   ➜  Network: http://192.0.2.2:3180/
+[INFO] Changes detected, reloading workers..
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/text_field.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/callout.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/sitemap.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/aspect_ratio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/element.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/path_ops.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/badge.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/strict_mode.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/section.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-react-player/src/reflex_components_react_player/video.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/metadata.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/table.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/telemetry.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/manager/disk.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/segmented_control.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/manager/redis.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/cond_tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/container.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/state.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/utils.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/button.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/tasks.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/popover.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/app_wrap.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/badge.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/plugin.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/match_tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/media.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/scroll_area.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/card.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/icon_button.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/tables.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/select.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/console.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/__main__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/other.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/datetime.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/breakpoints.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/rename.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/secrets.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/datadisplay/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/registry.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/memoize_helpers.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/table.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/pyi_generator.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/slider.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/apps/blank/code/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/body.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/style.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_hosting_cli-0.1.70.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/select.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/stack.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/datadisplay/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/apps/blank/assets/favicon.ico
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base-0.9.9a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/progress.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/mappings.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/compat.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/slider.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/number.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/tabs.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/container.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-code/src/reflex_components_code/code.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/manager/memory.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/storage.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/spinner.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/spinner.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/plugins/builtin.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/apps.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/telemetry_context.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/imports.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-base/src/reflex_base/.templates/web/components/reflex/radix_themes_color_mode_provider.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/assets.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/hover_card.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/imports.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/admin.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/badge.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code-0.9.4a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/sub_package/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/link.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/strict_mode.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/colors.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/switch.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/utils/console.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/shared_tailwind.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox_cards.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/manager/token.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/match.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/inset.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/html.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/event_processor.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/state.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/data_list.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/separator.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/code.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/components/reflex/radix_themes_color_mode_provider.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/element.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/link.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/callout.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/_screenshot.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/custom_components/custom_components.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/spacer.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-react-player/src/reflex_components_react_player/react_player.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/config.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_lucide/icon.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/error_boundary.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/_upload.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/slider.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/color_mode.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/upload.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/simple_component.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/namespace_component.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/text_field.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/charts.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_lucide-1.0.3.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/drawer.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code/code.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/inset.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/spinner.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/serializers.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_plotly-0.9.4.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/net.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/cond.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/other.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/number.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_dataeditor/dataeditor.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/app/entry.client.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/tabs.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/utils.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/cond_tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/frontend_skeleton.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/throttle.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/debounce.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/exceptions.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/py.typed
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/skeleton.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/bin/.tmp5XADX6
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/section.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/experimental/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/text_area.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/avatar.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/text.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/meta.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/compiler.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/var_types.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/string_event_annotations.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/utils.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/app_mixins/lifespan.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/compiler/templates.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/debounce.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/datetime.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/slider.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/context_menu.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/html.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/reflex.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/video.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/custom_create.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/switch.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/exec.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/media.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code-0.9.3.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/hover_card.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/script.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/checkbox_group.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/custom_components.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_sonner-0.9.1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/stack.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/component.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/apps/blank/code/blank.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/format.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/constants/hosting.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/element.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/style.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/console.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/progress.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/_screenshot.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/classvar_and_private.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/auto_scroll.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/dialog.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/clipboard.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/js_runtimes.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/tables.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/hybrid_property.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/center.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/center.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/document.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/misc.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/debounce.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/environment.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/dataeditor.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/memo_paths.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/processes.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/literal_types.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/embed.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/iter_tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core-0.9.9a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/datetime.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/body.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/inline.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/spacer.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/plugins/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/state.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/app.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix-0.9.8a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/spacer.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/serializers.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/custom_components/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/separator.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/literals.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/export.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_dataeditor-0.9.1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/scripts.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/banner.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/typography.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/fragment.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/window_events.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/document.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/button.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/constants/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/react_router/dom.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/decorator.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/aspect_ratio.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/heading.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/templates.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/scroll_area.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/alert_dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio_group.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/py.typed
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/audio.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/dep_tracking.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/sectioning.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/route.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/link.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/slider.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/cartesian.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/flex.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex-0.9.8.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/installer.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/strict_mode.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/code.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/scripts.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/alert_dialog.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/experimental/hooks.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/types.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/object.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/tagless.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/sticky.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/code.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/grid.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/timeout.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/future.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/sequence.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/providers.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/wrappers.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/experimental/memo.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/avatar.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/core/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/route.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/deployments.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/bin/.tmp5XADX6
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/decorator.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox_group.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio_cards.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/sectioning.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/cli.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/token_manager.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/window_events.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/text_field.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/range.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/checkbox_cards.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/tags/tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/card.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/react-theme.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/slider.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/module_level.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio_group.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/color_mode.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-moment/src/reflex_components_moment/moment.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/scripts/hatch_build.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/config.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/prerequisites.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/responsive.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/proxy.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code/shiki_code_block.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_plotly/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/manager/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/helmet.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/general.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/segmented_control.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/grid.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/media.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/inheritance.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/form.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio_cards.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/other.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/meta.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/dynamic.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/blockquote.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/box.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/banner.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/sub_package/widget.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_dataeditor/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/box.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/body.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_plotly/plotly.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/middleware/middleware.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/tagless.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/constants/compiler.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/scripts.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/react_player.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/dropdown_menu.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/bare.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_dataeditor/dataeditor.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox_group.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/progress.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/fragment.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/typography.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_sonner/toast.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/data_list.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/templates.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/installer.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/context_menu.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/typed_event_handlers.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/text.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/testing.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/separator.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/field.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/gcp.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/accordion.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/function.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/foreach.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/fragment.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/app_mixins/mixin.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/avatar.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/text.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/forms.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/tooltip.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/context.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/telemetry_accounting.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/tailwind_v4.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/scroll_area.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/app_mixins/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/tooltip.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/literals.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/center.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/typography.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/react-router.config.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/link.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/dynamic.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/banner.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/meta.pyi
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player-0.9.2a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/utils/dependency.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/component.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/breakpoints.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/codespaces.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/color.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/list.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/inline.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/plugins/memoize.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_plotly-0.9.5a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/page.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/pyi_generator.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/link.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/tailwind_v4.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/core/config.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/streaming_response.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/auto_scroll.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/error_boundary.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/compiler.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/paste.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/checkbox.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio_cards.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/app_mixins/middleware.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/text_area.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/skeleton.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix-0.9.7.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/table.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-code/src/reflex_components_code/shiki_code_block.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/dynamic.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/compiler/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_sonner/toast.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/compiler.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/callout.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/flex.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/color.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/event.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/memo.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/function.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/iter_tag.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/compat.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/experimental/memo.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/progress.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/icon_button.pyi
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_hosting_cli-0.1.71a2.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/props.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/auto_scroll.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/dialog.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/react_player.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/forms.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/debounce.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/experimental/client_state.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/config.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/drawer.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/deployments.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/cli.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/colors.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_sonner-0.9.2a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/grid.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/compress-static.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/app/entry.client.embed.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/progress.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_lucide/icon.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/styles/__reflex_style_reset.css
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code/shiki_code_block.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code/code.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/tabs.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/field.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/switch.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/shared_tailwind.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/exceptions.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/link.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/forms.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/aspect_ratio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/blockquote.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/clipboard.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/metadata.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/datadisplay/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/base.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/config.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/context_menu.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/props.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/sequence.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/state.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/shared.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/heading.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/card.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/icon_button.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/upload.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/color_mode.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/progress.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/vars/dep_tracking.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/project.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/box.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/segmented_control.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/app/routes.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/postcss.config.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/colors.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/context/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/checkbox_cards.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/environment.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/audio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/vmtypes_regions.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/context/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/utils.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/custom_components.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/react_router/dom.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/istate/data.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base-0.9.8.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/middleware/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/container.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/.gitignore
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/memo.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/script.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/metadata.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_code/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/inline.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-base/src/reflex_base/.templates
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/layout/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/popover.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/compiler/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/utils/helpers/upload.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/heading.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core-0.9.8.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/section.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/constants/event.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/accordion.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/tailwind_v3.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/types.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio_group.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/skeleton.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/v2/scan.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/script.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/primitives/accordion.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/utils/exceptions.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/utils/hosting.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/utils/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/radio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player/video.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/layout/list.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/select.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/clipboard.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/typography/blockquote.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/tags/match_tag.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_dataeditor-0.9.2a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_sonner/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/button.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/plugins/tailwind_v3.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/sticky.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/alert_dialog.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/helmet.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/app_wrap.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-react-player/src/reflex_components_react_player/audio.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/tests/units/reflex_base/utils/pyi_generator/golden/staticmethod_namespace.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/compiler.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/lazy_loader.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_plotly/plotly.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/text_area.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/datadisplay/logo.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/markdown_component_map.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/react_router/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/model.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_react_player-0.9.1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/lazy_loader.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/event/processor/compat.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/document.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/drawer.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/event.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/data_list.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/registry.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/sectioning.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/flex.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/_upload.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/inset.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/vite-plugin-safari-cachebust.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/vars/object.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_cli/constants/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/hover_card.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_lucide/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/dropdown_menu.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/el/elements/tables.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/popover.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/__init__.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/typography/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/.templates/web/components/shiki/code.js
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/base/error_boundary.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/constants/route.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/middleware/hydrate_middleware.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/form.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/plugins/sitemap.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/el/elements/base.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/core/upload.pyi
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_lucide-1.0.4a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/components/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/build.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/__init__.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/list.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/redir.py
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex-0.9.9a1.dist-info
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/components/tooltip.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-radix/src/reflex_components_radix/themes/components/dropdown_menu.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/primitives/form.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/utils/format.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_radix/themes/layout/stack.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_base/components/state_context.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/base/app_wrap.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex_components_core/react_router/dom.py
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/packages/reflex-components-core/src/reflex_components_core/core/html.pyi
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_reflexle_snake/reflexle/venv/lib64/python3.11/site-packages/reflex/utils/precompressed_staticfiles.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 14623
+DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `letter`, 
+`correctness`, `index`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:287)
+DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (reflexle/reflexle.py:350)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.12s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: 12:54:49 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 255 installs across 329 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'vite@8.0.16', '@react-router/dev@7.18.2', '@emotion/react@11.14.0', 
+'postcss-import@16.1.1', 'postcss@8.5.23', 'autoprefixer@10.5.4', 
+'@react-router/fs-routes@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@16.1.1
+Debug: installed postcss@8.5.23
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: 
+Debug: [9.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'lucide-react@1.26.0', 'isbot@5.2.1', '@react-router/node@7.18.2', 
+'react-dom@19.2.8', 'sonner@2.0.7', 'socket.io-client@4.8.3', 
+'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 'react-router-dom@7.18.2', 
+'react-error-boundary@6.1.2', 'react-router@7.18.2', 'react@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.1
+Debug: installed @react-router/node@7.18.2
+Debug: installed react-dom@19.2.8
+Debug: installed sonner@2.0.7
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router-dom@7.18.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-router@7.18.2
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/up_reflexle_snake/reflexle/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ⚠️  Future Flag Warning: Route middleware support is changing in React Router 
+v8.
+     You can use the `future.v8_middleware` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+  ⚠️  Future Flag Warning: Route module splitting behavior is changing in React 
+Router v8.
+     You can use the `future.v8_splitRouteModules` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+  ⚠️  Future Flag Warning: Vite Environment API usage is changing in React 
+Router v8.
+     You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+  ⚠️  Future Flag Warning: Request handling behavior is changing in React Router
+v8.
+     You can use the `future.v8_passThroughRequests` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+  ⚠️  Future Flag Warning: Data request URL formats are changing in React Router
+v8.
+     You can use the `future.v8_trailingSlashAwareDataRequests` flag to opt in 
+early.
+     -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+  ➜  Local:   http://localhost:3180/
+  ➜  Network: http://192.0.2.2:3180/
+12:54:49 PM  (client) hmr update /styles/__reflex_global_styles.css?direct
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+[12:54:57] Reflex app stopped.                                    console.py:232

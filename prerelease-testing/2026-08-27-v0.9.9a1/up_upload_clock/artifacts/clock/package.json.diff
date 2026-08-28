@@ -1,0 +1,36 @@
+--- /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_upload_clock/artifacts/clock/098/package.json	2026-08-28 12:49:45.162460357 +0000
++++ /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/up_upload_clock/artifacts/clock/099a1/package.json	2026-08-28 12:50:14.115120327 +0000
+@@ -7,7 +7,7 @@
+   },
+   "dependencies": {
+     "@radix-ui/themes": "3.3.0",
+-    "@react-router/node": "7.18.2",
++    "@react-router/node": "8.3.0",
+     "isbot": "5.2.1",
+     "lucide-react": "1.26.0",
+     "moment": "2.30.1",
+@@ -17,20 +17,19 @@
+     "react-error-boundary": "6.1.2",
+     "react-helmet": "6.1.0",
+     "react-moment": "1.2.2",
+-    "react-router": "7.18.2",
+-    "react-router-dom": "7.18.2",
++    "react-router": "8.3.0",
+     "socket.io-client": "4.8.3",
+     "sonner": "2.0.7",
+     "universal-cookie": "8.1.2"
+   },
+   "devDependencies": {
+     "@emotion/react": "11.14.0",
+-    "@react-router/dev": "7.18.2",
+-    "@react-router/fs-routes": "7.18.2",
++    "@react-router/dev": "8.3.0",
++    "@react-router/fs-routes": "8.3.0",
+     "autoprefixer": "10.5.4",
+     "postcss": "8.5.23",
+     "postcss-import": "16.1.1",
+-    "vite": "8.0.16"
++    "vite": "8.2.0"
+   },
+   "overrides": {
+     "postcss": "8.5.23"
