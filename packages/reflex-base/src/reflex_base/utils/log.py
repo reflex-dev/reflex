@@ -368,6 +368,9 @@ def log_file_stream() -> TextIO:
     try:
         stream = handler.stream
         if stream is None:
+            # FileHandler._open is private stdlib API, but it is the only way
+            # to reopen the file with the handler's own mode/encoding, and
+            # FileHandler.emit itself reopens a closed handler the same way.
             stream = handler.stream = handler._open()
         return cast("TextIO", stream)
     finally:
