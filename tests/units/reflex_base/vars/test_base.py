@@ -222,3 +222,27 @@ def test_linearize_bases_matches_real_mro(shape: str) -> None:
 def test_linearize_bases_without_bases() -> None:
     """A class with no bases has nothing to inherit from."""
     assert _linearize_bases(()) == []
+
+
+def test_linearize_bases_compares_by_identity() -> None:
+    """A metaclass defining __eq__ must not confuse the linearization."""
+
+    class EqMeta(type):
+        def __eq__(cls, other: object) -> bool:
+            return True
+
+        def __hash__(cls) -> int:
+            return 1
+
+    a = EqMeta("A", (), {})
+    b = EqMeta("B", (a,), {})
+    c = EqMeta("C", (a,), {})
+    created = EqMeta("Created", (b, c), {})
+
+    # `==` between these classes is always True, so compare element identities
+    assert all(
+        left is right
+        for left, right in zip(
+            _linearize_bases((b, c)), created.__mro__[1:], strict=True
+        )
+    )

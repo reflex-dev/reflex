@@ -3757,9 +3757,11 @@ def _linearize_bases(bases: tuple[type, ...]) -> list[type]:
         sequences = [sequence for sequence in sequences if sequence]
         if not sequences:
             return order
+        # compared by identity, as `type.mro()` does: a metaclass may define __eq__
+        tails = [klass for sequence in sequences for klass in sequence[1:]]
         for sequence in sequences:
             head = sequence[0]
-            if not any(head in rest[1:] for rest in sequences):
+            if not any(head is klass for klass in tails):
                 break
         else:
             # No valid head: `type.__new__` will reject these bases.

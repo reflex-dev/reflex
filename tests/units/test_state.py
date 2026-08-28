@@ -4374,6 +4374,30 @@ def test_assignment_to_undeclared_vars():
     state.handle_non_var()
 
 
+def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
+    """A Field on a plain base supplies its default; a failing factory is not swallowed."""
+
+    class WithDefault:
+        _n = field(default=3)
+
+    class InheritsDefault(WithDefault, BaseState):
+        _n: int
+
+    assert InheritsDefault.backend_vars["_n"] == 3
+
+    def _boom() -> int:
+        msg = "factory blew up"
+        raise ValueError(msg)
+
+    class WithFailingFactory:
+        _n = field(default_factory=_boom)
+
+    with pytest.raises(ValueError, match="factory blew up"):
+
+        class FactoryState(WithFailingFactory, BaseState):
+            _n: int
+
+
 def test_assignment_through_property_setter():
     """A property's setter runs instead of the undeclared-var guard."""
 

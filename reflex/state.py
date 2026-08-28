@@ -1347,11 +1347,13 @@ class BaseState(EvenMoreBasicBaseState):
                 continue
             value = klass.__dict__[name]
             if isinstance(value, Field):
-                try:
+                if (
+                    value.default is not dataclasses.MISSING
+                    or value.default_factory is not None
+                ):
                     return value.default_value()
-                except ValueError:
-                    # the field declares no default; use the annotation's
-                    break
+                # the field declares no default; use the annotation's
+                break
             if hasattr(type(value), "__get__"):
                 # A descriptor provides behavior, not a stored default.
                 break
