@@ -48,9 +48,14 @@ Find the pre-release branch (`git ls-remote --heads origin 'r/pre-*'`, or the us
 read **every** `CHANGELOG.md` on it: the root one plus `packages/*/CHANGELOG.md`. The top entry of
 each is what this train ships.
 
-Run `scripts/check_release_versions.py <git-ref>` to extract every package's version and confirm
-each is published on PyPI. An unpublished version is a finding in its own right — report it
-immediately rather than working around it.
+Run the discovery script to extract every package's version and confirm each is published:
+
+    .claude/skills/prerelease-test/scripts/check_release_versions.py --ref <git-ref>
+
+(Script paths in this skill are repo-root-relative — the repo has its own unrelated `scripts/`
+directory, so the prefix matters.) It exits 1 when a package is confirmed missing and 2 when a
+check could not complete, so a proxy hiccup never reads as a missing package. An unpublished
+version is a finding in its own right — report it immediately rather than working around it.
 
 Read the linked PRs for anything whose intent is not obvious from the changelog line; the GitHub
 MCP tools (`mcp__github__pull_request_read`) do this well. Understanding what a change was *for*
@@ -58,9 +63,10 @@ is what lets you test it as a user rather than as a checklist.
 
 ### Phase 1 — De-risk with a smoke test
 
-Before any fan-out: one venv, `reflex init --template blank`, `reflex run`, drive it in Chromium
-with `scripts/drive_app.py`. This shakes out environment problems (proxy, bun installs, browser
-path) once, in a context where you can debug them, instead of inside ten parallel agents.
+Before any fan-out: one venv, `reflex init --template blank`, `reflex run`, then drive it in
+Chromium with `.claude/skills/prerelease-test/scripts/drive_app.py`. This shakes out environment
+problems (proxy, bun installs, browser path) once, in a context where you can debug them, instead
+of inside ten parallel agents.
 
 Also confirm the dependency graph resolves the way the changelog says it should (e.g. optional
 dependencies genuinely absent, sub-packages pinned as intended).
@@ -111,9 +117,14 @@ were removed; that finds the breakage in seconds instead of hours.
 
 ### Phase 5 — Packaging audit
 
-Run `scripts/audit_pyi.py` over every package in the train. It verifies each ships its own
-generated `.pyi` stubs in **both** wheel and sdist, that they are byte-identical between the two,
-that no package leaks another package's stubs, and that counts line up with `pyi_hashes.json`.
+Audit every package in the train; the discovery script feeds it the whole list:
+
+    .claude/skills/prerelease-test/scripts/check_release_versions.py --ref <ref> --specs \
+      | xargs .claude/skills/prerelease-test/scripts/audit_pyi.py --manifest-ref <ref>
+
+It verifies each package ships its own generated `.pyi` stubs in **both** wheel and sdist, that
+they are byte-identical between the two, that no package leaks another package's stubs, and that
+counts line up with `pyi_hashes.json` (a package absent from the manifest must ship none).
 
 Stub content hashes legitimately differ from the committed manifest because the build hook
 regenerates them at release time — compare *presence and counts*, and wheel against sdist.

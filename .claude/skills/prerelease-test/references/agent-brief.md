@@ -52,7 +52,8 @@ and hunt for anomalies. You REPORT issues; you never fix framework code.
 - **Playwright driver venv:** `$SB/envs/driver/bin/python` (playwright, httpx, websockets).
   Chromium: `/opt/pw-browsers/chromium` — launch with
   `p.chromium.launch(executable_path="/opt/pw-browsers/chromium")`.
-  A ready-made driver with console/network capture is at `<SKILL>/scripts/drive_app.py`.
+  A ready-made driver with console/network capture is at
+  `.claude/skills/prerelease-test/scripts/drive_app.py` in the checkout (read-only use is fine).
 - **Local HTTP needs proxy bypass on the CLIENT side only:** prefix curl/Playwright commands with
   `NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1` (curl: `--noproxy '*'`).
   Do NOT export those variables into the reflex server's environment — it breaks bun's package
