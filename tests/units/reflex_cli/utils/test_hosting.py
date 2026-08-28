@@ -21,6 +21,8 @@ from reflex_cli.utils.hosting import (
     SecurityReviewError,
     TokenSource,
     _archive_chunks,
+    _report_deployment_failure,
+    _strip_terminal_controls,
     _UploadAbandonedError,
     authenticated_token,
     create_app,
@@ -692,6 +694,20 @@ def test_set_app_provider_forwards_connection(mocker: MockerFixture):
     }
 
 
+def test_set_app_provider_forwards_service_name(mocker: MockerFixture):
+    """A requested Cloud Run service name rides along as service_name."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"provider": "gcp"})
+    )
+    assert set_app_provider(
+        "app-1", "gcp", _CLIENT, service_name="sales-dashboard"
+    ) == ("gcp")
+    assert mock_post.call_args.kwargs["json"] == {
+        "provider": "gcp",
+        "service_name": "sales-dashboard",
+    }
+
+
 def test_set_app_full_deploy_success(mocker: MockerFixture):
     """The mode change posts to the app's full_deploy endpoint."""
     mock_post = mocker.patch(
@@ -1347,3 +1363,388 @@ def test_validate_token_failure_carries_request_id_on_exception(mocker: MockerFi
         validate_token("some-token")
 
     assert exc_info.value.request_id == get_auth_request_id() != ""
+
+
+def _log_messages(caplog: pytest.LogCaptureFixture, level: int) -> list[str]:
+    """Return the captured log messages emitted at the given level.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        level: The numeric log level to filter records by.
+
+    Returns:
+        The formatted messages of the matching records.
+    """
+    return [r.getMessage() for r in caplog.records if r.levelno == level]
+
+
+def _failure_report(mocker: MockerFixture, **fields: object):
+    """A mock 2xx /failure response carrying the given report fields.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        **fields: Failure-report fields to override on the default report.
+
+    Returns:
+        A mocked successful HTTP response containing the failure report.
+    """
+    report = {
+        "status": "Failed",
+        "code": None,
+        "fault": None,
+        "reason": "",
+        "guidance": "",
+        "build_log_excerpt": None,
+    }
+    report.update(fields)
+    return _ok(mocker, report)
+
+
+def test_failure_report_prints_reason_and_build_log(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """A build failure shows its reason, its guidance and the log's tail.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            fault="customer",
+            reason="Deployment error: the build failed",
+            guidance="Your app failed to build.",
+            build_log_excerpt="ERROR: no matching distribution for pandas==9.9",
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
+    assert "Your app failed to build." in _log_messages(caplog, logging.WARNING)
+    printed = capsys.readouterr().out
+    assert "no matching distribution for pandas==9.9" in printed
+    assert "reflex cloud apps build-logs dep-1" in printed
+
+
+def test_failure_report_withholds_build_log_when_the_fault_is_ours(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """A platform failure says so and never sends the reader to their build.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="image_push_failed",
+            fault="platform",
+            reason="Deployment error: could not push the image",
+            guidance="This failure is on Reflex's side, not in your app.",
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "deployment error", offer_build_logs=False
+    )
+
+    assert "Deployment error: could not push the image" in _log_messages(
+        caplog, logging.ERROR
+    )
+    assert "not in your app" in " ".join(_log_messages(caplog, logging.WARNING))
+    assert "build-logs" not in capsys.readouterr().out
+
+
+def test_failure_report_falls_back_when_the_endpoint_is_absent(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """An older control plane 404s, and the status string is reported as before.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch("httpx.get", return_value=_error(mocker, 404, "Not Found"))
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error: something broke", offer_build_logs=True
+    )
+
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert "build error: something broke" in warnings
+    assert any("reflex cloud apps build-logs dep-1" in w for w in warnings)
+
+
+def test_failure_report_fallback_respects_the_arm_that_asked(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """With no report, a generic failure offers no build log, as before.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch("httpx.get", side_effect=httpx.RequestError("down"))
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "deployment error", offer_build_logs=False
+    )
+
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert warnings == ["deployment error"]
+
+
+def test_failure_report_falls_back_to_the_status_when_no_reason_was_recorded(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A row that recorded no reason still reports something.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch("httpx.get", return_value=_failure_report(mocker))
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "deployment error", offer_build_logs=False
+    )
+
+    assert "deployment error" in _log_messages(caplog, logging.ERROR)
+
+
+@pytest.mark.parametrize(
+    "hostile, banned",
+    [
+        # OSC 52: writes the reader's clipboard.
+        ("\x1b]52;c;bWFsaWNpb3Vz\x07error: build failed", "\x1b]52"),
+        # OSC 8: renders as one destination and links to another.
+        ("\x1b]8;;https://evil.example\x07docs\x1b]8;;\x07", "\x1b]8"),
+        # CSI: erases the lines above it, hiding what really happened.
+        ("done\x1b[2J\x1b[1;1Hbuild succeeded", "\x1b["),
+        # A carriage return overwrites the line in place.
+        ("real error\rbuild succeeded", "\r"),
+    ],
+)
+def test_a_build_log_cannot_drive_the_terminal(hostile: str, banned: str):
+    """Build output is the app's own dependencies, printed without being asked for.
+
+    Args:
+        hostile: Build output carrying a terminal control sequence.
+        banned: The sequence that must not survive.
+    """
+    cleaned = _strip_terminal_controls(hostile)
+
+    assert banned not in cleaned
+    assert "\x1b" not in cleaned
+
+
+def test_stripping_keeps_the_text_worth_reading():
+    """Colour is dropped; the words, newlines and tabs that carry the answer stay."""
+    log = "\x1b[31mERROR\x1b[0m: no matching distribution\n\tfor pandas==9.9\n"
+
+    assert (
+        _strip_terminal_controls(log)
+        == "ERROR: no matching distribution\n\tfor pandas==9.9\n"
+    )
+
+
+def test_the_printed_excerpt_is_stripped(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """The sanitiser is actually on the path the excerpt takes to the terminal.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt="\x1b]52;c;cHduZWQ=\x07ERROR: \x1b[31mno such package\x1b[0m",
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    printed = capsys.readouterr().out
+    assert "ERROR: no such package" in printed
+    assert "\x1b" not in printed
+
+
+@pytest.mark.parametrize(
+    "hostile",
+    [
+        "A\x1b7B",  # DECSC: final byte 0x37, outside the CSI and OSC shapes
+        "A\x1b=B",  # DECKPAM
+        "A\x1bcB",  # RIS: a full terminal reset
+        "A\x1b(0B",  # a designator with an intermediate byte
+    ],
+)
+def test_a_two_character_escape_leaves_no_stray_byte(hostile: str):
+    """The final byte goes with the ESC, rather than printing as garbage.
+
+    Args:
+        hostile: Build output carrying a non-CSI escape sequence.
+    """
+    cleaned = _strip_terminal_controls(hostile)
+
+    assert cleaned == "AB"
+
+
+def test_an_undecodable_body_falls_back_rather_than_raising(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A 2xx body httpx cannot decode is not an answer, and must not end the watch.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")
+    mocker.patch("httpx.get", return_value=response)
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "build error" in _log_messages(caplog, logging.WARNING)
+
+
+def test_a_non_string_excerpt_is_ignored(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """The CLI ships apart from the server, so the excerpt's type is not a given.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt={"unexpected": "shape"},
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
+    assert "the end of the build log" not in capsys.readouterr().out
+
+
+def test_an_unreadable_log_is_reported_rather_than_passed_over(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A log the server could not read is not a build that produced none.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt=None,
+            build_log_unreadable=True,
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    warnings = " ".join(_log_messages(caplog, logging.WARNING))
+    assert "could not be read" in warnings
+    assert "reflex cloud apps build-logs dep-1" in warnings
+
+
+def test_a_build_that_stored_no_log_says_nothing_extra(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, capsys
+):
+    """Absence is not an outage, and there is nothing to send the reader to.
+
+    The reason stands alone: no excerpt, no header over one, and no command to
+    go and fetch a log that was never stored. The command is what separates
+    this path from the unreadable one, which does offer it.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        capsys: Pytest stdout capture fixture.
+    """
+    mocker.patch(
+        "httpx.get",
+        return_value=_failure_report(
+            mocker,
+            code="build_failed",
+            reason="Deployment error: the build failed",
+            build_log_excerpt=None,
+        ),
+    )
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "Deployment error: the build failed" in _log_messages(caplog, logging.ERROR)
+    said = " ".join(_log_messages(caplog, logging.WARNING)) + capsys.readouterr().out
+    assert "could not be read" not in said
+    assert "the end of the build log" not in said
+    assert "reflex cloud apps build-logs" not in said
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid"),
+        # A deeply nested document: a RuntimeError, so a ValueError catch misses it.
+        RecursionError("maximum recursion depth exceeded"),
+    ],
+)
+def test_a_malformed_body_falls_back_however_it_is_malformed(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture, failure: Exception
+):
+    """Not getting an answer costs nothing, whichever way the answer is broken.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        failure: What `.json()` raises on this body.
+    """
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = failure
+    mocker.patch("httpx.get", return_value=response)
+
+    _report_deployment_failure(
+        "dep-1", "fake-token", "build error", offer_build_logs=True
+    )
+
+    assert "build error" in _log_messages(caplog, logging.WARNING)

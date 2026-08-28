@@ -1152,6 +1152,7 @@ def set_app_provider(
     provider: str,
     client: AuthenticatedClient,
     provider_account_id: str | None = None,
+    service_name: str | None = None,
 ) -> str:
     """Choose which hosting platform an app deploys to.
 
@@ -1168,6 +1169,9 @@ def set_app_provider(
             through (GCP only). None keeps the connection the app already has
             when it stays on GCP, and means the org's default connection when
             GCP is first chosen.
+        service_name: The Cloud Run service name the app deploys as (GCP only).
+            None keeps the app's current name, or lets the server mint one from
+            the app name; the server refuses a change once the app has deployed.
 
     Returns:
         The provider now set on the app, or a ``"... failed: ..."`` string on
@@ -1184,6 +1188,8 @@ def set_app_provider(
     payload: dict[str, Any] = {"provider": provider}
     if provider_account_id is not None:
         payload["provider_account_id"] = provider_account_id
+    if service_name is not None:
+        payload["service_name"] = service_name
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/provider"),
         json=payload,
@@ -2867,6 +2873,145 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
     return response.json()
 
 
+# Terminal control sequences, which a build log is not entitled to emit into
+# somebody's terminal. Ordered so a full sequence is consumed before the bare
+# ESC that starts it: OSC first (it runs until its own terminator and is the
+# one that writes the clipboard and forges hyperlinks), then CSI, then the
+# two-character escapes, then anything left over.
+_TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
+    r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
+    # Every other escape sequence, in the general ECMA-48 shape: optional
+    # intermediates then one final byte in 0x30-0x7E. Narrower classes leave
+    # the final byte behind once the catch-all below eats the ESC -- `\x1b7`
+    # (DECSC) printing a stray "7", `\x1bc` (full terminal reset) a stray "c".
+    r"|\x1b[ -/]*[0-~]"
+    r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """*text* with terminal control sequences removed.
+
+    A build log is the output of building the user's own app, dependencies
+    included, and this excerpt is printed without anyone asking for it -- on
+    any failed deploy, rather than only when `reflex cloud apps build-logs` is
+    run. Colour is not worth carrying for that: the same sequences let the
+    output erase the lines above it, forge a hyperlink, or write the
+    clipboard, and none of that should be reachable from a dependency's build
+    script. `markup=False` stops rich reading the text as its own markup and
+    does nothing about escape sequences.
+
+    Args:
+        text: The text to strip.
+
+    Returns:
+        The text with terminal control sequences removed.
+
+    """
+    return _TERMINAL_CONTROL_RE.sub("", text)
+
+
+def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
+    """Why a deployment failed, in fields, or None when that cannot be had.
+
+    None covers every way of not getting an answer, and they are one case to
+    the caller: a control plane predating this endpoint 404s, an older
+    self-hosted one may not route it at all, and the network may simply be
+    down. All three mean the same thing here -- report the failure the way the
+    CLI always has, from the status string.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+
+    Returns:
+        The failure report, or None if it could not be read.
+
+    """
+    import httpx
+
+    try:
+        response = httpx.get(
+            urljoin(
+                constants.Hosting.HOSTING_SERVICE,
+                f"/api/v1/deployments/{deployment_id}/failure",
+            ),
+            headers=authorization_header(token),
+            timeout=constants.Hosting.TIMEOUT,
+        )
+        response.raise_for_status()
+        report = response.json()
+    # Wider than json.JSONDecodeError, because a malformed body has more than
+    # one way to fail: an undecodable encoding raises UnicodeDecodeError (a
+    # ValueError) and a deeply nested document raises RecursionError (a
+    # RuntimeError). Either escaping would abort the watch over an answer this
+    # function is contracted to treat as no answer at all.
+    except (httpx.RequestError, httpx.HTTPStatusError, ValueError, RecursionError):
+        return None
+    return report if isinstance(report, dict) else None
+
+
+def _report_deployment_failure(
+    deployment_id: str,
+    token: str,
+    status: str,
+    *,
+    offer_build_logs: bool,
+) -> None:
+    """Tell the user why their deploy failed and what to do about it.
+
+    The build log is offered only where the control plane says it is the
+    answer. A failure in our pipeline reported as a build failure sends
+    somebody hunting for a bug in an app that does not have one, which is the
+    more expensive of the two mistakes and the reason the fault is asked about
+    at all.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+        status: The status string the watch loop ended on.
+        offer_build_logs: Whether to point at the build log when no structured
+            report can be read, preserving what this arm printed before.
+
+    """
+    report = _get_deployment_failure(deployment_id, token)
+    if report is None:
+        logger.warning(status)
+        if offer_build_logs:
+            logger.warning(
+                f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+
+    logger.error(report.get("reason") or status)
+    if guidance := report.get("guidance"):
+        logger.warning(guidance)
+
+    excerpt = report.get("build_log_excerpt")
+    # Typed as a string by the endpoint, checked because this one is not ours:
+    # the CLI is versioned apart from the control plane and talks to
+    # self-hosted ones, so a non-string here would raise in the sanitiser and
+    # take down a report that had already read fine.
+    if not excerpt or not isinstance(excerpt, str):
+        # A log the server holds but could not read is not a build that
+        # produced none, and saying nothing here reads as the latter.
+        if report.get("build_log_unreadable"):
+            logger.warning(
+                "the build log could not be read right now; try again with:\n"
+                f" reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+    # Raw build output: paths, versions and tracebacks, all of which rich would
+    # read as markup given the chance, plus whatever escape sequences the
+    # build printed.
+    console.print("\nthe end of the build log:")
+    console.print(_strip_terminal_controls(excerpt), markup=False)
+    console.print(
+        f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
+    )
+
+
 def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
     """Continuously watch the status of a specific deployment.
 
@@ -2900,16 +3045,19 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 )
                 break
             if "build error" in status:
-                logger.warning(status)
-                logger.warning(
-                    f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=True
                 )
                 return False
             if "unable to find status for given id" in status:
+                # Not a failed deployment but an id that resolves to nothing,
+                # so there is no row to report on and nothing to ask for.
                 logger.error(status)
                 return False
             if "error" in status:
-                logger.warning(status)
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=False
+                )
                 return False
             if "bad response" in status:
                 logger.warning(status)
