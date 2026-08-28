@@ -19,7 +19,6 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
-from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 from reflex_base import constants
@@ -586,7 +585,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
         )
         logger.warning(
             "Passing None to a Var that is not explicitly marked as Optional (| None) is deprecated. "
-            f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}."
+            f"Passed {obj!s} of type {type(obj) if not isinstance(obj, Var) else obj._var_type} to {type_hint}."
         )
         return True
     return False

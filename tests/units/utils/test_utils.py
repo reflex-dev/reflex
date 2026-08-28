@@ -865,6 +865,29 @@ def test_vite_config_template_minify(minify: bool) -> None:
     assert f"cssMinify: {expected}," in config
 
 
+def test_vite_config_template_valid_rolldown_options() -> None:
+    """The vite config only emits options accepted by rolldown-vite.
+
+    rolldown-vite rejects `rollupOptions.jsx` ("Invalid input options") and
+    deprecates `output.advancedChunks` in favor of `output.codeSplitting`
+    (same shape), so the template must emit neither legacy option while
+    keeping the reflex-env chunk group.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "jsx: {}" not in config
+    assert "advancedChunks" not in config
+    assert "codeSplitting: {" in config
+    assert 'name: "reflex-env",' in config
+
+
 def test_vite_config_template_pins_preview_host() -> None:
     """The vite config pins the preview server to an IPv4 loopback address.
 
