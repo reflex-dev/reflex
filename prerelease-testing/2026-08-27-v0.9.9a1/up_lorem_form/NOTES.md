@@ -145,3 +145,145 @@ alpha period. (Dry-run evidence in NOTES; command:
 - `probe_disconnect.py`, `probe_login.py`, `probe_dom.py` — small probes.
 - `artifacts/` — screenshots, `<label>_*_console.json`, `<label>_*_netfail.json`,
   `<label>_*_results.json` (per-check pass/fail).
+
+## VERIFICATION (adversarial re-check of the reflex[db] fresh-install pydantic-beta finding, 2026-08-28)
+
+Independently re-run in a fresh Python 3.11 venv (working dir
+`$SB/apps/verify_up_lorem_form_0/`, dry-run outputs saved there as
+`dryrun_*.txt` / `pip_report_*.json`). The observation is REPRODUCIBLE but the
+finding is REFUTED as a reflex defect — verdict: **not confirmed / not
+actionable** (installer semantics + an unnecessary flag, not a 0.9.9a1 issue).
+
+Resolution matrix (all fresh venvs, PyPI only):
+
+| command | pydantic resolved |
+|---|---|
+| `uv pip install --prerelease=allow 'reflex[db]==0.9.9a1'` | **2.14.0b1 (beta)** — claim reproduced |
+| `uv pip install 'reflex[db]==0.9.9a1'` (NO flag) | **2.13.5 (stable)** — resolves cleanly |
+| `pip install 'reflex[db]==0.9.9a1'` (NO --pre) | **2.13.5 (stable)** — resolves cleanly |
+| `pip install --pre 'reflex[db]==0.9.9a1'` | 2.14.0b1 (beta) |
+| `uv pip install --prerelease=allow 'reflex[db]==0.9.8'` (STABLE reflex) | **2.14.0b1 (beta)** — identical behavior on 0.9.8 |
+
+Why the claim's premise fails:
+1. "Users must use --pre/--prerelease=allow to get 0.9.9a1" is FALSE. The
+   published reflex 0.9.9a1 wheel pins its prerelease siblings exactly
+   (`reflex-base==0.9.9a1`, per PyPI requires_dist), and PEP 440 accepts a
+   prerelease that the specifier names explicitly. So a plain
+   `pip install 'reflex[db]==0.9.9a1'` and a plain uv install (default
+   `if-necessary-or-explicit` strategy) both succeed and both pick STABLE
+   pydantic. The release engineering already prevents the beta-pull for the
+   normal install path.
+2. The beta pull is pure installer semantics of the GLOBAL prerelease flag:
+   the identical `--prerelease=allow` install of stable `reflex[db]==0.9.8`
+   pulls the same pydantic 2.14.0b1. Nothing 0.9.9a1 introduced or can fix;
+   the db extra's `pydantic>=2.12.0,<3.0` range is correct and betas are only
+   considered when the user globally opts in.
+3. The "untested beta combination" also works: real install of
+   reflex[db]==0.9.9a1 + pydantic 2.14.0b1/pydantic-core 2.48.0 smoke-passed
+   (import, rx.State with @rx.var/@rx.event, rx.Model table via sqlmodel
+   0.0.39, component render, rx.App/add_page, state .dict(), pydantic
+   BaseModel serializer). No errors beyond the pre-existing rx.Model
+   deprecation warning.
+
+Conclusion: severity-low observation correctly recorded as non-regression by
+the original agent, but it is not a defect a fix-agent should act on. At most
+it is a docs nudge: recommend `pip install 'reflex[db]==0.9.9a1'` (exact pin,
+no --pre) for alpha adopters instead of a global prerelease flag.
+
+## VERIFICATION (adversarial re-check of the form-designer /form/<id> FormMessage crash, 2026-08-28)
+
+Independently reproduced from scratch (working dir `$SB/apps/verify_up_lorem_form_2/`,
+scripts copied here as `verify2_drive_verify.py` / `verify2_probe_entry.py`,
+screenshots `artifacts/verify2_*`). Fresh app copies (no .web, no db, byte-identical
+to `/home/user/reflex-dev/reflex-examples/form-designer` — diff-verified), fresh
+PyPI-only venvs: `uv pip install 'reflex[db]==0.9.9a1' 'reflex-local-auth>=0.5.0'`
+(exact pin, no prerelease flag; pydantic 2.13.5) and `'reflex[db]==0.9.8'`.
+Flow per run: register -> login -> create form -> add one text field -> open
+`/form/1` -> attempt submit.
+
+| run | entry page | detail |
+|---|---|---|
+| 0.9.9a1 (fp 3728/bp 8728) | CRASH into error boundary | console: "Error: `FormMessage` must be used within `FormField` or specify the `name` prop" (@radix-ui_react-form.js); submit impossible |
+| 0.9.8 (fp 3729/bp 8729) | CRASH, byte-identical error | same console error, same error-boundary page |
+| 0.9.9a1 + 1-line app patch | renders, entry submits, redirects to /success | patch: pass `name=field.name` to `rx.form.field()` in `form_designer/components/field_view.py` |
+
+Verdict: claim CONFIRMED as described (crash is real, reproducible, and identical
+on 0.9.8) but **NOT a reflex 0.9.9a1 defect and not a regression — not actionable
+for the release fix-agent**. Root-cause chain, pinpointed:
+
+1. Both reflex 0.9.8 and 0.9.9a1 resolve the *same* `reflex-components-radix==0.9.7`
+   wheel, which pins `library = "@radix-ui/react-form@0.1.14"` — the form component
+   stack is literally identical across the two reflex versions, so a regression is
+   structurally impossible here.
+2. In the packaged radix dist (`.web/node_modules/@radix-ui/react-form/dist/index.mjs`),
+   `FormMessage` computes `name = nameProp ?? fieldContext?.name` and throws exactly
+   this error when falsy. The example's `field_view()` calls `rx.form.field(...)`
+   with NO `name` prop (radix `Form.Field` documents `name` as required), so the
+   field context carries `name: undefined` and the nested nameless `rx.form.message`
+   throws on first render.
+3. Causality proven by the one-line app-side patch above: with `name=field.name`
+   the page renders and an entry submits end-to-end on 0.9.9a1. Reflex renders the
+   radix tree correctly when the app satisfies the radix contract.
+
+Classification: pre-existing app bug in the upstream `reflex-dev/reflex-examples`
+form-designer example (stale w.r.t. the radix react-form 0.1.x name requirement).
+Fix belongs in reflex-examples (add `name=field.name` in `field_view`), not in
+reflex or reflex-enterprise. Marginal framework nicety (not a defect): reflex's
+`FormField.name` is typed optional while radix requires it, so the mistake only
+surfaces at runtime.
+
+## VERIFICATION (adversarial re-check of the vite 8.2.0 configLoader:'native' warning, 2026-08-28)
+
+Independent verifier (verify_up_lorem_form_1). Claim: reflex-generated
+`vite.config.js` triggers vite 8.2.0's "unsupported by configLoader: 'native'"
+deprecation warning via the extensionless `import ... from
+"./vite-plugin-safari-cachebust"` (vite.config.js:4:35), twice per dev run;
+absent on 0.9.8 (vite 8.0.16). Verdict: **CONFIRMED — genuine reflex (reflex-base)
+0.9.9a1 defect, actionable, one-line fix. Not enterprise-related, not an env
+quirk, not app misuse.** Evidence in `verification_viteconfig/`.
+
+What was done (independent of the original agent's app):
+
+1. Source check: the config is generated from
+   `packages/reflex-base/src/reflex_base/compiler/templates.py` line 658:
+   `import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";`
+   The shipped file is `vite-plugin-safari-cachebust.js`, so the import is
+   extensionless. The IDENTICAL line exists in the installed PyPI wheels of BOTH
+   reflex-base 0.9.8 (templates.py:579) and 0.9.9a1 (templates.py:658) — the
+   template did not change; only the pinned vite version did
+   (`constants/installer.py`: 8.0.16 -> 8.2.0).
+2. Fresh repro: `reflex init --template blank` with reflex 0.9.9a1 in a clean dir
+   generates `.web/vite.config.js` with the extensionless import at line 4
+   (`vite.config.js.generated-0.9.9a1`). (The full `reflex run` in the fresh app
+   died in bun install on transient proxy `ConnectionClosed` errors — unrelated
+   env noise — so vite was exercised directly against already-installed `.web`
+   trees below.)
+3. Direct vite 8.2.0 run (`node node_modules/vite/bin/vite.js --port 3724` in a
+   hardlink copy of lorem-stream's installed `.web`): warning emitted TWICE at
+   startup (client + ssr environments), byte-identical to the claimed log lines,
+   including `(vite.config.js:4:35)` and the
+   `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` suppression hint (`vite820_dev.log`).
+   The second pair in 099a1_run1.log lines ~379-388 is the same output re-dumped
+   raw when the frontend process is torn down — still 2 emissions per startup.
+4. Fix validated: adding `.js` to the import (`"./vite-plugin-safari-cachebust.js"`)
+   and re-running the same vite 8.2.0 -> warning GONE, server starts clean
+   (`vite820_dev_fixed.log`).
+5. Baseline: vite 8.0.16 (0.9.8-pinned, from a 0.9.8 app's installed `.web`) with
+   the SAME extensionless import emits NO configLoader warning (`vite8016_dev.log`)
+   — the native-loader compatibility scan simply didn't exist/fire in 8.0.16.
+
+Classification nuances confirmed:
+- "regression vs 0.9.8: false" is correct for the defect itself (template
+  identical in both versions); the *visible warning* is nevertheless new in
+  0.9.9a1, surfaced by the vite 8.0.16 -> 8.2.0 bump. Every freshly-initialized
+  0.9.9a1 app emits it (corroborated in up_counter_todo, up_local_basic,
+  up_upload_clock logs), so it is release-wide, not app- or cluster-specific.
+- Severity low today (warning only, and only visible at `--loglevel debug` or in
+  raw frontend output dumps), but it becomes a hard failure when vite makes
+  `configLoader: 'native'` the default, and it is user-visible noise reflex
+  itself generates.
+- Actionable fix for the fix-agent: add the `.js` extension in
+  `packages/reflex-base/src/reflex_base/compiler/templates.py` (vite config
+  template, safari-cachebust import) — verified sufficient in step 4.
+
+Rerun: see `verification_viteconfig/` logs; commands embedded in this section.

@@ -177,3 +177,115 @@ any FAIL.
   (react-router-dom dropped), vite 8.0.16 -> 8.2.0, postcss override removed.
   Enterprise deps identical across versions (leaflet 1.9.4, react-leaflet 5.0.0,
   react-dnd 16.0.1, react-dnd-html5-backend 16.0.1).
+
+## VERIFICATION (adversarial re-check, 2026-08-28)
+
+Independently verified by a separate agent in fresh PyPI-only venvs
+(`$SB/apps/verify_ent_map_dnd_0/{v099,v098}`, Python 3.11,
+`reflex==0.9.9a1`/`reflex==0.9.8` + `reflex-enterprise==0.9.4`). **VERDICT:
+CONFIRMED** — genuine regression; classified as a **reflex-enterprise
+incompatibility caused by an intentional reflex-base 0.9.9a1 breaking change**
+(PR #6382 "Move more globals to RegistrationContext").
+
+1. **Repro reproduced bit-for-bit.** `repro_finding001_dnd_can_drop.py`:
+   exit 1 on 0.9.9a1 with the exact
+   `AttributeError: module 'reflex.components.dynamic' has no attribute
+   'bundled_libraries'` at `reflex_enterprise/vars.py:143`; exit 0 on 0.9.8
+   (same enterprise 0.9.4 wheel in both envs).
+2. **Mechanism verified in the published wheels.** reflex-base 0.9.8
+   `components/dynamic.py:35` defines module-level
+   `bundled_libraries = list(DEFAULT_BUNDLED_LIBRARIES)` (wildcard re-exported
+   via `reflex.components.dynamic`); reflex-base 0.9.9a1 moves the list onto
+   `RegistrationContext.ensure_context().bundled_libraries` and provides **no
+   module `__getattr__`/alias shim** (checked wheel + release checkout source).
+   `bundle_library()` itself still exists and works on 0.9.9a1.
+   reflex-enterprise 0.9.4 `vars.py:143`
+   (`_validate_and_extend_return_expr`) reads `dynamic.bundled_libraries`.
+3. **All four trigger-scoping claims verified** (`scope_checks.py`, run on both
+   versions): plain lambda without VarData -> OK/OK; `@rxe.static` lambda with
+   bundled-library imports -> OK/OK (validator skipped); state-var lambda ->
+   identical "cannot use hooks" ValueError on BOTH versions (pre-existing, not
+   a regression); plain lambda with bundled-library imports -> OK on 0.9.8,
+   AttributeError on 0.9.9a1. So the shipped demos escape exactly as claimed
+   and the crash needs non-static + import-carrying VarData without hooks.
+4. **Refutations attempted, all failed:**
+   - *Misuse / version mismatch?* No — reflex-enterprise 0.9.4 declares
+     `reflex[db]>=0.9.6` with **no upper bound**, so 0.9.9a1 + 0.9.4 is a legal
+     (and default) resolution, and 0.9.4 is the **newest** reflex-enterprise on
+     PyPI (releases end at 0.9.4/0.9.4a4 — no fixed prerelease exists to pair
+     with 0.9.9a1).
+   - *App bug?* No — the repro uses the officially supported
+     `bundle_library()` mechanism; enterprise's own error message at
+     vars.py:146-150 instructs users to call it, i.e. this validator exists to
+     serve exactly this pattern.
+   - *Pre-existing?* No — 0.9.8 passes; only the state-var variant is
+     pre-existing and it fails identically on both versions.
+   - *Env quirk?* No — clean uv venvs, PyPI-only, provenance of both packages
+     confirmed via `__file__`.
+5. Corroboration: fix branch `origin/claude/reflex-enterprise-shim-mvevpt`
+   (commit 5bda46ce8, not in the release branch) independently restores
+   `dynamic.bundled_libraries` as a deprecated shim and notes every published
+   reflex-enterprise 0.8.0-0.9.4a4 reads this attribute.
+
+Verifier repro dir: `$SB/apps/verify_ent_map_dnd_0/` (`v099/`, `v098/`,
+`repro_finding001_dnd_can_drop.py` copy, `scope_checks.py`). No servers were
+started during verification.
+
+## VERIFICATION — console.error DeprecationWarning on enterprise gate paths (adversarial re-check, 2026-08-28)
+
+Separate verifier for anomalies 1 and 5(b) (console.error DeprecationWarning at
+`reflex_enterprise/app.py:120` login gate and `reflex_enterprise/utils.py:119`
+prod gate on 0.9.9a1). **VERDICT: CONFIRMED** — genuine, reproduced from a
+minimal fresh app in clean PyPI-only venvs. Classified as a
+**reflex-enterprise incompatibility** (latest published enterprise calls a
+reflex-base API deprecated in 0.9.9), **cosmetic/low severity, not a
+functional regression** (gates behave identically on both versions; only the
+warning line is new, and it is the intentional 0.9.9 console-API deprecation
+firing as designed).
+
+Independent repro (minimal `rxe.App`, NOT the demos — `gate_app/` under
+`verify_console_deprecation/`), run matrix with venvs
+`$SB/apps/verify_ent_map_dnd_0/{v099,v098}` (provenance re-confirmed:
+reflex 0.9.9a1/0.9.8 + reflex-enterprise 0.9.4 from PyPI, no CI/REFLEX_ACCESS_TOKEN
+env vars, no `~/.reflex` token on the box):
+
+| run | cmd | result |
+|-----|-----|--------|
+| 0.9.9a1 dev, no CI | `reflex run --frontend-port 3844 --backend-port 8844` | `DeprecationWarning: console.error has been deprecated in version 0.9.9 ... (reflex_enterprise/app.py:120)` then login-gate msg, exit |
+| 0.9.9a1 prod, CI=1 | `reflex run --env prod --frontend-port 3845 --backend-port 3845` | same warning at `reflex_enterprise/utils.py:119` then prod-gate msg, exit |
+| 0.9.8 dev, no CI | same | login-gate msg, **no** DeprecationWarning |
+| 0.9.8 prod, CI=1, single port | same | prod-gate msg, **no** DeprecationWarning |
+
+Logs: `verify_console_deprecation/logs/gate_{099a1,098}_{dev_nologin,prod_ci}.log`.
+Neither licensing gate was circumvented — every run exited at the gate.
+
+Mechanism verified in the published wheels:
+
+- reflex-base 0.9.9a1 `reflex_base/utils/console.py` deprecates the whole
+  `console.*` logging API (`_shim_deprecation`, `deprecation_version="0.9.9"`,
+  removal 1.0) — present in the release checkout source too, i.e. intentional;
+  0.9.8's `console.error` has no shim.
+- reflex-enterprise 0.9.4 wheel calls `console.error` at exactly `app.py:120`
+  (`_check_login`) and `utils.py:119` (`check_prod_mode_in_tier`), both invoked
+  from `AppEnterprise.__post_init__`; the wheel has 18 `console.*` call sites
+  across 9 files, but none fired on the successful CI=1 demo runs (0 console.*
+  deprecations in `map_099a1_run2.log`/`dnd_099a1_run1.log`), so the two
+  error-path sites are the user-visible ones.
+- PyPI re-checked 2026-08-28: newest reflex-enterprise is 0.9.4 (prereleases end
+  at 0.9.4a4), and 0.9.4 declares `reflex[db]>=0.9.6` with no upper bound — so
+  every enterprise user resolving 0.9.9a1 gets this noise and cannot fix it
+  themselves.
+
+Refutations attempted: env quirk (no — clean venvs, warning is plain Python,
+attribution frame points into the enterprise wheel), app bug (no — reproduces
+with a 3-line minimal app; demo code never calls console.error), pre-existing
+(no — 0.9.8 baseline clean on both paths), misuse (no — running logged-out /
+attempting prod are exactly the states these gates exist for). Side note: the
+"prod requires same frontend/backend port" error also occurs on 0.9.8
+(`gate_098_prod_ci.log` first attempt with distinct ports), so that part of
+anomaly 5(a) is not 0.9.9a1-specific.
+
+Actionable fix lives in reflex-enterprise (migrate console.* -> logging, or a
+coordinated 0.9.9-compatible release); nothing to change in reflex-base unless
+the team wants deprecation shims to stay silent for first-party callers.
+No servers were left running by this verification.

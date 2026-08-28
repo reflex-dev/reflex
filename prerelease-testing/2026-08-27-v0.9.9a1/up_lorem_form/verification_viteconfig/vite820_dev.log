@@ -1,0 +1,12 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+3:22:11 PM [vite] (client) Re-optimizing dependencies because vite config has changed
+
+  VITE v8.2.0  ready in 1042 ms
+
+  ➜  Local:   http://localhost:3724/
+  ➜  Network: use --host to expose
