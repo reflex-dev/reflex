@@ -83,17 +83,22 @@ def _sanitize_upload_filename(filename: str) -> str:
         filename: The raw multipart filename.
 
     Returns:
-        A safe relative upload path.
+        A safe relative upload path. Filenames that reduce to nothing or a
+        traversal token (e.g. ``".."``) fall back to ``"upload"``.
     """
     windows_path = PureWindowsPath(filename)
     normalized = filename.replace("\\", "/")
     if normalized.startswith("/") or windows_path.drive:
-        return windows_path.name
-
-    safe_parts = [part for part in normalized.split("/") if part not in {"", ".", ".."}]
-    if safe_parts:
-        return "/".join(safe_parts)
-    return windows_path.name
+        result = windows_path.name
+    else:
+        safe_parts = [
+            part for part in normalized.split("/") if part not in {"", ".", ".."}
+        ]
+        result = "/".join(safe_parts) if safe_parts else windows_path.name
+    if result in {"", ".", ".."}:
+        # No usable segment survived; a bare name keeps the file in the upload dir.
+        return "upload"
+    return result
 
 
 def _upload_file_from_starlette(file: StarletteUploadFile) -> UploadFile:

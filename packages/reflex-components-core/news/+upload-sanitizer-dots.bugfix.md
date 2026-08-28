@@ -1,0 +1,1 @@
+Upload filenames consisting only of traversal or empty segments (e.g. `".."`, `"./../."`) now sanitize to the fallback name `upload` instead of returning the bare traversal token, which pointed the saved path outside the upload directory and crashed the upload handler with a 500.
