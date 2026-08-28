@@ -2613,7 +2613,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
-                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(

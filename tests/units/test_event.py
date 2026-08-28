@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
+from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
@@ -15,10 +16,13 @@ from reflex_base.event import (
     call_event_handler,
     event,
     fix_events,
+    on_submit_event,
+    on_submit_string_event,
 )
-from reflex_base.utils import format
+from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Field, LiteralVar, Var, field
+from rich.console import Console
 
 import reflex as rx
 from reflex.state import BaseState
@@ -1281,3 +1285,33 @@ def test_decentralized_event_global_state():
     """Test the decentralized event with a global state."""
     _ = rx.input(on_change=f("foo"))
     _ = rx.input(on_change=f)
+
+
+def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
+    """The arg-mismatch warning renders bracketed type names without escapes.
+
+    The rich console sink prints records with markup disabled, so the message
+    must not carry rich-markup escapes: the backslashes would print literally.
+    """
+
+    def handle_submit(form_data: dict[str, str]):
+        pass
+
+    handle_submit.__qualname__ = "handle_submit"
+
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
+    # A wide console so the long warning is not line-wrapped mid-assertion.
+    monkeypatch.setattr(log, "_console", Console(highlight=False, width=1000))
+    log.configure()
+    try:
+        call_event_handler(
+            EventHandler(fn=handle_submit),
+            (on_submit_event, on_submit_string_event),
+            key="on_submit",
+        )
+        out, _ = capsys.readouterr()
+    finally:
+        log._reset()
+    assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
+    assert "\\" not in out
