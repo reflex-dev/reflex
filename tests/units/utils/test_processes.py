@@ -2,13 +2,18 @@
 
 import socket
 import threading
+import time
 from contextlib import closing
 from unittest import mock
 
 import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
-from reflex.utils.processes import is_process_on_port
+from reflex.utils.processes import (
+    is_process_on_port,
+    run_concurrently,
+    run_concurrently_context,
+)
 
 
 def test_is_process_on_port_free_port():
@@ -153,3 +158,48 @@ def test_is_process_on_port_concurrent_access():
     assert AppHarness._poll_for(
         lambda: shared is not None and not is_process_on_port(shared)
     )
+
+
+def _raise_system_exit():
+    """Simulate a fatal preflight error in a worker task.
+
+    Raises:
+        SystemExit: Always, mimicking a fatal CLI error path.
+    """
+    raise SystemExit(1)
+
+
+def test_run_concurrently_context_unblocks_main_thread_on_task_failure():
+    """A task raising SystemExit interrupts a blocked with-body and propagates.
+
+    Regression test for `reflex run` hanging forever when a fatal error (e.g.
+    the node version check) exits a frontend worker thread while the backend
+    blocks the main thread.
+    """
+    block = threading.Event()
+    start = time.monotonic()
+
+    with pytest.raises(SystemExit), run_concurrently_context(_raise_system_exit):
+        # Simulate the backend blocking the main thread (e.g. granian serve()).
+        block.wait(timeout=10)
+
+    assert time.monotonic() - start < 5, (
+        "task failure did not interrupt the blocked main thread"
+    )
+
+
+def test_run_concurrently_context_reraises_real_keyboard_interrupt():
+    """A KeyboardInterrupt in the with-body propagates when no task failed."""
+    with pytest.raises(KeyboardInterrupt), run_concurrently_context(lambda: None):
+        raise KeyboardInterrupt
+
+
+def test_run_concurrently_propagates_task_exception():
+    """An exception raised by a task propagates out of run_concurrently."""
+
+    def _fail():
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        run_concurrently(_fail)
