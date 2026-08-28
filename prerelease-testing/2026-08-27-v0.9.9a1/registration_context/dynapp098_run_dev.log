@@ -1,0 +1,510 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/rc098/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dynapp098', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/rc098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3421
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8421
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3421 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3421 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3421 is not in use.
+Debug: Checking if Backend port: 8421 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8421 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8421 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/rc098/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.07s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Applying framework overrides to .web/package.json
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@emotion/react@11.14.0', 'autoprefixer@10.5.4', 'postcss@8.5.23', 
+'postcss-import@16.1.1', '@react-router/dev@7.18.2', 
+'@tailwindcss/typography@0.5.20', '@react-router/fs-routes@7.18.2', 
+'vite@8.0.16', 'tailwindcss@4.3.0', '@tailwindcss/postcss@4.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [145]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.23
+Debug: installed postcss-import@16.1.1
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed tailwindcss@4.3.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: 
+Debug: 173 packages installed [3.57s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'universal-cookie@8.1.2', 'isbot@5.2.1', 'lucide-react@1.26.0', 
+'socket.io-client@4.8.3', 'react@19.2.8', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.2', 'react-dom@19.2.8', 'react-router@7.18.2', 
+'react-router-dom@7.18.2', 'react-helmet@6.1.0', 'sonner@2.0.7', 
+'@react-router/node@7.18.2']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [27]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.1
+Debug: installed lucide-react@1.26.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@7.18.2
+Debug: installed react-router-dom@7.18.2
+Debug: installed react-helmet@6.1.0
+Debug: installed sonner@2.0.7
+Debug: installed @react-router/node@7.18.2
+Debug: 
+Debug: 99 packages installed [1344.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/registration_context/dynapp098/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/registration_context/dynapp098/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 4.94s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/registration_context/dynapp098/dynapp098', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/init.log', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/run_dev.log', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/registration_context/dynapp098/rxconfig.py']
+[INFO] Starting granian (main PID: 26064)
+[INFO] Listening at: http://0.0.0.0:8421
+[INFO] Spawning worker-1 with PID: 26104
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug:   ➜  Local:   http://localhost:3421/
+App running at: http://localhost:3421/
+Backend running at: http://0.0.0.0:8421
+Debug:   ➜  Network: http://192.0.2.2:3421/
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:3421/utils/state.js:168:24), <anonymous>:1:8)
+    at evalReactComponent (http://localhost:3421/utils/state.js:168:24)
+    at http://localhost:3421/app_components/dynapp098/dynapp098.jsx:51:5
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:12
+904:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=6294a393:76
+72:14)
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-initial%22))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-initial%22))%0A%20%20)%0A%7D
+
+Debug: 10:39:09 AM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+resolve module specifier "lucide-react/dist/esm/icons/apple.mjs". Relative 
+references must start with either "/", "./", or "../".
+Debug:  > eval utils/state.js:168:24
+Debug:     166 |    const encodedJs = encodeURIComponent(component);
+Debug:     167 |    const dataUri = "data:text/javascript;charset=utf-8," + 
+encodedJs;
+Debug:     168 |    const module = await eval(`import(dataUri)`);
+Debug:         |                          ^
+Debug:     169 |    return module.default;
+Debug:     170 |  };
+Debug:  > evalReactComponent utils/state.js:168:24
+Debug:  > evalReactComponent app_components/dynapp098/dynapp098.jsx:41:38
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15718:10
+Debug: 
+Debug: 10:39:09 AM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+Debug: 
+Debug: 10:39:09 AM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+Debug: 
+Debug: 10:39:09 AM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-initial%22))%0A%20%20)%0A%7D
+Debug: 
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.dynapp098___dynapp098____dyn_state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+DynState.relabel at 0x7f7bf03431a0>: it's not the same object as 
+dynapp098.dynapp098.DynState.relabel. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+Debug: 10:39:38 AM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-clicked%22))%0A%20%20)%0A%7D
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-clicked%22))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BButton%
+20as%20RadixThemesButton%7D%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2F%
+40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_dyn_button%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_button%22%5D
+%20%3D%20ref_dyn_button%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixT
+hemesButton%2C%20(%7Bid%3A%22dyn-button%22%2Cref%3Aref_dyn_button%7D)%2C%20%22dy
+n-button-clicked%22))%0A%20%20)%0A%7D
+
+Debug: 
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.dynapp098___dynapp098____dyn_state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+DynState.relabel at 0x7f7bf03431a0>: it's not the same object as 
+dynapp098.dynapp098.DynState.relabel. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

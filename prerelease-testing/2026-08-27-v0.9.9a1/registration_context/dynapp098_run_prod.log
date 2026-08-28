@@ -1,0 +1,312 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/rc098/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dynapp098', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'app_name', 'plugins', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/rc098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8423
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8423
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.051 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Fullstack port: 8423 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8423 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8423 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/rc098/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.04s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 274 installs across 370 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'tailwindcss@4.3.0', '@react-router/fs-routes@7.18.2', 'postcss@8.5.23', 
+'postcss-import@16.1.1', '@tailwindcss/typography@0.5.20', 'vite@8.0.16', 
+'@emotion/react@11.14.0', 'autoprefixer@10.5.4', '@react-router/dev@7.18.2', 
+'@tailwindcss/postcss@4.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: installed postcss@8.5.23
+Debug: installed postcss-import@16.1.1
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-router-dom@7.18.2', 'lucide-react@1.26.0', 'react-router@7.18.2', 
+'react-helmet@6.1.0', 'isbot@5.2.1', 'universal-cookie@8.1.2', 'react@19.2.8', 
+'socket.io-client@4.8.3', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.7', '@react-router/node@7.18.2']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-router-dom@7.18.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@7.18.2
+Debug: installed react-helmet@6.1.0
+Debug: installed isbot@5.2.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.7
+Debug: installed @react-router/node@7.18.2
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/registration_context/dynapp098/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/registration_context/dynapp098/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: vite v8.0.16 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: [2K
+Debug: transforming...✓ 356 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.20 kB │ 
+gzip:   0.63 kB
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css    694.55 kB │ 
+gzip:  84.93 kB
+Debug: build/client/assets/reflex-env-U9Kxa9C_.js                   0.30 kB │ 
+gzip:   0.20 kB
+Debug: build/client/assets/_404_._index-BpcScdZx.js                 0.42 kB │ 
+gzip:   0.30 kB
+Debug: build/client/assets/rolldown-runtime-QTnfLwEv.js             0.69 kB │ 
+gzip:   0.42 kB
+Debug: build/client/assets/_index-ncur9kFd.js                       1.77 kB │ 
+gzip:   0.87 kB
+Debug: build/client/assets/react-dom-DJPhu9Mm.js                    3.59 kB │ 
+gzip:   1.37 kB
+Debug: build/client/assets/emotion-react.browser.esm-D66BJTCW.js   21.01 kB │ 
+gzip:   8.31 kB
+Debug: build/client/assets/root-CKI5fulX.js                        43.64 kB │ 
+gzip:  13.28 kB
+Debug: build/client/assets/chunk-62JRHF6Z-Dq1aAwXd.js             128.75 kB │ 
+gzip:  42.50 kB
+Debug: build/client/assets/entry.client-Dhfbak_A.js               182.60 kB │ 
+gzip:  57.88 kB
+Debug: build/client/assets/createLucideIcon-BKM13WPF.js           458.83 kB │ 
+gzip: 118.02 kB
+Debug: 
+Debug: ✓ built in 1.31s
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug: vite v8.0.16 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: [2K
+Debug: transforming...⚠️ Paths with dynamic/splat params cannot be prerendered 
+when using `prerender: true`. You may want to use the `prerender()` API to 
+prerender the following paths:
+Debug:   - *
+Debug: ✓ 24 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css
+Debug: 
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Debug: Removing the server build in 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/registration_context/dynapp098/.web/build/server due to ssr:false
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.96 kB │ 
+gzip:  0.35 kB
+Debug: build/server/assets/__reflex_global_styles-HfJALDEv.css  694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/server/assets/rolldown-runtime-DK3Fl9T5.js           0.15 kB │ 
+gzip:  0.15 kB
+Debug: build/server/assets/reflex-env-U9Kxa9C_.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     42.36 kB │ 
+gzip: 13.13 kB
+Debug: 
+Debug: ✓ built in 1.07s
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/registration_context/dynapp098/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/registration_context/dynapp098/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8423/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 27016)
+[INFO] Listening at: http://0.0.0.0:8423
+[INFO] Spawning worker-1 with PID: 27078
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)
+%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_lab
+el%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label
+%3B%0Aconst%20ref_dyn_relabel%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_relabe
+l%22%5D%20%3D%20ref_dyn_relabel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(js
+x(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdi
+rection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%
+22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3
+A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%20%22label%3A%20sta
+rt%22))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dyn-relabel%22%2ConClick%3A
+((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.dynapp098
+___dynapp098____dyn_state.relabel%22%2C%20(%7B%20%20%7D)%2C%20(%7B%20%20%7D)))%5
+D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dyn_relabel%7D)%2C%20%22relab
+el-inside-dyn%22))))%0A%20%20)%0A%7D
+
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.dynapp098___dynapp098____dyn_state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+DynState.relabel at 0x7fc8a510c2c0>: it's not the same object as 
+dynapp098.dynapp098.DynState.relabel. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.dynapp098___dynapp098____dyn_state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+DynState.relabel at 0x7fc8a510c2c0>: it's not the same object as 
+dynapp098.dynapp098.DynState.relabel. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+[10:45:03] Reflex app stopped.                                    console.py:232

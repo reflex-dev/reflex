@@ -1,0 +1,42 @@
+reflex version: 0.9.8
+python: 3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]
+
+=== PROBE: reflex.config.get_config() plain ===
+OK -> 'Config'
+
+=== PROBE: reflex.config.get_config(reload=True)  [OLD API] ===
+OK -> Config(app_name='', app_module_import=None, loglevel=<LogLevel.DEFAULT: 'default'>, frontend_port=None, frontend_path='', backend_port=None, backend_path='', api_url='http://localhost:8000', deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, async_db_url=None, redis_url=None, telemetry_enabled=False, bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, frontend_compression_formats=['gzip'], frontend_packages=[], state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000, redis_lock_warning_threshold=1000, redis_token_expiration=3600, _non_default_attributes={'telemetry_enabled', 'app_name', '_skip_plugins_checks'}, env_file=None, state_auto_setters=False, default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None, hydrate_fallback=None, plugins=[], disable_plugins=[], transport='websocket')
+
+=== PROBE: from reflex import config; config.get_config(True) positional [OLD API] ===
+OK -> Config(app_name='', app_module_import=None, loglevel=<LogLevel.DEFAULT: 'default'>, frontend_port=None, frontend_path='', backend_port=None, backend_path='', api_url='http://localhost:8000', deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, async_db_url=None, redis_url=None, telemetry_enabled=False, bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, frontend_compression_formats=['gzip'], frontend_packages=[], state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000, redis_lock_warning_threshold=1000, redis_token_expiration=3600, _non_default_attributes={'telemetry_enabled', 'app_name', '_skip_plugins_checks'}, env_file=None, state_auto_setters=False, default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None, hydrate_fallback=None, plugins=[], disable_plugins=[], transport='websocket')
+
+=== PROBE: reflex.config.reload_config()  [NEW API] ===
+RAISED builtins.ImportError: cannot import name 'reload_config' from 'reflex.config' (/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rc098/lib/python3.11/site-packages/reflex/config.py)
+  last tb line:     from reflex.config import reload_config
+
+=== PROBE: reflex_base.config.reload_config() ===
+RAISED builtins.ImportError: cannot import name 'reload_config' from 'reflex_base.config' (/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rc098/lib/python3.11/site-packages/reflex_base/config.py)
+  last tb line:     from reflex_base.config import reload_config
+
+=== PROBE: reflex.components.dynamic.bundled_libraries  [OLD module attr] ===
+OK -> ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+
+=== PROBE: reflex_base.components.dynamic.bundled_libraries  [OLD module attr] ===
+OK -> ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+
+=== PROBE: bundle_library('some-lib@1.2.3') then read ctx.bundled_libraries ===
+RAISED builtins.AttributeError: 'RegistrationContext' object has no attribute 'bundled_libraries'
+  last tb line:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: reset_bundled_libraries() ===
+RAISED builtins.AttributeError: 'RegistrationContext' object has no attribute 'bundled_libraries'
+  last tb line:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: misc third-party touchpoints ===
+OK -> {'rx.App': True, 'reflex.page.page': True, 'reflex.page.DECORATED_PAGES': "defaultdict(<class 'list'>, {})", 'reflex.app.UnevaluatedPage': True}
+
+=== PROBE: RegistrationContext public surface ===
+OK -> {'type': 'RegistrationContext', 'has_fork': False, 'app_prop_before_app': "AttributeError: 'RegistrationContext' object has no attribute 'app'", 'reflex.RegistrationContext': False}
+
+=== PROBE: inspect.signature(get_config) ===
+OK -> '(reload: bool = False) -> reflex_base.config.Config'

@@ -1,0 +1,104 @@
+───────────────────────────── Initializing appone ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [25401]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42909 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+  ➜  Local:   http://localhost:45891/
+
+───────────────────────────── Initializing apptwo ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [25401]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:35409 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+  ➜  Local:   http://localhost:45459/
+
+INFO:     127.0.0.1:34222 - "WebSocket /_event/?token=d0a73874-2ad5-45b4-d222-f6cc1fbbf500&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49944 - "WebSocket /_event/?token=b2bd558d-25a3-4ef0-b5d5-a88beed23923&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:36798 - "WebSocket /_event/?token=d0a73874-2ad5-45b4-d222-f6cc1fbbf500&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49952 - "WebSocket /_event/?token=b2bd558d-25a3-4ef0-b5d5-a88beed23923&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:36814 - "WebSocket /_event/?token=d0a73874-2ad5-45b4-d222-f6cc1fbbf500&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49958 - "WebSocket /_event/?token=b2bd558d-25a3-4ef0-b5d5-a88beed23923&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25401]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25401]
+
+console sim harness1:
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [debug] [vite] connected.
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [log] Disconnect websocket on page navigation
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [debug] [vite] connected.
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [log] Disconnect websocket on page navigation
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [debug] [vite] connected.
+  [log] Disconnect websocket on pagehide
+
+console sim harness2:
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [debug] [vite] connected.
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [log] Disconnect websocket on page navigation
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [debug] [vite] connected.
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [log] Disconnect websocket on page navigation
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+  [debug] [vite] connected.
+  [log] Disconnect websocket on pagehide
+.
+1 passed in 15.75s

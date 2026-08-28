@@ -1,0 +1,13 @@
+[PASS] app1 owns before-fork page - routes=['index', 'page-before-fork']
+[PASS] second App() in same ctx raises ReflexRuntimeError - msg mentions fork(): True
+[PASS] app2 created after fork 
+[PASS] ctx2.app is app2 / ctx1.app is app1 
+[PASS] before-fork @rx.page carried into fork (documented) - app2 routes=['index', 'page-after-fork', 'page-before-fork']
+[PASS] after-fork @rx.page did NOT leak to original ctx - ctx1 decorated routes=['/page-before-fork']
+[PASS] add_page() no bleed 
+[PASS] StateTwo registered on ctx2 only - ctx1 has StateTwo: False
+[PASS] StateOne carried into ctx2 (fork preserves registrations) 
+[PASS] get_config() cached per-context (different instances) - id(cfg1)=0x7f5d92747f10 id(cfg2)=0x7f5d9251ab90
+[PASS] bundle_library in fork does not touch original - ctx1=['react', '@emotion/react', '$/utils/context', '$/utils/state']
+
+11/11 checks passed

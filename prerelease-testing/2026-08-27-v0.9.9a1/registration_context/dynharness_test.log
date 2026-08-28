@@ -1,0 +1,180 @@
+────────────────────────── Initializing dynharnessapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [26331]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42377 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+
+  - import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35). Add the file extension
+
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+  ➜  Local:   http://localhost:36983/
+
+INFO:     127.0.0.1:37252 - "WebSocket /_event/?token=7a991645-fb89-4ba1-9340-26cfe97b8c8a&EIO=4&transport=websocket" [accepted]
+
+CDN requests: (none)
+failed requests: (none)
+console:
+  [log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+  [debug] [vite] connecting...
+  [debug] [vite] connected.
+  [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+.ERROR:    Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 286, in _process_write_queue
+    await self._process_write_queue_delay()
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 245, in _process_write_queue_delay
+    await asyncio.sleep(next_write_in)
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 649, in sleep
+    return await future
+           ^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/server.py", line 81, in serve
+    await self._serve(sockets)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/server.py", line 100, in _serve
+    await self.shutdown(sockets=sockets)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/testing.py", line 320, in _shutdown
+    await self.app_instance._state_manager.close()
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 388, in close
+    await self._write_queue_task
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 288, in _process_write_queue
+    await self._flush_write_queue()
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 307, in _flush_write_queue
+    await self.set_state_for_substate(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 231, in set_state_for_substate
+    await self.set_state_for_substate(token, substate_substate)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 221, in set_state_for_substate
+    pickle_state = token.serialize(substate)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/token.py", line 172, in serialize
+    return state._serialize()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/state.py", line 2196, in _serialize
+    raise e
+reflex_base.utils.exceptions.StateSerializationError: Failed to serialize state reflex___state____state.dynharnessapp___dynharnessapp____dyn_harness_state due to unpicklable object. This state will not be persisted. Pickle error: Can't pickle <function DynHarnessState.relabel at 0x7f9ea07d7c40>: it's not the same object as dynharnessapp.dynharnessapp.DynHarnessState.relabel. Consider `pip install 'dill>=0.3.8'` for more exotic serialization support.
+While pickling object of type function
+While pickling dict value for key 'fn'
+While pickling dict value for key 'handler'
+While pickling index 0 of list
+While pickling dict value for key 'events'
+While pickling dict value for key 'on_click'
+While pickling dict value for key 'event_triggers'
+While pickling index 1 of list
+While pickling dict value for key 'children'
+While pickling dict value for key '__cached_dyn_block_rx_state_'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/starlette/routing.py", line 655, in lifespan
+    await receive()
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+
+=============================== warnings summary ===============================
+test_appharness_dynamic.py::test_dynamic_component_no_cdn
+  /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/_pytest/threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread Thread-4 (_run_backend)
+  
+  Traceback (most recent call last):
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 286, in _process_write_queue
+      await self._process_write_queue_delay()
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 245, in _process_write_queue_delay
+      await asyncio.sleep(next_write_in)
+    File "/usr/lib/python3.11/asyncio/tasks.py", line 649, in sleep
+      return await future
+             ^^^^^^^^^^^^
+  asyncio.exceptions.CancelledError
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "/usr/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+      self.run()
+    File "/usr/lib/python3.11/threading.py", line 982, in run
+      self._target(*self._args, **self._kwargs)
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/testing.py", line 355, in _run_backend
+      context.run(self.backend.run)
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/server.py", line 77, in run
+      return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+      return runner.run(main)
+             ^^^^^^^^^^^^^^^^
+    File "/usr/lib/python3.11/asyncio/runners.py", line 118, in run
+      return self._loop.run_until_complete(task)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/usr/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+      return future.result()
+             ^^^^^^^^^^^^^^^
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/server.py", line 81, in serve
+      await self._serve(sockets)
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/uvicorn/server.py", line 100, in _serve
+      await self.shutdown(sockets=sockets)
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/testing.py", line 320, in _shutdown
+      await self.app_instance._state_manager.close()
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 388, in close
+      await self._write_queue_task
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 288, in _process_write_queue
+      await self._flush_write_queue()
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 307, in _flush_write_queue
+      await self.set_state_for_substate(
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 231, in set_state_for_substate
+      await self.set_state_for_substate(token, substate_substate)
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/disk.py", line 221, in set_state_for_substate
+      pickle_state = token.serialize(substate)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/istate/manager/token.py", line 172, in serialize
+      return state._serialize()
+             ^^^^^^^^^^^^^^^^^^
+    File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/rcx/lib/python3.11/site-packages/reflex/state.py", line 2196, in _serialize
+      raise e
+  reflex_base.utils.exceptions.StateSerializationError: Failed to serialize state reflex___state____state.dynharnessapp___dynharnessapp____dyn_harness_state due to unpicklable object. This state will not be persisted. Pickle error: Can't pickle <function DynHarnessState.relabel at 0x7f9ea07d7c40>: it's not the same object as dynharnessapp.dynharnessapp.DynHarnessState.relabel. Consider `pip install 'dill>=0.3.8'` for more exotic serialization support.
+  While pickling object of type function
+  While pickling dict value for key 'fn'
+  While pickling dict value for key 'handler'
+  While pickling index 0 of list
+  While pickling dict value for key 'events'
+  While pickling dict value for key 'on_click'
+  While pickling dict value for key 'event_triggers'
+  While pickling index 1 of list
+  While pickling dict value for key 'children'
+  While pickling dict value for key '__cached_dyn_block_rx_state_'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 5.52s

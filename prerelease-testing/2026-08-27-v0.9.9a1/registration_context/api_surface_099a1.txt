@@ -1,0 +1,42 @@
+reflex version: 0.9.9a1
+python: 3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]
+
+=== PROBE: reflex.config.get_config() plain ===
+OK -> 'Config'
+
+=== PROBE: reflex.config.get_config(reload=True)  [OLD API] ===
+RAISED builtins.TypeError: get_config() got an unexpected keyword argument 'reload'
+  last tb line:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: from reflex import config; config.get_config(True) positional [OLD API] ===
+RAISED builtins.TypeError: get_config() takes 0 positional arguments but 1 was given
+  last tb line:             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: reflex.config.reload_config()  [NEW API] ===
+OK -> "Config app_name=''"
+
+=== PROBE: reflex_base.config.reload_config() ===
+OK -> 'Config'
+
+=== PROBE: reflex.components.dynamic.bundled_libraries  [OLD module attr] ===
+RAISED builtins.AttributeError: module 'reflex.components.dynamic' has no attribute 'bundled_libraries'
+  last tb line:            ^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: reflex_base.components.dynamic.bundled_libraries  [OLD module attr] ===
+RAISED builtins.AttributeError: module 'reflex_base.components.dynamic' has no attribute 'bundled_libraries'
+  last tb line:            ^^^^^^^^^^^^^^^^^^^^^
+
+=== PROBE: bundle_library('some-lib@1.2.3') then read ctx.bundled_libraries ===
+OK -> ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'some-lib']
+
+=== PROBE: reset_bundled_libraries() ===
+OK -> ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+
+=== PROBE: misc third-party touchpoints ===
+OK -> {'rx.App': True, 'reflex.page.page': True, 'reflex.page.DECORATED_PAGES': "ImportError: cannot import name 'DECORATED_PAGES' from 'PageNamespace' (unknown location)", 'reflex.app.UnevaluatedPage': True}
+
+=== PROBE: RegistrationContext public surface ===
+OK -> {'type': 'RegistrationContext', 'has_fork': True, 'app_prop_before_app': 'ReflexRuntimeError: No App is registered with the active RegistrationContext.', 'reflex.RegistrationContext': False}
+
+=== PROBE: inspect.signature(get_config) ===
+OK -> '() -> reflex_base.config.Config'
