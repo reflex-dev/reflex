@@ -919,7 +919,8 @@ def get_config(reload: bool = False) -> Config:
             deprecation_version="0.9.9",
             removal_version="1.0",
         )
-        return reload_config()
+        with _load_config_lock:
+            return reload_config()
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
         # Serialize check/load/set so threads sharing a context load once.
