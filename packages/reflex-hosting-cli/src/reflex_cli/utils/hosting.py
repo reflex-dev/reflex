@@ -1152,6 +1152,7 @@ def set_app_provider(
     provider: str,
     client: AuthenticatedClient,
     provider_account_id: str | None = None,
+    service_name: str | None = None,
 ) -> str:
     """Choose which hosting platform an app deploys to.
 
@@ -1168,6 +1169,9 @@ def set_app_provider(
             through (GCP only). None keeps the connection the app already has
             when it stays on GCP, and means the org's default connection when
             GCP is first chosen.
+        service_name: The Cloud Run service name the app deploys as (GCP only).
+            None keeps the app's current name, or lets the server mint one from
+            the app name; the server refuses a change once the app has deployed.
 
     Returns:
         The provider now set on the app, or a ``"... failed: ..."`` string on
@@ -1184,6 +1188,8 @@ def set_app_provider(
     payload: dict[str, Any] = {"provider": provider}
     if provider_account_id is not None:
         payload["provider_account_id"] = provider_account_id
+    if service_name is not None:
+        payload["service_name"] = service_name
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/provider"),
         json=payload,

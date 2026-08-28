@@ -59,7 +59,8 @@ from reflex_cli.utils.cli_options import log_options
 )
 @click.option(
     "--hostname",
-    help="The hostname of the frontend.",
+    help="The hostname of the frontend. On the deploy that first lands the "
+    "app on GCP, it also names the app's Cloud Run service.",
 )
 @click.option(
     "--provider",
