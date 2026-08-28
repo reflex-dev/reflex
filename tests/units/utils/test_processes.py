@@ -183,6 +183,8 @@ def test_run_concurrently_context_unblocks_main_thread_on_task_failure():
         # Simulate the backend blocking the main thread (e.g. granian serve()).
         block.wait(timeout=10)
 
+    # The failed task must interrupt the main thread well before the body's
+    # own 10s wait expires; 5 seconds leaves headroom on slow CI runners.
     assert time.monotonic() - start < 5, (
         "task failure did not interrupt the blocked main thread"
     )
@@ -203,3 +205,78 @@ def test_run_concurrently_propagates_task_exception():
 
     with pytest.raises(RuntimeError, match="boom"):
         run_concurrently(_fail)
+
+
+def test_run_concurrently_context_no_interrupt_after_body_exception():
+    """A task failing after the body raised must not interrupt the caller.
+
+    The executor is shut down without waiting, so a task can fail after the
+    context has unwound; the caller's own exception must propagate untouched
+    instead of a stray KeyboardInterrupt landing in unrelated code.
+    """
+    task_may_fail = threading.Event()
+    interrupt_callback_ran = threading.Event()
+
+    def _fail_on_release():
+        # Hold the failure until the context has fully unwound below.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+        raise SystemExit(1)
+
+    with (
+        pytest.raises(ValueError, match="body failed"),
+        run_concurrently_context(_fail_on_release) as tasks,
+    ):
+        # Done callbacks run in registration order, so this fires strictly
+        # after the context's own interrupt callback has run for the task.
+        tasks[0].add_done_callback(lambda _t: interrupt_callback_ran.set())
+        msg = "body failed"
+        raise ValueError(msg)
+
+    # The context has unwound (in_body cleared); only now may the task fail.
+    task_may_fail.set()
+    assert interrupt_callback_ran.wait(timeout=DEFAULT_TIMEOUT), (
+        "worker task did not finish"
+    )
+    # A stale interrupt would already have been sent by the callback above;
+    # give signal delivery a moment so it would surface as KeyboardInterrupt
+    # here (delivery latency is microseconds; 0.1s is generous headroom).
+    time.sleep(0.1)
+
+
+def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
+    """A failure racing context entry must not leave the interrupt armed.
+
+    With one task already failed and another still running, the pre-body
+    failure check can raise before the body is ever entered; the surviving
+    task's later failure must not interrupt the caller after the context has
+    unwound. When the fast failure instead loses the race to context entry,
+    the body path exercises the same invariant, so both orderings assert
+    identically.
+    """
+    task_may_fail = threading.Event()
+    late_finished = threading.Event()
+
+    def _fail_fast():
+        raise SystemExit(2)
+
+    def _fail_on_release():
+        try:
+            task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+            raise SystemExit(3)
+        finally:
+            late_finished.set()
+
+    with (
+        pytest.raises(SystemExit),
+        run_concurrently_context(_fail_fast, _fail_on_release),
+    ):
+        # Reached only when the fast failure loses the race to context entry;
+        # its interrupt then surfaces here and converts to the task's error.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+
+    # The context has unwound; only now may the surviving task fail.
+    task_may_fail.set()
+    assert late_finished.wait(timeout=DEFAULT_TIMEOUT), "task did not finish"
+    # The interrupt callback runs within microseconds of the task finishing;
+    # a stale interrupt would surface as KeyboardInterrupt in this window.
+    time.sleep(0.1)

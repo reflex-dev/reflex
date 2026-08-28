@@ -20,9 +20,13 @@ from reflex_base.event import (
     on_submit_string_event,
 )
 from reflex_base.utils import format, log
-from reflex_base.utils.exceptions import EventHandlerValueError
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from rich.console import Console
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
@@ -146,6 +150,54 @@ def test_call_event_handler_partial():
         format.format_event(event_spec2)
         == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
+
+
+_PayloadAlias = TypeAliasType("_PayloadAlias", dict[str, str])
+_NameAlias = TypeAliasType("_NameAlias", str)
+
+
+def test_call_event_handler_alias_annotated_arg():
+    """An uncalled handler with TypeAliasType-annotated args works as a trigger.
+
+    The trigger comparison runs typehint_issubclass on the raw annotations, so
+    a PEP 695 alias must compare like the annotation it stands for instead of
+    failing with an opaque TypeError at page compile; a genuine mismatch still
+    raises the same EventHandlerArgTypeMismatchError a plain annotation does.
+    """
+
+    class AliasTriggerState(BaseState):
+        @event
+        def on_plain(self, payload: dict[str, str], name: str):
+            pass
+
+        @event
+        def on_alias(self, payload: _PayloadAlias, name: _NameAlias):
+            pass
+
+        @event
+        def on_mismatch(self, payload: _NameAlias, name: _NameAlias):
+            pass
+
+    def args_spec(
+        payload: Var[dict[str, str]], name: Var[str]
+    ) -> tuple[Var[dict[str, str]], Var[str]]:
+        return (payload, name)
+
+    plain_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_plain), args_spec
+    )
+    alias_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_alias), args_spec
+    )
+    assert len(alias_spec.args) == len(plain_spec.args) == 2
+    for (alias_arg, alias_value), (plain_arg, plain_value) in zip(
+        alias_spec.args, plain_spec.args, strict=True
+    ):
+        assert alias_arg.equals(plain_arg)
+        assert alias_value.equals(plain_value)
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        call_event_handler(cast(EventHandler, AliasTriggerState.on_mismatch), args_spec)
 
 
 def test_state_event_handler_type_hints_are_stable_after_class_patch():
