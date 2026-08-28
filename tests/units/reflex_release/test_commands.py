@@ -49,6 +49,27 @@ def make_internal(repo: Path, package: str) -> Config:
     return load_config(repo)
 
 
+def make_never_published(repo: Path, package: str) -> Config:
+    """Mark a package as never published and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``never-publish-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\nnever-publish-packages = ["{package}"]',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
 def fragment(config: Config, package: str, name: str, text: str = "Something.") -> None:
     """Write a news fragment for a package.
 
@@ -227,6 +248,36 @@ def test_plan_rejects_internal_packages(
         commands.cmd_plan(reloaded, "release-minor", "widget-core")
 
 
+def test_plan_rejects_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_plan(reloaded, "release-minor", "widget-core")
+
+
+def test_prepare_publish_refuses_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A manual publish dispatch is the only way to reach one, so it must fail.
+
+    No release selection offers a never-published package and changelog
+    detection skips it, which leaves typing it into the publish workflow's
+    package field — refused here, in the first unprivileged job, rather than at
+    verify-dist after a build.
+    """
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_prepare_publish(reloaded, "widget-core", "1.0.0", "main")
+
+
+def test_packages_omits_never_published_packages(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture
+) -> None:
+    commands.cmd_packages(make_never_published(repo, "widget-core"))
+    assert capsys.readouterr().out.split() == ["mypkg"]
+
+
 def test_materialize_writes_the_changelog(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
@@ -348,7 +399,7 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     assert outputs()["any"] == "true"
 
 
-def test_commit_changelogs_leaves_unrelated_work_alone(
+def test_commit_materialized_leaves_unrelated_work_alone(
     config: Config, repo: Path
 ) -> None:
     """A release commit carries the changelogs and nothing a human was mid-way through."""
@@ -360,8 +411,8 @@ def test_commit_changelogs_leaves_unrelated_work_alone(
     set_changelog(config, "widget-core", "## v0.9.0 (2026-01-01)\n\nNot mine.\n")
     fragment(config, "widget-core", "3.bugfix.md")
 
-    commands._commit_changelogs(
-        config, [{"package": "mypkg", "next": "1.0.0"}], "Materialize changelogs"
+    commands._commit_materialized(
+        config, [{"package": "mypkg", "next": "1.0.0"}], [], "Materialize changelogs"
     )
 
     assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
@@ -381,9 +432,10 @@ def test_release_commit_removes_the_fragments_it_consumed(
     commands.cmd_plan(config, "release-minor", "widget-core")
     commands.cmd_materialize(config, "release-minor", outputs()["releases"])
 
-    commands._commit_changelogs(
+    commands._commit_materialized(
         config,
         [{"package": "widget-core", "next": "0.1.0"}],
+        [],
         "Materialize changelogs",
     )
 
@@ -780,7 +832,7 @@ def test_push_prerelease_summary_links_the_branch(
     config: Config, dispatched: pytest.MonkeyPatch, summary: Callable[[], str]
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     branch = next(
@@ -803,7 +855,7 @@ def test_push_prerelease_annotates_the_branch_url(
     capsys: pytest.CaptureFixture,
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     notices = [
         line
@@ -819,7 +871,7 @@ def test_dispatch_summaries_degrade_outside_actions(
 ) -> None:
     dispatched.delenv("GITHUB_REPOSITORY")
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     assert "](" not in text
@@ -834,7 +886,7 @@ def test_open_release_pr_summary_links_the_pull_request(
 ) -> None:
     url = "https://github.example.com/acme/widgets/pull/42"
     dispatched.setattr(commands, "gh_output", lambda *args, **kwargs: url)
-    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN))
+    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN), "")
     text = summary()
     assert f"Pull request: [#42]({url})" in text
     assert "/tree/release/release-minor-" in text
@@ -1004,3 +1056,151 @@ def test_post_release_rejects_an_unknown_package(
     monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 0)
     with pytest.raises(ReleaseError, match="unknown package"):
         commands.cmd_post_release(reloaded, "v1.2.3", "ghost", "1.2.3")
+
+
+def dev_pin(repo: Path, requirement: str) -> Config:
+    """Replace the root package's dependency and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        requirement: The requirement string to declare instead.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            '"widget-core >= 0.1.0"', f'"{requirement}"'
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_plan_holds_back_an_auto_selected_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs, summary: Callable[[], str]
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    commands.cmd_plan(reloaded, "release-minor", "")
+    # The dependency can still be released; only its dependent is held back.
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["widget-core"]
+    assert "### Held back" in summary()
+
+
+def test_plan_rejects_an_explicit_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+
+
+def test_plan_holds_back_a_whole_lockstep_group(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Members only ever release together, so one blocker holds back the group."""
+    write_lockstep(repo)
+    # Not the lockstep sibling, which pin-lockstep rewrites at build time.
+    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    with pytest.raises(ReleaseError, match="every auto-selected package"):
+        commands.cmd_plan(reloaded, "release-minor", "")
+
+
+def test_plan_accepts_a_pin_a_prerelease_can_satisfy(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0a1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    # A final version cannot take the alpha; the alpha train can.
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_plan(reloaded, "new-prerelease-minor", "mypkg")
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["mypkg"]
+
+
+def test_materialize_lifts_the_dev_pin_it_can_resolve(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "4.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+
+    assert '"widget-core >= 0.2.0"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_release_commit_carries_the_lifted_pins(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "5.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    # The commit runs as its own process, so materialize hands it the paths.
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
+    commands._commit_materialized(
+        reloaded,
+        [{"package": "mypkg", "next": "0.1.0"}],
+        json.loads(outputs()["repinned"]),
+        "Materialize",
+    )
+
+    assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
+        "CHANGELOG.md",
+        "news/5.feature.md",
+        "pyproject.toml",
+    ]
+
+
+def test_release_commit_stages_no_pyproject_when_no_pin_moved(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Only what the pin upgrade actually rewrote is staged beside the changelogs."""
+    fragment(config, "mypkg", "6.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(config, "release-minor", "mypkg")
+    commands.cmd_materialize(config, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == []
+
+    commands._commit_materialized(
+        config, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
+    )
+
+    assert (
+        "pyproject.toml"
+        not in git(repo, "show", "--name-only", "--format=", "HEAD").split()
+    )
+
+
+def test_release_commit_refuses_to_strand_a_lifted_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A workflow that predates the `repinned` output would otherwise commit the
+    changelog bump with the old pin, and die at the publish-time gate.
+    """
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "7.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
+
+    # The delivery step of an un-synced workflow passes nothing through.
+    with pytest.raises(ReleaseError, match="modified but unstaged"):
+        commands._commit_materialized(
+            reloaded, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
+        )

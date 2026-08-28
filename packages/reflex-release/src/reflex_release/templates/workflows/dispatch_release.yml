@@ -12,6 +12,12 @@ name: Dispatch release
 # topped by an alpha (the train's fragments are already consumed). Lockstep
 # groups share one checkbox: their members only ever release together.
 #
+# Materializing also lifts each released package's unshippable dependency
+# floors — a *.dev pin, and a prerelease pin when the version is final — to the
+# earliest published version that satisfies them, re-locking the repository so
+# the pins and the lock file land with the changelog bump. A package whose
+# floor no published version satisfies is held back from the release instead.
+#
 # The package list is generated from [tool.reflex-release] — after adding or
 # removing a package, re-run `@@CLI@@ sync`.
 #
@@ -81,6 +87,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
       - name: Plan versions
         id: plan
         env:
@@ -92,6 +99,7 @@ jobs:
         shell: bash
         run: @@CLI@@ plan
       - name: Materialize changelogs
+        id: materialize
         env:
           ACTION: ${{ inputs.action }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
@@ -104,6 +112,7 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+          REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}
         shell: bash
         run: @@CLI@@ push-prerelease
       - name: Open release pull request
@@ -113,5 +122,6 @@ jobs:
           ACTION: ${{ inputs.action }}
           REF_NAME: ${{ github.ref_name }}
           RELEASES_JSON: ${{ steps.plan.outputs.releases }}
+          REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}
         shell: bash
         run: @@CLI@@ open-release-pr
