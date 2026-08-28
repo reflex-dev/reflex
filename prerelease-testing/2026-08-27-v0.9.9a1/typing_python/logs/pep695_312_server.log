@@ -1,0 +1,379 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='pep695app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 'loglevel'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/typ312/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3340
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8340
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.044 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Frontend port: 3340 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3340 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3340 is not in use.
+Debug: Checking if Backend port: 8340 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8340 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8340 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.10s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 425 installs across 270 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@16.1.1', 'autoprefixer@10.5.4', 'postcss@8.5.23', 
+'@react-router/dev@8.3.0', 'vite@8.2.0', '@react-router/fs-routes@8.3.0', 
+'@emotion/react@11.14.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss-import@16.1.1
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-router@8.3.0', 'isbot@5.2.1', 'react-dom@19.2.8', 
+'@radix-ui/themes@3.3.0', '@react-router/node@8.3.0', 'sonner@2.0.7', 
+'universal-cookie@8.1.2', 'react@19.2.8', 'socket.io-client@4.8.3', 
+'react-error-boundary@6.1.2', '@radix-ui/react-form@0.1.14', 
+'react-helmet@6.1.0', 'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-router@8.3.0
+Debug: installed isbot@5.2.1
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed @react-router/node@8.3.0
+Debug: installed sonner@2.0.7
+Debug: installed universal-cookie@8.1.2
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @radix-ui/react-form@0.1.14
+Debug: installed react-helmet@6.1.0
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/typing_python/pep695app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/typing_python/pep695app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/typing_python/pep695app/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/pep695app', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/rxconfig.py']
+[INFO] Starting granian (main PID: 23234)
+[INFO] Listening at: http://0.0.0.0:8340
+[INFO] Spawning worker-1 with PID: 23263
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug:   ➜  Local:   http://localhost:3340/
+App running at: http://localhost:3340/
+Backend running at: http://0.0.0.0:8340
+Debug:   ➜  Network: http://192.0.2.2:3340/  eth0
+Debug: 10:10:43 AM [vite] (ssr) connected.
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 832, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 823, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 638, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 307, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/pep695app/pep695app.py", line 44, in choose_key
+    self.key = value
+    ^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex/state.py", line 1544, in 
+__setattr__
+    if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/utils/types.py", line 872,
+in _isinstance
+    return isinstance(obj, cls)
+           ^^^^^^^^^^^^^^^^^^^^
+TypeError: isinstance() arg 2 must be a type, a tuple of types, or a union
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 832, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 823, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 638, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 307, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/pep695app/pep695app.py", line 44, in choose_key
+    self.key = value
+    ^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex/state.py", line 1544, in 
+__setattr__
+    if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/utils/types.py", line 872,
+in _isinstance
+    return isinstance(obj, cls)
+           ^^^^^^^^^^^^^^^^^^^^
+TypeError: isinstance() arg 2 must be a type, a tuple of types, or a union
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 832, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 823, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 638, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 307, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/pep695app/pep695app.py", line 44, in choose_key
+    self.key = value
+    ^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex/state.py", line 1544, in 
+__setattr__
+    if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/utils/types.py", line 872,
+in _isinstance
+    return isinstance(obj, cls)
+           ^^^^^^^^^^^^^^^^^^^^
+TypeError: isinstance() arg 2 must be a type, a tuple of types, or a union
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 832, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 823, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 638, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 307, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/typing_python/pep695app/pep695app/pep695app.py", line 66, in add_entry
+    self.entries = [*self.entries, item]
+    ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex/state.py", line 1544, in 
+__setattr__
+    if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/typ312/lib/python3.12/site-packages/reflex_base/utils/types.py", line 969,
+in _isinstance
+    return isinstance(obj, get_base_class(cls))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: isinstance() arg 2 must be a type, a tuple of types, or a union
+
+

@@ -1,0 +1,15 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/pyd_bare/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 367, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/pyd_bare/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 276, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/pyd_bare/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 243, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/pyd_bare/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 203, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/pydantic_optional/bare_pyd_fail/pyd_app/pyd_app.py", line 3, in <module>
+    import pydantic
+ModuleNotFoundError: No module named 'pydantic'
