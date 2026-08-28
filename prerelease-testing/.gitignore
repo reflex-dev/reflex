@@ -1,0 +1,11 @@
+.web/
+node_modules/
+.states/
+*.db
+__pycache__/
+.venv/
+venv/
+assets/external/
+reflex.lock/
+bun.lock
+package-lock.json
