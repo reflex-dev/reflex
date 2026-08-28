@@ -1,0 +1,30 @@
+{
+  "/": {
+    "actions": [
+      "index links=17"
+    ],
+    "console": [],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 7.2,
+    "all_console_count": 4
+  },
+  "/formatters": {
+    "actions": [
+      "initial rows=5",
+      "tab 'State' clicked",
+      "tab 'API' clicked",
+      "tab 'Inline' clicked",
+      "clicked in-grid button, now='1\\n(00:00)'",
+      "clicked header (sort)",
+      "first_cell_after_sort='John'"
+    ],
+    "console": [],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 8.4,
+    "all_console_count": 5
+  }
+}

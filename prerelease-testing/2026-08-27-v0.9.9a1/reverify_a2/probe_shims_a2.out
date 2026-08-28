@@ -1,0 +1,23 @@
+reflex 0.9.9a2 | reflex-base 0.9.9a2 | reflex-enterprise 0.9.4
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. (probe_shims_a2.py:53)
+[PASS] dynamic.bundled_libraries (FINDING-001/022 shim) -> ('list', ['$/utils/context', '$/utils/state', '@emotion/react', 'react'], 4)
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(probe_shims_a2.py:58)
+[PASS] reflex.page.DECORATED_PAGES import (FINDING-023 shim) -> 'defaultdict'
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_enterprise/vars.py:143)
+[PASS] LiteralLambdaVar.create bare (FINDING-021: no AttributeError) -> "designed 'not bundled' ValueError (matches 0.9.8 behavior)"
+[PASS] LiteralLambdaVar.create after bundle_library (FINDING-021) -> ('LiteralLambdaVar', "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __r")
+
+SUMMARY: ALL PASS

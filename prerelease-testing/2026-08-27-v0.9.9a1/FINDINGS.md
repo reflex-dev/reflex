@@ -486,3 +486,42 @@ reflex-components-* package plus gridjs (28 artifacts total). Result: PASS.
 Rerun: scripts inline in session history; artifacts fetched from
 `https://pypi.org/pypi/<pkg>/<ver>/json` urls, inspected with zipfile/tarfile,
 hashes vs `git show origin/main:pyi_hashes.json`.
+
+## 0.9.9a2 re-verification (enterprise)
+
+2026-08-28, fresh venv (`uv venv --python 3.11`), PyPI-only: `reflex==0.9.9a2`
+(pulls reflex-base 0.9.9a2) + `reflex-enterprise==0.9.4`. Provenance asserted at the start
+of every run (`reflex.__file__`/`reflex_enterprise.__file__` inside the venv; all python
+invocations from neutral dirs, never cwd=/home/user/reflex[-enterprise]). Working dir
+`$SB/apps/reverify_ent/`; ports 3202-3205/8202-8205; one server at a time, all killed and
+ports verified free afterwards. Artifacts: `reverify_a2/` (scripts, logs, screenshots,
+NOTES.md with rerun commands).
+
+Verdict: **the a2 shims (PR #6967 `bundled_libraries`, PR #6985 `DECORATED_PAGES` +
+`get_config(reload=True)`) fully restore reflex-enterprise 0.9.4 compatibility.**
+FINDING-021 (CRITICAL), FINDING-022 (HIGH) and FINDING-023 (HIGH) are all FIXED on
+0.9.9a2; the mantine regression sweep shows no new a1->a2 breakage. Each shim emits a
+clear, correctly-attributed DeprecationWarning exactly once per process (deduped) — no
+noise problem.
+
+| Check | 0.9.9a1 | 0.9.9a2 | Evidence |
+| --- | --- | --- | --- |
+| FINDING-021 minimal e2e: `REPRO_LAMBDA=1` rxe.ag_grid app (lambda `cell_renderer`) | compile crash (`VarAttributeError`) | **FIXED** — compiles, serves; Chromium: 3 lambda-rendered `<p>` cells, tomato rgb(255,99,71), sort works, 0 console/page errors; pixel-equal to the 0.9.8 baseline shot | `reverify_a2/drive_minimal_a2.py` -> RESULT PASS; `logs/minimal_lambda_a2.log` (0 tracebacks); `shots/min_lambda_a2.png` vs `ent_aggrid/shots_minimal/min_lambda_098.png` |
+| FINDING-021 demo: fixed ag_grid demo (`ent_aggrid/demo_098` copy, formatters ENABLED) `/formatters` | whole-app compile dead | **FIXED** — compiles with formatters page; `/` (17 links) + `/formatters` driver report action-for-action identical to the 0.9.8 baseline (5 rows, State/API/Inline tabs, memo `row_counter` button -> `'1\n(00:00)'`, sort), 0 errors | `shots/shots_agdemo_a2/report.json` == `ent_aggrid/shots_098/report.json` for those routes; `formatters.png` shows flag/currency/reversed formatters rendered |
+| FINDING-022 dnd non-static `can_drop` + `bundle_library` trigger | exit 1, AttributeError at `reflex_enterprise/vars.py:143` | **FIXED** — exit 0, `DropTarget` created; one deprecation warning | `ent_map_dnd/repro_finding001_dnd_can_drop.py` on a2 venv -> `reverify_a2/repro_dnd_can_drop_a2.out` |
+| FINDING-023 flow demo UNMODIFIED (`from reflex.page import DECORATED_PAGES`) | ImportError at flow.py:2, worker dead | **FIXED** — imports/compiles unmodified (byte-identical to `/home/user/reflex-enterprise/demos/flow`); index lists all 6 pages via DECORATED_PAGES; 11/11 Playwright checks incl. `/overview` node drag round-trip + toolbar emoji, connection-limit, edge-drop node creation; 0 console/page errors, 0 4xx/5xx | `ent_misc/drive_flow.py` -> 11/11 PASS; `reverify_a2/logs/flow_a2.log`; `shots/shots_flow_a2/` |
+| Regression sweep: mantine demo (worked on a1) | 11/11 | **still 11/11** — dates calendar/DatePicker/TimeInput toasts, pills, tags round-trips, dropdown nav; clean console | `ent_misc/drive_mantine.py` -> 11/11 PASS; `reverify_a2/logs/mantine_a2.log` |
+| Offline shim probes | AttributeError / ImportError / TypeError | **all PASS**: `dynamic.bundled_libraries` readable (list); `from reflex.page import DECORATED_PAGES` -> defaultdict; bare `LiteralLambdaVar.create` now reaches rxe's DESIGNED "Library @radix-ui/themes is not bundled" ValueError (matching 0.9.8 behavior outside compile context, per `ent_aggrid` verification pt 4) and creates fine after `bundle_library()`; bonus: `get_config(reload=True)` works again (FINDING-008 half-fixed at the API surface) | `reverify_a2/probe_shims_a2.py` / `.out` |
+
+Deprecation-warning noise (per `--loglevel debug` server log, shim warnings deduped per
+process; 2 = compile process + backend worker): minimal app 1x `bundled_libraries`;
+ag_grid demo 2x `bundled_libraries`; flow demo 2x `DECORATED_PAGES`. Everything else in
+the logs is pre-existing demo-hygiene noise already present on a1/0.9.8 (`@rx.memo`
+without annotations x10, `App(theme=...)`, `ArrayVar.foreach`, string `disable_plugins`,
+implicit Radix Themes, `console.error/info` from rxe internals, `reflex.Model`).
+
+Not re-tested (unchanged expectations): FINDING-024 (AttributeError masking — pre-existing,
+orthogonal), FINDING-025 (shipped ag_grid demo's stale `$/utils/components` bundle path —
+broken on 0.9.8 too; the a2 runs used the fixed `demo_098` copy), FINDING-026 (cookies/sync
+404 — enterprise-side, both versions), FINDING-029 (console.* deprecation on rxe gate
+paths — still expected, observed benignly in the agdemo log).

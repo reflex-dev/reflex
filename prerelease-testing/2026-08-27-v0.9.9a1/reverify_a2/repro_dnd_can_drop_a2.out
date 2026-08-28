@@ -1,0 +1,8 @@
+reflex 0.9.9a2 | reflex-enterprise 0.9.4
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_enterprise/vars.py:143)
+OK: drop_target with bundled-library can_drop lambda created: DropTarget

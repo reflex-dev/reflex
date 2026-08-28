@@ -1,0 +1,558 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/config.py
+:22)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/config.py
+'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'disable_plugins', 'loglevel', 
+'telemetry_enabled', 'async_db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/config.py
+'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'disable_plugins', 'loglevel', 
+'telemetry_enabled', 'async_db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing ag_grid ─────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.042 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/.templates/web 
+to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/agdemo/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 26270531735494753549227618531376929487.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized ag_grid. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3205
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8205
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.032 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Frontend port: 3205 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3205 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3205 is not in use.
+Debug: Checking if Backend port: 8205 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8205 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8205 is not in use.
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/app.py:15
+4)
+Info: Single port proxy mode enabled
+Debug: Registered lifespan task: proxy_middleware
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/component
+s/ag_grid/aggrid.py:1736)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_components_radix/plu
+gin.py:72)
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py:1
+43)
+Debug: [timing] Compile pages: 1.47s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 44/43 0:00:01
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@react-router/fs-routes@8.3.0', 'postcss@8.5.23', 
+'postcss-import@16.1.1', 'vite@8.2.0', 'autoprefixer@10.5.4', 
+'@react-router/dev@8.3.0', '@emotion/react@11.14.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [125]
+Debug: warn: incorrect peer dependency "react-router@8.3.1"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed postcss@8.5.23
+Debug: installed postcss-import@16.1.1
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: 140 packages installed [2.55s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-error-boundary@6.1.2', 'ag-grid-enterprise@34.3.1', 'sonner@2.0.7', 
+'lucide-react@1.26.0', '@radix-ui/react-form@0.1.14', 'react-dom@19.2.8', 
+'@react-router/node@8.3.0', 'isbot@5.2.1', 'moment@2.30.1', 
+'universal-cookie@8.1.2', 'react-helmet@6.1.0', 'react-router@8.3.0', 
+'ag-charts-enterprise@11.2.4', '@radix-ui/themes@3.3.0', 
+'ag-grid-community@34.3.1', '@mantine/core@8.3.9', 'socket.io-client@4.8.3', 
+'react-moment@1.2.2', 'react-syntax-highlighter@16.1.1', 'react@19.2.8', 
+'ag-grid-react@34.3.1']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [29]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-error-boundary@6.1.2
+Debug: installed ag-grid-enterprise@34.3.1
+Debug: installed sonner@2.0.7
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/react-form@0.1.14
+Debug: installed react-dom@19.2.8
+Debug: installed @react-router/node@8.3.0
+Debug: installed isbot@5.2.1
+Debug: installed moment@2.30.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed react-router@8.3.0
+Debug: installed ag-charts-enterprise@11.2.4
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed ag-grid-community@34.3.1
+Debug: installed @mantine/core@8.3.9
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-moment@1.2.2
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed react@19.2.8
+Debug: installed ag-grid-react@34.3.1
+Debug: 
+Debug: 160 packages installed [1.98s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/agdemo/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/reverify_ent/agdemo/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 4.56s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/reverify_ent/agdemo/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/alembic.ini', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/reflex.db', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/alembic', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/rxconfig.py', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/agdemo/ag_grid']
+[INFO] Starting granian (main PID: 3423)
+[INFO] Listening at: http://0.0.0.0:8205
+[INFO] Spawning worker-1 with PID: 3485
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug: Registered lifespan task: proxy_middleware
+Debug: BE Evaluating stateful page: model
+Debug:   ➜  Local:   http://localhost:3205/
+App running at: http://localhost:3205/
+Backend running at: http://0.0.0.0:8205
+Debug:   ➜  Network: http://192.0.2.2:3205/  eth0
+Debug: BE Evaluating stateful page: model-auth
+Debug: BE Evaluating stateful page: model-ssrm
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/component
+s/ag_grid/aggrid.py:1736)
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/proxy.py:
+135)
+Unable to find the base Starlette app. Proxying will not be enabled.
+Debug: Started lifespan task: proxy_middleware as asynccontextmanager
+[INFO] Started worker-1
+Debug: 8:47:20 PM [vite] (client) [optimizer] bundling dependencies...
+Debug: 8:47:24 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py:1
+43)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 829, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 820, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 637, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/base_state_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/base_state_processor.py", line 303, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex/state.py", line 
+2310, in hydrate
+    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/context.p
+y", line 132, in emit_delta
+    await self.emit_delta_impl(self.token, delta)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 176, in emit_delta
+    await event_namespace.emit_update(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex/app.py", line 2064, 
+in emit_update
+    await self.emit(str(constants.SocketEvent.EVENT), update, 
+to=socket_record.sid)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_namespace.py
+", line 71, in emit
+    return await self.server.emit(event, data=data, to=to, room=room,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_server.py", 
+line 180, in emit
+    await self.manager.emit(event, data, namespace, room=room,
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_manager.py",
+ line 40, in emit
+    encoded_packet = pkt.encode()
+                     ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/packet.py", line 
+64, in encode
+    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/utils/format.py
+", line 734, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/utils/serialize
+rs.py", line 176, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 265, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 147, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from 
+reflex.components.dynamic import bundle_library; 
+bundle_library('@radix-ui/themes') to enable it it.
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 829, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 820, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 637, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/base_state_processor.py", line 446, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/base_state_processor.py", line 303, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex/state.py", line 
+2310, in hydrate
+    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/context.p
+y", line 132, in emit_delta
+    await self.emit_delta_impl(self.token, delta)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/event/processor
+/event_processor.py", line 176, in emit_delta
+    await event_namespace.emit_update(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex/app.py", line 2064, 
+in emit_update
+    await self.emit(str(constants.SocketEvent.EVENT), update, 
+to=socket_record.sid)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_namespace.py
+", line 71, in emit
+    return await self.server.emit(event, data=data, to=to, room=room,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_server.py", 
+line 180, in emit
+    await self.manager.emit(event, data, namespace, room=room,
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/async_manager.py",
+ line 40, in emit
+    encoded_packet = pkt.encode()
+                     ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/socketio/packet.py", line 
+64, in encode
+    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/utils/format.py
+", line 734, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_base/utils/serialize
+rs.py", line 176, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 265, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/reverify_ent/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py",
+ line 147, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from 
+reflex.components.dynamic import bundle_library; 
+bundle_library('@radix-ui/themes') to enable it it.
+
+
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

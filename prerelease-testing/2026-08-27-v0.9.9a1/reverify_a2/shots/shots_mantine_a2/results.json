@@ -1,0 +1,82 @@
+{
+  "results": [
+    {
+      "name": "index_renders_links",
+      "ok": true,
+      "details": "count=3"
+    },
+    {
+      "name": "dates_calendar_renders",
+      "ok": true,
+      "details": "day-cells=126"
+    },
+    {
+      "name": "dates_datepicker_click_toast",
+      "ok": true,
+      "details": "toast 'Date selected:' visible"
+    },
+    {
+      "name": "dates_timeinput_toast",
+      "ok": true,
+      "details": "toast visible"
+    },
+    {
+      "name": "pill_renders",
+      "ok": true,
+      "details": "pill-count=7"
+    },
+    {
+      "name": "pill_remove_toast",
+      "ok": true,
+      "details": "toast 'Removed' visible"
+    },
+    {
+      "name": "pill_source_tab",
+      "ok": true,
+      "details": "code block visible"
+    },
+    {
+      "name": "tags_initial_render",
+      "ok": true,
+      "details": "Tag1 visible"
+    },
+    {
+      "name": "tags_add_roundtrip",
+      "ok": true,
+      "details": "new tag chip visible"
+    },
+    {
+      "name": "tags_remove_roundtrip",
+      "ok": true,
+      "details": "Tag1 removed"
+    },
+    {
+      "name": "dropdown_navigation",
+      "ok": true,
+      "details": "navigated to http://localhost:3204/dates"
+    }
+  ],
+  "console_all": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "debug: [vite] connected."
+  ],
+  "page_errors": [],
+  "req_failures": []
+}
