@@ -214,17 +214,30 @@ def test_run_concurrently_context_no_interrupt_after_body_exception():
     context has unwound; the caller's own exception must propagate untouched
     instead of a stray KeyboardInterrupt landing in unrelated code.
     """
+    task_may_fail = threading.Event()
+    interrupt_callback_ran = threading.Event()
 
-    def _fail_late():
-        time.sleep(0.3)
+    def _fail_on_release():
+        # Hold the failure until the context has fully unwound below.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
         raise SystemExit(1)
 
     with (
         pytest.raises(ValueError, match="body failed"),
-        run_concurrently_context(_fail_late),
+        run_concurrently_context(_fail_on_release) as tasks,
     ):
+        # Done callbacks run in registration order, so this fires strictly
+        # after the context's own interrupt callback has run for the task.
+        tasks[0].add_done_callback(lambda _t: interrupt_callback_ran.set())
         msg = "body failed"
         raise ValueError(msg)
-    # Give the late-failing task time to finish; a stale interrupt would
-    # surface as KeyboardInterrupt here and fail this test.
-    time.sleep(0.6)
+
+    # The context has unwound (in_body cleared); only now may the task fail.
+    task_may_fail.set()
+    assert interrupt_callback_ran.wait(timeout=DEFAULT_TIMEOUT), (
+        "worker task did not finish"
+    )
+    # A stale interrupt would already have been sent by the callback above;
+    # give signal delivery a moment so it would surface as KeyboardInterrupt
+    # here (delivery latency is microseconds; 0.1s is generous headroom).
+    time.sleep(0.1)
