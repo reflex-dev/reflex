@@ -249,7 +249,10 @@ def _usable_cpu_count() -> int:
     """Return the number of CPUs this process may actually use.
 
     A cgroup CPU quota (containers, sandboxes) throttles the process without
-    narrowing the affinity mask, so only ``cpu.max`` reveals it.
+    narrowing the affinity mask, so only ``cpu.max`` reveals it. The quota may
+    sit on any ancestor of the process's cgroup — in a namespaced container
+    that is the mount root, under e.g. a systemd ``CPUQuota`` it is a nested
+    slice — so every level is checked and the tightest one wins.
 
     Returns:
         The usable CPU count, at least 1.
@@ -258,12 +261,25 @@ def _usable_cpu_count() -> int:
         count = len(os.sched_getaffinity(0))
     except AttributeError:
         count = os.cpu_count() or 1
-    try:
-        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
-        if quota != "max":
-            count = min(count, -(-int(quota) // int(period)))
-    except (OSError, ValueError):
-        pass
+    with contextlib.suppress(OSError, ValueError):
+        v2_line = next(
+            (
+                line
+                for line in Path("/proc/self/cgroup").read_text().splitlines()
+                if line.startswith("0::")
+            ),
+            "0::/",
+        )
+        root = Path("/sys/fs/cgroup")
+        path = root / v2_line.removeprefix("0::").strip().lstrip("/")
+        while True:
+            with contextlib.suppress(OSError, ValueError):
+                quota, period = (path / "cpu.max").read_text().split()
+                if quota != "max":
+                    count = min(count, -(-int(quota) // int(period)))
+            if path == root:
+                break
+            path = path.parent
     return max(1, count)
 
 

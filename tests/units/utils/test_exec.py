@@ -130,12 +130,47 @@ def test_with_bundler_limits_bounds_pool_to_usable_cpus(mocker: MockerFixture):
     assert environ == {"ROLLDOWN_WORKER_THREADS": "8"}
 
 
-def test_usable_cpu_count_honors_cgroup_quota(mocker: MockerFixture, tmp_path: Path):
-    """A cgroup quota narrows the count the affinity mask reports."""
+def _fake_cgroup_fs(mocker: MockerFixture, files: dict[str, str]):
+    """Patch ``Path.read_text`` to serve the given path-to-content mapping."""
+
+    def read_text(self: Path, *args, **kwargs) -> str:
+        try:
+            return files[str(self)]
+        except KeyError:
+            raise FileNotFoundError(str(self)) from None
+
+    mocker.patch.object(exec_utils.Path, "read_text", read_text)
+
+
+def test_usable_cpu_count_honors_cgroup_quota(mocker: MockerFixture):
+    """A cgroup v2 quota in a namespaced container narrows the affinity count."""
     mocker.patch.object(os, "sched_getaffinity", return_value=set(range(64)))
-    quota = tmp_path / "cpu.max"
-    quota.write_text("200000 100000\n")
-    mocker.patch.object(exec_utils.Path, "read_text", quota.read_text)
+    _fake_cgroup_fs(
+        mocker,
+        {
+            "/proc/self/cgroup": "0::/\n",
+            "/sys/fs/cgroup/cpu.max": "200000 100000\n",
+        },
+    )
     assert exec_utils._usable_cpu_count() == 2
-    quota.write_text("max 100000\n")
+
+
+def test_usable_cpu_count_honors_nested_cgroup_quota(mocker: MockerFixture):
+    """A quota on an ancestor of a nested, non-namespaced cgroup is found."""
+    mocker.patch.object(os, "sched_getaffinity", return_value=set(range(64)))
+    _fake_cgroup_fs(
+        mocker,
+        {
+            "/proc/self/cgroup": "0::/user.slice/app.scope\n",
+            "/sys/fs/cgroup/user.slice/cpu.max": "300000 100000\n",
+            "/sys/fs/cgroup/user.slice/app.scope/cpu.max": "max 100000\n",
+        },
+    )
+    assert exec_utils._usable_cpu_count() == 3
+
+
+def test_usable_cpu_count_without_quota_uses_affinity(mocker: MockerFixture):
+    """No readable quota anywhere leaves the affinity count untouched."""
+    mocker.patch.object(os, "sched_getaffinity", return_value=set(range(64)))
+    _fake_cgroup_fs(mocker, {"/proc/self/cgroup": "0::/user.slice/app.scope\n"})
     assert exec_utils._usable_cpu_count() == 64
