@@ -142,8 +142,11 @@ fallback-version = "0.0.0dev0"
 # `reflex` under packages/, and `artifacts` patterns bypass `include`
 # altogether, which pulled every sibling package's generated stubs into the
 # reflex sdist and wheel.
-include = ["/reflex", "/scripts/hatch_build.py"]
+include = ["/reflex"]
 artifacts = ["/reflex/**/*.pyi"]
+# Only the sdist ships the build hook, so that the wheel can be built from it.
+# In the wheel it would just install a stray top-level `scripts` package.
+targets.sdist.include = ["/reflex", "/scripts/hatch_build.py"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"

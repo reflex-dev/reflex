@@ -20,8 +20,10 @@ pattern-prefix = "reflex-components-react-player-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Generated stubs are gitignored, so they need to be named as build artifacts
+# to be shipped. Anchored to `src` because hatchling matches artifacts with
+# gitignore semantics and checks them before (and instead of) `include`.
+artifacts = ["/src/**/*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
