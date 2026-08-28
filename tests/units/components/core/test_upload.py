@@ -355,14 +355,35 @@ def test_upload_filename_sanitization_drops_path_segments(filename: str, expecte
 
 @pytest.mark.parametrize(
     "filename",
-    ["..", "./../.", "..\\", "/..", "/foo/..", "C:\\..", "..//..", "", "."],
+    [
+        "..",
+        "./../.",
+        "..\\",
+        "/..",
+        "/foo/..",
+        "C:\\..",
+        "..//..",
+        "",
+        ".",
+        # Win32 strips trailing dots and spaces, so these navigate like ".." too.
+        ".. ",
+        ".. .",
+        "C:\\.. ",
+        "/foo/.. ",
+        ".. /.. ",
+        "...",
+        "....",
+        " ",
+    ],
 )
 def test_upload_filename_sanitization_traversal_only_falls_back(filename: str):
-    """Filenames reducing to nothing or a traversal token get a safe fallback name."""
+    """Filenames whose segments are only dots and spaces get a safe fallback name."""
     assert _sanitize_upload_filename(filename) == "upload"
 
 
-@pytest.mark.parametrize("filename", ["...", "....", "\u2024\u2024", "\u2025\u2025"])
+@pytest.mark.parametrize(
+    "filename", ["\u2024\u2024", "\u2025\u2025", "a.", "a. ", " a ", ".hidden"]
+)
 def test_upload_filename_sanitization_keeps_dot_like_names(filename: str):
     """Dot-like names that are not traversal tokens are kept unchanged."""
     assert _sanitize_upload_filename(filename) == filename
