@@ -293,6 +293,7 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
+SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
@@ -343,8 +344,7 @@ def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
         )
         raise UploadTypeError(msg)
 
-    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
-    for name, annotation in get_type_hints(func).items():
+    for name, annotation in handler._get_type_hints().items():
         if name == "return" or get_origin(annotation) is not list:
             continue
         args = get_args(annotation)
@@ -380,8 +380,7 @@ def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, ty
         msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
         raise UploadTypeError(msg)
 
-    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
-    for name, annotation in get_type_hints(func).items():
+    for name, annotation in handler._get_type_hints().items():
         if name == "return":
             continue
         if annotation is UploadChunkIterator:
@@ -490,9 +489,42 @@ class EventHandler(EventActionsMixin):
 
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
+    _type_hints: dict[str, Any] | None = dataclasses.field(
+        default=None, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        """Resolve handler annotations while the state class is stable."""
+        if self.state is not None:
+            self._get_type_hints()
+
+    def _get_type_hints(self) -> dict[str, Any]:
+        """Get and cache the type hints for the handler function.
+
+        Caching successful resolution at handler creation avoids deferred
+        annotation evaluation observing attributes assigned to the owning
+        state class after the handler was registered.
+
+        Returns:
+            The resolved type hints, or an empty mapping when forward references
+            cannot be resolved yet.
+        """
+        if self._type_hints is not None:
+            return self._type_hints
+        if self.fn is None:
+            object.__setattr__(self, "_type_hints", {})
+            return {}
+        func = self.fn.func if isinstance(self.fn, partial) else self.fn
+        try:
+            type_hints = get_type_hints(func)
+        except NameError:
+            return {}
+        object.__setattr__(self, "_type_hints", type_hints)
+        return type_hints
+
     @property
     def state_full_name(self) -> str:
-        """Get the full name of the state class this event handler is attached to.
+        """The full name of the state class this event handler is attached to.
 
         Returns:
             The full name of the state class this event handler is attached to.
@@ -519,7 +551,7 @@ class EventHandler(EventActionsMixin):
 
     @property
     def _parameters(self) -> Mapping[str, inspect.Parameter]:
-        """Get the parameters of the function.
+        """The parameters of the function.
 
         Returns:
             The parameters of the function.
@@ -549,6 +581,21 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
+
+    @property
+    def supersedes(self) -> bool:
+        """Whether a newer chain-root invocation supersedes an older one.
+
+        When True, enqueuing this handler as a chain root cancels the previous
+        unfinished event chain rooted at the same handler for the same client
+        token. Cancellation is cooperative: a handler that never yields to the
+        event loop runs to completion, and only its not-yet-started chained
+        events are skipped.
+
+        Returns:
+            True if the event handler is marked as superseding.
+        """
+        return getattr(self.fn, SUPERSEDES_MARKER, False)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
@@ -1997,21 +2044,6 @@ def _check_event_args_subclass_of_callback(
         raise delayed_exceptions[0]
 
 
-def _type_hints_or_empty(fn: Callable) -> dict[str, Any]:
-    """Type hints of ``fn``, or empty when its ForwardRefs cannot be resolved.
-
-    Args:
-        fn: The function to get the type hints of.
-
-    Returns:
-        The type hints, or an empty dict.
-    """
-    try:
-        return get_type_hints(fn)
-    except NameError:
-        return {}
-
-
 def call_event_handler(
     event_callback: EventHandler | EventSpec,
     event_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2050,9 +2082,7 @@ def call_event_handler(
 
         event_callback_spec_args = list(parameters)
 
-        type_hints_of_provided_callback = _type_hints_or_empty(
-            event_callback.handler.fn
-        )
+        type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
@@ -2087,7 +2117,7 @@ def call_event_handler(
     if event_spec_return_types:
         event_callback_spec_args = list(parameters)
 
-        type_hints_of_provided_callback = _type_hints_or_empty(event_callback.fn)
+        type_hints_of_provided_callback = event_callback._get_type_hints()
 
         _check_event_args_subclass_of_callback(
             event_callback_spec_args[n_self_args:],
@@ -2902,6 +2932,7 @@ class EventNamespace:
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
@@ -2927,6 +2958,7 @@ class EventNamespace:
         func: None = None,
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2942,6 +2974,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2954,6 +2987,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -2965,6 +2999,10 @@ class EventNamespace:
         Args:
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
+            supersedes: Whether enqueuing the event cancels the previous unfinished
+                chain of the same event for the same client token (latest-wins).
+                Cancellation is cooperative, so a handler that never yields to the
+                event loop is not interrupted. Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
@@ -3016,6 +3054,8 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if supersedes is True:
+                setattr(func, SUPERSEDES_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
@@ -3112,7 +3152,7 @@ class EventNamespace:
 
     @property
     def BaseState(self) -> "type[BaseState]":  # noqa: N802
-        """Get the BaseState class.
+        """The BaseState class.
 
         A reference to BaseState is needed for doc generation when resolving
         type hints, so add it to the namespace late to avoid circular import

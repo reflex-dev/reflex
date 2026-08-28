@@ -101,3 +101,18 @@ def test_with_development_condition_preserves_existing_options():
     assert env["BUN_OPTIONS"] == "--conditions=development"
     # The dev condition must not leak into the parent environment.
     assert environ["NODE_OPTIONS"] == "--max-old-space-size=4096"
+
+
+def test_arbitrate_ssr_stores_flag_when_env_unset(monkeypatch: pytest.MonkeyPatch):
+    """The flag value is stored in the environment when REFLEX_SSR is unset."""
+    monkeypatch.setenv(environment.REFLEX_SSR.name, "")
+
+    assert exec_utils.arbitrate_ssr(False) is False
+    assert environment.REFLEX_SSR.get() is False
+
+
+def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
+    """An already-set REFLEX_SSR env var overrides the flag value."""
+    monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
+
+    assert exec_utils.arbitrate_ssr(True) is False

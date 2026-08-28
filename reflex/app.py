@@ -479,7 +479,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_namespace(self) -> EventNamespace | None:
-        """Get the event namespace.
+        """The event namespace.
 
         Returns:
             The event namespace.
@@ -488,7 +488,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_processor(self) -> EventProcessor:
-        """Get the event processor.
+        """The event processor.
 
         Raises:
             RuntimeError: If the event processor is not initialized.
@@ -885,7 +885,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def state_manager(self) -> StateManager:
-        """Get the state manager.
+        """The state manager.
 
         Returns:
             The initialized state manager.
@@ -1316,7 +1316,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
-        """Get the route computer function.
+        """The route computer function.
 
         Returns:
             The route computer function.
@@ -1388,22 +1388,29 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
+        replaced_new_route = replace_brackets_with_keywords(new_route)
         for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
                     return route, r, nr
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
         return None
 
     def _setup_admin_dash(self):
@@ -1958,7 +1965,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Get token to SID mapping for backward compatibility.
+        """Token to SID mapping for backward compatibility.
 
         Note: this mapping is read-only.
 
@@ -1970,7 +1977,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """Get SID to token mapping for backward compatibility.
+        """SID to token mapping for backward compatibility.
 
         Returns:
             The SID to token mapping dict.
@@ -2051,11 +2058,15 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Await the emit directly: wrapping it in a task does not unblock the
+        # caller (awaiting the task blocks just the same) and only adds task
+        # creation/scheduling overhead on every update.
+        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The emit may complete without suspending (the packet is queued, not
+        # sent). Yield one loop tick so the websocket writer can flush the
+        # packet before the caller potentially blocks the event loop (e.g. a
+        # sync event handler resuming after a yield).
+        await asyncio.sleep(0)
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.

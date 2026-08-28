@@ -759,6 +759,10 @@ class EnvironmentVariables:
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 
+    # Referrer identifier appended (urlencoded) to the "Built with Reflex"
+    # badge link as https://reflex.dev/?ref=<value>. Read at compile time.
+    REFLEX_REFERRER_PARAM: EnvVar[str | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
