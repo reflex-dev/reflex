@@ -106,6 +106,12 @@ fragment to a sentence or two saying what changed and what it means for a user:
 
 > Reduce published wheel and sdist size by removing misplaced generated artifacts.
 
+Brevity is about the narrative, not the substance: whatever is genuinely useful
+downstream belongs in the fragment. A brief usage example for a new feature, or
+the before/after of converting deprecated usage to the supported style, earns
+its place. Once it runs past a few sentences and a small code block, it is
+documentation — write it under `docs/` and let the fragment link there.
+
 CI requires a fragment for every package whose source the PR touches; the
 `skip-changelog` label waives it for changes that are genuinely not user-facing.
 
