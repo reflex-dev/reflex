@@ -14,7 +14,6 @@ from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequen
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
-import rich.markup
 from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
@@ -750,9 +749,7 @@ class EventProcessor:
                 except Exception:
                     # Log the error and continue processing the next events.
                     logger.exception(
-                        rich.markup.escape(
-                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
-                        )
+                        f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
