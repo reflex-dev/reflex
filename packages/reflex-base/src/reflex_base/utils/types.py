@@ -851,6 +851,9 @@ def _isinstance(
     Returns:
         Whether the object is an instance of the class.
     """
+    # A PEP 695 type alias is opaque to every check below, so unwrap it first.
+    cls = resolve_type_alias(cls)
+
     if cls is Any:
         return True
 
@@ -1215,6 +1218,10 @@ def typehint_issubclass(
     Returns:
         Whether the type hint is a subclass of the other type hint.
     """
+    # A PEP 695 type alias on either side is opaque to every check below.
+    possible_subclass = resolve_type_alias(possible_subclass)
+    possible_superclass = resolve_type_alias(possible_superclass)
+
     if possible_subclass is possible_superclass or possible_superclass is Any:
         return True
     if possible_subclass is Any:
