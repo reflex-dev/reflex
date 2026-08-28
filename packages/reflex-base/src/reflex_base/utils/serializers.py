@@ -7,6 +7,7 @@ import dataclasses
 import decimal
 import functools
 import inspect
+import json
 import logging
 import uuid
 import warnings
@@ -490,6 +491,26 @@ with contextlib.suppress(ImportError):
 with contextlib.suppress(ImportError):
     from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
+    from plotly.io.json import config as plotly_json_config
+
+    def _loads_plotly(data: str) -> Any:
+        """Parse JSON that plotly produced, with the parser plotly dumped it with.
+
+        Args:
+            data: The JSON plotly emitted.
+
+        Returns:
+            The parsed figure or template data.
+        """
+        from reflex_base.utils.format import orjson_loads
+
+        # plotly's orjson engine and orjson_loads share the same 64-bit integer
+        # range, so the parse is exact whenever plotly dumped with orjson. Its
+        # stdlib engine can emit wider integers (a big id in customdata), which
+        # orjson would round to a float.
+        if plotly_json_config.default_engine == "json":
+            return json.loads(data)
+        return orjson_loads(data)
 
     @serializer
     def serialize_figure(figure: Figure) -> dict:
@@ -501,9 +522,7 @@ with contextlib.suppress(ImportError):
         Returns:
             The serialized figure.
         """
-        from reflex_base.utils.format import orjson_loads
-
-        return orjson_loads(str(to_json(figure)))
+        return _loads_plotly(str(to_json(figure)))
 
     @serializer
     def serialize_template(template: layout.Template) -> dict:
@@ -515,11 +534,9 @@ with contextlib.suppress(ImportError):
         Returns:
             The serialized template.
         """
-        from reflex_base.utils.format import orjson_loads
-
         return {
-            "data": orjson_loads(str(to_json(template.data))),
-            "layout": orjson_loads(str(to_json(template.layout))),
+            "data": _loads_plotly(str(to_json(template.data))),
+            "layout": _loads_plotly(str(to_json(template.layout))),
         }
 
 
