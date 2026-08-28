@@ -32,8 +32,19 @@ from pathlib import Path
 
 
 def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
-    """Download the wheel and sdist for a package version into dest."""
-    with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{version}/json", timeout=60) as r:
+    """Download the wheel and sdist for a package version.
+
+    Args:
+        name: The PyPI distribution name.
+        version: The version to download.
+        dest: Directory to download into.
+
+    Returns:
+        A mapping of ``"wheel"``/``"sdist"`` to the downloaded file paths.
+    """
+    with urllib.request.urlopen(
+        f"https://pypi.org/pypi/{name}/{version}/json", timeout=60
+    ) as r:
         data = json.load(r)
     out: dict[str, Path] = {}
     for entry in data.get("urls", []):
@@ -48,13 +59,30 @@ def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
 
 
 def wheel_stubs(path: Path) -> dict[str, bytes]:
-    """Map stub path -> content for every .pyi in a wheel."""
+    """Read every stub in a wheel.
+
+    Args:
+        path: Path to the wheel file.
+
+    Returns:
+        A mapping of archive-relative stub path to its contents.
+    """
     with zipfile.ZipFile(path) as z:
         return {n: z.read(n) for n in z.namelist() if n.endswith(".pyi")}
 
 
 def sdist_stubs(path: Path) -> dict[str, bytes]:
-    """Map stub path -> content for every .pyi in an sdist, normalized to wheel layout."""
+    """Read every stub in an sdist, normalized to the wheel's layout.
+
+    The ``<name>-<version>/`` prefix and any ``src/`` layout directory are stripped so the
+    keys line up with the wheel's, making the two directly comparable.
+
+    Args:
+        path: Path to the sdist tarball.
+
+    Returns:
+        A mapping of normalized stub path to its contents.
+    """
     out: dict[str, bytes] = {}
     with tarfile.open(path) as t:
         for member in t.getmembers():
@@ -70,12 +98,28 @@ def sdist_stubs(path: Path) -> dict[str, bytes]:
 
 
 def import_root(dist_name: str) -> str:
-    """Guess the top-level import package for a distribution name."""
+    """Guess the top-level import package for a distribution name.
+
+    Args:
+        dist_name: The PyPI distribution name.
+
+    Returns:
+        The import package name, which differs only by underscores by convention.
+    """
     return dist_name.replace("-", "_")
 
 
 def manifest_counts(ref: str, repo: str) -> dict[str, int]:
-    """Count expected stubs per distribution from pyi_hashes.json at a git ref."""
+    """Count the stubs each distribution is expected to ship.
+
+    Args:
+        ref: The git ref to read ``pyi_hashes.json`` from.
+        repo: Path to the reflex checkout.
+
+    Returns:
+        A mapping of distribution name to expected stub count, empty when the manifest is
+        unavailable at that ref.
+    """
     result = subprocess.run(
         ["git", "-C", repo, "show", f"{ref}:pyi_hashes.json"],
         capture_output=True,
@@ -92,7 +136,16 @@ def manifest_counts(ref: str, repo: str) -> dict[str, int]:
 
 
 def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
-    """Audit one 'name==version' spec, returning a result record."""
+    """Audit the stubs shipped by one package version.
+
+    Args:
+        spec: A ``name==version`` spec.
+        workdir: Directory to download artifacts into.
+        expected: Expected stub counts by distribution name, from the manifest.
+
+    Returns:
+        A record with the package, version, stub count and any problems found.
+    """
     name, _, version = spec.partition("==")
     root = import_root(name)
     problems: list[str] = []
@@ -118,24 +171,38 @@ def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
     sdist_own, sdist_foreign = split(sdist)
 
     if wheel_foreign:
-        problems.append(f"wheel carries {len(wheel_foreign)} foreign stub(s): {sorted(wheel_foreign)[:3]}")
+        problems.append(
+            f"wheel carries {len(wheel_foreign)} foreign stub(s): {sorted(wheel_foreign)[:3]}"
+        )
     if sdist_foreign:
-        problems.append(f"sdist carries {len(sdist_foreign)} foreign stub(s): {sorted(sdist_foreign)[:3]}")
+        problems.append(
+            f"sdist carries {len(sdist_foreign)} foreign stub(s): {sorted(sdist_foreign)[:3]}"
+        )
 
     only_wheel = sorted(set(wheel_own) - set(sdist_own))
     only_sdist = sorted(set(sdist_own) - set(wheel_own))
     if only_wheel:
-        problems.append(f"{len(only_wheel)} stub(s) in wheel but not sdist: {only_wheel[:3]}")
+        problems.append(
+            f"{len(only_wheel)} stub(s) in wheel but not sdist: {only_wheel[:3]}"
+        )
     if only_sdist:
-        problems.append(f"{len(only_sdist)} stub(s) in sdist but not wheel: {only_sdist[:3]}")
+        problems.append(
+            f"{len(only_sdist)} stub(s) in sdist but not wheel: {only_sdist[:3]}"
+        )
 
-    differing = sorted(k for k in set(wheel_own) & set(sdist_own) if wheel_own[k] != sdist_own[k])
+    differing = sorted(
+        k for k in set(wheel_own) & set(sdist_own) if wheel_own[k] != sdist_own[k]
+    )
     if differing:
-        problems.append(f"{len(differing)} stub(s) differ between wheel and sdist: {differing[:3]}")
+        problems.append(
+            f"{len(differing)} stub(s) differ between wheel and sdist: {differing[:3]}"
+        )
 
     want = expected.get(name)
     if want is not None and want != len(wheel_own):
-        problems.append(f"expected {want} stub(s) from manifest, wheel ships {len(wheel_own)}")
+        problems.append(
+            f"expected {want} stub(s) from manifest, wheel ships {len(wheel_own)}"
+        )
 
     return {
         "package": name,
@@ -147,15 +214,25 @@ def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
 
 
 def main() -> int:
-    """Audit every requested package and print a summary."""
+    """Audit every requested package and print a summary.
+
+    Returns:
+        ``1`` when any package has packaging problems, otherwise ``0``.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("specs", nargs="+", help="package==version specs")
-    parser.add_argument("--manifest-ref", help="git ref to read pyi_hashes.json from for count checks")
-    parser.add_argument("--repo", default=".", help="path to the reflex checkout (default: cwd)")
+    parser.add_argument(
+        "--manifest-ref", help="git ref to read pyi_hashes.json from for count checks"
+    )
+    parser.add_argument(
+        "--repo", default=".", help="path to the reflex checkout (default: cwd)"
+    )
     parser.add_argument("--keep", help="directory to keep downloaded artifacts in")
     args = parser.parse_args()
 
-    expected = manifest_counts(args.manifest_ref, args.repo) if args.manifest_ref else {}
+    expected = (
+        manifest_counts(args.manifest_ref, args.repo) if args.manifest_ref else {}
+    )
 
     with tempfile.TemporaryDirectory() as tmp:
         workdir = Path(args.keep) if args.keep else Path(tmp)
@@ -167,7 +244,9 @@ def main() -> int:
     for r in results:
         mark = "OK " if not r["problems"] else "!! "
         want = "" if r["expected"] is None else f" (manifest: {r['expected']})"
-        print(f"  {mark}{r['package']:<{width}}  {r['version']:<12} stubs={r['own']}{want}")
+        print(
+            f"  {mark}{r['package']:<{width}}  {r['version']:<12} stubs={r['own']}{want}"
+        )
         for problem in r["problems"]:
             print(f"       - {problem}")
 
@@ -177,7 +256,9 @@ def main() -> int:
         print(f"FAIL: {len(failed)} package(s) with packaging problems.")
     else:
         total = sum(r["own"] for r in results)
-        print(f"PASS: {total} stubs ship correctly in both wheel and sdist; no foreign stubs.")
+        print(
+            f"PASS: {total} stubs ship correctly in both wheel and sdist; no foreign stubs."
+        )
     return 1 if failed else 0
 
 

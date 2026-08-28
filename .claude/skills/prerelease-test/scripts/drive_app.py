@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive a running Reflex app in Chromium and report anomalies.
+r"""Drive a running Reflex app in Chromium and report anomalies.
 
 Loads a page, optionally runs a small action script against it, and captures the four
 channels worth watching on every run: console messages, page errors, failed requests, and
@@ -35,34 +35,59 @@ import re
 import sys
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Page, sync_playwright
 
 CHROMIUM = "/opt/pw-browsers/chromium"
 
 # Dev-server chatter that appears on healthy runs; see references/agent-brief.md.
 BENIGN_CONSOLE = [
-    re.compile(r"Hey developer.*HydrateFallback|reactrouter\.com/start/framework/route-module"),
+    re.compile(
+        r"Hey developer.*HydrateFallback|reactrouter\.com/start/framework/route-module"
+    ),
     re.compile(r"\[vite\] (connecting|connected)"),
     re.compile(r"Download the React DevTools"),
 ]
 
 
 def is_benign(text: str) -> bool:
-    """Report whether a console message is known dev-server noise."""
+    """Report whether a console message is known dev-server noise.
+
+    Args:
+        text: The console message text.
+
+    Returns:
+        ``True`` when the message matches a known-benign pattern.
+    """
     return any(pattern.search(text) for pattern in BENIGN_CONSOLE)
 
 
 def load_actions(raw: str | None) -> list[dict]:
-    """Parse actions given inline as JSON or as a path to a JSON file."""
+    """Parse the action script.
+
+    Args:
+        raw: Inline JSON, a path to a JSON file, or ``None``.
+
+    Returns:
+        The list of actions to apply, empty when none were given.
+    """
     if not raw:
         return []
     candidate = Path(raw)
     return json.loads(candidate.read_text() if candidate.exists() else raw)
 
 
-def run_action(page, action: dict, timeout: int) -> str:
-    """Apply one action to the page and return a human-readable description of it."""
-    (verb, value), = action.items()
+def run_action(page: Page, action: dict, timeout: int) -> str:
+    """Apply one action to the page.
+
+    Args:
+        page: The Playwright page to act on.
+        action: A single-entry mapping of verb to its argument(s).
+        timeout: Per-action timeout in milliseconds.
+
+    Returns:
+        A human-readable description of what was done.
+    """
+    ((verb, value),) = action.items()
     if verb == "click":
         page.click(value, timeout=timeout)
     elif verb == "fill":
@@ -85,21 +110,58 @@ def run_action(page, action: dict, timeout: int) -> str:
     elif verb == "eval":
         return f"eval -> {page.evaluate(value)!r}"
     else:
-        raise ValueError(f"unknown action {verb!r}")
+        msg = f"unknown action {verb!r}"
+        raise ValueError(msg)
     return f"{verb}: {value!r}"
 
 
+def try_action(page: Page, action: dict, timeout: int) -> tuple[str | None, str | None]:
+    """Run one action, turning a failure into a value rather than an exception.
+
+    Reporting the failure this way keeps the record of the actions that already
+    succeeded, which is usually the most useful part of a failed run.
+
+    Args:
+        page: The Playwright page to act on.
+        action: A single-entry mapping of verb to its argument(s).
+        timeout: Per-action timeout in milliseconds.
+
+    Returns:
+        A ``(description, error)`` tuple; exactly one side is set.
+    """
+    try:
+        return run_action(page, action, timeout), None
+    except Exception as exc:
+        return None, f"{type(exc).__name__}: {exc}"
+
+
 def main() -> int:
-    """Drive the app and print a report."""
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    """Drive the app and print a report.
+
+    Returns:
+        ``0`` when the run was clean, ``1`` when anything anomalous was captured.
+    """
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("url", help="page to load, e.g. http://localhost:3100/")
     parser.add_argument("--actions", help="JSON list of actions, inline or a file path")
-    parser.add_argument("--screenshot", help="path for a screenshot after the actions run")
+    parser.add_argument(
+        "--screenshot", help="path for a screenshot after the actions run"
+    )
     parser.add_argument("--report", help="path to write the full JSON report to")
-    parser.add_argument("--timeout", type=int, default=15000, help="per-action timeout in ms")
-    parser.add_argument("--settle", type=int, default=1500, help="ms to wait after load for hydration")
-    parser.add_argument("--headed", action="store_true", help="run with a visible browser")
-    parser.add_argument("--all-console", action="store_true", help="do not filter benign console noise")
+    parser.add_argument(
+        "--timeout", type=int, default=15000, help="per-action timeout in ms"
+    )
+    parser.add_argument(
+        "--settle", type=int, default=1500, help="ms to wait after load for hydration"
+    )
+    parser.add_argument(
+        "--headed", action="store_true", help="run with a visible browser"
+    )
+    parser.add_argument(
+        "--all-console", action="store_true", help="do not filter benign console noise"
+    )
     args = parser.parse_args()
 
     console: list[dict] = []
@@ -114,20 +176,28 @@ def main() -> int:
         page = browser.new_context().new_page()
         page.on("console", lambda m: console.append({"type": m.type, "text": m.text}))
         page.on("pageerror", lambda e: page_errors.append(str(e)))
-        page.on("requestfailed", lambda r: failed.append({"url": r.url, "failure": str(r.failure)}))
+        page.on(
+            "requestfailed",
+            lambda r: failed.append({"url": r.url, "failure": str(r.failure)}),
+        )
         page.on(
             "response",
-            lambda r: bad_status.append({"url": r.url, "status": r.status}) if r.status >= 400 else None,
+            lambda r: (
+                bad_status.append({"url": r.url, "status": r.status})
+                if r.status >= 400
+                else None
+            ),
         )
 
         page.goto(args.url, wait_until="networkidle", timeout=60000)
         page.wait_for_timeout(args.settle)
 
-        try:
-            for action in load_actions(args.actions):
-                performed.append(run_action(page, action, args.timeout))
-        except Exception as exc:
-            action_error = f"{type(exc).__name__}: {exc}"
+        for action in load_actions(args.actions):
+            done, action_error = try_action(page, action, args.timeout)
+            if done is not None:
+                performed.append(done)
+            if action_error:
+                break
 
         title = page.title()
         body = page.inner_text("body")[:2000]
@@ -136,7 +206,11 @@ def main() -> int:
             page.screenshot(path=args.screenshot, full_page=True)
         browser.close()
 
-    shown = console if args.all_console else [m for m in console if not is_benign(m["text"])]
+    shown = (
+        console
+        if args.all_console
+        else [m for m in console if not is_benign(m["text"])]
+    )
     problems = [m for m in shown if m["type"] in ("error", "warning")]
     clean = not (problems or page_errors or failed or bad_status or action_error)
 
