@@ -8,7 +8,7 @@ A footer bar is a common UI element located at the bottom of a webpage. It typic
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 
@@ -111,7 +111,7 @@ def footer() -> rx.Component:
 
 ## Newsletter form
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 
@@ -223,7 +223,7 @@ def footer_newsletter() -> rx.Component:
 
 ## Three columns
 
-```python demo exec toggle
+```python demo exec
 def footer_item(text: str, href: str) -> rx.Component:
     return rx.link(rx.text(text, size="3"), href=href)
 

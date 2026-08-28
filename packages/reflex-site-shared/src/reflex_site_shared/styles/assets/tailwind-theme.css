@@ -1152,6 +1152,9 @@
     --shadow-card-xs-no-left: var(--shadow-card-xs-no-left-adaptive);
     --shadow-card-small: var(--shadow-card-small-adaptive);
     --shadow-card-dark: 0 0 0 1px var(--secondary-4);
+    --spacing-gutter: clamp(1.5rem, 0.5rem + 5.2vw, 6rem);
+    --text-caption: 0.75rem;
+    --text-caption--line-height: 1rem;
     --text-xs: 0.8125rem;
     --text-xs--line-height: 1.25rem;
     --text-sm: 0.875rem;
@@ -1669,6 +1672,15 @@
 }
 
 @layer utilities {
+    .rule-dashed-b {
+        background-image: repeating-linear-gradient(to right,
+                var(--color-secondary-8) 0 1px,
+                transparent 1px 4px);
+        background-repeat: no-repeat;
+        background-size: 100% 1px;
+        background-position: left bottom;
+    }
+
     .font-instrument-sans {
         font-family: var(--font-instrument-sans);
     }
@@ -1846,17 +1858,6 @@
         background-color: var(--secondary-3) !important;
     }
 
-
-    .tab-style {
-        color: var(--secondary-9);
-        cursor: pointer;
-        padding: 0.25em 0.5em;
-        font-size: 0.9rem;
-        font-weight: 500;
-        line-height: 1.25rem;
-        letter-spacing: -0.01094rem;
-    }
-
     .pill-tab-list {
         display: inline-flex !important;
         gap: 2px !important;
@@ -1935,15 +1936,6 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
     }
 
-    .tab-style:hover:not([data-state='active'])::before {
-        background: transparent !important;
-        background-color: transparent !important;
-    }
-
-    .tab-style:hover {
-        color: var(--secondary-11);
-    }
-
     .hover-card-shadow:hover {
         background: var(0 3px 6px 0 rgba(0, 0, 0, 0.03),
                 0 1px 0 0 #FFF inset,
@@ -1963,14 +1955,6 @@
 
     :where(.dark, .dark *) .navbar-shadow {
         box-shadow: 0 0 0 1px var(--secondary-4);
-    }
-
-    .tab-style[data-state='active'] {
-        color: var(--c-violet-9);
-    }
-
-    .tab-style:not([data-state='active']) {
-        color: var(--secondary-12);
     }
 
     .demo-code-block {

@@ -99,6 +99,10 @@ class EventContext(BaseContext):
         default_factory=dict, init=False, repr=False
     )
 
+    # Routing data of the event being processed. Inherited by fork(), so an
+    # event a handler yields resolves against the view that produced it.
+    router_data: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
+
     def fork(self, token: str | None = None) -> EventContext:
         """Return a new EventContext with the specified fields replaced.
 
@@ -115,6 +119,7 @@ class EventContext(BaseContext):
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
+            router_data=self.router_data,
         )
 
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:

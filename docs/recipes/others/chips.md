@@ -8,7 +8,7 @@ Chips are compact elements that represent small pieces of information, such as t
 
 ## Status
 
-```python demo exec toggle
+```python demo exec
 from reflex.components.radix.themes.base import LiteralAccentColor
 
 status_chip_props = {
@@ -40,7 +40,7 @@ def status_chips_group() -> rx.Component:
 
 ## Single selection
 
-```python demo exec toggle
+```python demo exec
 chip_props = {
     "radius": "full",
     "variant": "soft",
@@ -111,7 +111,7 @@ def item_selector() -> rx.Component:
 
 This example demonstrates selecting multiple skills from a list. It includes buttons to add all skills, clear selected skills, and select a random number of skills.
 
-```python demo exec toggle
+```python demo exec
 import random
 from reflex.components.radix.themes.base import LiteralAccentColor
 

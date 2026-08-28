@@ -297,7 +297,13 @@ categories = {
             "history",
             "build-logs",
             "list",
+            "rollback",
+            "describe",
         ],
+    ),
+    "providers": prefix(
+        REFLEX_CLOUD_PREFIX + " providers",
+        ["status", "list"],
     ),
     "projects": prefix(
         REFLEX_CLOUD_PREFIX + " project",

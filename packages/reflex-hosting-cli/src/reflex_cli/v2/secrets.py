@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -59,18 +63,18 @@ def get_secrets(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
 
         if not app_id:
-            console.error("No valid app_id provided.")
+            logger.error("No valid app_id provided.")
             raise click.exceptions.Exit(1)
 
         secrets = hosting.get_secrets(app_id=app_id, client=authenticated_client)
         if "failed" in secrets:
-            console.error(secrets)
+            logger.error(secrets)
             raise click.exceptions.Exit(1)
         if as_json:
             console.print(secrets)
@@ -82,7 +86,7 @@ def get_secrets(
         else:
             console.print(str(secrets))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -140,21 +144,21 @@ def update_secrets(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
 
         if not app_id:
-            console.error("No valid app_id provided.")
+            logger.error("No valid app_id provided.")
             raise click.exceptions.Exit(1)
 
         if envfile is None and not envs:
-            console.error("--envfile or --env must be provided")
+            logger.error("--envfile or --env must be provided")
             raise click.exceptions.Exit(1)
 
         if envfile and envs:
-            console.warn("--envfile is set; ignoring --env")
+            logger.warning("--envfile is set; ignoring --env")
 
         if envfile:
             try:
@@ -162,7 +166,7 @@ def update_secrets(
                     dotenv_values,
                 )
             except ImportError:
-                console.error(
+                logger.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
                 raise click.exceptions.Exit(1) from None
@@ -173,7 +177,7 @@ def update_secrets(
             app_id=app_id, secrets=secrets, reboot=reboot, client=authenticated_client
         )
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -221,22 +225,22 @@ def delete_secret(
             if config:
                 app_id = config.appid
                 if not isinstance(app_id, (str, type(None))):
-                    console.error(
+                    logger.error(
                         "app_id must be a string or None. Please check your config file."
                     )
                     raise click.exceptions.Exit(1)
 
         if not app_id:
-            console.error("No valid app_id provided.")
+            logger.error("No valid app_id provided.")
             raise click.exceptions.Exit(1)
 
         result = hosting.delete_secret(
             app_id=app_id, key=key, reboot=reboot, client=authenticated_client
         )
         if "failed" in result:
-            console.error(result)
+            logger.error(result)
             raise click.exceptions.Exit(1)
-        console.success("Successfully deleted secret.")
+        logger.log(log.SUCCESS, "Successfully deleted secret.")
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err

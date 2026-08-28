@@ -33,7 +33,7 @@ class ScrollAreaBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the scroll area component."""
+        """The import variable for the scroll area component."""
         return ImportVar(tag="ScrollArea", package_path="", install=False)
 
 

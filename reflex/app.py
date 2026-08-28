@@ -10,6 +10,7 @@ import functools
 import importlib
 import inspect
 import json
+import logging
 import operator
 import sys
 import time
@@ -29,7 +30,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants
 from reflex_base.components.component import Component, ComponentStyle
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import environment
 from reflex_base.event import (
@@ -44,7 +45,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -75,7 +76,6 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
-from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -100,12 +100,16 @@ from reflex.utils.exec import (
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
+logger = logging.getLogger(__name__)
+
 if sys.version_info < (3, 13):
     from typing_extensions import deprecated
 else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from reflex_base.plugins import Plugin
+    from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
 
     # Define custom types.
@@ -123,7 +127,7 @@ def default_frontend_exception_handler(exception: Exception) -> None:
         exception: The exception.
 
     """
-    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+    logger.error(f"[Reflex Frontend Exception]\n {exception}\n")
 
 
 def default_backend_exception_handler(exception: Exception) -> EventSpec:
@@ -142,7 +146,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         type(exception), exception, exception.__traceback__
     )
 
-    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
+    logger.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
@@ -209,7 +213,7 @@ def _component_from_import_path(
 
         log_path = save_error(e)
 
-        console.error(
+        logger.error(
             f"Error loading {feature_name} {import_path}. Error saved to {log_path}"
         )
         return None
@@ -308,6 +312,26 @@ class UnevaluatedPage:
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreparedPage:
+    """A validated page descriptor awaiting registration."""
+
+    page: UnevaluatedPage
+    route_args: dict[str, str]
+
+
+def _route_arg_label(arg_type: str) -> str:
+    """Return the human-readable label for a dynamic route argument type.
+
+    Args:
+        arg_type: The ``RouteArgType`` value.
+
+    Returns:
+        ``"list"`` for catch-all arguments, otherwise ``"single"``.
+    """
+    return "list" if arg_type == constants.RouteArgType.LIST else "single"
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -389,6 +413,9 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
+    # Whether the plugins' ``register_route`` hooks have run for this app.
+    _plugin_routes_registered: bool = False
+
     # A map from a page route to the component to render. Users should use `add_page`.
     _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
@@ -452,7 +479,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_namespace(self) -> EventNamespace | None:
-        """Get the event namespace.
+        """The event namespace.
 
         Returns:
             The event namespace.
@@ -461,7 +488,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_processor(self) -> EventProcessor:
-        """Get the event processor.
+        """The event processor.
 
         Raises:
             RuntimeError: If the event processor is not initialized.
@@ -485,7 +512,9 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             raise ValueError(msg)
 
-        get_config(reload=True)
+        self._registration_context._set_app(self)
+
+        reload_config()
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -720,10 +749,25 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
+        trigger = get_backend_compile_trigger()
         self._compile(
             prerender_routes=should_prerender_routes(),
-            trigger=get_backend_compile_trigger(),
+            trigger=trigger,
         )
+
+        # In preview mode the frontend is served as a mounted static bundle rather
+        # than by the Vite dev server, so each hot reload must re-run the frontend
+        # build against the freshly compiled output.
+        if (
+            trigger == "hot_reload"
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.PREVIEW
+            and environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get()
+        ):
+            from reflex.utils import build
+
+            # The previous output is deleted before building, so a failed build
+            # must fail hard rather than pretend to serve a frontend.
+            build.build()
 
         config = get_config()
 
@@ -841,7 +885,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def state_manager(self) -> StateManager:
-        """Get the state manager.
+        """The state manager.
 
         Returns:
             The initialized state manager.
@@ -867,6 +911,25 @@ class App(MiddlewareMixin, LifespanMixin):
         from reflex.compiler.compiler import into_component
 
         return into_component(component)
+
+    @staticmethod
+    def _page_route_key(
+        component: Component | ComponentCallable | None, route: str | None
+    ) -> str | None:
+        """Derive the normalized route used to register a page.
+
+        Args:
+            component: The page component or component callable.
+            route: The explicit route, if any.
+
+        Returns:
+            The normalized route, or ``None`` when no route can be derived.
+        """
+        if route is not None:
+            return format.format_route(route)
+        if isinstance(component, Callable):
+            return format.format_route(format.to_kebab_case(component.__name__))
+        return None
 
     def add_page(
         self,
@@ -897,23 +960,66 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
+            ValueError: When the route syntax is invalid.
         """
-        # If the route is not set, get it from the callable.
+        self._register_prepared_page(
+            self._prepare_page(
+                component,
+                route,
+                title,
+                description,
+                image,
+                on_load,
+                meta,
+                context,
+            )
+        )
+
+    def _prepare_page(
+        self,
+        component: Component | ComponentCallable | None = None,
+        route: str | None = None,
+        title: str | Var | None = None,
+        description: str | Var | None = None,
+        image: str = constants.DefaultPage.IMAGE,
+        on_load: EventType[()] | None = None,
+        meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
+    ) -> _PreparedPage:
+        """Validate and normalize a page without mutating app route state.
+
+        App subclasses that extend ``add_page`` arguments should perform their
+        pure argument normalization here so staged plugin contributions and
+        direct page registration share the same preparation path.
+
+        Args:
+            component: The component to display at the page.
+            route: The route to display the component at.
+            title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
+            on_load: The event handler(s) called each time the page loads.
+            meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
+
+        Returns:
+            The validated page descriptor and its dynamic route arguments.
+
+        Raises:
+            PageValueError: When the component is not set for a non-404 page.
+            RouteValueError: When a route cannot be derived.
+            ValueError: When the route syntax is invalid.
+        """
+        route = self._page_route_key(component, route)
         if route is None:
-            if not isinstance(component, Callable):
-                msg = "Route must be set if component is not a callable."
-                raise exceptions.RouteValueError(msg)
-            # Format the route.
-            route = format.format_route(format.to_kebab_case(component.__name__))
-        else:
-            route = format.format_route(route)
+            msg = "Route must be set if component is not a callable."
+            raise exceptions.RouteValueError(msg)
 
         if route == constants.Page404.SLUG:
             if component is None:
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            component = self._generate_component(component)
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
@@ -944,41 +1050,235 @@ class App(MiddlewareMixin, LifespanMixin):
             _source_module=source_module,
         )
 
-        if route in self._unevaluated_pages:
-            if self._unevaluated_pages[route].component is component:
-                unevaluated_page = unevaluated_page.merged_with(
-                    self._unevaluated_pages[route]
+        return _PreparedPage(
+            page=unevaluated_page,
+            route_args=get_route_args(route),
+        )
+
+    def _register_prepared_page(self, prepared: _PreparedPage) -> None:
+        """Resolve conflicts and commit one directly added page.
+
+        Args:
+            prepared: The validated page descriptor to register.
+
+        Raises:
+            RouteValueError: When another component already owns the route.
+        """
+        page = prepared.page
+        if page.route in self._unevaluated_pages:
+            existing_page = self._unevaluated_pages[page.route]
+            if existing_page.component is page.component:
+                prepared = dataclasses.replace(
+                    prepared,
+                    page=page.merged_with(existing_page),
                 )
-                console.warn(
-                    f"Page {route} is being redefined with the same component."
+                logger.warning(
+                    f"Page {page.route} is being redefined with the same component."
                 )
             else:
                 route_name = (
-                    f"`{route}` or `/`"
-                    if route == constants.PageNames.INDEX_ROUTE
-                    else f"`{route}`"
+                    f"`{page.route}` or `/`"
+                    if page.route == constants.PageNames.INDEX_ROUTE
+                    else f"`{page.route}`"
                 )
-                existing_component = self._unevaluated_pages[route].component
                 msg = (
-                    f"Tried to add page {readable_name_from_component(component)} with route {route_name} but "
-                    f"page {readable_name_from_component(existing_component)} with the same route already exists. "
+                    f"Tried to add page {readable_name_from_component(page.component)} with route {route_name} but "
+                    f"page {readable_name_from_component(existing_page.component)} with the same route already exists. "
                     "Make sure you do not have two pages with the same route."
                 )
                 raise exceptions.RouteValueError(msg)
+        self._commit_page(prepared)
 
-        # Setup dynamic args for the route.
-        # this state assignment is only required for tests using the deprecated state kwarg for App
-        state = self._state or State
-        route_args = get_route_args(route)
-        state.setup_dynamic_args(route_args)
+    def _commit_page(
+        self, prepared: _PreparedPage, *, setup_dynamic_args: bool = True
+    ) -> None:
+        """Commit a prepared page to the app.
 
-        self._load_events[route] = (
-            (on_load if isinstance(on_load, list) else [on_load])
-            if on_load is not None
+        This is the fixed, non-fallible final write. Staged plugin batches
+        invoke this framework implementation directly so an override cannot
+        make the batch partially commit — subclasses must customize page
+        registration in ``_prepare_page``, not here.
+
+        Args:
+            prepared: The validated page descriptor to register.
+            setup_dynamic_args: Whether to install its dynamic route variables.
+                A staged plugin batch installs all variables once before
+                committing its descriptors.
+        """
+        page = prepared.page
+        if setup_dynamic_args:
+            # This state assignment is only required for tests using the
+            # deprecated state kwarg for App.
+            state = self._state or State
+            state.setup_dynamic_args(prepared.route_args)
+
+        self._load_events[page.route] = (
+            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            if page.on_load is not None
             else []
         )
 
-        self._unevaluated_pages[route] = unevaluated_page
+        self._unevaluated_pages[page.route] = page
+        self.__dict__.pop("router", None)
+
+    def _register_plugin_pages(self, plugins: Sequence[Plugin]) -> None:
+        """Collect and commit plugin page contributions, once per app instance.
+
+        Hooks receive a staged ``add_page`` capability. No live app route
+        state is mutated until every hook succeeds, so a hook exception cannot
+        leave partial routes or dynamic route variables behind.
+
+        Args:
+            plugins: The active plugins, in configuration order.
+        """
+        if self._plugin_routes_registered:
+            return
+
+        # Snapshot preserving definition order for deterministic error messages.
+        app_routes = dict.fromkeys(self._unevaluated_pages)
+        contributions: list[_PreparedPage] = []
+        route_owners: dict[str, str] = {}
+
+        def has_app_page(route: str) -> bool:
+            """Return whether the app defines a normalized route.
+
+            Args:
+                route: The route to check.
+
+            Returns:
+                Whether the route belongs to the app rather than a plugin.
+            """
+            return format.format_route(route) in app_routes
+
+        def make_add_page(plugin_name: str) -> AddPageProtocol:
+            """Create a staged page registrar bound to one plugin.
+
+            Args:
+                plugin_name: Name identifying the contributing plugin.
+
+            Returns:
+                A registrar recording contributions under ``plugin_name``.
+            """
+
+            def add_page(
+                component: Component | ComponentCallable | None = None,
+                route: str | None = None,
+                **page_args: Any,
+            ) -> None:
+                """Stage a page contribution owned by the active plugin.
+
+                Args:
+                    component: The component or component callable to register.
+                    route: The explicit page route, if any.
+                    page_args: Additional keyword page-preparation arguments.
+
+                Raises:
+                    RouteValueError: If a route cannot be derived or is
+                        already owned.
+                """
+                prepared = self._prepare_page(component, route, **page_args)
+                route_key = prepared.page.route
+
+                if route_key in app_routes:
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but that route is already defined by "
+                        "the app; use has_app_page(route) to keep the "
+                        "app-defined page."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                if (owner := route_owners.get(route_key)) is not None:
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but that route is already defined by "
+                        f"plugin {owner}; a route can only be registered by "
+                        "one plugin."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                existing_routes = app_routes.keys() | route_owners.keys()
+                if conflict := self._find_route_conflict(existing_routes, route_key):
+                    existing_route, existing_segment, new_segment = conflict
+                    existing_owner = (
+                        "the app"
+                        if existing_route in app_routes
+                        else f"plugin {route_owners[existing_route]}"
+                    )
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but it conflicts with route "
+                        f"`{existing_route}` defined by {existing_owner}; "
+                        "dynamic segment names must match "
+                        f"(`{existing_segment}` != `{new_segment}`)."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                route_owners[route_key] = plugin_name
+                contributions.append(prepared)
+
+            return add_page
+
+        class_names = [type(plugin).__name__ for plugin in plugins]
+        duplicated = {name for name in class_names if class_names.count(name) > 1}
+        for index, (plugin, class_name) in enumerate(
+            zip(plugins, class_names, strict=True)
+        ):
+            plugin_name = (
+                f"{class_name} (plugins[{index}])"
+                if class_name in duplicated
+                else class_name
+            )
+            plugin.register_route(
+                app_type=type(self),
+                add_page=make_add_page(plugin_name),
+                has_app_page=has_app_page,
+            )
+
+        # This state assignment is only required for tests using the
+        # deprecated state kwarg for App.
+        state = self._state or State
+        staged_args: dict[str, str] = {}
+        # First recorded source of each dynamic argument wins: stale variables
+        # from an earlier app in this process, then app routes, then staged
+        # contributions in commit order.
+        arg_sources: dict[str, tuple[str, str]] = {
+            name: (arg_type, "an earlier app in this process (restart to clear it)")
+            for name, arg_type in state._dynamic_route_arg_types().items()
+        }
+        for route in app_routes:
+            for name, arg_type in get_route_args(route).items():
+                arg_sources.setdefault(
+                    name, (arg_type, f"route `{route}` defined by the app")
+                )
+        for prepared in contributions:
+            route = prepared.page.route
+            owner = route_owners[route]
+            for name, arg_type in prepared.route_args.items():
+                existing_type, source = arg_sources.setdefault(
+                    name, (arg_type, f"route `{route}` defined by plugin {owner}")
+                )
+                if existing_type != arg_type:
+                    msg = (
+                        f"Plugin {owner} tried to register route `{route}` with "
+                        f"dynamic argument `{name}` of type "
+                        f"`{_route_arg_label(arg_type)}`, but {source} already "
+                        f"uses it as type `{_route_arg_label(existing_type)}`. "
+                        "Dynamic argument types must be consistent across routes."
+                    )
+                    raise exceptions.RouteValueError(msg)
+                staged_args.setdefault(name, arg_type)
+        if staged_args:
+            state.setup_dynamic_args(staged_args)
+
+        # Commit through the framework implementation: concrete App extensions
+        # normalize extra arguments in ``_prepare_page``; the final writes are
+        # intentionally fixed and non-fallible so the batch cannot partially
+        # commit.
+        for prepared in contributions:
+            App._commit_page(self, prepared, setup_dynamic_args=False)
+
+        self._plugin_routes_registered = True
 
     def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
@@ -1016,7 +1316,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
-        """Get the route computer function.
+        """The route computer function.
 
         Returns:
             The route computer function.
@@ -1057,32 +1357,61 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.exceptions import RouteValueError
 
+        conflict = self._find_route_conflict(self._pages, new_route)
+        if conflict is not None:
+            route, existing_segment, new_segment = conflict
+            msg = (
+                "You cannot use different slug names for the same dynamic path "
+                f"in  {route} and {new_route} "
+                f"('{existing_segment}' != '{new_segment}')"
+            )
+            raise RouteValueError(msg)
+
+    @staticmethod
+    def _find_route_conflict(
+        existing_routes: Collection[str], new_route: str
+    ) -> tuple[str, str, str] | None:
+        """Find an existing route with incompatible dynamic segment names.
+
+        Args:
+            existing_routes: Routes already occupying the router tree.
+            new_route: The route being added.
+
+        Returns:
+            The conflicting route and differing segment names, or ``None``.
+        """
         if "[" not in new_route:
-            return
+            return None
 
         segments = (
             constants.RouteRegex.SINGLE_SEGMENT,
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
-        for route in self._pages:
+        replaced_new_route = replace_brackets_with_keywords(new_route)
+        for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
-                    # If the slugs in the segments of both routes are not the same, then the route is invalid
-                    msg = f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
-                    raise RouteValueError(msg)
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
+                    return route, r, nr
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
+        return None
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
@@ -1143,7 +1472,7 @@ class App(MiddlewareMixin, LifespanMixin):
         filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:
-                console.warn(
+                logger.warning(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
@@ -1272,8 +1601,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
-        app_name = get_config().app_name
-        for render, kwargs in DECORATED_PAGES[app_name]:
+        for render, kwargs in self._registration_context.decorated_pages:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
@@ -1605,6 +1933,16 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Maximum error-level log entries a single session may produce via the
+    # client_error event before further reports from it are dropped.
+    _MAX_CLIENT_ERRORS_PER_SID = 5
+
+    # Process-wide bound on error-level client_error log entries per time
+    # window; per-SID budgets alone reset on reconnect, so scripted
+    # reconnects could otherwise flood the logs.
+    _CLIENT_ERROR_WINDOW_SECONDS = 60.0
+    _MAX_CLIENT_ERRORS_PER_WINDOW = 20
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1618,9 +1956,16 @@ class EventNamespace(AsyncNamespace):
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
 
+        # Number of client_error reports logged per SID, for rate limiting.
+        self._client_error_counts: dict[str, int] = {}
+
+        # Start time and count of the current process-wide client_error window.
+        self._client_error_window_start = 0.0
+        self._client_error_window_count = 0
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Get token to SID mapping for backward compatibility.
+        """Token to SID mapping for backward compatibility.
 
         Note: this mapping is read-only.
 
@@ -1632,7 +1977,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """Get SID to token mapping for backward compatibility.
+        """SID to token mapping for backward compatibility.
 
         Returns:
             The SID to token mapping dict.
@@ -1655,11 +2000,11 @@ class EventNamespace(AsyncNamespace):
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
         else:
-            console.warn(f"No token provided in connection for session {sid}")
+            logger.warning(f"No token provided in connection for session {sid}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
-            console.warn(
+            logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
@@ -1672,6 +2017,7 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -1684,7 +2030,7 @@ class EventNamespace(AsyncNamespace):
             task.add_done_callback(
                 lambda t: (
                     t.exception()
-                    and console.error(f"Token cleanup error: {t.exception()}")
+                    and logger.error(f"Token cleanup error: {t.exception()}")
                 )
             )
             return task
@@ -1708,15 +2054,19 @@ class EventNamespace(AsyncNamespace):
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
-                console.warn(
+                logger.warning(
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Await the emit directly: wrapping it in a task does not unblock the
+        # caller (awaiting the task blocks just the same) and only adds task
+        # creation/scheduling overhead on every update.
+        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The emit may complete without suspending (the packet is queued, not
+        # sent). Yield one loop tick so the websocket writer can flush the
+        # packet before the caller potentially blocks the event loop (e.g. a
+        # sync event handler resuming after a yield).
+        await asyncio.sleep(0)
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
@@ -1731,7 +2081,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
-            console.warn(
+            logger.warning(
                 f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
             )
             return
@@ -1739,7 +2089,7 @@ class EventNamespace(AsyncNamespace):
         fields = data
 
         if isinstance(fields, str):
-            console.warn(
+            logger.warning(
                 "Received event data as a string. This generally should not happen and may indicate a bug."
                 f" Event data: {fields}"
             )
@@ -1815,6 +2165,83 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def on_client_error(self, sid: str, data: Any):
+        """Handle errors reported by the frontend.
+
+        This is a dedicated socket event rather than a state event
+        (``FrontendEventExceptionState.handle_frontend_exception``) because a
+        state event is addressed by a handler name the frontend derives from
+        its own state definitions. When those definitions are what disagree
+        with the backend -- the case this handler exists to report -- the name
+        may not resolve and the report is lost. A fixed socket event name
+        cannot drift, and it still gets through after the frontend has stopped
+        sending events on detecting the mismatch.
+
+        Reports are routed through the app's ``frontend_exception_handler``,
+        so frontend errors (especially state update processing errors) are
+        visible in backend logs and reach custom exception handlers.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client.
+        """
+        if not isinstance(data, dict):
+            logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            return
+
+        # Check the sender and the rate limits before sanitizing: sanitizing is
+        # linear in the size of the client-supplied values, and reports that are
+        # dropped here must not cost more than the check itself.
+        if sid not in self.sid_to_token:
+            # Sockets without a linked token are not known clients; don't let
+            # them write error-level entries into the backend logs.
+            logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
+            return
+
+        # Rate limit per session so a client cannot flood the backend logs.
+        error_count = self._client_error_counts.get(sid, 0)
+        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+            return
+
+        # Also bound total entries per time window: per-SID budgets reset on
+        # reconnect, so they alone do not stop scripted reconnect loops.
+        now = time.monotonic()
+        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
+            self._client_error_window_start = now
+            self._client_error_window_count = 0
+        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self._client_error_window_count += 1
+                logger.warning(
+                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
+                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
+                    "suppressing further reports for this window."
+                )
+            return
+        self._client_error_window_count += 1
+        self._client_error_counts[sid] = error_count + 1
+
+        error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
+        if error_type == constants.ClientErrorType.DISPATCH_MISSING:
+            substate = format.sanitize_client_log_value(data.get("substate", ""))
+            report = (
+                f"[SID: {sid}] State update failed: "
+                f"no dispatch function for substate(s) '{substate}'. "
+                "This indicates a frontend/backend state mismatch. "
+                "Rebuild the frontend or check that api_url points to the matching backend."
+            )
+        else:
+            message = format.sanitize_client_log_value(
+                data.get("message", "No error message provided")
+            )
+            report = f"[SID: {sid}] {error_type}: {message}"
+        # Route through the app's frontend exception handler so custom
+        # handlers (e.g. error trackers) receive client errors too.
+        self.app.frontend_exception_handler(Exception(report))
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.

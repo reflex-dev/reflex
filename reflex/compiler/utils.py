@@ -24,6 +24,7 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -369,12 +370,8 @@ def _app_style() -> ComponentStyle | Style:
     Returns:
         The app-level style map.
     """
-    try:
-        from reflex.utils.prerequisites import get_and_validate_app
-
-        return get_and_validate_app().app.style
-    except Exception:
-        return {}
+    app = RegistrationContext.ensure_context()._app
+    return app.style if app is not None else {}
 
 
 def compile_experimental_component_memo(
@@ -460,6 +457,7 @@ def compile_experimental_component_memo(
             "name": memo_paths.library_and_symbol(
                 definition.source_module, definition.export_name
             )[1],
+            "display_name": definition.display_name or definition.export_name,
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
                 rest=rest_param.placeholder_name if rest_param is not None else None,

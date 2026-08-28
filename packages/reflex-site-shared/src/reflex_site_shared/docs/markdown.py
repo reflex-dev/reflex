@@ -5,6 +5,7 @@
 
 import json
 import sys
+import textwrap
 import types
 from pathlib import Path
 
@@ -443,8 +444,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
                 comp = self._exec_and_get_last_callable(content)
-                parts = content.rpartition("def")
-                data, code = parts[0], parts[1] + parts[2]
+                before, sep, after = content.rpartition("\ndef ")
+                data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
@@ -463,9 +464,6 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             k, sep, v = flag.partition("=")
             if sep:
                 demobox_props[k] = v
-        if "toggle" in flags:
-            demobox_props["toggle"] = True
-
         return docdemo(content, comp=comp, demobox_props=demobox_props, id=comp_id)
 
     def _render_demo_only(self, content: str, flags: set[str]) -> rx.Component:
@@ -480,8 +478,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
                 comp = self._exec_and_get_last_callable(content)
-                parts = content.rpartition("def")
-                data, code = parts[0], parts[1] + parts[2]
+                before, sep, after = content.rpartition("\ndef ")
+                data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
@@ -893,6 +891,7 @@ def render_markdown(
     *,
     virtual_filepath: str = "",
     filename: str = "",
+    dedent: bool = True,
 ) -> rx.Component:
     """Render a Markdown string into Reflex components.
 
@@ -900,10 +899,13 @@ def render_markdown(
         text: Markdown source to render.
         virtual_filepath: Stable document identity used by executable blocks.
         filename: Optional source filename included in execution errors.
+        dedent: If True, remove common leading whitespace from the source.
 
     Returns:
         The rendered component tree.
     """
+    if dedent:
+        text = textwrap.dedent(text)
     doc = parse_document(text)
     transformer = ReflexDocTransformer(
         virtual_filepath=virtual_filepath,

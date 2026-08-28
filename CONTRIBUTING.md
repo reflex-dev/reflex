@@ -79,22 +79,76 @@ Each PR that changes the source of a published package must add a news fragment 
 **Create a fragment from the CLI:**
 
 ```bash
-uv run towncrier create --config pyproject.toml --dir packages/reflex-components-lucide 1234.feature.md
+uv run reflex-release create --package reflex-components-lucide 1234.feature.md
 ```
 
-Drop `--dir` for a fragment against the main `reflex` package.
+Drop `--package` for a fragment against the main `reflex` package.
 
-If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`) and rename it after opening the PR.
+If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`). Renaming it after opening the PR is nice, but not required: the release workflow renames any orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
-**Publishing CHANGELOG.md**: This step should be completed by maintainers during
-the release process. If you have access to publish a release, you can run the
-following command to generate the `CHANGELOG.md` file in each subpackage.
+**Changelog version headings:** PRs to `main` must not add new version headings to any `CHANGELOG.md` — a merged heading without a git tag is a publish trigger, so new headings only come from the *Dispatch release* workflow. CI enforces this with the same parser the release pipeline uses; for deliberate restructuring of already-published sections, apply the `changelog-version-edit` label.
+
+**Releasing (maintainers):** the `CHANGELOG.md` files are the source of truth
+for publishing. A release is cut by materializing the news fragments into a
+package's `CHANGELOG.md` under a new version heading and landing that change on
+a release branch — never by tagging manually. The pieces:
+
+1. **Dispatch release** (`dispatch_release.yml`, run from the Actions tab)
+   selects packages and a release action, computes the next version(s), runs
+   towncrier, and delivers the changelog bump. Leaving every package
+   unchecked auto-selects the packages with pending news fragments (for
+   `release-from-prerelease`: the packages whose changelog is topped by an
+   alpha). Details:
+   - *Prerelease actions* (`new-prerelease-*`, `continued-prerelease`) push
+     alpha versions straight to an `r/pre-<date>` branch (continued
+     prereleases push back to the `r/pre-*` branch they are dispatched on);
+     alphas build immediately and upload once the `pypi` environment
+     deployment is approved. To pull new work into a prerelease train, merge
+     `main` into its branch and dispatch `continued-prerelease` on it.
+   - *Release actions* (`release-*`) open a PR with the changelog changes
+     instead; reviewing and merging that PR is how final versions land (the
+     upload still waits for the `pypi` environment approval below). The PR
+     targets `main`, or the `r/hotfix/...` branch the workflow was dispatched
+     on (hotfix branches may publish final versions directly).
+     `release-from-prerelease` collapses the accumulated alpha sections into
+     one final-version section — alpha headings never ship in a final
+     changelog.
+   - `reflex` and `reflex-base` are a lockstep pair and share one checkbox:
+     selecting it releases both at the same version. The checkboxes are
+     generated from the package list, so adding or removing a package means
+     re-running `uv run reflex-release sync`.
+2. **Release from changelog** (`release_from_changelog.yml`) runs on every push
+   to `main`, `r/pre-*`, and `r/hotfix/**`: any package whose newest changelog
+   version has no git tag gets built and queued for publishing. Final
+   (non-alpha) versions only publish from `main` or `r/hotfix/**`; alphas only
+   from `r/pre-*`/`r/hotfix/**`. `reflex` and `reflex-base` are checked as a
+   lockstep pair and `reflex` publishes only after the rest of the batch.
+3. **Publish to PyPI** (`publish.yml`, also manually dispatchable with a
+   package + version) validates and builds without privileges, then **waits
+   for a human to approve the `pypi` environment deployment** — every upload,
+   alphas and internal packages included, requires that approval. Only after a
+   successful upload does it push the tag and create the GitHub release, so a
+   failed or rejected publish leaves no tag behind — fix the problem on top of
+   the changelog bump and the next push retries automatically.
+
+**The release workflows are generated.** `dispatch_release.yml`,
+`release_from_changelog.yml`, `publish.yml`, `changelog.yml` and
+`auto_release_internal.yml` are rendered by
+[`reflex-release`](packages/reflex-release/README.md) — the copy bundled in this
+repository, run straight from `uv.lock` — out of the `[tool.reflex-release]`
+table in the repo-root `pyproject.toml`. Do not edit them by hand: change the
+configuration (or the templates under
+`packages/reflex-release/src/reflex_release/templates/`) and regenerate with
 
 ```bash
-uv run towncrier build --config pyproject.toml --version v0.9.4
+uv run reflex-release sync
 ```
+
+Because the workflows and the tool that renders them live in the same commit,
+`reflex-release sync --check` — which every pull request runs — catches both a
+workflow edited in place and a template change that was never applied.
 
 **Where changelogs are published:** the docs site renders every `CHANGELOG.md`
 in the repo (repo root and `packages/*/`) under

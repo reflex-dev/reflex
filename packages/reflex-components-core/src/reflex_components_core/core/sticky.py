@@ -1,6 +1,9 @@
 """Components for displaying the Reflex sticky logo."""
 
+import urllib.parse
+
 from reflex_base.components.component import ComponentNamespace
+from reflex_base.environment import environment
 from reflex_base.style import Style
 
 from reflex_components_core.core.colors import color
@@ -69,6 +72,18 @@ class StickyLabel(Span):
         })
 
 
+def _badge_href() -> str:
+    """Compute the badge link, appending the referrer param when set.
+
+    Returns:
+        The badge destination URL.
+    """
+    referrer = environment.REFLEX_REFERRER_PARAM.get()
+    if referrer:
+        return f"https://reflex.dev/?ref={urllib.parse.quote(referrer, safe='')}"
+    return "https://reflex.dev"
+
+
 class StickyBadge(A):
     """A badge that displays the Reflex sticky logo."""
 
@@ -82,7 +97,7 @@ class StickyBadge(A):
         return super().create(
             StickyLogo.create(),
             desktop_only(StickyLabel.create()),
-            href="https://reflex.dev",
+            href=_badge_href(),
             target="_blank",
             width="auto",
             padding="0.375rem",

@@ -68,6 +68,61 @@ def index():
     )
 ```
 
+Binding state to a prop at the call site does not pull the state into the page.
+The compiler moves that call into a generated wrapper component that holds the
+state hooks the prop needs, so the page itself keeps no dependency on the state.
+When the state changes, the wrapper re-renders and React's `memo` stops there
+unless the prop's value actually changed. The page function itself never re-runs,
+so nothing in it re-renders except the components that read the changed state
+themselves — each inside its own wrapper, the `rx.input` above included.
+
+That makes the call site the place to punch a single dependency through to an
+expensive component: pass exactly the Vars it needs, and it re-renders for those
+and nothing else, however much the rest of the state churns.
+
+## Using with `rx.foreach`
+
+To render a memoized component for each item of a list Var, wrap the call in a
+lambda and pass the props by keyword. Also pass a `key` prop that uniquely
+identifies each item — React uses it to track items across re-renders. For the
+`key` to reach the rendered element, declare an `rx.RestProp` parameter and
+spread it onto the returned component; `key` flows through the `...rest` spread
+and React consumes it. Do **not** declare `key` itself in the memo's signature.
+
+```python
+from typing import TypedDict
+
+
+class Task(TypedDict):
+    id: str
+    name: str
+
+
+class TaskState(rx.State):
+    tasks: list[Task] = [
+        {"id": "1", "name": "Write docs"},
+        {"id": "2", "name": "Review PR"},
+    ]
+
+
+@rx.memo
+def task_card(rest: rx.RestProp, *, task: rx.Var[Task]) -> rx.Component:
+    return rx.card(rx.text(task["name"]), rest)
+
+
+def index():
+    return rx.vstack(
+        rx.foreach(
+            TaskState.tasks,
+            lambda task: task_card(task=task, key=task["id"]),
+        ),
+    )
+```
+
+Inside the memo body, `task` is a `Var`, not a plain dict: index into it with
+`task["name"]` or use it in f-strings, but do not iterate over it or call
+Python dict methods like `.keys()` — only Var operations are available.
+
 ## Forwarding Props with `rx.RestProp`
 
 Use `rx.RestProp` to accept and forward arbitrary props (think `...rest` in JSX). Useful for thin wrappers that re-style a primitive without redeclaring every prop.
@@ -113,6 +168,32 @@ def primary_button(
 ) -> rx.Component:
     class_name = rest.get("class_name", "") + " bg-primary-9 text-white"
     return rx.button(label, rest.merge({"class_name": class_name}))
+```
+
+### Limitation: props consumed at build time
+
+`rx.RestProp` forwards props to the rendered element at **runtime**, so it can only carry props the element itself understands — real component props and CSS props. It **cannot** carry a prop that the target component's `create()` consumes at **build time** to decide what gets rendered.
+
+The memo body runs once, when the app compiles — before any caller has passed a value. A value sent later through `rest` arrives only in the browser, after the target's `create()` has already run, so it never reaches that code. It is then emitted as a plain prop or as CSS and silently has no effect. Build-time props include `is_external` on `rx.link` (it selects a router link), the `tag` on `rx.icon` (it picks which icon to import), and any custom `create()` that consumes a keyword to reshape its output.
+
+To forward such a prop, give it its own `rx.Var[...]` parameter and place it in the body yourself instead of routing it through `rest`:
+
+```python
+class CustomText(rx.el.Span):
+    @classmethod
+    def create(cls, *children, prefix: rx.Var[str] | str = "", **props) -> rx.Component:
+        return super().create(prefix, *children, **props)
+
+
+# `prefix` is consumed by `create`, so it cannot arrive through `rest`.
+# Declaring it as a parameter lets the memo body pass it to `create` itself.
+@rx.memo
+def styled_text(rest: rx.RestProp, *, prefix: rx.Var[str]) -> rx.Component:
+    return CustomText.create("Foo", rest, prefix=prefix)
+
+
+def index():
+    return styled_text(prefix="P: ", class_name="c")
 ```
 
 
