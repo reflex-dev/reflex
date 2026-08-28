@@ -71,6 +71,18 @@ def test_markup_literal_by_default(capsys):
     assert out == "Info: AssertionErr: foo[bar] != 'baz'\n"
 
 
+def test_warning_with_markup_tags_stays_literal(capsys):
+    """User data resembling rich markup is neither styled nor escaped.
+
+    Messages must not be markup-escaped at the call site: the sink renders
+    them raw, so the escape backslashes would print literally, while markup
+    injection stays impossible because markup is off by default.
+    """
+    logger.warning("got [red]x[/red] of type dict[str, str]")
+    out, _ = capsys.readouterr()
+    assert out == "Warning: got [red]x[/red] of type dict[str, str]\n"
+
+
 def test_level_gating(capsys):
     """Records below the configured level are dropped."""
     log.set_log_level(LogLevel.WARNING)
