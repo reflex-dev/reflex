@@ -2,7 +2,7 @@
 
 ### Breaking Changes
 
-- `get_config(reload=True)` has been replaced by `reload_config()`, and the module-level `bundled_libraries` list in `reflex_base.components.dynamic` has moved onto the active `RegistrationContext` (use `bundle_library()` / `reset_bundled_libraries()` as before). ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- `get_config(reload=True)` has been replaced by `reload_config()`, and the module-level `bundled_libraries` list in `reflex_base.components.dynamic` has moved onto the active `RegistrationContext` (use `bundle_library()` / `reset_bundled_libraries()` as before). Reading `reflex_base.components.dynamic.bundled_libraries` (or `DEFAULT_BUNDLED_LIBRARIES`) still works as a deprecated shim that resolves against the active context; the shims are removed in 1.0. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
 - `pydantic` is no longer a hard dependency; pydantic model support activates when it is installed. Use the `reflex-base[pydantic]` extra (or `reflex[db]`) to keep it. ([#6786](https://github.com/reflex-dev/reflex/issues/6786))
 - Upgraded the frontend to React Router 8.3.0 (from 7.18.2). Its new baseline requires Node 22.22.0+, so `Node.MIN_VERSION` moves from 22.12.0 to 22.22.0; the already-pinned React 19.2.8 and Vite 8.0.16 satisfy the React 19.2.7+ and Vite 7+ floors. React Router 8 dropped the `react-router-dom` re-export package, so it is no longer installed: components that declare `library = "react-router-dom"` must import from `react-router` instead (`RouterProvider`/`HydratedRouter` come from `react-router/dom`). Existing projects have the stale entry pruned from `package.json` on the next install. ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
 
