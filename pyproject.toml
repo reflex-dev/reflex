@@ -44,7 +44,11 @@ dependencies = [
   "reflex-components-react-player >= 0.9.0",
   "reflex-components-recharts >= 0.9.0",
   "reflex-components-sonner >= 0.9.0",
-  "reflex-hosting-cli >= 0.1.66",
+  # `reflex deploy` now lives in reflex_cli.v2.deploy, which older releases do
+  # not carry. Until the release that adds it ships, this is the workspace
+  # development version, following the same convention as the other unreleased
+  # sibling pins; replace it with the published version at release.
+  "reflex-hosting-cli >= 0.1.70.post18.dev0",
 ]
 
 classifiers = [

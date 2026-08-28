@@ -1,1 +1,0 @@
-Append new `Config` fields after the existing ones. `Config` is exported, so its generated `__init__` has a positional contract that inserting a field in the middle would break for any caller that does not pass every argument by keyword; a test now pins the historical field order as a prefix.

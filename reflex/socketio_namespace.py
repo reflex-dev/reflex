@@ -95,12 +95,15 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         """
         await self.handle_ping(sid)
 
-    async def on_client_error(self, sid: str, data: Any):
+    async def on_client_error(self, sid: str, data: Any = None):
         """Handle errors reported by the frontend.
 
         Args:
             sid: The Socket.IO session id.
-            data: The error data from the client.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard then
+                drops it without raising.
         """
         await self.handle_client_error(sid, data)
 
