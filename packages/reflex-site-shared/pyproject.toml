@@ -27,9 +27,7 @@ pattern-prefix = "reflex-site-shared-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-# Generated stubs are gitignored, so they need to be named as build artifacts
-# to be shipped. Anchored to `src` because hatchling matches artifacts with
-# gitignore semantics and checks them before (and instead of) `include`.
+# Include uncommitted pyi stubs generated for this package.
 artifacts = ["/src/**/*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]

@@ -137,15 +137,12 @@ source = "uv-dynamic-versioning"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-# Anchored to the repository root: hatchling matches these with gitignore
-# semantics, so an unanchored "reflex" also matches nested directories named
-# `reflex` under packages/, and `artifacts` patterns bypass `include`
-# altogether, which pulled every sibling package's generated stubs into the
-# reflex sdist and wheel.
+# Leading slashes anchor to the repo root; unanchored patterns match nested
+# directories under packages/ too.
 include = ["/reflex"]
+# Include uncommitted pyi stubs generated for this package.
 artifacts = ["/reflex/**/*.pyi"]
-# Only the sdist ships the build hook, so that the wheel can be built from it.
-# In the wheel it would just install a stray top-level `scripts` package.
+# The build hook is only needed to build the wheel from the sdist.
 targets.sdist.include = ["/reflex", "/scripts/hatch_build.py"]
 
 [tool.hatch.build.hooks.custom]
