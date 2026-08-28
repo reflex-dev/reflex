@@ -38,7 +38,6 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
 from typing_extensions import LiteralString, dataclass_transform, override
 
 from reflex_base import constants
@@ -1484,7 +1483,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     f"access the attribute '{name}'",
                 )
 
-            msg = f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly."
+            msg = f"The State var {self._js_expr} of type {self._var_type} has no attribute '{name}' or may have been annotated wrongly."
             raise VarAttributeError(msg)
 
         def __bool__(self) -> bool:
