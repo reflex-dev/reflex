@@ -25,6 +25,12 @@ Handlers = TypeAliasType(
 
 
 def _type_alias_types() -> list[type]:
+    """Collect the TypeAliasType classes available on this Python.
+
+    Returns:
+        The typing_extensions class, plus the distinct native ``typing`` class
+        on 3.12+ (the two produce separate alias objects there).
+    """
     native = getattr(typing, "TypeAliasType", None)
     return (
         [TypeAliasType] if native in (None, TypeAliasType) else [TypeAliasType, native]
@@ -76,6 +82,11 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert _isinstance("a", key | None, nested=1, treat_var_as_type=False)
     assert not _isinstance("c", key | None, nested=1, treat_var_as_type=False)
 
+    maybe = alias_cls("Maybe", str | None)
+    assert _isinstance(None, maybe, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", maybe, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
+
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())
 def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
@@ -103,3 +114,11 @@ def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     assert typehint_issubclass(str, key | None)
     assert typehint_issubclass(key | None, str | None)
     assert not typehint_issubclass(key | None, str)
+
+    # An alias of a union must compare with union semantics on either side.
+    maybe = alias_cls("Maybe", str | None)
+    assert typehint_issubclass(maybe, str | None)
+    assert typehint_issubclass(str | None, maybe)
+    assert typehint_issubclass(maybe, maybe)
+    assert not typehint_issubclass(maybe, str)
+    assert typehint_issubclass(str, maybe)
