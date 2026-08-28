@@ -931,17 +931,6 @@ def _isinstance(
                 )
             raise
 
-    if isinstance(origin, TypeAliasTypes):
-        # A subscripted PEP 695 type alias keeps the alias as its origin and is
-        # opaque to every check below, so unwrap it and re-dispatch.
-        return _isinstance(
-            obj,
-            resolve_type_alias(cls),
-            nested=nested,
-            treat_var_as_type=treat_var_as_type,
-            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-        )
-
     args = _get_args_cached(cls)
 
     if not args:
@@ -1034,7 +1023,22 @@ def _isinstance(
             obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
         )
 
-    return isinstance(obj, get_base_class(cls))
+    try:
+        return isinstance(obj, get_base_class(cls))
+    except TypeError:
+        # A subscripted PEP 695 type alias keeps the alias as its origin, so it
+        # matches none of the branches above and get_base_class hands the
+        # opaque alias back; unwrap it and re-dispatch. Checked lazily here so
+        # alias-free generic checks pay nothing.
+        if isinstance(origin, TypeAliasTypes):
+            return _isinstance(
+                obj,
+                resolve_type_alias(cls),
+                nested=nested,
+                treat_var_as_type=treat_var_as_type,
+                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+            )
+        raise
 
 
 def is_dataframe(value: type) -> bool:
