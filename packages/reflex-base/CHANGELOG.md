@@ -1,24 +1,4 @@
-## v0.9.9a2 (2026-08-28)
-
-### Deprecations
-
-- `get_config(reload=True)` is deprecated (removal in 1.0) but keeps working: passing `reload=True` emits a deprecation warning and delegates to `reload_config()`, which forces a fresh load of the config into the current `RegistrationContext`. ([#6985](https://github.com/reflex-dev/reflex/issues/6985))
-
-### Bug Fixes
-
-- Resolve `TypeAliasType` annotations (PEP 695 `type` statements and the `typing_extensions` backport) in `_isinstance` and `typehint_issubclass`, so assigning to an alias-annotated state var no longer raises `TypeError: isinstance() arg 2 must be a type` from `State.__setattr__`, and event handlers with alias-annotated arguments can be passed uncalled to event triggers without crashing page compile. Parameterized generic aliases (`Items[str]`) and aliases nested in unions (`Key | None`) are resolved as well, completing the alias support added to `Var.guess_type`. ([#6986](https://github.com/reflex-dev/reflex/issues/6986))
-- The generated `vite.config.js` no longer passes options rejected or deprecated by rolldown-vite 8.x: the no-op `rollupOptions.jsx` key is dropped and `output.advancedChunks` migrated to `output.codeSplitting` (same shape), removing the "Invalid input options" and "advancedChunks option is deprecated" warnings from every prod build/export. ([#6987](https://github.com/reflex-dev/reflex/issues/6987))
-- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
-- A custom component declaring `library = "react-router-dom"` (including versioned and subpath forms) now fails compilation with an actionable error naming the component, instead of silently installing the removed package — which pulled in a second, unpinned React Router 7 copy that worked in dev by accident and broke production builds. React Router 8 dropped `react-router-dom`: use `library = "react-router"` instead, or `"react-router/dom"` for `RouterProvider`/`HydratedRouter`. ([#6991](https://github.com/reflex-dev/reflex/issues/6991))
-- With `REFLEX_ENABLE_FULL_LOGGING`, granian worker records reach the log file again: the file handler now opens in append mode (truncating once up front), so it reopens after the worker's post-fork `logging.config.dictConfig` closes it instead of silently dropping every worker-side record. The legacy console file writer follows the reopened stream through a proxy, so its timestamped lines no longer leak to stdout and break `--json` output. ([#6992](https://github.com/reflex-dev/reflex/issues/6992))
-
-### Performance
-
-- Speed up prop validation and JSON serialization on hot paths: `_isinstance` now reads `__origin__` once per type, memoizes `get_args`, and caches the deferred `Var`/`LiteralVar`/`Field` imports instead of re-importing on every call, and `json_dumps` caches its deferred `serializers.serialize` lookup. ([#6862](https://github.com/reflex-dev/reflex/issues/6862))
-- `vite_config_template` declares a `resolveId` hook filter (`{ id: /react-dom\/server/ }`) on `vite-plugin-always-use-react-dom-server-node`. The plugin runs with `enforce: "pre"`, so without a filter rolldown invoked its JS handler for every import specifier in the graph (~15,800 calls on the Reflex docs build) to redirect the one specifier imported by `entry.server.node.tsx`; the filter is evaluated natively and skips the call otherwise. The template also imports `./vite-plugin-safari-cachebust.js` with its extension, which Vite's `configLoader: "native"` requires and warns about today. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
-
-
-## v0.9.9a1 (2026-08-27)
+## v0.9.9 (2026-08-28)
 
 ### Breaking Changes
 
@@ -29,6 +9,7 @@
 ### Deprecations
 
 - The `console.debug/info/success/log/warn/error/timing` helpers are deprecated (removal in 1.0) but keep working as shims; use `logging.getLogger(__name__)` and the pipeline in `reflex_base.utils.log` instead. The interactive Rich features (`print`/`rule`/`status`/`ask`/`progress`) remain first-class. ([#6867](https://github.com/reflex-dev/reflex/issues/6867))
+- `get_config(reload=True)` is deprecated (removal in 1.0) but keeps working: passing `reload=True` emits a deprecation warning and delegates to `reload_config()`, which forces a fresh load of the config into the current `RegistrationContext`. ([#6985](https://github.com/reflex-dev/reflex/issues/6985))
 
 ### Features
 
@@ -49,11 +30,18 @@
 - Chained events (those yielded by an event handler) now inherit the routing data of the event being processed, so `router` and dynamic route args resolve against the view that produced them instead of whichever view the last client-sent event left on the root state. ([#6919](https://github.com/reflex-dev/reflex/issues/6919))
 - Stop background event handlers from computing a delta and cleaning the root state after the state lock is dropped. On a shared state tree (opportunistic locking, in-memory state manager) that unlocked snapshot-then-clean raced concurrent foreground handlers: a write landing between the background task's dirty-var snapshot and its `_clean()` was silently discarded and never reached any delta. Background state changes are emitted by their `async with self` context exits, which hold the lock. ([#6920](https://github.com/reflex-dev/reflex/issues/6920))
 - Resolve `TypeAliasType` annotations (PEP 695 `type` statements and the `typing_extensions` backport) to their underlying value in `Var.guess_type`, so state vars annotated with an alias like `type Key = Literal["day", "week"]` compile instead of raising `TypeError: Unsupported type ... for guess_type`. Parameterized generic aliases (`Keys[str]` for `type Keys[T] = list[T]`) and aliases nested in unions (`Key | None`) are resolved as well. ([#6944](https://github.com/reflex-dev/reflex/issues/6944))
+- Resolve `TypeAliasType` annotations (PEP 695 `type` statements and the `typing_extensions` backport) in `_isinstance` and `typehint_issubclass`, so assigning to an alias-annotated state var no longer raises `TypeError: isinstance() arg 2 must be a type` from `State.__setattr__`, and event handlers with alias-annotated arguments can be passed uncalled to event triggers without crashing page compile. Parameterized generic aliases (`Items[str]`) and aliases nested in unions (`Key | None`) are resolved as well, completing the alias support added to `Var.guess_type`. ([#6986](https://github.com/reflex-dev/reflex/issues/6986))
+- The generated `vite.config.js` no longer passes options rejected or deprecated by rolldown-vite 8.x: the no-op `rollupOptions.jsx` key is dropped and `output.advancedChunks` migrated to `output.codeSplitting` (same shape), removing the "Invalid input options" and "advancedChunks option is deprecated" warnings from every prod build/export. ([#6987](https://github.com/reflex-dev/reflex/issues/6987))
+- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
+- A custom component declaring `library = "react-router-dom"` (including versioned and subpath forms) now fails compilation with an actionable error naming the component, instead of silently installing the removed package — which pulled in a second, unpinned React Router 7 copy that worked in dev by accident and broke production builds. React Router 8 dropped `react-router-dom`: use `library = "react-router"` instead, or `"react-router/dom"` for `RouterProvider`/`HydratedRouter`. ([#6991](https://github.com/reflex-dev/reflex/issues/6991))
+- With `REFLEX_ENABLE_FULL_LOGGING`, granian worker records reach the log file again: the file handler now opens in append mode (truncating once up front), so it reopens after the worker's post-fork `logging.config.dictConfig` closes it instead of silently dropping every worker-side record. The legacy console file writer follows the reopened stream through a proxy, so its timestamped lines no longer leak to stdout and break `--json` output. ([#6992](https://github.com/reflex-dev/reflex/issues/6992))
 
 ### Performance
 
 - Dev mode no longer pays for React's per-element owner-stack capture: navigation clicks in a large app dropped from ~350ms to ~83ms of main-thread CPU (5.6x prod down to ~1.3x). In exchange `React.captureOwnerStack()` returns no owner frames in dev, which affects React DevTools' owner-stack view and custom error overlays built on that API; set `REFLEX_REACT_OWNER_STACKS=1` to restore them. ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
 - `MemoComponent` instances no longer opt out of compiler auto-memoization wholesale. Only the passthrough wrappers the auto-memoize pass generates do, tracked by the new `auto_memo_wrapper` flag on `MemoComponentDefinition`, so state-bound props and event handlers on a `@rx.memo` call site compile their hooks into a generated wrapper instead of the enclosing page. ([#6949](https://github.com/reflex-dev/reflex/issues/6949))
+- Speed up prop validation and JSON serialization on hot paths: `_isinstance` now reads `__origin__` once per type, memoizes `get_args`, and caches the deferred `Var`/`LiteralVar`/`Field` imports instead of re-importing on every call, and `json_dumps` caches its deferred `serializers.serialize` lookup. ([#6862](https://github.com/reflex-dev/reflex/issues/6862))
+- `vite_config_template` declares a `resolveId` hook filter (`{ id: /react-dom\/server/ }`) on `vite-plugin-always-use-react-dom-server-node`. The plugin runs with `enforce: "pre"`, so without a filter rolldown invoked its JS handler for every import specifier in the graph (~15,800 calls on the Reflex docs build) to redirect the one specifier imported by `entry.server.node.tsx`; the filter is evaluated natively and skips the call otherwise. The template also imports `./vite-plugin-safari-cachebust.js` with its extension, which Vite's `configLoader: "native"` requires and warns about today. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
 
 ### Miscellaneous
 

@@ -49,7 +49,7 @@ dependencies = [
   # not carry. Until the release that adds it ships, this is the workspace
   # development version, following the same convention as the other unreleased
   # sibling pins; replace it with the published version at release.
-  "reflex-hosting-cli >= 0.1.71a1",
+  "reflex-hosting-cli >= 0.1.71",
 ]
 
 classifiers = [

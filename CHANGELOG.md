@@ -1,34 +1,15 @@
-## v0.9.9a2 (2026-08-28)
+## v0.9.9 (2026-08-28)
 
 ### Breaking Changes
 
+- `pip install reflex` no longer installs `pydantic`; pydantic model support activates when it is installed. Use the new `reflex[pydantic]` extra (or `reflex[db]`) to keep it. ([#6786](https://github.com/reflex-dev/reflex/issues/6786))
+- The compiled frontend now targets React Router 8.3.0 (from 7.18.2), and Reflex requires Node 22.22.0 or newer as a result. Apps on the default generated setup need no `rxconfig.py` or app code changes — Reflex sets no `future.v8_*` flags, and the v8 defaults those flags now enable (middleware, pass-through requests, trailing-slash-aware data requests, the Vite Environment API build path, and `splitRouteModules`) are all compatible with the generated app. One change is required if you wrote a custom component against `react-router-dom`: that package no longer exists upstream and is no longer installed, so `library = "react-router-dom"` must become `react-router` (or `react-router/dom` for `RouterProvider`/`HydratedRouter`). ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
 - A `RegistrationContext` can only be associated with a single `App` instance, so creating a second bare `rx.App()` in one process now raises `ReflexRuntimeError` (0.9.8 allowed it); use a fresh `RegistrationContext` (e.g. `RegistrationContext.fork()`) to create multiple apps. The module-level `reflex.page.DECORATED_PAGES` registry has moved onto the active `RegistrationContext` as `decorated_pages`; reading the old name still works as a deprecated shim that is removed in 1.0. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
 
 ### Deprecations
 
 - `reflex.components.dynamic.bundled_libraries` and `DEFAULT_BUNDLED_LIBRARIES` are deprecated (removal in 1.0) but keep working: reading either emits a deprecation warning and resolves against the active `RegistrationContext`. Use `RegistrationContext.ensure_context().bundled_libraries` to read the list, or `bundle_library()` / `reset_bundled_libraries()` to modify it. ([#6967](https://github.com/reflex-dev/reflex/issues/6967))
 - `reflex.page.DECORATED_PAGES` is deprecated (removal in 1.0) but keeps working: reading it emits a deprecation warning and resolves to a mapping of the app name to the active `RegistrationContext`'s `decorated_pages` list of `(render_fn, kwargs)` entries. Use `RegistrationContext.ensure_context().decorated_pages` instead. ([#6985](https://github.com/reflex-dev/reflex/issues/6985))
-
-### Bug Fixes
-
-- Cancelling stale `on_load` work on navigation also applies to `on_load` handlers that are background tasks (`@rx.event(background=True)`): navigating away now cancels such a task mid-flight, where 0.9.8 let it run to completion. Background tasks started from regular (non-superseding) events are unaffected. ([#6593](https://github.com/reflex-dev/reflex/issues/6593))
-- Reduce published wheel and sdist size by removing misplaced generated artifacts. ([#6966](https://github.com/reflex-dev/reflex/issues/6966))
-- A `client_error` socket emit with no payload no longer raises an unhandled `TypeError` inside python-socketio's dispatch, which let any connected socket — even one without a valid token — spam asyncio tracebacks into the backend logs past the handler's rate limits. A missing payload is now dropped by the same guard that handles other malformed payloads. ([#6984](https://github.com/reflex-dev/reflex/issues/6984))
-- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
-- `reflex run` no longer hangs forever when a fatal error (e.g. the node minimum-version check on the npm path) exits the frontend worker thread while the backend blocks the main thread; the failure now interrupts the main thread and the CLI exits promptly with the original error. ([#6990](https://github.com/reflex-dev/reflex/issues/6990))
-- Fixed an edge in the new fatal-error interrupt handling where a task failing after the with-body raised its own exception could deliver a stray SIGINT to unrelated caller code. ([#6994](https://github.com/reflex-dev/reflex/issues/6994))
-
-### Performance
-
-- The generated `vite.config.js` now declares a hook filter on the plugin that redirects `react-dom/server` to `react-dom/server.node`, so the bundler no longer calls into it for every import in the module graph — on the Reflex docs site that was ~15,800 calls per build to rewrite a single specifier. The local plugin import in the config also carries a file extension now, silencing Vite's warning about features its native config loader cannot resolve. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
-
-
-## v0.9.9a1 (2026-08-27)
-
-### Breaking Changes
-
-- `pip install reflex` no longer installs `pydantic`; pydantic model support activates when it is installed. Use the new `reflex[pydantic]` extra (or `reflex[db]`) to keep it. ([#6786](https://github.com/reflex-dev/reflex/issues/6786))
-- The compiled frontend now targets React Router 8.3.0 (from 7.18.2), and Reflex requires Node 22.22.0 or newer as a result. Apps on the default generated setup need no `rxconfig.py` or app code changes — Reflex sets no `future.v8_*` flags, and the v8 defaults those flags now enable (middleware, pass-through requests, trailing-slash-aware data requests, the Vite Environment API build path, and `splitRouteModules`) are all compatible with the generated app. One change is required if you wrote a custom component against `react-router-dom`: that package no longer exists upstream and is no longer installed, so `library = "react-router-dom"` must become `react-router` (or `react-router/dom` for `RouterProvider`/`HydratedRouter`). ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
 
 ### Features
 
@@ -53,12 +34,19 @@
 - Fixed a race where a finishing background task could silently discard state updates made by a concurrently running event handler before they reached the frontend, leaving the UI stale until the next write. Background handlers that never enter `async with self` still emit their delta, now computed under the state lock. ([#6920](https://github.com/reflex-dev/reflex/issues/6920))
 - `AppHarness` starts the frontend dev server with the `development` export condition enabled, fixing "Frontend did not start" on node-less (bun-only) installs where react-router's dev CLI restart guard trips. ([#6931](https://github.com/reflex-dev/reflex/issues/6931))
 - Adding a page no longer raises a spurious `RouteValueError` when a static segment lines up with another route's dynamic segment (e.g. `/posts/all/[x]` alongside `/posts/[id]`). React Router resolves such siblings in favor of the static one, so only two differently named dynamic segments at the same position conflict. The check was also order-dependent: it only tripped when the bracket-carrying route was added second. ([#6953](https://github.com/reflex-dev/reflex/issues/6953))
+- Cancelling stale `on_load` work on navigation also applies to `on_load` handlers that are background tasks (`@rx.event(background=True)`): navigating away now cancels such a task mid-flight, where 0.9.8 let it run to completion. Background tasks started from regular (non-superseding) events are unaffected. ([#6593](https://github.com/reflex-dev/reflex/issues/6593))
+- Reduce published wheel and sdist size by removing misplaced generated artifacts. ([#6966](https://github.com/reflex-dev/reflex/issues/6966))
+- A `client_error` socket emit with no payload no longer raises an unhandled `TypeError` inside python-socketio's dispatch, which let any connected socket — even one without a valid token — spam asyncio tracebacks into the backend logs past the handler's rate limits. A missing payload is now dropped by the same guard that handles other malformed payloads. ([#6984](https://github.com/reflex-dev/reflex/issues/6984))
+- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
+- `reflex run` no longer hangs forever when a fatal error (e.g. the node minimum-version check on the npm path) exits the frontend worker thread while the backend blocks the main thread; the failure now interrupts the main thread and the CLI exits promptly with the original error. ([#6990](https://github.com/reflex-dev/reflex/issues/6990))
+- Fixed an edge in the new fatal-error interrupt handling where a task failing after the with-body raised its own exception could deliver a stray SIGINT to unrelated caller code. ([#6994](https://github.com/reflex-dev/reflex/issues/6994))
 
 ### Performance
 
 - Remove the per-update `asyncio.create_task` wrapper in `EventNamespace.emit_update`, cutting scheduling overhead roughly in half for every outgoing state update while keeping the event-loop tick that flushes interim updates before a sync handler resumes. ([#6734](https://github.com/reflex-dev/reflex/issues/6734))
 - Dev mode no longer pays for React's per-element owner-stack capture: navigation clicks in a large app dropped from ~350ms to ~83ms of main-thread CPU (5.6x prod down to ~1.3x). In exchange `React.captureOwnerStack()` returns no owner frames in dev, which affects React DevTools' owner-stack view and custom error overlays built on that API; set `REFLEX_REACT_OWNER_STACKS=1` to restore them. ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
 - `@rx.memo` components with props bound to state are now auto-memoized at the call site: the state hooks (and event-handler callbacks) those props need compile into a generated wrapper component instead of the page module. A state change re-renders that wrapper rather than the whole page, and React's `memo` stops there unless one of the prop values actually changed — so binding a Var at the call site scopes an expensive component to exactly the state it reads, instead of coupling it to the page. ([#6949](https://github.com/reflex-dev/reflex/issues/6949))
+- The generated `vite.config.js` now declares a hook filter on the plugin that redirects `react-dom/server` to `react-dom/server.node`, so the bundler no longer calls into it for every import in the module graph — on the Reflex docs site that was ~15,800 calls per build to rewrite a single specifier. The local plugin import in the config also carries a file extension now, silencing Vite's warning about features its native config loader cannot resolve. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
 
 ### Documentation
 
