@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Audit that published packages ship their generated .pyi stubs correctly.
 
 For each package it downloads the wheel and the sdist from PyPI and checks:
@@ -16,6 +15,10 @@ Usage:
     audit_pyi.py reflex==0.9.9 reflex-base==0.9.9
     check_release_versions.py --ref origin/main --specs | xargs audit_pyi.py --manifest-ref origin/main
 """
+
+# /// script
+# requires-python = ">=3.10"
+# ///
 
 from __future__ import annotations
 
@@ -97,16 +100,66 @@ def sdist_stubs(path: Path) -> dict[str, bytes]:
     return out
 
 
-def import_root(dist_name: str) -> str:
-    """Guess the top-level import package for a distribution name.
+def import_root(dist_name: str, roots: dict[str, str]) -> str:
+    """Resolve the top-level import package for a distribution.
+
+    The manifest is authoritative when available because it records each stub's real
+    source path; the underscore convention is only a fallback. Deriving the root from the
+    artifact itself would be circular — foreign stubs would define themselves as native
+    and the leak check could never fail.
 
     Args:
         dist_name: The PyPI distribution name.
+        roots: Import roots by distribution name, from the manifest.
 
     Returns:
-        The import package name, which differs only by underscores by convention.
+        The import package name.
     """
-    return dist_name.replace("-", "_")
+    return roots.get(dist_name, dist_name.replace("-", "_"))
+
+
+def manifest_roots(ref: str, repo: str) -> dict[str, str]:
+    """Read each distribution's real import root from the stub manifest.
+
+    Args:
+        ref: The git ref to read ``pyi_hashes.json`` from.
+        repo: Path to the reflex checkout.
+
+    Returns:
+        A mapping of distribution name to import package name, empty when the manifest is
+        unavailable.
+    """
+    roots: dict[str, str] = {}
+    for key in _manifest_keys(ref, repo):
+        parts = key.split("/")
+        if key.startswith("packages/"):
+            # packages/<dist>/<src dir>/<import root>/...
+            if len(parts) > 3:
+                roots[parts[1]] = parts[3]
+        elif parts:
+            roots["reflex"] = parts[0]
+    return roots
+
+
+def _manifest_keys(ref: str, repo: str) -> list[str]:
+    """Read the stub paths recorded in the manifest.
+
+    Args:
+        ref: The git ref to read ``pyi_hashes.json`` from.
+        repo: Path to the reflex checkout.
+
+    Returns:
+        The manifest's stub paths, empty when it is unavailable at that ref.
+    """
+    result = subprocess.run(
+        ["git", "-C", repo, "show", f"{ref}:pyi_hashes.json"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    return list(json.loads(result.stdout))
 
 
 def manifest_counts(ref: str, repo: str) -> dict[str, int]:
@@ -120,23 +173,19 @@ def manifest_counts(ref: str, repo: str) -> dict[str, int]:
         A mapping of distribution name to expected stub count, empty when the manifest is
         unavailable at that ref.
     """
-    result = subprocess.run(
-        ["git", "-C", repo, "show", f"{ref}:pyi_hashes.json"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return {}
     counts: collections.Counter[str] = collections.Counter()
-    for key in json.loads(result.stdout):
+    for key in _manifest_keys(ref, repo):
         # "packages/<dist>/src/<pkg>/x.pyi" or a root-package path like "reflex/x.pyi"
         counts[key.split("/")[1] if key.startswith("packages/") else "reflex"] += 1
     return dict(counts)
 
 
 def audit(
-    spec: str, workdir: Path, expected: dict[str, int], have_manifest: bool
+    spec: str,
+    workdir: Path,
+    expected: dict[str, int],
+    have_manifest: bool,
+    roots: dict[str, str],
 ) -> dict:
     """Audit the stubs shipped by one package version.
 
@@ -144,6 +193,7 @@ def audit(
         spec: A ``name==version`` spec.
         workdir: Directory to download artifacts into.
         expected: Expected stub counts by distribution name, from the manifest.
+        roots: Import roots by distribution name, from the manifest.
         have_manifest: Whether a manifest was loaded. When it was, a package absent from
             it is expected to ship no stubs at all; without one, counts go unchecked.
 
@@ -151,7 +201,7 @@ def audit(
         A record with the package, version, stub count and any problems found.
     """
     name, _, version = spec.partition("==")
-    root = import_root(name)
+    root = import_root(name, roots)
     problems: list[str] = []
 
     artifacts = download_artifacts(name, version, workdir)
@@ -246,11 +296,14 @@ def main() -> int:
     # An empty result means the manifest was unreadable at that ref, so counts stay
     # unchecked rather than every package being held to a zero-stub expectation.
     have_manifest = bool(expected)
+    roots = manifest_roots(args.manifest_ref, args.repo) if args.manifest_ref else {}
 
     with tempfile.TemporaryDirectory() as tmp:
         workdir = Path(args.keep) if args.keep else Path(tmp)
         workdir.mkdir(parents=True, exist_ok=True)
-        results = [audit(spec, workdir, expected, have_manifest) for spec in args.specs]
+        results = [
+            audit(spec, workdir, expected, have_manifest, roots) for spec in args.specs
+        ]
 
     width = max(len(r["package"]) for r in results)
     print(f"pyi packaging audit — {len(results)} package(s)\n")

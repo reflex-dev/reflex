@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 r"""Drive a running Reflex app in Chromium and report anomalies.
 
 Loads a page, optionally runs a small action script against it, and captures the four
@@ -26,6 +25,11 @@ Actions are JSON, either inline or in a file, applied in order after load:
 Exit status is 0 when every action succeeded and nothing anomalous was captured, 1
 otherwise — so it works directly as a check in a loop.
 """
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["playwright"]
+# ///
 
 from __future__ import annotations
 
@@ -72,8 +76,15 @@ def load_actions(raw: str | None) -> list[dict]:
     """
     if not raw:
         return []
-    candidate = Path(raw)
-    return json.loads(candidate.read_text() if candidate.exists() else raw)
+    try:
+        candidate = Path(raw)
+        if candidate.is_file():
+            raw = candidate.read_text()
+    except OSError:
+        # Inline JSON longer than the filesystem's filename limit makes the stat itself
+        # raise, so treat any path error as "this was not a path".
+        pass
+    return json.loads(raw)
 
 
 def run_action(page: Page, action: dict, timeout: int) -> str:
@@ -204,6 +215,12 @@ def main() -> int:
                 performed.append(done)
             if action_error:
                 break
+
+        if performed:
+            # Playwright returns as soon as an action's own wait resolves, but the
+            # resulting state update, network call and any error it triggers land after
+            # that; without this the last action's fallout is invisible to the report.
+            page.wait_for_timeout(args.settle)
 
         try:
             title = page.title()
