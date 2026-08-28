@@ -615,7 +615,7 @@ def cmd_pin_lockstep(config: Config, package: str, version: str) -> None:
     config.require_known(package)
     targets = config.exact_pin_targets(package)
     if not targets:
-        notice(f"{package} has no exact-pin lockstep siblings; nothing to do.")
+        echo(f"{package} has no exact-pin lockstep siblings; nothing to do.")
         return
     pyproject = config.package_path(package) / "pyproject.toml"
     for target in targets:
@@ -1174,7 +1174,7 @@ def cmd_post_release(config: Config, tag: str, package: str, version: str) -> No
     """
     workflow = config.post_release_workflow
     if workflow is None:
-        notice(f"no {POST_RELEASE_WORKFLOW_KEY} is configured; nothing to dispatch.")
+        echo(f"no {POST_RELEASE_WORKFLOW_KEY} is configured; nothing to dispatch.")
         return
     # An unset environment variable reaches here as an empty string, and GitHub
     # accepts a dispatch carrying empty inputs — the run would go green having
