@@ -245,6 +245,46 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     return env
 
 
+def _usable_cpu_count() -> int:
+    """Return the number of CPUs this process may actually use.
+
+    A cgroup CPU quota (containers, sandboxes) throttles the process without
+    narrowing the affinity mask, so only ``cpu.max`` reveals it.
+
+    Returns:
+        The usable CPU count, at least 1.
+    """
+    try:
+        count = len(os.sched_getaffinity(0))
+    except AttributeError:
+        count = os.cpu_count() or 1
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            count = min(count, -(-int(quota) // int(period)))
+    except (OSError, ValueError):
+        pass
+    return max(1, count)
+
+
+def _with_bundler_limits(environ: Mapping[str, str]) -> dict[str, str]:
+    """Copy an environment with vite's native bundler sized to the usable CPUs.
+
+    rolldown sizes its worker pool from the host's core count, and each idle
+    worker retains a mimalloc arena, so in a container the dev server's memory
+    grows with every dependency re-optimization.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment with the worker thread pool bounded.
+    """
+    env = dict(environ)
+    env.setdefault("ROLLDOWN_WORKER_THREADS", str(_usable_cpu_count()))
+    return env
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -267,7 +307,9 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": _with_development_condition({**os.environ, "NO_COLOR": "1"})
+                "env": _with_bundler_limits(
+                    _with_development_condition({**os.environ, "NO_COLOR": "1"})
+                )
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]

@@ -116,3 +116,26 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+def test_with_bundler_limits_bounds_pool_to_usable_cpus(mocker: MockerFixture):
+    """The bundler pool is sized to the usable CPU count; an explicit setting
+    wins and the base environment is not mutated.
+    """
+    mocker.patch.object(exec_utils, "_usable_cpu_count", return_value=2)
+    env = exec_utils._with_bundler_limits({})
+    assert env == {"ROLLDOWN_WORKER_THREADS": "2"}
+    environ = {"ROLLDOWN_WORKER_THREADS": "8"}
+    assert exec_utils._with_bundler_limits(environ)["ROLLDOWN_WORKER_THREADS"] == "8"
+    assert environ == {"ROLLDOWN_WORKER_THREADS": "8"}
+
+
+def test_usable_cpu_count_honors_cgroup_quota(mocker: MockerFixture, tmp_path: Path):
+    """A cgroup quota narrows the count the affinity mask reports."""
+    mocker.patch.object(os, "sched_getaffinity", return_value=set(range(64)))
+    quota = tmp_path / "cpu.max"
+    quota.write_text("200000 100000\n")
+    mocker.patch.object(exec_utils.Path, "read_text", quota.read_text)
+    assert exec_utils._usable_cpu_count() == 2
+    quota.write_text("max 100000\n")
+    assert exec_utils._usable_cpu_count() == 64
