@@ -135,13 +135,17 @@ def manifest_counts(ref: str, repo: str) -> dict[str, int]:
     return dict(counts)
 
 
-def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
+def audit(
+    spec: str, workdir: Path, expected: dict[str, int], have_manifest: bool
+) -> dict:
     """Audit the stubs shipped by one package version.
 
     Args:
         spec: A ``name==version`` spec.
         workdir: Directory to download artifacts into.
         expected: Expected stub counts by distribution name, from the manifest.
+        have_manifest: Whether a manifest was loaded. When it was, a package absent from
+            it is expected to ship no stubs at all; without one, counts go unchecked.
 
     Returns:
         A record with the package, version, stub count and any problems found.
@@ -153,7 +157,13 @@ def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
     artifacts = download_artifacts(name, version, workdir)
     if "wheel" not in artifacts or "sdist" not in artifacts:
         problems.append(f"missing artifact kinds: has {sorted(artifacts)}")
-        return {"package": name, "version": version, "problems": problems, "own": 0}
+        return {
+            "package": name,
+            "version": version,
+            "problems": problems,
+            "own": 0,
+            "expected": expected.get(name) if have_manifest else None,
+        }
 
     wheel = wheel_stubs(artifacts["wheel"])
     sdist = sdist_stubs(artifacts["sdist"])
@@ -198,7 +208,7 @@ def audit(spec: str, workdir: Path, expected: dict[str, int]) -> dict:
             f"{len(differing)} stub(s) differ between wheel and sdist: {differing[:3]}"
         )
 
-    want = expected.get(name)
+    want = expected.get(name, 0) if have_manifest else None
     if want is not None and want != len(wheel_own):
         problems.append(
             f"expected {want} stub(s) from manifest, wheel ships {len(wheel_own)}"
@@ -233,11 +243,14 @@ def main() -> int:
     expected = (
         manifest_counts(args.manifest_ref, args.repo) if args.manifest_ref else {}
     )
+    # An empty result means the manifest was unreadable at that ref, so counts stay
+    # unchecked rather than every package being held to a zero-stub expectation.
+    have_manifest = bool(expected)
 
     with tempfile.TemporaryDirectory() as tmp:
         workdir = Path(args.keep) if args.keep else Path(tmp)
         workdir.mkdir(parents=True, exist_ok=True)
-        results = [audit(spec, workdir, expected) for spec in args.specs]
+        results = [audit(spec, workdir, expected, have_manifest) for spec in args.specs]
 
     width = max(len(r["package"]) for r in results)
     print(f"pyi packaging audit — {len(results)} package(s)\n")

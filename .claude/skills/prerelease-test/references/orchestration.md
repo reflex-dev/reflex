@@ -84,7 +84,9 @@ const results = await pipeline(
     const verdicts = await parallel(
       issues.map((iss, j) => () =>
         agent(verifyBrief(c, iss, j), { label: `verify:${c.key}:${j}`, phase: 'Verify', schema: VERDICT_SCHEMA })
-          .then((v) => ({ issue: iss, verdict: v })),
+          // A dead verifier resolves falsy; drop it rather than recording verdict: null,
+          // which would read downstream as an unverified issue that passed verification.
+          .then((v) => (v ? { issue: iss, verdict: v } : null)),
       ),
     )
     return { ...res, verified_issues: verdicts.filter(Boolean) }

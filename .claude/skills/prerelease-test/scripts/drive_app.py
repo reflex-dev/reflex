@@ -170,6 +170,7 @@ def main() -> int:
     bad_status: list[dict] = []
     performed: list[str] = []
     action_error: str | None = None
+    load_error: str | None = None
 
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=CHROMIUM, headless=not args.headed)
@@ -189,18 +190,26 @@ def main() -> int:
             ),
         )
 
-        page.goto(args.url, wait_until="networkidle", timeout=60000)
-        page.wait_for_timeout(args.settle)
+        try:
+            page.goto(args.url, wait_until="networkidle", timeout=60000)
+            page.wait_for_timeout(args.settle)
+        except Exception as exc:
+            # A server that never came up is the most common failure here, and it still
+            # deserves a report and the documented exit status rather than a traceback.
+            load_error = f"{type(exc).__name__}: {exc}"
 
-        for action in load_actions(args.actions):
+        for action in [] if load_error else load_actions(args.actions):
             done, action_error = try_action(page, action, args.timeout)
             if done is not None:
                 performed.append(done)
             if action_error:
                 break
 
-        title = page.title()
-        body = page.inner_text("body")[:2000]
+        try:
+            title = page.title()
+            body = page.inner_text("body")[:2000]
+        except Exception as exc:
+            title, body = "", f"<unreadable: {type(exc).__name__}>"
         if args.screenshot:
             Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=args.screenshot, full_page=True)
@@ -212,12 +221,15 @@ def main() -> int:
         else [m for m in console if not is_benign(m["text"])]
     )
     problems = [m for m in shown if m["type"] in ("error", "warning")]
-    clean = not (problems or page_errors or failed or bad_status or action_error)
+    clean = not (
+        problems or page_errors or failed or bad_status or action_error or load_error
+    )
 
     report = {
         "url": args.url,
         "title": title,
         "clean": clean,
+        "load_error": load_error,
         "actions_performed": performed,
         "action_error": action_error,
         "console": shown,
@@ -230,6 +242,8 @@ def main() -> int:
         Path(args.report).parent.mkdir(parents=True, exist_ok=True)
         Path(args.report).write_text(json.dumps(report, indent=2))
 
+    if load_error:
+        print(f"  LOAD FAILED: {load_error}")
     print(f"TITLE: {title}")
     print(f"BODY:  {body[:300].replace(chr(10), ' | ')}")
     for item in performed:

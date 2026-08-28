@@ -26,6 +26,8 @@ import urllib.request
 
 VERSION_HEADING = re.compile(r"^##\s+v?([0-9][^\s]*)", re.MULTILINE)
 PROJECT_NAME = re.compile(r"^name\s*=\s*[\"']([^\"']+)[\"']", re.MULTILINE)
+NEVER_PUBLISH = re.compile(r"^never-publish-packages\s*=\s*\[([^\]]*)\]", re.MULTILINE)
+QUOTED = re.compile(r"[\"']([^\"']+)[\"']")
 
 
 def git_show(ref: str, path: str, repo: str) -> str | None:
@@ -48,6 +50,27 @@ def git_show(ref: str, path: str, repo: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
+def never_published(ref: str, repo: str) -> set[str]:
+    """Read the packages the release config never publishes.
+
+    Those are built for other purposes (the docs site) and have no PyPI release, so a
+    changelog in one of them must not be reported as an unpublished blocker. Parsed with a
+    regex rather than a TOML library to keep this script dependency-free on Python 3.10.
+
+    Args:
+        ref: The git ref to read the root ``pyproject.toml`` from.
+        repo: Path to the reflex checkout.
+
+    Returns:
+        The set of package directory names to skip.
+    """
+    content = git_show(ref, "pyproject.toml", repo) or ""
+    match = NEVER_PUBLISH.search(content)
+    if not match:
+        return set()
+    return set(QUOTED.findall(match.group(1)))
+
+
 def changelog_paths(ref: str, repo: str) -> list[str]:
     """Find the changelogs that describe a release train.
 
@@ -64,11 +87,16 @@ def changelog_paths(ref: str, repo: str) -> list[str]:
         text=True,
         check=True,
     ).stdout.splitlines()
-    return [
-        p
-        for p in listing
-        if p == "CHANGELOG.md" or re.fullmatch(r"packages/[^/]+/CHANGELOG.md", p)
-    ]
+    skip = never_published(ref, repo)
+    paths = []
+    for path in listing:
+        if path == "CHANGELOG.md":
+            paths.append(path)
+            continue
+        match = re.fullmatch(r"packages/([^/]+)/CHANGELOG.md", path)
+        if match and match.group(1) not in skip:
+            paths.append(path)
+    return paths
 
 
 def dist_name(changelog_path: str, ref: str, repo: str) -> str:
@@ -92,16 +120,19 @@ def dist_name(changelog_path: str, ref: str, repo: str) -> str:
     return parts[1] if len(parts) > 2 else "reflex"
 
 
-def pypi_status(name: str, version: str) -> tuple[bool, str]:
+def pypi_status(name: str, version: str) -> tuple[str, str]:
     """Check whether a distribution version is installable from PyPI.
+
+    The result distinguishes "definitely not published" from "could not tell", because a
+    proxy hiccup reported as a missing package would be a false release blocker.
 
     Args:
         name: The PyPI distribution name.
         version: The version to look for.
 
     Returns:
-        A ``(published, detail)`` tuple, where detail names the artifact kinds found or
-        why the check failed.
+        A ``(status, detail)`` tuple where status is ``"published"``, ``"missing"`` or
+        ``"error"``, and detail names the artifact kinds found or why the check failed.
     """
     url = f"https://pypi.org/pypi/{name}/{version}/json"
     try:
@@ -109,25 +140,23 @@ def pypi_status(name: str, version: str) -> tuple[bool, str]:
             data = json.load(response)
         kinds = sorted({u["packagetype"] for u in data.get("urls", [])})
         if not kinds:
-            return False, "published but no files"
-        return True, "+".join(
-            k.replace("bdist_wheel", "wheel").replace("sdist", "sdist") for k in kinds
-        )
+            return "missing", "published but no files"
+        return "published", "+".join(k.replace("bdist_wheel", "wheel") for k in kinds)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            return False, "NOT ON PYPI"
-        return False, f"HTTP {exc.code}"
-    except (
-        Exception
-    ) as exc:  # network/proxy trouble should not look like a missing package
-        return False, f"check failed: {type(exc).__name__}"
+            return "missing", "NOT ON PYPI"
+        return "error", f"HTTP {exc.code}"
+    except Exception as exc:
+        # Network/proxy trouble is indeterminate, not evidence the package is missing.
+        return "error", f"check failed: {type(exc).__name__}"
 
 
 def main() -> int:
     """Run the discovery and print the results.
 
     Returns:
-        ``1`` when any package is missing from PyPI, otherwise ``0``.
+        ``1`` when a package is confirmed missing from PyPI (a release blocker), ``2``
+        when a check could not be completed and the result is indeterminate, else ``0``.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -154,17 +183,19 @@ def main() -> int:
             continue
         version = match.group(1)
         name = dist_name(path, args.ref, args.repo)
-        published, detail = pypi_status(name, version)
+        status, detail = pypi_status(name, version)
         rows.append({
             "package": name,
             "version": version,
-            "published": published,
+            "status": status,
             "detail": detail,
             "changelog": path,
             "prerelease": bool(re.search(r"[abc]|rc|dev", version.split(".")[-1])),
         })
 
-    missing = [r for r in rows if not r["published"]]
+    missing = [r for r in rows if r["status"] == "missing"]
+    errors = [r for r in rows if r["status"] == "error"]
+    marks = {"published": "OK ", "missing": "!! ", "error": "?? "}
 
     if args.specs:
         for row in rows:
@@ -172,27 +203,40 @@ def main() -> int:
     elif args.json:
         print(
             json.dumps(
-                {"ref": args.ref, "packages": rows, "missing": len(missing)}, indent=2
+                {
+                    "ref": args.ref,
+                    "packages": rows,
+                    "missing": len(missing),
+                    "errors": len(errors),
+                },
+                indent=2,
             )
         )
     else:
         width = max((len(r["package"]) for r in rows), default=10)
         print(f"Release train at {args.ref}: {len(rows)} packages\n")
         for row in rows:
-            mark = "OK " if row["published"] else "!! "
             tag = " (prerelease)" if row["prerelease"] else ""
             print(
-                f"  {mark}{row['package']:<{width}}  {row['version']:<12} {row['detail']}{tag}"
+                f"  {marks[row['status']]}{row['package']:<{width}}  "
+                f"{row['version']:<12} {row['detail']}{tag}"
             )
         print()
         if missing:
             print(f"BLOCKER: {len(missing)} package(s) not installable from PyPI:")
             for row in missing:
                 print(f"  - {row['package']}=={row['version']} ({row['detail']})")
-        else:
+        if errors:
+            print(f"INDETERMINATE: {len(errors)} package(s) could not be checked:")
+            for row in errors:
+                print(f"  - {row['package']}=={row['version']} ({row['detail']})")
+            print("  Re-run before drawing conclusions; this is not evidence of a gap.")
+        if not missing and not errors:
             print("All packages are published and installable.")
 
-    return 1 if missing else 0
+    if missing:
+        return 1
+    return 2 if errors else 0
 
 
 if __name__ == "__main__":
