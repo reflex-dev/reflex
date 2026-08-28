@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-import tomllib
 from hatchling.builders.plugin.interface import BuilderInterface
 from hatchling.builders.sdist import SdistBuilder
 from hatchling.builders.wheel import WheelBuilder
@@ -56,9 +55,8 @@ def stub_packages() -> list[Path]:
     """
     packages = []
     for path in sorted((REPO_ROOT / "packages").glob("*/pyproject.toml")):
-        config = tomllib.loads(path.read_text())
-        build = config.get("tool", {}).get("hatch", {}).get("build", {})
-        if "reflex-pyi" in build.get("hooks", {}):
+        build_config = SdistBuilder(str(path.parent)).config.build_config
+        if "reflex-pyi" in build_config.get("hooks", {}):
             packages.append(path.parent)
     return packages
 
