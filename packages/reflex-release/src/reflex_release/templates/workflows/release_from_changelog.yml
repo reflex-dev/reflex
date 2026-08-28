@@ -55,6 +55,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
       - id: detect
         env:
           REF_NAME: ${{ github.ref_name }}
