@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, TimeoutType
 
 
 def request_raw(
@@ -62,6 +62,43 @@ def poll_for_navigation(
     yield
 
     AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
+
+
+def click_element(
+    driver: WebDriver,
+    by: str,
+    value: str,
+    timeout: TimeoutType = None,
+) -> None:
+    """Locate an element and click it, retrying until the click lands.
+
+    Client-side navigation swaps the DOM after the URL changes, so an element
+    located right after navigating can go stale before the click is dispatched.
+    Re-locating on each attempt clicks whichever node is currently rendered.
+
+    Args:
+        driver: WebDriver instance.
+        by: Locator strategy, one of the `By` constants.
+        value: Locator value.
+        timeout: Time to wait for the click to succeed.
+
+    Raises:
+        TimeoutError: if the element could not be clicked within the timeout.
+    """
+    last_exc: Exception | None = None
+
+    def _click() -> bool:
+        nonlocal last_exc
+        try:
+            driver.find_element(by, value).click()
+        except Exception as exc:
+            last_exc = exc
+            raise
+        return True
+
+    if not AppHarness._poll_for(_click, timeout=timeout):
+        msg = f"Could not click element {by}={value!r} while polling: {last_exc}"
+        raise TimeoutError(msg)
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:

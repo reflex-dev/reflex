@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 
-from .utils import poll_assert_event_order, poll_for_navigation
+from .utils import click_element, poll_assert_event_order, poll_for_navigation
 
 
 def DynamicRoute():
@@ -300,9 +300,8 @@ def test_on_load_navigate(
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_missing")
 
     # hit a page that redirects back to dynamic page
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
@@ -330,29 +329,24 @@ def test_on_load_navigate_non_dynamic(
         driver: WebDriver instance.
     """
     assert dynamic_route.app_instance is not None
-    link = driver.find_element(By.ID, "link_page_x")
-    assert link
 
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
-    link = driver.find_element(By.ID, "link_index")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_index")
     assert urlsplit(driver.current_url).path.removesuffix("/") == ""
 
-    link = driver.find_element(By.ID, "link_page_x")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id", "/static/x-no page id"])
 
     for _ in range(3):
-        link = driver.find_element(By.ID, "link_page_x")
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
         assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id"] * 5)
 
