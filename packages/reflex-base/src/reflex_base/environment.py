@@ -630,6 +630,12 @@ class EnvironmentVariables:
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
+    # Whether to keep React's development-build owner-stack capture in dev mode.
+    # Reflex disables it by default because the per-element Error() capture
+    # dominates dev-mode render CPU on large pages; enable it to restore full
+    # owner stacks in React DevTools and dev warnings.
+    REFLEX_REACT_OWNER_STACKS: EnvVar[bool] = env_var(False)
+
     # Whether to run the backend only. Exclusive with REFLEX_FRONTEND_ONLY.
     REFLEX_BACKEND_ONLY: EnvVar[bool] = env_var(False)
 
@@ -752,6 +758,10 @@ class EnvironmentVariables:
 
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
+
+    # Referrer identifier appended (urlencoded) to the "Built with Reflex"
+    # badge link as https://reflex.dev/?ref=<value>. Read at compile time.
+    REFLEX_REFERRER_PARAM: EnvVar[str | None] = env_var(None)
 
 
 environment = EnvironmentVariables()

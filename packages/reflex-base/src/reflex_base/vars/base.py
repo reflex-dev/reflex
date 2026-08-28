@@ -1077,6 +1077,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if var_type is NoReturn:
             return self.to(Any)
 
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
+
         var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
@@ -2466,7 +2470,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _cache_attr(self) -> str:
-        """Get the attribute used to cache the value on the instance.
+        """The attribute used to cache the value on the instance.
 
         Returns:
             An attribute name.
@@ -2475,7 +2479,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _last_updated_attr(self) -> str:
-        """Get the attribute used to store the last updated timestamp.
+        """The attribute used to store the last updated timestamp.
 
         Returns:
             An attribute name.
@@ -2726,7 +2730,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def __class__(self) -> type:
-        """Get the class of the var.
+        """The class of the var.
 
         Returns:
             The class of the var.
@@ -2735,7 +2739,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -2871,7 +2875,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -3487,8 +3491,8 @@ class Field(Generic[FIELD_TYPE]):
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE
-        default_factory: Callable[[], FIELD_TYPE] | None
+        default: FIELD_TYPE | _MISSING_TYPE | None
+        default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
@@ -3522,7 +3526,11 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
-                default_value = types.get_default_value_for_type(annotated_type)
+                # A type with no computed default gets None, even when FIELD_TYPE
+                # itself excludes None; `annotated_type` is widened to match below.
+                default_value: FIELD_TYPE | None = types.get_default_value_for_type(
+                    annotated_type
+                )
                 if default_value is None and not types.is_optional(annotated_type):
                     annotated_type = annotated_type | None
                 if types.is_immutable(default_value):
@@ -3549,7 +3557,7 @@ class Field(Generic[FIELD_TYPE]):
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
                     self.__dict__[key] = value
 
-    def default_value(self) -> FIELD_TYPE:
+    def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
         Returns:

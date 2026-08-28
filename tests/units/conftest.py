@@ -240,9 +240,7 @@ def model_registry() -> Generator[type[ModelRegistry], None, None]:
     ModelRegistry._metadata = None
 
 
-@pytest_asyncio.fixture(
-    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
-)
+@pytest_asyncio.fixture(loop_scope="function", params=["in_process", "disk", "redis"])
 async def state_manager(
     request: pytest.FixtureRequest, mock_root_event_context: EventContext
 ) -> AsyncGenerator[StateManager, None]:

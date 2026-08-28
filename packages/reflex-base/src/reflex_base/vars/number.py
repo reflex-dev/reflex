@@ -18,14 +18,13 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.format import orjson_dumps
 from reflex_base.utils.imports import ImportDict, ImportVar
-from reflex_base.utils.types import safe_issubclass
+from reflex_base.utils.types import safe_issubclass, unionize
 
 from .base import (
     CustomVarOperationReturn,
     LiteralVar,
     Var,
     VarData,
-    unionize,
     var_operation,
     var_operation_return,
 )

@@ -902,6 +902,24 @@ def should_prerender_routes() -> bool:
     return environment.REFLEX_SSR.get()
 
 
+def arbitrate_ssr(ssr: bool) -> bool:
+    """Reconcile an --ssr flag value with the REFLEX_SSR environment variable.
+
+    The environment variable wins when already set; otherwise the flag value
+    is stored in the environment so worker subprocesses inherit it.
+
+    Args:
+        ssr: The flag value from the command line.
+
+    Returns:
+        The effective SSR setting.
+    """
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+        return ssr
+    return environment.REFLEX_SSR.get()
+
+
 def get_compile_context() -> constants.CompileContext:
     """Check if the app is compiled for deploy.
 

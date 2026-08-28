@@ -1,7 +1,7 @@
 @@HEADER@@
 name: changelog
 
-# Two guards on every pull request:
+# Three guards on every pull request:
 #
 # 1. New CHANGELOG.md version headings are rejected. A merged version heading
 #    without a git tag is a real publish trigger (see
@@ -22,6 +22,8 @@ name: changelog
 
 permissions:
   contents: read
+  # Reading the pull request's labels back from the API.
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
@@ -34,17 +36,47 @@ on:
   pull_request:
     branches:
       ["@@MAIN_BRANCH@@", "@@PRERELEASE_PREFIX@@**", "@@HOTFIX_PREFIX@@**"]
+    # labeled/unlabeled: the two labels below waive parts of this check, so a
+    # verdict is only valid for the label set it was computed under. Without
+    # these types, applying a label after the last push starts no run at all —
+    # and removing one leaves the green run that label produced standing, with
+    # the gate silently open.
+    #
+    # The job cannot cheaply no-op on an unrelated label: a job skipped by `if`
+    # reports its check as skipped, which branch protection counts as passing,
+    # so it would overwrite a real failure with a green. Every run therefore
+    # computes the real verdict.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   changelog:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Read from the API rather than github.event.pull_request.labels: a
+      # re-run replays the original event payload, so a label applied after the
+      # run that failed would still be missing from it and re-running would
+      # keep failing until someone pushed. Nothing is checked out yet — this
+      # needs only `gh`.
+      - name: Read the pull request's labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "$PR_URL" --jq '
+            [.labels[].name] |
+            "skip=\(index("skip-changelog") != null)",
+            "version_edit=\(index("changelog-version-edit") != null)"
+          ' >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
       # The heading guard runs even for skip-changelog PRs: that label only
       # waives the news-fragment requirement, not the publish-trigger guard.
       #
@@ -57,16 +89,19 @@ jobs:
       # sound escape hatch on its own.
       - name: Reject manual changelog version headings
         if: >-
-          ${{ !contains(github.event.pull_request.labels.*.name, 'changelog-version-edit')
+          ${{ steps.labels.outputs.version_edit != 'true'
           && !(startsWith(github.head_ref, '@@RELEASE_PREFIX@@')
           && github.event.pull_request.user.login == 'github-actions[bot]') }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
+        shell: bash
         run: @@CLI@@ check-headings
       - name: Check for news fragments
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+        if: ${{ steps.labels.outputs.skip != 'true' }}
         env:
           BASE_REF: origin/${{ github.base_ref }}
+        shell: bash
         run: @@CLI@@ changelog-check
       - name: Check the release workflows are up to date
+        shell: bash
         run: @@CLI@@ sync --check
