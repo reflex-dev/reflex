@@ -25,7 +25,9 @@ and hunt for anomalies. You REPORT issues; you never fix framework code.
    installed package, so `import reflex` silently picks up unreleased source and your results
    become fiction. Run scripts from a neutral directory and start each repro with an assertion:
    ```python
-   import reflex; assert "<VENV_PATH>" in reflex.__file__, reflex.__file__
+   import reflex
+
+   assert "<VENV_PATH>" in reflex.__file__, reflex.__file__
    ```
 3. Reading the checkout is fine and encouraged — release source is on branch `<PRERELEASE_BRANCH>`.
    For PR context load the GitHub MCP tools via ToolSearch (`select:mcp__github__pull_request_read`).
