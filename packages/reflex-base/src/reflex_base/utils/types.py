@@ -232,6 +232,19 @@ def get_origin(tp: Any):
     )
 
 
+@lru_cache(maxsize=1024)
+def _get_args_cached(tp: Any) -> tuple[Any, ...]:
+    """Get the generic arguments of a type, memoized on the type.
+
+    Args:
+        tp: The type to get the arguments of.
+
+    Returns:
+        The generic arguments of the type.
+    """
+    return get_args(tp)
+
+
 @lru_cache
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
@@ -797,6 +810,27 @@ def does_obj_satisfy_typed_dict(
     return required_keys.issubset(frozenset(obj))
 
 
+class _Unloaded:
+    """Stands in for the Var classes until they are first needed."""
+
+
+_Var: type = _Unloaded
+_LiteralVar: type = _Unloaded
+_Field: type = _Unloaded
+
+
+def _load_var_classes() -> None:
+    """Resolve the Var classes ``_isinstance`` compares against.
+
+    ``reflex_base.vars`` imports this module, so the import has to be deferred;
+    doing it per call is measurable when validating large containers.
+    """
+    global _Var, _LiteralVar, _Field
+    from reflex_base.vars import Field, LiteralVar, Var
+
+    _Var, _LiteralVar, _Field = Var, LiteralVar, Field
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,
@@ -820,15 +854,16 @@ def _isinstance(
     if cls is Any:
         return True
 
-    from reflex_base.vars import LiteralVar, Var
+    if _Var is _Unloaded:
+        _load_var_classes()
 
-    if cls is Var:
-        return isinstance(obj, Var)
-    if isinstance(obj, LiteralVar):
+    if cls is _Var:
+        return isinstance(obj, _Var)
+    if isinstance(obj, _LiteralVar):
         return treat_var_as_type and _isinstance(
             obj._var_value, cls, nested=nested, treat_var_as_type=True
         )
-    if isinstance(obj, Var):
+    if isinstance(obj, _Var):
         return treat_var_as_type and typehint_issubclass(
             obj._var_type,
             cls,
@@ -840,16 +875,24 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if is_union(cls):
+    # ``is_union``, ``is_literal`` and ``get_origin`` all start from this
+    # attribute; container checks call back in once per element, so read it once.
+    origin_attr = getattr(cls, "__origin__", None)
+
+    if origin_attr is Union or (
+        origin_attr is None and isinstance(cls, types.UnionType)
+    ):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
-            for arg in get_args(cls)
+            for arg in _get_args_cached(cls)
         )
 
-    if is_literal(cls):
-        return obj in get_args(cls)
+    if origin_attr is Literal:
+        return obj in _get_args_cached(cls)
 
-    origin = get_origin(cls)
+    origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
+
+    args = _get_args_cached(cls) if origin is not None else ()
 
     if origin is None:
         # cls is a typed dict
@@ -871,8 +914,6 @@ def _isinstance(
         # cls is a simple class
         return isinstance(obj, cls)
 
-    args = get_args(cls)
-
     if not args:
         if treat_mutable_obj_as_immutable:
             if origin is dict:
@@ -882,7 +923,7 @@ def _isinstance(
         # cls is a simple generic class
         return isinstance(obj, origin)
 
-    if origin is Var and args:
+    if origin is _Var and args:
         # cls is a Var
         return _isinstance(
             obj,
@@ -958,13 +999,10 @@ def _isinstance(
                 for item in obj
             )
 
-    if args:
-        from reflex_base.vars import Field
-
-        if origin is Field:
-            return _isinstance(
-                obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
-            )
+    if args and origin is _Field:
+        return _isinstance(
+            obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+        )
 
     return isinstance(obj, get_base_class(cls))
 
