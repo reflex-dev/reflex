@@ -1,0 +1,407 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/routing098/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='routing098', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 'loglevel'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/routing098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/routing098/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='routing098', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 'loglevel'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/routing098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing routing098 ────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.046 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+[07:44:09] Initializing the web directory.                        console.py:232
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/routing098/lib/python3.11/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing098/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 129763098198296122050290395053837834297.
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized routing098. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3101
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8101
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.041 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3101 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3101 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3101 is not in use.
+Debug: Checking if Backend port: 8101 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8101 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8101 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/routing098/lib/python3.11/site-packages/reflex_components_radix/plugin.py:
+72)
+Debug: [timing] Compile pages: 0.29s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 28/27 0:00:00
+Debug: Applying framework overrides to .web/package.json
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss@8.5.23', '@react-router/fs-routes@7.18.2', 'vite@8.0.16', 
+'@emotion/react@11.14.0', 'autoprefixer@10.5.4', 'postcss-import@16.1.1', 
+'@react-router/dev@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [319]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@16.1.1
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: 154 packages installed [3.43s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-router-dom@7.18.2', 'universal-cookie@8.1.2', 'sonner@2.0.7', 
+'react-router@7.18.2', 'react-error-boundary@6.1.2', '@radix-ui/themes@3.3.0', 
+'react@19.2.8', 'isbot@5.2.1', 'react-helmet@6.1.0', 
+'@react-router/node@7.18.2', 'react-dom@19.2.8', 'socket.io-client@4.8.3', 
+'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [31]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-router-dom@7.18.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed sonner@2.0.7
+Debug: installed react-router@7.18.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react@19.2.8
+Debug: installed isbot@5.2.1
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@7.18.2
+Debug: installed react-dom@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: 99 packages installed [1279.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing098/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing098/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 4.74s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/routing/routing098/routing098', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/routing/routing098/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/routing/routing098/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/routing/routing098/rxconfig.py']
+[INFO] Starting granian (main PID: 5390)
+[INFO] Listening at: http://0.0.0.0:8101
+[INFO] Spawning worker-1 with PID: 5465
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug:   ➜  Local:   http://localhost:3101/
+App running at: http://localhost:3101/
+Backend running at: http://0.0.0.0:8101
+Debug:   ➜  Network: http://192.0.2.2:3101/
+Warning: Attempting to send delta to disconnected client 
+'c4f33da4-ff8e-468c-e2f1-07be75f3ba28'
+Warning: Attempting to send delta to disconnected client 
+'c4f33da4-ff8e-468c-e2f1-07be75f3ba28'
+Warning: Attempting to send delta to disconnected client 
+'c4f33da4-ff8e-468c-e2f1-07be75f3ba28'
+Warning: Attempting to send delta to disconnected client 
+'c4f33da4-ff8e-468c-e2f1-07be75f3ba28'
+Warning: Attempting to send delta to disconnected client 
+'c4f33da4-ff8e-468c-e2f1-07be75f3ba28'
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/routing/routing098/routing098/routing098.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 5927
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/routing098/lib/python3.11/site-packages/reflex_components_radix/plugin.py:
+72)
+Debug: [timing] Compile pages: 0.23s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 28/27 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 255 installs across 329 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss@8.5.23', '@react-router/fs-routes@7.18.2', 'vite@8.0.16', 
+'@emotion/react@11.14.0', 'autoprefixer@10.5.4', 'postcss-import@16.1.1', 
+'@react-router/dev@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@16.1.1
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-router-dom@7.18.2', 'universal-cookie@8.1.2', 'sonner@2.0.7', 
+'react-router@7.18.2', 'react-error-boundary@6.1.2', '@radix-ui/themes@3.3.0', 
+'react@19.2.8', 'isbot@5.2.1', 'react-helmet@6.1.0', 
+'@react-router/node@7.18.2', 'react-dom@19.2.8', 'socket.io-client@4.8.3', 
+'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-router-dom@7.18.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed sonner@2.0.7
+Debug: installed react-router@7.18.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react@19.2.8
+Debug: installed isbot@5.2.1
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@7.18.2
+Debug: installed react-dom@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing098/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing098/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 7:46:15 AM [vite] (client) hmr update 
+/app_components/routing098/routing098.jsx
+Debug: 7:46:15 AM [vite] (client) hmr update 
+/app_components/routing098/routing098.jsx
+Debug: 7:46:15 AM [vite] (client) hmr update /app/routes/[slowbg]._index.jsx
+Debug: 7:46:15 AM [vite] (client) hmr update /app/routes/[slowbg]._index.jsx
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ⚠️  Future Flag Warning: Route middleware support is changing in React Router 
+v8.
+     You can use the `future.v8_middleware` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+  ⚠️  Future Flag Warning: Route module splitting behavior is changing in React 
+Router v8.
+     You can use the `future.v8_splitRouteModules` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+  ⚠️  Future Flag Warning: Vite Environment API usage is changing in React 
+Router v8.
+     You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+  ⚠️  Future Flag Warning: Request handling behavior is changing in React Router
+v8.
+     You can use the `future.v8_passThroughRequests` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+  ⚠️  Future Flag Warning: Data request URL formats are changing in React Router
+v8.
+     You can use the `future.v8_trailingSlashAwareDataRequests` flag to opt in 
+early.
+     -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+  ➜  Local:   http://localhost:3101/
+  ➜  Network: http://192.0.2.2:3101/
+7:46:15 AM  (client) hmr update /app_components/routing098/routing098.jsx
+7:46:15 AM  (client) hmr update /app_components/routing098/routing098.jsx
+7:46:15 AM  (client) hmr update /app/routes/._index.jsx
+7:46:15 AM  (client) hmr update /app/routes/._index.jsx
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[07:47:11] Reflex app stopped.                                    console.py:232

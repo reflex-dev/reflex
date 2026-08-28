@@ -1,0 +1,286 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='routing_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8102
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8102
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.036 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Fullstack port: 8102 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8102 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8102 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.13s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 32/31 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 259 installs across 305 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'tailwindcss@4.3.0', '@tailwindcss/postcss@4.3.0', 
+'@tailwindcss/typography@0.5.20', 'vite@8.2.0', 'postcss-import@16.1.1', 
+'@react-router/dev@8.3.0', '@emotion/react@11.14.0', 'postcss@8.5.23', 
+'@react-router/fs-routes@8.3.0', 'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed tailwindcss@4.3.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@16.1.1
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-dom@19.2.8', 'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 
+'lucide-react@1.26.0', 'isbot@5.2.1', '@react-router/node@8.3.0', 
+'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 'sonner@2.0.7', 
+'react-router@8.3.0', 'react@19.2.8', 'socket.io-client@4.8.3']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.1
+Debug: installed @react-router/node@8.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.7
+Debug: installed react-router@8.3.0
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing_app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/routing/routing_app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 425 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                                6.03 kB │
+gzip:  0.82 kB
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css       694.55 kB │
+gzip: 84.93 kB
+Debug: build/client/assets/reflex-env-BtpcNcnM.js                      0.30 kB │
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-kiP9HKS1.js                    0.41 kB │
+gzip:  0.30 kB
+Debug: build/client/assets/_other_._index-Bs92Ffnh.js                  2.72 kB │
+gzip:  0.89 kB
+Debug: build/client/assets/_postsomething_._index-DsDhQ-wA.js          2.75 kB │
+gzip:  0.90 kB
+Debug: build/client/assets/_slow_._index-OrAnRjjJ.js                   2.75 kB │
+gzip:  0.90 kB
+Debug: build/client/assets/_articles_._all_.__x_._index-EoPy5PEj.js    2.85 kB │
+gzip:  0.94 kB
+Debug: build/client/assets/_slowbg_._index-D5bv1Hj4.js                 2.85 kB │
+gzip:  0.93 kB
+Debug: build/client/assets/_posts_._-DPTbTGN3.js                       2.86 kB │
+gzip:  0.96 kB
+Debug: build/client/assets/_articles_.__id_._index-CdHL6GPb.js         2.96 kB │
+gzip:  0.97 kB
+Debug: build/client/assets/_index-BN0JfzBH.js                          3.23 kB │
+gzip:  1.05 kB
+Debug: build/client/assets/routing_app-1KShnVQH.js                     4.21 kB │
+gzip:  0.76 kB
+Debug: build/client/assets/emotion-react.browser.esm-Cwax2nv3.js      20.71 kB │
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-DwLBjLGa.js                36.80 kB │
+gzip: 12.77 kB
+Debug: build/client/assets/components-BY9SJKTA.js                     83.46 kB │
+gzip: 27.74 kB
+Debug: build/client/assets/separator-CRtcGLMt.js                     149.81 kB │
+gzip: 44.28 kB
+Debug: build/client/assets/entry.client-Bu8MaL7R.js                  182.33 kB │
+gzip: 57.70 kB
+Debug: build/client/assets/root-Bd1N9Bwt.js                          300.75 kB │
+gzip: 85.01 kB
+Debug: 
+Debug: ✓ built in 1.52s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - articles/all/:x
+Debug:   - articles/:id
+Debug:   - posts/*
+Debug:   - *
+Debug: ✓ 31 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-HfJALDEv.css  694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/server/assets/reflex-env-BtpcNcnM.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     81.61 kB │ 
+gzip: 15.97 kB
+Debug: 
+Debug: ✓ built in 624ms
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /postsomething -> build/client/postsomething/index.html
+Debug: Prerender (html): /slowbg -> build/client/slowbg/index.html
+Debug: Prerender (html): /other -> build/client/other/index.html
+Debug: Prerender (html): /slow -> build/client/slow/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/postsomething/index.html to 
+.web/build/client/postsomething.html
+Debug: Copying .web/build/client/slow/index.html to .web/build/client/slow.html
+Debug: Copying .web/build/client/slowbg/index.html to 
+.web/build/client/slowbg.html
+Debug: Copying .web/build/client/other/index.html to 
+.web/build/client/other.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/routing/routing_app/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/routing/routing_app/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8102/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 6153)
+[INFO] Listening at: http://0.0.0.0:8102
+[INFO] Spawning worker-1 with PID: 6210
+Warning: Page index is being redefined with the same component.
+Warning: Page slow is being redefined with the same component.
+Warning: Page slowbg is being redefined with the same component.
+Warning: Page other is being redefined with the same component.
+Warning: Page posts/[[...splat]] is being redefined with the same component.
+Warning: Page postsomething is being redefined with the same component.
+Warning: Page articles/all/[x] is being redefined with the same component.
+Warning: Page articles/[id] is being redefined with the same component.
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token 555a3479-c53c-427f-b2d0-6824544e446b, superseded by a newer 
+invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token f34df533-4550-42a6-d87d-7b3640724582, superseded by a newer 
+invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.routing_app___routing_app____click_state.slow_click 
+chain for token 598956b5-4141-426c-c3b1-3f2e5c7faaf3, superseded by a newer 
+invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.routing_app___routing_app____click_state.slow_click 
+chain for token 598956b5-4141-426c-c3b1-3f2e5c7faaf3, superseded by a newer 
+invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.routing_app___routing_app____click_state.slow_click 
+chain for token 598956b5-4141-426c-c3b1-3f2e5c7faaf3, superseded by a newer 
+invocation.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

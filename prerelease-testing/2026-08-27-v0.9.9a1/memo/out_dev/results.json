@@ -1,0 +1,350 @@
+{
+  "mode": "dev",
+  "results": [
+    {
+      "name": "initial: memo_one text",
+      "ok": true,
+      "details": "a0"
+    },
+    {
+      "name": "initial: memo_two text",
+      "ok": true,
+      "details": "b0"
+    },
+    {
+      "name": "initial: last-event empty",
+      "ok": true,
+      "details": "''"
+    },
+    {
+      "name": "initial: foreach rows",
+      "ok": true,
+      "details": "['red', 'green', 'blue']"
+    },
+    {
+      "name": "initial: cs-count",
+      "ok": true,
+      "details": "0"
+    },
+    {
+      "name": "initial: ccs-count",
+      "ok": true,
+      "details": "0"
+    },
+    {
+      "name": "initial: island title",
+      "ok": true,
+      "details": "a0"
+    },
+    {
+      "name": "initial: unwrapped value",
+      "ok": true,
+      "details": "a0"
+    },
+    {
+      "name": "initial: cross-module same-name badges",
+      "ok": true,
+      "details": "['A:a0', 'B:b0']"
+    },
+    {
+      "name": "initial: NoSSR moment rendered",
+      "ok": true,
+      "details": "2026"
+    },
+    {
+      "name": "restprop: class forwarded",
+      "ok": true,
+      "details": "note-extra css-r3zfwc"
+    },
+    {
+      "name": "restprop: title attr forwarded",
+      "ok": true,
+      "details": "notetitle"
+    },
+    {
+      "name": "restprop: font_weight -> CSS 700",
+      "ok": true,
+      "details": "{'fw': '700', 'pad': '10px', 'fs': 'italic'}"
+    },
+    {
+      "name": "restprop: explicit style merged (padding)",
+      "ok": true,
+      "details": "{'fw': '700', 'pad': '10px', 'fs': 'italic'}"
+    },
+    {
+      "name": "restprop: explicit style merged (font-style)",
+      "ok": true,
+      "details": "{'fw': '700', 'pad': '10px', 'fs': 'italic'}"
+    },
+    {
+      "name": "restprop: note text rendered",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "bump_a: page does NOT re-render",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: memo_one body re-renders",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: wrapper_one re-renders",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: wrapper_two re-renders (same state ctx)",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: memo_two body does NOT re-render (memo stops propagation)",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: status body stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: rows stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: cs body stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: island body re-renders (title prop)",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: unwrapped label re-renders",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 2, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_a: ccs count unchanged",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "bump_a: badge A updated, badge B not",
+      "ok": true,
+      "details": "['A:a1', 'B:b0']"
+    },
+    {
+      "name": "bump_b: page stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 2, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_b: memo_two body re-renders",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 2, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "bump_b: memo_one body stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 2, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "ping: status body re-renders",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 2, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "ping: memo_one body stable (props unchanged)",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 2, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "ping: page stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 2, 'body_two': 0, 'body_unwrapped': 2, 'page': 0, 'wrapper_one': 2, 'wrapper_two': 2}"
+    },
+    {
+      "name": "reverse: order flipped",
+      "ok": true,
+      "details": "['blue', 'green', 'red']"
+    },
+    {
+      "name": "reverse: page stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 4, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "reverse: rows re-rendered",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 4, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "append: new row present",
+      "ok": true,
+      "details": "['blue', 'green', 'red', 'item3']"
+    },
+    {
+      "name": "append: page stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 2, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "append: only new row rendered",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 0, 'body_one': 0, 'body_row': 2, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "client_state: memo body re-renders",
+      "ok": true,
+      "details": "{'body_cs': 2, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "client_state: page stable",
+      "ok": true,
+      "details": "{'body_cs': 2, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "client_state: unrelated memo bodies stable",
+      "ok": true,
+      "details": "{'body_cs': 2, 'body_island': 0, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "component_state: count updated",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "component_state: page stable",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "component_state: island body delta (informational)",
+      "ok": true,
+      "details": "{'body_cs': 0, 'body_island': 2, 'body_one': 0, 'body_row': 0, 'body_status': 0, 'body_two': 0, 'body_unwrapped': 0, 'page': 0, 'wrapper_one': 0, 'wrapper_two': 0}"
+    },
+    {
+      "name": "fiber displayName: Component(index)",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: MemoOne",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: MemoTwo",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: MemoStatus",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: MemoRow",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: MemoCs",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: CounterIsland",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: StyledNote",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: UnwrappedLabel",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: TokenDisplay",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: Badge",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: Foreach",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: Button",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: ClientSide(Moment)",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "fiber displayName: auto-memo wrappers named",
+      "ok": true,
+      "details": "['MemoComponent_MemoStatus_21819d56', 'MemoComponent_MemoTwo_21819d56', 'MemoComponent_UnwrappedLabel_21819d56', 'MemoComponent_Badge_6a3335c9', 'MemoComponent_MemoCs_21819d56', 'MemoComponent_TokenDisplay_21819d56', 'MemoComponent_Badge_d38f1d91', 'MemoComponent_MemoOne_21819d56', 'MemoComponent_CounterIsland_21819d56']"
+    },
+    {
+      "name": "context displayNames present",
+      "ok": true,
+      "details": "['Route', '(anon ctx: undefined)', '(anon ctx: didCatch,error,resetErrorBoundary)', 'EventLoopContext', 'DispatchContext', 'StateContext(reflex___state____state.reflex___state____update_vars_internal_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___istate___dynamic____counter_cs_n1)', 'StateContext(reflex___state____state.memoapp___memoapp___ab_state)', 'StateContext(reflex___state____state.memoapp___memoapp____list_state)', 'StateContext(reflex___state____state)', 'ColorModeContext', 'ThemeContext', 'Route', 'Location', 'Navigation', 'ViewTransition', 'Fetchers', 'DataRouterState', 'DataRouter']"
+    },
+    {
+      "name": "anonymous contexts above page (informational)",
+      "ok": true,
+      "details": "['(anon ctx: undefined)', '(anon ctx: didCatch,error,resetErrorBoundary)']"
+    },
+    {
+      "name": "about: page displayName",
+      "ok": true,
+      "details": "['App', 'AppWrap', 'ColorModeContext', 'Component(about)', 'Ctx:anon', 'DataRouter', 'DataRouterState', 'DataRoutes', 'DefaultOverlayComponents', 'DirectionProvider', 'DispatchContext', 'EmotionCssPropInternal', 'ErrorBoundary', 'EventLoopContext', 'EventLoopProvider', 'Fetchers', 'FrameworkContext', 'HydratedRouter', 'Insertion', 'Layout']"
+    },
+    {
+      "name": "about: memo_two shows current state b",
+      "ok": true,
+      "details": "b1"
+    },
+    {
+      "name": "about: wrapper_two_about probe ran",
+      "ok": true,
+      "details": "{'wrapper_two_about': 2, 'body_two': 2}"
+    },
+    {
+      "name": "console: no unexpected errors/warnings",
+      "ok": true,
+      "details": "[]"
+    },
+    {
+      "name": "console: no hydration mismatches",
+      "ok": true,
+      "details": "[]"
+    },
+    {
+      "name": "network: no failed requests",
+      "ok": true,
+      "details": "[]"
+    }
+  ]
+}
