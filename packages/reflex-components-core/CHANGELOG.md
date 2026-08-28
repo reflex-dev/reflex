@@ -1,3 +1,10 @@
+## v0.9.9a2 (2026-08-28)
+
+### Bug Fixes
+
+- Upload filenames whose segments contain nothing but dots and spaces (e.g. `".."`, `"./../."`, `".. "`) now sanitize to the fallback name `upload` instead of returning the bare segment. Such names pointed the saved path outside the upload directory — directly on POSIX, and via Win32's trailing dot/space trimming on Windows — and crashed the upload handler with a 500. ([#6971](https://github.com/reflex-dev/reflex/issues/6971))
+
+
 ## v0.9.9a1 (2026-08-27)
 
 ### Features
