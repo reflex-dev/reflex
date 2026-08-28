@@ -1,1 +1,0 @@
-Upgrade the locked dev tooling: `ruff` 0.15.12 -> 0.16.2, `pyright` 1.1.408 -> 1.1.411, `typer` 0.25.1 -> 0.27.1. Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff's new `D421`), and `typer.main.get_command()` is cast to `click.Command` because typer 0.27 vendors its own copy of click.

@@ -1,3 +1,10 @@
+## v0.9.8a1 (2026-08-27)
+
+### Bug Fixes
+
+- Deprecated `App(theme=...)` now keeps applying its theme when an explicit `RadixThemesPlugin` is configured, instead of being silently ignored until its removal in 1.0. ([#6776](https://github.com/reflex-dev/reflex/issues/6776))
+
+
 ## v0.9.7 (2026-08-04)
 
 ### Miscellaneous

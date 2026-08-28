@@ -1,3 +1,10 @@
+## v1.0.4a1 (2026-08-27)
+
+### Miscellaneous
+
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+
+
 ## v1.0.3 (2026-08-04)
 
 ### Miscellaneous
