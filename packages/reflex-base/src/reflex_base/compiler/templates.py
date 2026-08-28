@@ -734,9 +734,8 @@ export default defineConfig((config) => ({{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
         warn(warning);
       }},
-      jsx: {{}},
       output: {{
-        advancedChunks: {{
+        codeSplitting: {{
           groups: [
             {{
               test: /env.json/,
