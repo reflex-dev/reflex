@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -340,6 +341,8 @@ def test_buffered_upload_args_file_rejected():
     [
         ("plain.txt", "plain.txt"),
         ("../secret.txt", "secret.txt"),
+        ("../../evil.txt", "evil.txt"),
+        ("a b<>|.txt", "a b<>|.txt"),
         ("nested/path/report.csv", "nested/path/report.csv"),
         (r"..\secret.txt", "secret.txt"),
         (r"C:\Users\name\report.csv", "report.csv"),
@@ -348,6 +351,51 @@ def test_buffered_upload_args_file_rejected():
 def test_upload_filename_sanitization_drops_path_segments(filename: str, expected: str):
     """Unsafe path segments are removed from uploaded filenames."""
     assert _sanitize_upload_filename(filename) == expected
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "..",
+        "./../.",
+        "..\\",
+        "/..",
+        "/foo/..",
+        "C:\\..",
+        "..//..",
+        "",
+        ".",
+        # Win32 strips trailing dots and spaces, so these navigate like ".." too.
+        ".. ",
+        ".. .",
+        "C:\\.. ",
+        "/foo/.. ",
+        ".. /.. ",
+        "...",
+        "....",
+        " ",
+    ],
+)
+def test_upload_filename_sanitization_traversal_only_falls_back(filename: str):
+    """Filenames whose segments are only dots and spaces get a safe fallback name."""
+    assert _sanitize_upload_filename(filename) == "upload"
+
+
+@pytest.mark.parametrize(
+    "filename", ["\u2024\u2024", "\u2025\u2025", "a.", "a. ", " a ", ".hidden"]
+)
+def test_upload_filename_sanitization_keeps_dot_like_names(filename: str):
+    """Dot-like names that are not traversal tokens are kept unchanged."""
+    assert _sanitize_upload_filename(filename) == filename
+
+
+def test_buffered_upload_traversal_only_filename_falls_back():
+    """A buffered upload named only with traversal tokens stays in the upload dir."""
+    upload = StarletteUploadFile(file=io.BytesIO(b"data"), filename="..")
+    reflex_upload = _upload_file_from_starlette(upload)
+
+    assert reflex_upload.path == Path("upload")
+    assert reflex_upload.name == "upload"
 
 
 def test_upload_filename_sanitization_preserves_relative_directory():
@@ -491,6 +539,15 @@ async def test_chunk_parser_preserves_relative_directory_filename():
         _multipart_body("BOUNDARY", filename="photos/2026/image.png"), "BOUNDARY"
     )
     assert filenames == ["photos/2026/image.png"]
+
+
+async def test_chunk_parser_traversal_only_filename_falls_back():
+    """Streamed uploads named only with traversal tokens get the fallback name."""
+    _, chunks, filenames = await _run_chunk_parser(
+        _multipart_body("BOUNDARY", filename=".."), "BOUNDARY"
+    )
+    assert filenames == ["upload"]
+    assert b"".join(chunks) == b"hello"
 
 
 async def test_chunk_parser_args_as_file_rejected():
