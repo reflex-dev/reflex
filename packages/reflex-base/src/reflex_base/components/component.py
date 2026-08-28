@@ -693,6 +693,40 @@ def _deterministic_hash(value: object) -> str:
     return hasher.hexdigest()
 
 
+_REMOVED_REACT_ROUTER_DOM = "react-router-dom"
+
+
+def _check_react_router_dom_imports(
+    import_names: Iterable[str], component_name: str
+) -> None:
+    """Reject imports that resolve to the removed react-router-dom package.
+
+    React Router 8 dropped the ``react-router-dom`` re-export package, so
+    installing it would silently pull in a second, unpinned React Router 7
+    copy that breaks production builds.
+
+    Args:
+        import_names: The import paths contributed by a component.
+        component_name: The name of the component contributing them.
+
+    Raises:
+        ValueError: If an import path resolves to the react-router-dom package.
+    """
+    for import_name in import_names:
+        if not import_name.startswith(_REMOVED_REACT_ROUTER_DOM):
+            continue
+        suffix = import_name[len(_REMOVED_REACT_ROUTER_DOM) :]
+        if suffix and suffix[0] not in "@/":
+            continue
+        msg = (
+            f"The component `{component_name}` references `{import_name}`, but "
+            "React Router 8 removed the `react-router-dom` package and Reflex no "
+            'longer installs it. Use `library = "react-router"` instead, or '
+            '`"react-router/dom"` for `RouterProvider`/`HydratedRouter`.'
+        )
+        raise ValueError(msg)
+
+
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
 class TriggerDefinition:
     """A default event trigger with its args spec and description."""
@@ -1974,6 +2008,7 @@ class Component(BaseComponent, ABC):
             *var_imports,
             *added_import_dicts,
         )
+        _check_react_router_dom_imports(result, type(self).__name__)
         self._imports_cache = result
         return result
 
