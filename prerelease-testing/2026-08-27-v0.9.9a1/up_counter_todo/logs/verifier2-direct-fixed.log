@@ -1,0 +1,5 @@
+$ react-router dev --host --port "3605"
+[restart] Relaunching with NODE_OPTIONS: --max-old-space-size=8192 --conditions=development
+  ➜  Local:   http://localhost:3605/
+  ➜  Network: http://192.0.2.2:3605/  eth0
+error: script "dev" exited with code 143

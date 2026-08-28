@@ -127,3 +127,36 @@ artifacts/reflexle/reflex.lock.after_upgrade/   lockfile dir snapshot post-migra
 logs/<app>_{098_run1,099a1_run1,099a1_cold}.log full --loglevel debug server logs
 shots/<app>_{098,099a1,099a1_cold}/             screenshots + results/console JSON
 ```
+
+## VERIFICATION (adversarial re-check of the "discarded toasts" quirk, 2026-08-28)
+
+Independently reproduced by a separate verifier agent, from scratch (fresh venvs from
+PyPI, fresh app copies, own driver `verify_toast.py` in this dir), on BOTH versions:
+
+- **reflex 0.9.9a1** (venv: reflex==0.9.9a1 + reflex-global-hotkey 1.2.3, ports
+  3680/8680): 13/13 checks pass.
+- **reflex 0.9.8** (fresh copy, `reflex.lock/` and `.web/` removed so 0.9.8 installs its
+  own frontend pins, ports 3681/8681): 13/13 checks pass — behavior byte-identical.
+
+Checks (per version): 'zzzzz' + Enter → row gets the shake animation
+(`animationName === 'shake'` / invert filter on the row), auto-clears ~0.3s later via
+the `set_is_wrong_guess_false` background task, and **zero sonner toasts render** during
+a 3s polling window. Same for the duplicate-guess path ('crane' accepted and colored,
+'crane' again → shake+clear, no toast). Control check: a short guess ('abc' + Enter)
+DOES show the "Word must be 5 characters long." toast — so the returned-EventSpec →
+frontend toast pipeline works fine in both versions; the missing toasts are solely
+because `received_letter()` in `reflexle/reflexle.py` assigns
+`event = self._word.guess(current_guess)` and then `return type(self).set_is_wrong_guess_false`,
+never returning/yielding `event`. ('zzzzz' confirmed absent from `words.py` valid_guess.)
+No unexpected console errors (only the known-benign fonts.googleapis.com blocked-resource
+line).
+
+**VERDICT: claim CONFIRMED as described — an example-app bug in reflex-examples
+(pre-existing, identical on 0.9.8 and 0.9.9a1), NOT a reflex 0.9.9a1 defect and NOT a
+regression. Nothing for a framework fix-agent to act on.** The example could be fixed
+upstream by returning `[event, type(self).set_is_wrong_guess_false]`.
+
+Rerun: `verify_toast.py <base_url> <shots_dir>` with the driver venv
+(`$SB/envs/driver/bin/python`, NO_PROXY=localhost,127.0.0.1). Verifier screenshots/JSON:
+`$SB/apps/verify_up_reflexle_snake_0/shots_{a1,098}/` (results.json includes full
+toast/console capture).

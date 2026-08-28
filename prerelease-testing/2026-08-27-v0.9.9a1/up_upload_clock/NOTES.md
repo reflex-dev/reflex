@@ -179,3 +179,39 @@ zero functional impact observed.
 
 Verification processes: reflex server pgid killed (`kill -KILL -<pgid>`), probes exited/timed out;
 `ps` confirms no leftovers on ports 3640/3641/8640.
+
+## VERIFICATION (adversarial re-check #2, 2026-08-28): stale Files list / cached @rx.var claim
+
+Claim re-verified independently: **CONFIRMED as described — pre-existing app-level behavior,
+NOT a reflex 0.9.9a1 defect and NOT a regression.** confirmed=false for fix-agent purposes.
+
+Independent repro (fresh app copies, own driver `verification_stale_files_var/drive_verify.py`,
+NOT the original agent's script; ports 3648/8648 for 0.9.9a1 via the shared smoke venv, 3649/8649
+for 0.9.8 via a fresh PyPI venv `reflex==0.9.8`; empty `uploaded_files/` at start). 10 checks per
+version, all PASS, byte-identical outcomes on 0.9.8 and 0.9.9a1
+(`verification_stale_files_var/{098,099a1}/results_*.json` + screenshots):
+
+1. Initial render: Files list empty (upload dir empty).
+2. Upload verify_one.txt -> file lands on disk; list STILL empty after 3s grace.
+3. Reload page: sessionStorage `token` unchanged -> list still empty.
+4. Second upload (new events: handle_upload + on_upload_progress deltas in the same session)
+   -> list still empty; both files on disk.
+5. Fresh browser context (new token) -> list shows BOTH files immediately.
+6. Original context re-checked at end -> still empty.
+
+Zero unexpected console messages, zero 4xx/5xx, no server-log tracebacks on either version.
+
+Root cause (framework source, reflex/state.py, same on release branch): only `cache=False`
+computed vars enter `_always_dirty_computed_vars` (state.py ~line 921); a cached computed var
+recomputes only when a traced dependency is marked dirty or its `interval` expires. The example's
+`State.files` reads `Path(rx.get_upload_dir()).rglob(...)` — zero state-var dependencies — so it
+computes once per session token and is never invalidated. This is documented Reflex caching
+semantics (cache=True default since 0.6.x), not a defect: the reflex-examples upload app should
+use `@rx.var(cache=False)` (or maintain a real state var / touch a dependency in handle_upload).
+Nothing here involves reflex-enterprise.
+
+Regression check: behavior identical on 0.9.8 -> claim's "regression vs 0.9.8: false" is correct;
+severity low / recorded-as-context is the right disposition. Not a release blocker.
+
+Processes: both server pgids killed (`kill -KILL -<pgid>` on the setsid group — note the launcher
+pid and the setsid pgid differ); `ps` confirms no leftovers on 3648/3649/8648/8649, no chromium.

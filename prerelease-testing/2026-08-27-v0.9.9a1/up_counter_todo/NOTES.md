@@ -168,6 +168,71 @@ both versions — only the rendering differs); not pre-existing (0.9.8 output is
 clean). Severity low/cosmetic: warning text remains readable, no functional
 impact. Verifier repro logs: `<scratchpad>/apps/verify_up_counter_todo_0/{a1-run.log,098-run.log}`.
 
+## VERIFICATION of anomaly 2 — vite configLoader:'native' warning (adversarial verifier, 2026-08-28)
+
+Claim verified: **CONFIRMED** — genuine reflex 0.9.9a1 defect (reflex-base web
+template), regression vs 0.9.8 in observable behavior. Low severity today
+(warning only, dev server works), but the flagged import will hard-break when
+vite makes `configLoader: 'native'` the default major.
+
+Independent repro (working dir `<scratchpad>/apps/verify_up_counter_todo_1/`,
+PyPI installs only):
+
+- 0.9.9a1 (`envs/smoke`, todo app, `reflex run --loglevel debug` on 3604/8604,
+  log `a1_todo_run.log`): warning block appears TWICE before "App running at";
+  frontend serves HTTP 200. Matches the reporter's logs (2x per dev start).
+- 0.9.8 (`envs/base098`, same todo app, same ports, log `v098_todo_run.log`):
+  0 occurrences of `VITE_CONFIG_NATIVE_IGNORE_WARNING` / `configLoader`;
+  app starts normally. Also corroborated by `verify_up_counter_todo_0/098-run.log`
+  (0 hits) vs `.../a1-run.log` (4 hits).
+- Note: a fresh `reflex init` + first run failed twice in this verification pass
+  with bun `error: ConnectionClosed downloading package manifest ...` (shared
+  proxy overloaded — environment issue, unrelated to the claim); the repro above
+  therefore reuses the prebuilt `.web/` app copies (`todo_a1_copy/`, `todo_098_copy/`).
+
+Root cause (byte-level proof):
+
+1. The generated `.web/vite.config.js` line 4 is
+   `import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";`
+   (no extension), emitted verbatim by
+   `packages/reflex-base/src/reflex_base/compiler/templates.py:658` — identical
+   in the installed 0.9.9a1 wheel and in the release branch
+   `origin/r/pre-2026.08.27-33148999938`.
+2. The SAME extensionless import exists in 0.9.8's wheel (its `templates.py:579`)
+   — the template line is NOT new. What changed is the pinned vite version:
+   `reflex_base/constants/installer.py` pins vite 8.0.16 in 0.9.8 vs 8.2.0 in
+   0.9.9a1, and the warning code (`VITE_CONFIG_NATIVE_IGNORE_WARNING`) exists in
+   vite 8.2.0's `dist/node/chunks/node.js` but nowhere in vite 8.0.16's dist.
+   So: pre-existing template latent issue, surfaced as a new warning by the vite
+   bump shipped in 0.9.9a1 — a real (cosmetic) regression vs 0.9.8.
+3. Direct-cause A/B test (bypassing reflex recompile): running
+   `bun run dev -- --port 3605` in `todo_a1_copy/.web` with the stock config
+   prints the warning twice (`direct_stock.log`); after
+   `sed 's|safari-cachebust"|safari-cachebust.js"|' vite.config.js` the warning
+   is gone and the dev server still starts (`direct_fixed.log`, 0 hits).
+4. Upstream already agrees: commit `522cf410a` ("Filter the react-dom/server
+   resolveId hook and fix the config import extension", 2026-08-27 20:10 UTC,
+   only on branch `origin/claude/reflex-docs-macos-timeout-d3ucaj` — NOT in the
+   release) changes the template to `"./vite-plugin-safari-cachebust.js"`.
+
+Fix direction for a fix-agent: add the `.js` extension in
+`packages/reflex-base/src/reflex_base/compiler/templates.py:658` (or cherry-pick
+522cf410a's template hunk).
+
+Verifier log copies (this dir): `logs/verifier2-a1-todo-run.log` (2 hits),
+`logs/verifier2-098-todo-run.log` (0 hits), `logs/verifier2-direct-stock.log`
+(warning, stock config), `logs/verifier2-direct-fixed.log` (clean, `.js` added).
+
+Refutations attempted: not an env quirk (reproduced from prebuilt app dirs, and
+observed independently by several other clusters — e.g.
+`prerelease-testing/.../registration_context/dynapp/run_dev.log`); not app-specific
+(config line is template-generated, identical for counter/todo/blank apps); not
+misuse (default `reflex run`); not pre-existing (0 hits on 0.9.8 in two
+independent log sets). Visibility caveat: normally only surfaced at
+`--loglevel debug` (vite stderr -> Debug lines), but it also prints un-prefixed
+at default loglevel in frontend-failure dumps and via AppHarness runs, and it
+appears in prod mode logs too (`registration_context/dynapp/run_prod.log`).
+
 ## VERIFICATION #2 — anomaly 3, transient peer-dep warnings (adversarial verifier, 2026-08-28)
 
 Claim verified: **REFUTED as an actionable defect** (observation itself accurately

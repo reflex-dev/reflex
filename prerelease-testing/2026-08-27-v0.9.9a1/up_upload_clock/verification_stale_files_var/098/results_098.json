@@ -1,0 +1,52 @@
+[
+  {
+    "name": "initial_list_empty",
+    "ok": true,
+    "detail": "links=[]"
+  },
+  {
+    "name": "upload1_on_disk",
+    "ok": true,
+    "detail": "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_up_upload_clock_2/upload098/uploaded_files/verify_one.txt"
+  },
+  {
+    "name": "list_stale_after_upload_same_session",
+    "ok": true,
+    "detail": "links=[] (claim says stays empty)"
+  },
+  {
+    "name": "token_survives_reload",
+    "ok": true,
+    "detail": "12e0b452-6201-445e-fbb8-a75ed9b76500 vs 12e0b452-6201-445e-fbb8-a75ed9b76500"
+  },
+  {
+    "name": "list_stale_after_reload_same_token",
+    "ok": true,
+    "detail": "links=[]"
+  },
+  {
+    "name": "upload2_on_disk",
+    "ok": true,
+    "detail": "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_up_upload_clock_2/upload098/uploaded_files/verify_two.txt"
+  },
+  {
+    "name": "list_still_stale_after_second_event",
+    "ok": true,
+    "detail": "links=[]"
+  },
+  {
+    "name": "fresh_context_new_token",
+    "ok": true,
+    "detail": "2b51bc28-0114-40d0-814e-f113f947db96"
+  },
+  {
+    "name": "fresh_context_sees_both_files",
+    "ok": true,
+    "detail": "links=['verify_two.txt', 'verify_one.txt']"
+  },
+  {
+    "name": "ctx_a_still_stale_at_end",
+    "ok": true,
+    "detail": "links=[]"
+  }
+]
