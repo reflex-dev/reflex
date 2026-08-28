@@ -1,0 +1,1 @@
+A background event handler that raises before ever entering `async with self` now still emits the compatibility delta flush (refreshing uncached computed vars and preamble-dirty vars like `router_data`) that a non-raising handler gets, instead of skipping it when the exception propagates.

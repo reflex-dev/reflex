@@ -467,6 +467,67 @@ async def test_background_event_without_context_still_flushes_a_delta(
     )
 
 
+async def test_background_event_raising_without_context_still_flushes_a_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A background handler that raises before ``async with self`` still flushes.
+
+    Regression: the compatibility flush for handlers that never enter their
+    proxy context ran only after a normal return, so a raising handler
+    propagated the exception before the flush and no delta was emitted --
+    unlike every non-raising no-context background handler. The flush now
+    runs in a finally, and the exception still reaches the backend
+    exception handler afterwards.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    handled: list[Exception] = []
+
+    class RaisingBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            return 11
+
+        @event(background=True)
+        async def bg_raises(self):
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    real_base_state_processor.backend_exception_handler = handled.append
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(RaisingBgState.bg_raises())[0]
+            )
+            await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(RaisingBgState.get_name())
+
+    state_name = RaisingBgState.get_full_name()
+    beat_key = "beat" + FIELD_MARKER
+    assert any(d.get(state_name, {}).get(beat_key) == 11 for _, d in emitted_deltas), (
+        f"no delta refreshed the uncached var after the handler raised: {emitted_deltas}"
+    )
+    assert [type(ex) for ex in handled] == [RuntimeError], (
+        f"the handler's exception did not reach the backend handler: {handled}"
+    )
+
+
 async def test_chained_event_keeps_originating_router_data(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
