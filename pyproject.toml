@@ -140,9 +140,13 @@ source = "uv-dynamic-versioning"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-include = ["reflex", "scripts/hatch_build.py"]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Leading slashes anchor to the repo root; unanchored patterns match nested
+# directories under packages/ too.
+include = ["/reflex"]
+# Include uncommitted pyi stubs generated for this package.
+artifacts = ["/reflex/**/*.pyi"]
+# The build hook is only needed to build the wheel from the sdist.
+targets.sdist.include = ["/reflex", "/scripts/hatch_build.py"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
