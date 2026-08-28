@@ -152,3 +152,94 @@ every step resolves the right page and fires the right on_load with correct rout
    `rx.App()` raises `ReflexRuntimeError` with a helpful message. `route_conflict_check.py`
    sidesteps this with one subprocess per case (also portable to 0.9.8, which has no
    `fork`).
+
+## VERIFICATION (independent adversarial check, 2026-08-28)
+
+Claim verified: **"Background-task on_load is cancelled on navigation" is CONFIRMED**
+as a real 0.9.9a1 behavior regression vs 0.9.8.
+
+Method: independent minimal app written from the repro description alone
+(`verify_bg_onload/vbg/` — 3 pages: `/`, `/slowbg` with
+`@rx.event(background=True)` on_load doing `async with self` writes 1s apart,
+`/other` with a button starting the identical background task), run from PyPI
+installs only (0.9.9a1 = shared smoke venv; 0.9.8 = fresh `envs/verify098` venv),
+driven by `verify_bg_onload/drive_verify.py` (ports 3600/8600 and 3601/8601).
+
+Results (same app source, same script, only the reflex version differs):
+
+| test | 0.9.9a1 dev | 0.9.8 dev |
+|---|---|---|
+| A control: stay on /slowbg | bg on_load completes step1..step4 | completes |
+| B repro: client-nav away after `load1-start` | **frozen at `load1-start`; zero writes 6s after nav** | completes step1..step4 after nav |
+| C contrast: button-started bg task, nav away | completes | completes |
+
+Refutation attempts, all failed:
+- Not a delta-emission artifact: after B, a hard reload of `/other` still shows
+  only `load1-start` (`drive_reload_check.py`) — the state writes never happened
+  server-side; the task really is cancelled.
+- Not app/env specific: control A completes on 0.9.9a1, and the identical
+  button-started task (C) survives navigation on 0.9.9a1 — cancellation is
+  scoped exactly to the on_load chain, ruling out websocket-disconnect or
+  environment explanations.
+- Not API misuse: `background=True` handlers are legal `on_load` targets in both
+  versions and worked in 0.9.8.
+
+Mechanism (from release source, commit a33e02ade / PR #6713 for #6593):
+`on_load_internal` is marked `supersedes=True`; on the next navigation
+`EventProcessor._supersede_previous` cancels the previous chain if not
+`all_done()`, and `_on_future_done` cascades `cancel()` to ALL child futures and
+their asyncio tasks. A background on_load handler is a child future of the
+on_load chain, and (unlike sequential children) it keeps the chain "unfinished"
+for its whole lifetime, so any later navigation cancels it mid-flight.
+Server log shows only a Debug-level "Cancelling the previous unfinished
+...on_load_internal chain" line — no traceback, silent from the app's view.
+
+Why this is a defect and not just an undocumented intended change:
+- Background tasks exist to escape chain semantics and run long; 0.9.8 let them
+  survive navigation. Apps using a background on_load to prefetch/stream data
+  across pages silently lose data with no error and no opt-out
+  (`supersedes` can only be set on the chain root, not opted out by the child).
+- Neither news fragment (news/6593.bugfix.md, packages/reflex-base/news/6593.bugfix.md)
+  mentions background tasks, and no unit test in the supersession commit covers a
+  background child of a superseded chain — the interaction appears unconsidered
+  rather than designed.
+
+Suggested fix direction for the fix-agent: exclude `is_background` child futures
+from the supersession cancellation cascade (or detach background children from
+the chain future for supersession purposes), or provide an explicit opt-out and
+a changelog/docs callout. Severity medium is fair.
+
+## VERIFICATION (adversarial verifier, anomaly #2: prod HTTP 404 for dynamic-route direct loads)
+
+Independently reproduced from the repro steps alone with a fresh minimal app
+(`$SB/apps/verify_routing_1/vapp`: pages `/`, `/other`, `/articles/[id]`, `/posts/[[...splat]]`),
+built with `reflex init --template blank` and run via
+`reflex run --env prod --frontend-port 8604 --backend-port 8604` (0.9.9a1 smoke venv, PyPI).
+
+- curl matrix (0.9.9a1): `/` 200; `/other` 307 -> `/other/` 200; `/articles/7`,
+  `/articles/7/`, `/posts`, `/posts/`, `/posts/a/b` all **404**, body = 5167 bytes,
+  byte-identical (`cmp`) to `.web/build/client/404.html`; `/definitely-not-a-page` also 404
+  with the same body — valid dynamic URLs and true 404s are indistinguishable at the HTTP layer.
+- Playwright (Chromium, document response status): `/articles/7` -> status 404, renders
+  `PAGE:article:7`; `/posts/a/b` -> 404, renders correctly; `/other` -> 307/200, renders.
+- 0.9.8 baseline (separate PyPI venv `routing098`, identical app in
+  `$SB/apps/verify_routing_1/vapp098`, port 8605): identical curl matrix and identical
+  Playwright results. Confirmed pre-existing, NOT a 0.9.9 regression.
+
+Root cause (read from `reflex/utils/exec.py` + `reflex/utils/build.py`, identical in the
+installed 0.9.8 and 0.9.9a1 wheels): prod mode mounts the built frontend with Starlette
+`StaticFiles(html=True)` (`get_frontend_mount` -> `PrecompressedStaticFiles`), and the build
+step copies the react-router SPA fallback (`__spa-fallback.html`) over `404.html`
+(`build.py: path_ops.cp(spa_fallback, static_dir / "404.html")`). Starlette's `html=True`
+semantics serve `404.html` with status 404 for any path that maps to no file; dynamic routes
+are never prerendered to files, so they always take this path. Static pages exist as
+`<route>/index.html` dirs, hence the 307 -> 200. This is the standard "SPA fallback via
+404.html" static-hosting technique — deliberate design, correct rendering, wrong-ish status.
+
+Verdict: the claim is **factually accurate as filed** (reproduced end-to-end, twice, plus
+source-level root cause). However it is longstanding intended-tradeoff behavior identical in
+stable 0.9.8 — an environment-independent framework *limitation*, not a 0.9.9a1 defect or
+regression, so it is NOT actionable for this release (marking confirmed=false on the
+"fix-agent should act" bar only). If ever tackled upstream: the prod backend knows the route
+table (`app.router(path)`), so the static mount could serve the fallback with 200 for
+routable paths and reserve 404 for genuinely unknown ones.

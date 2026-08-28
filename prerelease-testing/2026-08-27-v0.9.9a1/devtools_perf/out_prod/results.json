@@ -1,0 +1,180 @@
+{
+  "mode": "prod",
+  "results": [
+    {
+      "name": "index: fiber walk ok",
+      "status": "pass",
+      "details": "None"
+    },
+    {
+      "name": "index: page displayName Component(index)",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "index: memo CounterPanel named",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "index: memo NavBar named",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "index: auto-memo wrapper MemoComponent_CounterPanel_* named",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "index: StyledUpload memo named",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "index: context named StateContext(reflex___state____state)",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named StateContext(reflex___state____state.devtools_app___devtools_app____app_state)",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named ColorModeContext",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named EventLoopContext",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: context named DispatchContext",
+      "status": "pass",
+      "details": "['DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Navigation', 'Location', 'Route', 'ThemeContext', 'ColorModeContext', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state____frontend_event_exception_state)', 'StateContext(reflex___state____state.reflex___state____on_load_internal_state)', 'StateContext(reflex___st"
+    },
+    {
+      "name": "index: unnamed contexts in tree (3rd-party ok)",
+      "status": "info",
+      "details": "1 of 21"
+    },
+    {
+      "name": "index: bump updates StatCard",
+      "status": "pass",
+      "details": ""
+    },
+    {
+      "name": "index: PulseBadge shows last action",
+      "status": "pass",
+      "details": "last: bump"
+    },
+    {
+      "name": "ownerstack: prod captures",
+      "status": "info",
+      "details": "['<no captureOwnerStack API>']"
+    },
+    {
+      "name": "ownerstack: internals probe",
+      "status": "info",
+      "details": "{'value': None, 'writable': None}"
+    },
+    {
+      "name": "index: ThemeContext provider in tree",
+      "status": "info",
+      "details": "True"
+    },
+    {
+      "name": "perf: heavy-page navigation metrics",
+      "status": "info",
+      "details": "[{'nav': 0, 'wall_ms': 126.3, 'TaskDuration_ms': 96.7, 'ScriptDuration_ms': 38.6, 'LayoutDuration_ms': 14.0, 'RecalcStyleDuration_ms': 21.0}, {'nav': 1, 'wall_ms': 105.8, 'TaskDuration_ms': 67.7, 'ScriptDuration_ms': 17.6, 'LayoutDuration_ms': 11.5, 'RecalcStyleDuration_ms': 18.9}, {'nav': 2, 'wall_ms': 102.2, 'TaskDuration_ms': 69.2, 'ScriptDuration_ms': 16.3, 'LayoutDuration_ms': 11.5, 'RecalcStyleDuration_ms': 21.8}]"
+    },
+    {
+      "name": "heavy: page displayName Component(heavy)",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)']"
+    },
+    {
+      "name": "charts: rx.plotly(id=...) does not land on DOM (react-plotly.js wants divId)",
+      "status": "info",
+      "details": "True"
+    },
+    {
+      "name": "charts: plotly bar chart rendered with 6 bars",
+      "status": "pass",
+      "details": "6"
+    },
+    {
+      "name": "charts: page displayName Component(charts)",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "charts: ClientSide(Plot) in fiber tree",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "charts: memoized Plotly wrapper named from Python class",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "charts: shuffle updates figure + total",
+      "status": "pass",
+      "details": "total: 46"
+    },
+    {
+      "name": "charts: plotly hover tooltip works",
+      "status": "pass",
+      "details": ""
+    },
+    {
+      "name": "blog: page displayName Component(blog/[slug])",
+      "status": "pass",
+      "details": "['ce', 'FrameworkContext', 'ct', 'ie', 'vr', 'DataRouter', 'DataRouterState', 'Fetchers', 'ViewTransition', 'Cr', 'Navigation', 'Location', 'xr', 'Yn', 'Qn', 'Route', 'TE', 'SE', 'CE', 'ScrollRestoration', 'ot', 'Ce', 'ThemeContext', 'ColorModeContext', 'wE', 'StateProvider', 'StateContext(reflex___state____state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____blog_state)', 'StateContext(reflex___state____state.devtools_app___devtools_app____app_state.devtools_app___devtools_app____chart_state)', 'StateContext(reflex___state____state.reflex___istate___shared____shared_state_base_internal)', 'StateContext(reflex___state____state.reflex___state___"
+    },
+    {
+      "name": "blog: on_load recorded view of slug",
+      "status": "pass",
+      "details": "views this session: 1"
+    },
+    {
+      "name": "blog: second slug renders via client-side nav",
+      "status": "pass",
+      "details": ""
+    },
+    {
+      "name": "blog: on_load re-fired for new slug",
+      "status": "pass",
+      "details": ""
+    },
+    {
+      "name": "ownerstack: total probe captures this session",
+      "status": "info",
+      "details": "14"
+    },
+    {
+      "name": "hygiene: no unexpected console errors/warnings",
+      "status": "pass",
+      "details": "[]"
+    },
+    {
+      "name": "hygiene: no failed/4xx/5xx requests",
+      "status": "pass",
+      "details": "[]"
+    }
+  ]
+}

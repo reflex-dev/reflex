@@ -173,3 +173,53 @@ found in the log to explain it.
 - `evidence_escaping_ratelimit.txt`, `evidence_noarg_typeerror.txt`, `evidence_genuine_mismatch.txt`.
 - Server logs: `backend_only.log`, `backend_only2.log`, `be_extra.log`, `run_dev.log`.
 ```
+
+## VERIFICATION (adversarial verifier) — CONFIRMED
+
+Independently reproduced the no-arg `client_error` TypeError from the repro steps
+alone, on `reflex==0.9.9a1` (smoke venv, PyPI). Fresh blank app
+(`reflex init --template blank`) in `$SB/apps/verify_client_error_0/`, backend-only
+on reserved port **8720** at `--loglevel info`. Driver: `$SB/envs/client_error_drv`
+(python-socketio 5.16.4, aiohttp 3.14.3 — note the smoke venv's socketio client
+has NO aiohttp so its websocket transport fails; use client_error_drv). Script:
+`$SB/apps/verify_client_error_0/verify_noarg.py`.
+
+Result — 14 no-arg `emit("client_error", namespace="/_event")` (7 from an
+UNLINKED/no-token socket + 7 from a token-linked socket) produced:
+- **14** `Task exception was never retrieved` tracebacks (28 lines matching
+  `missing 1 required positional argument`, i.e. 2 per traceback), all
+  `TypeError: EventNamespace.on_client_error() missing 1 required positional
+  argument: 'data'` raised in socketio `async_server.py:621`
+  (`_trigger_event(data[0], namespace, sid, *data[1:])`) — one traceback per emit.
+- **0** `unknown SID` guard hits (despite 7 emits from a no-token socket),
+  **0** malformed-payload guard hits, **0** rate-limit-window warnings.
+- A single VALID dict from a linked socket was logged normally as a report — so
+  the handler works on the happy path; only the arity-mismatch path is broken.
+
+Structural confirmation: installed `reflex/app.py:2169`
+`async def on_client_error(self, sid: str, data: Any)` has NO default for `data`,
+and all four guards (`isinstance(data, dict)` @2189, `sid not in self.sid_to_token`
+@2196, per-SID cap @2204, per-window cap @2213) live in the body AFTER parameter
+binding — so a no-arg emit raises before any guard runs. The exception is a
+`Task exception was never retrieved` from asyncio's default handler (not the
+reflex logger), so it prints at default `info` and cannot be silenced by
+`--loglevel`.
+
+Refutation attempts, all failed:
+- **Env quirk?** No. `handler(sid, *data[1:])` is standard python-socketio
+  dispatch; any socketio version calls a fixed-arity handler with the emitted
+  args, so a no-arg emit under-supplies `data` regardless of version.
+- **API misuse?** No. This is a raw socket endpoint exposed to any client, and
+  hardening it against arbitrary/abusive clients is the whole premise of #6827;
+  a crafted no-arg emit is squarely inside that threat model.
+- **Pre-existing 0.9.8 behavior / regression?** No. `on_client_error` does not
+  exist in reflex 0.9.8 (base098 venv, VERSION 0.9.8, 0 occurrences). It is new
+  in 0.9.9a1 — a new-feature defect, not a regression.
+
+Assessment: genuine framework defect. Unauthenticated (no valid token needed)
+log-spam vector — one unhandled-exception traceback per emit — that bypasses
+every anti-abuse guard #6827 added. Not a crash (server keeps serving). Severity
+**medium** is appropriate. Suggested fix (`data: Any = None`) is correct: with
+the default, a no-arg/None call hits `isinstance(data, dict)` == False and returns
+at debug with no traceback. Verifier processes (backend pid on :8720) killed;
+port confirmed closed.

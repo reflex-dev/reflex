@@ -132,3 +132,35 @@ Log shows `DeprecationWarning: reflex.Model has been deprecated in version
 `pyd_098_{initial,final}.png`, `pyd_upgraded_{initial,final}.png`,
 `pyd_prod_{initial,final}.png`, `db_099_{initial,final}.png`,
 `bare_fail_run.log` (clean-install ModuleNotFoundError), `importtime_bare.log`.
+
+## VERIFICATION (independent, adversarial — 2026-08-28)
+
+Claim verified: "rx.Model subclass with table=True gives bare TypeError instead of
+`pip install reflex[db]` guidance when sqlmodel is absent". **CONFIRMED (low severity,
+pre-existing, deprecated API)** — reproduced from the repro steps alone in fresh
+PyPI-only venvs (built independently of the original tester's venvs):
+
+- `uv venv .../vpo_bare --python 3.11 && uv pip install --prerelease=allow reflex==0.9.9a1`
+  (verified: sqlmodel/sqlalchemy/pydantic all absent; `reflex.__file__` points at the
+  venv's site-packages, NOT the local checkout). Then, from a neutral cwd:
+  `python -c "import reflex as rx"` + `class Item(rx.Model, table=True): name: str`
+  -> `TypeError: Item.__init_subclass__() takes no keyword arguments`. Reproduced exactly.
+- Root cause confirmed in reflex/model.py: when sqlmodel/sqlalchemy are missing,
+  `Model = _ClassThatErrorsOnInit`, which only overrides `__init__`. A class keyword
+  (`table=True`) is routed to `object.__init_subclass__`, which takes no kwargs, so the
+  TypeError fires at class-definition time — before the helpful
+  "Database is not available... `pip install reflex[db]`" ImportError can ever run.
+  A plain subclass (`class Item(rx.Model)`) is created silently and only errors helpfully
+  on instantiation. Trivial fix shape: give `_ClassThatErrorsOnInit` an
+  `__init_subclass__(cls, **kwargs)` that calls `_print_db_not_available()`.
+- NOT a regression: identical TypeError on a fresh bare `reflex==0.9.8` venv (sqlmodel was
+  already extra-only there), matching the original claim's own framing.
+- Not API misuse: with `reflex[db]==0.9.9a1` installed the same declaration works
+  (`Item.__table__` created) — `table=True` is the standard SQLModel/Reflex table form.
+- Caveat for a fix-agent: with `[db]` installed the same code emits
+  "DeprecationWarning: reflex.Model has been deprecated in version 0.9.2 ... removed in
+  1.0.0", so rx.Model is already on the way out; the fallback-error polish is still a
+  legitimate 2-line improvement but low priority.
+
+Verifier venvs kept at $SB/envs/vpo_bare, vpo_098, vpo_db. No servers/browsers were
+started for this verification.

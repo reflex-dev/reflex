@@ -1,0 +1,12 @@
+[
+  {
+    "marker": "index",
+    "t": 1787916243065,
+    "stack": "\n    at jsx (http://localhost:3500/node_modules/.vite/deps/@emotion_react.js?v=92e2920b:1707:85)\n    at Component (http://localhost:3500/app/routes/_index.jsx?import:21:6)\n    at WithComponentProps (http://localhost:3500/node_modules/.vite/deps/development-VnGdt2rT.js?v=92e2920b:6830:23)"
+  },
+  {
+    "marker": "index",
+    "t": 1787916243065,
+    "stack": "\n    at jsx (http://localhost:3500/node_modules/.vite/deps/@emotion_react.js?v=92e2920b:1707:85)\n    at Component (http://localhost:3500/app/routes/_index.jsx?import:21:6)\n    at WithComponentProps (http://localhost:3500/node_modules/.vite/deps/development-VnGdt2rT.js?v=92e2920b:6830:23)"
+  }
+]

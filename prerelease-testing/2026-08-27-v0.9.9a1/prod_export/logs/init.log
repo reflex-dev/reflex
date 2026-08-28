@@ -1,0 +1,6 @@
+───────────────────────────── Initializing prodapp ─────────────────────────────
+Info: Initializing the web directory.
+Info: Initializing the app directory.
+Success: Initialized prodapp using the blank template. Install dependencies from
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.

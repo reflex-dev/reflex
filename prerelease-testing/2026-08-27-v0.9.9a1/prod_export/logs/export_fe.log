@@ -1,0 +1,457 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8461
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='prodapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8461', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'api_url', 'app_name', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────── Compiling production app and preparing for export. ──────────────
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 261 installs across 307 packages (no changes) [8.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'vite@8.2.0', '@tailwindcss/typography@0.5.20', 'tailwindcss@4.3.0', 
+'@react-router/dev@8.3.0', '@react-router/fs-routes@8.3.0', 
+'@emotion/react@11.14.0', 'autoprefixer@10.5.4', 'postcss@8.5.23', 
+'postcss-import@16.1.1', '@tailwindcss/postcss@4.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.23
+Debug: installed postcss-import@16.1.1
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'@react-router/node@8.3.0', 'isbot@5.2.1', 'lucide-react@1.26.0', 
+'react-helmet@6.1.0', 'universal-cookie@8.1.2', 'react-router@8.3.0', 
+'sonner@2.0.7', 'react-error-boundary@6.1.2', 'react-dom@19.2.8', 
+'react-debounce-input@3.3.0', '@radix-ui/themes@3.3.0', 
+'socket.io-client@4.8.3', 'react@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/node@8.3.0
+Debug: installed isbot@5.2.1
+Debug: installed lucide-react@1.26.0
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-router@8.3.0
+Debug: installed sonner@2.0.7
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed react-debounce-input@3.3.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react@19.2.8
+Debug: 
+Debug: [8.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 418 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             4.51 kB │ 
+gzip:  0.78 kB
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css    694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/client/assets/reflex-env-CMyRjCvu.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-kiP9HKS1.js                 0.41 kB │ 
+gzip:  0.30 kB
+Debug: build/client/assets/badge-SXZ7-orX.js                        0.68 kB │ 
+gzip:  0.43 kB
+Debug: build/client/assets/_about_._index-DkhHYDko.js               1.75 kB │ 
+gzip:  0.77 kB
+Debug: build/client/assets/_post_.__pid_._index-B67qOV8E.js         1.76 kB │ 
+gzip:  0.76 kB
+Debug: build/client/assets/_index-DmYeYoxV.js                       2.55 kB │ 
+gzip:  0.99 kB
+Debug: build/client/assets/react-dom-CltAQbqX.js                    3.54 kB │ 
+gzip:  1.34 kB
+Debug: build/client/assets/text-field-40P64tJj.js                   5.47 kB │ 
+gzip:  2.10 kB
+Debug: build/client/assets/prodapp-CcFrsdsN.js                     10.29 kB │ 
+gzip:  3.46 kB
+Debug: build/client/assets/emotion-react.browser.esm-Cwax2nv3.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-HKp9FVqc.js             33.30 kB │ 
+gzip: 11.64 kB
+Debug: build/client/assets/components-BY9SJKTA.js                  83.46 kB │ 
+gzip: 27.74 kB
+Debug: build/client/assets/link-C3PPC0kG.js                       141.53 kB │ 
+gzip: 42.57 kB
+Debug: build/client/assets/entry.client-4AZsJhei.js               182.36 kB │ 
+gzip: 57.72 kB
+Debug: build/client/assets/root-C3Vi5m_n.js                       299.95 kB │ 
+gzip: 84.81 kB
+Debug: 
+Debug: ✓ built in 1.38s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - post/:pid
+Debug:   - *
+Debug: ✓ 26 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-HfJALDEv.css  694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/server/assets/reflex-env-CMyRjCvu.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     54.63 kB │ 
+gzip: 14.88 kB
+Debug: 
+Debug: ✓ built in 729ms
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /about -> build/client/about/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/about/index.html to 
+.web/build/client/about.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/build/client'), 'gzip']
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/index.html.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/about.html
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/__spa-fallback.html.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/favicon.ico
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/404.html
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/index.html
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/404.html.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/sitemap.xml
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/__spa-fallback.html
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/about.html.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/emotion-react.browser.esm-Cwax
+2nv3.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/reflex-env-CMyRjCvu.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/badge-SXZ7-orX.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/prodapp-CcFrsdsN.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/text-field-40P64tJj.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_index-DmYeYoxV.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/manifest-cfbf2ad5.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/root-C3Vi5m_n.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/reflex-env-CMyRjCvu.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/components-BY9SJKTA.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/entry.client-4AZsJhei.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/link-C3PPC0kG.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/badge-SXZ7-orX.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_about_._index-DkhHYDko.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_post_.__pid_._index-B67qOV8E.
+js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/react-dom-CltAQbqX.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/__reflex_global_styles-HfJALDE
+v.css
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/components-BY9SJKTA.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/errorBoundaries-HKp9FVqc.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/prodapp-CcFrsdsN.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/text-field-40P64tJj.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/emotion-react.browser.esm-Cwax
+2nv3.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/__reflex_global_styles-HfJALDE
+v.css.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_404_._index-kiP9HKS1.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_about_._index-DkhHYDko.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/errorBoundaries-HKp9FVqc.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/entry.client-4AZsJhei.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/root-C3Vi5m_n.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_404_._index-kiP9HKS1.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/manifest-cfbf2ad5.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_index-DmYeYoxV.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/react-dom-CltAQbqX.js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/_post_.__pid_._index-B67qOV8E.
+js.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/assets/link-C3PPC0kG.js
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/about/index.html.gz
+Debug: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/frontend.zip: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/.web/build/client/about/index.html
+Zipping Frontend: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 46/46 0:00:00

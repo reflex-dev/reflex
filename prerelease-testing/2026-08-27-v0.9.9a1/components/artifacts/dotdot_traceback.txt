@@ -1,0 +1,16 @@
+23:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+96:    async for delta in app.event_processor.enqueue_stream_delta(token, event):
+97:  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 508, in enqueue_stream_delta
+102:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+111:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+184:    async for delta in app.event_processor.enqueue_stream_delta(token, event):
+185:  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 508, in enqueue_stream_delta
+190:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+199:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+272:    async for delta in app.event_processor.enqueue_stream_delta(token, event):
+273:  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 508, in enqueue_stream_delta
+278:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+287:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'
+360:    async for delta in app.event_processor.enqueue_stream_delta(token, event):
+361:  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 508, in enqueue_stream_delta
+366:IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'

@@ -1,0 +1,26 @@
+[
+  {
+    "nav": 0,
+    "wall_ms": 126.3,
+    "TaskDuration_ms": 96.7,
+    "ScriptDuration_ms": 38.6,
+    "LayoutDuration_ms": 14.0,
+    "RecalcStyleDuration_ms": 21.0
+  },
+  {
+    "nav": 1,
+    "wall_ms": 105.8,
+    "TaskDuration_ms": 67.7,
+    "ScriptDuration_ms": 17.6,
+    "LayoutDuration_ms": 11.5,
+    "RecalcStyleDuration_ms": 18.9
+  },
+  {
+    "nav": 2,
+    "wall_ms": 102.2,
+    "TaskDuration_ms": 69.2,
+    "ScriptDuration_ms": 16.3,
+    "LayoutDuration_ms": 11.5,
+    "RecalcStyleDuration_ms": 21.8
+  }
+]

@@ -1,0 +1,45 @@
+{
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "summary": {
+    "failures": [],
+    "page_errors": [],
+    "unexpected_console": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "bad_responses": [
+      {
+        "url": "http://localhost:8460/post/7",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:8460/definitely-not-a-page",
+        "status": 404
+      }
+    ],
+    "all_console_count": 4
+  }
+}

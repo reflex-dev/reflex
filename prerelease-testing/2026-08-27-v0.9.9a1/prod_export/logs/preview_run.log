@@ -1,0 +1,433 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='prodapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'plugins', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8462
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8462
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Fullstack port: 8462 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8462 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8462 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 261 installs across 307 packages (no changes) [8.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@tailwindcss/typography@0.5.20', 'autoprefixer@10.5.4', 
+'@emotion/react@11.14.0', '@tailwindcss/postcss@4.3.0', 
+'@react-router/fs-routes@8.3.0', '@react-router/dev@8.3.0', 'vite@8.2.0', 
+'tailwindcss@4.3.0', 'postcss-import@16.1.1', 'postcss@8.5.23']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss-import@16.1.1
+Debug: installed postcss@8.5.23
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'socket.io-client@4.8.3', '@react-router/node@8.3.0', 
+'react-debounce-input@3.3.0', '@radix-ui/themes@3.3.0', 'isbot@5.2.1', 
+'react@19.2.8', 'react-router@8.3.0', 'universal-cookie@8.1.2', 
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 'react-dom@19.2.8', 
+'lucide-react@1.26.0', 'sonner@2.0.7']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed @react-router/node@8.3.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.1
+Debug: installed react@19.2.8
+Debug: installed react-router@8.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.7
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 418 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             4.51 kB │ 
+gzip:   0.78 kB
+Debug: build/client/assets/__reflex_global_styles-DzEllOLn.css    694.65 kB │ 
+gzip:  84.58 kB
+Debug: build/client/assets/reflex-env-1olGiz7c.js                   0.37 kB │ 
+gzip:   0.23 kB
+Debug: build/client/assets/_404_._index-DI951KIE.js                 0.71 kB │ 
+gzip:   0.42 kB
+Debug: build/client/assets/badge-C7y0Dqk9.js                        1.24 kB │ 
+gzip:   0.63 kB
+Debug: build/client/assets/_about_._index-NQeYBbtl.js               3.12 kB │ 
+gzip:   1.01 kB
+Debug: build/client/assets/_post_.__pid_._index-BdRefrNg.js         3.35 kB │ 
+gzip:   1.09 kB
+Debug: build/client/assets/_index-CIUrw9UD.js                       5.50 kB │ 
+gzip:   1.59 kB
+Debug: build/client/assets/react-dom-DusR9W5y.js                    6.53 kB │ 
+gzip:   1.93 kB
+Debug: build/client/assets/text-field-hPqSim6V.js                  10.36 kB │ 
+gzip:   3.14 kB
+Debug: build/client/assets/prodapp-CHOTYKZl.js                     28.76 kB │ 
+gzip:   7.74 kB
+Debug: build/client/assets/emotion-react.browser.esm-g0m4PXFe.js   47.57 kB │ 
+gzip:  12.39 kB
+Debug: build/client/assets/errorBoundaries-RPOm4LbN.js             75.82 kB │ 
+gzip:  17.99 kB
+Debug: build/client/assets/components-BnOQkdIJ.js                 207.14 kB │ 
+gzip:  48.48 kB
+Debug: build/client/assets/link-m8vbTES9.js                       270.93 kB │ 
+gzip:  68.15 kB
+Debug: build/client/assets/entry.client-B-OsvBsS.js               472.40 kB │ 
+gzip:  90.18 kB
+Debug: build/client/assets/root-M-l5foAt.js                       611.69 kB │ 
+gzip: 123.39 kB
+Debug: 
+Debug: ✓ built in 1.45s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 21 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-DzEllOLn.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-DzEllOLn.css  694.65 kB │ 
+gzip: 84.58 kB
+Debug: build/server/assets/reflex-env-1olGiz7c.js                 0.37 kB │ 
+gzip:  0.23 kB
+Debug: build/server/index.js                                     71.86 kB │ 
+gzip: 18.05 kB
+Debug: 
+Debug: ✓ built in 543ms
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: SPA Mode: Generated build/client/index.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8462/
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/prod_export/prodapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/prodapp', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/frontend.zip', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/backend.zip', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/prod_export/prodapp/rxconfig.py']
+[INFO] Starting granian (main PID: 30359)
+[INFO] Listening at: http://0.0.0.0:8462
+[INFO] Spawning worker-1 with PID: 30419
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Changes detected, reloading workers..
+[INFO] Added: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/prod_export/prodapp/prodapp/prodapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 30594
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 261 installs across 307 packages (no changes) [8.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@tailwindcss/typography@0.5.20', 'autoprefixer@10.5.4', 
+'@emotion/react@11.14.0', '@tailwindcss/postcss@4.3.0', 
+'@react-router/fs-routes@8.3.0', '@react-router/dev@8.3.0', 'vite@8.2.0', 
+'tailwindcss@4.3.0', 'postcss-import@16.1.1', 'postcss@8.5.23']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss-import@16.1.1
+Debug: installed postcss@8.5.23
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'socket.io-client@4.8.3', '@react-router/node@8.3.0', 
+'react-debounce-input@3.3.0', '@radix-ui/themes@3.3.0', 'isbot@5.2.1', 
+'react@19.2.8', 'react-router@8.3.0', 'universal-cookie@8.1.2', 
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 'react-dom@19.2.8', 
+'lucide-react@1.26.0', 'sonner@2.0.7']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed @react-router/node@8.3.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.1
+Debug: installed react@19.2.8
+Debug: installed react-router@8.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.7
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/prod_export/prodapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 418 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             4.51 kB │ 
+gzip:   0.78 kB
+Debug: build/client/assets/__reflex_global_styles-DzEllOLn.css    694.65 kB │ 
+gzip:  84.58 kB
+Debug: build/client/assets/reflex-env-1olGiz7c.js                   0.37 kB │ 
+gzip:   0.23 kB
+Debug: build/client/assets/_404_._index-DI951KIE.js                 0.71 kB │ 
+gzip:   0.42 kB
+Debug: build/client/assets/badge-C7y0Dqk9.js                        1.24 kB │ 
+gzip:   0.63 kB
+Debug: build/client/assets/_about_._index-NQeYBbtl.js               3.12 kB │ 
+gzip:   1.01 kB
+Debug: build/client/assets/_post_.__pid_._index-BdRefrNg.js         3.35 kB │ 
+gzip:   1.09 kB
+Debug: build/client/assets/_index-CGa59J9f.js                       5.50 kB │ 
+gzip:   1.60 kB
+Debug: build/client/assets/react-dom-DusR9W5y.js                    6.53 kB │ 
+gzip:   1.93 kB
+Debug: build/client/assets/text-field-hPqSim6V.js                  10.36 kB │ 
+gzip:   3.14 kB
+Debug: build/client/assets/prodapp-CHOTYKZl.js                     28.76 kB │ 
+gzip:   7.74 kB
+Debug: build/client/assets/emotion-react.browser.esm-g0m4PXFe.js   47.57 kB │ 
+gzip:  12.39 kB
+Debug: build/client/assets/errorBoundaries-RPOm4LbN.js             75.82 kB │ 
+gzip:  17.99 kB
+Debug: build/client/assets/components-BnOQkdIJ.js                 207.14 kB │ 
+gzip:  48.48 kB
+Debug: build/client/assets/link-m8vbTES9.js                       270.93 kB │ 
+gzip:  68.15 kB
+Debug: build/client/assets/entry.client-B-OsvBsS.js               472.40 kB │ 
+gzip:  90.18 kB
+Debug: build/client/assets/root-M-l5foAt.js                       611.69 kB │ 
+gzip: 123.39 kB
+Debug: 
+Debug: ✓ built in 1.58s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 21 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-DzEllOLn.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-DzEllOLn.css  694.65 kB │ 
+gzip: 84.58 kB
+Debug: build/server/assets/reflex-env-1olGiz7c.js                 0.37 kB │ 
+gzip:  0.23 kB
+Debug: build/server/index.js                                     71.86 kB │ 
+gzip: 18.05 kB
+Debug: 
+Debug: ✓ built in 543ms
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: SPA Mode: Generated build/client/index.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/
+scratchpad/apps/prod_export/prodapp/.web/build/client'), 'gzip']
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

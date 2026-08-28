@@ -145,3 +145,49 @@ definition), but it guts the new feature. Repros: `repro_alias_setattr.py`
   different module paths for the state; and overriding NO_PROXY with just
   `localhost,127.0.0.1` breaks bun installs in this container (the inherited
   NO_PROXY already includes localhost AND registry.npmjs.org — don't override).
+
+## VERIFICATION (independent, adversarial — 2026-08-28)
+
+BUG 2 (alias setattr TypeError) is **CONFIRMED** as a genuine 0.9.9a1 framework defect.
+Reproduced from the repro steps alone in a FRESH venv (`uv venv --python 3.12` +
+`uv pip install --prerelease=allow 'reflex==0.9.9a1'` from PyPI; reflex-base 0.9.9a1):
+
+1. `repro_alias_setattr.py`: all four assignments (plain alias, Literal alias,
+   `Items[str]`, `Key | None`) crash with
+   `TypeError: isinstance() arg 2 must be a type, a tuple of types, or a union`;
+   in-place dict mutation passes — exactly as claimed.
+2. End-to-end with an INDEPENDENT minimal app (`verification/aliasapp/`, ports
+   3840/8840, driven by Playwright/Chromium — `verification/drive_verify.py`):
+   a control button assigning a plain `str` var updates the UI fine (rules out
+   env/app-structure issues); the button assigning `k: Key = "b"`
+   (`type Key = Literal["a","b"]`, "b" is a VALID member, so this is not even a
+   type mismatch) silently does nothing in the browser — zero console errors —
+   while the backend logs the full traceback:
+   `reflex/state.py:1544 __setattr__` -> `reflex_base/utils/types.py:872
+   _isinstance` -> `return isinstance(obj, cls)` -> TypeError
+   (`verification/server.log` lines ~243-290, `verification/shots/`).
+3. 3.11 backport variant reproduced on the shared smoke env
+   (`repro_alias_backport_311.py`: compile OK, `_var_type` correctly resolved to
+   `Literal['a','b']`, setattr crashes).
+4. Baseline: reflex==0.9.8 in a fresh 3.12 venv fails at class DEFINITION
+   (`TypeError: Unsupported type Name for guess_type`) — so this is not a
+   regression of previously-working code, but the feature #6944 ships (alias-
+   annotated state vars) is unusable for any var that is ever reassigned.
+
+Refutation attempts that failed: not an environment quirk (fresh PyPI-only venv,
+control var works in the same app/session); not API misuse (a real `@rx.event`
+handler doing `self.k = "b"` through the real websocket event pipeline crashes
+identically to the `_reflex_internal_init` repro); not pre-existing behavior a
+user could have relied on (0.9.8 rejects the class outright). Root cause check
+against the installed 0.9.9a1 wheels: `resolve_type_alias` exists in
+`reflex_base/utils/types.py` but its only call site is
+`reflex_base/vars/base.py:1080` (`Var.guess_type`); `_isinstance` (and
+`typehint_issubclass`) never resolve TypeAliasType, and the `__setattr__` guard
+at `reflex/state.py:1544` — intended only to `logger.error` a mismatch — lets
+the TypeError escape, killing every event delta. Severity "high" is fair.
+
+BUG 1 was not re-verified in depth (out of scope for this pass), but its
+mechanism (typehint_issubclass not resolving aliases) is consistent with what
+the BUG 2 root-cause inspection showed.
+
+All verifier processes killed; ports 3840/8840 confirmed free.

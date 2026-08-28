@@ -160,3 +160,40 @@ Reflex-owned, so #6945 is complete on Reflex's side.
 - `out_dev/`, `out_prod/` — full run outputs incl. screenshots.
 - `dev_server.log`, `prod_server.log` — server logs (`--loglevel debug`) from
   the successful runs.
+
+## VERIFICATION (adversarial verifier, 2026-08-28)
+
+Claim checked: "Prod build passes invalid/deprecated options to vite 8.2.0
+(rolldown): 'jsx' input option rejected, 'advancedChunks' deprecated" (low).
+
+**CONFIRMED as a genuine framework defect — but NOT a 0.9.9a1 regression;
+it is pre-existing in stable 0.9.8.**
+
+- Independent repro on a fresh `reflex init --template blank` app (reflex
+  0.9.9a1 from PyPI, no memo features involved):
+  `reflex run --env prod --frontend-port 8640 --backend-port 8640 --loglevel debug`
+  → `vite v8.2.0 building client environment...` then
+  `Warning: Invalid input options (1 issue found) - For the "jsx". Invalid key:
+  Expected never but received "jsx".` and
+  `WARN advancedChunks option is deprecated, please use codeSplitting instead.`
+  The pair repeats for the ssr environment build. Build succeeds, app serves
+  HTTP 200 — cosmetic today, as claimed. Log: `verify_prod_server.log`
+  (lines ~136-140 client, ~171-175 ssr).
+- Source attribution: the options come from reflex's own generated
+  `.web/vite.config.js` (`rollupOptions.jsx: {}` and
+  `rollupOptions.output.advancedChunks`), emitted by
+  `reflex_base/compiler/templates.py` (`jsx: {{}}` at line 736,
+  `advancedChunks` at line 738 in the 0.9.9a1 wheel). Not user code, not an
+  environment quirk.
+- Baseline refutation of the regression angle: the reflex **0.9.8** wheel on
+  PyPI ships the identical template (`jsx: {{}}` / `advancedChunks` at
+  templates.py lines 657-667) and pins vite **8.0.16** (also rolldown-based);
+  a 0.9.8 prod build produces the *identical* two warnings — see
+  `../registration_context/dynapp098_run_prod.log` lines 128-134 (client) and
+  192-198 (ssr), `vite v8.0.16`.
+- Verdict: real, reproducible, framework-owned, low severity, forward-breaking
+  when rolldown drops `advancedChunks`. Fix belongs in
+  `packages/reflex-base/src/reflex_base/compiler/templates.py`: drop the
+  rejected `jsx: {}` key and migrate `advancedChunks` → `codeSplitting`.
+  Since 0.9.8 behaves the same, this need not block the 0.9.9 release.
+- Hygiene: verifier server killed and port 8640 verified closed.
