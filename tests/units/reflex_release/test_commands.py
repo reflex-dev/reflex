@@ -991,7 +991,37 @@ def test_post_release_without_a_configured_workflow_does_nothing(
     )
     commands.cmd_post_release(config, "v1.2.3", "mypkg", "1.2.3")
     assert captured == []
-    assert "no post-release-workflow is configured" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "no post-release-workflow is configured" in out
+    assert "::notice::" not in out
+
+
+def test_pin_lockstep_pins_the_sibling_to_the_exact_version(
+    config: Config, repo: Path
+) -> None:
+    write_lockstep(repo)
+    commands.cmd_pin_lockstep(load_config(repo), "mypkg", "1.2.3")
+    assert '"widget-core == 1.2.3"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_pin_lockstep_without_siblings_does_not_annotate_the_run(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A step that no-ops has nothing an approver needs to be shown.
+
+    Every package outside an exact-pin lockstep group runs this step, so an
+    annotation here is one "nothing to do" line per package on the summary of
+    every release batch.
+    """
+    commands.cmd_pin_lockstep(config, "mypkg", "1.2.3")
+    out = capsys.readouterr().out
+    assert "mypkg has no exact-pin lockstep siblings" in out
+    assert "::notice::" not in out
+    assert "widget-core >= 0.1.0" in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_post_release_dispatches_the_workflow_on_the_tag(
