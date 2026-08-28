@@ -1,0 +1,128 @@
+{
+  "label": "dnd_098",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "t": 1787924030.0616262
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "t": 1787924030.2229185
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "t": 1787924030.2692757
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "t": 1787924030.3176866
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "t": 1787924031.9734688
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "t": 1787924032.1360185
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "t": 1787924032.1893187
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "t": 1787924032.2389219
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "t": 1787924032.2426276
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "t": 1787924038.1217234
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "t": 1787924038.221337
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "t": 1787924038.2658415
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "t": 1787924038.2836764
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "t": 1787924038.2841172
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "t": 1787924044.1421618
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "t": 1787924044.2625802
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "t": 1787924044.324606
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "t": 1787924044.3398554
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "t": 1787924044.3399894
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "t": 1787924056.3474498
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "t": 1787924056.4227228
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "t": 1787924056.4744604
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "t": 1787924059.4879458
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "t": 1787924059.4882464
+    }
+  ],
+  "unexpected_console": [],
+  "net_fail": [],
+  "page_errors": []
+}

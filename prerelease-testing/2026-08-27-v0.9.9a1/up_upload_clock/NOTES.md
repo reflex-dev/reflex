@@ -137,3 +137,45 @@ both versions (visible in 02_ticking.png: switch shows checked after click on bo
 - SitemapPlugin "enabled by default, but not explicitly added" warning: present on BOTH 0.9.8 and
   0.9.9a1 logs (apps don't list it in plugins) — not new in the alpha.
 - 0.9.8 logs a "Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1" warning.
+
+## VERIFICATION (adversarial re-check, 2026-08-28)
+
+Claim verified: **CONFIRMED** — vite.config.js template imports `./vite-plugin-safari-cachebust`
+without a file extension; vite 8.2.0 (newly pinned by 0.9.9a1) emits the `configLoader: 'native'`
+deprecation warning twice per run. Genuine reflex-base defect, not env quirk / app bug / misuse.
+
+Independent repro (fresh blank app, no reuse of this cluster's apps):
+- `reflex init --template blank` with the shared 0.9.9a1 venv in
+  `$SB/apps/verify_up_upload_clock_0/vwarn/`, then
+  `reflex run --frontend-port 3640 --backend-port 8640 --loglevel debug`.
+- Frontend 200 in <10s; `server.log` contains the warning twice
+  (`import "./vite-plugin-safari-cachebust" without a file extension (vite.config.js:4:35)`),
+  matching this cluster's artifacts exactly. Generated `.web/package.json` pins `"vite": "8.2.0"`.
+
+Source-level root cause:
+- `packages/reflex-base/src/reflex_base/compiler/templates.py` line 658 (same on release branch
+  `origin/r/pre-2026.08.27-33148999938`): `import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";`
+  The shipped plugin file is `vite-plugin-safari-cachebust.js`, so the import is extensionless.
+- The identical extensionless import exists in tag `v0.9.8` (templates.py line 579) — the DEFECT is
+  pre-existing; the WARNING is newly surfaced because 0.9.9a1 bumps the vite pin 8.0.16 -> 8.2.0
+  (`reflex_base/constants/installer.py`), and vite 8.2 added the native-config-loader deprecation
+  check. 0.9.8 baseline logs in `artifacts/*/098/server.log` contain 0 occurrences — consistent
+  with "regression vs 0.9.8: false" for behavior, "new warning in 0.9.9a1 logs" for visibility.
+- Warning appears in other clusters' 0.9.9a1 logs too (registration_context, devtools_perf, memo),
+  dev AND prod — it is universal, not specific to these apps.
+
+Future hard-break claim substantiated (partially):
+- `node node_modules/vite/bin/vite.js --configLoader native` in the generated `.web` FAILS to start:
+  `ERR_MODULE_NOT_FOUND: Cannot find module '.../vite-plugin-safari-cachebust' imported from
+  .../vite.config.js` (node ESM requires the extension).
+- Under bun (`bun node_modules/vite/bin/vite.js --configLoader native`) the server starts fine —
+  bun's resolver handles extensionless imports. Reflex drives vite via bun, so when Vite flips the
+  default loader the break would hit node-driven setups; under bun it likely keeps working, but the
+  warning is emitted by vite's static check regardless of runtime.
+
+Fix for a fix-agent: add `.js` to the import in `templates.py` (vite.config.js template), i.e.
+`from "./vite-plugin-safari-cachebust.js"`. Severity low is correct: debug-level log noise today,
+zero functional impact observed.
+
+Verification processes: reflex server pgid killed (`kill -KILL -<pgid>`), probes exited/timed out;
+`ps` confirms no leftovers on ports 3640/3641/8640.

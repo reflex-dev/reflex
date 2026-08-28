@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "name": "index_renders_login_buttons",
+      "ok": true,
+      "details": "okta=1 databricks=1"
+    },
+    {
+      "name": "do_nothing_and_cookie_sync",
+      "ok": true,
+      "details": "page_errors=[]"
+    },
+    {
+      "name": "okta_login_redirect_formed",
+      "ok": true,
+      "details": "url=http://localhost:8385/authorize?client_id=dummy-okta-client&redirect_uri=http%3A%2F%2Flocalhost%3A3385%2F_reflex_oidc_okta%2Fauthorization-code%2Fcallback&scope=openid+email+profile&state=G5t7kZPI1Rwt params={\"client_id\": \"dummy-okta-client\", \"redirect_uri\": \"http://localhost:3385/_reflex_oidc_okta/authorization-code/callback\", \"scope\": \"openid email profile\", \"state\": \"G5t7kZPI1RwtwQDmjpnA4G3fg6L1nzU3_NcUakvNDfM6ytA8dYIXq_glMdm8Xa5IyI5_k2S8MuEz2LZM0pMhAA\", \"code_challenge\": \"cYrNlUk8LsVwWDqlgdkP4WEEx8CCMeVUFwgEii_Isl8\", \"code_challenge_method\": \"S256\", \"response_type\": \"code\", \"response_m"
+    },
+    {
+      "name": "okta_login_uses_pkce",
+      "ok": true,
+      "details": "code_challenge_method=S256"
+    },
+    {
+      "name": "okta_callback_wired_handles_bogus_code",
+      "ok": true,
+      "details": "callback GET status=200 final_url=http://localhost:3385/_reflex_oidc_okta/authorization-code/callback?code=bogus-code&state=G5t7kZPI1RwtwQDmjpnA4G3fg6L1nzU3_NcUakvNDfM6ytA8dYIXq_glMdm8Xa5IyI5_k2S8MuEz2LZM0pMhAA"
+    },
+    {
+      "name": "databricks_login_scopes",
+      "ok": true,
+      "details": "client_id=dummy-dbx-client scope='all-apis offline_access openid email profile'"
+    },
+    {
+      "name": "iframe_page_renders",
+      "ok": true,
+      "details": "iframes=1"
+    }
+  ],
+  "console_all": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: Disconnect websocket on page navigation",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "debug: [vite] connected.",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected."
+  ],
+  "page_errors": [],
+  "req_failures": [
+    "HTTP404 http://localhost:8386/_reflex/cookies/sync"
+  ]
+}

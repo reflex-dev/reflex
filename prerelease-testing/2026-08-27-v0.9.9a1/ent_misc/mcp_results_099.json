@@ -1,0 +1,87 @@
+[
+  {
+    "name": "token_endpoint",
+    "ok": true,
+    "details": "status=200 body={\"access_token\": \"vqEjgFwa9TrN6ndTjqSD2MyQFn3HV8UARxYZGmT6XVQ\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"session\": \"anonymous\"}"
+  },
+  {
+    "name": "mcp_requires_auth",
+    "ok": true,
+    "details": "status without bearer=401 (after redirects)"
+  },
+  {
+    "name": "mcp_initialize",
+    "ok": true,
+    "details": "server=mcp_app MCP instructions[:120]='# mcp_app MCP (v1.0.0)\\n\\nMCP access to the Reflex app **mcp_app** and its 2 event handler(s).\\n\\nThe app is served at http:'"
+  },
+  {
+    "name": "tools_list",
+    "ok": true,
+    "details": "tools=['ping', 'queue_event', 'search_events']"
+  },
+  {
+    "name": "custom_tool_ping",
+    "ok": true,
+    "details": "ping -> 'pong'"
+  },
+  {
+    "name": "resources_list",
+    "ok": true,
+    "details": "resources=['config://version', 'reflex://event', 'reflex://state', 'state-resource://mcp_app____counter_state/summary']"
+  },
+  {
+    "name": "resource_templates_list",
+    "ok": true,
+    "details": "templates=['reflex://event/{event_name}', 'reflex://state/events/{state_name}', 'reflex://state/vars/{state_name}', 'reflex://state/vars/{state_name}/{var_name}']"
+  },
+  {
+    "name": "state_resource_advertised",
+    "ok": true,
+    "details": "summary_uri=state-resource://mcp_app____counter_state/summary"
+  },
+  {
+    "name": "custom_resource_version",
+    "ok": true,
+    "details": "-> '1.0.0-test'"
+  },
+  {
+    "name": "search_events",
+    "ok": true,
+    "details": "search_events('increment')[:300] -> '{\\n  \"query\": \"increment\",\\n  \"total_available\": 2,\\n  \"total_matched\": 1,\\n  \"returned\": 1,\\n  \"results\": [\\n    {\\n      \"name\": \"mcp_app____counter_state.increment\",\\n      \"state\": \"mcp_app____counter_state\",\\n      \"handler\": \"increment\",\\n      \"rest_path\": \"/_reflex/event/mcp_app____counter_state/incre'"
+  },
+  {
+    "name": "read_states_meta",
+    "ok": true,
+    "details": "states[:300]='{\"states\": [\"reflex___state____state\", \"reflex___state____state.mcp_app____counter_state\"]}' -> state_name=reflex___state____state.mcp_app____counter_state"
+  },
+  {
+    "name": "queue_event_increment",
+    "ok": true,
+    "details": "delta[:300]='{\\n  \"event\": \"mcp_app____counter_state.increment\",\\n  \"delta\": {\\n    \"reflex___state____state\": {\\n      \"router\": {\\n        \"session\": {\\n          \"client_token\": \"\",\\n          \"client_ip\": \"0.0.0.0\",\\n          \"session_id\": \"\"\\n        },\\n        \"headers\": {\\n          \"host\": \"\",\\n          \"origin\":'"
+  },
+  {
+    "name": "queue_event_session_persists",
+    "ok": true,
+    "details": "delta[:300]='{\\n  \"event\": \"mcp_app____counter_state.increment\",\\n  \"delta\": {\\n    \"reflex___state____state.mcp_app____counter_state\": {\\n      \"doubled\": 20,\\n      \"count\": 10\\n    }\\n  }\\n}'"
+  },
+  {
+    "name": "read_state_vars",
+    "ok": true,
+    "details": "state vars[:300]='{\"reflex___state____state.mcp_app____counter_state\": {\"count\": 10, \"doubled\": 20, \"label\": \"hello\"}}'"
+  },
+  {
+    "name": "read_computed_var",
+    "ok": true,
+    "details": "doubled -> '{\"state\": \"reflex___state____state.mcp_app____counter_state\", \"var\": \"doubled\", \"computed\": true, \"value\": 20}'"
+  },
+  {
+    "name": "custom_state_resource",
+    "ok": true,
+    "details": "summary -> '{\\n  \"count\": 10,\\n  \"label\": \"hello\"\\n}'"
+  },
+  {
+    "name": "read_event_meta",
+    "ok": true,
+    "details": "event meta[:300]='{\"name\": \"mcp_app____counter_state.increment\", \"state\": \"mcp_app____counter_state\", \"handler\": \"increment\", \"rest_path\": \"/_reflex/event/mcp_app____counter_state/increment\", \"summary\": \"Increment the counter by amount.\", \"description\": \"Increment the counter by amount.\", \"parameters\": [{\"name\": \"amo'"
+  }
+]

@@ -1,0 +1,11 @@
+MOCKIDP 127.0.0.1 - "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /authorize?client_id=dummy-okta-client&redirect_uri=http%3A%2F%2Flocalhost%3A3384%2F_reflex_oidc_okta%2Fauthorization-code%2Fcallback&scope=openid+email+profile&state=AbecTDDtVun5uPtMZRjEe-lrSayYppMUSz7GVX0EwgZH9GiSvK4Foq12n_B0kdUNxjXbTA4NfNJugYCi_mWX6A&code_challenge=e0cT8PBqm2287jFefwqkoXWqISfIiJiPAF54PcV9KDM&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /favicon.ico HTTP/1.1" 404 -
+MOCKIDP 127.0.0.1 - "POST /token HTTP/1.1" 400 -
+MOCKIDP 127.0.0.1 - "GET /authorize?client_id=dummy-dbx-client&redirect_uri=http%3A%2F%2Flocalhost%3A3384%2F_reflex_oidc_databricks%2Fauthorization-code%2Fcallback&scope=all-apis+offline_access+openid+email+profile&state=TONtia89rnIKWLoS26Y94mpIoPofLwZUMHVWIM8tH7wd5bA0FNJ2UgqqsVAZe0NrCIBguyWQ0AeF7QkGIo3anA&code_challenge=uM0tyfslJzdxTpYfQyRN76hFYvnXRgyb5efAz3FeMa4&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /authorize?client_id=dummy-okta-client&redirect_uri=http%3A%2F%2Flocalhost%3A3385%2F_reflex_oidc_okta%2Fauthorization-code%2Fcallback&scope=openid+email+profile&state=G5t7kZPI1RwtwQDmjpnA4G3fg6L1nzU3_NcUakvNDfM6ytA8dYIXq_glMdm8Xa5IyI5_k2S8MuEz2LZM0pMhAA&code_challenge=cYrNlUk8LsVwWDqlgdkP4WEEx8CCMeVUFwgEii_Isl8&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+MOCKIDP 127.0.0.1 - "GET /favicon.ico HTTP/1.1" 404 -
+MOCKIDP 127.0.0.1 - "POST /token HTTP/1.1" 400 -
+MOCKIDP 127.0.0.1 - "GET /authorize?client_id=dummy-dbx-client&redirect_uri=http%3A%2F%2Flocalhost%3A3385%2F_reflex_oidc_databricks%2Fauthorization-code%2Fcallback&scope=all-apis+offline_access+openid+email+profile&state=61DBkzdjS4y6T9DWuz7Ydu4KDckWNPSdBJPbFMIlfoGdW7-5qYHSQhoNLTxfilkVEspOU3JMdGq-lkKy8Z7D9A&code_challenge=RMGiRPfIsZlPGontEMTcEBL1Wra0sLj52r1zWCN2hM4&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -

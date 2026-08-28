@@ -1,0 +1,26 @@
+reflex 0.9.9a1 | reflex-enterprise 0.9.4
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/repro_finding001_dnd_can_drop.py", line 52, in <module>
+    comp = rxe.dnd.drop_target(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_enterprise/components/dnd/dnd.py", line 660, in create
+    ) = use_drop(
+        ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_enterprise/components/dnd/dnd.py", line 563, in use_drop
+    spec["canDrop"] = Var.create(can_drop)
+                      ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_base/vars/base.py", line 925, in create
+    return LiteralVar.create(value, _var_data=_var_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1683, in _create_literal_var
+    return literal_subclass.create(value, _var_data=_var_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_map_dnd/venv099a1/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 143, in _validate_and_extend_return_expr
+    bundled_libraries = set(dynamic.bundled_libraries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'reflex.components.dynamic' has no attribute 'bundled_libraries'
+
+FINDING-001 REPRODUCED: AttributeError on dynamic.bundled_libraries

@@ -119,3 +119,99 @@ Drivers: `counter_drive.py <url> <shot_prefix> <report.json>`,
 - `logs/*-package.json.0.9.8|0.9.9a1`, `logs/*-package.json.diff` — before/after
 - `logs/counter-reflex.lock-0.9.8/` — pre-upgrade lock dir snapshot (counter)
 - `shots/` — screenshots (matching names across versions are md5-identical)
+
+## VERIFICATION (adversarial verifier, 2026-08-28)
+
+Claim verified: **CONFIRMED** — genuine (cosmetic) regression in reflex 0.9.9a1
+itself (reflex-base), not an env quirk, app bug, or enterprise issue.
+
+Independent repro (fresh app dirs, PyPI installs only, no browser needed — the
+warning is emitted at compile time):
+
+```bash
+SB=<scratchpad>; W=$SB/apps/verify_up_counter_todo_0
+# copies of ./todo (this dir), reflex.lock removed from the 0.9.8 copy
+cd $W/todo_a1 && REFLEX_TELEMETRY_ENABLED=false $SB/envs/smoke/bin/reflex run \
+  --loglevel debug --frontend-port 3602 --backend-port 8602 > $W/a1-run.log 2>&1 &
+# wait until 'on_submit expects' appears in the log, then kill (incl. bun/node children)
+cd $W/todo_098 && REFLEX_TELEMETRY_ENABLED=false $SB/envs/base098/bin/reflex run \
+  --loglevel debug --frontend-port 3602 --backend-port 8602 > $W/098-run.log 2>&1 &
+```
+
+Results (byte-verified with `grep ... | cat -A`, real backslash characters):
+
+- 0.9.9a1 (`a1-run.log:73`): `Event handler on_submit expects (dict\[str, typing.Any]) -> () but got (dict\[str, str]) -> () ...`
+- 0.9.8   (`098-run.log:72`): `Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () ...`
+
+Root cause (read from the installed 0.9.9a1 wheel and the release checkout,
+`packages/reflex-base/src/reflex_base/event/__init__.py` ~lines 2023-2040):
+`expect_string`/`given_string` are still built with `.replace("[", "\\[")` —
+rich-markup escaping carried over from 0.9.8, where the message went through
+`console.warn(...)` and rich consumed the `\[`. In 0.9.9a1 the call site was
+migrated to the new logging pipeline (`logger.warning(...)` on
+`logging.getLogger(__name__)`), and `reflex_base/utils/log.py`'s
+`RichConsoleHandler.emit` prints with `markup=False` unless the record opts in
+via `extra={"rich": True}` — this call does not, so the escapes print literally.
+Cross-check: the `Debug: [timing] ...` lines in the same 0.9.9a1 log render
+clean because the legacy `console._debug` shim path still opts into markup;
+only this warning call site kept the escaping without the markup flag.
+
+Fix direction for a fix-agent: drop the two `.replace("[", "\\[")` calls in
+`reflex_base/event/__init__.py` (the message no longer passes through rich
+markup), or pass `extra={"rich": True}` — the former is correct since the
+strings contain user type reprs that should never be parsed as markup.
+
+Refutations attempted: not an env quirk (reproduced in fresh dirs, both
+versions, same machine/terminal-less file logging); not app misuse (the
+`dict[str, str]` annotation legitimately triggers this intentional warning on
+both versions — only the rendering differs); not pre-existing (0.9.8 output is
+clean). Severity low/cosmetic: warning text remains readable, no functional
+impact. Verifier repro logs: `<scratchpad>/apps/verify_up_counter_todo_0/{a1-run.log,098-run.log}`.
+
+## VERIFICATION #2 — anomaly 3, transient peer-dep warnings (adversarial verifier, 2026-08-28)
+
+Claim verified: **REFUTED as an actionable defect** (observation itself accurately
+reproduced; classified benign-by-design, not something a fix-agent should act on).
+
+Independent repro (fresh dirs, PyPI-only installs, counter app, ports 3608/8608,
+logs in `logs/verify2-*.log` and `<scratchpad>/apps/verify_up_counter_todo_2/logs/`):
+
+1. Fresh venv `reflex==0.9.8` (PyPI), `reflex run --loglevel debug` until frontend 200.
+   Log `verify2-counter-0.9.8-run1.log` shows ONE `warn: incorrect peer dependency
+   "react@19.2.8"` during its own first install — bun peer-dep warnings at debug
+   loglevel are pre-existing on 0.9.8, not introduced by 0.9.9a1.
+2. Kill server tree, `uv pip install --prerelease=allow -U reflex==0.9.9a1` into the
+   SAME venv, keep `.web/` + `reflex.lock/` (lock still pins react-router 7.18.2).
+3. Re-run: `verify2-counter-0.9.9a1-run1.log` lines 196/198 (same line numbers as the
+   original report) show exactly TWO `warn: incorrect peer dependency
+   "react-router@7.18.2"`, both inside the `bun add --legacy-peer-deps -d ...
+   @react-router/fs-routes@8.3.0 @react-router/dev@8.3.0 vite@8.2.0` phase.
+   Mechanism byte-confirmed: `@react-router/dev@8.3.0` declares peer
+   `react-router: ^8.3.0` while the restored lockfile still resolves 7.18.2 at that
+   instant; the very next `bun add ... react-router@8.3.0 @react-router/node@8.3.0`
+   bumps it. Final state consistent: `.web/package.json` and `reflex.lock/package.json`
+   both `react-router 8.3.0`, zero `7.18.2` strings in either bun.lock.
+4. Cold-run control (`rm -rf .web`, same migrated lock): 0 warnings
+   (`verify2-counter-0.9.9a1-coldrun.log`), matching the original coldrun logs.
+
+Why refuted as a defect despite reproducing:
+
+- The warnings are emitted by bun, printed only at `--loglevel debug` (never at
+  default loglevel), only once — during the single migration run.
+- Reflex runs every add with `--legacy-peer-deps`, i.e. peer conflicts are tolerated
+  by design; bun's warn is informational and does not affect resolution.
+- The dev-deps-before-runtime-deps order that creates the transient window is
+  INTENTIONAL: `reflex/utils/js_runtimes.py` (~lines 752-754 in the release source)
+  documents that dev deps must be added first so overlapping names land in
+  `dependencies`. "Fixing" the warning by reordering would reintroduce the
+  section-placement bug that ordering prevents.
+- Not a regression in class: 0.9.8's own install already prints an
+  `incorrect peer dependency` warning (react@19.2.8). The react-router-specific text
+  is new only because 0.9.9a1 bumps react-router 7->8; any major dep bump would
+  transiently produce the same one-time debug line during in-place migration.
+- No functional impact: frontend serves 200, no tracebacks, final lock consistent,
+  identical app behavior (per the original 6-run drive reports).
+
+Conclusion: accurate observation, correctly rated benign by the original agent;
+recommend recording as release-notes color only ("expect two one-time bun peer
+warnings at debug loglevel when upgrading a 0.9.8 app in place"), no code change.

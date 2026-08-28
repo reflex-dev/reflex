@@ -1,0 +1,97 @@
+{
+  "results": [
+    {
+      "name": "index_renders_links",
+      "ok": true,
+      "details": "links=6"
+    },
+    {
+      "name": "overview_renders",
+      "ok": true,
+      "details": "nodes=11 edges=6 minimap=1 controls=1"
+    },
+    {
+      "name": "overview_node_drag_roundtrip",
+      "ok": true,
+      "details": "before=(518,167) after=(592,222)"
+    },
+    {
+      "name": "overview_toolbar_emoji",
+      "ok": true,
+      "details": "node text now: '\ud83d\udd25'"
+    },
+    {
+      "name": "custom_node_renders",
+      "ok": true,
+      "details": "nodes=4"
+    },
+    {
+      "name": "drag_handle_moves_via_handle",
+      "ok": true,
+      "details": "dx=91"
+    },
+    {
+      "name": "drag_handle_body_not_draggable",
+      "ok": true,
+      "details": "dx2=0"
+    },
+    {
+      "name": "connection_limit_first_connect",
+      "ok": true,
+      "details": "edges=1"
+    },
+    {
+      "name": "connection_limit_enforced",
+      "ok": true,
+      "details": "edges after 2nd attempt=1"
+    },
+    {
+      "name": "edge_drop_creates_node",
+      "ok": true,
+      "details": "nodes 1->2, edges=1"
+    },
+    {
+      "name": "intersections_highlight",
+      "ok": true,
+      "details": "highlighted=1"
+    }
+  ],
+  "console_all": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "debug: [vite] connected.",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  "page_errors": [],
+  "req_failures": []
+}

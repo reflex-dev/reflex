@@ -1,0 +1,40 @@
+{
+  "name": "reflex",
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev --host",
+    "export": "react-router build"
+  },
+  "dependencies": {
+    "@radix-ui/themes": "3.3.0",
+    "@react-router/node": "7.18.2",
+    "isbot": "5.2.1",
+    "lucide-react": "1.26.0",
+    "moment": "2.30.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-error-boundary": "6.1.2",
+    "react-helmet": "6.1.0",
+    "react-moment": "1.2.2",
+    "react-router": "7.18.2",
+    "react-router-dom": "7.18.2",
+    "socket.io-client": "4.8.3",
+    "sonner": "2.0.7",
+    "universal-cookie": "8.1.2"
+  },
+  "devDependencies": {
+    "@emotion/react": "11.14.0",
+    "@react-router/dev": "7.18.2",
+    "@react-router/fs-routes": "7.18.2",
+    "@tailwindcss/postcss": "4.3.0",
+    "@tailwindcss/typography": "0.5.20",
+    "autoprefixer": "10.5.4",
+    "postcss": "8.5.23",
+    "postcss-import": "16.1.1",
+    "tailwindcss": "4.3.0",
+    "vite": "8.0.16"
+  },
+  "overrides": {
+    "postcss": "8.5.23"
+  }
+}

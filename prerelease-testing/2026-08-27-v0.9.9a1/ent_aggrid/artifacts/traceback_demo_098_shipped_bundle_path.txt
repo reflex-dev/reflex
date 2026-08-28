@@ -1,0 +1,118 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 361, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 273, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/app.py", line 1652, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1222, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 840, in compile
+    page_ctx.root_component = self.hooks.compile_component(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 327, in compile_component
+    return self._compile_component_with_replacements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 556, in _compile_component_with_replacements
+    return visit(
+           ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 520, in visit
+    for prop_component in compiled_component._get_components_in_props():
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/components/component.py", line 1274, in _get_components_in_props
+    return self._get_component_prop_property
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/functools.py", line 1001, in __get__
+    val = self.func(instance)
+          ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/components/component.py", line 1260, in _get_component_prop_property
+    return [
+           ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/components/component.py", line 1265, in <listcomp>
+    for component in _components_from(value)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/components/component.py", line 602, in _components_from
+    var_data = component_or_var._get_all_var_data()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2121, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2068, in __get__
+    GLOBAL_CACHE[unique_id] = self._func(instance)
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 655, in _cached_get_all_var_data
+    *[
+     ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 656, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1777, in _get_all_var_data_without_creating_var_dispatch
+    return LiteralObjectVar._get_all_var_data_without_creating_var(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/object.py", line 484, in _get_all_var_data_without_creating_var
+    LiteralArrayVar._get_all_var_data_without_creating_var(value.values()),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 642, in _get_all_var_data_without_creating_var
+    return VarData.merge(*[
+                          ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 643, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1757, in _get_all_var_data_without_creating_var_dispatch
+    return literal_subclass._get_all_var_data_without_creating_var(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1731, in _get_all_var_data_without_creating_var
+    return cls.create(value)._get_all_var_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 147, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library $/app_components/ag_grid/formatters is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('$/app_components/ag_grid/formatters') to enable it it.

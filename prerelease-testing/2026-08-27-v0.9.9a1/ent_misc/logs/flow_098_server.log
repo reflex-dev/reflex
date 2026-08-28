@@ -1,0 +1,401 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/venv/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='flow', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'disable_plugins', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/venv/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='flow', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'disable_plugins', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────────── Initializing flow ───────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.049 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+[13:49:08] Initializing the web directory.                        console.py:232
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/venv/lib/python3.11/site-packages/reflex_base/.templates/
+web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 164122417029108356340082369909637939385.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized flow. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3382
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8382
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.036 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3382 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3382 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3382 is not in use.
+Debug: Checking if Backend port: 8382 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8382 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8382 is not in use.
+DeprecationWarning: `@rx.memo` on `custom_handle` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/connection_limit.py:47)
+DeprecationWarning: `@rx.memo` on `custom_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/connection_limit.py:60)
+DeprecationWarning: `@rx.memo` on `color_selector_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/custom_node.py:91)
+DeprecationWarning: `@rx.memo` on `drag_handle_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/drag_handle.py:18)
+DeprecationWarning: `@rx.memo` on `button_edge` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:185)
+DeprecationWarning: `@rx.memo` on `toolbar_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:232)
+DeprecationWarning: `@rx.memo` on `circle_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:260)
+DeprecationWarning: `@rx.memo` on `resizer_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:276)
+DeprecationWarning: `@rx.memo` on `annotation_node` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:307)
+DeprecationWarning: `@rx.memo` on `dimension_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:342)
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: App(theme=...) has been deprecated in version 0.9.0. 
+configure `rx.plugins.RadixThemesPlugin(theme=...)` in `rxconfig.py` instead. It
+will be completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_components_radix/plugin.py:100)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(flow/intersections.py:71)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(flow/intersections.py:76)
+Debug: [timing] Compile pages: 0.08s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Applying framework overrides to .web/package.json
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@16.1.1', 'vite@8.0.16', 'postcss@8.5.23', 
+'@react-router/dev@7.18.2', 'autoprefixer@10.5.4', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@7.18.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [89]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss-import@16.1.1
+Debug: installed vite@8.0.16 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/dev@7.18.2 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@7.18.2
+Debug: 
+Debug: 154 packages installed [2.25s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'isbot@5.2.1', 'react-router-dom@7.18.2', 'sonner@2.0.7', 'react-dom@19.2.8', 
+'react-router@7.18.2', '@react-router/node@7.18.2', 'lucide-react@1.26.0', 
+'socket.io-client@4.8.3', 'react@19.2.8', 'universal-cookie@8.1.2', 
+'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.2', 'react-helmet@6.1.0', 
+'@xyflow/react@12.8.4']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [27]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed isbot@5.2.1
+Debug: installed react-router-dom@7.18.2
+Debug: installed sonner@2.0.7
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@7.18.2
+Debug: installed @react-router/node@7.18.2
+Debug: installed lucide-react@1.26.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed @xyflow/react@12.8.4
+Debug: 
+Debug: 119 packages installed [424.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/flow_098/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 2.70s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/ent_misc/flow_098/server.log', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/flow', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/venv', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/flow_098/rxconfig.py']
+[INFO] Starting granian (main PID: 26188)
+[INFO] Listening at: http://0.0.0.0:8382
+[INFO] Spawning worker-1 with PID: 26231
+DeprecationWarning: `@rx.memo` on `custom_handle` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/connection_limit.py:47)
+DeprecationWarning: `@rx.memo` on `custom_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/connection_limit.py:60)
+DeprecationWarning: `@rx.memo` on `color_selector_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/custom_node.py:91)
+DeprecationWarning: `@rx.memo` on `drag_handle_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/drag_handle.py:18)
+DeprecationWarning: `@rx.memo` on `button_edge` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:185)
+DeprecationWarning: `@rx.memo` on `toolbar_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:232)
+DeprecationWarning: `@rx.memo` on `circle_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:260)
+DeprecationWarning: `@rx.memo` on `resizer_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:276)
+DeprecationWarning: `@rx.memo` on `annotation_node` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:307)
+DeprecationWarning: `@rx.memo` on `dimension_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:342)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ⚠️  Future Flag Warning: Route middleware support is changing in React 
+Router v8.
+Debug:      You can use the `future.v8_middleware` flag to opt in early.
+Debug:      -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+Debug:   ⚠️  Future Flag Warning: Route module splitting behavior is changing in
+React Router v8.
+Debug:      You can use the `future.v8_splitRouteModules` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+Debug:   ⚠️  Future Flag Warning: Vite Environment API usage is changing in 
+React Router v8.
+Debug:      You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+Debug:   ⚠️  Future Flag Warning: Request handling behavior is changing in React
+Router v8.
+Debug:      You can use the `future.v8_passThroughRequests` flag to opt in 
+early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+Debug:   ⚠️  Future Flag Warning: Data request URL formats are changing in React
+Router v8.
+Debug:      You can use the `future.v8_trailingSlashAwareDataRequests` flag to 
+opt in early.
+Debug:      -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+Debug:   ➜  Local:   http://localhost:3382/
+App running at: http://localhost:3382/
+Backend running at: http://0.0.0.0:8382
+Debug:   ➜  Network: http://192.0.2.2:3382/
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ⚠️  Future Flag Warning: Route middleware support is changing in React Router 
+v8.
+     You can use the `future.v8_middleware` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_middleware
+  ⚠️  Future Flag Warning: Route module splitting behavior is changing in React 
+Router v8.
+     You can use the `future.v8_splitRouteModules` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_splitroutemodules
+  ⚠️  Future Flag Warning: Vite Environment API usage is changing in React 
+Router v8.
+     You can use the `future.v8_viteEnvironmentApi` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_viteenvironmentapi
+  ⚠️  Future Flag Warning: Request handling behavior is changing in React Router
+v8.
+     You can use the `future.v8_passThroughRequests` flag to opt in early.
+     -> https://reactrouter.com/v7/upgrading/future#futurev8_passthroughrequests
+  ⚠️  Future Flag Warning: Data request URL formats are changing in React Router
+v8.
+     You can use the `future.v8_trailingSlashAwareDataRequests` flag to opt in 
+early.
+     -> 
+https://reactrouter.com/v7/upgrading/future#futurev8_trailingslashawaredatareque
+sts
+  ➜  Local:   http://localhost:3382/
+  ➜  Network: http://192.0.2.2:3382/
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[13:50:24] Reflex app stopped.                                    console.py:232

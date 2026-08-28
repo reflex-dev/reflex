@@ -1,0 +1,306 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/venv/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='oidc', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/venv/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='oidc', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/venv/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────────── Initializing oidc ───────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.042 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/venv/lib/python3.11/site-packages/reflex_base/.templates/
+web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 275391420923156538158681840316721163537.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized oidc. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3384
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8384
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.035 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Frontend port: 3384 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3384 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3384 is not in use.
+Debug: Checking if Backend port: 8384 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8384 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8384 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: register_auth_endpoints has been deprecated in version 
+0.9.1. Register rxe.AuthPlugin in rxe.Config(plugins=[...]) instead. It will be 
+completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py:2581)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.18s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 31/30 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss@8.5.23', 'tailwindcss@4.3.0', 'autoprefixer@10.5.4', 
+'@tailwindcss/postcss@4.3.0', '@react-router/dev@8.3.0', 
+'@emotion/react@11.14.0', '@react-router/fs-routes@8.3.0', 
+'@tailwindcss/typography@0.5.20', 'postcss-import@16.1.1', 'vite@8.2.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [139]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.23
+Debug: installed tailwindcss@4.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed postcss-import@16.1.1
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: 
+Debug: 159 packages installed [3.44s]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react@19.2.8', 'universal-cookie@8.1.2', 'lucide-react@1.26.0', 
+'react-router@8.3.0', 'moment@2.30.1', '@radix-ui/themes@3.3.0', 
+'socket.io-client@4.8.3', 'isbot@5.2.1', 'react-dom@19.2.8', 
+'react-error-boundary@6.1.2', 'react-moment@1.2.2', 'sonner@2.0.7', 
+'react-helmet@6.1.0', '@react-router/node@8.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [28]
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.2.8"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.0
+Debug: installed moment@2.30.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed isbot@5.2.1
+Debug: installed react-dom@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-moment@1.2.2
+Debug: installed sonner@2.0.7
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.3.0
+Debug: 
+Debug: 101 packages installed [1150.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/ent_misc/oidc_099/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 4.61s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpa
+d/apps/ent_misc/oidc_099/oidc', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/server.log', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/assets', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/venv', 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_misc/oidc_099/rxconfig.py']
+[INFO] Starting granian (main PID: 27313)
+[INFO] Listening at: http://0.0.0.0:8384
+[INFO] Spawning worker-1 with PID: 27372
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: register_auth_endpoints has been deprecated in version 
+0.9.1. Register rxe.AuthPlugin in rxe.Config(plugins=[...]) instead. It will be 
+completely removed in 1.0. 
+(venv/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py:2581)
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug:   ➜  Local:   http://localhost:3384/
+App running at: http://localhost:3384/
+Backend running at: http://0.0.0.0:8384
+Debug:   ➜  Network: http://192.0.2.2:3384/  eth0
+Debug: 1:55:47 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+DEBUG   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=59167d395fe247808f1706c832f3d710] Processing login flow
+DEBUG   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=59167d395fe247808f1706c832f3d710] Building authorization request
+DEBUG   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=f6af220dc43a49e0a04acf612c9d94f5] Processing auth callback
+DEBUG   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=f6af220dc43a49e0a04acf612c9d94f5] ─ Building token request payload
+DEBUG   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=f6af220dc43a49e0a04acf612c9d94f5] ─ Exchanging authorization code for tokens
+ERROR   okta      : be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=f6af220dc43a49e0a04acf612c9d94f5] ─ Exchanging authorization code for tokens failed: Token request failed with status 400: {"error": "invalid_grant", "error_description": "mock idp"}
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_misc/oidc_099/venv/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py", line 1080, in _error_context
+    yield exceptions
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/ent_misc/oidc_099/venv/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py", line 1994, in auth_callback
+    raise RuntimeError(
+RuntimeError: Token request failed with status 400: {"error": "invalid_grant", "error_description": "mock idp"}
+DEBUG   databricks: be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=4cb75487f1a64c78b1cf9d1272e1d5c2] Processing login flow
+DEBUG   databricks: be659bae-f039-4da8-e78c-19cd2c5f1de2 [txid=4cb75487f1a64c78b1cf9d1272e1d5c2] Building authorization request
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+  ➜  Local:   http://localhost:3384/
+  ➜  Network: http://192.0.2.2:3384/  eth0
+1:55:47 PM [vite] (ssr) connected.
+Files in the public directory are served at the root path.
+Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

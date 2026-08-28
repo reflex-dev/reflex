@@ -1,0 +1,121 @@
+Debug: Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/event_processor.py", line 751, in _finish_task
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/event_processor.py", line 742, in _finish_task
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/event_processor.py", line 579, in _process_event_queue_entry
+    await self._execute_event(entry=entry, 
+registered_handler=registered_handler)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/base_state_processor.py", line 382, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/base_state_processor.py", line 257, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/state.py", 
+line 2311, in hydrate
+    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/co
+ntext.py", line 127, in emit_delta
+    await self.emit_delta_impl(self.token, delta)
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/event/pr
+ocessor/event_processor.py", line 171, in emit_delta
+    await event_namespace.emit_update(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex/app.py", line
+2034, in emit_update
+    await asyncio.create_task(
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/socketio/async_names
+pace.py", line 71, in emit
+    return await self.server.emit(event, data=data, to=to, room=room,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/socketio/async_serve
+r.py", line 180, in emit
+    await self.manager.emit(event, data, namespace, room=room,
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/socketio/async_manag
+er.py", line 40, in emit
+    encoded_packet = pkt.encode()
+                     ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/socketio/packet.py",
+ line 64, in encode
+    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/utils/fo
+rmat.py", line 683, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_base/utils/se
+rializers.py", line 173, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_enterprise/va
+rs.py", line 265, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_enterprise/va
+rs.py", line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/ent_aggrid/demo_098/venv/lib/python3.11/site-packages/reflex_enterprise/va
+rs.py", line 147, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from 
+reflex.components.dynamic import bundle_library; 
+bundle_library('@radix-ui/themes') to enable it it.
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):

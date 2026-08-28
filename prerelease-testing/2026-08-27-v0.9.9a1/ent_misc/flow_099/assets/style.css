@@ -1,0 +1,218 @@
+html,
+body {
+  margin: 0;
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Circle Node */
+
+.react-flow__node-circle {
+  border-radius: 50%;
+  height: 100px;
+  width: 100px;
+  font-family: monospace;
+  text-align: center;
+}
+
+/* Text Input Node */
+
+.react-flow__node-textinput {
+  width: 150px;
+  font-family: monospace;
+  text-align: left;
+}
+
+.text-input-node__input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 5px 0;
+}
+
+/* Annotation Node */
+
+.react-flow__node-annotation {
+  font-size: 16px;
+  width: 200px;
+  color: #683bfa;
+  position: absolute;
+  box-shadow: none;
+  font-family: monospace;
+  text-align: left;
+  background-color: transparent;
+  border: none;
+}
+
+.react-flow__node-annotation .annotation-content {
+  padding: 10px;
+  display: flex;
+}
+
+.react-flow__node-annotation .annotation-level {
+  margin-right: 4px;
+}
+
+.react-flow__node-annotation .annotation-arrow {
+  position: absolute;
+  font-size: 24px;
+}
+
+/* Toolbar Node */
+
+.react-flow__node-toolbar {
+  background-color: #000000;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.react-flow__node-toolbar button {
+  cursor: pointer;
+  background: inherit;
+  border: none;
+  padding: 5px 7px;
+  margin: 3px;
+  border-radius: 50%;
+  box-shadow: var(--xy-node-boxshadow-default);
+}
+
+.react-flow__node-toolbar button:hover {
+  background: #4d4d4d;
+}
+
+/* Resizer Node */
+
+.resizer-node__handles {
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  justify-content: space-evenly;
+  left: 0;
+}
+
+.resizer-node__handle {
+  position: relative;
+  left: 0;
+  transform: none;
+}
+
+/* Button Edge */
+
+.button-edge__label {
+  position: absolute;
+  pointer-events: all;
+  transform-origin: center;
+}
+
+.button-edge__button {
+  width: 30px;
+  height: 30px;
+  border: 5px solid #f7f9fb;
+  color: var(--xy-edge-node-color-default);
+  background-color: #f3f3f4;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 12px;
+  padding-top: 0px;
+}
+
+.button-edge__button:hover {
+  background-color: var(--xy-theme-hover);
+  color: #ffffff;
+}
+
+/* Custom Handles */
+
+.react-flow__handle.custom-handle {
+  background-color: var(--xy-handle-border-color-default);
+  border-radius: 1px;
+  width: 8px;
+  height: 4px;
+  border: none;
+  min-width: 2px;
+  min-height: 2px;
+}
+
+.react-flow__handle.custom-handle:hover,
+.react-flow__handle.custom-handle.connectionindicator:focus,
+.react-flow__handle.custom-handle.connectingfrom,
+.react-flow__handle.custom-handle.connectingto {
+  background-color: var(--xy-theme-edge-hover);
+}
+
+.react-flow__handle-bottom.custom-handle {
+  bottom: -5px;
+  transform: none;
+}
+
+.react-flow__handle-top.custom-handle {
+  top: -5px;
+  transform: none;
+}
+
+.react-flow__handle-left.custom-handle {
+  height: 8px;
+  width: 4px;
+  left: -3px;
+}
+
+/* Minimap */
+
+.react-flow__minimap .group {
+  fill-opacity: 0.4;
+}
+
+.react-flow__minimap .resizer,
+.react-flow__minimap .tools,
+.react-flow__minimap .circle,
+.react-flow__minimap .textinput {
+  fill: rgb(208, 192, 247);
+}
+
+.react-flow__minimap .circle {
+  rx: 100%;
+  ry: 100%;
+}
+
+.react-flow__minimap .annotation {
+  display: none;
+}
+
+.react-flow__node-custom .react-flow__handle.connectable {
+  border-color: var(--xy-theme-selected);
+  background: var(--xy-theme-selected);
+
+  &:hover {
+    background: var(--xy-theme-selected);
+  }
+}
+
+.drag-handle__label {
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle__custom {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-color: teal;
+  margin-left: 15px;
+  border-radius: 50%;
+}
+
+/* Intersections highlight */
+
+.react-flow__node.highlight {
+  background-color: rgb(255, 194, 206);
+  border-color: rgb(255, 101, 132);
+}
+
+.intersection-flow .react-flow__handle {
+  display: none;
+}
