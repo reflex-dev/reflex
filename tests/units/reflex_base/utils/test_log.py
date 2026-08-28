@@ -71,6 +71,18 @@ def test_markup_literal_by_default(capsys):
     assert out == "Info: AssertionErr: foo[bar] != 'baz'\n"
 
 
+def test_warning_with_markup_tags_stays_literal(capsys):
+    """User data resembling rich markup is neither styled nor escaped.
+
+    Messages must not be markup-escaped at the call site: the sink renders
+    them raw, so the escape backslashes would print literally, while markup
+    injection stays impossible because markup is off by default.
+    """
+    logger.warning("got [red]x[/red] of type dict[str, str]")
+    out, _ = capsys.readouterr()
+    assert out == "Warning: got [red]x[/red] of type dict[str, str]\n"
+
+
 def test_level_gating(capsys):
     """Records below the configured level are dropped."""
     log.set_log_level(LogLevel.WARNING)
@@ -505,6 +517,104 @@ def test_console_and_pipeline_share_one_log_file(monkeypatch, tmp_path):
         handler.close()
     assert "from the legacy console" in contents
     assert "from the logging pipeline" in contents
+
+
+def _fresh_file_handler(
+    monkeypatch, tmp_path: Path
+) -> tuple[logging.FileHandler, Path]:
+    """Create a real file handler on a temp path, bypassing the once cache.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        tmp_path: The pytest tmp_path fixture.
+
+    Returns:
+        The handler and the log file path it writes to.
+    """
+    log_file = tmp_path / "full.log"
+    monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
+    handler = log._file_handler.__wrapped__()  # pyright: ignore[reportFunctionMemberAccess]
+    monkeypatch.setattr(log, "_file_handler", lambda: handler)
+    return handler, log_file
+
+
+def test_file_handler_survives_external_dictconfig(monkeypatch, tmp_path):
+    """Records keep landing in the log file after dictConfig closes the handler.
+
+    granian's worker startup runs ``logging.config.dictConfig``, whose
+    ``_clearExistingHandlers`` closes every fork-inherited handler; the file
+    handler must reopen (appending, not truncating) instead of silently
+    dropping every worker-side record.
+    """
+    import logging.config
+
+    handler, log_file = _fresh_file_handler(monkeypatch, tmp_path)
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "true")
+    log.configure()
+    try:
+        logger.warning("before the worker dictConfig")
+        logging.config.dictConfig({"version": 1, "disable_existing_loggers": False})
+        logger.warning("after the worker dictConfig")
+    finally:
+        logging.getLogger("reflex").removeHandler(handler)
+        handler.close()
+    contents = log_file.read_text(encoding="utf-8")
+    assert "before the worker dictConfig" in contents
+    assert "after the worker dictConfig" in contents
+
+
+def test_log_file_console_targets_file_after_external_close(
+    monkeypatch, tmp_path, capsys
+):
+    """A file console created after the handler was closed writes to the file.
+
+    Before the fix, ``log_file_stream()`` returned the closed handler's
+    ``None`` stream and rich fell back to stdout, leaking plain text into the
+    ``--json`` output of granian workers.
+    """
+    handler, log_file = _fresh_file_handler(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        console,
+        "log_file_console",
+        console.log_file_console.__wrapped__,  # pyright: ignore[reportFunctionMemberAccess]
+    )
+    try:
+        # What granian's post-fork dictConfig does to every existing handler.
+        handler.close()
+        console.print_to_log_file("worker record")
+    finally:
+        handler.close()
+    out, _ = capsys.readouterr()
+    assert out == ""
+    assert "worker record" in log_file.read_text(encoding="utf-8")
+
+
+def test_cached_log_file_console_survives_external_close(monkeypatch, tmp_path, capsys):
+    """A file console created before the close keeps writing to the file."""
+    handler, log_file = _fresh_file_handler(monkeypatch, tmp_path)
+    file_console = console.log_file_console.__wrapped__()  # pyright: ignore[reportFunctionMemberAccess]
+    monkeypatch.setattr(console, "log_file_console", lambda: file_console)
+    try:
+        console.print_to_log_file("record before close")
+        handler.close()
+        console.print_to_log_file("record after close")
+    finally:
+        handler.close()
+    out, _ = capsys.readouterr()
+    assert out == ""
+    contents = log_file.read_text(encoding="utf-8")
+    assert "record before close" in contents
+    assert "record after close" in contents
+
+
+def test_file_handler_truncates_previous_run(monkeypatch, tmp_path):
+    """A fresh handler still truncates a file left over from a previous run."""
+    log_file = tmp_path / "full.log"
+    log_file.write_text("records from a previous run\n", encoding="utf-8")
+    monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
+    handler = log._file_handler.__wrapped__()  # pyright: ignore[reportFunctionMemberAccess]
+    handler.close()
+    assert log_file.read_text(encoding="utf-8") == ""
 
 
 def test_every_logging_package_root_is_registered():

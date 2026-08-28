@@ -1,3 +1,22 @@
+## v0.9.9 (2026-08-28)
+
+### Features
+
+- The "Built with Reflex" badge appends a urlencoded `ref` query parameter to its reflex.dev link when the `REFLEX_REFERRER_PARAM` environment variable is set at compile time. ([#6951](https://github.com/reflex-dev/reflex/issues/6951))
+
+### Bug Fixes
+
+- Sanitize buffered upload filenames the same way streamed upload filenames are sanitized. ([#6753](https://github.com/reflex-dev/reflex/issues/6753))
+- `rx.script` head updates now flush synchronously instead of via react-helmet's requestAnimationFrame batching, fixing intermittently missing script tags after hydration (flaky "scripts not loaded" failures). ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
+- Upload filenames whose segments contain nothing but dots and spaces (e.g. `".."`, `"./../."`, `".. "`) now sanitize to the fallback name `upload` instead of returning the bare segment. Such names pointed the saved path outside the upload directory — directly on POSIX, and via Win32's trailing dot/space trimming on Windows — and crashed the upload handler with a 500. ([#6971](https://github.com/reflex-dev/reflex/issues/6971))
+
+### Miscellaneous
+
+- Hoist the `RegistrationContext` import in the upload handler to module level. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+- Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+
+
 ## v0.9.8 (2026-08-04)
 
 ### Miscellaneous

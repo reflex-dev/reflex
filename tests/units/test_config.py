@@ -1053,3 +1053,27 @@ def test_load_config_survives_rxconfig_rebuilding_meta_path(
         reflex_base.config._config_module_deps.discard("rxconfig")
         if reflex_base.config._import_recorder not in sys.meta_path:
             sys.meta_path.insert(0, reflex_base.config._import_recorder)
+
+
+def test_get_config_reload_deprecated(mocker: MockerFixture):
+    """get_config(reload=True) reloads the config and warns about deprecation.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    first = rx.Config(app_name="first")
+    second = rx.Config(app_name="second")
+    mocker.patch.object(reflex_base.config, "_load_config", side_effect=[first, second])
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config() is first
+        deprecate.assert_not_called()
+        assert reflex_base.config.get_config(reload=True) is second
+        deprecate.assert_called_once()
+        assert deprecate.call_args.kwargs["feature_name"] == "get_config(reload=True)"
+        # The freshly loaded config stays cached on the context afterwards.
+        assert reflex_base.config.get_config() is second
+        deprecate.assert_called_once()
