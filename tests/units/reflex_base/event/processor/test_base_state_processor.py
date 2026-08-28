@@ -615,3 +615,90 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+async def test_navigation_delta_elides_connection_scoped_router_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A navigation only re-sends the navigation-scoped router vars.
+
+    Session and headers cannot change without going through a reconnect, so
+    re-shipping them in the delta of every client event is pure overhead.
+    The router is stored in per-field base vars precisely so that a
+    navigation marks only page/url/route_id dirty; a reconnect (new sid)
+    marks only the session dirty.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NavState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    headers = {"origin": "http://localhost:3000", "user-agent": "test-agent"}
+
+    def view(path: str, sid: str = "sid1") -> dict[str, Any]:
+        return {
+            "pathname": path,
+            "asPath": path,
+            "query": {},
+            "token": token,
+            "sid": sid,
+            "ip": "127.0.0.1",
+            "headers": headers,
+        }
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NavState.bump())[0], router_data=router_data
+        )
+
+    def router_vars_in_deltas() -> set[str]:
+        return {
+            key.removesuffix(FIELD_MARKER)
+            for _token, delta in emitted_deltas
+            for key in delta.get(State.get_full_name(), {})
+            if key.startswith("router")
+        }
+
+    async def run_event(router_data: dict[str, Any]) -> None:
+        emitted_deltas.clear()
+        async with real_base_state_processor as processor:
+            await processor.enqueue(token, client_event(router_data))
+            await processor.join(10)
+
+    # First event on the connection populates every router var.
+    await run_event(view("/a"))
+    assert router_vars_in_deltas() == {
+        "router_session",
+        "router_headers",
+        "router_page",
+        "router_url",
+        "router_route_id",
+    }
+
+    # A navigation only re-sends the navigation-scoped vars.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == {
+        "router_page",
+        "router_url",
+        "router_route_id",
+    }
+
+    # An event without a route change re-sends no router vars at all.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == set()
+
+    # A reconnect (new sid, same headers) re-sends only the session.
+    await run_event(view("/b", sid="sid2"))
+    assert router_vars_in_deltas() == {"router_session"}

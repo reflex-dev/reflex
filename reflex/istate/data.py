@@ -382,6 +382,86 @@ def _serialize_page_data(obj: PageData) -> dict:
     return {key.name: getattr(obj, key.name) for key in dataclasses.fields(obj)}
 
 
+def _url_from_router_data(router_data: dict) -> ReflexURL:
+    """Build the browser URL for the page described by a router_data dict.
+
+    Args:
+        router_data: the router_data dict.
+
+    Returns:
+        The parsed browser URL (origin header + prefixed path).
+    """
+    return ReflexURL(
+        router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+        + get_config().prepend_frontend_path(
+            router_data.get(constants.RouteVar.ORIGIN, "")
+        )
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class URLData:
+    """The parsed components of the current page URL.
+
+    Storage form of ``RouterData.url`` in the state: unlike ``ReflexURL`` (a
+    ``str`` subclass, which ``json.dumps`` would serialize as a bare string),
+    a dataclass goes through the registered serializer, so the frontend
+    receives the parsed component dict.
+    """
+
+    scheme: str = ""
+    netloc: str = ""
+    origin: str = ""
+    path: str = ""
+    query: str = ""
+    query_parameters: Mapping[str, str] = dataclasses.field(
+        default_factory=_FrozenDictStrStr
+    )
+    fragment: str = ""
+    # Annotated str so the frontend var for this field renders the raw href
+    # string, but always holds a ReflexURL at runtime so the backend keeps
+    # parsed-component access without re-splitting the URL.
+    href: str = ReflexURL("")
+
+    @classmethod
+    def from_url(cls, url: ReflexURL) -> "URLData":
+        """Create a URLData object from an already-parsed ReflexURL.
+
+        Args:
+            url: the parsed URL.
+
+        Returns:
+            A URLData object mirroring the URL's components.
+        """
+        return cls(
+            scheme=url.scheme,
+            netloc=url.netloc,
+            origin=url.origin,
+            path=url.path,
+            query=url.query,
+            query_parameters=url.query_parameters,
+            fragment=url.fragment,
+            href=url,
+        )
+
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "URLData":
+        """Create a URLData object from the given router_data.
+
+        Args:
+            router_data: the router_data dict.
+
+        Returns:
+            A URLData object for the page described by the router_data.
+        """
+        return cls.from_url(_url_from_router_data(router_data))
+
+
+@serializer(to=dict)
+def _serialize_url_data(obj: URLData) -> dict:
+    return {key.name: getattr(obj, key.name) for key in dataclasses.fields(obj)}
+
+
 @dataclasses.dataclass(frozen=True)
 class SessionData:
     """An object containing session data."""
@@ -451,12 +531,7 @@ class RouterData:
             session=SessionData.from_router_data(router_data),
             headers=HeaderData.from_router_data(router_data),
             _page=PageData.from_router_data(router_data),
-            url=ReflexURL(
-                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
-                + get_config().prepend_frontend_path(
-                    router_data.get(constants.RouteVar.ORIGIN, "")
-                )
-            ),
+            url=_url_from_router_data(router_data),
             route_id=router_data.get(constants.RouteVar.PATH, ""),
         )
 
@@ -482,3 +557,138 @@ def serialize_router_data(obj: RouterData) -> dict:
         "url": _serialize_reflex_url(obj.url),
         "route_id": obj.route_id,
     }
+
+
+def _null_var() -> Var:
+    """Placeholder default for RouterDataVar component fields.
+
+    Returns:
+        A null Var.
+    """
+    return Var(_js_expr="null", _var_type=None)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
+    """Switchboard Var for ``State.router``.
+
+    Router data is stored in separate per-field base vars on the root state
+    (session, headers, page, url, route_id) so that unchanged
+    connection-scoped data is not re-sent in the delta on every navigation.
+    This var stitches them back together: each attribute resolves directly to
+    the underlying per-field base var, and rendering the var itself produces
+    an object literal matching the pre-split serialized router shape.
+    """
+
+    # _url_var first: VarData.merge picks the first non-empty field_name, so
+    # `deps=[State.router]` registers against the navigation-scoped var.
+    _url_var: Var = dataclasses.field(default_factory=_null_var)
+    _page_var: Var = dataclasses.field(default_factory=_null_var)
+    _session_var: Var = dataclasses.field(default_factory=_null_var)
+    _headers_var: Var = dataclasses.field(default_factory=_null_var)
+    _route_id_var: Var = dataclasses.field(default_factory=_null_var)
+    _default_var_type: ClassVar[Any] = RouterData
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Render the router as an object literal over the per-field vars.
+
+        Returns:
+            The JS expression for the assembled router object.
+        """
+        return (
+            "({ "
+            f'"session": {self._session_var!s}, '
+            f'"headers": {self._headers_var!s}, '
+            f'"page": {self._page_var!s}, '
+            f'"url": {self._url_var!s}, '
+            f'"route_id": {self._route_id_var!s}'
+            " })"
+        )
+
+    @property
+    def session(self) -> ObjectVar[SessionData]:
+        """The per-connection session data.
+
+        Returns:
+            ObjectVar for the ``router_session`` base var.
+        """
+        return self._session_var.to(ObjectVar, SessionData)
+
+    @property
+    def headers(self) -> ObjectVar[HeaderData]:
+        """The headers of the websocket connection request.
+
+        Returns:
+            ObjectVar for the ``router_headers`` base var.
+        """
+        return self._headers_var.to(ObjectVar, HeaderData)
+
+    @property
+    def page(self) -> ObjectVar[PageData]:
+        """The page data for the current page (deprecated, use ``url``).
+
+        Returns:
+            ObjectVar for the ``router_page`` base var.
+        """
+        return self._page_var.to(ObjectVar, PageData)
+
+    # RouterData exposes the page data under both `page` and `_page`.
+    _page = page
+
+    @property
+    def url(self) -> ReflexURLCastedVar:
+        """The parsed URL of the current page.
+
+        Returns:
+            ReflexURLCastedVar over the ``router_url`` base var.
+        """
+        return ReflexURLCastedVar.create(self._url_var)
+
+    @property
+    def route_id(self) -> StringVar:
+        """The route pattern that matched the current page.
+
+        Returns:
+            StringVar for the ``router_route_id`` base var.
+        """
+        return self._route_id_var.to(str)
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        session: Var,
+        headers: Var,
+        page: Var,
+        url: Var,
+        route_id: Var,
+        _var_data: VarData | None = None,
+    ) -> "RouterDataVar":
+        """Create a RouterDataVar over the per-field router base vars.
+
+        Args:
+            session: The ``router_session`` base var.
+            headers: The ``router_headers`` base var.
+            page: The ``router_page`` base var.
+            url: The ``router_url`` base var.
+            route_id: The ``router_route_id`` base var.
+            _var_data: Additional VarData to merge in.
+
+        Returns:
+            The new RouterDataVar.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=RouterData,
+            _var_data=_var_data,
+            _url_var=url,
+            _page_var=page,
+            _session_var=session,
+            _headers_var=headers,
+            _route_id_var=route_id,
+        )

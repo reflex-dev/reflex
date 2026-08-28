@@ -12,7 +12,6 @@ from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -414,12 +413,16 @@ class BaseStateEventProcessor(EventProcessor):
             )
 
             # re-assign only when the value is set and different
-            if router_data and state.router_data != router_data:
+            if (
+                router_data
+                and (previous_router_data := state.router_data) != router_data
+            ):
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-                if state.router != (router := RouterData.from_router_data(router_data)):
-                    state.router = router
+                # only the router vars whose backing keys changed are rebuilt
+                # and re-sent; session/headers stay put across navigations
+                state._update_router_vars(router_data, previous_router_data)
 
             # Preprocess the event.
             if (

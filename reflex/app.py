@@ -73,7 +73,6 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -1959,6 +1958,10 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # Connection-scoped router_data entries per SID, computed once at
+        # connect time instead of for every event on the connection.
+        self._static_router_data: dict[str, dict[str, Any]] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2008,6 +2011,51 @@ class EventNamespace(AsyncNamespace):
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+    def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
+        """Build the connection-scoped router_data entries for a socket.
+
+        Args:
+            sid: The Socket.IO session id.
+            environ: The request information, including HTTP headers.
+
+        Returns:
+            The router_data entries that are constant for the connection.
+        """
+        asgi_scope = environ.get("asgi.scope", {})
+
+        # Get the client headers.
+        headers = {
+            k.decode("utf-8"): v.decode("utf-8")
+            for (k, v) in asgi_scope.get("headers", [])
+        }
+
+        # Get the client IP
+        try:
+            client_ip = asgi_scope["client"][0]
+            headers["asgi-scope-client"] = client_ip
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        # Unroll reverse proxy forwarded headers.
+        client_ip = (
+            headers
+            .get(
+                "x-forwarded-for",
+                client_ip,
+            )
+            .partition(",")[0]
+            .strip()
+        )
+        return {
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
 
@@ -2018,6 +2066,7 @@ class EventNamespace(AsyncNamespace):
             An asyncio Task for cleaning up the token, or None.
         """
         self._client_error_counts.pop(sid, None)
+        self._static_router_data.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2110,45 +2159,25 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        # Get the event environment.
-        if self.app.sio is None:
-            msg = "Socket.IO is not initialized."
-            raise RuntimeError(msg)
-        environ = self.app.sio.get_environ(sid, self.namespace)
-        if environ is None:
-            msg = "Socket.IO environ is not initialized."
-            raise RuntimeError(msg)
-
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        static_router_data = self._static_router_data.get(sid)
+        if static_router_data is None:
+            # The connection was not seen by on_connect (e.g. namespace created
+            # after the socket connected); fall back to the connection environ.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            static_router_data = self._static_router_data[sid] = (
+                self._build_static_router_data(sid, environ)
             )
-            .partition(",")[0]
-            .strip()
-        )
         router_data = event.router_data
+        router_data.update(static_router_data)
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
         })
         router_data[constants.RouteVar.PATH] = "/" + (
             self.app.router(path) or "404"
@@ -2263,4 +2292,5 @@ class EventNamespace(AsyncNamespace):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+                if (session := state.router_session).session_id != sid:
+                    state.router_session = dataclasses.replace(session, session_id=sid)

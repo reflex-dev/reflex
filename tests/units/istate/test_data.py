@@ -146,3 +146,69 @@ def test_router_url_var_renders_as_href_at_top_level():
     """
     url_var = rx.State.router.url
     assert str(url_var) == f'{url_var._original!s}?.["href"]'
+
+
+def test_url_data_serializes_like_reflex_url():
+    """URLData (the per-field storage form of the router URL) must serialize
+    to the same component dict shape as the eager ReflexURL serialization, so
+    the frontend var access patterns are unchanged by the router var split.
+    """
+    import json
+
+    from reflex_base.utils.format import json_dumps
+
+    from reflex.istate.data import URLData, _serialize_reflex_url
+
+    url = ReflexURL(SAMPLE_URL)
+    payload = json.loads(json_dumps(URLData.from_url(url)))
+    assert payload == json.loads(json_dumps(_serialize_reflex_url(url)))
+    # The runtime value of href keeps parsed-component access on the backend.
+    assert isinstance(URLData.from_url(url).href, ReflexURL)
+
+
+def test_router_var_resolves_to_per_field_base_vars():
+    """State.router is a switchboard: each attribute must resolve directly to
+    the per-field base var, so a navigation delta that only carries the
+    navigation-scoped vars still updates every rendered router expression.
+    """
+    prefix = "reflex___state____state"
+    assert (
+        str(rx.State.router.session.client_token)
+        == f'{prefix}.router_session_rx_state_?.["client_token"]'
+    )
+    assert (
+        str(rx.State.router.headers.user_agent)
+        == f'{prefix}.router_headers_rx_state_?.["user_agent"]'
+    )
+    assert (
+        str(rx.State.router.page.raw_path)
+        == f'{prefix}.router_page_rx_state_?.["raw_path"]'
+    )
+    assert str(rx.State.router.url) == f'{prefix}.router_url_rx_state_?.["href"]'
+    assert str(rx.State.router.url.path) == f'{prefix}.router_url_rx_state_?.["path"]'
+    assert str(rx.State.router.route_id) == f"{prefix}.router_route_id_rx_state_"
+
+
+def test_router_var_renders_composed_object():
+    """Rendering State.router itself produces an object literal over the
+    per-field vars, matching the pre-split serialized router shape.
+    """
+    prefix = "reflex___state____state"
+    assert str(rx.State.router) == (
+        "({ "
+        f'"session": {prefix}.router_session_rx_state_, '
+        f'"headers": {prefix}.router_headers_rx_state_, '
+        f'"page": {prefix}.router_page_rx_state_, '
+        f'"url": {prefix}.router_url_rx_state_, '
+        f'"route_id": {prefix}.router_route_id_rx_state_'
+        " })"
+    )
+
+
+def test_router_var_carries_state_var_data():
+    """The switchboard var must merge the per-field vars' VarData so hooks
+    and context wiring for the root state are set up when it renders.
+    """
+    var_data = rx.State.router._get_all_var_data()
+    assert var_data is not None
+    assert var_data.state == rx.State.get_full_name()

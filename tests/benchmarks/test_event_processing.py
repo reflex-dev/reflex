@@ -120,3 +120,85 @@ def test_process_event(
     @benchmark
     def _():
         loop.run_until_complete(run_events(num_events=3, num_expected_deltas=3))
+
+
+@pytest.fixture
+def on_event_harness():
+    """Set up an EventNamespace with a connected socket for benchmarking on_event.
+
+    The event processor's enqueue is mocked out so the benchmark isolates the
+    per-event router_data preparation (which reuses the connection-scoped
+    data gathered once in on_connect).
+
+    Yields:
+        An async callable that feeds the given number of events through
+        ``EventNamespace.on_event``, and the event loop to drive it with.
+    """
+    from reflex.app import App, EventNamespace
+
+    app = App()
+    app._event_processor = mock.Mock(enqueue=mock.AsyncMock())
+    namespace = EventNamespace("/event", app)
+
+    sid = "benchmark-sid"
+    environ = {
+        "QUERY_STRING": "token=benchmark-token",
+        "asgi.scope": {
+            "headers": [
+                (b"host", b"localhost:3000"),
+                (b"origin", b"http://localhost:3000"),
+                (b"user-agent", b"Mozilla/5.0 (X11; Linux x86_64) benchmark"),
+                (b"accept-encoding", b"gzip, deflate, br"),
+                (b"accept-language", b"en-US,en;q=0.9"),
+                (b"cookie", b"session=abc123; theme=dark"),
+                (b"upgrade", b"websocket"),
+                (b"connection", b"Upgrade"),
+                (b"sec-websocket-version", b"13"),
+                (b"sec-websocket-key", b"dGhlIHNhbXBsZSBub25jZQ=="),
+                (b"x-forwarded-for", b"203.0.113.7, 10.0.0.1"),
+            ],
+            "client": ("127.0.0.1", 54321),
+        },
+    }
+
+    async def run_events(num_events: int) -> None:
+        """Feed events through on_event.
+
+        Args:
+            num_events: Number of events to process.
+        """
+        for _ in range(num_events):
+            await namespace.on_event(
+                sid,
+                {
+                    "name": "state.hydrate",
+                    "router_data": {"pathname": "/", "query": {}, "asPath": "/"},
+                    "payload": {},
+                },
+            )
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(namespace.on_connect(sid, environ))
+    yield run_events, loop
+    loop.close()
+
+
+def test_on_event_router_data(
+    on_event_harness,
+    benchmark: BenchmarkFixture,
+):
+    """Benchmark the per-event router_data preparation in on_event.
+
+    Headers and client IP are gathered once at connect time, so the
+    per-event path is reduced to merging the cached connection-scoped dict
+    with the event's navigation data.
+
+    Args:
+        on_event_harness: The run_events async callable and its event loop.
+        benchmark: The codspeed benchmark fixture.
+    """
+    run_events, loop = on_event_harness
+
+    @benchmark
+    def _():
+        loop.run_until_complete(run_events(num_events=10))
