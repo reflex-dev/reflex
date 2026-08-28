@@ -241,3 +241,42 @@ def test_run_concurrently_context_no_interrupt_after_body_exception():
     # give signal delivery a moment so it would surface as KeyboardInterrupt
     # here (delivery latency is microseconds; 0.1s is generous headroom).
     time.sleep(0.1)
+
+
+def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
+    """A failure racing context entry must not leave the interrupt armed.
+
+    With one task already failed and another still running, the pre-body
+    failure check can raise before the body is ever entered; the surviving
+    task's later failure must not interrupt the caller after the context has
+    unwound. When the fast failure instead loses the race to context entry,
+    the body path exercises the same invariant, so both orderings assert
+    identically.
+    """
+    task_may_fail = threading.Event()
+    late_finished = threading.Event()
+
+    def _fail_fast():
+        raise SystemExit(2)
+
+    def _fail_on_release():
+        try:
+            task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+            raise SystemExit(3)
+        finally:
+            late_finished.set()
+
+    with (
+        pytest.raises(SystemExit),
+        run_concurrently_context(_fail_fast, _fail_on_release),
+    ):
+        # Reached only when the fast failure loses the race to context entry;
+        # its interrupt then surfaces here and converts to the task's error.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+
+    # The context has unwound; only now may the surviving task fail.
+    task_may_fail.set()
+    assert late_finished.wait(timeout=DEFAULT_TIMEOUT), "task did not finish"
+    # The interrupt callback runs within microseconds of the task finishing;
+    # a stale interrupt would surface as KeyboardInterrupt in this window.
+    time.sleep(0.1)

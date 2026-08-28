@@ -351,15 +351,17 @@ def run_concurrently_context(
             task.add_done_callback(wake_main_thread)
 
         try:
-            # Don't enter (and block in) the body if a task has already failed.
-            raise_first_failure(tasks)
-
             try:
+                # Don't enter (and block in) the body if a task has already
+                # failed.
+                raise_first_failure(tasks)
+
                 # Yield control back to the main thread while tasks are running.
                 yield tasks
             finally:
-                # However the body exits, stop interrupting the main thread:
-                # tasks outlive this context (shutdown below does not wait).
+                # Whether the pre-check or the body raised, stop interrupting
+                # the main thread: tasks outlive this context (shutdown below
+                # does not wait).
                 with interrupt_lock:
                     in_body = False
 
