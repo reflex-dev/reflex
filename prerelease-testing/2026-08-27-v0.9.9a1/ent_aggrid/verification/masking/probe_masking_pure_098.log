@@ -1,0 +1,19 @@
+reflex-base 0.9.8  python 3.11.15
+
+1. AttributeError inside _cached_get_all_var_data computation:
+  [ok] raises VarAttributeError -- VarAttributeError
+  [ok] message is the misleading 'not found' -- 'Attribute _cached_get_all_var_data not found.'
+  [ok] __cause__ is None -- None
+  [ok] __context__ is None (fully discarded) -- None
+  [ok] real error text absent from traceback
+
+2. control: ValueError in the same spot propagates unmasked:
+  [ok] raises the original ValueError -- ValueError: REAL_UNDERLYING_ATTRIBUTE_ERROR_marker_xyzzy
+
+3. AttributeError inside _cached_var_name computation (str(var) path):
+  [ok] raises VarAttributeError -- VarAttributeError
+  [ok] misleading message (either _js_expr or _cached_var_name 'not found') -- 'Attribute _cached_var_name not found.'
+  [ok] no __cause__ and no __context__
+  [ok] real error text absent from traceback
+
+ALL CHECKS PASSED — AttributeError masking reproduced on this version

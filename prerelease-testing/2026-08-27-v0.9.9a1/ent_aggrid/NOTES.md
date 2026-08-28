@@ -189,3 +189,203 @@ sole rx.moment user — was disabled there.)
 | /model, /model-auth, /model-ssrm data load | FAIL (404 %3F) | FAIL (404 %3F) — broken anyway |
 | minimal plain rxe.ag_grid | PASS | PASS |
 | minimal + lambda cell_renderer | PASS | FAIL at compile — REGRESSION (minimal trigger) |
+
+## VERIFICATION (independent, 2026-08-28, verifier agent)
+
+Verdict: **CONFIRMED** — genuine regression, reproduced from scratch with fresh PyPI
+installs (`uv venv --python 3.11`; `reflex==0.9.9a1` + `reflex-enterprise==0.9.4` vs
+`reflex==0.9.8` + `reflex-enterprise==0.9.4`), using a copy of `minimal/` in an
+independent working dir with different ports (3800/8800 a1, 3801/8801 baseline).
+Scripts/logs/screenshots: `verification/`.
+
+What was reproduced (all match the claim):
+
+1. **Direct proof, no server needed** (`verification/probe_direct.py`, a1 venv):
+   `LiteralLambdaVar.create(lambda params: rx.text(params.value, color="tomato"))`
+   raises at `reflex_enterprise/vars.py:143`:
+   `AttributeError: module 'reflex.components.dynamic' has no attribute
+   'bundled_libraries'. Did you mean: 'bundle_library'?`
+   Also confirmed `hasattr(reflex.components.dynamic, "bundled_libraries")` is
+   False on 0.9.9a1 and True on 0.9.8.
+2. **End-to-end compile crash on 0.9.9a1**: `REPRO_LAMBDA=1 CI=1 reflex run` exits 1
+   during "Compile pages" with
+   `VarAttributeError: Attribute _cached_get_all_var_data not found.` and the real
+   `bundled_libraries` AttributeError appears NOWHERE in the debug log
+   (`grep -c bundled_libraries run_a1_lambda.log` == 0) — masking confirmed
+   (`verification/run_a1_lambda.log`).
+3. **Masking mechanism confirmed in installed source**: `_cached_get_all_var_data` is
+   reflex_base's custom `cached_property` (`reflex_base/vars/base.py:1999`); an
+   AttributeError escaping its `__get__` computation triggers Python's `__getattr__`
+   fallback -> `CachedVarOperation.__getattr__` -> `Var.__getattr__` ->
+   `VarAttributeError` with the original exception swallowed (no `__cause__`).
+   Agreed this masking pattern itself is pre-existing (same code shape on 0.9.8).
+4. **Root cause proof** (`verification/probe_shim.py`): assigning
+   `dynamic.bundled_libraries = RegistrationContext.ensure_context().bundled_libraries`
+   before `LiteralLambdaVar.create` removes the AttributeError and restores rxe's
+   intended validation (its designed "Library @radix-ui/themes is not bundled ...
+   bundle_library(...)" ValueError outside app-compile context).
+5. **Baseline A/B**: identical app on 0.9.8 + rxe 0.9.4 compiles ("Compiling: 100%
+   14/13"), serves, and the lambda `cell_renderer` renders in Chromium: 3 styled
+   nodes in the "fancy" column with computed color rgb(255, 99, 71) (tomato), zero
+   console errors (`verification/verify_098_lambda.png`). NOT pre-existing.
+6. **Scope check**: same app without `REPRO_LAMBDA` on 0.9.9a1 runs and renders the
+   plain grid end-to-end, zero console errors (`verification/verify_a1_plain.png`) —
+   breakage confined to the python-callable (LiteralLambdaVar) path, as claimed.
+7. **Source-level cause**: `#6382` ("Move more globals to RegistrationContext",
+   commit 7888170ad, in v0.9.9a1) removed the module-level `bundled_libraries` list
+   from `reflex_base.components.dynamic` (present at module level in v0.9.8), which
+   `reflex.components.dynamic` star re-exports. Not misuse: python-callable
+   renderers/formatters are a designed rxe feature (rxe's own demo formatters.py and
+   its error messages are built around it). A draft fix already exists in-repo on
+   branch `origin/claude/reflex-enterprise-shim-mvevpt` (commit 5bda46ce8, "Restore
+   `dynamic.bundled_libraries` as a deprecated shim"), corroborating that the fix is
+   expected on the reflex/reflex-base side.
+
+Attribution: primarily a **reflex 0.9.9a1 (reflex-base) breaking change** — a
+module attribute that published reflex-enterprise releases (through 0.9.4) read at
+runtime was removed without a deprecation shim; every published rxe is broken by it.
+Secondary (pre-existing) reflex-base anomaly: CachedVarOperation/cached_property
+converts internal AttributeErrors into misleading `VarAttributeError`s, which fully
+masked the root cause here.
+
+One env note for re-runners: do NOT override the ambient `NO_PROXY` when launching
+`reflex run` in this environment — the ambient value whitelists
+`registry.npmjs.org`; replacing it with only `localhost,127.0.0.1` sends bun through
+the agent proxy and the frontend install dies with ~111 "ConnectionClosed
+downloading package manifest" errors (observed twice; unrelated to this finding —
+it happens after page compile, and the a1 crash happens before frontend install).
+
+## VERIFICATION of finding 2 — AttributeError masking (independent, 2026-08-28, verifier agent 2)
+
+Verdict: **CONFIRMED** — genuine reflex-base diagnosability defect; **NOT a regression**
+(identical behavior reproduced on reflex-base 0.9.8), matching the claim. Attribution:
+the masking itself is a **reflex (reflex-base) defect**, orthogonal to the enterprise
+incompatibility of finding 1 (which it hid). Reproduced with the same PyPI venvs as the
+finding-1 verification (`verification/../venv_a1`: reflex 0.9.9a1 + rxe 0.9.4;
+`venv_098`: reflex 0.9.8 + rxe 0.9.4; both confirmed index installs, no direct_url).
+Scripts + logs: `verification/masking/`.
+
+1. **Pure reflex-base repro, no enterprise** (`probe_masking_pure.py`, run on BOTH
+   versions -> `probe_masking_pure_{a1,098}.log`): a CachedVarOperation subclass declared
+   exactly like reflex-base's own ConcatVarOperation whose `_cached_get_all_var_data`
+   computation raises `AttributeError(MARKER)`. On 0.9.9a1 AND 0.9.8,
+   `_get_all_var_data()` raises `VarAttributeError: Attribute _cached_get_all_var_data
+   not found.` with `__cause__ is None` AND `__context__ is None`; MARKER appears nowhere
+   in the traceback (CPython's `__getattr__` fallback clears the pending AttributeError
+   before calling it, so even implicit exception context is destroyed — full masking,
+   worse than a normal unchained raise). Same masking via the
+   `str(var)` -> `_js_expr` -> `_cached_var_name` path.
+2. **Specific to AttributeError** (control in the same probe): a `ValueError` raised at
+   the identical spot propagates unmasked. So the descriptor-protocol +
+   `CachedVarOperation.__getattr__` combination is the mechanism, as claimed.
+3. **Organic repro on 0.9.9a1** (`probe_masking_rxe.py` -> `probe_masking_rxe_a1.log`):
+   `LiteralVar.create([{"field": "x", "cellRenderer": lambda params: rx.text(...)}])`
+   (the ag_grid column_defs shape) constructs lazily with no error; calling
+   `._get_all_var_data()` on the LiteralArrayVar raises the masked VarAttributeError —
+   no `__cause__`, no `__context__`, "bundled_libraries"/"reflex_enterprise" absent from
+   the traceback. Matches the saved compile traceback
+   (`artifacts/traceback_minimal_a1.txt`: base.py:2129 -> `__getattr__` 2121 -> raise at
+   1472, no chained sections). Instrumenting `cached_property.__get__` (phase 2) captures
+   the swallowed error and it is exactly the root cause of finding 1:
+   `AttributeError: module 'reflex.components.dynamic' has no attribute
+   'bundled_libraries'` — i.e. the information exists and is discarded.
+4. **NEW, worse variant found while verifying** (phase 1b of `probe_masking_rxe.py`): on
+   a Mapping-typed object var (bare dict column def -> LiteralObjectVar), the same
+   underlying AttributeError does not raise AT ALL: `ObjectVar.__getattr__` treats
+   `_cached_get_all_var_data` as JS item access and `_get_all_var_data()` **silently
+   returns an ObjectItemOperation Var** (`{...}?.["_cached_get_all_var_data"]`) instead
+   of VarData — silent wrong-value corruption, strictly worse than the misleading
+   exception. Any fix should cover this path too (it lives in the same
+   cached_property/__getattr__ interaction).
+5. **Refutation attempts, all negative**: not an env quirk (deterministic CPython
+   descriptor semantics, reproduced in fresh processes on 3.11.15); not app misuse
+   (subclass declared exactly like reflex-base's own, and the organic path is designed
+   rxe usage); not intentional — no code in the installed reflex_base relies on
+   `hasattr`/`getattr` of `_cached_*` names, so catching-and-chaining inside
+   `cached_property.__get__` would break nothing found; not fixed upstream — the current
+   checkout (`packages/reflex-base/src/reflex_base/vars/base.py:2076`,
+   `self._func(instance)` with no exception handling) still has the identical pattern.
+6. Claimed line refs check out in installed 0.9.9a1: raise at base.py:1471-1472,
+   `cached_property` at 1999 (`__get__` ~2052-2076), `CachedVarOperation.__getattr__`
+   at 2105 (0.9.8: 1463 / 1991 / 2090 — same shape).
+
+Severity **medium** agreed: no functional breakage by itself, but it converted this
+release's headline enterprise breakage (finding 1) into an undebuggable one-liner, and
+(per point 4) can silently corrupt VarData instead of erroring. Fix direction (catch
+AttributeError in `cached_property.__get__` / the cached wrapper and re-raise chained as
+a non-AttributeError) is sound and safe per point 5.
+
+Rerun:
+```bash
+cd verification/masking
+../..//venv_a1-or-your-own/bin/python probe_masking_pure.py   # any venv with reflex-base
+CI=1 <venv_a1>/bin/python probe_masking_rxe.py                # needs rxe 0.9.4 + 0.9.9a1
+```
+
+## VERIFICATION of FINDING 3 (shipped-demo bundle path) — independent, 2026-08-28, second verifier
+
+Verdict: **CONFIRMED, with one mechanism correction** — the shipped rxe ag_grid demo
+is genuinely broken against reflex 0.9.8 (rxe-side incompatibility, NOT a 0.9.9a1
+regression). Reproduced from scratch: fresh PyPI venv (`reflex==0.9.8`,
+`reflex-base==0.9.8`, `reflex-enterprise==0.9.4`, Python 3.11), pristine copy of
+`/home/user/reflex-enterprise/demos/ag_grid`, ports 3808/8808.
+Artifacts: `verification_demo_bundle/` (phase logs, driver, screenshots).
+
+Phases (each = one edit of `ag_grid/formatters.py` + full `CI=1 reflex run`):
+
+- **A. Unmodified shipped demo** (`bundle_library("$/utils/components")` only):
+  compile FAILS, exit 1, `ValueError: Library $/app_components/ag_grid/formatters
+  is not bundled.` — exactly as claimed (`phaseA_shipped_098.log`). Confirmed the
+  path is stale at the source level: on 0.9.8, `row_counter(...)`'s memo component
+  reports `library == "$/app_components/ag_grid/formatters"` (mirrored memo layout,
+  reflex #6457; per git tags that change shipped in reflex v0.9.6 already, so
+  "stale since 0.9.6", not just 0.9.8 — the claim's ">=0.9.8" boundary is
+  conservative but not wrong for what was tested).
+- **B. Both paths bundled at IMPORT TIME ONLY — claim's intermediate state as
+  literally written: REFUTED.** Compile still fails with the same ValueError
+  (`phaseB_bothpaths_098.log`). Cause: `compile_app` calls
+  `reset_bundled_libraries()` (confirmed at `reflex/compiler/compiler.py:1202` in
+  the installed 0.9.8; it mutates the list in place, so the star-import alias in
+  `reflex.components.dynamic` is reset too) after app import and before page
+  compile, wiping ALL import-time `bundle_library()` calls. This is STRONGER than
+  the claim's hedge: rxe's own error-message advice (module-level import-time
+  `bundle_library`) simply does not work for page-compile validation on 0.9.8.
+- **B'. Both paths bundled at import AND page-eval time**: compile PASSES,
+  `.web/app/root.jsx` gets `import * as utils_components from "$/utils/components"`,
+  and EVERY route returns HTTP 500 with vite `Internal server error: Cannot find
+  module '$/utils/components' imported from .../root.jsx`
+  (`phaseBprime_bothpaths_pageeval_098.log`; curl-verified on /, /formatters,
+  /editable). So the claimed compile-pass/all-500 state exists, but only when the
+  stale bundle survives to page-eval time.
+- **C. Working fix** (drop stale path, bundle `$/app_components/ag_grid/formatters`
+  at import + page-eval, identical to `demo_098/ag_grid/formatters.py`): compile
+  passes, all 17 routes curl 200, and Chromium/Playwright on /formatters shows the
+  Inline grid fully working — percent/flag/currency/scaled formatters render, memo
+  row-counter button clicks to "1 (00:00)", zero non-license console errors
+  (`shotsC_inline.png`, `drive_phaseC.py`).
+- **c. Backend bundling desync: CONFIRMED and user-visible.** In the phase C run,
+  first page load triggers `[Reflex Backend Exception]` — `hydrate`
+  (reflex/state.py:2311) -> socketio delta encode -> rxe `serialize_lambda`
+  (reflex_enterprise/vars.py:265) -> `ValueError: Library @radix-ui/themes is not
+  bundled` (`phaseC_fixed_098.log` lines 243-354). The backend worker never runs
+  `compile_app`, so the radix plugin's `bundle_library("@radix-ui/themes")`
+  (compiler.py:1206-1208) never executes there. Consequences observed in the
+  browser: the State tab's grid renders 0 cells (defs never reach the client) AND
+  an error toast "ValueError: Library @radix-ui/themes is not bundled..." is shown
+  to the user on the /formatters page (visible in `shotsC_inline.png`).
+
+Attribution for a fix-agent: **reflex-enterprise 0.9.4 incompatibility with
+reflex >= 0.9.8 (actually >= 0.9.6), not a reflex 0.9.9a1 defect** — three rxe-side
+issues: (1) demo bundles the pre-mirroring memo path `$/utils/components`;
+(2) rxe's `LiteralLambdaVar` error message recommends import-time `bundle_library`,
+which `reset_bundled_libraries()` in `compile_app` makes ineffective for page
+compile; (3) rxe validates bundling at runtime in the backend worker, whose
+process state never includes compile-time plugin bundling, so state-var lambdas
+fail to serialize (desync). Reflex-side follow-ups worth considering: the
+compile-time reset semantics of user `bundle_library()` calls (2) and the
+worker-side bundling state (3) are reflex-base lifecycle sharp edges that rxe (or
+any downstream) can't robustly work around; neither is new in 0.9.9a1.
+
+Rerun: `verification_demo_bundle/` logs name each phase; the exact formatters.py
+edits per phase are described above (phase C's final state == `demo_098`'s file).
+All verifier server/browser processes were killed after the runs.

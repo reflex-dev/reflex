@@ -1,0 +1,22 @@
+reflex 0.9.9a1 reflex-enterprise 0.9.4 python 3.11.15
+
+phase 1a: organic access on the column_defs LIST var (the ag_grid shape)
+  prop var constructed lazily as LiteralArrayVar (no error yet)
+  [ok] raises VarAttributeError -- VarAttributeError
+  [ok] misleading message -- 'Attribute _cached_get_all_var_data not found.'
+  [ok] __cause__ is None -- None
+  [ok] __context__ is None -- None
+  [ok] 'bundled_libraries' absent from traceback
+  [ok] 'reflex_enterprise' absent from traceback
+
+phase 1b: same on a bare DICT var -- masking degrades to a SILENT bogus value
+  prop var constructed lazily as LiteralObjectVar (no error yet)
+  [ok] returns a Var (ObjectItemOperation) instead of VarData -- silent corruption -- got ObjectItemOperation
+
+phase 2: instrument cached_property.__get__ to reveal the swallowed error
+  [ok] still surfaces as VarAttributeError -- VarAttributeError
+  [ok] instrumentation captured swallowed AttributeError(s)
+    swallowed during '_cached_get_all_var_data': AttributeError: module 'reflex.components.dynamic' has no attribute 'bundled_libraries'
+  [ok] swallowed error is the real root cause (bundled_libraries)
+
+ALL CHECKS PASSED — organic masking + hidden root cause confirmed

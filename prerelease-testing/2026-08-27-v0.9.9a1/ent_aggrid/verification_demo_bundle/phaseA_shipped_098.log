@@ -1,0 +1,280 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise
+/config.py:22)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise
+/config.py'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'disable_plugins', 'async_db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_ent_aggrid_2/venv098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise
+/config.py'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'disable_plugins', 'async_db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.8 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_ent_aggrid_2/venv098/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.12.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing ag_grid ─────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.036 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+[15:57:59] Initializing the web directory.                        console.py:232
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/.templ
+ates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_ent_aggrid_2/demo/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 148825167110246327645088200821061787460.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized ag_grid. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3808
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8808
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.028 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+Debug: Checking if Frontend port: 3808 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3808 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3808 is not in use.
+Debug: Checking if Backend port: 8808 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8808 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8808 is not in use.
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:208)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+Info: Single port proxy mode enabled
+Debug: Registered lifespan task: proxy_middleware
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise
+/components/ag_grid/aggrid.py:1736)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_components
+_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.50s
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 361, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 273, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex/app.py", line 1652, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1222, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 840, in compile
+    page_ctx.root_component = self.hooks.compile_component(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 327, in compile_component
+    return self._compile_component_with_replacements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 556, in _compile_component_with_replacements
+    return visit(
+           ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 520, in visit
+    for prop_component in compiled_component._get_components_in_props():
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/components/component.py", line 1274, in _get_components_in_props
+    return self._get_component_prop_property
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/functools.py", line 1001, in __get__
+    val = self.func(instance)
+          ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/components/component.py", line 1260, in _get_component_prop_property
+    return [
+           ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/components/component.py", line 1265, in <listcomp>
+    for component in _components_from(value)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/components/component.py", line 602, in _components_from
+    var_data = component_or_var._get_all_var_data()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2121, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2068, in __get__
+    GLOBAL_CACHE[unique_id] = self._func(instance)
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 655, in _cached_get_all_var_data
+    *[
+     ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 656, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1777, in _get_all_var_data_without_creating_var_dispatch
+    return LiteralObjectVar._get_all_var_data_without_creating_var(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/object.py", line 484, in _get_all_var_data_without_creating_var
+    LiteralArrayVar._get_all_var_data_without_creating_var(value.values()),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 642, in _get_all_var_data_without_creating_var
+    return VarData.merge(*[
+                          ^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 643, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1757, in _get_all_var_data_without_creating_var_dispatch
+    return literal_subclass._get_all_var_data_without_creating_var(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1731, in _get_all_var_data_without_creating_var
+    return cls.create(value)._get_all_var_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 225, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/verify_ent_aggrid_2/venv098/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 147, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library $/app_components/ag_grid/formatters is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('$/app_components/ag_grid/formatters') to enable it it.

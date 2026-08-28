@@ -1,0 +1,5 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+In prod mode, frontend and backend must run on the same port.

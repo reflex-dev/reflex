@@ -289,3 +289,72 @@ Actionable fix lives in reflex-enterprise (migrate console.* -> logging, or a
 coordinated 0.9.9-compatible release); nothing to change in reflex-base unless
 the team wants deprecation shims to stay silent for first-party callers.
 No servers were left running by this verification.
+
+## VERIFICATION — prod-mode subscription gate (anomaly 5; adversarial re-check #2, 2026-08-28)
+
+Independently re-verified by a separate agent in fresh PyPI-only venvs
+(`$SB/apps/verify_ent_map_dnd_2/{v099,v098}`, Python 3.11, `reflex==0.9.9a1` /
+`reflex==0.9.8` + `reflex-enterprise==0.9.4`, provenance confirmed via
+`importlib.metadata` + `__file__`), running the unmodified `dnd` demo copied
+from this artifacts dir. **VERDICT: facts CONFIRMED, but NOT a defect — no
+regression, nothing for a fix-agent to act on.** It is intentional
+reflex-enterprise licensing behavior, identical on 0.9.8, and the coverage gap
+is narrower than claimed (see point 4). Logs: `logs/verifier2_*.log`.
+
+1. **Gate reproduced on both versions** (`CI=1 ... reflex run --env prod
+   --frontend-port <P> --backend-port <P>`): both exit before compiling with
+   "`reflex run --env prod` requires a paid Reflex subscription (one of pro,
+   team, enterprise)." — 0.9.9a1 port 8848 (`verifier2_A_...`), 0.9.8 port 8849
+   (`verifier2_C_...`). Same `console.error` DeprecationWarning at
+   `reflex_enterprise/utils.py:119` on 0.9.9a1 only. NOT a regression.
+2. **Mechanism verified in the wheel, with one naming correction:** the gate is
+   `check_paid_tier_for_command` (`reflex_enterprise/utils.py:82`), not
+   "check_prod_mode_in_tier" as the original evidence said. It is called from
+   `AppEnterprise.__post_init__` (`app.py:45`) whenever compile context is
+   EXPORT, or RUN + prod mode; `get_user_tier()` returns "anonymous" without a
+   token; the only skip is `is_in_app_harness()`. The `CI` /
+   `REFLEX_BACKEND_ONLY` bypass exists only in `_check_login` (`app.py:113-114`)
+   — confirmed: CI does not bypass the paid-tier gate (and `reflex export` is
+   gated by the same function, so exporting is no workaround either).
+3. **Side observation "0.9.9a1 newly requires frontend-port == backend-port in
+   prod" is REFUTED — it is pre-existing.** The identical check (env in
+   PROD/PREVIEW and both ports given and different -> error + SystemExit(1))
+   exists in the 0.9.8 wheel (`reflex/reflex.py:335`) and the 0.9.9a1 wheel
+   (`reflex/reflex.py:358`), byte-identical logic. Empirically: 0.9.8 with
+   `--frontend-port 3849 --backend-port 8849 --env prod` exits with the same
+   "In prod mode, frontend and backend must run on the same port."
+   (`verifier2_D_098_prod_diffports.log`), exactly like 0.9.9a1
+   (`verifier2_B_...`). The original tester only tried distinct ports on
+   0.9.9a1 and inferred novelty.
+4. **"Cannot be tested in prod mode without a paid subscription" is
+   overstated.** reflex-enterprise deliberately exempts reflex's app harness:
+   `APP_HARNESS_FLAG=1` in the environment (what `reflex.testing.AppHarness` /
+   `AppHarnessProd` set) makes `is_in_app_harness()` true and the gate returns
+   early. Verified: `CI=1 APP_HARNESS_FLAG=1 ... reflex run --env prod
+   --frontend-port 8850 --backend-port 8850` proceeds past the gate — page
+   compile completes (Compiling 100% 18/17) and frontend package install starts
+   (`verifier2_E3_099_prod_harnessflag.log`). So prod
+   hydration/memoization of enterprise components IS testable without a
+   subscription via the sanctioned harness path (`AppHarnessProd`), which is
+   precisely what reflex's own prod integration tests use. Side effect of the
+   flag: `TEST_MODE` is set for the frontend build (`reflex/utils/build.py:25`).
+5. **Why no full prod run is archived here:** all 3 attempts (with/without
+   capped `BUN_CONFIG_MAX_HTTP_REQUESTS`) died ~7 min in during `bun add` of
+   dev dependencies with repeated `error: ConnectionClosed downloading package
+   manifest ...` against registry.npmjs.org, while `curl` to the same manifest
+   URLs returned 200 in <0.2s — sandbox-proxy flakiness for bun's connection
+   pattern at test time (reflex writes `fetch-retries=0` into `.web/.npmrc`,
+   hardcoded in `reflex_base/constants/installer.py:87`, so one dropped
+   connection is fatal). Environmental, unrelated to the gate; earlier dev-mode
+   installs of the same demo succeeded in this sandbox.
+
+Conclusion: anomaly 5 stands as documented context (SKIPPED coverage, licensing
+by design, identical on both versions) with two corrections (function name;
+same-port requirement is not new) and one workaround (AppHarnessProd /
+`APP_HARNESS_FLAG` is the supported unlicensed prod-testing path — a follow-up
+agent wanting prod coverage of enterprise components should drive the demos via
+`AppHarnessProd` rather than raw `reflex run --env prod`, and needs working npm
+registry access). No reflex 0.9.9a1 defect, no reflex-enterprise
+incompatibility. Verifier working dir: `$SB/apps/verify_ent_map_dnd_2/`
+(`v099/`, `v098/`, `dnd/`, `logs/`). All spawned processes killed (verified via
+`ps`; ports 8848-8850 free).

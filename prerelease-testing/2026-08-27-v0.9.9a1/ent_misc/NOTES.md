@@ -213,3 +213,136 @@ SB=/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchp
 ```
 
 Servers were run one at a time; all PIDs killed and ports verified free afterwards.
+
+## VERIFICATION (independent, 2026-08-28, verify_ent_misc_0)
+
+Claim verified: **CONFIRMED** — genuine reflex 0.9.9a1 regression (undocumented breaking
+removal, no shim), manifesting as a reflex-enterprise *demo/tests* incompatibility.
+
+Fresh PyPI-only venvs (`uv venv --python 3.11`; cwd outside the checkout, so no source
+shadowing) in `$SB/apps/verify_ent_misc_0/`: `v991` = reflex 0.9.9a1 + reflex-enterprise
+0.9.4, `v098` = reflex 0.9.8 + reflex-enterprise 0.9.4.
+
+1. Minimal repro reproduced exactly: `v991/bin/python -c "from reflex.page import
+   DECORATED_PAGES"` → `ImportError: cannot import name 'DECORATED_PAGES' from
+   'PageNamespace' (unknown location)`. Same on 0.9.8 → OK, `collections.defaultdict`.
+   Not an env quirk; not pre-existing.
+2. End-to-end reproduced with the PRISTINE demo (verified byte-identical to
+   `/home/user/reflex-enterprise/demos/flow/flow/flow.py`): `import flow.flow` on 0.9.9a1
+   fails at line 2 with that ImportError; `CI=true v991/bin/reflex run --backend-only
+   --backend-port 8880` → granian worker-1 dies on the same ImportError, "Unexpected exit
+   from worker-1", app never serves (`verify_ent_misc_0/run_991.log`). On 0.9.8 the same
+   pristine demo imports clean and builds its 6-page index from DECORATED_PAGES.
+3. The documented patch in `flow_099/flow/flow.py` verified on 0.9.9a1: imports OK and
+   `RegistrationContext.ensure_context().decorated_pages` yields the same 6
+   `(render_fn, kwargs)` entries/routes. (Full 11/11 browser suite not re-run here; the
+   registration_context verifier already confirmed the micro-level claims independently.)
+4. "Misuse" refuted: no underscore prefix, and 0.9.8's `PageNamespace` deliberately carried
+   `DECORATED_PAGES = DECORATED_PAGES` to keep the name importable through the
+   `sys.modules` replacement — an intentional export. Reflex's own first-party downstream
+   uses it (enterprise flow demo + `reflex-enterprise/tests/units/auth/{conftest,test_page}.py`).
+   The installed `reflex_enterprise` 0.9.4 *library* has zero references, so the enterprise
+   runtime itself is unaffected — the breakage is demo/test-level (unlike FINDING-001).
+5. Removal traced to PR #6382 (`git show 7888170ad -- reflex/page.py` deletes all three
+   DECORATED_PAGES lines). Release branch `origin/r/pre-2026.08.27-33148999938`:
+   `reflex/page.py` has 0 occurrences, and the released `packages/reflex-base/CHANGELOG.md`
+   v0.9.9a1 section never mentions it (Breaking lists only get_config/bundled_libraries,
+   pydantic, React Router 8; the RegistrationContext change is filed under Features).
+   Overlaps FINDING-009 (registration_context cluster) — same root cause, this adds the
+   first-party-demo hard-crash evidence.
+6. The existing shim branch `origin/claude/reflex-enterprise-shim-mvevpt` (commit 5bda46ce8)
+   restores `dynamic.bundled_libraries` only — zero DECORATED_PAGES mentions — so this
+   break is NOT yet fixed there. Suggested fix: a deprecated `DECORATED_PAGES` shim on
+   `PageNamespace` (e.g. property/`__getattr__` view over the active context's
+   `decorated_pages`) + a breaking-change changelog entry.
+
+Verifier processes: `reflex run` reaped by `timeout` (exit 124 after granian shutdown);
+ports 8880/3880 verified free, no stray processes.
+
+## VERIFICATION (adversarial, 2026-08-28) — MCP plugin startup IncompleteFieldDefinitionWarning
+
+Verified independently in `$SB/apps/verify_ent_misc_2/` with a FRESH venv (`$SB/envs/vem2`,
+Python 3.11, `uv pip install --prerelease=if-necessary-or-explicit 'reflex==0.9.9a1'
+'reflex-enterprise[mcp]==0.9.4'` — stable deps: pydantic 2.13.4, pydantic-settings 2.15.0,
+mcp 1.29.0; note the original venv had beta pydantic 2.14.0b1 from `--prerelease=allow`,
+which turned out NOT to matter).
+
+Repro reproduced: `cd mcp_app && REFLEX_TELEMETRY_ENABLED=false CI=true reflex run
+--backend-only --backend-port 8888 --loglevel debug` -> the
+`pydantic_settings/sources/utils.py:47 IncompleteFieldDefinitionWarning: Field 'lifespan'
+...` warning appears exactly ONCE at startup (`logs/verify2_mcp_app_server.log`); backend
+healthy (`/ping` 200, `/_reflex/mcp/` 401 without bearer as expected).
+
+Root cause isolated — NOT reflex, NOT reflex-enterprise:
+1. `python -c "from mcp.server.fastmcp import FastMCP; FastMCP('x')"` in a venv with ONLY
+   `mcp==1.29.0` installed (no reflex at all) emits the identical warning. The mcp SDK's
+   `Settings` model (`mcp/server/fastmcp/server.py`) annotates `lifespan:
+   Callable[[FastMCP[...]], ...] | None` as a forward reference to `FastMCP`, defined later
+   in the same module, and never calls `model_rebuild()`.
+2. Same probe with `mcp==1.29.0` + `pydantic-settings==2.14.0`: NO warning. The warning is
+   new behavior introduced by pydantic-settings 2.15.0 (released 2026-08-07;
+   `IncompleteFieldDefinitionWarning` check in `sources/utils.py`).
+3. Nothing in the reflex stack pins pydantic-settings (mcp requires `>=2.5.2`,
+   reflex/reflex-enterprise don't constrain it), so ANY fresh install today — reflex 0.9.8
+   or 0.9.9a1 — resolves pydantic-settings 2.15.0 and shows the same warning. It is
+   environment/date-driven, not reflex-version-driven; "regression vs 0.9.8: false" is
+   correct.
+
+Verdict: REFUTED as a reflex 0.9.9a1 defect or reflex-enterprise incompatibility. Upstream
+mcp python-sdk cosmetic issue surfaced by pydantic-settings 2.15.0; functionality unaffected
+(original 17/17 MCP protocol checks; my run confirms healthy startup + auth gating). No
+reflex/enterprise fix warranted (at most reflex-enterprise could filter the warning or
+`model_rebuild()` mcp's Settings, but the proper fix belongs in the mcp SDK).
+
+Verifier processes: backend PIDs killed and verified gone; port 8888 free.
+
+## VERIFICATION (independent, 2026-08-28, verify_ent_misc_1) — cookies/sync 404 claim
+
+Claim verified: **CONFIRMED** as a genuine **reflex-enterprise 0.9.4 defect** (library-level,
+pre-existing). **NOT a reflex 0.9.9a1 defect and NOT a regression** — reproduced byte-for-byte
+identically on reflex 0.9.8. The claimed mechanism is correct and was proven experimentally.
+
+Setup: fresh PyPI-only venvs in `$SB/apps/verify_ent_misc_1/` (`oidc_v991` = reflex 0.9.9a1,
+`oidc_v098` = reflex 0.9.8, both + reflex-enterprise 0.9.4 + aiohttp; installed wheel's
+`auth/cookie.py` verified identical to the checkout). Pristine demo copies from
+`/home/user/reflex-enterprise/demos/oidc`, mock IdP on :8885, app ports 3884/8884 (0.9.9a1)
+and 3886/8887 (0.9.8). Driver: `verify_cookie_sync/drive_cookie_sync.py` (results in
+`verify_cookie_sync/shots_v99{1}/shots_v098/results.json`).
+
+1. **404 reproduced on both versions**, browser AND curl. Fresh dev server, Chromium click on
+   "Cookie Sync" → `POST /_reflex/cookies/sync` → 404 (0.9.9a1 and 0.9.8). Direct
+   `curl -X POST` → 404 both with and without an `X-Reflex-Client-Token` header — decisive,
+   because when the route exists a token-less POST returns **400 "No client token in request"**
+   (`sync_cookies` handler), never 404. `/ping` → 200 (the 404 comes from the live reflex
+   backend, not a proxy/frontend artifact).
+2. **Mechanism proven, not just inferred.** The only registration point of the route in all of
+   reflex_enterprise 0.9.4 is `HTTPCookie.ensure_handlers_registered()` (cookie.py:341), called
+   from `sync()`. The demo invokes `sync()` during page build, i.e. in the reflex CLI's
+   compile process. The dev backend worker starts with a `.web/nocompile` marker
+   (reflex/utils/exec.py `run_backend` → `App._should_compile()` False), so the worker never
+   evaluates pages and never runs `sync()` → route absent in the serving process.
+   Experiment: `touch oidc/oidc.py` to force a granian hot reload — the reloaded worker finds
+   no `.nocompile`, compiles pages itself, and the SAME endpoint immediately answers
+   **400 "No client token in request"** (route now present). Identical on 0.9.8. So the
+   insertion "not landing in the serving worker" is exactly right; amusing corollary: in dev
+   the endpoint starts working after the first hot reload.
+3. **"Use rxe.AuthPlugin instead" is NOT a refutation**: repo-wide grep of the installed wheel
+   and checkout shows `/_reflex/cookies/sync` referenced only in `auth/cookie.py`; AuthPlugin
+   never registers it at backend startup either. The deprecated-`register_auth_endpoints()`
+   demo shape is incidental — that function only adds frontend callback/popup *pages* (which
+   work; verified callback runs the token exchange). Not app misuse: `HTTPCookie.sync()` is a
+   public API and its own `ensure_handlers_registered()` call shows the intended contract.
+4. Scope nuance: runtime paths that call `sync()` inside the worker (`notify_sync` when the
+   backend sets a cookie, `reset_auth`, token-hash reconciliation) register the route
+   just-in-time, so *server-initiated* cookie sync self-heals. Only a client-initiated sync
+   whose EventSpec was baked at compile time (the demo's button, or any app using
+   `HTTPCookie.sync()` in a component) 404s until one of those backend paths has run in the
+   current worker. The bogus-code callback failure path does NOT register it (verified: still
+   404 after the failed token exchange on both versions).
+5. Verdict for the 0.9.9a1 release: nothing to act on — pre-existing enterprise bug, correctly
+   filed for the reflex-enterprise team. Suggested enterprise fix: register the route at app
+   startup in the serving process (e.g. backend plugin hook / `AppEnterprise` init) instead of
+   as a compile-time side effect of building an EventSpec.
+
+Verifier processes: both dev servers, mock IdP killed; ports 3884/8884/3886/8887/8885 verified
+free.

@@ -1,0 +1,73 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+─────────────────────────────── Initializing dnd ───────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized dnd. Install dependencies from `requirements.txt` with `uv 
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/basic.py:23)
+DeprecationWarning: `@rx.memo` on `card_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (dnd/foreach.py:23)
+DeprecationWarning: `@rx.memo` on `target_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `pos`. Until
+removal, a missing return defaults to `rx.Component` and missing or bare-type 
+parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/foreach.py:35)
+DeprecationWarning: `@rx.memo` on `item_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `item`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:270)
+DeprecationWarning: `@rx.memo` on `item_card_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `item`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:280)
+DeprecationWarning: `@rx.memo` on `item_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `column_id`, `replace_position`, `child_before`, `child_after`. 
+Until removal, a missing return defaults to `rx.Component` and missing or 
+bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed
+in 1.0. (dnd/kanban.py:300)
+DeprecationWarning: `@rx.memo` on `column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `replace_position`, `child_before`, `child_after`. Until removal, a
+missing return defaults to `rx.Component` and missing or bare-type parameters 
+are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/kanban.py:330)
+DeprecationWarning: `@rx.memo` on `kanban_column` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `col`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:363)
+DeprecationWarning: `@rx.memo` on `kanban_column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `col`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:408)
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_map_dnd_2/v099/lib/python3.11/site-packages/reflex_enterprise/u
+tils.py:119)
+`reflex run --env prod` requires a paid Reflex subscription (one of pro, team, 
+enterprise). You are currently logged out. Run `reflex login` to authenticate. 
+See https://reflex.dev/pricing/ for more information.

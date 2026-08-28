@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "name": "cookie_sync_click_fresh_worker",
+      "ok": true,
+      "details": "responses=[(404, 'http://localhost:8884/_reflex/cookies/sync')]"
+    },
+    {
+      "name": "okta_bogus_callback_ran",
+      "ok": true,
+      "details": "final_url=http://localhost:3884/_reflex_oidc_okta/authorization-code/callback?code=bogus-code&state=V1htAdm9WpC7y-lidCiS1_iDGlfTN89PAIOpKLssnd4XsApGEtq8bLaZXosA"
+    },
+    {
+      "name": "cookie_sync_click_after_callback",
+      "ok": true,
+      "details": "responses=[(404, 'http://localhost:8884/_reflex/cookies/sync')]"
+    }
+  ],
+  "sync_responses": [
+    [
+      404,
+      "http://localhost:8884/_reflex/cookies/sync"
+    ],
+    [
+      404,
+      "http://localhost:8884/_reflex/cookies/sync"
+    ]
+  ],
+  "console_lines": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: Disconnect websocket on page navigation",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "page_errors": []
+}

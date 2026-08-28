@@ -1,0 +1,345 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_map_dnd_2/v099/lib/python3.11/site-packages/reflex_base/config.
+py'
+Debug: Config: Config(app_name='dnd', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'disable_plugins', 'loglevel', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_ent_map_dnd_2/v099/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8850
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8850
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.453 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Fullstack port: 8850 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8850 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8850 is not in use.
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/basic.py:23)
+DeprecationWarning: `@rx.memo` on `card_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (dnd/foreach.py:23)
+DeprecationWarning: `@rx.memo` on `target_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `pos`. Until
+removal, a missing return defaults to `rx.Component` and missing or bare-type 
+parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/foreach.py:35)
+DeprecationWarning: `@rx.memo` on `item_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `item`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:270)
+DeprecationWarning: `@rx.memo` on `item_card_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `item`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:280)
+DeprecationWarning: `@rx.memo` on `item_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `column_id`, `replace_position`, `child_before`, `child_after`. 
+Until removal, a missing return defaults to `rx.Component` and missing or 
+bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed
+in 1.0. (dnd/kanban.py:300)
+DeprecationWarning: `@rx.memo` on `column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `replace_position`, `child_before`, `child_after`. Until removal, a
+missing return defaults to `rx.Component` and missing or bare-type parameters 
+are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/kanban.py:330)
+DeprecationWarning: `@rx.memo` on `kanban_column` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `col`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:363)
+DeprecationWarning: `@rx.memo` on `kanban_column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `col`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:408)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Passing base-component prop(s) `key` to `@rx.memo` 
+`kanban_column_drop_target` without an `rx.RestProp` has been deprecated in 
+version 0.9.3. Declare an `rx.RestProp` parameter to keep passing base props 
+like `key` to the rendered component. It will be completely removed in 1.0. 
+(dnd/kanban.py:442)
+DeprecationWarning: Passing base-component prop(s) `key` to `@rx.memo` 
+`item_card_drop_target` without an `rx.RestProp` has been deprecated in version 
+0.9.3. Declare an `rx.RestProp` parameter to keep passing base props like `key` 
+to the rendered component. It will be completely removed in 1.0. 
+(dnd/kanban.py:378)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_ent_map_dnd_2/v099/lib/python3.11/site-packages/reflex_components_r
+adix/plugin.py:72)
+Debug: [timing] Compile pages: 0.24s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'autoprefixer@10.5.4', '@emotion/react@11.14.0', 'vite@8.2.0', 
+'postcss-import@16.1.1', '@react-router/fs-routes@8.3.0', 'postcss@8.5.23', 
+'@react-router/dev@8.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [282]
+Debug: warn: ConnectionClosed downloading package manifest fsevents
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest lightningcss
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/runtime
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest dedent
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest picocolors
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@emotion/babel-plugin
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/generator
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest pathe
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest nanoid
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest rolldown
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest valibot
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest es-module-lexer
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @emotion/serialize
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest prettier
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest caniuse-lite
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest semver
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@babel/preset-typescript
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest fraction.js
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest isbot
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+hoist-non-react-statics
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @emotion/utils
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest read-cache
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @emotion/cache
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest resolve
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest lodash
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/parser
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@babel/plugin-syntax-jsx
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest react-refresh
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest minimatch
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest pkg-types
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest postcss
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest picomatch
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@emotion/use-insertion-effect-with-fallbacks
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/core
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+babel-dead-code-elimination
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/traverse
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest tinyglobby
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@remix-run/node-fetch-server
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest source-map-js
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest p-map
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest @babel/types
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest browserslist
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest 
+@emotion/weak-memoize
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest postcss-value-parser
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest chokidar
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest react-router
+Debug: 
+Debug: error: ConnectionClosed downloading package manifest react
+Installing frontend development dependencies failed with exit code 1
+bun add v1.3.11 (af24e281)
+Resolving dependencies
+Resolved, downloaded and extracted [282]
+warn: ConnectionClosed downloading package manifest fsevents
+
+error: ConnectionClosed downloading package manifest lightningcss
+
+error: ConnectionClosed downloading package manifest @babel/runtime
+
+error: ConnectionClosed downloading package manifest dedent
+
+error: ConnectionClosed downloading package manifest picocolors
+
+error: ConnectionClosed downloading package manifest @emotion/babel-plugin
+
+error: ConnectionClosed downloading package manifest @babel/generator
+
+error: ConnectionClosed downloading package manifest pathe
+
+error: ConnectionClosed downloading package manifest nanoid
+
+error: ConnectionClosed downloading package manifest rolldown
+
+error: ConnectionClosed downloading package manifest valibot
+
+error: ConnectionClosed downloading package manifest es-module-lexer
+
+error: ConnectionClosed downloading package manifest @emotion/serialize
+
+error: ConnectionClosed downloading package manifest prettier
+
+error: ConnectionClosed downloading package manifest caniuse-lite
+
+error: ConnectionClosed downloading package manifest semver
+
+error: ConnectionClosed downloading package manifest @babel/preset-typescript
+
+error: ConnectionClosed downloading package manifest fraction.js
+
+error: ConnectionClosed downloading package manifest isbot
+
+error: ConnectionClosed downloading package manifest hoist-non-react-statics
+
+error: ConnectionClosed downloading package manifest @emotion/utils
+
+error: ConnectionClosed downloading package manifest read-cache
+
+error: ConnectionClosed downloading package manifest @emotion/cache
+
+error: ConnectionClosed downloading package manifest resolve
+
+error: ConnectionClosed downloading package manifest lodash
+
+error: ConnectionClosed downloading package manifest @babel/parser
+
+error: ConnectionClosed downloading package manifest @babel/plugin-syntax-jsx
+
+error: ConnectionClosed downloading package manifest react-refresh
+
+error: ConnectionClosed downloading package manifest minimatch
+
+error: ConnectionClosed downloading package manifest pkg-types
+
+error: ConnectionClosed downloading package manifest postcss
+
+error: ConnectionClosed downloading package manifest picomatch
+
+error: ConnectionClosed downloading package manifest 
+@emotion/use-insertion-effect-with-fallbacks
+
+error: ConnectionClosed downloading package manifest @babel/core
+
+error: ConnectionClosed downloading package manifest babel-dead-code-elimination
+
+error: ConnectionClosed downloading package manifest @babel/traverse
+
+error: ConnectionClosed downloading package manifest tinyglobby
+
+error: ConnectionClosed downloading package manifest 
+@remix-run/node-fetch-server
+
+error: ConnectionClosed downloading package manifest source-map-js
+
+error: ConnectionClosed downloading package manifest p-map
+
+error: ConnectionClosed downloading package manifest @babel/types
+
+error: ConnectionClosed downloading package manifest browserslist
+
+error: ConnectionClosed downloading package manifest @emotion/weak-memoize
+
+error: ConnectionClosed downloading package manifest postcss-value-parser
+
+error: ConnectionClosed downloading package manifest chokidar
+
+error: ConnectionClosed downloading package manifest react-router
+
+error: ConnectionClosed downloading package manifest react
+
+
+
+Run with --loglevel debug  for the full log.
+Debug: [timing] Install Frontend Packages: 402.37s
