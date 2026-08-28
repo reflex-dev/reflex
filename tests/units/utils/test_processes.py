@@ -183,6 +183,8 @@ def test_run_concurrently_context_unblocks_main_thread_on_task_failure():
         # Simulate the backend blocking the main thread (e.g. granian serve()).
         block.wait(timeout=10)
 
+    # The failed task must interrupt the main thread well before the body's
+    # own 10s wait expires; 5 seconds leaves headroom on slow CI runners.
     assert time.monotonic() - start < 5, (
         "task failure did not interrupt the blocked main thread"
     )
@@ -203,3 +205,26 @@ def test_run_concurrently_propagates_task_exception():
 
     with pytest.raises(RuntimeError, match="boom"):
         run_concurrently(_fail)
+
+
+def test_run_concurrently_context_no_interrupt_after_body_exception():
+    """A task failing after the body raised must not interrupt the caller.
+
+    The executor is shut down without waiting, so a task can fail after the
+    context has unwound; the caller's own exception must propagate untouched
+    instead of a stray KeyboardInterrupt landing in unrelated code.
+    """
+
+    def _fail_late():
+        time.sleep(0.3)
+        raise SystemExit(1)
+
+    with (
+        pytest.raises(ValueError, match="body failed"),
+        run_concurrently_context(_fail_late),
+    ):
+        msg = "body failed"
+        raise ValueError(msg)
+    # Give the late-failing task time to finish; a stale interrupt would
+    # surface as KeyboardInterrupt here and fail this test.
+    time.sleep(0.6)

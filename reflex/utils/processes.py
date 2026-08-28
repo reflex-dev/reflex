@@ -354,11 +354,14 @@ def run_concurrently_context(
             # Don't enter (and block in) the body if a task has already failed.
             raise_first_failure(tasks)
 
-            # Yield control back to the main thread while tasks are running.
-            yield tasks
-
-            with interrupt_lock:
-                in_body = False
+            try:
+                # Yield control back to the main thread while tasks are running.
+                yield tasks
+            finally:
+                # However the body exits, stop interrupting the main thread:
+                # tasks outlive this context (shutdown below does not wait).
+                with interrupt_lock:
+                    in_body = False
 
             # Get the results in the order completed to check any exceptions.
             for task in futures.as_completed(tasks):
@@ -367,8 +370,6 @@ def run_concurrently_context(
         except KeyboardInterrupt:
             # Raised by wake_main_thread for a failed task, or a real Ctrl+C;
             # surface the task's own error when there is one.
-            with interrupt_lock:
-                in_body = False
             raise_first_failure(tasks)
             raise
     finally:
