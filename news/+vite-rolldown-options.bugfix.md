@@ -1,0 +1,1 @@
+The generated `vite.config.js` no longer passes options rejected or deprecated by rolldown-vite 8.x: the no-op `rollupOptions.jsx` key is dropped and `output.advancedChunks` migrated to `output.codeSplitting` (same shape), removing the "Invalid input options" and "advancedChunks option is deprecated" warnings from every prod build/export.
