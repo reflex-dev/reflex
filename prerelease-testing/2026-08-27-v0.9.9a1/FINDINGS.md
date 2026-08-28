@@ -459,3 +459,30 @@ Tested reflex-enterprise 0.9.4 (PyPI) demos mantine + flow, the MCP plugin, and 
   file; will become a hard incompatibility in a future Vite major per warning text. Present in
   dev runs on 0.9.9a1 (vite 8.2.0).
 
+
+## 0.9.9a2 pyi packaging audit (wheels + sdists, all 14 packages)
+
+Audited the published artifacts of reflex 0.9.9a2, reflex-base 0.9.9a2,
+reflex-components-core 0.9.9a2, and the current versions of every other
+reflex-components-* package plus gridjs (28 artifacts total). Result: PASS.
+
+- Every package ships its own generated `.pyi` stubs in BOTH the wheel and the
+  sdist, and the stub content is byte-identical between the two.
+- Zero foreign stubs: no artifact contains `.pyi` files belonging to another
+  package.
+- Per-package stub counts exactly match the monorepo `pyi_hashes.json` manifest
+  (122 stubs across the train: reflex 3, core 36, radix 65, recharts 6,
+  react-player 3, code 2, and 1 each for dataeditor/gridjs/lucide/markdown/
+  moment/plotly/sonner). reflex-base legitimately ships none (no entries in the
+  manifest).
+- Building from the sdist works in an isolated env: `hatch-reflex-pyi` (the
+  build hook that generates stubs) is published on PyPI, and an sdist install
+  lands the same stubs.
+- Note (not a defect): shipped stub content hashes differ from the dev-workspace
+  `pyi_hashes.json` values because the hook regenerates stubs at build time in
+  the release environment; the same divergence exists in the a1 artifacts, and
+  wheel/sdist of each release run agree with each other.
+
+Rerun: scripts inline in session history; artifacts fetched from
+`https://pypi.org/pypi/<pkg>/<ver>/json` urls, inspected with zipfile/tarfile,
+hashes vs `git show origin/main:pyi_hashes.json`.
