@@ -1,0 +1,10 @@
+########## 0.9.9a1 ##########
+reflex version: 0.9.9a1
+reflex from: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/vregctx_a1/lib/python3.11/site-packages/reflex/__init__.py
+double-App: ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+DECORATED_PAGES: ImportError: cannot import name 'DECORATED_PAGES' from 'PageNamespace' (unknown location)
+########## 0.9.8 ##########
+reflex version: 0.9.8
+reflex from: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/vregctx_098/lib/python3.11/site-packages/reflex/__init__.py
+double-App: OK (two distinct instances: True)
+DECORATED_PAGES: defaultdict

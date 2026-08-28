@@ -162,3 +162,63 @@ smaller app / 4-CPU container. Raw numbers: `out_*/perf_heavy_nav.json`.
 - `probe_charts.py` — small standalone probe used while debugging selectors.
 - `out_dev_default/`, `out_dev_ownerstacks/`, `out_prod/` — full run outputs.
 - `dev_default.log`, `dev_ownerstacks.log`, `prod_server.log` — server logs.
+
+## VERIFICATION (adversarial verifier, 2026-08-28)
+
+Claim verified: **`rx.plotly(id=...)` never reaches the DOM — CONFIRMED as a
+genuine (low-severity, longstanding) wrapper defect; NOT a 0.9.9a1 regression.**
+
+Independent repro (fresh venv `reflex==0.9.9a1` + `plotly==6.9.0` from PyPI,
+minimal blank-template app in `verification/plotid_app/`, dev mode, ports
+4000/9000, driven by `verification/probe_plotid.py`):
+
+- `rx.box(id="control-box")` → `#control-box` exists (1). Baseline id handling OK,
+  so the repro is not API misuse.
+- `rx.plotly(data=State.figure, id="the-plot")` → chart renders, `#the-plot`
+  count 0.
+- `rx.plotly(data=STATIC_FIGURE, id="static-plot")` → chart renders,
+  `#static-plot` count 0 (rules out state-var interplay).
+- Clean console (no errors/warnings), no failed requests. Screenshot:
+  `verification/probe_999.png`.
+
+Mechanism confirmed at both ends:
+
+- Compiled JSX (`.web/app_components/.../plotid_app.jsx`) DOES emit the prop:
+  `jsx(Plot,{id:"the-plot",ref:ref_the_plot,useResizeHandler:true,...})` —
+  Reflex passes `id` through as a React prop (it is not dropped at compile time).
+- react-plotly.js@4.0.0 (`dist/chunk-AIWLJUCK.mjs`) destructures
+  `{ ..., divId, ...eventProps }` and renders
+  `React.createElement("div", { id: divId, style, ref: setRef, className })`.
+  The `id` prop falls into `...eventProps` and is silently discarded.
+
+Refutation attempts:
+
+- **0.9.8 baseline** (separate venv `reflex==0.9.8` from PyPI, identical app in
+  `verification/plotid_app_098/`, ports 4001/9001): identical result —
+  `#control-box` 1, `#the-plot` 0, `#static-plot` 0, charts render
+  (`verification/probe_098.png`). 0.9.8 pins the same `react-plotly.js@4.0.0`.
+  So this is pre-existing behavior, not a 0.9.9 regression — matching the
+  claimant's own characterization.
+- **Workaround check**: `rx.plotly(data=..., custom_attrs={"divId": "workaround-plot"})`
+  → `#workaround-plot` exists with class `js-plotly-plot`
+  (`verification/probe_999_workaround.png`). Confirms the drop happens inside
+  react-plotly.js and that a `divId` mapping in the wrapper (`Plotly._render`)
+  would fix it.
+
+Verdict: reproduced exactly as claimed; severity "low" is right. `id` is a
+universal documented Component prop in Reflex, silently violated only by this
+wrapper (and note Reflex still generates `ref_the_plot` keyed to that id, so
+id-based helpers like `rx.scroll_to("the-plot")` would also not find the
+element). Suggested fix for a fix-agent: map `id` → `divId` in
+`packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py`
+(`_render`), or expose a `div_id` prop + docs note.
+
+Rerun:
+```
+SB=<scratchpad>
+uv venv $SB/envs/verify_plotly --python 3.11
+uv pip install --python $SB/envs/verify_plotly/bin/python --prerelease=allow 'reflex==0.9.9a1' 'plotly<7'
+cd verification/plotid_app
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify_plotly/bin/reflex run --frontend-port 4000 --backend-port 9000
+BASE_URL=http://localhost:4000 $SB/envs/driver/bin/python ../probe_plotid.py
+```

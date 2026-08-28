@@ -1,0 +1,8 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Warning: Your version (22.12.0) of Node.js is out of date. Upgrade to 22.22.0 or
+higher.
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 22.12.0
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

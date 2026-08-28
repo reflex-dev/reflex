@@ -208,3 +208,58 @@ intermittently returns `ConnectionClosed downloading package manifest ...` and
 reflex SIGTERMs the install after ~300s. Warming the bun manifest cache first
 (run the two `bun add` commands, or `bun install` in `.web/`, until they
 succeed) makes subsequent `reflex run` start in seconds. Not a reflex issue.
+
+---
+
+## VERIFICATION (adversarial re-check of the `_sanitize_upload_filename` '..' issue)
+
+Verifier reproduced the finding INDEPENDENTLY from the repro steps. Verdict: **CONFIRMED**
+— a genuine (narrow, low/medium-severity) framework defect a fix-agent should act on.
+
+**Offline (smoke venv, reflex-components-core 0.9.9a1):**
+`_sanitize_upload_filename('..')=='..'`, `('./../.')=='..'`, `('..\\')=='..'`, `('/..')=='..'`.
+Non-traversal `'...'->'...'`, `'../x.txt'->'x.txt'` (traversal segment stripped), `'a/../b'->'a/b'`.
+Code path: for all-traversal/empty names `safe_parts` is empty, so it returns
+`windows_path.name`, and `PureWindowsPath('..').name=='..'`. Docstring promises
+"A safe relative upload path" — returning `..` violates that contract.
+
+**Live (comp_app on reserved ports 3880/8880, real Playwright token, httpx raw multipart):**
+```
+raw='..'      status=500  body='Internal server error'
+raw='./../.'  status=500  body='Internal server error'
+raw='..\\'    status=500  body='Internal server error'
+raw='/..'     status=500  body='Internal server error'
+raw='...'     status=200  saved path='...'   (contained)
+raw='../x.txt'status=200  saved path='x.txt' (traversal stripped, contained)
+raw='normal.txt' status=200 path='normal.txt'
+```
+The "HTTP 500" claim is ACCURATE (I initially suspected a broken 200 stream since
+`DisconnectAwareStreamingResponse` is a Starlette `StreamingResponse`, but granian
+returns a real 500 "Internal server error" here — the handler raises on the first
+iteration before any body byte is flushed). Server log shows the unhandled
+`IsADirectoryError: [Errno 21] Is a directory: 'uploaded_files/..'` at
+`_upload.py:664` (`_ndjson_updates`) -> `event_processor.enqueue_stream_delta`.
+
+**Not misuse / not an env quirk:** the escape is reachable through the CANONICAL
+documented handler pattern too, not just this app's use of `file.path`:
+`UploadFile.name` returns `self.path.name`, and `Path('..').name=='..'`, so
+`get_upload_dir() / file.name` == `uploaded_files/..` as well.
+
+**Regression check:** NOT a regression. `_sanitize_upload_filename` is absent in
+0.9.8 (ImportError in base098 venv); 0.9.8 buffered used `Path(filename.lstrip('/'))`
+which yields the same `Path('..')`. 0.9.9a1 is strictly better (it strips `..` when a
+real segment follows). This is an incompletely-closed edge in the new #6753 hardening.
+
+**Impact:** limited — the escaped target is a directory so `write_bytes` fails (no
+arbitrary write demonstrated); any real filename segment defeats the escape. The
+concrete symptom is an unhandled 500 triggered by a client-controlled filename.
+
+**Note for fix-agent:** the suggested fix "return '' when safe_parts is empty" is
+INSUFFICIENT — `Path('')` == `Path('.')`, so `get_upload_dir() / Path('')` is the
+upload dir itself (a directory) and a naive `write_bytes` STILL raises
+`IsADirectoryError` -> 500 (verified). Also `'.'` and `''` filenames hit the same
+degenerate case. A robust fix needs a generated safe name (or an explicit 4xx
+rejection) for names that sanitize to no real segment, not an empty string.
+
+Verifier processes (reflex run on 3880/8880) killed; ports confirmed free; other
+agents' servers untouched.

@@ -1,0 +1,35 @@
+=== 0.9.9a1 (envs/smoke) ===
+reflex version: 0.9.9a1
+default bundled: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+after user bundle_library: ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'lucide-react']
+
+--- serialized with lucide-react REGISTERED (backend-worker context) ---
+bare subpath import line: import LucideApple from "lucide-react/dist/esm/icons/apple.mjs"
+cdn import line: None
+window rewrite line: None
+VERDICT subpath-not-rewritten: True
+
+after reset_bundled_libraries (compile_app behavior): ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+VERDICT user registration wiped by reset: True
+
+--- serialized with lucide-react NOT registered (post-reset context) ---
+cdn import line: import LucideApple from "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs"
+bare import line: None
+
+=== 0.9.8 (fresh venv envs/vregctx3_098) ===
+reflex version: 0.9.8
+default bundled: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+after user bundle_library: ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'lucide-react']
+
+--- serialized with lucide-react REGISTERED (backend-worker context) ---
+bare subpath import line: import LucideApple from "lucide-react/dist/esm/icons/apple.mjs"
+cdn import line: None
+window rewrite line: None
+VERDICT subpath-not-rewritten: True
+
+after reset_bundled_libraries (compile_app behavior): ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+VERDICT user registration wiped by reset: True
+
+--- serialized with lucide-react NOT registered (post-reset context) ---
+cdn import line: import LucideApple from "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs"
+bare import line: None

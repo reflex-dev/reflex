@@ -191,3 +191,57 @@ mechanism (typehint_issubclass not resolving aliases) is consistent with what
 the BUG 2 root-cause inspection showed.
 
 All verifier processes killed; ports 3840/8840 confirmed free.
+
+## VERIFICATION of BUG 1 (independent, adversarial — 2026-08-28, second verifier)
+
+BUG 1 (uncalled handler with PEP695-alias-annotated arg crashes page compile) is
+**CONFIRMED** as a genuine 0.9.9a1 framework defect (severity medium is fair;
+NOT a regression vs 0.9.8). Reproduced from the repro steps alone in FRESH
+PyPI-only venvs (`uv venv --python 3.12`; reflex==0.9.9a1 + reflex-base 0.9.9a1;
+separate venv with reflex==0.9.8 for baseline). Scripts: `verification/
+verify_bug1_099a1.py`, `verification/verify_bug1_098_baseline.py`.
+
+1. Standalone repro (own script, written from the claim, not copied):
+   `rx.input(on_change=S.choose)` with `def choose(self, value: Key)`,
+   `type Key = Literal["a","b"]` -> fatal
+   `TypeError: Could not compare types <class 'str'> and Key for argument value
+   of S.choose for on_change.` Underlying frame confirmed:
+   `reflex_base/utils/types.py:1192` `return issubclass(possible_subclass,
+   possible_superclass)` -> `issubclass() arg 2 must be a class...`, re-raised
+   at `reflex_base/event/__init__.py:1999` in
+   `_check_event_args_subclass_of_callback`. Parameterized alias
+   (`form_data: Pair[str, str]`) -> fatal `EventHandlerArgTypeMismatchError`.
+   Pre-called (`S.choose("a")`) and lambda-wrapped forms: OK, as claimed.
+2. End-to-end fatality confirmed with an independent minimal app
+   (`verification/verify_bug1_app/`, port 3844/8844): `reflex run` exits 1 at
+   "Happened while evaluating page 'index'" — full traceback in
+   `verification/bug1_reflex_run.log`. (Note: the claim said the first
+   traceback was preserved in `logs/pep695_312_server.log`; that log actually
+   contains only BUG 2 setattr tracebacks — evidence gap now closed by
+   bug1_reflex_run.log.)
+3. Refutation probes that FAILED (i.e. the bug stands):
+   - Not API misuse / not "any weird annotation": the SAME annotation spelled
+     as an old-style implicit alias (`OldKey = Literal["a","b"]`) compiles
+     fine uncalled. The PEP 695 TypeAliasType is specifically the trigger.
+   - The parameterized-alias failure is strictly alias-caused, not a latent
+     mismatch: the resolved form `form_data: dict[str, str]` on on_submit
+     compiles OK (only the benign "intentionally ignored for on_submit"
+     logger warning), while `Pair[str, str]` (identical after resolution) is
+     fatal. So resolving aliases in `typehint_issubclass` would fix both
+     shapes.
+   - Not an env quirk: fresh venvs, PyPI-only, Python 3.12.3.
+4. Baseline: reflex 0.9.8 with handler-arg-only aliases (state var kept plain
+   `str` since alias state vars crash at class def there) fails identically on
+   both uncalled shapes -> not a regression, matching the claim. But 0.9.9a1's
+   #6944 makes alias-annotated state vars compile, and any user who annotates
+   the handler with the same alias as the var (the natural pattern, see
+   `verify_bug1_app`) hits a hard compile crash.
+5. Root cause corroborated in the installed 0.9.9a1 wheel and release source:
+   `resolve_type_alias` exists in `reflex_base/utils/types.py` but its only
+   call site is `reflex_base/vars/base.py:1080` (`Var.guess_type`);
+   `typehint_issubclass` never resolves TypeAliasType (bare alias has
+   `get_origin(...) is None` -> bare `issubclass()` TypeError; `Pair[str,str]`
+   has the alias itself as origin -> compares unequal -> False).
+
+Second verifier processes: `reflex run` ran foreground and exited on the
+compile crash; ports 3844-3847/8844-8847 confirmed free afterwards.

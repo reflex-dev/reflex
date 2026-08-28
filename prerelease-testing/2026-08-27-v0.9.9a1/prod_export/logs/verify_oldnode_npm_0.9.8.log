@@ -1,0 +1,75 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/verify_pe098/lib/python3.11/site-packages/reflex_components_radix/plugin.p
+y:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Installing frontend packages failed with exit code 1
+npm verbose cli /opt/node22/bin/node /opt/node22/bin/npm
+npm info using npm@10.9.7
+npm info using node@v22.22.2
+npm silly config load:file:/opt/node22/lib/node_modules/npm/npmrc
+npm silly config 
+load:file:/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/s
+cratchpad/apps/verify_prod_export_1/vapp098/.web/.npmrc
+npm silly config load:file:/root/.npmrc
+npm silly config load:file:/opt/node22/etc/npmrc
+npm verbose title npm add react-error-boundary@6.1.2 @radix-ui/themes@3.3.0 
+@react-router/node@7.18.2 socket.io-client@4.8.3 universal-cookie@8.1.2 
+isbot@5.2.1 lucide-react@1.26.0 sonner@2.0.7 react@19.2.8 
+react-router-dom@7.18.2 react-router@7.18.2 react-helmet@6.1.0 react-dom@19.2.8
+npm verbose argv "add" "--legacy-peer-deps" "react-error-boundary@6.1.2" 
+"@radix-ui/themes@3.3.0" "@react-router/node@7.18.2" "socket.io-client@4.8.3" 
+"universal-cookie@8.1.2" "isbot@5.2.1" "lucide-react@1.26.0" "sonner@2.0.7" 
+"react@19.2.8" "react-router-dom@7.18.2" "react-router@7.18.2" 
+"react-helmet@6.1.0" "react-dom@19.2.8" "--loglevel" "silly"
+npm verbose logfile logs-max:10 dir:/root/.npm/_logs/2026-08-28T12_21_50_640Z-
+npm verbose logfile /root/.npm/_logs/2026-08-28T12_21_50_640Z-debug-0.log
+npm silly logfile start cleaning logs, removing 1 files
+npm silly logfile done cleaning log files
+npm silly packumentCache heap:8640266240 maxSize:2160066560 
+maxEntrySize:1080033280
+npm verbose stack Error: Override for postcss@^8.5.23 conflicts with direct 
+dependency
+npm verbose stack     at Node.assertRootOverrides 
+(/opt/node22/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/node.js:1356
+:29)
+npm verbose stack     at #loadActual 
+(/opt/node22/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/loa
+d-actual.js:133:24)
+npm verbose stack     at async Promise.all (index 0)
+npm verbose stack     at async Arborist.reify 
+(/opt/node22/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/rei
+fy.js:133:5)
+npm verbose stack     at async Install.exec 
+(/opt/node22/lib/node_modules/npm/lib/commands/install.js:150:5)
+npm verbose stack     at async Npm.exec 
+(/opt/node22/lib/node_modules/npm/lib/npm.js:207:9)
+npm verbose stack     at async module.exports 
+(/opt/node22/lib/node_modules/npm/lib/cli/entry.js:74:5)
+npm error code EOVERRIDE
+npm error Override for postcss@^8.5.23 conflicts with direct dependency
+npm silly unfinished npm timer reify 1787919710863
+npm silly unfinished npm timer reify:loadTrees 1787919710864
+npm silly unfinished npm timer idealTree 1787919710864
+npm silly unfinished npm timer idealTree:init 1787919710864
+npm verbose cwd 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_prod_export_1/vapp098/.web
+npm verbose os Linux 6.18.44-fc-v22
+npm verbose node v22.22.2
+npm verbose npm  v10.9.7
+npm verbose exit 1
+npm verbose code 1
+npm error A complete log of this run can be found in: 
+/root/.npm/_logs/2026-08-28T12_21_50_640Z-debug-0.log
+
+
+
+Run with --loglevel debug  for the full log.

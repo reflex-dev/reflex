@@ -1,0 +1,23 @@
+Debug:   ➜  Network: http://192.0.2.2:3932/  eth0
+Debug: 12:07:59 PM [vite] (ssr) connected.
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:3932/utils/state.js:179:24), <anonymous>:1:8)
+171: TypeError: Failed to resolve module specifier 
+174:TypeError: Failed to resolve module specifier 
+203:Debug: 12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+232: TypeError: Failed to fetch dynamically imported module: 
+249:TypeError: Failed to fetch dynamically imported module: 
+267:Debug: 12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+286:Debug: 12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to 
+306: TypeError: Failed to fetch dynamically imported module: 
+323:TypeError: Failed to fetch dynamically imported module: 
+366:12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to resolve 
+393:12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch 
+412:12:08:09 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch 

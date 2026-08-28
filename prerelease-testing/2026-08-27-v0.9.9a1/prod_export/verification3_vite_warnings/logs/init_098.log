@@ -1,0 +1,8 @@
+──────────────────────────── Initializing vwapp098 ─────────────────────────────
+Warning: Your version (0.9.8) of reflex is out of date. Upgrade to 0.9.8.post1 
+with 'pip install reflex --upgrade'
+[12:26:48] Initializing the web directory.                        console.py:232
+           Initializing the app directory.                        console.py:232
+Success: Initialized vwapp098 using the blank template. Install dependencies 
+from `requirements.txt` with `uv pip install -r requirements.txt` (or your 
+preferred installer) before running `uv run reflex run`.

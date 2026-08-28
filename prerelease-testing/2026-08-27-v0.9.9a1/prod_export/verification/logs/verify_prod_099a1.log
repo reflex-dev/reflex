@@ -1,0 +1,710 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='vapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'plugins', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.9a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8960
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8960
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.033 seconds
+Debug: Latest version of reflex: 0.9.8.post1
+Debug: Checking if Fullstack port: 8960 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8960 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8960 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.01s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: 
+Debug: Checked 262 installs across 308 packages (no changes) [8.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@tailwindcss/postcss@4.3.0', 'autoprefixer@10.5.4', 'tailwindcss@4.3.0', 
+'@react-router/fs-routes@8.3.0', 'postcss@8.5.23', '@react-router/dev@8.3.0', 
+'@tailwindcss/typography@0.5.20', 'vite@8.2.0', 'postcss-import@16.1.1', 
+'@emotion/react@11.14.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed postcss@8.5.23
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@16.1.1
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'sonner@2.0.7', '@radix-ui/themes@3.3.0', 'react-router@8.3.0', 
+'lucide-react@1.26.0', 'react@19.2.8', 'react-helmet@6.1.0', 
+'react-error-boundary@6.1.2', 'socket.io-client@4.8.3', 'react-dom@19.2.8', 
+'universal-cookie@8.1.2', 'isbot@5.2.1', '@react-router/node@8.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Saved lockfile
+Debug: 
+Debug: installed sonner@2.0.7
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router@8.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dom@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.1
+Debug: installed @react-router/node@8.3.0
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_prod_export_0/vapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/
+apps/verify_prod_export_0/vapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ✓ 413 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.52 kB │ 
+gzip:  0.67 kB
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css    694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/client/assets/reflex-env-Bo_5_dpQ.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-kiP9HKS1.js                 0.41 kB │ 
+gzip:  0.30 kB
+Debug: build/client/assets/_other_._index-CbgD3ADo.js               0.46 kB │ 
+gzip:  0.33 kB
+Debug: build/client/assets/_index-BJhvPOft.js                       0.66 kB │ 
+gzip:  0.44 kB
+Debug: build/client/assets/react-dom-CltAQbqX.js                    3.54 kB │ 
+gzip:  1.34 kB
+Debug: build/client/assets/flex-BzJldWrC.js                         4.97 kB │ 
+gzip:  1.22 kB
+Debug: build/client/assets/emotion-react.browser.esm-Cwax2nv3.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-HKp9FVqc.js             33.30 kB │ 
+gzip: 11.64 kB
+Debug: build/client/assets/components-BY9SJKTA.js                  83.46 kB │ 
+gzip: 27.74 kB
+Debug: build/client/assets/heading-9fju80mD.js                    132.71 kB │ 
+gzip: 40.89 kB
+Debug: build/client/assets/entry.client-4AZsJhei.js               182.36 kB │ 
+gzip: 57.72 kB
+Debug: build/client/assets/root-Va61vfGj.js                       307.54 kB │ 
+gzip: 86.57 kB
+Debug: 
+Debug: ✓ built in 1.40s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: [33mWarning: Invalid input options (1 issue found)
+Debug: - For the "jsx". Invalid key: Expected never but received "jsx". [0m
+Debug: 
+Debug:  WARN  advancedChunks option is deprecated, please use codeSplitting 
+instead.
+Debug: 
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 24 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-HfJALDEv.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.78 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-HfJALDEv.css  694.55 kB │ 
+gzip: 84.93 kB
+Debug: build/server/assets/reflex-env-Bo_5_dpQ.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     42.54 kB │ 
+gzip: 13.02 kB
+Debug: 
+Debug: ✓ built in 564ms
+Debug: (!) Your Vite config uses features that are unsupported by `configLoader:
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+Debug:   - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Debug: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Debug: TypeError: Cannot destructure property 'basename' of 
+'React10.useContext(...)' as it is null.
+Debug:     at LinkWithRef 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/react-router-dom/node_m
+odules/react-router/dist/development/chunk-62JRHF6Z.mjs:10518:11)
+Debug:     at renderWithHooks 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:4647:18)
+Debug:     at renderElement 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5193:18)
+Debug:     at retryNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5503:16)
+Debug:     at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5297:7)
+Debug:     at renderNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5864:14)
+Debug:     at renderChildrenArray 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5646:7)
+Debug:     at retryNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5517:9)
+Debug:     at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5297:7)
+Debug:     at renderNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5864:14)
+Debug: [Error: Unexpected Server Error]
+Debug: Error: Prerender: Request failed for /: Prerender (html): Received a 500 
+status code from `entry.server.tsx` while prerendering the `/` path.
+Debug: <!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta 
+content="width=device-width, initial-scale=1" name="viewport"/><link 
+rel="modulepreload" href="/assets/manifest-96cdabe0.js"/><link 
+rel="modulepreload" href="/assets/entry.client-4AZsJhei.js"/><link 
+rel="modulepreload" href="/assets/components-BY9SJKTA.js"/><link 
+rel="modulepreload" href="/assets/react-dom-CltAQbqX.js"/><link 
+rel="modulepreload" href="/assets/errorBoundaries-HKp9FVqc.js"/><link 
+rel="modulepreload" href="/assets/root-Va61vfGj.js"/><link rel="modulepreload" 
+href="/assets/heading-9fju80mD.js"/><link rel="modulepreload" 
+href="/assets/reflex-env-Bo_5_dpQ.js"/><link rel="modulepreload" 
+href="/assets/emotion-react.browser.esm-Cwax2nv3.js"/><link rel="modulepreload" 
+href="/assets/flex-BzJldWrC.js"/><link rel="modulepreload" 
+href="/assets/_index-BJhvPOft.js"/><script>
+Debug: // Only run in browser environment, not during SSR
+Debug: if (typeof document !== 'undefined') {
+Debug:     try {
+Debug:         const theme = localStorage.getItem("theme") || 'system';
+Debug:         const systemPreference = 
+window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+Debug:         const resolvedTheme = theme === "system" ? systemPreference : 
+theme;
+Debug: 
+Debug:         // Apply theme immediately - blocks until complete
+Debug:         // Use classList to avoid overwriting other classes
+Debug:         document.documentElement.classList.remove("light", "dark");
+Debug:         document.documentElement.classList.add(resolvedTheme);
+Debug:         document.documentElement.style.colorScheme = resolvedTheme;
+Debug: 
+Debug:     } catch (e) {
+Debug:         // Fallback to system preference on any error (resolve "system" 
+to actual theme)
+Debug:         const fallbackTheme = window.matchMedia("(prefers-color-scheme: 
+dark)").matches ? "dark" : "light";
+Debug:         document.documentElement.classList.remove("light", "dark");
+Debug:         document.documentElement.classList.add(fallbackTheme);
+Debug:         document.documentElement.style.colorScheme = fallbackTheme;
+Debug:     }
+Debug: }
+Debug: </script><link href="/assets/__reflex_global_styles-HfJALDEv.css" 
+rel="stylesheet" type="text/css"/></head><body><section 
+aria-label="Notifications alt+T" tabindex="-1" aria-live="polite" 
+aria-relevant="additions text" aria-atomic="false"></section><div 
+data-is-root-theme="true" data-accent-color="blue" data-gray-color="slate" 
+data-has-background="true" data-panel-background="translucent" 
+data-radius="medium" data-scaling="100%" class="radix-themes css-0"><style 
+data-emotion="css 
+17rg0dp">.css-17rg0dp{position:fixed;width:100vw;height:0;}</style><div 
+title="Connection Error: " class="css-17rg0dp"></div><h1 
+style="font-size:24px">Application Error</h1><pre 
+style="padding:2rem;background:hsla(10, 50%, 50%, 
+0.1);color:red;overflow:auto"></pre><script>
+Debug:         console.log(
+Debug:           "💿 Hey developer 👋. You can provide a way better UX than this
+when your app throws errors. Check out 
+https://reactrouter.com/how-to/error-boundary for more information."
+Debug:         );
+Debug:       </script><style data-emotion="css 
+1qwptgo">.css-1qwptgo{position:fixed;bottom:1rem;right:1rem;display:-webkit-box;
+display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-flex-direction:row
+;-ms-flex-direction:row;flex-direction:row;gap:0.375rem;-webkit-align-items:cent
+er;-webkit-box-align:center;-ms-flex-align:center;align-items:center;width:auto;
+border-radius:0.5rem;color:#E5E7EB;border:1px solid 
+#27282B;background-color:#151618;padding:0.375rem;-webkit-transition:background-
+color 0.2s ease-in-out;transition:background-color 0.2s ease-in-out;box-shadow:0
+1px 2px 0 rgba(0, 0, 0, 
+0.05);z-index:9998;cursor:pointer;align:center;text-align:center;}</style><a 
+href="https://reflex.dev" target="_blank" class="css-1qwptgo"><style 
+data-emotion="css 1wzg22f">.css-1wzg22f{fill:white;view-box:0 0 16 
+16;}</style><svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" 
+class="css-1wzg22f"><style data-emotion="css 
+bnqfad">.css-bnqfad{fill:#6E56CF;}</style><rect height="16" rx="2" width="16" 
+class="css-bnqfad"></rect><style data-emotion="css 
+j4aqsr">.css-j4aqsr{fill:white;}</style><path d="M10 9V13H12V9H10Z" 
+class="css-j4aqsr"></path><path d="M4 3V13H6V9H10V7H6V5H10V7H12V3H4Z" 
+class="css-j4aqsr"></path></svg><style data-emotion="css 1v8fzbk">@media screen 
+and (min-width: 0){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+30em){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+48em){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+62em){.css-1v8fzbk{display:block;}}</style><div class="css-1v8fzbk"><style 
+data-emotion="css 
+vq6poo">.css-vq6poo{color:var(--slate-1);font-weight:600;font-family:'Instrument
+Sans',sans-serif;--default-font-family:'Instrument 
+Sans',sans-serif;font-size:0.875rem;line-height:1rem;letter-spacing:-0.00656rem;
+}</style><span class="css-vq6poo">Built with 
+Reflex</span></div></a></div><script>((storageKey, restoreKey) => {
+Debug:          if (!window.history.state || !window.history.state.key) {
+Debug:                  let key = Math.random().toString(32).slice(2);
+Debug:                  window.history.replaceState({ key }, "");
+Debug:          }
+Debug:          try {
+Debug:                  let storedY = 
+JSON.parse(sessionStorage.getItem(storageKey) || "{}")[restoreKey || 
+window.history.state.key];
+Debug:                  if (typeof storedY === "number") window.scrollTo(0, 
+storedY);
+Debug:          } catch (error) {
+Debug:                  console.error(error);
+Debug:                  sessionStorage.removeItem(storageKey);
+Debug:          }
+Debug:  })("react-router-scroll-positions", 
+null)</script><script>window.__reactRouterContext = 
+{"basename":"/","future":{"unstable_enableNodeReadableStream":false,"unstable_op
+timizeDeps":true},"routeDiscovery":{"mode":"initial"},"ssr":false,"isSpaMode":fa
+lse};window.__reactRouterContext.stream = new 
+ReadableStream({start(controller){window.__reactRouterContext.streamController =
+controller;}}).pipeThrough(new TextEncoderStream());</script><script 
+type="module" async="">import "/assets/manifest-96cdabe0.js";
+Debug: import * as route0 from "/assets/root-Va61vfGj.js";
+Debug: import * as route1 from "/assets/_index-BJhvPOft.js";
+Debug:   
+Debug:   window.__reactRouterRouteModules = 
+{"root":route0,"routes/_index":route1};
+Debug: 
+Debug: import("/assets/entry.client-4AZsJhei.js");</script><!--$?--><template 
+id="B:0"></template><!--/$--><script 
+id="_R_">requestAnimationFrame(function(){$RT=performance.now()});</script><div 
+hidden 
+id="S:0"><script>window.__reactRouterContext.streamController.enqueue("[{\"_1\":
+2,\"_3\":-5,\"_4\":5},\"loaderData\",{},\"actionData\",\"errors\",{\"_6\":7},\"r
+oot\",[\"SanitizedError\",8,9,-7],\"Error\",\"Unexpected Server 
+Error\"]\n");</script><!--$?--><template 
+id="B:1"></template><!--/$--></div><script>$RB=[];$RV=function(a){$RT=performanc
+e.now();for(var b=0;b<a.length;b+=2){var 
+c=a[b],e=a[b+1];null!==e.parentNode&&e.parentNode.removeChild(e);var 
+f=c.parentNode;if(f){var g=c.previousSibling,h=0;do{if(c&&8===c.nodeType){var 
+d=c.data;if("/$"===d||"/&"===d)if(0===h)break;else 
+h--;else"$"!==d&&"$?"!==d&&"$~"!==d&&"$!"!==d&&"&"!==d||h++}d=c.nextSibling;f.re
+moveChild(c);c=d}while(c);for(;e.firstChild;)f.insertBefore(e.firstChild,c);g.da
+ta="$";g._reactRetry&&requestAnimationFrame(g._reactRetry)}}a.length=0};
+Debug: 
+$RC=function(a,b){if(b=document.getElementById(b))(a=document.getElementById(a))
+?(a.previousSibling.data="$~",$RB.push(a,b),2===$RB.length&&("number"!==typeof 
+$RT?requestAnimationFrame($RV.bind(null,$RB)):(a=performance.now(),setTimeout($R
+V.bind(null,$RB),2300>a&&2E3<a?2300-a:$RT+300-a)))):b.parentNode.removeChild(b)}
+;$RC("B:0","S:0")</script><div hidden 
+id="S:1"><script>window.__reactRouterContext.streamController.close();</script><
+/div><script>$RC("B:1","S:1")</script></body></html>
+Debug:     at defaultHandleError 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:887:8)
+Debug:     at attempt 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:835:11)
+Debug:     at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+Debug:     at async prerender 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:842:64)
+Debug:     at async default.concurrency.concurrency 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:859:9)
+Debug:     at async 
+file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scra
+tchpad/apps/verify_prod_export_0/vapp/.web/node_modules/p-map/index.js:122:20
+Debug: error: script "export" exited with code 1
+Creating Production Build failed with exit code 1
+$ react-router build
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Using Vite Environment API
+vite v8.2.0 building client environment for production...
+[33mWarning: Invalid input options (1 issue found)
+- For the "jsx". Invalid key: Expected never but received "jsx". [0m
+
+ WARN  advancedChunks option is deprecated, please use codeSplitting instead.
+
+transforming...
+✓ 413 modules transformed.
+rendering chunks...
+computing gzip size...
+build/client/.vite/manifest.json                             3.52 kB │ gzip:  
+0.67 kB
+build/client/assets/__reflex_global_styles-HfJALDEv.css    694.55 kB │ gzip: 
+84.93 kB
+build/client/assets/reflex-env-Bo_5_dpQ.js                   0.30 kB │ gzip:  
+0.20 kB
+build/client/assets/_404_._index-kiP9HKS1.js                 0.41 kB │ gzip:  
+0.30 kB
+build/client/assets/_other_._index-CbgD3ADo.js               0.46 kB │ gzip:  
+0.33 kB
+build/client/assets/_index-BJhvPOft.js                       0.66 kB │ gzip:  
+0.44 kB
+build/client/assets/react-dom-CltAQbqX.js                    3.54 kB │ gzip:  
+1.34 kB
+build/client/assets/flex-BzJldWrC.js                         4.97 kB │ gzip:  
+1.22 kB
+build/client/assets/emotion-react.browser.esm-Cwax2nv3.js   20.71 kB │ gzip:  
+8.12 kB
+build/client/assets/errorBoundaries-HKp9FVqc.js             33.30 kB │ gzip: 
+11.64 kB
+build/client/assets/components-BY9SJKTA.js                  83.46 kB │ gzip: 
+27.74 kB
+build/client/assets/heading-9fju80mD.js                    132.71 kB │ gzip: 
+40.89 kB
+build/client/assets/entry.client-4AZsJhei.js               182.36 kB │ gzip: 
+57.72 kB
+build/client/assets/root-Va61vfGj.js                       307.54 kB │ gzip: 
+86.57 kB
+
+✓ built in 1.40s
+vite v8.2.0 building ssr environment for production...
+[33mWarning: Invalid input options (1 issue found)
+- For the "jsx". Invalid key: Expected never but received "jsx". [0m
+
+ WARN  advancedChunks option is deprecated, please use codeSplitting instead.
+
+transforming...
+⚠️ Paths with dynamic/splat params cannot be prerendered when using `prerender: 
+true`. You may want to use the `prerender()` API to prerender the following 
+paths:
+  - *
+✓ 24 modules transformed.
+rendering chunks...
+
+✓ 1 asset cleaned from React Router server build.
+build/client/assets/__reflex_global_styles-HfJALDEv.css
+
+computing gzip size...
+build/server/.vite/manifest.json                           0.78 kB │ gzip:  0.31
+kB
+build/server/assets/__reflex_global_styles-HfJALDEv.css  694.55 kB │ gzip: 84.93
+kB
+build/server/assets/reflex-env-Bo_5_dpQ.js                 0.30 kB │ gzip:  0.20
+kB
+build/server/index.js                                     42.54 kB │ gzip: 13.02
+kB
+
+✓ built in 564ms
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+TypeError: Cannot destructure property 'basename' of 'React10.useContext(...)' 
+as it is null.
+    at LinkWithRef 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/react-router-dom/node_m
+odules/react-router/dist/development/chunk-62JRHF6Z.mjs:10518:11)
+    at renderWithHooks 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:4647:18)
+    at renderElement 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5193:18)
+    at retryNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5503:16)
+    at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5297:7)
+    at renderNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5864:14)
+    at renderChildrenArray 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5646:7)
+    at retryNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5517:9)
+    at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5297:7)
+    at renderNode 
+(/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad
+/apps/verify_prod_export_0/vapp/.web/node_modules/react-dom/cjs/react-dom-server
+.node.production.js:5864:14)
+[Error: Unexpected Server Error]
+Error: Prerender: Request failed for /: Prerender (html): Received a 500 status 
+code from `entry.server.tsx` while prerendering the `/` path.
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta 
+content="width=device-width, initial-scale=1" name="viewport"/><link 
+rel="modulepreload" href="/assets/manifest-96cdabe0.js"/><link 
+rel="modulepreload" href="/assets/entry.client-4AZsJhei.js"/><link 
+rel="modulepreload" href="/assets/components-BY9SJKTA.js"/><link 
+rel="modulepreload" href="/assets/react-dom-CltAQbqX.js"/><link 
+rel="modulepreload" href="/assets/errorBoundaries-HKp9FVqc.js"/><link 
+rel="modulepreload" href="/assets/root-Va61vfGj.js"/><link rel="modulepreload" 
+href="/assets/heading-9fju80mD.js"/><link rel="modulepreload" 
+href="/assets/reflex-env-Bo_5_dpQ.js"/><link rel="modulepreload" 
+href="/assets/emotion-react.browser.esm-Cwax2nv3.js"/><link rel="modulepreload" 
+href="/assets/flex-BzJldWrC.js"/><link rel="modulepreload" 
+href="/assets/_index-BJhvPOft.js"/><script>
+// Only run in browser environment, not during SSR
+if (typeof document !== 'undefined') {
+    try {
+        const theme = localStorage.getItem("theme") || 'system';
+        const systemPreference = window.matchMedia("(prefers-color-scheme: 
+dark)").matches ? "dark" : "light";
+        const resolvedTheme = theme === "system" ? systemPreference : theme;
+
+        // Apply theme immediately - blocks until complete
+        // Use classList to avoid overwriting other classes
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+
+    } catch (e) {
+        // Fallback to system preference on any error (resolve "system" to 
+actual theme)
+        const fallbackTheme = window.matchMedia("(prefers-color-scheme: 
+dark)").matches ? "dark" : "light";
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(fallbackTheme);
+        document.documentElement.style.colorScheme = fallbackTheme;
+    }
+}
+</script><link href="/assets/__reflex_global_styles-HfJALDEv.css" 
+rel="stylesheet" type="text/css"/></head><body><section 
+aria-label="Notifications alt+T" tabindex="-1" aria-live="polite" 
+aria-relevant="additions text" aria-atomic="false"></section><div 
+data-is-root-theme="true" data-accent-color="blue" data-gray-color="slate" 
+data-has-background="true" data-panel-background="translucent" 
+data-radius="medium" data-scaling="100%" class="radix-themes css-0"><style 
+data-emotion="css 
+17rg0dp">.css-17rg0dp{position:fixed;width:100vw;height:0;}</style><div 
+title="Connection Error: " class="css-17rg0dp"></div><h1 
+style="font-size:24px">Application Error</h1><pre 
+style="padding:2rem;background:hsla(10, 50%, 50%, 
+0.1);color:red;overflow:auto"></pre><script>
+        console.log(
+          "💿 Hey developer 👋. You can provide a way better UX than this when 
+your app throws errors. Check out https://reactrouter.com/how-to/error-boundary 
+for more information."
+        );
+      </script><style data-emotion="css 
+1qwptgo">.css-1qwptgo{position:fixed;bottom:1rem;right:1rem;display:-webkit-box;
+display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-flex-direction:row
+;-ms-flex-direction:row;flex-direction:row;gap:0.375rem;-webkit-align-items:cent
+er;-webkit-box-align:center;-ms-flex-align:center;align-items:center;width:auto;
+border-radius:0.5rem;color:#E5E7EB;border:1px solid 
+#27282B;background-color:#151618;padding:0.375rem;-webkit-transition:background-
+color 0.2s ease-in-out;transition:background-color 0.2s ease-in-out;box-shadow:0
+1px 2px 0 rgba(0, 0, 0, 
+0.05);z-index:9998;cursor:pointer;align:center;text-align:center;}</style><a 
+href="https://reflex.dev" target="_blank" class="css-1qwptgo"><style 
+data-emotion="css 1wzg22f">.css-1wzg22f{fill:white;view-box:0 0 16 
+16;}</style><svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" 
+class="css-1wzg22f"><style data-emotion="css 
+bnqfad">.css-bnqfad{fill:#6E56CF;}</style><rect height="16" rx="2" width="16" 
+class="css-bnqfad"></rect><style data-emotion="css 
+j4aqsr">.css-j4aqsr{fill:white;}</style><path d="M10 9V13H12V9H10Z" 
+class="css-j4aqsr"></path><path d="M4 3V13H6V9H10V7H6V5H10V7H12V3H4Z" 
+class="css-j4aqsr"></path></svg><style data-emotion="css 1v8fzbk">@media screen 
+and (min-width: 0){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+30em){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+48em){.css-1v8fzbk{display:none;}}@media screen and (min-width: 
+62em){.css-1v8fzbk{display:block;}}</style><div class="css-1v8fzbk"><style 
+data-emotion="css 
+vq6poo">.css-vq6poo{color:var(--slate-1);font-weight:600;font-family:'Instrument
+Sans',sans-serif;--default-font-family:'Instrument 
+Sans',sans-serif;font-size:0.875rem;line-height:1rem;letter-spacing:-0.00656rem;
+}</style><span class="css-vq6poo">Built with 
+Reflex</span></div></a></div><script>((storageKey, restoreKey) => {
+                if (!window.history.state || !window.history.state.key) {
+                        let key = Math.random().toString(32).slice(2);
+                        window.history.replaceState({ key }, "");
+                }
+                try {
+                        let storedY = 
+JSON.parse(sessionStorage.getItem(storageKey) || "{}")[restoreKey || 
+window.history.state.key];
+                        if (typeof storedY === "number") window.scrollTo(0, 
+storedY);
+                } catch (error) {
+                        console.error(error);
+                        sessionStorage.removeItem(storageKey);
+                }
+        })("react-router-scroll-positions", 
+null)</script><script>window.__reactRouterContext = 
+{"basename":"/","future":{"unstable_enableNodeReadableStream":false,"unstable_op
+timizeDeps":true},"routeDiscovery":{"mode":"initial"},"ssr":false,"isSpaMode":fa
+lse};window.__reactRouterContext.stream = new 
+ReadableStream({start(controller){window.__reactRouterContext.streamController =
+controller;}}).pipeThrough(new TextEncoderStream());</script><script 
+type="module" async="">import "/assets/manifest-96cdabe0.js";
+import * as route0 from "/assets/root-Va61vfGj.js";
+import * as route1 from "/assets/_index-BJhvPOft.js";
+  
+  window.__reactRouterRouteModules = {"root":route0,"routes/_index":route1};
+
+import("/assets/entry.client-4AZsJhei.js");</script><!--$?--><template 
+id="B:0"></template><!--/$--><script 
+id="_R_">requestAnimationFrame(function(){$RT=performance.now()});</script><div 
+hidden 
+id="S:0"><script>window.__reactRouterContext.streamController.enqueue("[{\"_1\":
+2,\"_3\":-5,\"_4\":5},\"loaderData\",{},\"actionData\",\"errors\",{\"_6\":7},\"r
+oot\",[\"SanitizedError\",8,9,-7],\"Error\",\"Unexpected Server 
+Error\"]\n");</script><!--$?--><template 
+id="B:1"></template><!--/$--></div><script>$RB=[];$RV=function(a){$RT=performanc
+e.now();for(var b=0;b<a.length;b+=2){var 
+c=a[b],e=a[b+1];null!==e.parentNode&&e.parentNode.removeChild(e);var 
+f=c.parentNode;if(f){var g=c.previousSibling,h=0;do{if(c&&8===c.nodeType){var 
+d=c.data;if("/$"===d||"/&"===d)if(0===h)break;else 
+h--;else"$"!==d&&"$?"!==d&&"$~"!==d&&"$!"!==d&&"&"!==d||h++}d=c.nextSibling;f.re
+moveChild(c);c=d}while(c);for(;e.firstChild;)f.insertBefore(e.firstChild,c);g.da
+ta="$";g._reactRetry&&requestAnimationFrame(g._reactRetry)}}a.length=0};
+$RC=function(a,b){if(b=document.getElementById(b))(a=document.getElementById(a))
+?(a.previousSibling.data="$~",$RB.push(a,b),2===$RB.length&&("number"!==typeof 
+$RT?requestAnimationFrame($RV.bind(null,$RB)):(a=performance.now(),setTimeout($R
+V.bind(null,$RB),2300>a&&2E3<a?2300-a:$RT+300-a)))):b.parentNode.removeChild(b)}
+;$RC("B:0","S:0")</script><div hidden 
+id="S:1"><script>window.__reactRouterContext.streamController.close();</script><
+/div><script>$RC("B:1","S:1")</script></body></html>
+    at defaultHandleError 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:887:8)
+    at attempt 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:835:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+    at async prerender 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:842:64)
+    at async default.concurrency.concurrency 
+(file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scr
+atchpad/apps/verify_prod_export_0/vapp/.web/node_modules/@react-router/dev/dist/
+vite.js:859:9)
+    at async 
+file:///tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scra
+tchpad/apps/verify_prod_export_0/vapp/.web/node_modules/p-map/index.js:122:20
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02

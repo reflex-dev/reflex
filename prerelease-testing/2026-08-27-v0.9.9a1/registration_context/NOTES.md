@@ -177,3 +177,205 @@ Result matrix (0.9.9a1 === 0.9.8 EXACTLY, dev and prod — no regression):
 - `prod_run/dynapp_*.png`, `prod_run098/dynapp_*.png` — prod, both versions
   (swap works, dyn block still needs CDN for lucide).
 - `dynharness.png` — AppHarness dynamic component fully rendered, no CDN.
+
+## VERIFICATION (independent, adversarial — 2026-08-28)
+
+Verified the "breaking API removals ship without shims or pointer errors" claim
+from scratch in fresh PyPI-only venvs (`uv venv` py3.11; `reflex==0.9.9a1` and
+`reflex==0.9.8`, no reuse of the claimant's envs). VERDICT: **CONFIRMED**.
+
+- `rx.config.get_config(reload=True)`: 0.9.8 returns `Config` (signature there is
+  `get_config(reload: bool = False)` — a public keyword); 0.9.9a1 raises bare
+  `TypeError: get_config() got an unexpected keyword argument 'reload'`. The new
+  `reload_config()` exists in 0.9.9a1 but the error never mentions it; no shim in
+  the wheel's `reflex_base/config.py` (checked — `console.deprecate` IS used
+  elsewhere in that same file, so the infra was available).
+- `reflex.components.dynamic.bundled_libraries`: list on 0.9.8 (non-underscored
+  module global, wildcard re-exported, no `__all__` excluding it); bare
+  `AttributeError` on 0.9.9a1. No module `__getattr__` in
+  `reflex_base/components/dynamic.py`.
+- Downstream impact re-proven live, not just by grep: installed
+  `reflex-enterprise==0.9.4` (latest; its constraint `reflex[db]>=0.9.6` admits
+  0.9.9) next to reflex 0.9.9a1 and ran
+  `Var.create(lambda: rx.el.div("hi"))` — `LiteralLambdaVar
+  ._validate_and_extend_return_expr` (reflex_enterprise/vars.py:143,
+  `set(dynamic.bundled_libraries)`) raises the AttributeError; the identical call
+  succeeds on 0.9.8 + enterprise 0.9.4. Any component-returning lambda (e.g.
+  AG Grid cell renderers) hits this.
+- Refutations attempted: not an env quirk (pure import-level API, fresh venvs, no
+  server/proxy); not misuse (both names were public surface in 0.9.8); not
+  pre-existing (0.9.8 baseline works). The removal is intentional and documented
+  (`packages/reflex-base/news/6382.breaking.md`), so the defect is precisely the
+  ABSENCE of a fallback/pointer path, contra the repo's own CLAUDE.md deprecation
+  policy ("Reflex has downstream users — don't break them. Provide a fallback
+  path during deprecation."). A `reload` kwarg accepted with `console.deprecate`
+  + a module `__getattr__` returning the active context's list would cover both.
+- Severity medium is fair for an alpha with a breaking-news entry; note the
+  enterprise runtime breakage pushes real-world impact toward the high end.
+
+## VERIFICATION (independent adversarial re-check, 2026-08-28)
+
+Verifier: separate agent, fresh PyPI venvs (`envs/vregctx_a1` = reflex 0.9.9a1,
+`envs/vregctx_098` = reflex 0.9.8), script `verify_repro.py` (output saved as
+`verify_output.txt`). Both claims REPRODUCE exactly and are 0.9.9a1 regressions,
+not environment quirks:
+
+- 0.9.9a1: second bare `rx.App()` raises `ReflexRuntimeError` from
+  `reflex_base/registry.py` `_set_app` ("...call `.fork()`..."); 0.9.8 happily
+  creates two distinct App instances.
+- 0.9.9a1: `from reflex.page import DECORATED_PAGES` ->
+  `ImportError: cannot import name 'DECORATED_PAGES' from 'PageNamespace'
+  (unknown location)`; 0.9.8 returns a `defaultdict`. The 0.9.8 `page.py` ALSO
+  did the `sys.modules[__name__] = PageNamespace` replacement but deliberately
+  re-exported `DECORATED_PAGES = DECORATED_PAGES` on the class — i.e. the
+  symbol was intentionally kept importable through the namespace until now;
+  0.9.9a1 dropped it with no `__getattr__` shim or deprecation. (Nit: the
+  module is replaced by the PageNamespace CLASS, not an instance.)
+
+Repro pitfall worth recording: running `python -c "import reflex..."` with cwd
+= /home/user/reflex silently imports the CHECKOUT's `reflex/` package instead
+of the venv's (sys.path[0] shadowing) and gives bogus results (my first 0.9.8
+run "failed" with `cannot import name 'reload_config'` for exactly this
+reason). Always run from a neutral cwd.
+
+Documentation-status check (the substance of the claim):
+
+- `packages/reflex-base/CHANGELOG.md` v0.9.9a1 Breaking Changes (release branch
+  `origin/r/pre-2026.08.27-33148999938`): only `get_config(reload=True)` ->
+  `reload_config()` and the `bundled_libraries` move. Neither the one-App-per-
+  context raise nor the `DECORATED_PAGES` removal appears.
+- Top-level `CHANGELOG.md` v0.9.9a1 DOES carry a #6382 entry ("The current
+  App, the loaded Config, @rx.page registrations, and the bundled-library
+  registry are now scoped to the active RegistrationContext...") — but it is
+  filed under **Features**, not Breaking Changes, never says a second bare
+  `App()` now raises, and never names `DECORATED_PAGES`. So "undocumented" is
+  mildly overstated for the general scoping change, but accurate for both
+  concrete failure modes.
+- Real-world impact of `DECORATED_PAGES` (GitHub code search):
+  `"from reflex.page import DECORATED_PAGES"` -> 165 files, including
+  reflex-dev's OWN `templates` repo (dashboard sidebar/navbar) and
+  `reflex-dev/reflex-enterprise` `demos/flow/flow/flow.py`; the bare symbol
+  appears in ~880 files. First-party templates hit the confusing ImportError
+  on upgrade.
+
+VERDICT: CONFIRMED (medium). The one-App raise is intentional design with a
+good message, but both breaks ship undocumented in the Breaking Changes notes
+and `DECORATED_PAGES` (used by first-party code) vanishes with no shim and a
+misleading error. Fix-agent scope: add both to 6382.breaking.md / changelog,
+and consider a deprecation shim (namespace-level `DECORATED_PAGES` property or
+`__getattr__` raising a pointed error naming
+`RegistrationContext.decorated_pages`).
+
+## VERIFICATION 2 (independent, adversarial — 2026-08-28): reflex.testing undeclared deps
+
+Claim: `reflex.testing` (AppHarness) requires `uvicorn`/`psutil` that the published
+wheel does not declare. VERDICT: **CONFIRMED** (low severity, NOT a regression).
+
+Reproduced from the repro steps alone in fresh PyPI-only venvs (no reuse of the
+claimant's envs), under `$SB/apps/verify_registration_context_2/`:
+
+- `uv venv v99 --python 3.11 && uv pip install --python v99/bin/python
+  --prerelease=allow 'reflex==0.9.9a1'` then `v99/bin/python -c 'import
+  reflex.testing'` -> `ModuleNotFoundError: No module named 'uvicorn'` at
+  `reflex/testing.py:28` (top-level `import uvicorn`). Exact match with the claim.
+- 0.9.8 baseline (`v98`, same steps): identical failure at the same line —
+  pre-existing behavior, not a 0.9.9a1 regression, exactly as the claimant said.
+- psutil half verified empirically too: after `uv pip install uvicorn` into v99,
+  `import reflex.testing` succeeds (uvicorn is the only import-time blocker), and
+  calling `AppHarness.stop()` raises `ModuleNotFoundError: No module named
+  'psutil'` — the `import psutil` at testing.py:473 is the unconditional first
+  statement of `stop()`, so EVERY harness teardown on non-Windows hits it (psutil
+  is a declared dep only on `sys_platform == 'win32'`).
+
+Refutations attempted, all failed:
+
+- Not an env quirk: wheel METADATA (reflex-0.9.9a1.dist-info) has no uvicorn in
+  Requires-Dist at all, psutil only for win32, and the only extras are `db` and
+  `pydantic` — there is no `[testing]` extra a user could install. uvicorn/psutil
+  live only in the repo's dev dependency-group, which never reaches the wheel.
+  Nothing in the runtime dep tree pulls uvicorn transitively (granian is the
+  server; empirically absent after install).
+- Not API misuse: `docs/enterprise/auth/testing.md` explicitly instructs users to
+  "Exercise it with `AppHarness` (from `reflex.testing`)" and lists other deps to
+  install (pytest-asyncio, playwright) but never uvicorn/psutil. Caveat:
+  `rx.testing.AppHarness` is commented out of the API reference page
+  (docs/app/reflex_docs/pages/docs/apiref.py:18), so it is semi-public — but the
+  shipped docs actively route users into it.
+- Not intentional design: the very same module guards `selenium` imports with
+  try/except (testing.py:52) precisely so it is importable without dev extras;
+  uvicorn/psutil just lack the same treatment.
+
+Fix directions a fix-agent could take: declare uvicorn (+ psutil without the
+win32 marker) as deps of the wheel, or add a `testing` extra, or lazy-import both
+with an actionable error message. Severity "low" is fair: docs-following
+downstream users hit it immediately, but the workaround (pip install uvicorn
+psutil) is trivial and it has been like this since at least 0.9.8.
+
+## VERIFICATION 3 (independent, adversarial — 2026-08-28): bundle_library wipe + subpath rewrite
+
+Claim: (1) `compile_app()` silently discards user/app-level `bundle_library()`
+registrations; (2) the dynamic serializer never rewrites SUBPATH imports of a
+bundled lib, emitting bare specifiers that throw in the browser.
+VERDICT: **CONFIRMED** (low severity; NOT a 0.9.9a1 regression — byte-identical
+on 0.9.8).
+
+Reproduced from the repro steps alone: own app (`verify3_vdynapp.py`, written
+fresh — `bundle_library("lucide-react")` at module import + a computed
+`rx.Component` var containing `rx.icon("apple")`), own driver
+(`verify3_drive_vdynapp.py`), fresh 0.9.8 venv (`envs/vregctx3_098`), no reuse
+of the claimant's apps/venvs. Ports 3932/8932.
+
+- Serializer-level (no server/network — `verify3_serializer_probe.py`, output in
+  `verify3_serializer_output.txt`): with lucide-react registered in the active
+  context, `serialize(rx.vstack(rx.icon("apple")))` emits
+  `import LucideApple from "lucide-react/dist/esm/icons/apple.mjs"` — a bare
+  specifier the window-rewrite loop never touches (it only substring-matches the
+  exact `from "<lib>"` with closing quote; `rx.icon` uses `package_path` deep
+  imports, `format_library_name()` strips only `@version`, never subpaths).
+  Calling `reset_bundled_libraries()` (what `compile_app()` does at compiler.py
+  ~1202 in the wheel / 1209 in the tree) drops lucide-react back to the 4
+  defaults. Both verdicts True on 0.9.9a1 AND on 0.9.8 with byte-identical
+  emitted import lines; wheel diff confirms the reset+plugin-only-readd and the
+  `f'from "{lib}"'` loop are unchanged between 0.9.8 and 0.9.9a1.
+- End-to-end (0.9.9a1, `reflex run` dev + Chromium): `window.__reflex` keys =
+  4 defaults + `@radix-ui/themes` only — the import-time
+  `bundle_library("lucide-react")` never reaches the frontend bundle. Server log
+  (`verify3_run_dev_excerpt.log`) captured BOTH failure modes in one page load:
+  (a) `TypeError: Failed to resolve module specifier
+  "lucide-react/dist/esm/icons/apple.mjs"` from the eval'd data-URI module —
+  the granian worker's hydrate-time serialization runs in a context that KEPT
+  the user's lucide registration (backend short-circuits compile before the
+  reset), so the subpath import stays bare; (b) a second exception whose data
+  URI shows the compile-time pass (post-reset context) emitted
+  `https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs`
+  with radix destructured from `window.__reflex` — i.e. the two serialization
+  passes disagree about what is bundled, and each is broken a different way.
+- Refutations attempted: NOT an env quirk — the bare specifier can never resolve
+  inside a data:-URI ES module in any browser regardless of network (the
+  CDN-unreachable part of the log IS env-specific, but the claimed defect
+  reproduces with zero network at the serializer level, and the hydrate-pass
+  TypeError would fire on the open internet too, breaking the dynamic block
+  post-hydration). NOT clearly API misuse — `bundle_library` is a public,
+  non-underscored, wildcard-re-exported symbol (used downstream, e.g.
+  reflex-enterprise touches this module), and even the officially-documented
+  plugin path (`get_frontend_dependencies`) feeds the same rewrite loop, so any
+  plugin-bundled lib with `package_path` deep imports (as reflex's own `rx.icon`
+  has) hits defect (2). NOT a regression — 0.9.8 identical (my serializer runs +
+  wheel source diff + claimant's 0.9.8 server logs).
+- Nuance vs the claim: "compile_app() silently discards" is precisely right for
+  the frontend compile pass; the backend worker actually PRESERVES the user
+  registration (it returns before the reset), which is what turns the subpath
+  bug from latent into a thrown TypeError. Sharpest user-facing irony: WITHOUT
+  `bundle_library` the icon import goes to the CDN and works (on open internet);
+  calling the API makes rendering strictly worse.
+
+CONFIRMED with the explicit caveat: pre-existing 0.9.8 behavior faithfully
+preserved, so low severity is right and it is NOT release-blocking for 0.9.9a1.
+Worth fixing while #6382 reworks this plumbing: preserve non-default
+registrations across `compile_app()` resets (or snapshot user registrations
+before reset and re-add alongside plugin deps), and rewrite subpath imports of
+bundled libs (match `from "<lib>/` too — though that requires the window bundle
+to expose subpath modules, so the simpler fix may be CDN-mapping subpath
+imports even when the lib is bundled). Killed all servers/browsers (verified
+via ps; two leftover node processes on this host belong to the verify_routing_0
+cluster, not this verification).

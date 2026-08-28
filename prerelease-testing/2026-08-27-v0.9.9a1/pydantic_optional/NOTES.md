@@ -164,3 +164,40 @@ PyPI-only venvs (built independently of the original tester's venvs):
 
 Verifier venvs kept at $SB/envs/vpo_bare, vpo_098, vpo_db. No servers/browsers were
 started for this verification.
+
+## VERIFICATION 2 (independent, adversarial — 2026-08-28)
+
+Claim verified: "Prod vite build logs 'Invalid input options: jsx key' and
+'advancedChunks deprecated' warnings on every build, twice (client+ssr)".
+**CONFIRMED as a genuine framework defect, but PRE-EXISTING on 0.9.8 — NOT a
+0.9.9a1 regression. Cosmetic/low.**
+
+Reproduced from the repro steps alone with a freshly written minimal counter app
+(no pydantic involvement — the warnings are app-agnostic), artifacts in
+`verify1_prod_warnings/`:
+
+- 0.9.9a1 (shared PyPI-only smoke venv): `reflex run --env prod --frontend-port 8804
+  --backend-port 8804 --loglevel debug` on `vpapp/` -> vite v8.2.0 logs BOTH warnings
+  exactly twice (once per client env, once per ssr env); server still comes up and
+  serves HTTP 200. Log: `vpapp_prod_run.log` (lines ~146/181 for the two builds).
+  Note: prod mode requires frontend-port == backend-port ("In prod mode, frontend and
+  backend must run on the same port" — reflex exits otherwise), so the claim's implied
+  two-port invocation is slightly off; single port reproduces it.
+- 0.9.8 baseline (fresh PyPI venv `envs/vpo_098`, reflex==0.9.8, vite pin 8.0.16):
+  identical app -> vite v8.0.16 logs the SAME two warnings, also twice, HTTP 200.
+  Log: `vpapp098_prod_run.log`. Cross-check: another cluster's
+  `registration_context/dynapp098_run_prod.log` shows the same on 0.9.8.
+- Root cause (framework code, not env/user error): the generated `.web/vite.config.js`
+  (template: `packages/reflex-base/src/reflex_base/compiler/templates.py`, lines
+  736-744 on the release branch, identical in `git show v0.9.8:...`) emits
+  `build.rollupOptions.jsx: {}` and `build.rollupOptions.output.advancedChunks`.
+  rolldown-vite 8.x no longer accepts `jsx` as a rollupOptions input key (hence
+  "Invalid key: Expected never") and has deprecated `advancedChunks` in favor of
+  `codeSplitting`. Both pins (8.0.16 and 8.2.0) warn identically.
+- Verdict for a fix-agent: real, actionable, low-severity cleanup in reflex's own
+  template (drop `jsx: {}`; migrate `advancedChunks` -> `codeSplitting`), but it is
+  NOT new in 0.9.9a1 and does not affect build output correctness (prod app serves
+  and hydrates fine per the original cluster run and this one).
+
+Processes: both prod servers killed after verification (verified `ps`/`ss` clean);
+no browsers started (log-level claim, no UI assertion needed).
