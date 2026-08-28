@@ -1,11 +1,4 @@
-## v0.1.71a2 (2026-08-28)
-
-### Bug Fixes
-
-- Fix for older reflex versions
-
-
-## v0.1.71a1 (2026-08-27)
+## v0.1.71 (2026-08-28)
 
 ### Breaking Changes
 
@@ -21,6 +14,7 @@
 ### Bug Fixes
 
 - The hosting config file (`hosting_v1.json`) is now written atomically. `save_token_to_config` and `delete_token_from_config` opened it with mode `"w"`, truncating it before writing, so a failed write — a full disk, an I/O error, an interrupted process — left an empty file and destroyed the stored access token and selected project. Neither helper reports write failures to the caller (`save_token_to_config` logs a warning, `delete_token_from_config` only a debug message), so this was easy to miss. Both now serialize to a temporary file alongside the target and move it into place, leaving the existing credentials untouched when a write fails. A config that exists but cannot be read is no longer treated as empty either, so `delete_token_from_config` leaves a malformed file alone instead of replacing it; `save_token_to_config` still starts fresh from one, so a corrupt config cannot block re-authenticating. This also covers `reflex login` and `reflex logout`, which share these helpers. ([#6918](https://github.com/reflex-dev/reflex/issues/6918))
+- Fix for older reflex versions
 
 ### Miscellaneous
 
