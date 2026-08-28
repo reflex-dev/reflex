@@ -1,0 +1,119 @@
+[2026-08-28 09:11:50,347] DEBUG: Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false
+[2026-08-28 09:11:50,348] DEBUG: Resetting disk state manager.
+[2026-08-28 09:11:50,349] DEBUG: Overriding config value frontend_port with env var FRONTEND_PORT=3263
+[2026-08-28 09:11:50,349] DEBUG: Overriding config value backend_port with env var BACKEND_PORT=8263
+[2026-08-28 09:11:50,349] DEBUG: Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false
+[2026-08-28 09:11:50,349] DEBUG: Checking for the latest version of reflex...
+[2026-08-28 09:11:50,548] DEBUG: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+[2026-08-28 09:11:50,587] DEBUG: Received response from https://pypi.org/pypi/reflex/json in 0.039 seconds
+[2026-08-28 09:11:50,596] DEBUG: Latest version of reflex: 0.9.8.post1
+[2026-08-28 09:11:50,596] DEBUG: Checking if Frontend port: 3263 is in use.
+[2026-08-28 09:11:50,596] DEBUG: Unable to bind to any port for 10: [Errno 97] Address family not supported by protocol
+[2026-08-28 09:11:50,596] DEBUG: Checking if Frontend port: 3263 is in use for families: [<AddressFamily.AF_INET: 2>].
+[2026-08-28 09:11:50,596] DEBUG: Frontend port: 3263 is not in use.
+[2026-08-28 09:11:50,596] DEBUG: Checking if Backend port: 8263 is in use.
+[2026-08-28 09:11:50,596] DEBUG: Unable to bind to any port for 10: [Errno 97] Address family not supported by protocol
+[2026-08-28 09:11:50,597] DEBUG: Checking if Backend port: 8263 is in use for families: [<AddressFamily.AF_INET: 2>].
+[2026-08-28 09:11:50,597] DEBUG: Backend port: 8263 is not in use.
+[2026-08-28 09:11:50,748] DEBUG: Overriding config value frontend_port with env var FRONTEND_PORT=3263
+[2026-08-28 09:11:50,748] DEBUG: Overriding config value backend_port with env var BACKEND_PORT=8263
+[2026-08-28 09:11:50,748] DEBUG: Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false
+[2026-08-28 09:11:50,751] DEBUG: Registered lifespan task: _setup_event_processor
+[2026-08-28 09:11:50,789] DEBUG: [timing] Compile pages: 0.04s
+[2026-08-28 09:11:50,813] DEBUG: [timing] Copy assets: 0.00s
+[2026-08-28 09:11:50,822] DEBUG: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', '--frozen-lockfile']
+[2026-08-28 09:11:50,828] DEBUG: Installing base frontend packages
+[2026-08-28 09:11:50,829] DEBUG: bun install v1.3.11 (af24e281)
+
+[2026-08-28 09:11:50,834] DEBUG: 
+
+[2026-08-28 09:11:50,834] DEBUG: Checked 259 installs across 305 packages (no changes) [9.00ms]
+
+[2026-08-28 09:11:50,836] DEBUG: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', '-d', '@tailwindcss/typography@0.5.20', '@react-router/fs-routes@8.3.0', 'vite@8.2.0', 'postcss-import@16.1.1', 'autoprefixer@10.5.4', '@emotion/react@11.14.0', '@tailwindcss/postcss@4.3.0', '@react-router/dev@8.3.0', 'tailwindcss@4.3.0', 'postcss@8.5.23']
+[2026-08-28 09:11:50,837] DEBUG: Installing frontend development dependencies
+[2026-08-28 09:11:50,840] DEBUG: bun add v1.3.11 (af24e281)
+
+[2026-08-28 09:11:50,847] DEBUG: Saved lockfile
+
+[2026-08-28 09:11:50,848] DEBUG: 
+
+[2026-08-28 09:11:50,848] DEBUG: installed @tailwindcss/typography@0.5.20
+
+[2026-08-28 09:11:50,848] DEBUG: installed @react-router/fs-routes@8.3.0
+
+[2026-08-28 09:11:50,848] DEBUG: installed vite@8.2.0 with binaries:
+
+[2026-08-28 09:11:50,848] DEBUG:  - vite
+
+[2026-08-28 09:11:50,848] DEBUG: installed postcss-import@16.1.1
+
+[2026-08-28 09:11:50,848] DEBUG: installed autoprefixer@10.5.4 with binaries:
+
+[2026-08-28 09:11:50,848] DEBUG:  - autoprefixer
+
+[2026-08-28 09:11:50,848] DEBUG: installed @emotion/react@11.14.0
+
+[2026-08-28 09:11:50,848] DEBUG: installed @tailwindcss/postcss@4.3.0
+
+[2026-08-28 09:11:50,848] DEBUG: installed @react-router/dev@8.3.0 with binaries:
+
+[2026-08-28 09:11:50,848] DEBUG:  - react-router
+
+[2026-08-28 09:11:50,848] DEBUG: installed tailwindcss@4.3.0
+
+[2026-08-28 09:11:50,848] DEBUG: installed postcss@8.5.23
+
+[2026-08-28 09:11:50,848] DEBUG: 
+
+[2026-08-28 09:11:50,848] DEBUG: [8.00ms] done
+
+[2026-08-28 09:11:50,849] DEBUG: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 'sonner@2.0.7', 'react-router@8.3.0', 'socket.io-client@4.8.3', 'react@19.2.8', '@react-router/node@8.3.0', '@radix-ui/themes@3.3.0', 'react-helmet@6.1.0', 'isbot@5.2.1', 'lucide-react@1.26.0', 'react-dom@19.2.8', 'react-error-boundary@6.1.2', 'universal-cookie@8.1.2']
+[2026-08-28 09:11:50,850] DEBUG: Installing frontend packages
+[2026-08-28 09:11:50,853] DEBUG: bun add v1.3.11 (af24e281)
+
+[2026-08-28 09:11:50,861] DEBUG: Saved lockfile
+
+[2026-08-28 09:11:50,861] DEBUG: 
+
+[2026-08-28 09:11:50,861] DEBUG: installed sonner@2.0.7
+
+[2026-08-28 09:11:50,861] DEBUG: installed react-router@8.3.0
+
+[2026-08-28 09:11:50,861] DEBUG: installed socket.io-client@4.8.3
+
+[2026-08-28 09:11:50,861] DEBUG: installed react@19.2.8
+
+[2026-08-28 09:11:50,861] DEBUG: installed @react-router/node@8.3.0
+
+[2026-08-28 09:11:50,861] DEBUG: installed @radix-ui/themes@3.3.0
+
+[2026-08-28 09:11:50,861] DEBUG: installed react-helmet@6.1.0
+
+[2026-08-28 09:11:50,861] DEBUG: installed isbot@5.2.1
+
+[2026-08-28 09:11:50,861] DEBUG: installed lucide-react@1.26.0
+
+[2026-08-28 09:11:50,861] DEBUG: installed react-dom@19.2.8
+
+[2026-08-28 09:11:50,861] DEBUG: installed react-error-boundary@6.1.2
+
+[2026-08-28 09:11:50,861] DEBUG: installed universal-cookie@8.1.2
+
+[2026-08-28 09:11:50,861] DEBUG: 
+
+[2026-08-28 09:11:50,861] DEBUG: [9.00ms] done
+
+[2026-08-28 09:11:50,862] DEBUG: Copying .web/bun.lock to /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/reflex.lock/bun.lock
+[2026-08-28 09:11:50,863] DEBUG: Copying .web/package.json to /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/reflex.lock/package.json
+[2026-08-28 09:11:50,863] DEBUG: [timing] Install Frontend Packages: 0.05s
+[2026-08-28 09:11:50,865] DEBUG: [timing] Write to Disk: 0.00s
+[2026-08-28 09:11:50,873] DEBUG: Overriding config value frontend_port with env var FRONTEND_PORT=3263
+[2026-08-28 09:11:50,874] DEBUG: Overriding config value backend_port with env var BACKEND_PORT=8263
+[2026-08-28 09:11:50,874] DEBUG: Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false
+[2026-08-28 09:11:50,877] DEBUG: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+[2026-08-28 09:11:50,884] DEBUG: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+[2026-08-28 09:11:50,885] DEBUG: Starting frontend
+[2026-08-28 09:11:50,888] DEBUG: $ react-router dev --host
+
+[2026-08-28 09:11:50,994] DEBUG: Using Granian for backend
+[2026-08-28 09:11:51,008] DEBUG: Reload paths: ['/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/logapp', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/requirements.txt', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/frontend.zip', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/assets', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/CLAUDE.md', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/backend.zip', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/AGENTS.md', '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/rxconfig.py']

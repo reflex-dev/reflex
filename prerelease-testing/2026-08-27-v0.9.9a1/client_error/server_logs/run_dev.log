@@ -1,0 +1,68 @@
+────────────────────────── Initializing client_error ───────────────────────────
+Info: Initializing the web directory.
+Success: Initialized client_error. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3220/
+Backend running at: http://0.0.0.0:8220
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+[Reflex Frontend Exception]
+ [SID: Ds3dxxvHTCWFjpAPAAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state____ghost_state'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+[Reflex Frontend Exception]
+ [SID: g6n0Enh5LyelLjl0AAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state____ghost_state'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+[ERROR] Unexpected exit from worker-1
+Starting frontend failed with exit code 143
+$ react-router dev --host
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(!) Your Vite config uses features that are unsupported by `configLoader: 
+'native'`, which is planned to become the default in a future major version of 
+Vite:
+  - import "./vite-plugin-safari-cachebust" without a file extension 
+(vite.config.js:4:35). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+  ➜  Local:   http://localhost:3220/
+  ➜  Network: http://192.0.2.2:3220/  eth0
+8:36:26 AM [vite] (ssr) connected.
+8:36:54 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+8:37:13 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) "reflex___state____state____ghost_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+8:37:13 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+8:37:14 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+8:37:42 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+8:37:44 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+8:39:20 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) "reflex___state____state____ghost_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+8:39:22 AM [vite] (client) hmr update /styles/__reflex_global_styles.css?direct
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

@@ -1,0 +1,12 @@
+### Genuine mismatch: stale frontend + backend with new Extra substate ###
+-- browser console --
+[error] Cannot process state update: no dispatch function for substate(s) "reflex___state____state.client_error___client_error____state", "reflex___state____state.client_error___client_error____extra". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.
+
+-- backend terminal (be_extra.log) --
+ [SID: Uh3cw32Xb5iE7rtaAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.client_error___client_error____state, 
+reflex___state____state.client_error___client_error____extra'. This indicates a 
+--
+ [SID: 4Id2-n6HLBLrOqvVAAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.client_error___client_error____state, 
+reflex___state____state.client_error___client_error____extra'. This indicates a 

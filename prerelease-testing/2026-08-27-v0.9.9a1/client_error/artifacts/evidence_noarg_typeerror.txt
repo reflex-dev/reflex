@@ -1,0 +1,21 @@
+### No-arg client_error -> unhandled TypeError (abuse2.py, backend_only2.log) ###
+Count of 'missing 1 required positional argument' lines:
+62
+
+First traceback:
+Task exception was never retrieved
+future: <Task finished name='Task-28' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+Task exception was never retrieved
+
+Truncation evidence (600-char C message):

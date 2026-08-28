@@ -1,0 +1,86 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Backend running at: http://0.0.0.0:8220
+Task exception was never retrieved
+future: <Task finished name='Task-23' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+[Reflex Frontend Exception]
+ [SID: kf_6fRKmy3z3P4m5AAAB] state_update_processing_error:  [31mFAKE-RED [0m 
+line1 line2  \[bold red]RICH-MARKUP\[/bold red]     2099-01-01 00:00:00 | ERROR 
+| forged-log-line
+
+[Reflex Frontend Exception]
+ [SID: kf_6fRKmy3z3P4m5AAAB] State update failed: no dispatch function for 
+substate(s) ' [31mFAKE-RED [0m line1 line2  \[bold red]RICH-MARKUP\[/bold red]  
+2099-01-01 00:00:00 | ERROR | forged-log-line'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: kf_6fRKmy3z3P4m5AAAB] totally_made_up_type [5m: hello
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n0
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n1
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n2
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n3
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n4
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n0
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n1
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n2
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n3
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n4
+
+[Reflex Frontend Exception]
+ [SID: Gg8xOzRueU9CHC9SAAAH] state_update_processing_error: flood r2 n0
+
+[Reflex Frontend Exception]
+ [SID: Gg8xOzRueU9CHC9SAAAH] state_update_processing_error: flood r2 n1
+
+[Reflex Frontend Exception]
+ [SID: Gg8xOzRueU9CHC9SAAAH] state_update_processing_error: flood r2 n2
+
+[Reflex Frontend Exception]
+ [SID: Gg8xOzRueU9CHC9SAAAH] state_update_processing_error: flood r2 n3
+
+[Reflex Frontend Exception]
+ [SID: Gg8xOzRueU9CHC9SAAAH] state_update_processing_error: flood r2 n4
+
+[Reflex Frontend Exception]
+ [SID: bvlfJV68z0FoPkx2AAAJ] state_update_processing_error: flood r3 n0
+
+[Reflex Frontend Exception]
+ [SID: bvlfJV68z0FoPkx2AAAJ] state_update_processing_error: flood r3 n1
+
+Warning: Received more than 20 client_error reports in 60s; suppressing further 
+reports for this window.
+Warning: No token provided in connection for session SnubOmuCQIqYIj6iAAAL
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

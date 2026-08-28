@@ -1,0 +1,31 @@
+### Escaping/sanitization evidence (from abuse.py run, backend_only.log) ###
+ [SID: kf_6fRKmy3z3P4m5AAAB] state_update_processing_error:  [31mFAKE-RED [0m 
+line1 line2  \[bold red]RICH-MARKUP\[/bold red]     2099-01-01 00:00:00 | ERROR 
+| forged-log-line
+--
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n0
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n1
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n2
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n3
+
+[Reflex Frontend Exception]
+ [SID: RRBmQZhqaL2kACh_AAAD] state_update_processing_error: flood r0 n4
+
+[Reflex Frontend Exception]
+ [SID: JrUNA2Bf4lybLRl4AAAF] state_update_processing_error: flood r1 n0
+
+### dispatch_missing forge (ANSI/newlines/markup neutralized) ###
+ [SID: kf_6fRKmy3z3P4m5AAAB] State update failed: no dispatch function for 
+substate(s) ' [31mFAKE-RED [0m line1 line2  \[bold red]RICH-MARKUP\[/bold red]  
+2099-01-01 00:00:00 | ERROR | forged-log-line'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+
+### per-window suppression + unlinked-sid ###
+Warning: Received more than 20 client_error reports in 60s; suppressing further 
+Warning: No token provided in connection for session SnubOmuCQIqYIj6iAAAL

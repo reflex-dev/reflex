@@ -1,0 +1,22 @@
+[
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "location": "{'url': 'http://localhost:3263/', 'line': 23, 'column': 22, 'lineNumber': 23, 'columnNumber': 22}"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "location": "{'url': 'http://localhost:3263/@vite/client', 'line': 854, 'column': 8, 'lineNumber': 854, 'columnNumber': 8}"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "location": "{'url': 'http://localhost:3263/@vite/client', 'line': 963, 'column': 11, 'lineNumber': 963, 'columnNumber': 11}"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "location": "{'url': 'http://localhost:3263/node_modules/.vite/deps/react-dom_client.js?v=a6af89da', 'line': 14335, 'column': 48, 'lineNumber': 14335, 'columnNumber': 48}"
+  }
+]

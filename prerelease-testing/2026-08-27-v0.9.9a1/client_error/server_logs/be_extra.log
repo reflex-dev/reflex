@@ -1,0 +1,84 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Backend running at: http://0.0.0.0:8220
+[Reflex Frontend Exception]
+ [SID: Uh3cw32Xb5iE7rtaAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.client_error___client_error____state, 
+reflex___state____state.client_error___client_error____extra'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: 4Id2-n6HLBLrOqvVAAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.client_error___client_error____state, 
+reflex___state____state.client_error___client_error____extra'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+Warning: No token provided in connection for session QWl3ef269U6DpwW2AAAB
+Task exception was never retrieved
+future: <Task finished name='Task-15' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+Task exception was never retrieved
+future: <Task finished name='Task-17' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+Task exception was never retrieved
+future: <Task finished name='Task-19' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+Task exception was never retrieved
+future: <Task finished name='Task-21' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+Task exception was never retrieved
+future: <Task finished name='Task-23' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_client_error() missing 1 required positional argument: 'data'")>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 621, in _handle_event_internal
+    r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_server.py", line 671, in _trigger_event
+    return await handler.trigger_event(event, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/socketio/async_namespace.py", line 39, in trigger_event
+    ret = await handler(*args)
+                ^^^^^^^^^^^^^^
+TypeError: EventNamespace.on_client_error() missing 1 required positional argument: 'data'
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

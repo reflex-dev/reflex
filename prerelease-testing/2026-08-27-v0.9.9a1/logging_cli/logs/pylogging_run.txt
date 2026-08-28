@@ -1,0 +1,98 @@
+PASS: import reflex emits no warnings -- warnings=[]
+FAIL: ANOMALY-CHECK: bare 'import reflex' loads logging pipeline (PR #6863 claim; currently lazy — loads on first framework use) -- loaded=False
+PASS: logging pipeline loaded after rx.App()
+PASS: logger 'reflex_base' parented under 'reflex' -- parent=<Logger reflex (INFO)>
+PASS: logger 'reflex_cli' parented under 'reflex' -- parent=<Logger reflex (INFO)>
+PASS: logger 'reflex_components_core' parented under 'reflex' -- parent=<Logger reflex (INFO)>
+PASS: 'reflex' logger has no handlers outside CLI (library mode) -- handlers=[]
+PASS: 'reflex_base' logger has no handlers outside CLI -- handlers=[]
+PASS: 'reflex' logger still propagates to root (library mode)
+PASS: root logger handlers unchanged after import reflex -- pre=[<StreamHandler <stderr> (NOTSET)>] post=[<StreamHandler <stderr> (NOTSET)>]
+PASS: root logger level unchanged after import reflex -- pre=20 post=20
+PASS: LogLevel strict ordering debug<default<info<warning<error<critical
+PASS: LogLevel critical NOT <= debug (banner-bug fix)
+PASS: LogLevel debug <= debug
+PASS: LogLevel warning > info and info >= info
+PASS: LogLevel.DEBUG.to_logging_level() == 10 -- got=10
+PASS: LogLevel.DEFAULT.to_logging_level() == 20 -- got=20
+PASS: LogLevel.INFO.to_logging_level() == 20 -- got=20
+PASS: LogLevel.WARNING.to_logging_level() == 30 -- got=30
+PASS: LogLevel.ERROR.to_logging_level() == 40 -- got=40
+PASS: LogLevel.CRITICAL.to_logging_level() == 50 -- got=50
+PASS: LogLevel.from_string round-trips
+PASS: reflex.utils.log re-exports reflex_base.utils.log API -- module=<module 'reflex.utils.log' from '/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/utils/log.py'>
+PASS: repeated bootstrap() adds no handlers
+PASS: repeated bootstrap keeps parenting
+USERFMT WARNING reflex_base.some.module framework-warn-rec
+USERFMT WARNING reflex_cli.x cli-warn-rec
+PASS: reflex_base logger records propagate to app root handler -- out='WARNING reflex_base.some.module framework-warn-rec\nWARNING reflex_cli.x cli-warn-rec\n'
+PASS: reflex_cli logger records propagate to app root handler
+---- shim child stdout ----
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:5)
+Info: hello-info-msg
+DeprecationWarning: console.warn has been deprecated in version 0.9.9. use 
+logger.warning(msg) on logging.getLogger(__name__) instead. It will be 
+completely removed in 1.0. (<string>:6)
+Warning: hello-warn-msg
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:7)
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:8)
+DeprecationWarning: console.success has been deprecated in version 0.9.9. use 
+logger.log(log.SUCCESS, msg) on logging.getLogger(__name__) instead. It will be 
+completely removed in 1.0. (<string>:9)
+Success: hello-success-msg
+DeprecationWarning: console.log has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:10)
+[08:43:09] hello-log-msg                                          console.py:252
+DeprecationWarning: console.timing has been deprecated in version 0.9.9. use 
+log.timing(logger, msg) on logging.getLogger(__name__) instead. It will be 
+completely removed in 1.0. (<string>:11)
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:14)
+Debug: visible-debug-at-debug
+DeprecationWarning: console.timing has been deprecated in version 0.9.9. use 
+log.timing(logger, msg) on logging.getLogger(__name__) instead. It will be 
+completely removed in 1.0. (<string>:15)
+Debug: [timing] timing-at-debug: 0.00s
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:18)
+DeprecationWarning: console.warn has been deprecated in version 0.9.9. use 
+logger.warning(msg) on logging.getLogger(__name__) instead. It will be 
+completely removed in 1.0. (<string>:19)
+Warning: visible-warn-at-warning
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (<string>:20)
+
+---- shim child stderr ----
+hello-error-msg
+
+---------------------------
+PASS: shim child exited 0 -- rc=0
+PASS: console shim still prints 'Info: hello-info-msg'
+PASS: console shim still prints 'Warning: hello-warn-msg'
+PASS: console shim still prints 'Success: hello-success-msg'
+PASS: console shim still prints 'hello-log-msg'
+PASS: console.error prints to stderr
+PASS: console.debug hidden at INFO level
+PASS: console.debug visible at DEBUG level
+PASS: console.timing prints duration at debug level
+PASS: console.info hidden at WARNING level
+PASS: console.warn visible at WARNING level
+PASS: each shim helper emits a DeprecationWarning banner -- count=12
+PASS: deprecation mentions removal in 1.0
+PASS: deprecation points at user call site (<string>:N) -- location tag not found (informational)
+PASS: set_log_level rejects plain string
+PASS: library-mode set_log_level adjusts 'reflex' logger level -- level=30
+PASS: library-mode set_log_level attaches no handlers
+PASS: get_log_level reflects set
+
+SUMMARY: 44/45 passed

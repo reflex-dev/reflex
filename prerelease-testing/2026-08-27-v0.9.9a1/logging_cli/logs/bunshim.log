@@ -1,0 +1,12 @@
+=== bun invocation: 08:49:18 pid=14851 ppid=14850
+args: add --legacy-peer-deps -d @emotion/react@11.14.0 postcss-import@16.1.1 autoprefixer@10.5.4 vite@8.2.0 postcss@8.5.23 @react-router/fs-routes@8.3.0 @react-router/dev@8.3.0 tailwindcss@4.3.0 @tailwindcss/postcss@4.3.0 @tailwindcss/typography@0.5.20
+cwd: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/.web
+Resolving dependencies
+Resolved, downloaded and extracted [6]
+error: ConnectionClosed downloading package manifest cookie-es
+error: cookie-es@^3.1.1 failed to resolve
+=== rc=1
+=== bun invocation: 08:56:51 pid=15316 ppid=15315
+args: add --legacy-peer-deps -d postcss-import@16.1.1 @emotion/react@11.14.0 @tailwindcss/postcss@4.3.0 postcss@8.5.23 tailwindcss@4.3.0 @tailwindcss/typography@0.5.20 @react-router/dev@8.3.0 autoprefixer@10.5.4 @react-router/fs-routes@8.3.0 vite@8.2.0
+cwd: /tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/.web
+Resolving dependencies

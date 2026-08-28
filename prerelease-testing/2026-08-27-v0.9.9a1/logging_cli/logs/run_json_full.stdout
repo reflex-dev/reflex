@@ -1,0 +1,33 @@
+{"timestamp": "2026-08-28T09:11:51.801773+00:00", "level": "info", "logger": "reflex.console", "message": "App running at: http://localhost:3263/", "pid": 17260}
+{"timestamp": "2026-08-28T09:11:51.806336+00:00", "level": "info", "logger": "reflex.console", "message": "Backend running at: http://0.0.0.0:8263", "pid": 17260}
+{"timestamp": "2026-08-28T09:11:59.321762+00:00", "level": "warning", "logger": "reflex.console", "message": "DeprecationWarning: console.info has been deprecated in version 0.9.9. use logger.info(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. (logapp/logapp.py:30)", "pid": 17285}
+[2026-08-28 09:11:59.325421] DeprecationWarning: console.info has been 
+deprecated in version 0.9.9. use logger.info(msg) on logging.getLogger(__name__)
+instead. It will be completely removed in 1.0. (logapp/logapp.py:30)
+{"timestamp": "2026-08-28T09:11:59.328381+00:00", "level": "info", "logger": "reflex.console", "message": "Info: console.info from event handler, count=1", "pid": 17285}
+[2026-08-28 09:11:59.328489] Info: console.info from event handler, count=1
+{"timestamp": "2026-08-28T09:11:59.328994+00:00", "level": "warning", "logger": "reflex.console", "message": "DeprecationWarning: console.warn has been deprecated in version 0.9.9. use logger.warning(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. (logapp/logapp.py:31)", "pid": 17285}
+[2026-08-28 09:11:59.329056] DeprecationWarning: console.warn has been 
+deprecated in version 0.9.9. use logger.warning(msg) on 
+logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(logapp/logapp.py:31)
+{"timestamp": "2026-08-28T09:11:59.329636+00:00", "level": "warning", "logger": "reflex.console", "message": "Warning: console.warn from event handler, count=1", "pid": 17285}
+[2026-08-28 09:11:59.329752] Warning: console.warn from event handler, count=1
+{"timestamp": "2026-08-28T09:11:59.330488+00:00", "level": "warning", "logger": "reflex_base.fake.module", "message": "reflex_base-hierarchy warning from app code count=1", "location": "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/logapp/logapp.py:35", "pid": 17285}
+{"timestamp": "2026-08-28T09:11:59.377221+00:00", "level": "info", "logger": "reflex.console", "message": "Info: console.info from event handler, count=2", "pid": 17285}
+[2026-08-28 09:11:59.377444] Info: console.info from event handler, count=2
+{"timestamp": "2026-08-28T09:11:59.378152+00:00", "level": "warning", "logger": "reflex.console", "message": "Warning: console.warn from event handler, count=2", "pid": 17285}
+[2026-08-28 09:11:59.378219] Warning: console.warn from event handler, count=2
+{"timestamp": "2026-08-28T09:11:59.378717+00:00", "level": "warning", "logger": "reflex_base.fake.module", "message": "reflex_base-hierarchy warning from app code count=2", "location": "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/logapp/logapp.py:35", "pid": 17285}
+{"timestamp": "2026-08-28T09:11:59.493843+00:00", "level": "warning", "logger": "reflex.console", "message": "DeprecationWarning: console.debug has been deprecated in version 0.9.9. use logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. (logapp/logapp.py:46)", "pid": 17285}
+[2026-08-28 09:11:59.494026] DeprecationWarning: console.debug has been 
+deprecated in version 0.9.9. use logger.debug(msg) on 
+logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(logapp/logapp.py:46)
+[2026-08-28 09:11:59.495171] Debug: console.debug from background task (hidden 
+unless debug)
+{"timestamp": "2026-08-28T09:11:59.861937+00:00", "level": "info", "logger": "reflex.console", "message": "Info: console.info from event handler, count=3", "pid": 17285}
+[2026-08-28 09:11:59.862163] Info: console.info from event handler, count=3
+{"timestamp": "2026-08-28T09:11:59.863181+00:00", "level": "warning", "logger": "reflex.console", "message": "Warning: console.warn from event handler, count=3", "pid": 17285}
+[2026-08-28 09:11:59.863309] Warning: console.warn from event handler, count=3
+{"timestamp": "2026-08-28T09:11:59.863988+00:00", "level": "warning", "logger": "reflex_base.fake.module", "message": "reflex_base-hierarchy warning from app code count=3", "location": "/tmp/claude-0/-home-user-reflex/20b6ffc8-8244-5bac-b158-8501871b3811/scratchpad/apps/logging_cli/logapp/logapp/logapp.py:35", "pid": 17285}

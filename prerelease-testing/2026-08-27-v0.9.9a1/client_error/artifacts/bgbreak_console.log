@@ -1,0 +1,8 @@
+[log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+[debug] [vite] connecting...
+[debug] [vite] connected.
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[error] WebSocket connection to 'ws://localhost:8220/_event/?token=46625ac6-51fc-419c-f8f5-9e252d3d3da9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+[debug] [vite] css hot updated: /styles/__reflex_global_styles.css
+[error] WebSocket connection to 'ws://localhost:8220/_event/?token=46625ac6-51fc-419c-f8f5-9e252d3d3da9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+[debug] [vite] css hot updated: /styles/__reflex_global_styles.css

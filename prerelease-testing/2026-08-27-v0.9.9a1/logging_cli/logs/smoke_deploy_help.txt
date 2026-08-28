@@ -1,0 +1,72 @@
+Usage: reflex deploy [OPTIONS]
+
+  Deploy the app to the Reflex hosting service.
+
+Options:
+  --loglevel, --log-level [debug|default|info|warning|error|critical]
+                                  The log level to use.
+  --json                          Output logs as machine-readable JSON
+                                  records.
+  --app-name TEXT                 The name of the app to deploy.
+  --app-id TEXT                   The ID of the app to deploy.
+  -r, --region TEXT               The regions to deploy to. `reflex cloud
+                                  regions` For multiple envs, repeat this
+                                  option, e.g. --region sjc --region iad
+  --env TEXT                      The environment variables to set:
+                                  <key>=<value>. For multiple envs, repeat
+                                  this option, e.g. --env k1=v2 --env k2=v2.
+  --vmtype TEXT                   Vm type id. Run `reflex cloud vmtypes` to
+                                  get options.
+  --min-instances INTEGER         The minimum number of instances to keep
+                                  running. Left unchanged when omitted. Only
+                                  supported on apps deployed to Google Cloud.
+  --max-instances INTEGER         The maximum number of instances to scale out
+                                  to. Left unchanged when omitted. Only
+                                  supported on apps deployed to Google Cloud.
+  --hostname TEXT                 The hostname of the frontend. On the deploy
+                                  that first lands the app on GCP, it also
+                                  names the app's Cloud Run service.
+  --provider TEXT                 The hosting provider to deploy to: 'reflex-
+                                  cloud' (default) or 'gcp' (a GCP account
+                                  connected to your org, Enterprise tier).
+                                  When omitted and GCP is connected, you'll be
+                                  prompted in interactive mode. Deploys
+                                  through Reflex Cloud either way; for an
+                                  unmanaged deploy run under your own gcloud
+                                  credentials, see `reflex cloud gcp-
+                                  standalone`.
+  --gcp-connection TEXT           Which of your organization's GCP connections
+                                  to deploy through, by name. Run `reflex
+                                  cloud providers connections` to list them.
+                                  Only valid with --provider gcp; omitted
+                                  keeps the app on the connection it already
+                                  has, or your organization's default the
+                                  first time it deploys to GCP.
+  --full-deploy / --no-full-deploy
+                                  Serve the frontend from the provider's own
+                                  container, on the same origin as the
+                                  backend, instead of Reflex's CDN. GCP only,
+                                  Enterprise tier. Omitted leaves the app's
+                                  hosting mode unchanged; changing it stops a
+                                  running app so this deploy brings it back up
+                                  in the new mode.
+  --strategy [immediate|rolling|bluegreen|canary]
+                                  How the new version rolls out. Defaults to
+                                  the app's last strategy, or 'immediate'.
+  --description TEXT              An optional note recorded on this deployment
+                                  and shown in `reflex cloud apps history`.
+  --interactive / --no-interactive
+                                  Whether to list configuration options and
+                                  ask for confirmation.
+  --envfile TEXT                  The path to an env file to use. Will
+                                  override any envs set manually.
+  --project TEXT                  project id to deploy to
+  --project-name TEXT             The name of the project to deploy to.
+  --token TEXT                    token to use for auth
+  --config-path, --config TEXT    path to the config file
+  --exclude-from-backend PATH     Files or directories to exclude from the
+                                  backend zip. Can be used multiple times.
+  --server-side-rendering, --ssr / --no-server-side-rendering, --no-ssr
+                                  Whether to enable server side rendering for
+                                  the frontend.
+  --help                          Show this message and exit.

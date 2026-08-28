@@ -1,0 +1,1 @@
+14650 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=14651, si_uid=0, si_status=1, si_utime=6 /* 0.06 s */, si_stime=5 /* 0.05 s */} ---

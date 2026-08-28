@@ -1,0 +1,4 @@
+user_logger.warning from event handler count=1
+user_logger.warning from event handler count=2
+background task user log
+user_logger.warning from event handler count=3

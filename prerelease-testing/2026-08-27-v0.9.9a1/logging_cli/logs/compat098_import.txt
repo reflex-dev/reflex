@@ -1,0 +1,3 @@
+hosting_cli import with reflex 0.9.8: ok
+hosting LogLevel: [<LogLevel.DEBUG: 'debug'>, <LogLevel.DEFAULT: 'default'>, <LogLevel.INFO: 'info'>, <LogLevel.WARNING: 'warning'>, <LogLevel.ERROR: 'error'>, <LogLevel.CRITICAL: 'critical'>]
+ordering critical<=debug: False
