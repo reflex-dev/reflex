@@ -1,0 +1,45 @@
+RESULTS: {
+ "n_changes": 10,
+ "values": [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10"
+ ],
+ "distinct_progress_values_seen": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "gaps_ms": [
+  142.3,
+  142.1,
+  141.2,
+  142.6,
+  141.7,
+  141.7,
+  142.3,
+  142.4,
+  141.4
+ ],
+ "span_ms": 1277.7,
+ "median_gap_ms": 142.1,
+ "incremental": true
+}
+CONSOLE: [["log", "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."]]
+FAILED_REQUESTS: []
+HTTP_4XX_5XX: []
+VERDICT: PASS

@@ -1,0 +1,145 @@
+RESULTS: {
+ "rounds": [
+  {
+   "round": 1,
+   "clicks_total": 8,
+   "ok": true
+  },
+  {
+   "round": 2,
+   "clicks_total": 16,
+   "ok": true
+  },
+  {
+   "round": 3,
+   "clicks_total": 24,
+   "ok": true
+  },
+  {
+   "round": 4,
+   "clicks_total": 32,
+   "ok": true
+  },
+  {
+   "round": 5,
+   "clicks_total": 40,
+   "ok": true
+  },
+  {
+   "round": 6,
+   "clicks_total": 49,
+   "ok": true
+  },
+  {
+   "round": 7,
+   "clicks_total": 57,
+   "ok": true
+  },
+  {
+   "round": 8,
+   "clicks_total": 65,
+   "ok": true
+  },
+  {
+   "round": 9,
+   "clicks_total": 73,
+   "ok": true
+  },
+  {
+   "round": 10,
+   "clicks_total": 81,
+   "ok": true
+  },
+  {
+   "round": 11,
+   "clicks_total": 89,
+   "ok": true
+  },
+  {
+   "round": 12,
+   "clicks_total": 97,
+   "ok": true
+  },
+  {
+   "round": 13,
+   "clicks_total": 105,
+   "ok": true
+  },
+  {
+   "round": 14,
+   "clicks_total": 113,
+   "ok": true
+  },
+  {
+   "round": 15,
+   "clicks_total": 122,
+   "ok": true
+  },
+  {
+   "round": 16,
+   "clicks_total": 130,
+   "ok": true
+  },
+  {
+   "round": 17,
+   "clicks_total": 138,
+   "ok": true
+  },
+  {
+   "round": 18,
+   "clicks_total": 146,
+   "ok": true
+  },
+  {
+   "round": 19,
+   "clicks_total": 154,
+   "ok": true
+  },
+  {
+   "round": 20,
+   "clicks_total": 162,
+   "ok": true
+  }
+ ],
+ "stale_rounds": 0,
+ "poke_recovered": 0,
+ "final_counter": "162",
+ "expected_counter": "162",
+ "cs_clicks": "162",
+ "expected_cs_clicks": "162",
+ "bg_ticks": "40",
+ "expected_bg_ticks": "40",
+ "counter_values_never_rendered": [
+  4,
+  12,
+  20,
+  28,
+  36,
+  44,
+  53,
+  61,
+  69,
+  77,
+  85,
+  93,
+  101,
+  109,
+  117,
+  126,
+  134,
+  142,
+  150,
+  158
+ ],
+ "poller_stopped": true,
+ "poller_counter_ok": true,
+ "poller_final_counter": "35",
+ "poller_expected_counter": "35",
+ "poller_ticks": "40",
+ "window": "40",
+ "window_expected": "40"
+}
+CONSOLE: [["log", "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."]]
+FAILED_REQUESTS: []
+HTTP_4XX_5XX: []
+VERDICT: PASS
