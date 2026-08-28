@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import ast
 import contextlib
 import importlib
 import logging
 import sys
 from collections.abc import Iterator
 from enum import Enum
+from pathlib import Path
 from types import ModuleType
 
 import pytest
+import reflex_cli
 from reflex_cli.utils import console, log
 
 
@@ -500,3 +503,93 @@ def test_cli_imports_with_old_reflex_base(module: str):
     """Every CLI module imports against a reflex-base that predates its log API."""
     with _with_old_reflex_base():
         importlib.import_module(module)
+
+
+# A log level handed in from outside may be any reflex's LogLevel, so it is
+# only ever safe to pass it to the normalizer. These two are the normalizer
+# itself and the sink it forwards to, which is where the type finally holds.
+_LOG_LEVEL_NORMALIZERS = {
+    ("reflex_cli/utils/console.py", "set_log_level"),
+    ("reflex_cli/utils/log.py", "set_log_level"),
+}
+_LOG_LEVEL_PARAMS = {"loglevel", "log_level"}
+
+
+def _receives_a_log_level(call: ast.Call) -> bool:
+    """Check whether a call is one of the log level normalizers.
+
+    Args:
+        call: The call node to inspect.
+
+    Returns:
+        True if the callee is a ``set_log_level``, however it is spelled.
+    """
+    func = call.func
+    name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", None)
+    return name == "set_log_level"
+
+
+def _untrusted_log_level_uses(tree: ast.Module, path: str) -> list[str]:
+    """Find reads of a log level parameter that do more than normalize it.
+
+    Args:
+        tree: The parsed module.
+        path: The module's path, relative to the package source root.
+
+    Returns:
+        A ``path:line in function()`` description of every offending read.
+    """
+    offenders = []
+    for func in ast.walk(tree):
+        if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if (path, func.name) in _LOG_LEVEL_NORMALIZERS:
+            continue
+        args = func.args
+        params = {
+            arg.arg for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs)
+        } & _LOG_LEVEL_PARAMS
+        if not params:
+            continue
+        normalized = {
+            id(arg)
+            for node in ast.walk(func)
+            if isinstance(node, ast.Call) and _receives_a_log_level(node)
+            for arg in (*node.args, *(kw.value for kw in node.keywords))
+        }
+        offenders += [
+            f"{path}:{node.lineno} in {func.name}()"
+            for node in ast.walk(func)
+            if isinstance(node, ast.Name)
+            and node.id in params
+            and isinstance(node.ctx, ast.Load)
+            and id(node) not in normalized
+        ]
+    return offenders
+
+
+def test_no_command_trusts_the_log_level_it_is_handed():
+    """A log level from outside the package is normalized, never used directly.
+
+    Old reflex calls ``deploy``, ``login``, ``logout`` and ``get_vm_types``
+    itself rather than through click, so their ``loglevel`` is whatever enum
+    that reflex has -- not necessarily this package's, and not necessarily one
+    carrying the API the annotation promises. Passing it to
+    ``console.set_log_level`` is safe because that resolves it by value;
+    comparing it, calling a method on it or reading ``.value`` off it is not,
+    and the type checker cannot tell the difference.
+    """
+    source_root = Path(reflex_cli.__file__).resolve().parents[1]
+    offenders = sorted(
+        offender
+        for module in sorted(source_root.rglob("reflex_cli/**/*.py"))
+        for offender in _untrusted_log_level_uses(
+            ast.parse(module.read_text()),
+            module.relative_to(source_root).as_posix(),
+        )
+    )
+    assert not offenders, (
+        "These read a log level parameter without normalizing it first: "
+        f"{offenders}. Pass it to console.set_log_level, which resolves a "
+        "foreign reflex's LogLevel by value, and use the result."
+    )
