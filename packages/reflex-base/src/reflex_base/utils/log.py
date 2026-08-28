@@ -29,6 +29,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
 from typing import TYPE_CHECKING, cast
@@ -353,14 +354,15 @@ def _file_handler() -> logging.FileHandler:
     return handler
 
 
-def log_file_stream() -> TextIO:
+@contextlib.contextmanager
+def log_file_stream() -> Generator[TextIO]:
     """Return the live stream of the full-logging file, reopening if needed.
 
     An external ``logging.config.dictConfig`` (granian runs one in each
     worker process) closes every existing handler; reopen the file in append
     mode rather than handing writers a dead stream.
 
-    Returns:
+    Yields:
         The writable stream of the full-logging file.
     """
     handler = _file_handler()
@@ -372,7 +374,7 @@ def log_file_stream() -> TextIO:
             # to reopen the file with the handler's own mode/encoding, and
             # FileHandler.emit itself reopens a closed handler the same way.
             stream = handler.stream = handler._open()
-        return cast("TextIO", stream)
+        yield cast("TextIO", stream)
     finally:
         handler.release()
 
@@ -396,11 +398,13 @@ class _LogFileStreamProxy:
         Returns:
             The number of characters written.
         """
-        return log_file_stream().write(text)
+        with log_file_stream() as stream:
+            return stream.write(text)
 
     def flush(self):
         """Flush the current log-file stream."""
-        log_file_stream().flush()
+        with log_file_stream() as stream:
+            stream.flush()
 
     def isatty(self) -> bool:
         """Report that the log file is not a terminal.
