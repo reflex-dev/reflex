@@ -93,23 +93,38 @@ When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `p
 
 ## Changelog fragments
 
-Every PR that changes packaged source needs a news fragment **per affected
-package** — one fragment in each package's own `news/` directory, not one for
-the whole PR. Affected packages are decided by changed path: `reflex/**` -> root
-`news/`; `packages/<name>/src/**` -> `packages/<name>/news/`. A change spanning
-`reflex/` and `packages/reflex-base/src/` needs a fragment in both. Tests, docs,
-CI and scripts need none on their own.
+User-facing changes need a news fragment in the `news/` directory of each
+package they touch (the repo root's `news/` for `reflex`), named
+`<PR number>.<type>.md`, or `+<slug>.<type>.md` before the PR number is known.
+Types: `breaking`, `deprecation`, `feature`, `bugfix`, `performance`, `docs`,
+`misc`.
 
-Name it `<pr-number>.<type>.md`, or `+<slug>.<type>.md` when the PR number is not
-known yet. `<type>` is one of `breaking`, `deprecation`, `feature`, `bugfix`,
-`performance`, `docs`, `misc`. Write one or two sentences for users reading
-release notes. Verify with the same command CI uses, once per affected package:
+Write for external downstream users, not for reviewers. Every entry links to
+its PR, so motivation, narrative, and implementation details belong in the PR
+and the commit message — a reader who wants them will follow the link. Keep the
+fragment to a sentence or two saying what changed and what it means for a user:
+
+> Reduce published wheel and sdist size by removing misplaced generated artifacts.
+
+Brevity is about the narrative, not the substance: whatever is genuinely useful
+downstream belongs in the fragment. A brief usage example for a new feature, or
+the before/after of converting deprecated usage to the supported style, earns
+its place. Once it runs past a few sentences and a small code block, it is
+documentation — write it under `docs/` and let the fragment link there.
+
+CI requires a fragment for every package whose source the PR touches; the
+`skip-changelog` label waives it for changes that are genuinely not user-facing.
+
+Which `news/` directory a fragment lands in is decided purely by changed path:
+`reflex/**` -> repo-root `news/`; `packages/<name>/src/**` ->
+`packages/<name>/news/`. A PR spanning `reflex/` and `packages/reflex-base/src/`
+therefore needs a fragment in both. Paths outside those (tests, `docs/`, CI,
+`scripts/`) require none on their own. Check the way CI does, once per affected
+package:
 
 ```
 uv run towncrier check --config pyproject.toml --dir <pkg-dir> --compare-with origin/main
 ```
-
-See CONTRIBUTING.md for the full rules.
 
 ## Breaking changes and deprecation
 
@@ -148,5 +163,5 @@ Before submitting:
 3. `uv run pyright reflex tests` passes
 4. `pyi_hashes.json` updated if components changed
 5. Documentation updated if user-facing behavior changed
-6. Deprecation warnings added if breaking changes introduced
-7. A news fragment added for **each** affected package (see Changelog fragments)
+6. News fragment added for user-facing changes
+7. Deprecation warnings added if breaking changes introduced
