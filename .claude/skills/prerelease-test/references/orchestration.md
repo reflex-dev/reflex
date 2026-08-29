@@ -132,11 +132,16 @@ FIRST read <SB>/AGENT_BRIEF.md and follow every rule in it (isolated PyPI-only i
 install from the checkout; end-to-end browser testing; artifact + NOTES.md deliverables; kill your
 processes).
 Your cluster key: "<key>". Working dir: <SB>/apps/<key>/. Artifact destination: <DEST>/<key>/.
-Your RESERVED ports: frontend <FP>-<FP+19>, backend <BP>-<BP+19> — always pass them explicitly.
+Your RESERVED ports: frontend <FP_START>-<FP_END>, backend <BP_START>-<BP_END> — always pass them
+explicitly, and never bind outside them.
 <cluster brief: changelog lines verbatim, PR numbers, combine-with suggestions>
 Also in scope: anything adjacent you notice (log warnings, console anomalies, network errors,
 visual glitches). Record benign-but-surprising observations in NOTES.md and as 'anomaly' entries.
 ```
+
+Fill the port ends from the table above, not from a fixed span: an explore agent's range is 20
+ports wide and a verify agent's is 4. A verifier told it owns 20 would reach into the next
+verifier's range, which is the collision the map exists to prevent.
 
 ## Running it
 
