@@ -199,6 +199,7 @@ def main() -> int:
     action_error: str | None = None
     load_error: str | None = None
     screenshot_error: str | None = None
+    read_error: str | None = None
 
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=CHROMIUM, headless=not args.headed)
@@ -250,7 +251,11 @@ def main() -> int:
             title = page.title()
             body = page.inner_text("body")[:2000]
         except Exception as exc:
+            # Never fold this into the body text alone: a page that cannot be read is a
+            # run that inspected nothing, and reporting that as clean is the one result
+            # this driver must never produce.
             title, body = "", f"<unreadable: {type(exc).__name__}>"
+            read_error = f"{type(exc).__name__}: {exc}"
         if args.screenshot:
             try:
                 Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
@@ -275,6 +280,7 @@ def main() -> int:
         or action_error
         or load_error
         or screenshot_error
+        or read_error
     )
 
     report = {
@@ -285,6 +291,7 @@ def main() -> int:
         "actions_performed": performed,
         "action_error": action_error,
         "screenshot_error": screenshot_error,
+        "read_error": read_error,
         "console": shown,
         "page_errors": page_errors,
         "failed_requests": failed,
@@ -308,6 +315,8 @@ def main() -> int:
         print(f"  did  {item}")
     if action_error:
         print(f"  ACTION FAILED: {action_error}")
+    if read_error:
+        print(f"  PAGE UNREADABLE: {read_error}")
     if screenshot_error:
         print(f"  SCREENSHOT FAILED: {screenshot_error}")
     for m in shown:
