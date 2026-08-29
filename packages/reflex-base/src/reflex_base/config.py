@@ -7,7 +7,8 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -809,28 +810,17 @@ _config_module_deps: set[str] = set()
 
 
 class _ImportRecorder:
-    """Meta-path finder that records import attempts on the recording thread.
+    """Meta-path finder that records import attempts made on one thread.
 
-    Never resolves anything; per-thread recording keeps concurrent imports by
-    other threads out of the rxconfig dep set (unlike a sys.modules diff).
-    Left in sys.meta_path permanently: removal shifts the list under other
-    threads' unlocked _find_spec iteration, which can skip a real finder, and
-    raises ValueError if rxconfig.py rebuilt sys.meta_path.
+    Never resolves anything. Recording per thread keeps imports other threads
+    happen to make during the window out of the rxconfig dep set, which a plain
+    sys.modules diff cannot tell apart from rxconfig's own imports.
     """
 
     def __init__(self) -> None:
-        """Initialize the recorder as inactive."""
-        self._thread: int | None = None
-        self.names: set[str] = set()
-
-    def start(self) -> None:
-        """Start recording imports made on the current thread."""
-        self.names.clear()
+        """Record imports made on the calling thread."""
         self._thread = threading.get_ident()
-
-    def stop(self) -> None:
-        """Stop recording; names stay readable."""
-        self._thread = None
+        self.names: set[str] = set()
 
     def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
         """Record the import attempt without resolving it.
@@ -844,7 +834,24 @@ class _ImportRecorder:
             self.names.add(fullname)
 
 
-_import_recorder = _ImportRecorder()
+@contextmanager
+def _record_imports() -> Iterator[_ImportRecorder]:
+    """Install an import recorder for the current thread.
+
+    Yields:
+        The recorder, readable after the block.
+    """
+    recorder = _ImportRecorder()
+    # Rebind sys.meta_path instead of mutating it: importlib._find_spec
+    # iterates the list object it read from sys.meta_path and only copies it
+    # since 3.14, so an in-place removal can make a concurrent lookup skip a
+    # real finder. Filtering also tolerates an rxconfig.py that rebuilt
+    # sys.meta_path itself, where remove() would raise ValueError.
+    sys.meta_path = [recorder, *sys.meta_path]
+    try:
+        yield recorder
+    finally:
+        sys.meta_path = [f for f in sys.meta_path if f is not recorder]
 
 
 def _get_config() -> Config:
@@ -856,9 +863,12 @@ def _get_config() -> Config:
     # Never cache rxconfig or its project-local dependencies — each load goes
     # to disk so different RegistrationContexts hold independent Config
     # instances resolved against the current project. Evict before probing:
-    # find_spec answers from sys.modules, so a leftover module from another
+    # find_spec answers from sys.modules, so modules left behind by another
     # project directory would fake the existence check below.
     sys.modules.pop(constants.Config.MODULE, None)
+    for dep in _config_module_deps:
+        sys.modules.pop(dep, None)
+    _config_module_deps.clear()
     # only import the module if it exists. If a module spec exists then
     # the module exists.
     spec = find_spec(constants.Config.MODULE)
@@ -866,27 +876,20 @@ def _get_config() -> Config:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
         return Config(app_name="", _skip_plugins_checks=True)
-    for dep in _config_module_deps:
-        sys.modules.pop(dep, None)
-    _config_module_deps.clear()
-    # Reinstall if rxconfig.py rebuilt sys.meta_path on a previous load.
-    if _import_recorder not in sys.meta_path:
-        sys.meta_path.insert(0, _import_recorder)
-    _import_recorder.start()
-    try:
-        rxconfig = importlib.import_module(constants.Config.MODULE)
-    finally:
-        _import_recorder.stop()
-        # Record even on failure so a retry evicts partially-imported deps.
-        project_root = Path.cwd()
-        for name in _import_recorder.names:
-            origin = getattr(sys.modules.get(name), "__file__", None)
-            if (
-                origin
-                and (path := Path(origin)).is_relative_to(project_root)
-                and "site-packages" not in path.parts
-            ):
-                _config_module_deps.add(name)
+    with _record_imports() as recorder:
+        try:
+            rxconfig = importlib.import_module(constants.Config.MODULE)
+        finally:
+            # Record even on failure so a retry evicts partially-imported deps.
+            project_root = Path.cwd()
+            for name in recorder.names:
+                origin = getattr(sys.modules.get(name), "__file__", None)
+                if (
+                    origin
+                    and (path := Path(origin)).is_relative_to(project_root)
+                    and "site-packages" not in path.parts
+                ):
+                    _config_module_deps.add(name)
     return rxconfig.config
 
 

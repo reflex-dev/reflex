@@ -2,8 +2,11 @@ import logging
 import multiprocessing
 import os
 import sys
+import textwrap
 import threading
 import time
+import types
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
@@ -917,7 +920,7 @@ def test_load_config_keeps_sys_path_usable_for_other_threads(
     monkeypatch.setattr(reflex_base.config, "_get_config", blocking_get_config)
     # A stdlib module that nothing imports by default; drop it so the import
     # below walks sys.path again.
-    sys.modules.pop("colorsys", None)
+    monkeypatch.delitem(sys.modules, "colorsys", raising=False)
     sys_path_before = sys.path.copy()
 
     loader = threading.Thread(target=reflex_base.config._load_config)
@@ -955,8 +958,24 @@ def test_load_config_keeps_caller_owned_cwd_entry(monkeypatch: pytest.MonkeyPatc
     assert sys.path.count(cwd) == caller_owned
 
 
+@pytest.fixture
+def clean_config_modules() -> Generator[None, None, None]:
+    """Drop the modules and dep records a real rxconfig load leaves behind.
+
+    Yields:
+        None, once the module table is clean.
+    """
+    names = ("rxconfig", "side_module")
+    try:
+        yield
+    finally:
+        for name in names:
+            sys.modules.pop(name, None)
+        reflex_base.config._config_module_deps.clear()
+
+
 def test_concurrent_import_not_recorded_as_rxconfig_dep(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
     """A project-local module imported by another thread mid-load is not evicted.
 
@@ -967,10 +986,8 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     Args:
         tmp_path: The pytest tmp_path fixture.
         monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
     """
-    import textwrap
-    import types
-
     (tmp_path / "rxconfig.py").write_text(
         textwrap.dedent(
             """
@@ -989,7 +1006,7 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     gate.release = threading.Event()  # pyright: ignore[reportAttributeAccessIssue]
     monkeypatch.setitem(sys.modules, "_config_race_gate", gate)
     monkeypatch.chdir(tmp_path)
-    sys.modules.pop("side_module", None)
+    monkeypatch.delitem(sys.modules, "side_module", raising=False)
 
     loader = threading.Thread(target=reflex_base.config._load_config)
     loader.start()
@@ -1007,52 +1024,54 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     gate.release.set()
     reflex_base.config._load_config()
     assert "side_module" in sys.modules
-    sys.modules.pop("side_module", None)
-    sys.modules.pop("rxconfig", None)
-    reflex_base.config._config_module_deps.discard("rxconfig")
 
 
-def test_load_config_survives_rxconfig_rebuilding_meta_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_load_config_leaves_meta_path_as_it_found_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """A load succeeds even if rxconfig.py rebuilds sys.meta_path.
+    """The import recorder is gone once the load returns, even if rxconfig meddles.
 
-    Cleanup used to call sys.meta_path.remove(recorder) unconditionally in a
-    finally block, so an rxconfig that rebound sys.meta_path turned a
-    successful load into a ValueError (or masked the real import error). The
-    recorder is now permanent and reinstalled on the next load.
+    The recorder is installed and removed by rebinding sys.meta_path, so an
+    rxconfig.py that rebuilds the list itself neither loses its own entries nor
+    turns a successful load into a ValueError.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
         monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
     """
-    import textwrap
-
     (tmp_path / "rxconfig.py").write_text(
         textwrap.dedent(
             """
             import sys
             import reflex as rx
-            from reflex_base.config import _import_recorder
 
-            sys.meta_path = [f for f in sys.meta_path if f is not _import_recorder]
+            class _Dummy:
+                def find_spec(self, fullname, path=None, target=None):
+                    return None
+
+            sys.meta_path = [*sys.meta_path, _Dummy()]
             config = rx.Config(app_name="metapathapp")
             """
         )
     )
     monkeypatch.chdir(tmp_path)
+    meta_path_before = sys.meta_path.copy()
     try:
         config = reflex_base.config._load_config()
         assert config.app_name == "metapathapp"
-        assert reflex_base.config._import_recorder not in sys.meta_path
-        # The next load reinstalls the recorder, so deps are recorded again.
+        # rxconfig's own finder survived; only the recorder was taken back.
+        assert sys.meta_path[:-1] == meta_path_before
+        assert type(sys.meta_path[-1]).__name__ == "_Dummy"
+        assert not any(
+            isinstance(finder, reflex_base.config._ImportRecorder)
+            for finder in sys.meta_path
+        )
+        # Deps are still recorded on the next load.
         reflex_base.config._load_config()
         assert "rxconfig" in reflex_base.config._config_module_deps
     finally:
-        sys.modules.pop("rxconfig", None)
-        reflex_base.config._config_module_deps.discard("rxconfig")
-        if reflex_base.config._import_recorder not in sys.meta_path:
-            sys.meta_path.insert(0, reflex_base.config._import_recorder)
+        sys.meta_path = meta_path_before
 
 
 def test_get_config_reload_deprecated(mocker: MockerFixture):
