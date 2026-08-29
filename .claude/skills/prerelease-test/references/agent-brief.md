@@ -23,12 +23,15 @@ and hunt for anomalies. You REPORT issues; you never fix framework code.
    Everything installs from PyPI. We are testing what users receive, not what the tree contains.
 2. **Never run python with the checkout as your working directory.** `<REPO>/reflex/` shadows the
    installed package, so `import reflex` silently picks up unreleased source and your results
-   become fiction. Run scripts from a neutral directory and start each repro with an assertion:
+   become fiction. Run scripts from a neutral directory and start each repro with an assertion
+   naming the venv whose python is running it — the shared one below, or your own:
    ```python
    import reflex
 
    assert "<VENV_PATH>" in reflex.__file__, reflex.__file__
    ```
+   A guard that names some other venv fails on every run and gets deleted, which leaves you with
+   no guard at all.
 3. Reading the checkout is fine and encouraged — release source is on branch `<PRERELEASE_BRANCH>`.
    For PR context load the GitHub MCP tools via ToolSearch (`select:mcp__github__pull_request_read`).
 4. Do NOT run any `git` write commands (add/commit/checkout/...) in the checkout. The orchestrator
