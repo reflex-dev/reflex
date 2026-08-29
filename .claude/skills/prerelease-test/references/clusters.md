@@ -48,5 +48,5 @@ Two clusters that are not feature-shaped but catch the highest-severity problems
   the popular third-party packages (`reflex-local-auth`, `reflex-global-hotkey`) for the removed
   names. A bare `AttributeError`/`ImportError` with no pointer to the replacement is a finding even
   when the removal itself was intended.
-- **Packaging.** `scripts/audit_pyi.py`, plus a check that each package's declared dependency pins
+- **Packaging.** `.claude/skills/prerelease-test/scripts/audit_pyi.py`, plus a check that each package's declared dependency pins
   match what the changelog says and that installing from the sdist works.

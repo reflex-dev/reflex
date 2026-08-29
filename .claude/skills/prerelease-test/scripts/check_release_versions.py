@@ -141,10 +141,6 @@ def pypi_status(name: str, version: str) -> tuple[str, str]:
     try:
         with urllib.request.urlopen(url, timeout=30) as response:
             data = json.load(response)
-        kinds = sorted({u["packagetype"] for u in data.get("urls", [])})
-        if not kinds:
-            return "missing", "published but no files"
-        return "published", "+".join(k.replace("bdist_wheel", "wheel") for k in kinds)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             return "missing", "NOT ON PYPI"
@@ -152,6 +148,19 @@ def pypi_status(name: str, version: str) -> tuple[str, str]:
     except Exception as exc:
         # Network/proxy trouble is indeterminate, not evidence the package is missing.
         return "error", f"check failed: {type(exc).__name__}"
+
+    files = data.get("urls", [])
+    if not files:
+        return "missing", "published but no files"
+    live = [u for u in files if not u.get("yanked")]
+    if not live:
+        # The version exists but every file is withdrawn: resolvers skip a yanked release
+        # unless it is pinned exactly, and it was withdrawn for a reason.
+        return "missing", "published but all files yanked"
+    kinds = sorted({u["packagetype"] for u in live})
+    detail = "+".join(k.replace("bdist_wheel", "wheel") for k in kinds)
+    yanked = len(files) - len(live)
+    return "published", f"{detail} ({yanked} yanked)" if yanked else detail
 
 
 def main() -> int:
@@ -181,12 +190,16 @@ def main() -> int:
     rows = []
     for path in sorted(changelog_paths(args.ref, args.repo)):
         content = git_show(args.ref, path, args.repo) or ""
-        match = VERSION_HEADING.search(content)
-        if not match:
-            continue
-        version = match.group(1)
         name = dist_name(path, args.ref, args.repo)
-        status, detail = pypi_status(name, version)
+        match = VERSION_HEADING.search(content)
+        if match:
+            version = match.group(1)
+            status, detail = pypi_status(name, version)
+        else:
+            # Skipping the package silently would leave it unchecked, which is the exact
+            # failure this script exists to catch; report it as indeterminate instead.
+            version = "?"
+            status, detail = "error", "no version heading in changelog"
         rows.append({
             "package": name,
             "version": version,
@@ -242,7 +255,9 @@ def main() -> int:
             print(f"INDETERMINATE: {len(errors)} package(s) could not be checked:")
             for row in errors:
                 print(f"  - {row['package']}=={row['version']} ({row['detail']})")
-            print("  Re-run before drawing conclusions; this is not evidence of a gap.")
+            print(
+                "  Unchecked is not the same as missing — resolve each before releasing."
+            )
         if not missing and not errors:
             print("All packages are published and installable.")
 
