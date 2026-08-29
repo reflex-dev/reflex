@@ -1,5 +1,8 @@
+import logging
 import multiprocessing
 import os
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -606,7 +609,9 @@ class TestDisablePlugins:
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
 
-    def test_disable_non_builtin_plugin_does_not_warn(self, mocker: MockerFixture):
+    def test_disable_non_builtin_plugin_does_not_warn(
+        self, caplog: pytest.LogCaptureFixture
+    ):
         """Disabling a non-builtin plugin emits no warning.
 
         Non-builtin plugins (e.g. ones added via REFLEX_EXTRA_PLUGINS) can be
@@ -616,10 +621,9 @@ class TestDisablePlugins:
 
         class CustomPlugin(Plugin): ...
 
-        warn = mocker.patch("reflex_base.config.console.warn")
         rx.Config(app_name="test", disable_plugins=[CustomPlugin])
         assert not any(
-            "not a built-in plugin" in str(call.args[0]) for call in warn.call_args_list
+            "not a built-in plugin" in r.getMessage() for r in caplog.records
         )
 
 
@@ -788,29 +792,31 @@ def test_extra_plugins_disabled_is_never_instantiated(monkeypatch: pytest.Monkey
 
 
 def test_extra_plugins_bad_spec_warns_and_keeps_valid(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """A bad REFLEX_EXTRA_PLUGINS entry warns but valid entries are still added."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_BAD_PLUGIN_SPEC}:{_EXTRA_PLUGIN_A}")
     config = rx.Config(app_name="test")
     # The valid entry survives despite the bad one (no all-or-nothing failure).
     assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
     assert any(
-        "REFLEX_EXTRA_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+        "REFLEX_EXTRA_PLUGINS" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
 
 
 def test_extra_plugins_uninstantiable_warns_and_skips(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """An extra plugin that cannot be instantiated warns and is skipped, not fatal."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _NEEDS_ARGS_EXTRA_PLUGIN)
     config = rx.Config(app_name="test")
     assert not any(isinstance(p, NeedsArgsExtraPlugin) for p in config.plugins)
     assert any(
-        "could not be instantiated" in str(call.args[0]) for call in warn.call_args_list
+        "could not be instantiated" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
 
 
@@ -829,12 +835,82 @@ def test_plugins_bad_env_spec_raises_invalid_plugin_config_error(
 
 
 def test_disable_plugins_bad_env_spec_warns(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """An invalid REFLEX_DISABLE_PLUGINS import path warns but does not crash."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_DISABLE_PLUGINS", _BAD_PLUGIN_SPEC)
     rx.Config(app_name="test")
     assert any(
-        "REFLEX_DISABLE_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+        "REFLEX_DISABLE_PLUGINS" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
+
+
+def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatch):
+    """Concurrent first access to a shared context loads the config exactly once.
+
+    Threads sharing one RegistrationContext (e.g. a threadpool serving requests
+    under the app's context) must all observe the same Config instance, with
+    rxconfig loaded a single time.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    n_threads = 8
+    load_count = 0
+    count_lock = threading.Lock()
+
+    def slow_load() -> rx.Config:
+        nonlocal load_count
+        with count_lock:
+            load_count += 1
+        # Widen the check-to-set window so an unserialized load path races.
+        time.sleep(0.05)
+        return rx.Config(app_name="shared")
+
+    monkeypatch.setattr(reflex_base.config, "_load_config", slow_load)
+
+    ctx = RegistrationContext()
+    barrier = threading.Barrier(n_threads)
+    results: list[rx.Config | None] = [None] * n_threads
+
+    def worker(i: int) -> None:
+        RegistrationContext._context_var.set(ctx)
+        barrier.wait()
+        results[i] = reflex_base.config.get_config()
+
+    threads = [threading.Thread(target=worker, args=(i,)) for i in range(n_threads)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert load_count == 1
+    assert all(config is results[0] for config in results)
+
+
+def test_get_config_reload_deprecated(mocker: MockerFixture):
+    """get_config(reload=True) reloads the config and warns about deprecation.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    first = rx.Config(app_name="first")
+    second = rx.Config(app_name="second")
+    mocker.patch.object(reflex_base.config, "_load_config", side_effect=[first, second])
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config() is first
+        deprecate.assert_not_called()
+        assert reflex_base.config.get_config(reload=True) is second
+        deprecate.assert_called_once()
+        assert deprecate.call_args.kwargs["feature_name"] == "get_config(reload=True)"
+        # The freshly loaded config stays cached on the context afterwards.
+        assert reflex_base.config.get_config() is second
+        deprecate.assert_called_once()

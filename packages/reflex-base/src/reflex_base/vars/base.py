@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -9,6 +10,7 @@ import datetime
 import functools
 import inspect
 import json
+import logging
 import re
 import string
 import uuid
@@ -36,13 +38,12 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
 from typing_extensions import LiteralString, dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -70,6 +71,8 @@ from reflex_base.utils.types import (
     safe_issubclass,
     unionize,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -611,7 +614,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return self._js_expr
 
     @property
-    def _var_is_local(self) -> bool:
+    def _var_is_local(self) -> builtins.bool:
         """Whether this is a local javascript variable.
 
         Returns:
@@ -620,7 +623,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return False
 
     @property
-    def _var_is_string(self) -> bool:
+    def _var_is_string(self) -> builtins.bool:
         """Whether the var is a string literal.
 
         Returns:
@@ -728,7 +731,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self
 
-    def equals(self, other: Var) -> bool:
+    def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
 
         Args:
@@ -815,7 +818,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
-        value: bool,
+        value: builtins.bool,
         _var_data: VarData | None = None,
     ) -> LiteralBooleanVar: ...
 
@@ -940,7 +943,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def to(self, output: type[str]) -> StringVar: ...  # pyright: ignore[reportOverlappingOverload]
 
     @overload
-    def to(self, output: type[bool]) -> BooleanVar: ...
+    def to(self, output: type[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def to(self, output: type[int]) -> NumberVar[int]: ...
@@ -1048,7 +1051,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def guess_type(self: Var[str]) -> StringVar: ...
 
     @overload
-    def guess_type(self: Var[bool]) -> BooleanVar: ...
+    def guess_type(self: Var[builtins.bool]) -> BooleanVar: ...
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
@@ -1072,6 +1075,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return self.to(None)
         if var_type is NoReturn:
             return self.to(Any)
+
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
 
         var_type = types.value_inside_optional(var_type)
 
@@ -1156,7 +1163,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     value = self._var_type(value)
                     setattr(state, name, value)
                 except ValueError:
-                    console.debug(
+                    logger.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
@@ -1307,7 +1314,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return ~self.bool()
 
-    def to_string(self, use_json: bool = True) -> StringVar:
+    def to_string(self, use_json: builtins.bool = True) -> StringVar:
         """Convert the var to a string.
 
         Args:
@@ -1476,7 +1483,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     f"access the attribute '{name}'",
                 )
 
-            msg = f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly."
+            msg = f"The State var {self._js_expr} of type {self._var_type} has no attribute '{name}' or may have been annotated wrongly."
             raise VarAttributeError(msg)
 
         def __bool__(self) -> bool:
@@ -2460,7 +2467,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _cache_attr(self) -> str:
-        """Get the attribute used to cache the value on the instance.
+        """The attribute used to cache the value on the instance.
 
         Returns:
             An attribute name.
@@ -2469,7 +2476,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _last_updated_attr(self) -> str:
-        """Get the attribute used to store the last updated timestamp.
+        """The attribute used to store the last updated timestamp.
 
         Returns:
             An attribute name.
@@ -2603,9 +2610,9 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
-            console.error(
+            logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
-                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
@@ -2652,7 +2659,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 func=obj, state_cls=objclass, dependencies=d
             ).dependencies
         except Exception as e:
-            console.warn(
+            logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
@@ -2720,7 +2727,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def __class__(self) -> type:
-        """Get the class of the var.
+        """The class of the var.
 
         Returns:
             The class of the var.
@@ -2729,7 +2736,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -2865,7 +2872,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -3481,8 +3488,8 @@ class Field(Generic[FIELD_TYPE]):
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE
-        default_factory: Callable[[], FIELD_TYPE] | None
+        default: FIELD_TYPE | _MISSING_TYPE | None
+        default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
@@ -3516,7 +3523,11 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
-                default_value = types.get_default_value_for_type(annotated_type)
+                # A type with no computed default gets None, even when FIELD_TYPE
+                # itself excludes None; `annotated_type` is widened to match below.
+                default_value: FIELD_TYPE | None = types.get_default_value_for_type(
+                    annotated_type
+                )
                 if default_value is None and not types.is_optional(annotated_type):
                     annotated_type = annotated_type | None
                 if types.is_immutable(default_value):
@@ -3543,7 +3554,7 @@ class Field(Generic[FIELD_TYPE]):
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
                     self.__dict__[key] = value
 
-    def default_value(self) -> FIELD_TYPE:
+    def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
         Returns:
@@ -3710,7 +3721,7 @@ def field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     if default is not MISSING and not types.is_immutable(default):
-        console.warn(
+        logger.warning(
             "Mutable default values are not recommended. "
             "Use default_factory instead to avoid unexpected behavior."
         )

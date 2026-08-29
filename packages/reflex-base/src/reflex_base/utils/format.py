@@ -6,8 +6,11 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
+
+from rich.markup import escape as escape_markup
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
@@ -601,6 +604,35 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
+def sanitize_client_log_value(value: Any, max_length: int = 500) -> str:
+    """Make a client-supplied value safe to write to backend logs.
+
+    Args:
+        value: The client-supplied value.
+        max_length: Maximum length of the returned string.
+
+    Returns:
+        The value as a printable, length-bounded string with control characters
+        (newlines, ANSI escapes) replaced by spaces and rich markup escaped, so
+        a client cannot forge log lines, style backend output, or raise
+        ``MarkupError`` when the value is printed through the console helpers.
+    """
+    text = value if isinstance(value, str) else str(value)
+    # Slice before the per-character walk: clients can send arbitrarily long
+    # values, and everything past max_length is discarded anyway.
+    truncated = len(text) > max_length
+    text = escape_markup(
+        "".join(char if char.isprintable() else " " for char in text[:max_length])
+    )
+    if len(text) > max_length:
+        # Escaping markup can push a value that just fit over the limit.
+        truncated = True
+    if truncated:
+        suffix = "... (truncated)"
+        text = text[: max_length - len(suffix)] + suffix
+    return text
+
+
 def format_state_name(state_name: str) -> str:
     """Format a state name, replacing dots with double underscore.
 
@@ -665,6 +697,27 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the compile path,
+    so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -675,10 +728,8 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_base.utils import serializers
-
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", serializers.serialize)
+    kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
 

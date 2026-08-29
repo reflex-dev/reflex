@@ -1,11 +1,14 @@
 """Utilities for working with registries."""
 
+import logging
 from pathlib import Path
 
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cache_result_in_disk, once
 
-from reflex.utils import console, net
+from reflex.utils import net
+
+logger = logging.getLogger(__name__)
 
 
 def latency(registry: str) -> int:
@@ -22,10 +25,10 @@ def latency(registry: str) -> int:
     try:
         time_to_respond = net.get(registry, timeout=2).elapsed.microseconds
     except httpx.HTTPError:
-        console.info(f"Failed to connect to {registry}.")
+        logger.info(f"Failed to connect to {registry}.")
         return 10_000_000
     else:
-        console.debug(f"Latency of {registry}: {time_to_respond}")
+        logger.debug(f"Latency of {registry}: {time_to_respond}")
         return time_to_respond
 
 
@@ -40,7 +43,7 @@ def average_latency(registry: str, attempts: int = 3) -> int:
         The average latency of the registry in microseconds.
     """
     registry_latency = sum(latency(registry) for _ in range(attempts)) // attempts
-    console.debug(f"Average latency of {registry}: {registry_latency}")
+    logger.debug(f"Average latency of {registry}: {registry_latency}")
     return registry_latency
 
 
@@ -60,14 +63,14 @@ def _get_best_registry() -> str:
     Returns:
         The best registry.
     """
-    console.debug("Getting best registry...")
+    logger.debug("Getting best registry...")
     registries = [
         ("https://registry.npmjs.org", 1),
         ("https://registry.npmmirror.com", 2),
     ]
 
     best_registry = min(registries, key=lambda x: average_latency(x[0]) * x[1])[0]
-    console.debug(f"Best registry: {best_registry}")
+    logger.debug(f"Best registry: {best_registry}")
     return best_registry
 
 

@@ -10,7 +10,7 @@ from reflex_site_shared.components.marketing_button import button as marketing_b
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
-    GITHUB_URL,
+    GITHUB_ORG_URL,
     REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
 )
@@ -227,7 +227,7 @@ def products_panel() -> rx.Component:
             drawer_panel_item(
                 custom_nav_icon("github_navbar"),
                 "View on GitHub",
-                GITHUB_URL,
+                GITHUB_ORG_URL,
                 external=True,
                 launch=True,
             ),
@@ -279,7 +279,7 @@ def resources_panel() -> rx.Component:
             drawer_panel_item(
                 custom_nav_icon("github_navbar"),
                 "GitHub",
-                GITHUB_URL,
+                GITHUB_ORG_URL,
                 external=True,
             ),
             drawer_panel_item(

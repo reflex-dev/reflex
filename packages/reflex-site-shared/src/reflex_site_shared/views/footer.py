@@ -15,7 +15,7 @@ from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
     FORUM_URL,
-    GITHUB_URL,
+    GITHUB_ORG_URL,
     LINKEDIN_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_URL,
@@ -139,7 +139,7 @@ def menu_socials() -> rx.Component:
     """
     return rx.el.div(
         social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
-        social_menu_item("github_navbar", GITHUB_URL, "Github"),
+        social_menu_item("github_navbar", GITHUB_ORG_URL, "Github"),
         social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
         social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
         social_menu_item("forum_footer", FORUM_URL, "Forum"),
@@ -293,6 +293,7 @@ def footer_index(
                                     "Integrations",
                                     "/docs/ai/integrations/overview/",
                                 ),
+                                footer_link("FAQ", "/faq/"),
                             ],
                         ),
                         footer_link_flex(

@@ -139,6 +139,7 @@ config = rx.Config(
     plugins=[
         rx.plugins.SitemapPlugin(),
         rx.plugins.TailwindV4Plugin(),
+        rx.plugins.RadixThemesPlugin(),
     ]
 )"""
 
@@ -276,6 +277,7 @@ def context_template(
     initial_state: dict[str, Any] | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
+    disable_react_owner_stacks: bool = False,
 ):
     """Template for the context file.
 
@@ -285,6 +287,9 @@ def context_template(
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
+        disable_react_owner_stacks: Whether to emit the snippet that disables
+            React's dev-build owner-stack capture (an Error() constructed per
+            created element, whose cost grows with render depth).
 
     Returns:
         Rendered context file content as string.
@@ -294,6 +299,15 @@ def context_template(
         f"{format_state_name(state_name)}: createContext(null),"
         for state_name in initial_state
     ])
+
+    # React DevTools labels a context provider from the context's
+    # ``displayName``; without it every state provider in the tree renders as
+    # ``Context.Provider``. Name each one after the Python state it carries.
+    state_context_display_names_str = "\n".join(
+        f"StateContexts.{format_state_name(state_name)}.displayName = "
+        f'"StateContext({state_name})";'
+        for state_name in initial_state
+    )
 
     state_str = (
         rf"""
@@ -357,10 +371,38 @@ export const initialEvents = () => []
         for state_name in initial_state
     )
 
-    return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    disable_owner_stacks_str = (
+        r"""
+// Disable React dev-build owner-stack capture: the per-element Error()
+// dominates dev-mode render CPU on large pages. Costs owner frames in
+// `React.captureOwnerStack()`; set REFLEX_REACT_OWNER_STACKS=1 to restore.
+// Full context: https://github.com/reflex-dev/reflex/pull/6905
+if (typeof window !== "undefined") {
+  try {
+    const reactInternals =
+      React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
+    if (
+      reactInternals &&
+      typeof reactInternals[ownerStackCounterKey] === "number"
+    ) {
+      Object.defineProperty(reactInternals, ownerStackCounterKey, {
+        get: () => 1e9,
+        set: () => {},
+        configurable: true,
+      });
+    }
+  } catch {}
+}
+"""
+        if disable_react_owner_stacks
+        else ""
+    )
+
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ jsx }} from "@emotion/react";
-
+{disable_owner_stacks_str}
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
@@ -375,6 +417,12 @@ export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
+
+ColorModeContext.displayName = "ColorModeContext";
+UploadFilesContext.displayName = "UploadFilesContext";
+DispatchContext.displayName = "DispatchContext";
+EventLoopContext.displayName = "EventLoopContext";
+{state_context_display_names_str}
 
 {state_str}
 
@@ -412,8 +460,10 @@ export function UploadFilesProvider({{ children }}) {{
   );
 }}
 
-export function ClientSide(component) {{
-  return ({{ children, ...props }}) => {{
+// ``displayName`` is what React DevTools shows for the wrapper; without it
+// every client-only component in the tree renders as ``Anonymous``.
+export function ClientSide(component, name) {{
+  function ClientSideComponent({{ children, ...props }}) {{
     const [Component, setComponent] = useState(null);
     useEffect(() => {{
       async function load() {{
@@ -423,7 +473,9 @@ export function ClientSide(component) {{
       load();
     }}, []);
     return Component ? jsx(Component, props, children) : null;
-  }};
+  }}
+  ClientSideComponent.displayName = name ? `ClientSide(${{name}})` : "ClientSide";
+  return ClientSideComponent;
 }}
 
 export function EventLoopProvider({{ children }}) {{
@@ -479,8 +531,22 @@ def page_template(
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
+    route: str = "",
 ):
     """Template for a single react page.
+
+    Every page compiles to a component named ``Component``, so the route is
+    carried in its ``displayName`` — otherwise React DevTools shows the same
+    ``Component`` label for whichever page is mounted.
+
+    The function is declared, named, and only then exported. React Router's
+    ``decorateComponentExportsWithProps`` rewrites an exported function
+    *declaration* into a function *expression* wrapped in
+    ``UNSAFE_withComponentProps``, leaving no module-scope binding behind: a
+    trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads.
+    Exporting the identifier instead keeps the declaration in module scope, and
+    the wrapper renders ``Component`` as a child, so the name still shows.
 
     Args:
         imports: List of import statements.
@@ -488,6 +554,11 @@ def page_template(
         custom_codes: List of custom code snippets.
         hooks: Dictionary of hooks.
         render: Render function for the component.
+        route: The route this page is compiled for, used as its display name.
+            Defaults to empty, which omits the ``displayName`` assignment
+            entirely — ``page_template`` ships in ``reflex-base``, so an
+            out-of-tree caller predating the parameter keeps working and gets
+            the pre-existing unnamed ``Component``.
 
     Returns:
         Rendered React page component as string.
@@ -497,19 +568,27 @@ def page_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    display_name_str = (
+        f"Component.displayName = {json.dumps(f'Component({route})')};\n"
+        if route
+        else ""
+    )
     return f"""{imports_str}
 
 {dynamic_imports_str}
 
 {custom_code_str}
 
-export default function Component() {{
+function Component() {{
 {hooks_str}
 
   return (
     {_RenderUtils.render(render)}
   )
-}}"""
+}}
+{display_name_str}
+export default Component;
+"""
 
 
 def package_json_template(
@@ -576,7 +655,7 @@ def vite_config_template(
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -584,17 +663,19 @@ function alwaysUseReactDomServerNode() {{
     name: "vite-plugin-always-use-react-dom-server-node",
     enforce: "pre",
 
-    resolveId(source, importer) {{
-      if (
-        typeof importer === "string" &&
-        importer.endsWith("/entry.server.node.tsx") &&
-        source.includes("react-dom/server")
-      ) {{
-        return this.resolve("react-dom/server.node", importer, {{
-          skipSelf: true,
-        }});
-      }}
-      return null;
+    resolveId: {{
+      filter: {{ id: /react-dom\/server/ }},
+      handler(source, importer) {{
+        if (
+          typeof importer === "string" &&
+          importer.endsWith("/entry.server.node.tsx")
+        ) {{
+          return this.resolve("react-dom/server.node", importer, {{
+            skipSelf: true,
+          }});
+        }}
+        return null;
+      }},
     }},
   }};
 }}
@@ -654,9 +735,8 @@ export default defineConfig((config) => ({{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
         warn(warning);
       }},
-      jsx: {{}},
       output: {{
-        advancedChunks: {{
+        codeSplitting: {{
           groups: [
             {{
               test: /env.json/,
@@ -680,6 +760,13 @@ export default defineConfig((config) => ({{
         "**/.web/reflex.install_frontend_packages.cached",
       ],
     }},
+  }},
+  // react-router prerenders by fetching pages from a `vite preview` server
+  // started with this config. Pin an IPv4 loopback address so the bound
+  // socket and the fetched URL cannot resolve `localhost` to different
+  // address families (which refuses the connection, e.g. in docker).
+  preview: {{
+    host: "127.0.0.1",
   }},
   resolve: {{
     mainFields: ["browser", "module", "jsnext"],
@@ -750,10 +837,16 @@ _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
+    The exported symbol carries a ``displayName`` so React DevTools labels the
+    memo with the name of the Python component it came from. Without it, the
+    wrapped arrow function is anonymous and every memo in the tree shows up as
+    ``Anonymous``; ``memo()`` also drops the inferred name of the function it
+    wraps, so the assignment is needed even for readable symbols.
+
     Args:
-        component: The component render dict (name, signature, render, hooks,
-            and the optional ``wrapper`` JS expression the function component
-            is wrapped in).
+        component: The component render dict (name, display_name, signature,
+            render, hooks, and the optional ``wrapper`` JS expression the
+            function component is wrapped in).
 
     Returns:
         Rendered component export as string.
@@ -768,7 +861,15 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
         wrapper = f"({wrapper})"
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
-    return f"\nexport const {component['name']} = {export_expr};\n"
+    name = component["name"]
+    # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
+    # which is the layer that knows the memo's clean export name — the JS symbol
+    # here carries a module hash and would make a poor label.
+    display_name = json.dumps(component["display_name"])
+    return (
+        f"\nexport const {name} = {export_expr};\n"
+        f"{name}.displayName = {display_name};\n"
+    )
 
 
 def memo_components_template(

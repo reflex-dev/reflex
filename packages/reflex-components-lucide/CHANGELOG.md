@@ -1,3 +1,17 @@
+## v1.0.4 (2026-08-28)
+
+### Miscellaneous
+
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+
+
+## v1.0.3 (2026-08-04)
+
+### Miscellaneous
+
+- Bumped `lucide-react` 1.14.0 → 1.26.0, adding 46 new icons. ([#6678](https://github.com/reflex-dev/reflex/issues/6678))
+
+
 ## v1.0.2 (2026-06-10)
 
 ### Bug Fixes

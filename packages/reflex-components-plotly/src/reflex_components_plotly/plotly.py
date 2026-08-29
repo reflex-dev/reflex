@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.event import EventHandler, no_args_event_spec
-from reflex_base.utils import console
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.cond import color_mode_cond
+
+logger = logging.getLogger(__name__)
 
 try:
     from plotly.graph_objs import Figure
     from plotly.graph_objs.layout import Template
 
 except ImportError:
-    console.warn("Plotly is not installed. Please run `pip install plotly`.")
+    logger.warning("Plotly is not installed. Please run `pip install plotly`.")
     if not TYPE_CHECKING:
         Figure = Any
         Template = Any
@@ -374,7 +377,7 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     return f"""
 const {name} = ClientSide(() =>
     {library_import}{mod_import}
-)
+, {json.dumps(name)})
 """
 
 

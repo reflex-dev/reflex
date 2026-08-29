@@ -2,6 +2,7 @@
 
 import dataclasses
 import importlib
+import logging
 import os
 import sys
 import threading
@@ -28,8 +29,11 @@ from reflex_base.environment import env_var as env_var
 from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
-from reflex_base.utils import console
+from reflex_base.registry import RegistrationContext
+from reflex_base.utils import console, log
 from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -157,8 +161,8 @@ class BaseConfig:
         frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
-        api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-        deploy_url: The url the frontend will be hosted on.
+        api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
+        deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
         backend_host: The url the backend will be hosted on.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
@@ -176,7 +180,7 @@ class BaseConfig:
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
-        env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
+        env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
         default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
@@ -319,16 +323,7 @@ class Config(BaseConfig):
     REFLEX_FRONTEND_PORT=3001 reflex run
     ```
 
-    ## Key Configuration Areas
-
-    - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
-    - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
-    - **Database**: `db_url`, `async_db_url`, `redis_url`
-    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
-    - **State Management**: `state_manager_mode`, `state_auto_setters`
-    - **Plugins**: `plugins`, `disable_plugins`
-
-    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.
+    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for a guided overview of the most commonly tweaked settings.
     """
 
     # Track whether the app name has already been validated for this Config instance.
@@ -358,6 +353,10 @@ class Config(BaseConfig):
             env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
+        else:
+            # In managed (CLI) mode, make sure backend workers render records;
+            # outside the CLI this is a no-op and handlers stay untouched.
+            log.ensure_configured()
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
@@ -494,14 +493,14 @@ class Config(BaseConfig):
         """
         for plugin_class in environment.REFLEX_EXTRA_PLUGINS.get():
             if isinstance(plugin_class, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid REFLEX_EXTRA_PLUGINS entry {plugin_class.describe()}."
                 )
                 continue
             if any(
                 issubclass(plugin_class, disabled) for disabled in self.disable_plugins
             ):
-                console.debug(
+                logger.debug(
                     f"Skipping REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     "because its type is listed in disable_plugins.",
                 )
@@ -511,7 +510,7 @@ class Config(BaseConfig):
             try:
                 self.plugins.append(plugin_class())
             except Exception as exc:
-                console.warn(
+                logger.warning(
                     f"Ignoring REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     f"that could not be instantiated: {exc}"
                 )
@@ -527,7 +526,7 @@ class Config(BaseConfig):
         normalized: list[type[Plugin]] = []
         for entry in self.disable_plugins:
             if isinstance(entry, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid disable_plugins entry {entry.describe()}. "
                     "Check the REFLEX_DISABLE_PLUGINS import path(s)."
                 )
@@ -549,12 +548,12 @@ class Config(BaseConfig):
                         interpret_plugin_class_env(entry, "disable_plugins")
                     )
                 except Exception:
-                    console.warn(
+                    logger.warning(
                         f"Failed to import plugin from string {entry!r} in disable_plugins. "
                         "Please pass Plugin subclasses directly.",
                     )
             else:
-                console.warn(
+                logger.warning(
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
@@ -596,7 +595,7 @@ class Config(BaseConfig):
             plugin_name = plugin.__module__ + "." + plugin.__qualname__
             if plugin not in self.disable_plugins:
                 if not any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
                         "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
                         f"To disable this plugin, add `{plugin.__name__}` to the `disable_plugins` list.",
@@ -604,7 +603,7 @@ class Config(BaseConfig):
                     self.plugins.append(plugin())
             else:
                 if any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
@@ -683,7 +682,7 @@ class Config(BaseConfig):
 
     @property
     def app_module(self) -> ModuleType | None:
-        """Return the app module if `app_module_import` is set.
+        """The app module if `app_module_import` is set.
 
         Returns:
             The app module.
@@ -696,7 +695,7 @@ class Config(BaseConfig):
 
     @property
     def module(self) -> str:
-        """Get the module name of the app.
+        """The module name of the app.
 
         Returns:
             The module name.
@@ -742,9 +741,9 @@ class Config(BaseConfig):
                     environment_variable = "***"
 
                 if value != getattr(self, field.name):
-                    console.debug(
+                    logger.debug(
                         f"Overriding config value {field.name} with env var {field.name.upper()}={environment_variable}",
-                        dedupe=True,
+                        extra={"dedupe": True},
                     )
         return updated_values
 
@@ -803,8 +802,14 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
+# Project-local modules first imported while loading rxconfig.py; evicted
+# before the next load so projects don't reuse each other's dependencies.
+# Only mutated under _load_config_lock.
+_config_module_deps: set[str] = set()
+
+
 def _get_config() -> Config:
-    """Get the app config.
+    """Import rxconfig.py fresh and return its config object.
 
     Returns:
         The app config.
@@ -816,12 +821,32 @@ def _get_config() -> Config:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
         return Config(app_name="", _skip_plugins_checks=True)
-    rxconfig = importlib.import_module(constants.Config.MODULE)
+    # Never cache rxconfig or its project-local dependencies — each load goes
+    # to disk so different RegistrationContexts hold independent Config
+    # instances resolved against the current project.
+    sys.modules.pop(constants.Config.MODULE, None)
+    for dep in _config_module_deps:
+        sys.modules.pop(dep, None)
+    _config_module_deps.clear()
+    before = set(sys.modules)
+    try:
+        rxconfig = importlib.import_module(constants.Config.MODULE)
+    finally:
+        # Record even on failure so a retry evicts partially-imported deps.
+        project_root = Path.cwd()
+        for name in set(sys.modules) - before:
+            origin = getattr(sys.modules[name], "__file__", None)
+            if (
+                origin
+                and (path := Path(origin)).is_relative_to(project_root)
+                and "site-packages" not in path.parts
+            ):
+                _config_module_deps.add(name)
     return rxconfig.config
 
 
-# Protect sys.path from concurrent modification
-_config_lock = threading.RLock()
+# Protect sys.path from concurrent modification during config loading.
+_load_config_lock = threading.RLock()
 
 # Cached state_auto_setters so State-class creation never re-enters get_config().
 _state_auto_setters: bool | None = None
@@ -846,29 +871,17 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def get_config(reload: bool = False) -> Config:
-    """Get the app config.
-
-    Args:
-        reload: Re-import the rxconfig module from disk
+def _load_config() -> Config:
+    """Load the config from rxconfig.py with cwd on sys.path.
 
     Returns:
         The app config.
     """
-    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
-    if cached_rxconfig is not None:
-        if reload:
-            # Remove any cached module when `reload` is requested.
-            del sys.modules[constants.Config.MODULE]
-        else:
-            return cached_rxconfig.config
-
-    with _config_lock:
+    with _load_config_lock:
         orig_sys_path = sys.path.copy()
         sys.path.clear()
         sys.path.append(str(Path.cwd()))
         try:
-            # Try to import the module with only the current directory in the path.
             return _get_config()
         except Exception:
             # If the module import fails, try to import with the original sys.path.
@@ -883,3 +896,50 @@ def get_config(reload: bool = False) -> Config:
             sys.path.clear()
             sys.path.extend(extra_paths)
             sys.path.extend(orig_sys_path)
+
+
+def get_config(reload: bool = False) -> Config:
+    """Get the app config from the current RegistrationContext.
+
+    The config is loaded from rxconfig.py once per RegistrationContext and
+    cached on the context thereafter. If no context is currently attached,
+    one is created and attached automatically.
+
+    Args:
+        reload: Deprecated; force a fresh load of the config. Use
+            reload_config() instead.
+
+    Returns:
+        The app config.
+    """
+    if reload:
+        console.deprecate(
+            feature_name="get_config(reload=True)",
+            reason="Use reload_config() to force a fresh load of the config",
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        with _load_config_lock:
+            return reload_config()
+    ctx = RegistrationContext.ensure_context()
+    if ctx._config is None:
+        # Serialize check/load/set so threads sharing a context load once.
+        with _load_config_lock:
+            if ctx._config is None:
+                ctx._set_config(_load_config())
+    return ctx.config
+
+
+def reload_config() -> Config:
+    """Force a fresh load of the config into the current RegistrationContext.
+
+    Clears any cached config on the current context and reloads rxconfig.py
+    from disk.
+
+    Returns:
+        The freshly loaded app config.
+    """
+    ctx = RegistrationContext.ensure_context()
+    config = _load_config()
+    ctx._set_config(config)
+    return config
