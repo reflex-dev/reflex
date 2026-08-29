@@ -50,7 +50,7 @@ each is what this train ships.
 
 Run the discovery script to extract every package's version and confirm each is published:
 
-    .claude/skills/prerelease-test/scripts/check_release_versions.py --ref <git-ref>
+    uv run --script .claude/skills/prerelease-test/scripts/check_release_versions.py --ref <git-ref>
 
 (Script paths in this skill are repo-root-relative — the repo has its own unrelated `scripts/`
 directory, so the prefix matters.) It exits 1 when a package is confirmed missing and 2 when a
@@ -67,6 +67,10 @@ Before any fan-out: one venv, `reflex init --template blank`, `reflex run`, then
 Chromium with `.claude/skills/prerelease-test/scripts/drive_app.py`. This shakes out environment
 problems (proxy, bun installs, browser path) once, in a context where you can debug them, instead
 of inside ten parallel agents.
+
+The scripts carry PEP 723 metadata, so `uv run --script <path>` runs each one in its own isolated
+environment (the driver pulls in playwright that way); running them with an existing driver venv's
+interpreter works too.
 
 Also confirm the dependency graph resolves the way the changelog says it should (e.g. optional
 dependencies genuinely absent, sub-packages pinned as intended).
@@ -119,8 +123,10 @@ were removed; that finds the breakage in seconds instead of hours.
 
 Audit every package in the train; the discovery script feeds it the whole list:
 
-    .claude/skills/prerelease-test/scripts/check_release_versions.py --ref <ref> --specs \
-      | xargs .claude/skills/prerelease-test/scripts/audit_pyi.py --manifest-ref <ref>
+    uv run --script .claude/skills/prerelease-test/scripts/check_release_versions.py \
+      --ref <ref> --specs \
+      | xargs uv run --script .claude/skills/prerelease-test/scripts/audit_pyi.py \
+        --manifest-ref <ref>
 
 It verifies each package ships its own generated `.pyi` stubs in **both** wheel and sdist, that
 they are byte-identical between the two, that no package leaks another package's stubs, and that

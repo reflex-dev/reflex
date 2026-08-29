@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Discover what a release train ships and confirm every package published to PyPI.
 
 Reads the root CHANGELOG.md plus every packages/*/CHANGELOG.md at a git ref, takes the
@@ -13,6 +12,10 @@ Usage:
     check_release_versions.py --ref origin/main --json
     check_release_versions.py --ref origin/main --specs   # pkg==ver lines for audit_pyi.py
 """
+
+# /// script
+# requires-python = ">=3.10"
+# ///
 
 from __future__ import annotations
 
