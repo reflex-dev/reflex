@@ -7,10 +7,10 @@ package's pyproject.toml, and checks the version exists on PyPI.
 An unpublished version is a release blocker in its own right, so a missing package makes
 this exit non-zero.
 
-Usage:
-    check_release_versions.py --ref origin/r/pre-2026-08-27-1234
-    check_release_versions.py --ref origin/main --json
-    check_release_versions.py --ref origin/main --specs   # pkg==ver lines for audit_pyi.py
+Usage (the script carries PEP 723 metadata and no shebang, so run it through uv):
+    uv run --script check_release_versions.py --ref origin/r/pre-2026-08-27-1234
+    uv run --script check_release_versions.py --ref origin/main --json
+    uv run --script check_release_versions.py --ref origin/main --specs   # pkg==ver lines
 """
 
 # /// script
@@ -173,7 +173,12 @@ def pypi_status(name: str, version: str) -> tuple[str, str]:
     if not files:
         return "missing", "published but no files"
     if not all(
-        isinstance(f, dict) and isinstance(f.get("packagetype"), str) for f in files
+        isinstance(f, dict)
+        and isinstance(f.get("packagetype"), str)
+        # Absent means not yanked, which is fine; present but not a boolean means the
+        # entry is not PyPI's and its yank state cannot be read from it.
+        and isinstance(f.get("yanked", False), bool)
+        for f in files
     ):
         # The list is there but its entries are not PyPI's, so reading them would raise
         # out of this function and end the run rather than reporting one bad check.

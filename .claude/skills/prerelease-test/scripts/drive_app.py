@@ -91,6 +91,12 @@ def load_actions(raw: str | None) -> list[dict]:
     if not isinstance(actions, list):
         msg = f"expected a JSON list of actions, got {type(actions).__name__}"
         raise ValueError(msg)
+    for action in actions:
+        # run_action unpacks exactly one (verb, value) pair, so anything else would fail
+        # mid-run, after a browser launch and a page load that a caller typo did not earn.
+        if not isinstance(action, dict) or len(action) != 1:
+            msg = f"each action must be a single-key object, got {action!r}"
+            raise ValueError(msg)
     return actions
 
 
