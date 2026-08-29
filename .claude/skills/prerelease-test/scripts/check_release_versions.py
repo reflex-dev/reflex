@@ -90,13 +90,22 @@ def changelog_paths(ref: str, repo: str) -> list[str]:
 
     Returns:
         Paths of the root ``CHANGELOG.md`` and every ``packages/*/CHANGELOG.md``.
+
+    Raises:
+        LookupError: The ref does not exist in that checkout.
     """
-    listing = subprocess.run(
+    result = subprocess.run(
         ["git", "-C", repo, "ls-tree", "-r", "--name-only", ref],
         capture_output=True,
         text=True,
-        check=True,
-    ).stdout.splitlines()
+        check=False,
+    )
+    if result.returncode != 0:
+        # A mistyped ref is the likeliest way to misuse this, and a CalledProcessError
+        # traceback buries that under a stack it has no use for.
+        msg = f"cannot read ref {ref!r} in {repo}: {result.stderr.strip()}"
+        raise LookupError(msg)
+    listing = result.stdout.splitlines()
     skip = excluded_packages(ref, repo)
     paths = []
     for path in listing:
@@ -163,6 +172,12 @@ def pypi_status(name: str, version: str) -> tuple[str, str]:
     files = data["urls"]
     if not files:
         return "missing", "published but no files"
+    if not all(
+        isinstance(f, dict) and isinstance(f.get("packagetype"), str) for f in files
+    ):
+        # The list is there but its entries are not PyPI's, so reading them would raise
+        # out of this function and end the run rather than reporting one bad check.
+        return "error", "unexpected PyPI response shape"
     live = [u for u in files if not u.get("yanked")]
     if not live:
         # The version exists but every file is withdrawn: resolvers skip a yanked release
@@ -198,8 +213,14 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    try:
+        paths = sorted(changelog_paths(args.ref, args.repo))
+    except LookupError as exc:
+        print(exc, file=sys.stderr)
+        return 2
+
     rows = []
-    for path in sorted(changelog_paths(args.ref, args.repo)):
+    for path in paths:
         content = git_show(args.ref, path, args.repo) or ""
         name = dist_name(path, args.ref, args.repo)
         match = VERSION_HEADING.search(content)

@@ -35,7 +35,24 @@ import tarfile
 import tempfile
 import urllib.request
 import zipfile
+import zlib
 from pathlib import Path
+
+
+def _exc_name(exc: BaseException) -> str:
+    """Name an exception well enough for the reader to act on it.
+
+    Args:
+        exc: The exception to name.
+
+    Returns:
+        The class name, module-qualified unless it is a builtin. ``zlib.error`` is called
+        just ``error``, which says nothing at all on its own in a report.
+    """
+    cls = type(exc)
+    if cls.__module__ == "builtins":
+        return cls.__name__
+    return f"{cls.__module__}.{cls.__name__}"
 
 
 def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
@@ -265,7 +282,7 @@ def audit(
     except Exception as exc:
         # One unreachable package should not abort the audit of all the others.
         # Never reached the package, so nothing is known about its packaging.
-        reason = f"could not fetch artifacts: {type(exc).__name__}"
+        reason = f"could not fetch artifacts: {_exc_name(exc)}"
         return _record(
             name, version, problems, expected, have_manifest, unchecked=reason
         )
@@ -276,10 +293,16 @@ def audit(
     try:
         wheel = wheel_stubs(artifacts["wheel"])
         sdist = sdist_stubs(artifacts["sdist"])
-    except (zipfile.BadZipFile, tarfile.TarError, OSError, EOFError) as exc:
+    except (
+        zipfile.BadZipFile,
+        tarfile.TarError,
+        OSError,
+        EOFError,
+        zlib.error,
+    ) as exc:
         # A truncated download and an artifact PyPI really serves broken look identical
         # from here, so this is unchecked rather than a defect: re-run to tell them apart.
-        reason = f"could not read artifacts: {type(exc).__name__}"
+        reason = f"could not read artifacts: {_exc_name(exc)}"
         return _record(
             name, version, problems, expected, have_manifest, unchecked=reason
         )
