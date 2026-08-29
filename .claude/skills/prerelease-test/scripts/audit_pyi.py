@@ -14,14 +14,14 @@ hashes. A package with no manifest entries is expected to ship no stubs.
 It exits 1 when a package's packaging is wrong and 2 when a package could not be audited
 at all, so an unreachable PyPI never reads as a defect in a package nobody looked at.
 
-Usage:
-    audit_pyi.py reflex==0.9.9 reflex-base==0.9.9
+Usage (the script carries PEP 723 metadata and no shebang, so run it through uv):
+    uv run --script audit_pyi.py reflex==0.9.9 reflex-base==0.9.9
 
 Chain it to discovery with && rather than a pipe: a pipe reports only this script's exit
 status, so a package dropped for a failed lookup would take the audit's PASS with it.
 
-    check_release_versions.py --ref origin/main --specs > specs.txt \
-      && xargs audit_pyi.py --manifest-ref origin/main < specs.txt
+    uv run --script check_release_versions.py --ref origin/main --specs > specs.txt \
+      && xargs uv run --script audit_pyi.py --manifest-ref origin/main < specs.txt
 """
 
 # /// script
