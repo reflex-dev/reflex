@@ -121,12 +121,14 @@ were removed; that finds the breakage in seconds instead of hours.
 
 ### Phase 5 — Packaging audit
 
-Audit every package in the train; the discovery script feeds it the whole list:
+Audit every package in the train; the discovery script feeds it the whole list. Run it as two
+commands, not one pipe — a pipe reports only the audit's exit status, so a package whose PyPI
+check never completed would be dropped from the list and the audit would still print PASS:
 
     uv run --script .claude/skills/prerelease-test/scripts/check_release_versions.py \
-      --ref <ref> --specs \
-      | xargs uv run --script .claude/skills/prerelease-test/scripts/audit_pyi.py \
-        --manifest-ref <ref>
+      --ref <ref> --specs > specs.txt      # non-zero if anything is unpublished or unchecked
+    xargs uv run --script .claude/skills/prerelease-test/scripts/audit_pyi.py \
+      --manifest-ref <ref> < specs.txt
 
 It verifies each package ships its own generated `.pyi` stubs in **both** wheel and sdist, that
 they are byte-identical between the two, that no package leaks another package's stubs, and that

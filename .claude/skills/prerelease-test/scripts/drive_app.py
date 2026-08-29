@@ -73,6 +73,9 @@ def load_actions(raw: str | None) -> list[dict]:
 
     Returns:
         The list of actions to apply, empty when none were given.
+
+    Raises:
+        ValueError: The JSON is malformed or is not a list of actions.
     """
     if not raw:
         return []
@@ -84,7 +87,11 @@ def load_actions(raw: str | None) -> list[dict]:
         # Inline JSON longer than the filesystem's filename limit makes the stat itself
         # raise, so treat any path error as "this was not a path".
         pass
-    return json.loads(raw)
+    actions = json.loads(raw)
+    if not isinstance(actions, list):
+        msg = f"expected a JSON list of actions, got {type(actions).__name__}"
+        raise ValueError(msg)
+    return actions
 
 
 def run_action(page: Page, action: dict, timeout: int) -> str:
@@ -175,6 +182,15 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    try:
+        actions = load_actions(args.actions)
+    except ValueError as exc:
+        # Parsing after the browser is up spends a launch and a page load before failing,
+        # and leaves a traceback where the report should be. A malformed --actions is a
+        # usage error, so say so up front and exit with the documented failure status.
+        print(f"INVALID --actions: {exc}", file=sys.stderr)
+        return 1
+
     console: list[dict] = []
     page_errors: list[str] = []
     failed: list[dict] = []
@@ -209,7 +225,7 @@ def main() -> int:
             # deserves a report and the documented exit status rather than a traceback.
             load_error = f"{type(exc).__name__}: {exc}"
 
-        for action in [] if load_error else load_actions(args.actions):
+        for action in [] if load_error else actions:
             done, action_error = try_action(page, action, args.timeout)
             if done is not None:
                 performed.append(done)

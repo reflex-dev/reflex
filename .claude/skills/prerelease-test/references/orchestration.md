@@ -92,6 +92,9 @@ const results = await pipeline(
     return { ...res, verified_issues: verdicts.filter(Boolean) }
   },
 )
+// Dead explorers stay in as `agent_died` markers rather than being filtered out: a cluster
+// that produced nothing is a hole in the campaign, and silently dropping it is how a hole
+// gets mistaken for a clean result. Handle them explicitly when you write the report.
 return results.filter(Boolean)
 ```
 
