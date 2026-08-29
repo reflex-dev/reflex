@@ -11,6 +11,9 @@ Stub *content* legitimately differs from the committed manifest hashes because t
 hook regenerates stubs at release time, so this compares presence and counts rather than
 hashes. A package with no manifest entries is expected to ship no stubs.
 
+It exits 1 when a package's packaging is wrong and 2 when a package could not be audited
+at all, so an unreachable PyPI never reads as a defect in a package nobody looked at.
+
 Usage:
     audit_pyi.py reflex==0.9.9 reflex-base==0.9.9
     check_release_versions.py --ref origin/main --specs | xargs audit_pyi.py --manifest-ref origin/main
@@ -197,16 +200,20 @@ def _record(
     expected: dict[str, int],
     have_manifest: bool,
     own: int = 0,
+    unchecked: str | None = None,
 ) -> dict:
     """Build one package's audit record.
 
     Args:
         name: The PyPI distribution name.
         version: The audited version.
-        problems: Problems found, empty when the package is clean.
+        problems: Packaging defects found, empty when the package is clean.
         expected: Expected stub counts by distribution name, from the manifest.
         have_manifest: Whether a manifest was loaded.
         own: Number of the package's own stubs found in the wheel.
+        unchecked: Why the package could not be audited at all, when it could not be.
+            Kept apart from ``problems`` so an unreachable PyPI never reads as a defect
+            in a package nobody managed to look at.
 
     Returns:
         The record ``main`` prints, with every key it reads.
@@ -217,6 +224,7 @@ def _record(
         "own": own,
         "expected": expected.get(name, 0) if have_manifest else None,
         "problems": problems,
+        "unchecked": unchecked,
     }
 
 
@@ -248,8 +256,11 @@ def audit(
         artifacts = download_artifacts(name, version, workdir)
     except Exception as exc:
         # One unreachable package should not abort the audit of all the others.
-        problems.append(f"could not fetch artifacts: {type(exc).__name__}")
-        return _record(name, version, problems, expected, have_manifest)
+        # Never reached the package, so nothing is known about its packaging.
+        reason = f"could not fetch artifacts: {type(exc).__name__}"
+        return _record(
+            name, version, problems, expected, have_manifest, unchecked=reason
+        )
     if "wheel" not in artifacts or "sdist" not in artifacts:
         problems.append(f"missing artifact kinds: has {sorted(artifacts)}")
         return _record(name, version, problems, expected, have_manifest)
@@ -258,10 +269,12 @@ def audit(
         wheel = wheel_stubs(artifacts["wheel"])
         sdist = sdist_stubs(artifacts["sdist"])
     except (zipfile.BadZipFile, tarfile.TarError, OSError) as exc:
-        # A corrupt artifact is a finding about that package, not a reason to abandon the
-        # rest of the train.
-        problems.append(f"could not read artifacts: {type(exc).__name__}")
-        return _record(name, version, problems, expected, have_manifest)
+        # A truncated download and an artifact PyPI really serves broken look identical
+        # from here, so this is unchecked rather than a defect: re-run to tell them apart.
+        reason = f"could not read artifacts: {type(exc).__name__}"
+        return _record(
+            name, version, problems, expected, have_manifest, unchecked=reason
+        )
 
     def split(stubs: dict[str, bytes]) -> tuple[dict[str, bytes], dict[str, bytes]]:
         own = {k: v for k, v in stubs.items() if k.split("/")[0] == root}
@@ -316,7 +329,8 @@ def main() -> int:
     """Audit every requested package and print a summary.
 
     Returns:
-        ``1`` when any package has packaging problems, otherwise ``0``.
+        ``1`` when any package has packaging problems, ``2`` when a package could not be
+        audited and the result is indeterminate, otherwise ``0``.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("specs", nargs="+", help="package==version specs")
@@ -344,27 +358,38 @@ def main() -> int:
             audit(spec, workdir, expected, have_manifest, roots) for spec in args.specs
         ]
 
+    failed = [r for r in results if r["problems"]]
+    unchecked = [r for r in results if r["unchecked"]]
+
     width = max(len(r["package"]) for r in results)
     print(f"pyi packaging audit — {len(results)} package(s)\n")
     for r in results:
-        mark = "OK " if not r["problems"] else "!! "
+        mark = "!! " if r["problems"] else "?? " if r["unchecked"] else "OK "
         want = "" if r["expected"] is None else f" (manifest: {r['expected']})"
         print(
             f"  {mark}{r['package']:<{width}}  {r['version']:<12} stubs={r['own']}{want}"
         )
         for problem in r["problems"]:
             print(f"       - {problem}")
+        if r["unchecked"]:
+            print(f"       - {r['unchecked']}")
 
-    failed = [r for r in results if r["problems"]]
     print()
     if failed:
         print(f"FAIL: {len(failed)} package(s) with packaging problems.")
-    else:
+    if unchecked:
+        print(f"INDETERMINATE: {len(unchecked)} package(s) could not be audited:")
+        for r in unchecked:
+            print(f"  - {r['package']}=={r['version']} ({r['unchecked']})")
+        print("  Unaudited is not the same as broken — resolve each before releasing.")
+    if not failed and not unchecked:
         total = sum(r["own"] for r in results)
         print(
             f"PASS: {total} stubs ship correctly in both wheel and sdist; no foreign stubs."
         )
-    return 1 if failed else 0
+    if failed:
+        return 1
+    return 2 if unchecked else 0
 
 
 if __name__ == "__main__":
