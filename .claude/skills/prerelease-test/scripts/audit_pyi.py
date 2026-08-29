@@ -65,11 +65,19 @@ def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
         if not path.exists():
             # urlretrieve honours only the global socket timeout, which is unset, so a
             # stalled transfer would hang the whole audit rather than failing this row.
-            with (
-                urllib.request.urlopen(entry["url"], timeout=60) as response,
-                path.open("wb") as handle,
-            ):
-                shutil.copyfileobj(response, handle)
+            partial = path.with_name(path.name + ".part")
+            try:
+                with (
+                    urllib.request.urlopen(entry["url"], timeout=60) as response,
+                    partial.open("wb") as handle,
+                ):
+                    shutil.copyfileobj(response, handle)
+                # Only a whole file earns the real name. A partial one left there would be
+                # reused by every later run, since --keep skips what already exists, and
+                # the re-run this failure tells you to do could never clear it.
+                partial.replace(path)
+            finally:
+                partial.unlink(missing_ok=True)
         out["wheel" if kind == "bdist_wheel" else "sdist"] = path
     return out
 
