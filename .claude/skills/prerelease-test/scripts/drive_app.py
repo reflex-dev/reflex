@@ -252,11 +252,12 @@ def main() -> int:
         except Exception as exc:
             title, body = "", f"<unreadable: {type(exc).__name__}>"
         if args.screenshot:
-            Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
             try:
+                Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
                 page.screenshot(path=args.screenshot, full_page=True)
             except Exception as exc:
-                # Same closed-page case; a missing screenshot must not cost the report.
+                # A closed page, or a destination that cannot be created. Either way a
+                # missing screenshot must not cost the report.
                 screenshot_error = f"{type(exc).__name__}: {exc}"
         browser.close()
 
@@ -291,8 +292,13 @@ def main() -> int:
         "body_text": body,
     }
     if args.report:
-        Path(args.report).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.report).write_text(json.dumps(report, indent=2))
+        try:
+            Path(args.report).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.report).write_text(json.dumps(report, indent=2))
+        except OSError as exc:
+            # Losing the file must not also lose the findings: the summary below is
+            # printed either way.
+            print(f"  REPORT NOT WRITTEN: {exc}", file=sys.stderr)
 
     if load_error:
         print(f"  LOAD FAILED: {load_error}")
