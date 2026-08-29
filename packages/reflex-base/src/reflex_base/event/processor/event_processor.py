@@ -422,7 +422,10 @@ class EventProcessor:
                 # tracker since this event will never enter the queue.
                 tracked.cancel()
                 return tracked
-            parent_future.add_child(tracked)
+            # Skip registration if the parent is already done (late-chained
+            # event) so the child runs instead of crashing.
+            if not parent_future.done():
+                parent_future.add_child(tracked)
         if parent_future is None:
             self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
