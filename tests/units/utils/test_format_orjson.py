@@ -17,11 +17,6 @@ from typing import Any
 from uuid import UUID
 
 import pytest
-
-# Skip the entire module if orjson is not installed -- the helpers have
-# stdlib fallbacks but these tests target the orjson code path.
-pytest.importorskip("orjson")
-
 from reflex_base.style import Style
 from reflex_base.utils.format import (
     INF_SENTINEL,
@@ -38,16 +33,22 @@ from reflex_base.utils.serializers import serializer
 
 
 @pytest.fixture(autouse=True)
-def _orjson_enabled(monkeypatch: pytest.MonkeyPatch):
+def _orjson_enabled(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch):
     """Run every test here with the orjson paths enabled.
 
     An Enum/UUID serializer registered at import time by any other test module
-    would otherwise disable them process-wide.
+    would otherwise disable them process-wide. Tests requesting ``no_orjson``
+    drive the stdlib fallback and run whether or not the extra is installed --
+    that is the configuration the fallback exists for.
 
     Args:
+        request: The pytest request fixture, for the test's fixture names.
         monkeypatch: The pytest monkeypatch fixture.
     """
     from reflex_base.utils import format as format_module
+
+    if "no_orjson" not in request.fixturenames:
+        pytest.importorskip("orjson")
 
     monkeypatch.setattr(format_module, "_orjson_registry_shadowed", False)
 
@@ -564,6 +565,26 @@ def test_fallback_uses_compact_separators(no_orjson):
     assert orjson_dumps_socket({"a": 1, "b": [2, 3]}) == '{"a":1,"b":[2,3]}'
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"path": "bad\udcff"},
+        # The collision walk re-dumps, so it needs the guard too.
+        {"path": "bad\udcff", "v": NAN_SENTINEL},
+    ],
+)
+def test_socket_output_always_encodes_as_utf8(payload: dict):
+    """A lone surrogate must not reach the transport unescaped.
+
+    orjson rejects one outright, so both payloads take the stdlib fallback,
+    whose ``ensure_ascii=False`` would otherwise emit an unencodable string.
+
+    Args:
+        payload: A payload carrying a lone surrogate.
+    """
+    orjson_dumps_socket(payload).encode("utf-8")
+
+
 def test_fallback_skips_walk_on_clean_payload(no_orjson, monkeypatch):
     """The walker must not run when the output contains no sentinel prefix."""
     from reflex_base.utils import format as format_module
@@ -795,22 +816,45 @@ def test_orjson_dumps_ensure_ascii_true_falls_back_to_stdlib():
 # generated artifacts must not depend on the optional extra
 
 
+_NULL_FREE_PAYLOAD = {"b": {"nested": [1, 2.5, "café"], "empty": {}}, "a": True}
+# Either the None or the dropped Infinity puts a null in orjson's output, which
+# sends orjson_dumps to the stdlib in both backends.
+_NULL_BEARING_PAYLOAD = {
+    "b": {"nested": [1, 2.5, None, "café", float("inf")], "empty": {}},
+    "a": True,
+}
+
+
+def test_orjson_dumps_keeps_orjson_output_for_null_free_payload():
+    """Pin that a null-free payload really is served by orjson.
+
+    A null anywhere in the output routes ``orjson_dumps`` to the stdlib, so a
+    payload carrying one would make the byte-identity test below compare the
+    stdlib against itself.
+    """
+    import orjson as orjson_module
+
+    assert (
+        orjson_dumps(_NULL_FREE_PAYLOAD)
+        == orjson_module.dumps(_NULL_FREE_PAYLOAD).decode()
+    )
+
+
+@pytest.mark.parametrize(
+    "payload", [_NULL_FREE_PAYLOAD, _NULL_BEARING_PAYLOAD], ids=["null_free", "null"]
+)
 @pytest.mark.parametrize(
     "kwargs",
     [{}, {"indent": 2}, {"sort_keys": True}, {"indent": 2, "sort_keys": True}],
 )
 def test_orjson_dumps_output_is_backend_independent(
-    kwargs: dict, monkeypatch: pytest.MonkeyPatch
+    kwargs: dict, payload: dict, monkeypatch: pytest.MonkeyPatch
 ):
     """Files rendered with ``orjson_dumps`` (package.json, config files,
     pyi_hashes.json) must be byte-identical with and without orjson.
     """
     from reflex_base.utils import format as format_module
 
-    payload = {
-        "b": {"nested": [1, 2.5, None, "café", float("inf")], "empty": {}},
-        "a": True,
-    }
     with_orjson = orjson_dumps(payload, **kwargs)
 
     monkeypatch.setattr(format_module, "orjson", None)

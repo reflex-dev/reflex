@@ -131,6 +131,24 @@ _SOCKET_JSON_CODEC = SimpleNamespace(
 )
 
 
+def _install_socket_json_codec(sio: AsyncServer) -> None:
+    """Install the Reflex codec on one Socket.IO server.
+
+    Passing ``json=`` to the server instead assigns onto the shared
+    ``socketio.packet.Packet`` and ``engineio.packet.Packet`` classes, which
+    reconfigures every other socket.io server and client in the process, so
+    subclass the packet class for this server alone.
+
+    Args:
+        sio: The server to configure.
+    """
+    # socket.io types this attribute as the json module it defaults to.
+    packet_class: Any = sio.packet_class
+    sio.packet_class = type(
+        packet_class.__name__, (packet_class,), {"json": _SOCKET_JSON_CODEC}
+    )
+
+
 def default_frontend_exception_handler(exception: Exception) -> None:
     """Default frontend exception handler function.
 
@@ -590,30 +608,22 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
-                json=_SOCKET_JSON_CODEC,
                 allow_upgrades=False,
                 transports=[config.transport],
             )
+            _install_socket_json_codec(self.sio)
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
             raise RuntimeError(msg)
         else:
-            # A custom server that kept socket.io's default codec does not
-            # escape user strings colliding with the non-finite float sentinels
-            # the frontend revives, so install ours; a codec the user chose
-            # deliberately is left alone.
             # socket.io types this attribute as the json module it defaults to.
             packet_class: Any = self.sio.packet_class
             if packet_class.json is engineio_json:
-                # Subclass instead of assigning onto packet_class itself: that
-                # is the shared socketio.packet.Packet class, so writing to it
-                # would reconfigure every other socket.io server and client in
-                # the process (which is what passing `json=` does).
-                self.sio.packet_class = type(
-                    packet_class.__name__,
-                    (packet_class,),
-                    {"json": _SOCKET_JSON_CODEC},
-                )
+                # A custom server that kept socket.io's default codec does not
+                # escape user strings colliding with the non-finite float
+                # sentinels the frontend revives, so install ours; a codec the
+                # user chose deliberately is left alone.
+                _install_socket_json_codec(self.sio)
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")

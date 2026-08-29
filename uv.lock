@@ -3675,7 +3675,7 @@ db = [
     { name = "sqlmodel" },
 ]
 orjson = [
-    { name = "orjson" },
+    { name = "reflex-base", extra = ["orjson"] },
 ]
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
@@ -3737,7 +3737,6 @@ requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
-    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.11.1,<4.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
@@ -3745,6 +3744,7 @@ requires-dist = [
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<8.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-base", extras = ["orjson"], marker = "extra == 'orjson'", editable = "packages/reflex-base" },
     { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'pydantic'", editable = "packages/reflex-base" },
     { name = "reflex-components-code", editable = "packages/reflex-components-code" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
@@ -3825,19 +3825,23 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+orjson = [
+    { name = "orjson" },
+]
 pydantic = [
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.11.1,<4.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
 ]
-provides-extras = ["pydantic"]
+provides-extras = ["orjson", "pydantic"]
 
 [[package]]
 name = "reflex-components-code"

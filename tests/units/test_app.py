@@ -231,13 +231,44 @@ def restore_socketio_codec() -> Generator[None, None, None]:
     Yields:
         None.
     """
+    import engineio.packet
     import socketio.packet
 
     original = socketio.packet.Packet.json
+    original_engineio = engineio.packet.Packet.json
     try:
         yield
     finally:
         socketio.packet.Packet.json = original
+        engineio.packet.Packet.json = original_engineio
+
+
+def test_own_sio_codec_does_not_leak_to_other_servers(restore_socketio_codec: None):
+    """The server Reflex creates must not reconfigure anyone else's.
+
+    ``AsyncServer(json=...)`` assigns onto the shared ``socketio.packet.Packet``
+    and ``engineio.packet.Packet`` classes, so it would hand Reflex's sentinel
+    escaping to every other socket.io server and client in the process.
+    """
+    import engineio.packet
+    import socketio
+    import socketio.packet
+
+    from reflex.app import _SOCKET_JSON_CODEC
+
+    original = socketio.packet.Packet.json
+    original_engineio = engineio.packet.Packet.json
+    unrelated = socketio.AsyncServer(async_mode="asgi")
+
+    app = App()
+    app._enable_state()
+
+    own_packet_class: Any = app.sio.packet_class  # pyright: ignore[reportOptionalMemberAccess]
+    unrelated_packet_class: Any = unrelated.packet_class
+    assert own_packet_class.json is _SOCKET_JSON_CODEC
+    assert socketio.packet.Packet.json is original
+    assert engineio.packet.Packet.json is original_engineio
+    assert unrelated_packet_class.json is original
 
 
 def test_custom_sio_gets_sentinel_aware_codec(restore_socketio_codec: None):

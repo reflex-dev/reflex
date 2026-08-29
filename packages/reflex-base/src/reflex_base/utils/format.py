@@ -826,8 +826,9 @@ def _utf8_safe(out: str, obj: Any, **kwargs: Any) -> str:
     """Re-escape output that a UTF-8 writer would reject.
 
     ``ensure_ascii=False`` leaves lone surrogates (e.g. a path decoded with
-    ``surrogateescape``) raw, and every caller writes the result to a UTF-8
-    file. ``isascii`` keeps the check off the common path.
+    ``surrogateescape``) raw, and every caller hands the result to a UTF-8
+    writer -- a file, or the socket transport. ``isascii`` keeps the check off
+    the common path.
 
     Args:
         out: The serialized output.
@@ -1029,24 +1030,29 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
     inside a ``StateUpdate``), which the plain walker cannot reach — hence
     the walking ``default`` callback.
 
+    Both dumps go through ``_utf8_safe``: a lone surrogate (which orjson
+    rejects, routing the payload here) would otherwise produce a string the
+    socket transport cannot encode.
+
     Args:
         obj: The object to serialize.
 
     Returns:
         A compact JSON string ready for socket emit.
     """
-    out = json_dumps(obj, separators=(",", ":"))
+    kwargs: dict[str, Any] = {"separators": (",", ":")}
+    out = json_dumps(obj, **kwargs)
     if _SENTINEL_COMMON_PREFIX not in out:
-        return out
+        return _utf8_safe(out, obj, **kwargs)
 
     from reflex_base.utils import serializers
 
     def _default(o: Any) -> Any:
         return _replace_non_finite_floats(serializers.serialize(o))
 
-    return json_dumps(
-        _replace_non_finite_floats(obj), default=_default, separators=(",", ":")
-    )
+    kwargs["default"] = _default
+    walked = _replace_non_finite_floats(obj)
+    return _utf8_safe(json_dumps(walked, **kwargs), walked, **kwargs)
 
 
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
