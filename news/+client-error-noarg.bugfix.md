@@ -1,1 +1,0 @@
-A `client_error` socket emit with no payload no longer raises an unhandled `TypeError` inside python-socketio's dispatch, which let any connected socket — even one without a valid token — spam asyncio tracebacks into the backend logs past the handler's rate limits. A missing payload is now dropped by the same guard that handles other malformed payloads.

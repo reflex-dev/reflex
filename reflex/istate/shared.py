@@ -54,20 +54,23 @@ def _do_update_other_tokens(
     """
     app = RegistrationContext.get().app
 
+    tasks = []
+    if (event_namespace := app.event_namespace) is None:
+        return tasks
+    token_manager = event_namespace._token_manager
+
     async def _update_client(token: str):
+        # Don't send updates for disconnected clients; emit_update relays the
+        # delta to the owning instance if the socket lives elsewhere.
+        if not await token_manager.is_token_connected(token):
+            return
         async with app.modify_state(
             BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
         ):
             pass
 
-    tasks = []
-    if (event_namespace := app.event_namespace) is None:
-        return tasks
     for affected_token in affected_tokens:
-        # Don't send updates for disconnected clients.
-        if affected_token not in event_namespace._token_manager.token_to_socket:
-            continue
         # TODO: remove disconnected clients after some time.
         t = asyncio.create_task(_update_client(affected_token))
         UPDATE_OTHER_CLIENT_TASKS.add(t)
