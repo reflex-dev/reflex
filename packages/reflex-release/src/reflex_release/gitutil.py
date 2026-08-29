@@ -330,6 +330,26 @@ def gh_run(args: list[str], cwd: Path, check: bool = True) -> int:
     return returncode
 
 
+def gh_capture(args: list[str], cwd: Path) -> tuple[int, str, str]:
+    """Run a GitHub CLI command, returning everything it reported.
+
+    For callers that have to tell one failure from another: through an exit
+    status alone, "GitHub says there is no such release" and "GitHub could not
+    be asked" are the same answer.
+
+    Args:
+        args: The ``gh`` arguments.
+        cwd: The repository directory.
+
+    Returns:
+        The exit status, and stdout and stderr, both stripped.
+    """
+    result = subprocess.run(
+        ["gh", *args], cwd=cwd, capture_output=True, text=True, check=False
+    )
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+
 def gh_output(args: list[str], cwd: Path, check: bool = True) -> str:
     """Run a GitHub CLI command whose stdout is consumed by the caller.
 
@@ -342,11 +362,9 @@ def gh_output(args: list[str], cwd: Path, check: bool = True) -> str:
         The command's stdout, stripped. Empty when it failed and ``check`` is
         False.
     """
-    result = subprocess.run(
-        ["gh", *args], cwd=cwd, capture_output=True, text=True, check=False
-    )
-    if result.returncode != 0:
+    returncode, stdout, stderr = gh_capture(args, cwd)
+    if returncode != 0:
         if check:
-            fail(f"gh {' '.join(args)} failed: {result.stderr.strip()}")
+            fail(f"gh {' '.join(args)} failed: {stderr}")
         return ""
-    return result.stdout.strip()
+    return stdout

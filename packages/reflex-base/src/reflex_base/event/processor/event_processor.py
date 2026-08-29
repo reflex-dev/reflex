@@ -14,7 +14,6 @@ from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequen
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
-import rich.markup
 from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
@@ -423,7 +422,10 @@ class EventProcessor:
                 # tracker since this event will never enter the queue.
                 tracked.cancel()
                 return tracked
-            parent_future.add_child(tracked)
+            # Skip registration if the parent is already done (late-chained
+            # event) so the child runs instead of crashing.
+            if not parent_future.done():
+                parent_future.add_child(tracked)
         if parent_future is None:
             self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
@@ -749,9 +751,7 @@ class EventProcessor:
                 except Exception:
                     # Log the error and continue processing the next events.
                     logger.exception(
-                        rich.markup.escape(
-                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
-                        )
+                        f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():

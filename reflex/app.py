@@ -2166,7 +2166,7 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-    async def on_client_error(self, sid: str, data: Any):
+    async def on_client_error(self, sid: str, data: Any = None):
         """Handle errors reported by the frontend.
 
         This is a dedicated socket event rather than a state event
@@ -2184,7 +2184,10 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
-            data: The error data from the client.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard below
+                then drops it without raising.
         """
         if not isinstance(data, dict):
             logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
