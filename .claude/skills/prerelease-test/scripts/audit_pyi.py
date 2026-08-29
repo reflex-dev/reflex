@@ -16,7 +16,12 @@ at all, so an unreachable PyPI never reads as a defect in a package nobody looke
 
 Usage:
     audit_pyi.py reflex==0.9.9 reflex-base==0.9.9
-    check_release_versions.py --ref origin/main --specs | xargs audit_pyi.py --manifest-ref origin/main
+
+Chain it to discovery with && rather than a pipe: a pipe reports only this script's exit
+status, so a package dropped for a failed lookup would take the audit's PASS with it.
+
+    check_release_versions.py --ref origin/main --specs > specs.txt \
+      && xargs audit_pyi.py --manifest-ref origin/main < specs.txt
 """
 
 # /// script
