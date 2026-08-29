@@ -29,8 +29,11 @@ import urllib.request
 
 VERSION_HEADING = re.compile(r"^##\s+v?([0-9][^\s]*)", re.MULTILINE)
 PROJECT_NAME = re.compile(r"^name\s*=\s*[\"']([^\"']+)[\"']", re.MULTILINE)
-NEVER_PUBLISH = re.compile(r"^never-publish-packages\s*=\s*\[([^\]]*)\]", re.MULTILINE)
 QUOTED = re.compile(r"[\"']([^\"']+)[\"']")
+# Packages whose CHANGELOG.md does not name a release version, for two different
+# reasons: never-published ones have no PyPI release at all, and internal ones are
+# patch-released on every push to main rather than through the changelog.
+EXCLUDED_KEYS = ("never-publish-packages", "internal-packages")
 
 
 def git_show(ref: str, path: str, repo: str) -> str | None:
@@ -53,12 +56,14 @@ def git_show(ref: str, path: str, repo: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
-def never_published(ref: str, repo: str) -> set[str]:
-    """Read the packages the release config never publishes.
+def excluded_packages(ref: str, repo: str) -> set[str]:
+    """Read the packages whose changelog does not name a release version.
 
-    Those are built for other purposes (the docs site) and have no PyPI release, so a
-    changelog in one of them must not be reported as an unpublished blocker. Parsed with a
-    regex rather than a TOML library to keep this script dependency-free on Python 3.10.
+    A changelog in one of these must not be read as the version this train ships: a
+    never-published package has no PyPI release for it to name, and an internal package
+    is patch-released outside the changelog flow, so its heading would be checked against
+    a version that was never cut. Either way the result would be a false blocker. Parsed
+    with a regex rather than a TOML library to keep this script dependency-free on 3.10.
 
     Args:
         ref: The git ref to read the root ``pyproject.toml`` from.
@@ -68,10 +73,12 @@ def never_published(ref: str, repo: str) -> set[str]:
         The set of package directory names to skip.
     """
     content = git_show(ref, "pyproject.toml", repo) or ""
-    match = NEVER_PUBLISH.search(content)
-    if not match:
-        return set()
-    return set(QUOTED.findall(match.group(1)))
+    skip: set[str] = set()
+    for key in EXCLUDED_KEYS:
+        match = re.search(rf"^{key}\s*=\s*\[([^\]]*)\]", content, re.MULTILINE)
+        if match:
+            skip.update(QUOTED.findall(match.group(1)))
+    return skip
 
 
 def changelog_paths(ref: str, repo: str) -> list[str]:
@@ -90,7 +97,7 @@ def changelog_paths(ref: str, repo: str) -> list[str]:
         text=True,
         check=True,
     ).stdout.splitlines()
-    skip = never_published(ref, repo)
+    skip = excluded_packages(ref, repo)
     paths = []
     for path in listing:
         if path == "CHANGELOG.md":
