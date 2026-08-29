@@ -79,22 +79,26 @@ const results = await pipeline(
   (c, _item, i) => agent(brief(c, i), { label: `explore:${c.key}`, phase: 'Explore', schema: FINDINGS_SCHEMA }),
   async (res, c, i) => {
     if (!res) return { cluster: c.key, agent_died: true }
-    const issues = (res.issues || []).slice(0, 4)   // cap verification fan-out per cluster
+    // Cap the fan-out per cluster. Issues past the cap are absent from verified_issues but
+    // still present in res.issues, which is how the report tells them from verified ones.
+    const issues = (res.issues || []).slice(0, 4)
     if (!issues.length) return res
     const verdicts = await parallel(
       issues.map((iss, j) => () =>
         agent(verifyBrief(c, iss, j), { label: `verify:${c.key}:${j}`, phase: 'Verify', schema: VERDICT_SCHEMA })
-          // A dead verifier resolves falsy; drop it rather than recording verdict: null,
-          // which would read downstream as an unverified issue that passed verification.
-          .then((v) => (v ? { issue: iss, verdict: v } : null)),
+          // A dead verifier resolves falsy. Give it its own marker: `verdict: null` would
+          // read as a verdict that cleared the issue, and dropping the entry would leave a
+          // hole indistinguishable from an issue the cap never sent to a verifier.
+          .then((v) => (v ? { issue: iss, verdict: v } : { issue: iss, verifier_died: true })),
       ),
     )
-    return { ...res, verified_issues: verdicts.filter(Boolean) }
+    return { ...res, verified_issues: verdicts }
   },
 )
 // Dead explorers stay in as `agent_died` markers rather than being filtered out: a cluster
 // that produced nothing is a hole in the campaign, and silently dropping it is how a hole
-// gets mistaken for a clean result. Handle them explicitly when you write the report.
+// gets mistaken for a clean result. Same for `verifier_died` above. Every marker is work
+// the campaign did not do, so the report must account for each one rather than skip it.
 return results.filter(Boolean)
 ```
 

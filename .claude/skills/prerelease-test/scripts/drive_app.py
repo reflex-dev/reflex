@@ -232,10 +232,12 @@ def main() -> int:
             if action_error:
                 break
 
-        if performed:
+        if performed or action_error:
             # Playwright returns as soon as an action's own wait resolves, but the
             # resulting state update, network call and any error it triggers land after
             # that; without this the last action's fallout is invisible to the report.
+            # A failed action counts: the click that raised on its assertion may still
+            # have reached the server, and that response is often the whole finding.
             page.wait_for_timeout(args.settle)
 
         try:
