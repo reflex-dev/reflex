@@ -53,7 +53,10 @@ def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
     out: dict[str, Path] = {}
     for entry in data.get("urls", []):
         kind = entry["packagetype"]
-        if kind not in ("bdist_wheel", "sdist"):
+        if kind not in ("bdist_wheel", "sdist") or entry.get("yanked"):
+            # A yanked file is not what a user would install, so auditing it would report
+            # on the wrong artifact. With every file yanked this leaves nothing, which the
+            # caller already reports as a missing artifact kind.
             continue
         path = dest / entry["filename"]
         if not path.exists():
