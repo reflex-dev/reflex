@@ -818,9 +818,18 @@ class _ImportRecorder:
     """
 
     def __init__(self) -> None:
-        """Record imports made on the calling thread."""
-        self._thread = threading.get_ident()
+        """Initialize the recorder as inactive."""
+        self._thread: int | None = None
         self.names: set[str] = set()
+
+    def start(self) -> None:
+        """Start recording imports made on the current thread."""
+        self.names.clear()
+        self._thread = threading.get_ident()
+
+    def stop(self) -> None:
+        """Stop recording; names stay readable."""
+        self._thread = None
 
     def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
         """Record the import attempt without resolving it.
@@ -830,28 +839,33 @@ class _ImportRecorder:
             path: Unused.
             target: Unused.
         """
-        if threading.get_ident() == self._thread:
+        if self._thread is not None and self._thread == threading.get_ident():
             self.names.add(fullname)
+
+
+_import_recorder = _ImportRecorder()
 
 
 @contextmanager
 def _record_imports() -> Iterator[_ImportRecorder]:
-    """Install an import recorder for the current thread.
+    """Record imports made on the current thread while rxconfig loads.
 
     Yields:
         The recorder, readable after the block.
     """
-    recorder = _ImportRecorder()
-    # Rebind sys.meta_path instead of mutating it: importlib._find_spec
-    # iterates the list object it read from sys.meta_path and only copies it
-    # since 3.14, so an in-place removal can make a concurrent lookup skip a
-    # real finder. Filtering also tolerates an rxconfig.py that rebuilt
-    # sys.meta_path itself, where remove() would raise ValueError.
-    sys.meta_path = [recorder, *sys.meta_path]
+    # Installed in place and never removed. Both ways of taking it back out are
+    # unsafe: importlib._find_spec iterates the list object it read from
+    # sys.meta_path (it only copies it since 3.14), so an in-place removal can
+    # make a concurrent lookup skip a real finder, and rebinding the list drops
+    # whatever another thread inserted meanwhile — reflex.components installs a
+    # redirect finder on first import, and losing it is permanent.
+    if _import_recorder not in sys.meta_path:
+        sys.meta_path.insert(0, _import_recorder)
+    _import_recorder.start()
     try:
-        yield recorder
+        yield _import_recorder
     finally:
-        sys.meta_path = [f for f in sys.meta_path if f is not recorder]
+        _import_recorder.stop()
 
 
 def _get_config() -> Config:

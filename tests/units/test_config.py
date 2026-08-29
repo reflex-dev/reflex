@@ -1026,14 +1026,27 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     assert "side_module" in sys.modules
 
 
-def test_load_config_leaves_meta_path_as_it_found_it(
+def test_record_imports_never_rebinds_meta_path():
+    """Recording must mutate sys.meta_path in place, never rebind it.
+
+    Rebinding drops finders another thread inserted while the replacement list
+    was being built. reflex.components installs its redirect finder on first
+    import, and losing it makes every later reflex.components.* import fail
+    with ModuleNotFoundError for the rest of the process.
+    """
+    meta_path = sys.meta_path
+    with reflex_base.config._record_imports():
+        assert sys.meta_path is meta_path
+    assert sys.meta_path is meta_path
+
+
+def test_load_config_survives_rxconfig_rebuilding_meta_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """The import recorder is gone once the load returns, even if rxconfig meddles.
+    """A load succeeds even if rxconfig.py rebuilds sys.meta_path.
 
-    The recorder is installed and removed by rebinding sys.meta_path, so an
-    rxconfig.py that rebuilds the list itself neither loses its own entries nor
-    turns a successful load into a ValueError.
+    The recorder is dropped by the rebuild, so the next load has to reinstall
+    it rather than assume it is still there.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
@@ -1045,33 +1058,26 @@ def test_load_config_leaves_meta_path_as_it_found_it(
             """
             import sys
             import reflex as rx
+            from reflex_base.config import _import_recorder
 
-            class _Dummy:
-                def find_spec(self, fullname, path=None, target=None):
-                    return None
-
-            sys.meta_path = [*sys.meta_path, _Dummy()]
+            sys.meta_path = [f for f in sys.meta_path if f is not _import_recorder]
             config = rx.Config(app_name="metapathapp")
             """
         )
     )
     monkeypatch.chdir(tmp_path)
-    meta_path_before = sys.meta_path.copy()
+    meta_path = sys.meta_path
+    contents_before = meta_path.copy()
     try:
         config = reflex_base.config._load_config()
         assert config.app_name == "metapathapp"
-        # rxconfig's own finder survived; only the recorder was taken back.
-        assert sys.meta_path[:-1] == meta_path_before
-        assert type(sys.meta_path[-1]).__name__ == "_Dummy"
-        assert not any(
-            isinstance(finder, reflex_base.config._ImportRecorder)
-            for finder in sys.meta_path
-        )
-        # Deps are still recorded on the next load.
+        assert reflex_base.config._import_recorder not in sys.meta_path
+        # The next load reinstalls the recorder, so deps are recorded again.
         reflex_base.config._load_config()
         assert "rxconfig" in reflex_base.config._config_module_deps
     finally:
-        sys.meta_path = meta_path_before
+        meta_path[:] = contents_before
+        sys.meta_path = meta_path
 
 
 def test_get_config_reload_deprecated(mocker: MockerFixture):
