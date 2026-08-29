@@ -304,8 +304,10 @@ def main() -> int:
             Path(args.report).write_text(json.dumps(report, indent=2))
         except OSError as exc:
             # Losing the file must not also lose the findings: the summary below is
-            # printed either way.
+            # printed either way. It must not be reported as a pass either — a caller
+            # that asked for a report and got none has no result to trust.
             print(f"  REPORT NOT WRITTEN: {exc}", file=sys.stderr)
+            clean = False
 
     if load_error:
         print(f"  LOAD FAILED: {load_error}")
