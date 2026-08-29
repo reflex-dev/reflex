@@ -201,8 +201,17 @@ def main() -> int:
     marks = {"published": "OK ", "missing": "!! ", "error": "?? "}
 
     if args.specs:
+        # Only confirmed-published rows: specs feed a downloader, so emitting a missing or
+        # indeterminate package just moves the failure downstream. Skips go to stderr so
+        # a short list is never silently mistaken for a complete one.
         for row in rows:
-            print(f"{row['package']}=={row['version']}")
+            if row["status"] == "published":
+                print(f"{row['package']}=={row['version']}")
+        for row in missing + errors:
+            print(
+                f"skipped {row['package']}=={row['version']} ({row['detail']})",
+                file=sys.stderr,
+            )
     elif args.json:
         print(
             json.dumps(

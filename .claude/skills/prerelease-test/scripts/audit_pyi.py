@@ -204,7 +204,18 @@ def audit(
     root = import_root(name, roots)
     problems: list[str] = []
 
-    artifacts = download_artifacts(name, version, workdir)
+    try:
+        artifacts = download_artifacts(name, version, workdir)
+    except Exception as exc:
+        # One unreachable package should not abort the audit of all the others.
+        problems.append(f"could not fetch artifacts: {type(exc).__name__}")
+        return {
+            "package": name,
+            "version": version,
+            "problems": problems,
+            "own": 0,
+            "expected": expected.get(name) if have_manifest else None,
+        }
     if "wheel" not in artifacts or "sdist" not in artifacts:
         problems.append(f"missing artifact kinds: has {sorted(artifacts)}")
         return {
