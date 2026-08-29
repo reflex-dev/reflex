@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -56,7 +57,13 @@ def download_artifacts(name: str, version: str, dest: Path) -> dict[str, Path]:
             continue
         path = dest / entry["filename"]
         if not path.exists():
-            urllib.request.urlretrieve(entry["url"], path)
+            # urlretrieve honours only the global socket timeout, which is unset, so a
+            # stalled transfer would hang the whole audit rather than failing this row.
+            with (
+                urllib.request.urlopen(entry["url"], timeout=60) as response,
+                path.open("wb") as handle,
+            ):
+                shutil.copyfileobj(response, handle)
         out["wheel" if kind == "bdist_wheel" else "sdist"] = path
     return out
 
@@ -180,6 +187,36 @@ def manifest_counts(ref: str, repo: str) -> dict[str, int]:
     return dict(counts)
 
 
+def _record(
+    name: str,
+    version: str,
+    problems: list[str],
+    expected: dict[str, int],
+    have_manifest: bool,
+    own: int = 0,
+) -> dict:
+    """Build one package's audit record.
+
+    Args:
+        name: The PyPI distribution name.
+        version: The audited version.
+        problems: Problems found, empty when the package is clean.
+        expected: Expected stub counts by distribution name, from the manifest.
+        have_manifest: Whether a manifest was loaded.
+        own: Number of the package's own stubs found in the wheel.
+
+    Returns:
+        The record ``main`` prints, with every key it reads.
+    """
+    return {
+        "package": name,
+        "version": version,
+        "own": own,
+        "expected": expected.get(name, 0) if have_manifest else None,
+        "problems": problems,
+    }
+
+
 def audit(
     spec: str,
     workdir: Path,
@@ -209,25 +246,19 @@ def audit(
     except Exception as exc:
         # One unreachable package should not abort the audit of all the others.
         problems.append(f"could not fetch artifacts: {type(exc).__name__}")
-        return {
-            "package": name,
-            "version": version,
-            "problems": problems,
-            "own": 0,
-            "expected": expected.get(name) if have_manifest else None,
-        }
+        return _record(name, version, problems, expected, have_manifest)
     if "wheel" not in artifacts or "sdist" not in artifacts:
         problems.append(f"missing artifact kinds: has {sorted(artifacts)}")
-        return {
-            "package": name,
-            "version": version,
-            "problems": problems,
-            "own": 0,
-            "expected": expected.get(name) if have_manifest else None,
-        }
+        return _record(name, version, problems, expected, have_manifest)
 
-    wheel = wheel_stubs(artifacts["wheel"])
-    sdist = sdist_stubs(artifacts["sdist"])
+    try:
+        wheel = wheel_stubs(artifacts["wheel"])
+        sdist = sdist_stubs(artifacts["sdist"])
+    except (zipfile.BadZipFile, tarfile.TarError, OSError) as exc:
+        # A corrupt artifact is a finding about that package, not a reason to abandon the
+        # rest of the train.
+        problems.append(f"could not read artifacts: {type(exc).__name__}")
+        return _record(name, version, problems, expected, have_manifest)
 
     def split(stubs: dict[str, bytes]) -> tuple[dict[str, bytes], dict[str, bytes]]:
         own = {k: v for k, v in stubs.items() if k.split("/")[0] == root}
@@ -275,13 +306,7 @@ def audit(
             f"expected {want} stub(s) from manifest, wheel ships {len(wheel_own)}"
         )
 
-    return {
-        "package": name,
-        "version": version,
-        "own": len(wheel_own),
-        "expected": want,
-        "problems": problems,
-    }
+    return _record(name, version, problems, expected, have_manifest, len(wheel_own))
 
 
 def main() -> int:
