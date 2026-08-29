@@ -156,7 +156,11 @@ def pypi_status(name: str, version: str) -> tuple[str, str]:
         # Network/proxy trouble is indeterminate, not evidence the package is missing.
         return "error", f"check failed: {type(exc).__name__}"
 
-    files = data.get("urls", [])
+    if not isinstance(data, dict) or not isinstance(data.get("urls"), list):
+        # A proxy or error page that happens to parse as JSON is not evidence about the
+        # release. Only PyPI's own shape, with urls present and empty, means "no files".
+        return "error", "unexpected PyPI response shape"
+    files = data["urls"]
     if not files:
         return "missing", "published but no files"
     live = [u for u in files if not u.get("yanked")]

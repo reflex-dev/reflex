@@ -268,7 +268,7 @@ def audit(
     try:
         wheel = wheel_stubs(artifacts["wheel"])
         sdist = sdist_stubs(artifacts["sdist"])
-    except (zipfile.BadZipFile, tarfile.TarError, OSError) as exc:
+    except (zipfile.BadZipFile, tarfile.TarError, OSError, EOFError) as exc:
         # A truncated download and an artifact PyPI really serves broken look identical
         # from here, so this is unchecked rather than a defect: re-run to tell them apart.
         reason = f"could not read artifacts: {type(exc).__name__}"

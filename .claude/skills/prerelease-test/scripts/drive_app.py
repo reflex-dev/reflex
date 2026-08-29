@@ -198,6 +198,7 @@ def main() -> int:
     performed: list[str] = []
     action_error: str | None = None
     load_error: str | None = None
+    screenshot_error: str | None = None
 
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=CHROMIUM, headless=not args.headed)
@@ -238,7 +239,12 @@ def main() -> int:
             # that; without this the last action's fallout is invisible to the report.
             # A failed action counts: the click that raised on its assertion may still
             # have reached the server, and that response is often the whole finding.
-            page.wait_for_timeout(args.settle)
+            try:
+                page.wait_for_timeout(args.settle)
+            except Exception as exc:
+                # An action can close the page or navigate it away. That is an anomaly to
+                # record, not a reason to abandon the report the caller is waiting on.
+                action_error = action_error or f"{type(exc).__name__}: {exc}"
 
         try:
             title = page.title()
@@ -247,7 +253,11 @@ def main() -> int:
             title, body = "", f"<unreadable: {type(exc).__name__}>"
         if args.screenshot:
             Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
-            page.screenshot(path=args.screenshot, full_page=True)
+            try:
+                page.screenshot(path=args.screenshot, full_page=True)
+            except Exception as exc:
+                # Same closed-page case; a missing screenshot must not cost the report.
+                screenshot_error = f"{type(exc).__name__}: {exc}"
         browser.close()
 
     shown = (
@@ -257,7 +267,13 @@ def main() -> int:
     )
     problems = [m for m in shown if m["type"] in ("error", "warning")]
     clean = not (
-        problems or page_errors or failed or bad_status or action_error or load_error
+        problems
+        or page_errors
+        or failed
+        or bad_status
+        or action_error
+        or load_error
+        or screenshot_error
     )
 
     report = {
@@ -267,6 +283,7 @@ def main() -> int:
         "load_error": load_error,
         "actions_performed": performed,
         "action_error": action_error,
+        "screenshot_error": screenshot_error,
         "console": shown,
         "page_errors": page_errors,
         "failed_requests": failed,
@@ -285,6 +302,8 @@ def main() -> int:
         print(f"  did  {item}")
     if action_error:
         print(f"  ACTION FAILED: {action_error}")
+    if screenshot_error:
+        print(f"  SCREENSHOT FAILED: {screenshot_error}")
     for m in shown:
         print(f"  [{m['type']}] {m['text'][:300]}")
     for e in page_errors:
