@@ -17,7 +17,7 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import Component, ComponentStyle
+from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.memo import (
     MemoComponentDefinition,
     MemoFunctionDefinition,
@@ -582,6 +582,34 @@ def create_document_root(
     """
     from reflex.utils.misc import preload_color_theme
 
+    def document_root_component(component: Component) -> Component:
+        """Copy a head component without generating refs from static IDs.
+
+        Document roots cannot contain hooks, but a static component ID normally
+        creates a ``useRef`` hook. Preserve the ID as an HTML attribute while
+        making it a literal variable so it does not create a ref in the
+        document root.
+
+        Returns:
+            A copied component with static IDs represented as literal variables.
+        """
+        if not component._get_all_refs():
+            return component
+        component = copy.deepcopy(component)
+
+        def literalize_static_ids(component: BaseComponent) -> None:
+            if not isinstance(component, Component):
+                return
+            if component.id is not None and not isinstance(component.id, Var):
+                component.id = Var.create(component.id)
+            for child in component.children:
+                literalize_static_ids(child)
+            for child in component._get_components_in_props():
+                literalize_static_ids(child)
+
+        literalize_static_ids(component)
+        return component
+
     existing_meta_types = set()
 
     for component in head_components or []:
@@ -627,7 +655,7 @@ def create_document_root(
 
     head_components = [
         *theme_preload_components,
-        *(head_components or []),
+        *(document_root_component(component) for component in head_components or []),
         *maybe_head_components,
         *always_head_components,
     ]
