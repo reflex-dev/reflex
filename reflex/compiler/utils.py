@@ -598,6 +598,11 @@ def create_document_root(
         component = copy.deepcopy(component)
 
         def literalize_static_ids(component: BaseComponent) -> None:
+            """Replace static component IDs with literal variables recursively.
+
+            Args:
+                component: The component or nested component to update.
+            """
             if not isinstance(component, Component):
                 return
             if component.id is not None and not isinstance(component.id, Var):

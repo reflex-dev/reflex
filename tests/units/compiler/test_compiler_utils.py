@@ -3,13 +3,13 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from reflex.constants.state import FIELD_MARKER
-from reflex.state import State
-from reflex.vars.base import computed_var
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 
 from reflex.compiler.utils import compile_state, create_document_root
+from reflex.constants.state import FIELD_MARKER
+from reflex.state import State
+from reflex.vars.base import computed_var
 
 
 class CompileStateState(State):
