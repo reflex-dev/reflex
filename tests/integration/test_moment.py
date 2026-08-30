@@ -74,4 +74,4 @@ def test_moment_2_props_render(driver: WebDriver) -> None:
     moment = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "moment")
     )
-    assert moment.text == "2026-08-30"
+    AppHarness.expect(lambda: moment.text == "2026-08-30")
