@@ -62,6 +62,7 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_lucide",
     "reflex_components_plotly",
     "reflex_components_react_player",
+    "reflex_webmcp",
 )
 
 # The single logger the reflex sinks attach to; parent of every package logger.
