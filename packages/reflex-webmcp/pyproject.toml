@@ -1,0 +1,19 @@
+[project]
+name = "reflex-webmcp"
+dynamic = ["version"]
+description = "Reflex plugin that exposes bound backend events as WebMCP site tools."
+license.text = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["reflex-base >= 0.9.9", "typing_extensions >= 4.13.0"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-webmcp-"
+fallback-version = "0.0.0dev0"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
