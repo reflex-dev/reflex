@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from typing import Any
 
 from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -31,8 +32,8 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     tag: str | None = "Moment"
     is_default = True
-    library: str | None = "react-moment@1.2.2"
-    lib_dependencies: list[str] = ["moment@2.30.1"]
+    library: str | None = "react-moment@2.0.2"
+    lib_dependencies: list[str] = ["moment@2.30.1", "moment-duration-format@2.2.2"]
 
     interval: Var[int] = field(
         doc="How often the date update (how often time update / 0 to disable)."
@@ -42,11 +43,11 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         doc="Formats the date according to the given format string."
     )
 
-    trim: Var[bool] = field(
+    trim: Var[bool | str] = field(
         doc="When formatting duration time, the largest-magnitude tokens are automatically trimmed when they have no value."
     )
 
-    parse: Var[str] = field(
+    parse: Var[str | list[Any]] = field(
         doc=" Use the parse attribute to tell moment how to parse the given date when non-standard."
     )
 

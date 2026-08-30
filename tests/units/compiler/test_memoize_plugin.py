@@ -1841,6 +1841,24 @@ def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> No
     )
 
 
+def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
+    """The wrapper should support the changed react-moment 2.x prop types."""
+
+    assert Moment.library == "react-moment@2.0.2"
+    assert Moment.lib_dependencies == [
+        "moment@2.30.1",
+        "moment-duration-format@2.2.2",
+    ]
+
+    moment = Moment.create(
+        "2026-08-30",
+        trim="h [hours]",
+        parse=["YYYY-MM-DD"],
+    )
+    assert str(moment.trim) == '"h [hours]"'
+    assert str(moment.parse) == '["YYYY-MM-DD"]'
+
+
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
     """The moment's memo body must interpolate the state Var as text, not a Bare wrapper."""
     ctx, _page_ctx = _compile_single_page(
