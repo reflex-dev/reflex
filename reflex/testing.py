@@ -69,6 +69,25 @@ POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
+
+
+def _get_uvicorn():
+    """Import uvicorn for an AppHarness server.
+
+    Returns:
+        The imported uvicorn module.
+    """
+    try:
+        import uvicorn
+    except ImportError as exc:
+        msg = (
+            "AppHarness backend support requires `uvicorn`. Install it with "
+            "`pip install 'reflex[testing]'`."
+        )
+        raise ImportError(msg) from exc
+    return uvicorn
+
+
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -343,14 +362,7 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
-        try:
-            import uvicorn
-        except ImportError as exc:
-            msg = (
-                "AppHarness backend support requires `uvicorn`. Install it with "
-                "`pip install 'reflex[testing]'`."
-            )
-            raise ImportError(msg) from exc
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -842,6 +854,7 @@ class AppHarnessProd(AppHarness):
     frontend_server: uvicorn.Server | None = None
 
     def _run_frontend(self):
+        uvicorn = _get_uvicorn()
         with chdir(self.app_path):
             frontend_app = reflex.utils.exec._frontend_prod_app()
         self.frontend_server = uvicorn.Server(
@@ -910,6 +923,7 @@ class AppHarnessProd(AppHarness):
             msg = "App was not initialized."
             raise RuntimeError(msg)
         environment.REFLEX_SKIP_COMPILE.set(True)
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
