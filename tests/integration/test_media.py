@@ -50,7 +50,7 @@ def MediaApp():
 
         @rx.var
         def img_from_url(self) -> Image.Image:
-            img_url = "https://picsum.photos/id/1/200/300"
+            img_url = "https://raw.githubusercontent.com/reflex-dev/reflex/dd96aea556948ea95217ef1d8b5431546dc58363/docs/images/reflex_dark.svg"
             img_resp = httpx.get(img_url, follow_redirects=True)
             img_bytes = img_resp.content
             return Image.open(io.BytesIO(img_bytes))
