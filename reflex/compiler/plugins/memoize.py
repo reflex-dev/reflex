@@ -21,6 +21,7 @@ No shared ``stateful_components`` file is produced.
 from __future__ import annotations
 
 import dataclasses
+import functools
 from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component
@@ -35,6 +36,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_base.plugins.compiler import CompilerHooks
 
 from reflex.compiler.plugins.builtin import (
     collect_var_app_wraps_for_component,
@@ -205,6 +207,21 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
+@functools.cache
+def _memoize_only_hooks() -> CompilerHooks:
+    """Return a hook chain that runs auto-memoization and nothing else.
+
+    Used to walk a structural snapshot child's subtree: it must keep memoizing
+    so descendants get their own modules, but no page-level collector may see
+    it -- the subtree is compiled into the snapshot's own memo body. The plugin
+    holds no state, so one chain is shared across compiles.
+
+    Returns:
+        A single-plugin hook chain.
+    """
+    return CompilerHooks(plugins=(MemoizeStatefulPlugin(),))
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class MemoizeStatefulPlugin(Plugin):
     """Auto-memoize stateful components with experimental-memo wrappers.
@@ -214,18 +231,22 @@ class MemoizeStatefulPlugin(Plugin):
     wrappers (see ``get_memoization_strategy``):
 
     - Snapshot wrappers (``MemoizationLeaf``-style boundaries and structural
-      ``Foreach`` wrappers): wrapped in ``enter_component``
-      and returned with empty structural children. The walker skips descent, so
-      hooks attached to the captured body are compiled into the memo body only.
+      ``Foreach`` wrappers): wrapped in ``enter_component`` and returned with
+      empty structural children, so hooks attached to the captured body are
+      compiled into the memo body only.
     - Passthrough wrappers are wrapped in
       ``leave_component`` after descendants have already compiled, so any inner
       memo wrappers flow into this wrapper's children.
 
-    Descendants of a snapshot boundary are never independently memoized; the
+    Descendants of a snapshot *boundary* are never independently memoized; the
     boundary owns the wrapping decision for its whole subtree. This is tracked
     via ``PageContext.memoize_suppressor_stack`` — a stack of component ids
     that pushed suppression, popped in ``leave_component`` when the matching
     component leaves.
+
+    A structural snapshot child is the one case in between: its subtree is user
+    content, so it keeps memoizing, but under a memoize-only hook chain that no
+    page-level collector sees (``_memoize_structural_child``).
     """
 
     def enter_component(
@@ -237,7 +258,7 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context: Any,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
-        """Memoize snapshot-boundary subtrees before descent.
+        """Memoize snapshot subtrees before descent.
 
         Snapshot boundaries (``MemoizationLeaf``-style, see
         ``is_snapshot_boundary``) stash state-referencing hooks inside
@@ -249,7 +270,10 @@ class MemoizeStatefulPlugin(Plugin):
         entirely — the boundary's full snapshot lives only in the memo
         component definition compiled separately.
 
-        Non-boundary components are handled in ``leave_component`` so their
+        Structural snapshot children (``Foreach``) seal the same way, but their
+        subtree is memoized on the way in rather than skipped.
+
+        Everything else is handled in ``leave_component`` so its
         already-compiled children flow into the wrapper.
 
         Args:
@@ -268,16 +292,20 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         if page_context.memoize_suppressor_stack:
             return None
-        strategy = get_memoization_strategy(comp)
-        if strategy is not MemoizationStrategy.SNAPSHOT:
-            return None
-        snapshot_boundary = is_snapshot_boundary(comp)
+        if not is_snapshot_boundary(comp):
+            if get_memoization_strategy(comp) is not MemoizationStrategy.SNAPSHOT:
+                return None
+            # A structural snapshot child (``Foreach``) also renders its whole
+            # subtree into its own memo body, but unlike a boundary that
+            # subtree is user content that must keep memoizing: a descendant
+            # needs its own module so its hooks land below the per-item scope
+            # the loop provides. Memoize it here, sealed from the page walk.
+            return self._memoize_structural_child(comp, page_context, compile_context)
 
         if not _should_memoize(comp):
             # Boundary not worth wrapping — still suppress descendants so
             # they don't memoize independently of the boundary's subtree.
-            if snapshot_boundary:
-                page_context.memoize_suppressor_stack.append(id(comp))
+            page_context.memoize_suppressor_stack.append(id(comp))
             return None
 
         wrapper = self._build_wrapper(
@@ -305,7 +333,7 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context: Any,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
-        """Wrap non-boundary memoizables and pop any suppression this component pushed.
+        """Wrap memoizables handled after descent, and pop this component's suppression.
 
         Args:
             comp: The component being visited.
@@ -339,8 +367,8 @@ class MemoizeStatefulPlugin(Plugin):
             comp = page_context.own(comp)
             comp.children = list(children)
 
-        strategy = get_memoization_strategy(comp)
-        if strategy is MemoizationStrategy.SNAPSHOT:
+        if is_snapshot_boundary(comp):
+            # Already handled (and sealed) in ``enter_component``.
             return None
 
         if not _should_memoize(comp):
@@ -357,6 +385,54 @@ class MemoizeStatefulPlugin(Plugin):
         )
 
         return self._build_wrapper(comp, page_context, compile_context)
+
+    def _memoize_structural_child(
+        self,
+        comp: Component,
+        page_context: PageContext,
+        compile_context: Any,
+    ) -> ComponentAndChildren | None:
+        """Memoize a structural snapshot child's subtree without exposing it.
+
+        The subtree is walked with this plugin alone, so descendants still get
+        their own memo modules while the page collector never sees them — their
+        hooks, imports, refs and custom code belong to the memo body that
+        renders them, exactly as when the walker skipped the subtree outright.
+
+        Args:
+            comp: The structural snapshot child.
+            page_context: The active page context.
+            compile_context: The active compile context.
+
+        Returns:
+            A ``(wrapper, ())`` replacement, or ``None`` if not worth wrapping.
+        """
+        if not _should_memoize(comp):
+            return None
+
+        hooks = _memoize_only_hooks()
+        memoized_children = [
+            hooks.compile_component(
+                child,
+                page_context=page_context,
+                compile_context=compile_context,
+            )
+            for child in comp.children
+        ]
+        if any(
+            memoized is not original
+            for memoized, original in zip(memoized_children, comp.children, strict=True)
+        ):
+            comp = page_context.own(comp)
+            comp.children = memoized_children
+
+        wrapper = self._build_wrapper(comp, page_context, compile_context)
+        if wrapper is None:
+            return None
+        # Var-declared app wraps still have to reach the page registry; the
+        # collector that normally surfaces them never walks this subtree.
+        collect_var_app_wraps_in_subtree(page_context.app_wrap_components, comp)
+        return (wrapper, ())
 
     @staticmethod
     def _build_wrapper(
@@ -399,6 +475,10 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context.auto_memo_components[tag, definition.source_module] = definition
 
         wrapper = wrapper_factory()
+        # The wrapper takes the wrapped component's place in the tree, so it has
+        # to take its key too: the key belongs to the element the parent renders,
+        # and a key left behind on the memo body does nothing.
+        wrapper.key = comp.key
         # The wrapper has no structural children at the page level, but parents
         # walking ``_get_all_refs`` (e.g. ``Form._get_form_refs`` collecting
         # ref_<id> mappings into ``handleSubmit``) need to see refs from the

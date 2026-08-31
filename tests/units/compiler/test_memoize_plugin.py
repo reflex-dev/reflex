@@ -20,6 +20,7 @@ from reflex_base.components.memoize_helpers import (
     get_memoization_strategy,
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.utils import memo_paths
 from reflex_base.vars import VarData
@@ -125,6 +126,16 @@ class SpecialFormMemoState(BaseState):
     items: Field[list[str]] = field(default_factory=lambda: ["a"])
     flag: Field[bool] = field(default=True)
     value: Field[str] = field(default="a")
+
+    @rx.event
+    def record(self, index: int, form_data: dict):
+        """Record a submission from a loop item.
+
+        Args:
+            index: The loop index the form was rendered for.
+            form_data: The submitted form data.
+        """
+        self.value = f"{index}:{form_data}"
 
 
 class MemoTriggerState(BaseState):
@@ -443,6 +454,9 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     reactive content into the same wide memo body. The parent should now render
     on the page side, with Foreach and any reactive sibling each getting their
     own independent wrapper.
+
+    The Foreach snapshot is not opaque: the walker descends into the item body,
+    so the item's own loop-var consumer gets a third, independent wrapper.
     """
     ctx, _page_ctx = _compile_single_page(
         lambda: rx.box(
@@ -461,7 +475,7 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     ]
     wrapped_types = {type(definition.component) for definition in wrapped_definitions}
 
-    assert len(wrapped_definitions) == 2
+    assert len(wrapped_definitions) == 3
     assert Box not in wrapped_types
 
     foreach_definition = next(
@@ -474,16 +488,25 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
         is MemoizationStrategy.SNAPSHOT
     )
 
-    bare_definition = next(
+    bare_definitions = [
         definition
         for definition in wrapped_definitions
         if isinstance(definition.component, Bare)
-    )
-    assert (
-        get_memoization_strategy(bare_definition.component)
+    ]
+    assert len(bare_definitions) == 2
+    assert all(
+        get_memoization_strategy(definition.component)
         is MemoizationStrategy.PASSTHROUGH
+        for definition in bare_definitions
     )
-    assert bare_definition is not foreach_definition
+    # One reads app state on the page side, the other reads the loop item from
+    # the scope the Foreach provides around each rendered item.
+    bare_contents = {
+        str(cast(Bare, definition.component).contents)
+        for definition in bare_definitions
+    }
+    assert any("items_rx_state_.length" in contents for contents in bare_contents)
+    assert any(contents == f"item{FIELD_MARKER}" for contents in bare_contents)
 
 
 def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
@@ -720,28 +743,59 @@ def test_user_memo_children_render_in_page_scope() -> None:
     assert "static child" not in wrapper_code
 
 
-def test_user_memo_inside_foreach_is_not_independently_memoized() -> None:
-    """Foreach owns its snapshot, so a memo inside it renders in that body."""
+def test_user_memo_inside_foreach_reads_its_loop_var_from_the_scope() -> None:
+    """A user memo with a loop-var prop is wrapped, and the wrapper reads the scope.
+
+    Foreach owns the snapshot for the item subtree, so the wrapper module lands
+    beside it rather than on the page, and it resolves ``item`` through
+    ``useScopedValue`` instead of closing over the callback parameter.
+    """
     from reflex.compiler.compiler import compile_memo_components
 
     @rx.memo
     def row(label: rx.Var[str]) -> Component:
         return WithProp.create(label=label)
 
-    ctx, _page_ctx = _compile_single_page(
+    ctx, page_ctx = _compile_single_page(
         lambda: rx.box(
             rx.foreach(SpecialFormMemoState.items, lambda item: row(label=item))
         )
     )
 
-    (definition,) = ctx.auto_memo_components.values()
-    assert isinstance(definition, MemoComponentDefinition)
-    assert isinstance(definition.component, Foreach)
+    definitions = list(ctx.auto_memo_components.values())
+    (foreach_definition,) = (
+        definition
+        for definition in definitions
+        if isinstance(definition.component, Foreach)
+    )
+    (wrapper_definition,) = (
+        definition
+        for definition in definitions
+        if isinstance(definition.component, MemoComponent)
+    )
+    assert isinstance(foreach_definition, MemoComponentDefinition)
+    assert isinstance(wrapper_definition, MemoComponentDefinition)
+    assert wrapper_definition.auto_memo_wrapper
+
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    memo_code = "\n".join(code for _, code in memo_files)
-    assert f"jsx({row(label='x').tag}," in memo_code
+    code_by_export = {
+        definition.export_name: next(
+            code for path, code in memo_files if definition.export_name in path
+        )
+        for definition in (foreach_definition, wrapper_definition)
+    }
+
+    wrapper_code = code_by_export[wrapper_definition.export_name]
+    assert 'useScopedValue("item_rx_state_")' in wrapper_code
+    assert f"jsx({row(label='x').tag},{{label:item_rx_state_}}" in wrapper_code
+
+    # The foreach body mounts the wrapper inside the per-item provider, and the
+    # page module is left with neither the loop var nor the item subtree.
+    foreach_code = code_by_export[foreach_definition.export_name]
+    assert f"jsx({wrapper_definition.export_name}," in foreach_code
+    assert not any("useScopedValue" in hook for hook in page_ctx.hooks)
 
 
 def test_passthrough_memo_skips_hole_for_childless_component() -> None:
@@ -1539,27 +1593,24 @@ def test_memoized_match_wrapper_receives_case_children_in_page_output() -> None:
     )
 
 
-def test_client_state_setter_in_call_function_event_imports_refs() -> None:
-    """A button whose ``on_click`` calls a global ``ClientStateVar`` setter
-    must memoize and the resulting memo body's imports must include ``refs``
-    from ``$/utils/state``.
+def test_client_state_setter_in_call_function_event_imports_hook() -> None:
+    """A button whose ``on_click`` calls a ``ClientStateVar`` setter must memoize
+    and the resulting memo body must declare the ``useClientState`` hook and
+    import it from ``$/utils/client_state``.
 
-    Regression: ``ClientStateVar.set_value`` builds its setter as
-    ``refs['_client_state_<setter>']`` but the returned setter ``Var`` does not
-    carry the ``refs`` import. When the on_click event chain is compiled into
-    the memo body, the body references ``refs['_client_state_<setter>'](42)``
-    with no matching ``import { refs } from "$/utils/state"`` — producing a
-    ``ReferenceError: refs is not defined`` at runtime.
+    The setter is the local binding returned by the hook, so the memo body is
+    only valid if ``ClientStateVar.set`` carries its own hook VarData. When it
+    did not, the body referenced a setter that nothing declared, producing a
+    ``ReferenceError`` at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components
-    from reflex.experimental.client_state import ClientStateVar
 
-    counter = ClientStateVar.create("counter", default=0)
+    counter = rx.client_state(0, name="counter")
 
     def page() -> Component:
         return rx.el.button(
             "click",
-            on_click=rx.call_function(counter.set_value(42)),
+            on_click=rx.call_function(counter.set(42)),
         )
 
     ctx, _page_ctx = _compile_single_page(page)
@@ -1577,25 +1628,32 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
     )
 
-    assert "refs['_client_state_setCounter'](42)" in memo_code, (
-        "Expected the memo body to call the client-state setter via refs.\n"
+    assert "setCounter(42)" in memo_code, (
+        "Expected the memo body to call the client-state setter.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
+    assert 'useClientState(0, "counter", true)' in memo_code, (
+        "Expected the memo body to declare the client-state hook so the setter "
+        f"binding exists.\nMemo code snippet: {memo_code[:2000]}"
+    )
 
-    state_import_match = re.search(
-        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/state"',
+    import_match = re.search(
+        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/client_state"',
         memo_code,
         flags=re.MULTILINE,
     )
-    assert state_import_match is not None, (
-        "Memo body must import from $/utils/state since the on_click handler "
-        "uses refs['_client_state_setCounter'].\n"
-        f"Memo code snippet: {memo_code[:2000]}"
+    assert import_match is not None, (
+        "Memo body must import from $/utils/client_state since it calls "
+        f"useClientState.\nMemo code snippet: {memo_code[:2000]}"
     )
-    imported_names = {name.strip() for name in state_import_match.group(1).split(",")}
-    assert "refs" in imported_names, (
-        f"Memo body imports {imported_names!r} from $/utils/state but is missing "
-        "'refs' — the on_click handler references refs['_client_state_setCounter'].\n"
+    imported_names = {name.strip() for name in import_match.group(1).split(",")}
+    assert "useClientState" in imported_names, (
+        f"Memo body imports {imported_names!r} from $/utils/client_state but is "
+        f"missing 'useClientState'.\nMemo code snippet: {memo_code[:2000]}"
+    )
+
+    assert "refs['_client_state" not in memo_code, (
+        "Client state must no longer route through the global refs object.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
 
@@ -2339,21 +2397,19 @@ def test_static_restricted_element_no_id_no_children_does_not_memoize() -> None:
     )
 
 
-@pytest.mark.parametrize("global_ref", [True, False])
+@pytest.mark.parametrize("name", ["titletest", None])
 def test_client_state_value_inside_snapshot_boundary_is_memoized(
-    global_ref: bool,
+    name: str | None,
 ) -> None:
     """Client-state Vars are reactive and must trigger boundary memoization.
 
-    A ``client_state`` Var contributes its ``useState``/``useId`` hooks via
+    A ``client_state`` Var contributes its ``useClientState`` hook via
     ``var_data.hooks`` without setting ``var_data.state``. The reactive-Var
     walk must catch the hooks-only case so client-state-driven content
-    inside a snapshot boundary lands in the memo body. Both global and
-    page-local ``ClientStateVar`` Vars must drive the same wrapping.
+    inside a snapshot boundary lands in the memo body. Both a named (global)
+    and an unnamed (tree-scoped) var must drive the same wrapping.
     """
-    from reflex.experimental.client_state import ClientStateVar
-
-    cs_var = ClientStateVar.create("titletest", default="hi", global_ref=global_ref)
+    cs_var = rx.client_state("hi", name=name)
     title = Title.create(cs_var.value)
     ctx, page_ctx = _compile_single_page(lambda: title)
     assert len(ctx.memoize_wrappers) == 1, (
@@ -2362,7 +2418,7 @@ def test_client_state_value_inside_snapshot_boundary_is_memoized(
     )
     page_output = page_ctx.output_code
     assert page_output is not None
-    assert "useState" not in page_output, (
+    assert "useClientState" not in page_output, (
         "Client-state hooks should be inside the memo body, not the page.\n"
         f"Page output snippet: {page_output[:2000]}"
     )
@@ -2593,3 +2649,230 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def _memo_export_line(files: object, symbol: str) -> str:
+    """Get the `export const` line for one memo symbol.
+
+    Memos from the same source module are grouped into one JS file, so assertions
+    about a single memo's wrapper have to look at its own export line rather than
+    the whole file.
+
+    Args:
+        files: The compiled (path, code) pairs.
+        symbol: Substring identifying the memo's exported symbol.
+
+    Returns:
+        The matching export line.
+    """
+    for _path, code in files:  # pyright: ignore [reportGeneralTypeIssues]
+        for line in code.splitlines():
+            if line.startswith("export const") and symbol in line:
+                return line
+    msg = f"no export line found for {symbol!r}"
+    raise AssertionError(msg)
+
+
+def test_explicit_memo_using_client_state_opens_a_scope() -> None:
+    """An ``@rx.memo`` whose body uses client state is an instance boundary.
+
+    The scope must wrap the component function, not sit inside what it returns:
+    a component's hooks run before its own output mounts, so an inner provider
+    would leave its own ``useClientState`` resolving against the enclosing scope
+    and sharing state across instances.
+    """
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def scoped_toggle(label: rx.Var[str]) -> Component:
+        local = rx.client_state(False)
+        return rx.el.button(label, on_click=local.set(True))
+
+    scoped_toggle(label="x")
+    files, _ = compile_memo_components(memos=tuple(MEMOS.values()))
+    export_line = _memo_export_line(files, "ScopedToggle")
+
+    assert "withClientStateScope(memo(Component))" in export_line, (
+        f"expected the memo wrapped in a client state scope.\n{export_line}"
+    )
+    assert any(
+        "withClientStateScope" in line
+        for _path, code in files
+        for line in code.splitlines()
+        if line.startswith("import")
+    ), "the scope HOC must be imported"
+
+
+def test_memo_without_client_state_is_not_wrapped() -> None:
+    """Pages must not pay for a scope provider on every memo."""
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def unscoped_label(label: rx.Var[str]) -> Component:
+        return rx.text(label)
+
+    unscoped_label(label="y")
+    files, _ = compile_memo_components(memos=tuple(MEMOS.values()))
+    export_line = _memo_export_line(files, "UnscopedLabel")
+
+    assert "= memo(" in export_line, f"expected the plain memo wrapper.\n{export_line}"
+    assert "withClientStateScope" not in export_line
+
+
+def test_auto_memo_wrappers_do_not_open_a_scope() -> None:
+    """Optimizer-generated wrappers must stay semantically invisible.
+
+    Auto-memoization splits one logical component across modules; if each split
+    opened a scope, the pieces would resolve different slots and a var read in
+    one and written in another would silently disconnect.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    counter = rx.client_state(0, name="autotransparent")
+
+    def page() -> Component:
+        return rx.vstack(
+            rx.text(counter.value),
+            rx.el.button("set", on_click=counter.set(1)),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    files, _ = compile_memo_components(memos=tuple(ctx.auto_memo_components.values()))
+    assert files, "expected auto-memo wrappers for the client-state consumers"
+    for path, code in files:
+        assert "withClientStateScope" not in code, (
+            f"auto-memo wrapper {path} must not open a client state scope"
+        )
+
+
+def test_foreach_item_event_handler_reaches_the_loop_index() -> None:
+    """A hoisted item handler reads the loop index from the item's scope.
+
+    Regression for reflex-dev/reflex#3210: the ``on_submit`` callback of a form
+    rendered inside an ``rx.foreach`` compiles into a ``useCallback`` that the
+    compiler lifts out of the ``.map`` body, so the callback parameter the loop
+    index used to render as was not in scope and the page threw
+    ``ReferenceError: index is not defined``. The index now renders as a
+    ``useScopedValue`` read inside the handler's own memo module.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.vstack(
+            rx.foreach(
+                Var.range(3),
+                lambda index: rx.form(
+                    rx.input(name="input"),
+                    on_submit=lambda form_data: SpecialFormMemoState.record(
+                        index, form_data
+                    ),
+                ),
+            )
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "\n".join(memo_code for _path, memo_code in files)
+
+    handler = next(
+        block for block in code.split("export const ") if "handleSubmit" in block
+    )
+    index_read = re.search(r'const (\w+) = useScopedValue\("(index\w*)"\)', handler)
+    assert index_read is not None, f"no scoped index read in the handler\n{handler}"
+    local, provided = index_read.groups()
+    # The handler sends the scoped read, not the map callback parameter.
+    assert f'["index"] : {local}' in handler
+
+    # ... and the loop provides that exact name around each rendered item.
+    foreach_block = next(
+        block for block in code.split("export const ") if "Array.prototype.map" in block
+    )
+    assert f"{provided}:{provided}" in foreach_block
+    # The read has to happen below the provider, which means in a module of its
+    # own: hooks are hoisted to the top of whichever component they land in, so
+    # a read in the module that *renders* the provider would sit above it.
+    assert handler is not foreach_block, "the handler must be its own memo module"
+    # Inside the loop body the callback parameter of the same name shadows any
+    # hoisted read, so inline uses see the real per-item value.
+    assert f"(({provided}," in foreach_block
+
+    # The page itself stays free of the loop scope.
+    assert "useScopedValue" not in (page_ctx.output_code or "")
+
+
+def test_memo_wrapper_carries_the_wrapped_component_key() -> None:
+    """An auto-memo wrapper takes the key of the component it replaces.
+
+    The key belongs to the element the parent renders. Left on the memo body it
+    does nothing, so a keyed item inside a ``rx.foreach`` would silently fall
+    back to positional identity once its root became a wrapper.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.el.div(
+                    Bare.create(SpecialFormMemoState.value), key=item
+                ),
+            )
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "\n".join(memo_code for _path, memo_code in files)
+
+    assert f"jsx(ScopedValues,{{key:item{FIELD_MARKER}," in code
+
+
+def test_client_state_seeded_from_a_loop_var_declares_it_in_every_consumer() -> None:
+    """A ``Var`` client state default reaches each consumer module it seeds.
+
+    A loop var is a cast wrapper whose hooks live on the var it wraps, so the
+    default used to compile into a bare identifier with nothing declaring it --
+    ``useClientState(ix_rx_state_, "cs0")`` above no ``useScopedValue`` line.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def counter(initial: Any) -> Component:
+        count = rx.client_state(initial, prefix="seeded")
+        return rx.hstack(
+            rx.el.button("-", on_click=count.set(lambda v: v - 1)),
+            Bare.create(count.value),
+        )
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(SpecialFormMemoState.items, lambda _x, ix: counter(ix))
+        )
+    )
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    consumers = [
+        block
+        for _path, code in files
+        for block in code.split("export const ")
+        if "useClientState(" in block
+    ]
+    assert consumers, "no memo module read the client state var"
+    for block in consumers:
+        read = re.search(r'const (\w+) = useScopedValue\("(\w+)"\)', block)
+        assert read is not None, f"nothing declares the seed\n{block}"
+        local, provided = read.groups()
+        assert local == provided
+        assert f"useClientState({local}," in block
+        # Declared before it is read, since hooks emit in order.
+        assert block.index(local) < block.index("useClientState(")
+
+    assert "useScopedValue" not in (page_ctx.output_code or "")

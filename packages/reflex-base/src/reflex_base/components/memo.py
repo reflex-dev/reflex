@@ -324,6 +324,11 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Whether each render of this memo is a distinct component instance from
+    # the user's point of view. True only for ``@rx.memo``; the auto-memoize
+    # optimizer's wrappers leave it False so they stay semantically invisible
+    # -- notably to client state, which opens a scope per instance boundary.
+    is_instance_boundary: bool = False
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -1479,6 +1484,7 @@ def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
     source_module: str | None = None,
+    params: tuple[MemoParam, ...] | None = None,
 ) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
@@ -1486,6 +1492,10 @@ def _create_component_definition(
         fn: The function to analyze.
         return_annotation: The return annotation.
         source_module: The user-app Python module that defined the memo.
+        params: Already-analyzed parameters for ``fn``. Analyzing them resolves
+            type hints, which is a measurable share of compile time, so a caller
+            that has already done it for the same function passes them through
+            rather than paying twice.
 
     Returns:
         The component memo definition.
@@ -1493,7 +1503,8 @@ def _create_component_definition(
     Raises:
         TypeError: If the function does not return a component.
     """
-    params = _analyze_params(fn, for_component=True)
+    if params is None:
+        params = _analyze_params(fn, for_component=True)
     rest_target_fields: set[str] = set()
     return MemoComponentDefinition(
         fn=fn,
@@ -1907,9 +1918,11 @@ def create_passthrough_component_memo(
         return new_component
 
     # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` evaluates again internally; that second
-    # pass appends another, identical hole to ``captured_hole_child``, and the
-    # ``captured_hole_child[0]`` read below picks up the first.
+    # ``_create_component_definition`` evaluates the body again internally; that
+    # second pass appends another, identical hole to ``captured_hole_child``, and
+    # the ``captured_hole_child[0]`` read below picks up the first. The analyzed
+    # params are shared with it, since resolving type hints twice for one
+    # function is pure waste.
     params = _analyze_params(passthrough, for_component=True)
     preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
     if preview is None:
@@ -1924,7 +1937,9 @@ def create_passthrough_component_memo(
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component, source_module)
+    definition = _create_component_definition(
+        passthrough, Component, source_module, params=params
+    )
     # ``export_name`` is the content-hashed tag, which reads as noise in the
     # React DevTools tree. Name the memo after the Python class it wraps.
     replacements: dict[str, Any] = {
@@ -2101,6 +2116,7 @@ def _memo_impl(
             _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
+            is_instance_boundary=True,
         )
         memo_callable = _create_component_wrapper(definition)
     else:

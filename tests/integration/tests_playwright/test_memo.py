@@ -29,6 +29,8 @@ def MemoApp():
     class MemoState(rx.State):
         last_value: str = ""
         order: list[str] = ["row-a", "row-b", "row-c"]
+        grid: list[list[str]] = [["a0", "a1"], ["b0", "b1"]]
+        mutable: list[str] = ["a", "b", "c"]
         tree: TreeNode = TreeNode(
             name="root",
             children=[
@@ -54,6 +56,14 @@ def MemoApp():
         @rx.event
         def reverse_order(self):
             self.order = list(reversed(self.order))
+
+        @rx.event
+        def replace_mutable(self):
+            self.mutable = ["d", "e", "f"]
+
+        @rx.event
+        def record_submit(self, item: str, position: int):
+            self.last_value = f"{item}@{position}"
 
     @rx.memo
     def my_memoed_component(
@@ -97,6 +107,97 @@ def MemoApp():
         # component that must still render and follow its prop.
         return rx.text(value, id="unwrapped-label")
 
+    def scoped_row(item: rx.Var[str], position: rx.Var[int]) -> rx.Component:
+        # No ``rx.memo``: an inline foreach body, which is where loop vars used
+        # to fall out of scope. Every consumer here compiles into its own
+        # module -- the submit handler into a ``useCallback``, the client state
+        # read into its own memo -- so each one only works if it can reach the
+        # loop item from the scope the loop provides around the item.
+        opened = rx.client_state(False, prefix="opened")
+        # Seeded from a loop var: the default is a cast Var whose declaration
+        # has to travel into every module that reads the slot.
+        count = rx.client_state(position, prefix="seeded")
+        return rx.hstack(
+            rx.form(
+                rx.el.button("submit", type="submit"),
+                on_submit=lambda _form_data: MemoState.record_submit(item, position),
+                id=f"scoped-form-{position}",
+            ),
+            rx.el.button(
+                "toggle",
+                id=f"scoped-toggle-{position}",
+                on_click=opened.set(~opened.value),
+            ),
+            rx.text(
+                rx.cond(opened.value, f"open:{item}", f"closed:{item}"),
+                id=f"scoped-status-{position}",
+            ),
+            rx.text(count.value, id=f"scoped-count-{position}"),
+            rx.el.button(
+                "bump",
+                id=f"scoped-bump-{position}",
+                on_click=count.set(lambda prev: prev + 1),
+            ),
+        )
+
+    def nested_grid() -> rx.Component:
+        # Distinct names, so the leaf reads the outer item by walking out past
+        # the inner loop's provider.
+        return rx.box(
+            rx.foreach(
+                MemoState.grid,
+                lambda row: rx.foreach(
+                    row,
+                    lambda cell: rx.text(f"{row[0]}/{cell}", class_name="nested-cell"),
+                ),
+            ),
+            id="nested-grid",
+        )
+
+    def mutable_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        # Three things that could go stale when the list content changes, with
+        # the loop keyed by position (the default -- no `key=` here).
+        seeded = rx.client_state(item, prefix="seeded")
+        fixed = rx.client_state("untouched", prefix="fixed")
+        return rx.hstack(
+            rx.text(item, id=f"mut-item-{index}"),
+            rx.text(index, id=f"mut-index-{index}"),
+            rx.text(seeded.value, id=f"mut-seeded-{index}"),
+            rx.text(fixed.value, id=f"mut-fixed-{index}"),
+            rx.el.button(
+                "mark",
+                id=f"mut-mark-{index}",
+                on_click=fixed.set("marked"),
+            ),
+        )
+
+    def mutable_list() -> rx.Component:
+        return rx.box(rx.foreach(MemoState.mutable, mutable_row), id="mutable-list")
+
+    def identity_keyed_row(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        seeded = rx.client_state(item, prefix="keyedseed")
+        return rx.text(seeded.value, id=f"keyed-seeded-{index}", key=item)
+
+    def keyed_list() -> rx.Component:
+        return rx.box(
+            rx.foreach(MemoState.mutable, identity_keyed_row), id="keyed-list"
+        )
+
+    def shadowed_grid() -> rx.Component:
+        # Both loops name their arg the same. Python shadows the outer binding
+        # inside the inner lambda, and the compiled output has to shadow it the
+        # same way: each level renders its own value.
+        return rx.box(
+            rx.foreach(
+                MemoState.grid,
+                lambda v: rx.box(
+                    rx.text(v[0], class_name="shadowed-head"),
+                    rx.foreach(v, lambda v: rx.text(v, class_name="shadowed-cell")),
+                ),
+            ),
+            id="shadowed-grid",
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.input(
@@ -126,6 +227,17 @@ def MemoApp():
                 rx.text(MemoState.last_value, id="framed-child"),
                 title=MemoState.last_value,
             ),
+            rx.box(
+                rx.foreach(MemoState.order, scoped_row),
+                id="scoped-rows",
+            ),
+            nested_grid(),
+            shadowed_grid(),
+            rx.el.button(
+                "replace", id="replace-mutable", on_click=MemoState.replace_mutable
+            ),
+            mutable_list(),
+            keyed_list(),
         )
 
     app = rx.App()
@@ -303,3 +415,208 @@ def test_memo_wrapper_none_renders_and_updates(
     expect(page.locator("#unwrapped-label")).to_have_text("")
     page.locator("#memo-input").fill("unwrapped_update")
     expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")
+
+
+def test_foreach_item_handler_receives_its_own_loop_vars(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A submit handler inside an inline foreach body sees its item and index.
+
+    Regression for reflex-dev/reflex#3210: the handler compiles into a
+    ``useCallback`` that the compiler lifts out of the ``.map`` body, so the
+    loop vars it referenced were not in scope and the page threw
+    ``ReferenceError``. Submitting each row must report that row's own values.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for position, item in enumerate(("row-a", "row-b", "row-c")):
+        page.locator(f"#scoped-form-{position} button").click()
+        expect(page.locator("#memo-last-value")).to_have_text(f"{item}@{position}")
+
+
+def test_foreach_item_client_state_is_per_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """An unnamed client state var in an inline foreach body is per item.
+
+    The var is constructed once at compile time, so all three rows resolve the
+    same generated name -- against the scope the loop opens around each item,
+    which is what makes them independent. The rendered text also interpolates
+    the loop item, so this covers the item reaching a memoized reader.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
+    expect(page.locator("#scoped-status-1")).to_have_text("closed:row-b")
+
+    page.locator("#scoped-toggle-1").click()
+
+    expect(page.locator("#scoped-status-1")).to_have_text("open:row-b")
+    # The other rows are untouched: each item owns its own slot.
+    expect(page.locator("#scoped-status-0")).to_have_text("closed:row-a")
+    expect(page.locator("#scoped-status-2")).to_have_text("closed:row-c")
+
+
+def test_foreach_item_client_state_seeded_from_the_loop_index(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A client state var defaulting to a loop var is seeded per item.
+
+    The default is a cast ``Var`` whose ``useScopedValue`` declaration lives on
+    the var it wraps; dropping it compiled every consumer to
+    ``useClientState(<name>, …)`` with nothing declaring ``<name>``, so each row
+    seeded from ``undefined``.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for position in range(3):
+        expect(page.locator(f"#scoped-count-{position}")).to_have_text(str(position))
+
+    page.locator("#scoped-bump-1").click()
+
+    expect(page.locator("#scoped-count-1")).to_have_text("2")
+    # Seeded per item, and independent of each other.
+    expect(page.locator("#scoped-count-0")).to_have_text("0")
+    expect(page.locator("#scoped-count-2")).to_have_text("2")
+
+
+def test_nested_foreach_leaf_reads_both_loop_scopes(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A leaf in a nested loop reaches the outer item by walking outward.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    cells = page.locator("#nested-grid .nested-cell")
+    expect(cells).to_have_count(4)
+    expect(cells).to_have_text(["a0/a0", "a0/a1", "b0/b0", "b0/b1"])
+
+
+def test_nested_foreach_with_shadowed_names_renders_each_level(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Nested loops reusing one parameter name each render their own values.
+
+    Reusing the name is only expressible in Python by shadowing the outer
+    binding, and the scope chain has to resolve it the same way: a read inside
+    the inner loop binds to the inner provider, and the outer row head -- which
+    sits above that provider -- keeps binding to the outer one.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#shadowed-grid .shadowed-head")).to_have_text(["a0", "b0"])
+    expect(page.locator("#shadowed-grid .shadowed-cell")).to_have_text([
+        "a0",
+        "a1",
+        "b0",
+        "b1",
+    ])
+
+
+def test_mutating_a_list_updates_the_rendered_loop_values(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Replacing a list's contents updates what each row renders.
+
+    The loop keys by position here (no ``key=``), so React re-renders the
+    existing rows rather than mounting new ones. The item and index still have
+    to follow the data: they resolve through the scope the loop provides on
+    every render, not from anything captured at mount.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-item-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-index-{index}")).to_have_text(str(index))
+
+    page.click("#replace-mutable")
+
+    for index, item in enumerate(("d", "e", "f")):
+        expect(page.locator(f"#mut-item-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-index-{index}")).to_have_text(str(index))
+
+
+def test_positionally_keyed_row_keeps_its_client_state_across_a_list_change(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A row's client state belongs to the position when the loop keys by position.
+
+    This is ``useState`` semantics: the default seeds the slot when the row
+    first claims it and is not re-read afterwards, and a positional key means
+    the row never unmounts, so nothing re-claims. Both the state a row was
+    given (``fixed``) and a state seeded from the item (``seeded``) therefore
+    survive the list being replaced.
+
+    Asserted rather than assumed, because the alternative -- re-seeding when the
+    default changes -- would silently discard whatever the user had put in the
+    row. ``key=`` is the way to tie state to the item instead; the next test
+    covers that.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-seeded-{index}")).to_have_text(item)
+        expect(page.locator(f"#mut-fixed-{index}")).to_have_text("untouched")
+
+    page.click("#mut-mark-1")
+    expect(page.locator("#mut-fixed-1")).to_have_text("marked")
+
+    page.click("#replace-mutable")
+
+    # The rows now show d/e/f (previous test), but their state stayed put.
+    expect(page.locator("#mut-item-1")).to_have_text("e")
+    expect(page.locator("#mut-fixed-1")).to_have_text("marked")
+    for index, seed in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#mut-seeded-{index}")).to_have_text(seed)
+
+
+def test_identity_keyed_row_reseeds_its_client_state_from_the_new_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """``key=`` on the item ties a row's state to the item, not the position.
+
+    Keying by identity unmounts the old rows when the list is replaced, which
+    releases their scopes, so the new rows claim fresh slots and a state seeded
+    from the item reflects the new item.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    for index, item in enumerate(("a", "b", "c")):
+        expect(page.locator(f"#keyed-seeded-{index}")).to_have_text(item)
+
+    page.click("#replace-mutable")
+
+    for index, item in enumerate(("d", "e", "f")):
+        expect(page.locator(f"#keyed-seeded-{index}")).to_have_text(item)

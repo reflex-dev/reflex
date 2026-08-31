@@ -161,6 +161,11 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     ],
     "reflex_components_sonner.toast": ["toast"],
     "reflex_base.components.props": ["PropsBase"],
+    "reflex_base.client_state": [
+        "ClientStateSetter",
+        "ClientStateVar",
+        "client_state",
+    ],
     "reflex_components_core.datadisplay.logo": ["logo"],
     "reflex_components_gridjs": ["data_table"],
     "reflex_components_moment": ["MomentDelta", "moment"],

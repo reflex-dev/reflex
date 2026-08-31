@@ -8,12 +8,54 @@ from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
 from reflex_base.components.tags.tag import Tag
+from reflex_base.constants import Dirs
+from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
 from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_base.vars.base import LiteralVar, VarData
 from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+
+_SCOPED_VALUE_IMPORT = {
+    f"$/{Dirs.CLIENT_STATE_PATH}": [ImportVar(tag="useScopedValue")]
+}
+
+
+def scoped_loop_var(name: str, var_type: GenericType) -> Var:
+    """Build a loop var that reads its value from the enclosing scope.
+
+    A loop var used to render as nothing but the map callback's parameter, which
+    broke the moment anything referencing it compiled into its own function -- an
+    event handler hoisted into a ``useCallback``, or a subtree lifted into its own
+    memo module (reflex-dev/reflex#3210). The loop now publishes the item and
+    index by name around each rendered item, so a consumer reads them from
+    context wherever the compiler puts it.
+
+    The hook declares the *same* identifier as the map callback's parameter, on
+    purpose. Hooks float to the top of whichever component they land in, so in
+    the module that renders the loop itself the declaration sits above the
+    ``.map`` and would read nothing -- the parameter shadows it for everything
+    inside the callback, which is exactly the scope where the parameter is the
+    real value. Anywhere else there is no parameter, and the context read wins.
+
+    Args:
+        name: The name the value is provided under.
+        var_type: The type of the value.
+
+    Returns:
+        A Var carrying the hook that reads the value.
+    """
+    return Var(
+        _js_expr=name,
+        _var_type=var_type,
+        _var_data=VarData(
+            hooks={f"const {name} = useScopedValue({LiteralVar.create(name)!s})": None},
+            imports=_SCOPED_VALUE_IMPORT,
+        ),
+    ).guess_type()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,10 +92,7 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return Var(
-            _js_expr=self.index_var_name,
-            _var_type=int,
-        ).guess_type()
+        return scoped_loop_var(self.index_var_name, int)
 
     def get_arg_var(self) -> Var:
         """Get the arg var for the tag (with curly braces).
@@ -63,10 +102,7 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return Var(
-            _js_expr=self.arg_var_name,
-            _var_type=self.get_iterable_var_type(),
-        ).guess_type()
+        return scoped_loop_var(self.arg_var_name, self.get_iterable_var_type())
 
     def render_component(self) -> Component:
         """Render the component.
@@ -109,9 +145,5 @@ class IterTag(Tag):
         if component is None:
             msg = "The render function must return a component."
             raise ValueError(msg)
-
-        # Set the component key.
-        if component.key is None:
-            component.key = index
 
         return component
