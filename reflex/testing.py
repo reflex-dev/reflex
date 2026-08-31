@@ -25,7 +25,6 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
-import uvicorn
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
@@ -60,6 +59,9 @@ try:
     has_selenium = True
 except ImportError:
     has_selenium = False
+
+if TYPE_CHECKING:
+    import uvicorn
 
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
@@ -341,6 +343,14 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
+        try:
+            import uvicorn
+        except ImportError as exc:
+            msg = (
+                "AppHarness backend support requires `uvicorn`. Install it with "
+                "`pip install 'reflex[testing]'`."
+            )
+            raise ImportError(msg) from exc
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -470,7 +480,14 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
-        import psutil
+        try:
+            import psutil
+        except ImportError as exc:
+            msg = (
+                "AppHarness cleanup requires `psutil`. Install it with "
+                "`pip install 'reflex[testing]'`."
+            )
+            raise ImportError(msg) from exc
 
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:

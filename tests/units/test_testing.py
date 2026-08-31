@@ -19,6 +19,11 @@ from reflex.testing import AppHarness
 from reflex.utils.exec import should_prerender_routes
 
 
+def test_testing_module_does_not_import_uvicorn_at_module_load():
+    """Importing reflex.testing does not require the AppHarness backend runtime."""
+    assert "uvicorn" not in reflex_testing.__dict__
+
+
 @pytest.mark.skip("Slow test that makes network requests.")
 def test_app_harness(tmp_path):
     """Ensure that AppHarness can compile and start an app.
