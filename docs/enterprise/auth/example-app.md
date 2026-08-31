@@ -7,8 +7,8 @@ _New in reflex-enterprise v0.9.1._
 # Example: A Complete App
 
 This page builds one small, complete app with `rxe.AuthPlugin`: **Team Notes**,
-a notes app with a public landing page, a login-protected dashboard, and
-one admin-only action. It shows the full pattern — configuration, checks,
+a shared team notepad with a public landing page, a login-protected dashboard,
+and one admin-only action. It shows the full pattern — configuration, checks,
 state, pages — in about 100 lines of code, applying the practices from
 [secure by default](/docs/enterprise/auth/secure-by-default/).
 
@@ -48,11 +48,11 @@ A role check written inside a handler body protects that one handler, silently, 
 | --- | --- | --- | --- |
 | Landing page | `/` | `False` | everyone |
 | Dashboard page | `/notes` | default (`True`) | logged-in users |
-| `add_note`, `set_draft` events | — | default (`True`) | logged-in users |
+| `add_note`, `join_team_board` events | — | default (`True`) | logged-in users |
 | `clear_all_notes` event | — | `is_admin` | the `admins` group |
-| `toggle_dark_mode` event | — | `False` | everyone |
-| `notes`, `draft` fields | — | default (`True`) | logged-in users |
-| `note_count` computed var | — | default (`True`) | logged-in users |
+| `dismiss_promo` event | — | `False` | everyone |
+| `show_promo` field | — | `False` | everyone |
+| `notes` field, `note_count` var | — | default (`True`) | logged-in users |
 
 The project has three files:
 
@@ -64,10 +64,11 @@ team_notes/
     └── team_notes.py       # state, pages, app
 ```
 
-Notes live in Reflex state to keep the example focused on auth. State is
-per-client, so each user sees only their own notes; a real team app stores
-them in a database shared by every user. Nothing about the auth pattern
-changes either way.
+The notes live in an `rx.SharedState` (available from reflex 0.8.23) linked
+to one team token, so every signed-in user reads and writes the same board
+and edits propagate live. A real app would also persist the notes to a
+database — shared state is memory-resident — but nothing about the auth
+pattern changes.
 
 ## Step 1: Configure the plugin
 
@@ -151,42 +152,50 @@ class UserExtras(AuthUserState):
         return "admins" in (self.userinfo.get("groups") or [])
 
 
-class NotesState(rx.State):
-    # Public: the landing page uses this before anyone logs in.
-    dark_mode: rx.Field[bool] = rxe.field(False, auth=False)
+class SiteState(rx.State):
+    # Public: the landing page reads and writes this before anyone logs in.
+    show_promo: rx.Field[bool] = rxe.field(True, auth=False)
 
+    @rxe.event(auth=False)
+    def dismiss_promo(self):
+        self.show_promo = False
+
+
+class NotesState(rx.SharedState):
     # Protected by default: withheld from the client until login.
     notes: rx.Field[list[str]] = rx.field([])
-    draft: rx.Field[str] = rx.field("")
 
     # Protected by default; the placeholder shows until the user is resolved.
     @rxe.var(initial_value=0)
     def note_count(self) -> int:
         return len(self.notes)
 
-    @rxe.event(auth=False)
-    def toggle_dark_mode(self):
-        self.dark_mode = not self.dark_mode
-
-    @rxe.event  # default auth=True
-    def set_draft(self, value: str):
-        self.draft = value
+    @rxe.event  # default auth=True: only signed-in users join the board
+    async def join_team_board(self):
+        if not self._linked_to:
+            await self._link_to("team-notes")
 
     @rxe.event  # default auth=True: anonymous callers are sent to /login
-    async def add_note(self):
+    async def add_note(self, form_data: dict):
         user = await User.current() or {}
         author = user.get("name") or user.get("sub") or "someone"
-        if self.draft.strip():
-            self.notes = [*self.notes, f"{self.draft} — {author}"]
-            self.draft = ""
+        text = (form_data.get("text") or "").strip()
+        if text:
+            self.notes = [*self.notes, f"{text} — {author}"]
 
     @rxe.event(auth=is_admin)  # authorization: only admins may clear the board
     def clear_all_notes(self):
         self.notes = []
 ```
 
-Three things to notice:
+Four things to notice:
 
+- **The notes are genuinely shared.** `NotesState` is an
+  [`rx.SharedState`](/docs/state-structure/shared-state/): every signed-in
+  user links to the same `"team-notes"` token (linked tokens may not contain
+  underscores), so an added or cleared note propagates to everyone on the
+  dashboard. The protected `join_team_board` event does the linking, and the
+  page guard guarantees a resolved user before it runs.
 - **`UserExtras` exists for the UI, not for security.** The common claims
   (`name`, `email`, `sub`, `picture`) are already frontend Vars on `User`; any
   other claim you want to *render* — here, whether to show the admin button —
@@ -231,34 +240,36 @@ def index() -> rx.Component:
     """Public landing page: opted out of secure-by-default on purpose."""
     return rx.vstack(
         navbar(),
+        rx.cond(
+            SiteState.show_promo,
+            rx.hstack(
+                rx.text("New: notes now update live for the whole team."),
+                rx.button("Dismiss", on_click=SiteState.dismiss_promo, size="1"),
+                align="center",
+                spacing="3",
+            ),
+        ),
         rx.heading("Keep your team's notes in one place."),
         rx.link("Open the dashboard", href="/notes"),
-        rx.button(
-            rx.cond(NotesState.dark_mode, "Switch to light", "Switch to dark"),
-            on_click=NotesState.toggle_dark_mode,
-        ),
         align="center",
         spacing="4",
-        min_height="100vh",
-        background_color=rx.cond(NotesState.dark_mode, "#111113", "#ffffff"),
-        color=rx.cond(NotesState.dark_mode, "#ededef", "#1c2024"),
     )
 
 
-@rxe.page(route="/notes", title="Notes")  # default: login required
+@rxe.page(route="/notes", title="Notes", on_load=NotesState.join_team_board)
 def notes() -> rx.Component:
     """Protected dashboard: anonymous visitors are redirected to /login."""
     return rx.vstack(
         navbar(),
-        rx.heading(f"Notes ({NotesState.note_count})"),
+        rx.heading(f"Team notes ({NotesState.note_count})"),
         rx.foreach(NotesState.notes, rx.text),
-        rx.hstack(
-            rx.input(
-                value=NotesState.draft,
-                on_change=NotesState.set_draft,
-                placeholder="Write a note",
+        rx.form(
+            rx.hstack(
+                rx.input(name="text", placeholder="Write a note"),
+                rx.button("Add", type="submit"),
             ),
-            rx.button("Add", on_click=NotesState.add_note),
+            on_submit=NotesState.add_note,
+            reset_on_submit=True,
         ),
         rx.cond(
             UserExtras.is_admin_user,
@@ -296,18 +307,21 @@ authenticated visitors who fail it are redirected to `/forbidden`. See
 reflex run
 ```
 
-Open the app: the landing page renders for everyone. Click **Open the
-dashboard** and you are redirected to `/login`; the plugin renders a button
-for the configured provider. To complete a real login, register the app's
+Open the app: the landing page renders for everyone, and anyone — signed in
+or not — can dismiss the promo banner. Click **Open the dashboard** and you
+are redirected to `/login`; the plugin renders a button for the configured
+provider. To complete a real login, register the app's
 callback URL (`http://localhost:3000/callback` in local dev) as an allowed
 redirect URI in your identity provider, and point the `OIDC_*` variables at
 it. See [deploying to production](/docs/enterprise/auth/deployment/) for
 production callback URLs and HTTPS.
 
-After login: the notes and the count appear, `add_note` signs entries with
-your name, and the clear button appears only if your IdP puts you in the
-`admins` group — and refuses everyone else even if they dispatch the event by
-hand.
+After login: the notes and the count appear, and `add_note` signs entries
+with your name. Sign in from a second browser and the two dashboards show the
+same board — a note added in one appears in the other, because both sessions
+linked to the shared `"team-notes"` state. The clear button appears only if
+your IdP puts you in the `admins` group — and refuses everyone else even if
+they dispatch the event by hand.
 
 ## The rules this app follows
 
@@ -318,8 +332,8 @@ hand.
    `authz.py`, named for the question they answer, and attach at the surface
    they protect. Handlers contain business logic, not policy.
 3. **Opt public surfaces out deliberately.** Every `auth=False` in the app is
-   a decision you can point at: the landing page, the theme toggle, the theme
-   field. Everything else is protected because you did nothing.
+   a decision you can point at: the landing page, the promo banner's field,
+   its dismiss event. Everything else is protected because you did nothing.
 4. **Give protected values presentable placeholders.** Declared defaults and
    `initial_value` are what logged-out visitors see. Make them look
    intentional (`0`, an empty list, a "log in to see this" string), not
