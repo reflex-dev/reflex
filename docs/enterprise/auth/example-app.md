@@ -7,7 +7,7 @@ _New in reflex-enterprise v0.9.1._
 # Example: A Complete App
 
 This page builds one small, complete app with `rxe.AuthPlugin`: **Team Notes**,
-a shared notepad with a public landing page, a login-protected dashboard, and
+a notes app with a public landing page, a login-protected dashboard, and
 one admin-only action. It shows the full pattern — configuration, checks,
 state, pages — in about 100 lines of code, applying the practices from
 [secure by default](/docs/enterprise/auth/secure-by-default/).
@@ -64,8 +64,10 @@ team_notes/
     └── team_notes.py       # state, pages, app
 ```
 
-Notes live in state to keep the example focused on auth. A real app stores
-them in a database; nothing about the auth pattern changes.
+Notes live in Reflex state to keep the example focused on auth. State is
+per-client, so each user sees only their own notes; a real team app stores
+them in a database shared by every user. Nothing about the auth pattern
+changes either way.
 
 ## Step 1: Configure the plugin
 
@@ -229,11 +231,17 @@ def index() -> rx.Component:
     """Public landing page: opted out of secure-by-default on purpose."""
     return rx.vstack(
         navbar(),
-        rx.heading("A shared notepad for your team."),
+        rx.heading("Keep your team's notes in one place."),
         rx.link("Open the dashboard", href="/notes"),
-        rx.button("Toggle dark mode", on_click=NotesState.toggle_dark_mode),
+        rx.button(
+            rx.cond(NotesState.dark_mode, "Switch to light", "Switch to dark"),
+            on_click=NotesState.toggle_dark_mode,
+        ),
         align="center",
         spacing="4",
+        min_height="100vh",
+        background_color=rx.cond(NotesState.dark_mode, "#111113", "#ffffff"),
+        color=rx.cond(NotesState.dark_mode, "#ededef", "#1c2024"),
     )
 
 
