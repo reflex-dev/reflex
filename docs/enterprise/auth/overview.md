@@ -18,6 +18,15 @@ The plugin runs the OIDC Authorization Code + PKCE flow against your identity
 provider (IdP) and registers `/login`, `/logout`, `/callback`, and `/forbidden`
 routes.
 
+The plugin splits the problem in two. **Authentication** — establishing who the
+user is — is handled entirely by the plugin and your IdP; you never write a
+login form or handle a token. **Authorization** — deciding what a signed-in
+user may do — is yours, and you express it with the `auth=` argument: `False`
+opens a surface to everyone, and a callable check restricts it to some users
+(see [authorization checks](/docs/enterprise/auth/secure-by-default/#authorization-checks)).
+[Example: a complete app](/docs/enterprise/auth/example-app/) shows both in one
+small app.
+
 ```md alert warning
 # Requirements
 The auth plugin ships with `reflex-enterprise` (v0.9.1+). Your app **must** use `rxe.App()` (not `rx.App()`), and you must configure an OIDC identity provider via environment variables. Using a plain `rx.App()` with the plugin raises a `ConfigError` at startup.
@@ -207,6 +216,8 @@ def header() -> rx.Component:
 
 - [Secure by default](/docs/enterprise/auth/secure-by-default/): enforcement,
   `auth=`, authorization checks, and the `User` facade.
+- [Example: a complete app](/docs/enterprise/auth/example-app/): a small app
+  with a public landing page, a protected dashboard, and an admin-only action.
 - [Providers](/docs/enterprise/auth/providers/): provider classes, environment
   variables, scopes, and multi-provider setups.
 - [Custom pages](/docs/enterprise/auth/custom-pages/): custom `/login`,
