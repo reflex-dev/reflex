@@ -82,6 +82,21 @@ def test_deploy_keeps_log_options():
     assert {"--loglevel", "--log-level", "--json"} <= option_names
 
 
+def test_deploy_interactive_spellings_are_pinned():
+    """The exact spellings `--interactive` answers to, including the `-i` alias.
+
+    Adopting the shared option brought `-i` with it, which the parameter-name
+    check above cannot see: it compares names, and the name did not move. A
+    later edit to the shared option would change what `reflex deploy` accepts
+    on the command line, so what it accepts is pinned here rather than left to
+    be noticed by whoever's script stops working.
+    """
+    interactive = next(param for param in deploy.params if param.name == "interactive")
+
+    assert set(interactive.opts) == {"--interactive", "-i"}
+    assert set(interactive.secondary_opts) == {"--no-interactive"}
+
+
 def test_deploy_uses_only_the_supported_framework_interface():
     """The command imports the framework only through `reflex.hosting`.
 
