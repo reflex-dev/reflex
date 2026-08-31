@@ -4,10 +4,15 @@ import ast
 import inspect
 import subprocess
 import sys
+from unittest import mock
 
 import click.testing
+import pytest
+from pytest_mock import MockFixture
+from reflex_base.constants import LogLevel
 from reflex_cli.v2.deploy import deploy
 
+from reflex import hosting
 from reflex.reflex import cli
 
 EXPECTED_DEPLOY_PARAMS = {
@@ -106,3 +111,77 @@ def test_deploy_help():
     result = click.testing.CliRunner().invoke(cli, ["deploy", "--help"])
     assert result.exit_code == 0
     assert "Deploy the app to the Reflex hosting service." in result.output
+
+
+@pytest.fixture
+def driven(mocker: MockFixture) -> mock.MagicMock:
+    """Stub everything the deploy body reaches for beyond the flags.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The mock standing in for the hosting CLI's own deploy.
+    """
+    mocker.patch("reflex_cli.v2.deployments.check_version")
+    mocker.patch("reflex_cli.utils.dependency.check_requirements")
+    mocker.patch(
+        "reflex.hosting.prepare_deploy",
+        return_value=hosting.DeployPrep(
+            app_name="app", loglevel=LogLevel.INFO, ssr=True
+        ),
+    )
+    return mocker.patch("reflex_cli.v2.cli.deploy")
+
+
+@pytest.mark.parametrize(
+    ("argv", "tty", "expected"),
+    [
+        ([], False, False),
+        ([], True, True),
+        (["--interactive"], False, True),
+        (["-i"], False, True),
+        (["--no-interactive"], True, False),
+    ],
+)
+def test_deploy_interactive_follows_the_terminal(
+    mocker: MockFixture,
+    driven: mock.MagicMock,
+    argv: list[str],
+    tty: bool,
+    expected: bool,
+):
+    """`reflex deploy` resolves --interactive the way every cloud command does.
+
+    A deploy off a TTY prompts for a project, a provider and a browser login,
+    so inheriting the shared default is what keeps it from hanging in CI.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        driven: The stubbed hosting CLI deploy.
+        argv: The arguments passed on the command line.
+        tty: Whether stdout is a terminal.
+        expected: The interactive value the command should resolve to.
+    """
+    mocker.patch("reflex_cli.utils.output.stdout_is_tty", return_value=tty)
+
+    result = click.testing.CliRunner().invoke(deploy, argv)
+
+    assert result.exit_code == 0, result.output
+    assert driven.call_args.kwargs["interactive"] is expected
+
+
+@pytest.mark.usefixtures("driven")
+def test_deploy_off_a_terminal_does_not_check_requirements(mocker: MockFixture):
+    """The requirements check prompts, so it goes with the prompts.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    mocker.patch("reflex_cli.utils.output.stdout_is_tty", return_value=False)
+    check = mocker.patch("reflex_cli.utils.dependency.check_requirements")
+
+    result = click.testing.CliRunner().invoke(deploy, [])
+
+    assert result.exit_code == 0, result.output
+    check.assert_not_called()
