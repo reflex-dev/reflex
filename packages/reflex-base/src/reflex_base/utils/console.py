@@ -470,8 +470,15 @@ def ask(
     Returns:
         A string with the user input.
     """
+    # A prompt is human output like any other, and the one that must not land
+    # on a reserved stdout: it blocks, so a caller parsing the document reads
+    # the question as data and never answers it.
     return Prompt.ask(
-        question, choices=choices, default=default, show_choices=show_choices
+        question,
+        choices=choices,
+        default=default,
+        show_choices=show_choices,
+        console=_human_console(),
     )
 
 

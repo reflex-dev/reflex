@@ -603,17 +603,22 @@ def test_no_command_trusts_the_log_level_it_is_handed():
 # the two names -- leaves the parent package's `log` attribute pointing at the
 # stand-in, which is invisible here and destabilized async tests elsewhere in
 # the suite.
-def _probe(body: str) -> subprocess.CompletedProcess[str]:
+def _probe(body: str, stdin: str = "") -> subprocess.CompletedProcess[str]:
     """Run a snippet against the shim in a clean interpreter.
 
     Args:
         body: The python source to run.
+        stdin: What to feed the snippet's stdin, for a prompt that reads it.
 
     Returns:
         The finished process, with stdout and stderr captured.
     """
     return subprocess.run(
-        [sys.executable, "-c", body], capture_output=True, text=True, check=False
+        [sys.executable, "-c", body],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
 
@@ -721,6 +726,40 @@ print('{"ok": true}')
     assert json.loads(result.stdout) == {"ok": True}
     assert "a message for a person" in result.stderr
     assert "a table-ish thing" in result.stderr
+
+
+def test_the_fallback_asks_its_questions_on_a_reserved_stdout_too():
+    """A prompt is the one piece of human output that must not reach stdout.
+
+    It blocks, so a caller parsing the document reads the question as data and
+    never answers it -- which is how `--json` came to emit one non-JSON line on
+    the bad-token login fall-through. `console.ask` was reaching Prompt.ask with
+    no console of its own, so it bypassed the reservation the prints observe.
+    """
+    result = _probe(
+        """
+import sys
+
+class Blocked:
+    def find_spec(self, name, path=None, target=None):
+        if name == "reflex_base" or name.startswith("reflex_base."):
+            raise ImportError(name)
+
+sys.meta_path.insert(0, Blocked())
+
+from reflex_cli.utils import console, log
+
+log.reserve_stdout(True)
+console.ask("a question for a person")
+print('{"ok": true}')
+""",
+        # Prompt.ask still reads stdin; only where it writes the question moves.
+        stdin="an answer\n",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {"ok": True}
+    assert "a question for a person" in result.stderr
 
 
 def test_the_reservation_is_asked_for_separately_from_the_rest_of_the_shim():

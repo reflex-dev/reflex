@@ -115,7 +115,11 @@ else:
             A string with the user input.
         """
         return Prompt.ask(
-            question, choices=choices, default=default, show_choices=show_choices
+            question,
+            choices=choices,
+            default=default,
+            show_choices=show_choices,
+            console=_human_console(),
         )
 
     def progress():
