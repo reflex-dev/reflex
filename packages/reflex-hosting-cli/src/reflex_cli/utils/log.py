@@ -16,6 +16,8 @@ from reflex_cli.constants.base import LogLevel
 try:
     from reflex_base.utils.log import SUCCESS as SUCCESS
     from reflex_base.utils.log import is_json_mode as is_json_mode
+    from reflex_base.utils.log import is_stdout_reserved as is_stdout_reserved
+    from reflex_base.utils.log import reserve_stdout as reserve_stdout
     from reflex_base.utils.log import set_log_level as set_log_level
 
     HAS_REFLEX_BASE = True
@@ -24,6 +26,20 @@ except ImportError:
     from rich.console import Console
 
     HAS_REFLEX_BASE = False
+
+    # A reflex-base without the stdout reservation cannot route human output to
+    # stderr, so `--json` simply does not get that protection. Degrading is the
+    # point of this shim: the CLI still imports and runs against an older base.
+    def reserve_stdout(reserved: bool = True) -> None:
+        """No-op: this reflex-base has no stdout reservation."""
+
+    def is_stdout_reserved() -> bool:
+        """Whether stdout is reserved for machine-readable output.
+
+        Returns:
+            False always: this reflex-base has no stdout reservation.
+        """
+        return False
 
     # Level between INFO and WARNING for user-facing success messages.
     SUCCESS = 25
