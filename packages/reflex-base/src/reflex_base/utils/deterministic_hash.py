@@ -120,6 +120,12 @@ def _hash_dataclass_declares_keyed_fields(cls: type) -> bool:
         Whether every declared field type is drawn from
         ``_HASH_VALUE_KEYED_FIELD_TYPES``.
     """
+    # Deliberately not the cached wrapper in ``reflex_base.utils.types``: an
+    # ``lru_cache`` stores results but not exceptions, and the raising path is
+    # the one that recurs here -- ``VarData`` and its like cost ~170us every
+    # call. Caching the verdict instead, failures included, is what keeps this
+    # to once per type; that cache also holds its classes weakly, which an
+    # ``lru_cache`` cannot.
     try:
         hints = get_type_hints(cls)
     except (NameError, TypeError):
