@@ -878,24 +878,16 @@ def _load_config() -> Config:
         The app config.
     """
     with _load_config_lock:
-        orig_sys_path = sys.path.copy()
-        sys.path.clear()
-        sys.path.append(str(Path.cwd()))
-        try:
-            return _get_config()
-        except Exception:
-            # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(orig_sys_path)
-            return _get_config()
-        finally:
-            # Find any entries added to sys.path by rxconfig.py itself.
-            extra_paths = [
-                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
-            ]
-            # Restore the original sys.path.
-            sys.path.clear()
-            sys.path.extend(extra_paths)
-            sys.path.extend(orig_sys_path)
+        # Put the project root first so rxconfig.py and its project-local
+        # imports resolve ahead of installed packages, and leave it there.
+        # Emptying or restoring sys.path here is not safe: other threads
+        # (e.g. the frontend runner in `reflex run`) may be mid-import, and
+        # the import system iterates sys.path by index, so shrinking the list
+        # under them makes unrelated modules fail with ModuleNotFoundError.
+        cwd = str(Path.cwd())
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+        return _get_config()
 
 
 def get_config(reload: bool = False) -> Config:

@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -914,3 +915,47 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         # The freshly loaded config stays cached on the context afterwards.
         assert reflex_base.config.get_config() is second
         deprecate.assert_called_once()
+
+
+def test_load_config_keeps_sys_path_intact_for_other_threads(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Loading rxconfig must not empty sys.path while other threads import.
+
+    `reflex run` loads the config from the frontend thread while the main
+    thread is still importing the backend; the import system walks sys.path
+    by index, so shrinking it under another thread turns unrelated imports
+    into ModuleNotFoundError.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        tmp_path: The pytest tmp_path fixture.
+    """
+    import importlib
+
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='race')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    stop = threading.Event()
+    loader_errors: list[BaseException] = []
+
+    def loader() -> None:
+        while not stop.is_set():
+            try:
+                reflex_base.config._load_config()
+            except BaseException as e:
+                loader_errors.append(e)
+                return
+
+    thread = threading.Thread(target=loader)
+    thread.start()
+    try:
+        for _ in range(200):
+            sys.modules.pop("colorsys", None)
+            importlib.import_module("colorsys")
+    finally:
+        stop.set()
+        thread.join()
+        sys.path[:] = [p for p in sys.path if p != str(tmp_path)]
+    assert not loader_errors
