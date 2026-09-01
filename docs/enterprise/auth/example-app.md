@@ -117,8 +117,14 @@ from reflex_enterprise.auth import AuthContext
 
 def is_admin(ctx: AuthContext) -> bool:
     """Allow only members of the ``admins`` group."""
-    return "admins" in (ctx.auth_user_state.userinfo.get("groups") or [])
+    groups = ctx.auth_user_state.userinfo.get("groups")
+    return isinstance(groups, list) and "admins" in groups
 ```
+
+The `isinstance` guard is deliberate: some providers serialize `groups` as a
+single string, and Python's `in` on a string is a substring test —
+`"admins" in "not-admins"` is true. Checking the type first fails closed on
+any unexpected claim shape.
 
 Annotating `ctx` with the `AuthContext` union makes `is_admin` usable on any
 surface — an event, a field, a var, or the plugin's global default. A check
@@ -148,7 +154,8 @@ class UserExtras(AuthUserState):
 
     @rx.var
     def is_admin_user(self) -> bool:
-        return "admins" in (self.userinfo.get("groups") or [])
+        groups = self.userinfo.get("groups")
+        return isinstance(groups, list) and "admins" in groups
 
 
 class SiteState(rx.State):
