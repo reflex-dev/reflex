@@ -878,14 +878,17 @@ def _load_config() -> Config:
         The app config.
     """
     with _load_config_lock:
-        # Put the project root first so rxconfig.py and its project-local
+        # Keep the project root first so rxconfig.py and its project-local
         # imports resolve ahead of installed packages, and leave it there.
-        # Emptying or restoring sys.path here is not safe: other threads
-        # (e.g. the frontend runner in `reflex run`) may be mid-import, and
-        # the import system iterates sys.path by index, so shrinking the list
+        # Only ever insert: emptying or restoring sys.path is not safe while
+        # other threads are mid-import (the frontend runner in `reflex run`
+        # loads the config while the main thread imports the backend), since
+        # the import system walks sys.path by index and removing entries
         # under them makes unrelated modules fail with ModuleNotFoundError.
+        # Re-inserting after a cwd change only shifts entries back, which an
+        # in-flight import tolerates.
         cwd = str(Path.cwd())
-        if cwd not in sys.path:
+        if not sys.path or sys.path[0] != cwd:
             sys.path.insert(0, cwd)
         return _get_config()
 

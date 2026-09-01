@@ -1,3 +1,4 @@
+import importlib
 import logging
 import multiprocessing
 import os
@@ -918,9 +919,11 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
 
 
 def test_load_config_keeps_sys_path_intact_for_other_threads(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    tmp_path_factory: pytest.TempPathFactory,
 ):
-    """Loading rxconfig must not empty sys.path while other threads import.
+    """Loading rxconfig must not shrink sys.path while other threads import.
 
     `reflex run` loads the config from the frontend thread while the main
     thread is still importing the backend; the import system walks sys.path
@@ -930,13 +933,20 @@ def test_load_config_keeps_sys_path_intact_for_other_threads(
     Args:
         monkeypatch: The pytest monkeypatch fixture.
         tmp_path: The pytest tmp_path fixture.
+        tmp_path_factory: The pytest tmp_path_factory fixture.
     """
-    import importlib
-
     (tmp_path / "rxconfig.py").write_text(
         "import reflex as rx\nconfig = rx.Config(app_name='race')\n"
     )
     monkeypatch.chdir(tmp_path)
+    # A private probe module at the end of sys.path, in a sibling directory:
+    # nothing else imports it (a shared stdlib module would race the config
+    # loader's own imports), and it sits outside the project root, so the
+    # loader never evicts it from sys.modules either.
+    probe_dir = tmp_path_factory.mktemp("rx_race_probe")
+    (probe_dir / "rx_race_probe.py").write_text("VALUE = 1\n")
+    sys.path.append(str(probe_dir))
+    importlib.invalidate_caches()
     stop = threading.Event()
     loader_errors: list[BaseException] = []
 
@@ -952,10 +962,12 @@ def test_load_config_keeps_sys_path_intact_for_other_threads(
     thread.start()
     try:
         for _ in range(200):
-            sys.modules.pop("colorsys", None)
-            importlib.import_module("colorsys")
+            sys.modules.pop("rx_race_probe", None)
+            importlib.import_module("rx_race_probe")
     finally:
         stop.set()
         thread.join()
-        sys.path[:] = [p for p in sys.path if p != str(tmp_path)]
+        sys.modules.pop("rx_race_probe", None)
+        sys.path[:] = [p for p in sys.path if p not in (str(tmp_path), str(probe_dir))]
     assert not loader_errors
+    assert sys.path[0] != str(tmp_path)
