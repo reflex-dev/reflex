@@ -401,6 +401,15 @@ and signed link tokens respectively. HTTP signal deliveries pass through
 the same kernel path as Python ones, so dispositions, channel validation,
 and payload canonicalization are identical by construction.
 
+A process that must not hold database credentials speaks this API through
+`RemoteWorkflows(url, token)`: start, read, list, wait, typed `result`,
+signal (by run or business key), and cancel/retry/resume, with the same
+disposition words as in-process. Refusals — no scope, bad token, arguments
+that do not fit — raise rather than return, so a 403 can never read like a
+run that did not start; outcomes the API states as dispositions come back
+as values. `rx.workflows.connect()` remains the client for a process that
+shares the store.
+
 ### The operator console
 
 `reflex workflows console` serves a Reflex app over the store — runs, one

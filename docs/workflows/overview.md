@@ -22,6 +22,22 @@ reflex workflows worker workflows.py                                # serve it; 
 `reflex workflows serve workflows.py` runs ingress, API, and worker in one process for a
 workflow-only service.
 
+Code in the same deployment starts runs through `rx.workflows.connect(...)`, which shares the
+store. Code anywhere else — another service, a script, a partner — uses the HTTP API through
+`RemoteWorkflows`, holding a scoped API token instead of database credentials:
+
+```python
+from reflex.workflow import RemoteWorkflows
+
+async with RemoteWorkflows("https://flows.internal", token) as flows:
+    started = await flows.start(
+        "orders.orders", "start", {"order": "ord-1"}, request_key="ord-1"
+    )
+    receipt = await flows.result(started.run_id, as_type=Receipt)
+```
+
+A workflow class reads top to bottom as the process it runs:
+
 ```python
 import reflex as rx
 
