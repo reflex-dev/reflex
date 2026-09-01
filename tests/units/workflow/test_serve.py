@@ -196,7 +196,11 @@ def test_the_run_lifecycle_works_end_to_end_over_http(service):
         json={"parcel": "P-1"},
         headers={**_auth("tk_signal"), "Idempotency-Key": "evt_1"},
     )
-    assert duplicate.json()["disposition"] == "duplicate"
+    # The service's worker races the second post: if the run is still open the
+    # key is refused as a duplicate; if the worker already completed it, as
+    # run_terminal. Either way the shipment is handled once, which the result
+    # below proves.
+    assert duplicate.json()["disposition"] in ("duplicate", "run_terminal")
 
     snapshot: dict = {}
     deadline = time.monotonic() + 10

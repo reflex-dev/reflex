@@ -129,7 +129,7 @@ async def test_unserializable_failure_details_do_not_break_the_commit(
             Returns:
                 A failure carrying an unserializable value.
             """
-            return fail("nope", details={"when": dt.datetime.now(tz=dt.UTC)})
+            return fail("nope", details={"when": dt.datetime.now(tz=dt.timezone.utc)})
 
     async with WorkflowTestHarness(Detailed) as harness:
         result = await harness.start(Detailed.go)

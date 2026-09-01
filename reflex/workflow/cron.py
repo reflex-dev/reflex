@@ -177,7 +177,7 @@ class CronSchedule:
             The occurrence time in epoch seconds, or None when the expression
             has no occurrence within the search horizon.
         """
-        moment = dt.datetime.fromtimestamp(after, tz=dt.UTC).replace(
+        moment = dt.datetime.fromtimestamp(after, tz=dt.timezone.utc).replace(
             second=0, microsecond=0
         ) + dt.timedelta(minutes=1)
         day = moment.date()
@@ -194,7 +194,7 @@ class CronSchedule:
                         candidate_day.day,
                         hour,
                         minute,
-                        tzinfo=dt.UTC,
+                        tzinfo=dt.timezone.utc,
                     )
                     if first_minute is not None and occurrence < first_minute:
                         continue

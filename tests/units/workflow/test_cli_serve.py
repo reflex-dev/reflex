@@ -14,6 +14,14 @@ import time
 import urllib.error
 import urllib.request
 
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="real kills and signals are POSIX; this evidence is held on Linux and macOS",
+)
+
+
 MODULE = '''
 import reflex as rx
 

@@ -45,6 +45,12 @@ from tests.units.workflow.chaos_flows import (
     open_store,
 )
 
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="real kills and signals are POSIX; this evidence is held on Linux and macOS",
+)
+
+
 WORKER = Path(__file__).with_name("chaos_worker.py")
 POSTGRES_URL_VAR = "REFLEX_TEST_POSTGRES"
 T = TypeVar("T")
@@ -217,12 +223,37 @@ async def test_the_engine_holds_under_random_worker_kills(
     rng = random.Random(7)
     pending_shipments = list(shipments)
     kills = 0
+    landed = 0
     severed = 0
     died_alone: list[int] = []
-    deadline = time.monotonic() + SECONDS
+    started = time.monotonic()
+    deadline = started + SECONDS
+    # A shared runner can take longer to boot a worker than the kill interval,
+    # so a kill is only taken once some worker holds a claim (a RUNNING run),
+    # and the soak keeps going past its budget until at least one has.
+    hard_deadline = started + 4 * SECONDS
+
+    async def a_claim_is_held() -> bool:
+        """Whether any run is mid-attempt right now.
+
+        Returns:
+            True when at least one run is RUNNING.
+        """
+        running = await retrying(
+            lambda: store.count_runs(RunQuery(statuses=(RunStatus.RUNNING,)))
+        )
+        return running > 0
+
     try:
-        while time.monotonic() < deadline:
+        while time.monotonic() < deadline or (
+            landed == 0 and time.monotonic() < hard_deadline
+        ):
             await asyncio.sleep(rng.uniform(0.3, 0.8))
+            settle = time.monotonic() + 3.0
+            while time.monotonic() < settle and not await a_claim_is_held():  # noqa: ASYNC110 -- another process's store state has no event to await
+                await asyncio.sleep(0.1)
+            if await a_claim_is_held():
+                landed += 1
             for index, worker in enumerate(workers):
                 if worker.poll() is not None:
                     # Nobody killed this one: a worker that exits on a store
@@ -318,6 +349,9 @@ async def test_the_engine_holds_under_random_worker_kills(
             1 for event in history if event.type is HistoryEventType.STEP_RECOVERED
         )
     assert kills >= 3, f"only {kills} kills in {SECONDS}s; the soak proved little"
+    assert landed >= 1, (
+        f"{kills} kills, none while a claim was held; the soak proved nothing"
+    )
     if severable:
         assert severed >= 1, "no worker connection was ever severed"
     assert recovered >= 1, (

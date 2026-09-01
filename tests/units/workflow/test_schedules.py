@@ -35,7 +35,7 @@ class _Clock:
 
 
 # A Tuesday at 12:00 UTC, chosen so quarter-hour schedules are 15 minutes away.
-START = dt.datetime(2026, 8, 18, 12, 0, tzinfo=dt.UTC).timestamp()
+START = dt.datetime(2026, 8, 18, 12, 0, tzinfo=dt.timezone.utc).timestamp()
 
 
 def _at(expression: str, after: float = START) -> str:
@@ -50,7 +50,7 @@ def _at(expression: str, after: float = START) -> str:
     """
     occurrence = CronSchedule(expression).next_after(after)
     assert occurrence is not None
-    return dt.datetime.fromtimestamp(occurrence, tz=dt.UTC).strftime(
+    return dt.datetime.fromtimestamp(occurrence, tz=dt.timezone.utc).strftime(
         "%a %Y-%m-%d %H:%M"
     )
 
@@ -220,7 +220,7 @@ async def test_a_restart_resumes_the_schedule_cursor(forked_registration_context
     assert len(fired) > first_count, "the restarted worker skipped the downtime"
 
 
-async def test_skipped_catchup_is_counted_out_loud(forked_registration_context, capsys):
+async def test_skipped_catchup_is_counted_out_loud(forked_registration_context, caplog):
     """Occurrences the cap drops are named, never silently lost.
 
     A worker down for a week comes back to hundreds of missed quarter-hour
@@ -250,8 +250,7 @@ async def test_skipped_catchup_is_counted_out_loud(forked_registration_context, 
     clock.now += 7 * 24 * 3600  # a week of downtime
     admitted = await kernel._admit_due_schedules(clock.now)  # pyright: ignore[reportPrivateUsage]
     assert admitted == MAX_SCHEDULE_CATCHUP
-    err = capsys.readouterr()
-    assert "missed more than" in err.out + err.err, (
+    assert "missed more than" in caplog.text, (
         "the skipped remainder must be named, not silently jumped over"
     )
 

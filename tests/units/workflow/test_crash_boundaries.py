@@ -21,6 +21,12 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="real kills and signals are POSIX; this evidence is held on Linux and macOS",
+)
+
+
 WORKER = Path(__file__).parent / "crash_worker.py"
 
 LEASE_LAPSE = 1.4

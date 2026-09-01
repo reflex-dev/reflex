@@ -115,10 +115,12 @@ def test_the_cron_horizon_reaches_across_a_skipped_leap_century():
     schedule = CronSchedule("0 0 29 2 *")
     import datetime as dt
 
-    base = dt.datetime(2096, 3, 1, tzinfo=dt.UTC).timestamp()
+    base = dt.datetime(2096, 3, 1, tzinfo=dt.timezone.utc).timestamp()
     found = schedule.next_after(base)
     assert found is not None
-    assert dt.datetime.fromtimestamp(found, dt.UTC).date() == dt.date(2104, 2, 29)
+    assert dt.datetime.fromtimestamp(found, dt.timezone.utc).date() == dt.date(
+        2104, 2, 29
+    )
     assert MAX_SEARCH_DAYS >= 8 * 366, "the horizon must cover the longest gap"
 
 
@@ -231,7 +233,7 @@ def test_missed_occurrences_are_counted_without_a_ceiling():
     import datetime as dt
 
     schedule = CronSchedule("* * * * *")
-    start = dt.datetime(2026, 1, 1, tzinfo=dt.UTC).timestamp()
+    start = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc).timestamp()
     # Eleven days of minutes is more than any bounded query returned.
     end = start + 11 * 24 * 3600
     assert schedule.count_between(start, end) == 11 * 24 * 60
@@ -242,7 +244,7 @@ def test_counting_agrees_with_listing_on_a_small_window():
     import datetime as dt
 
     schedule = CronSchedule("0 * * * *")
-    start = dt.datetime(2026, 1, 1, tzinfo=dt.UTC).timestamp()
+    start = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc).timestamp()
     end = start + 5 * 3600
     listed = schedule.occurrences_between(start, end, limit=100)
     assert schedule.count_between(start, end) == len(listed)

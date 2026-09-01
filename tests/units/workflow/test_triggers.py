@@ -16,7 +16,7 @@ import reflex as rx
 from reflex.workflow.definition import compile_workflow, discover_workflows
 from reflex.workflow.triggers import describe_triggers, schedule_cursors
 
-NOW = dt.datetime(2026, 3, 1, 12, 0, tzinfo=dt.UTC).timestamp()
+NOW = dt.datetime(2026, 3, 1, 12, 0, tzinfo=dt.timezone.utc).timestamp()
 
 
 @pytest.fixture(autouse=True)
@@ -108,7 +108,8 @@ def test_every_trigger_kind_is_described(monkeypatch, forked_registration_contex
     nightly = by_detail["0 3 * * *"]
     assert nightly["kind"] == "schedule"
     assert (
-        nightly["next_fire"] == dt.datetime(2026, 3, 2, 3, 0, tzinfo=dt.UTC).timestamp()
+        nightly["next_fire"]
+        == dt.datetime(2026, 3, 2, 3, 0, tzinfo=dt.timezone.utc).timestamp()
     )
     assert nightly["lag"] == pytest.approx(7200.0)
 
