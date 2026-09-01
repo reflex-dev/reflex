@@ -56,11 +56,33 @@ _DATACLASSES_FILE = dataclasses.__file__
 # sidestep the proxy's dirty tracking. Field defaults, ClassVars and `__slots__`
 # would be worse: a class attribute is found before `__getattr__` runs, so
 # copying those would shadow the wrapped instance's own values.
+_DATACLASS_FIELDS: str = dataclasses._FIELDS  # pyright: ignore [reportAttributeAccessIssue]
 _DATACLASS_CLASS_ATTRS = (
-    dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
+    _DATACLASS_FIELDS,
     dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
-    "__match_args__",  # absent when declared `@dataclass(match_args=False)`
+    "__match_args__",
 )
+
+
+def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
+    """Collect the dataclass metadata to define a wrapped type's proxy class with.
+
+    Args:
+        wrapped_cls: The wrapped dataclass type.
+
+    Returns:
+        The metadata attributes to copy, keyed by name.
+    """
+    fields = getattr(wrapped_cls, _DATACLASS_FIELDS)
+    return {
+        attr: getattr(wrapped_cls, attr)
+        # A dataclass may declare a field named like one of these attributes,
+        # and that value belongs to the instance: copying it would shadow the
+        # wrapped object, since a class attribute is found before `__getattr__`
+        # forwards. `@dataclass(match_args=False)` leaves nothing to copy.
+        for attr in _DATACLASS_CLASS_ATTRS
+        if attr not in fields and hasattr(wrapped_cls, attr)
+    }
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -480,11 +502,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 cls.__dataclass_proxies__[wrapper_cls_key] = type(
                     wrapper_cls_name,
                     (cls,),
-                    {
-                        attr: getattr(wrapped_cls, attr)
-                        for attr in _DATACLASS_CLASS_ATTRS
-                        if hasattr(wrapped_cls, attr)
-                    },
+                    _dataclass_proxy_namespace(wrapped_cls),
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_key]
         return super().__new__(cls)  # pyright: ignore[reportArgumentType]

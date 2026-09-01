@@ -813,6 +813,26 @@ def test_dataclass_proxy_class_copies_no_behavior() -> None:
     assert model.tag == "mutated"
 
 
+@dataclasses.dataclass
+class DunderFieldModel:
+    """A dataclass whose field names collide with the copied metadata."""
+
+    __match_args__: tuple[str, ...] = ()
+    __dataclass_params__: int = 0
+
+
+def test_dataclass_proxy_class_never_shadows_a_field() -> None:
+    """A field named like copied metadata keeps its instance value through the proxy."""
+    model = DunderFieldModel(__match_args__=("live",), __dataclass_params__=7)
+    proxy = _dataclass_proxy(model)
+
+    assert "__match_args__" not in vars(type(proxy))
+    assert "__dataclass_params__" not in vars(type(proxy))
+    assert proxy.__match_args__ == ("live",)
+    assert proxy.__dataclass_params__ == 7
+    assert dataclasses.asdict(proxy) == dataclasses.asdict(model)
+
+
 def test_frozen_dataclass_proxy_rejects_mutation() -> None:
     """A frozen dataclass stays frozen through its proxy."""
     proxy = _dataclass_proxy(FrozenTaggedModel())
