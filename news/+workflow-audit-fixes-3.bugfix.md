@@ -1,0 +1,1 @@
+Fixes six more audit findings: an unregistered workflow class stayed browser-reachable, an expired wait still accepted its signal, a child failed by recovery never reported to its join, wrong-typed start policies vanished silently, and run pagination could hide runs.

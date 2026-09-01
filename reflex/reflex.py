@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 from importlib.util import find_spec
 from pathlib import Path
@@ -15,6 +16,7 @@ from reflex_base.utils import console, log
 
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils.cli_options import log_options
+from reflex.workflow.cli import workflows as workflows_cli
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +143,18 @@ def _init(
 @click.option(
     "--name",
     metavar="APP_NAME",
-    help="The name of the app to initialize.",
+    help=(
+        "The name of the app to initialize; with --workflow, the module to "
+        "write (default: workflows)."
+    ),
+)
+@click.option(
+    "--workflow",
+    is_flag=True,
+    help=(
+        "Scaffold a workflow-only module instead of an app: one runnable file, "
+        "no frontend, no rxconfig. Same as `reflex workflows init`."
+    ),
 )
 @click.option(
     "--template",
@@ -159,11 +172,23 @@ def _init(
 )
 def init(
     name: str,
+    workflow: bool,
     template: str | None,
     ai: bool,
     agents: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
+    if workflow:
+        if template or ai:
+            logger.error(
+                "--workflow scaffolds a workflow-only module and takes no "
+                "--template or --ai."
+            )
+            raise click.exceptions.Exit(1)
+        from reflex.workflow.cli import write_scaffold
+
+        write_scaffold(name or "workflows")
+        return
     _init(name, template, ai, agents)
 
 
@@ -872,6 +897,68 @@ def rename(new_name: str):
     rename_app(new_name, get_config().loglevel)
 
 
+def _refuse_workflow_only_deploy() -> None:
+    """Say something true when a workflow-only project reaches deploy.
+
+    ``reflex workflows init`` writes one module and no ``rxconfig.py`` on
+    purpose -- there is no frontend to configure. Deploy's generic complaint
+    for a missing config tells the reader to run ``reflex init`` and start a
+    new project, which for this reader means scaffolding the web app they
+    deliberately did not ask for. Hosting cannot yet deploy a project with no
+    frontend, and saying so is better than sending someone down that path.
+
+    Raises:
+        Exit: When the directory holds workflows but no Reflex app.
+    """
+    from reflex.constants import Config
+
+    if Path(Config.FILE).exists():
+        return
+    holding = [
+        candidate.name
+        for candidate in sorted(Path.cwd().glob("*.py"))
+        if "__workflow__" in candidate.read_text(errors="ignore")
+    ]
+    if not holding:
+        return
+    logger.error(
+        f"{', '.join(holding)} define workflows, but this is not a Reflex app "
+        f"({Config.FILE} is absent) and hosting cannot deploy a project with "
+        "no frontend yet. Run the workers yourself against your own "
+        "infrastructure:\n"
+        "    reflex workflows worker <module>\n"
+        "pointing REFLEX_WORKFLOW_DATABASE at a Postgres you control. To "
+        "deploy this as a full Reflex app instead, add an app and an "
+        f"{Config.FILE}."
+    )
+    raise click.exceptions.Exit(1)
+
+
+def _guard_workflow_only(command: click.Command) -> click.Command:
+    """Run the workflow-only refusal before the Cloud CLI's deploy.
+
+    ``reflex deploy`` lives in the Cloud CLI now; the check that a
+    workflow-only project is told the truth instead of "run reflex init"
+    stays in the framework, in front of it.
+
+    Args:
+        command: The Cloud CLI's deploy command.
+
+    Returns:
+        The same command, guarded.
+    """
+    original = command.callback
+    assert original is not None
+
+    @functools.wraps(original)
+    def guarded(*args, **kwargs):
+        _refuse_workflow_only_deploy()
+        return original(*args, **kwargs)
+
+    command.callback = guarded
+    return command
+
+
 try:
     from reflex_cli.v2.deploy import deploy
     from reflex_cli.v2.deployments import hosting_cli
@@ -895,12 +982,13 @@ else:
     else:
         hosting_cli_command = hosting_cli
 
-    cli.add_command(deploy, name="deploy")
+    cli.add_command(_guard_workflow_only(deploy), name="deploy")
     cli.add_command(hosting_cli_command, name="cloud")
 
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
 cli.add_command(custom_components_cli, name="component")
+cli.add_command(workflows_cli, name="workflows")
 
 if __name__ == "__main__":
     cli()

@@ -66,6 +66,7 @@ db = [
   "sqlmodel >=0.0.24,<0.1",
 ]
 pydantic = ["reflex-base[pydantic]"]
+workflows = ["reflex-base[pydantic]"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -86,13 +87,15 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "opentelemetry-api",
+  "opentelemetry-sdk",
   "pandas",
   "pillow",
   "playwright",
   "plotly",
   "pre-commit",
   "psutil",
-  "psycopg[binary]",
+  "psycopg[binary,pool]",
   "pydantic",
   "pyright",
   "pytest-asyncio",

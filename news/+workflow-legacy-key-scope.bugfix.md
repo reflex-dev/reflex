@@ -1,0 +1,1 @@
+The backward-compatibility lookup for pre-upgrade webhook deduplication keys now matches only a run started by the same root handler. Without that check the compatibility path reintroduced the cross-topic collision the new key format was added to fix: an `invoice_paid` delivery could deduplicate against a legacy `invoice_failed` run and be dropped.

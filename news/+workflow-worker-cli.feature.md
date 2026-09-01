@@ -1,0 +1,1 @@
+`reflex workflows worker <module>` runs durable workflows as a background process with no frontend or web server, so a worker can serve workflows defined in any Python module — a FastAPI service, a Django project, or a bare script.

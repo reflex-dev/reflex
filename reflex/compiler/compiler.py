@@ -1183,6 +1183,7 @@ def compile_app(
                 logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
         app._add_optional_endpoints()
+        app._add_workflow_endpoints()
         return False
 
     if constants.Page404.SLUG not in app._unevaluated_pages:
@@ -1198,6 +1199,7 @@ def compile_app(
 
         app._write_stateful_pages_marker()
         app._add_optional_endpoints()
+        app._add_workflow_endpoints()
         return False
 
     progress = console.progress() if use_rich else console.PoorProgress()
@@ -1245,6 +1247,7 @@ def compile_app(
     app._stateful_pages.update(compile_ctx.stateful_routes)
     app._write_stateful_pages_marker()
     app._add_optional_endpoints()
+    app._add_workflow_endpoints()
     app._validate_var_dependencies()
 
     if config.show_built_with_reflex is None:

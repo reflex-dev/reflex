@@ -236,6 +236,32 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
+    "workflow": [
+        "WorkflowConfig",
+        "Retry",
+        "TransientWorkflowError",
+        "manual",
+        "webhook",
+        "hmac_signature",
+        "stripe_signature",
+        "schedule",
+        "Signal",
+        "wait_for",
+        "never",
+        "parallel",
+        "Singleton",
+        "RateLimit",
+        "Throttle",
+        "Debounce",
+        "after",
+        "complete",
+        "fail",
+        "needs_attention",
+        "workflows",
+        "approval_link",
+        "current_run",
+        "step",
+    ],
 }
 
 _SUBMODULES: set[str] = {
@@ -252,6 +278,7 @@ _SUBMODULES: set[str] = {
     "config",
     "compiler",
     "plugins",
+    "workflow",
 }
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
 _EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH

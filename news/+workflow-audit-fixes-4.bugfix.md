@@ -1,0 +1,1 @@
+Fixes two more audit findings: a persistently failing lease renewal could let the kernel re-execute its own live attempt, and `rx.parallel` branches bypassed the trigger check that direct starts enforce.

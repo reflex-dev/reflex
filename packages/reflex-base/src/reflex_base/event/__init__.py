@@ -35,7 +35,7 @@ from typing_extensions import (
     is_typeddict,
 )
 
-from reflex_base import constants
+from reflex_base import constants, workflow
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
@@ -45,6 +45,7 @@ from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
+    WorkflowDefinitionError,
 )
 from reflex_base.utils.types import (
     ArgsSpec,
@@ -2959,9 +2960,20 @@ class EventNamespace:
         supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
+        id: str | None = None,
+        durable: bool = False,
+        trigger: "workflow.Trigger | None" = None,
+        retry: "workflow.Retry | None" = None,
+        timeout: "workflow.DurationLike | None" = None,
+        effect: "workflow.EffectClass | None" = None,
+        queue: str | None = None,
+        on_failure: Any = None,
+        on_timeout: Any = None,
+        singleton: "workflow.Singleton | None" = None,
+        rate_limit: "workflow.RateLimit | None" = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -2975,8 +2987,8 @@ class EventNamespace:
         supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
@@ -2988,9 +3000,20 @@ class EventNamespace:
         supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
+        throttle: "int | workflow.Throttle | None" = None,
+        debounce: "int | workflow.Debounce | None" = None,
         temporal: bool | None = None,
+        id: str | None = None,
+        durable: bool = False,
+        trigger: "workflow.Trigger | None" = None,
+        retry: "workflow.Retry | None" = None,
+        timeout: "workflow.DurationLike | None" = None,
+        effect: "workflow.EffectClass | None" = None,
+        queue: str | None = None,
+        on_failure: Any = None,
+        on_timeout: Any = None,
+        singleton: "workflow.Singleton | None" = None,
+        rate_limit: "workflow.RateLimit | None" = None,
     ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
@@ -3003,9 +3026,22 @@ class EventNamespace:
                 event loop is not interrupted. Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
-            throttle: Throttle the event handler to limit calls (in milliseconds).
-            debounce: Debounce the event handler to delay calls (in milliseconds).
+            throttle: Milliseconds to throttle a session handler, or an
+                rx.Throttle policy capping how often a durable root may start.
+            debounce: Milliseconds to debounce a session handler, or an
+                rx.Debounce policy collapsing a burst of durable starts.
             temporal: Whether the event should be dropped when the backend is down.
+            id: Stable durable handler id; derived from the method name if omitted.
+            durable: Whether the handler is a durable workflow step.
+            trigger: How a durable root handler starts a run.
+            retry: Business-attempt retry policy for a durable handler.
+            timeout: Per-attempt execution timeout for a durable handler.
+            effect: Declared external-effect class; required when durable=True.
+            queue: Admission queue override for a durable handler.
+            on_failure: Same-class handler run after a durable step finally fails.
+            on_timeout: Same-class handler run after a durable step finally times out.
+            singleton: Allow at most one active run of this root per key.
+            rate_limit: Cap the start rate per key, dropping the excess.
 
         Returns:
             The wrapped function.
@@ -3013,6 +3049,28 @@ class EventNamespace:
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
         """
+        durable_config = workflow.build_durable_config(
+            durable=durable,
+            id=id,
+            trigger=trigger,
+            retry=retry,
+            timeout=timeout,
+            effect=effect,
+            queue=queue,
+            on_failure=on_failure,
+            on_timeout=on_timeout,
+            singleton=singleton,
+            rate_limit=rate_limit,
+            throttle=throttle,
+            debounce=debounce,
+            background=background,
+            has_browser_actions=any(
+                value is not None
+                for value in (stop_propagation, prevent_default, temporal)
+            )
+            or isinstance(throttle, int)
+            or isinstance(debounce, int),
+        )
 
         def _build_event_actions():
             """Build event_actions dict from decorator parameters.
@@ -3020,11 +3078,13 @@ class EventNamespace:
             Returns:
                 Dict of event actions to apply, or empty dict if none specified.
             """
+            browser_throttle = throttle if isinstance(throttle, int) else None
+            browser_debounce = debounce if isinstance(debounce, int) else None
             if not any([
                 stop_propagation,
                 prevent_default,
-                throttle,
-                debounce,
+                browser_throttle,
+                browser_debounce,
                 temporal,
             ]):
                 return {}
@@ -3034,10 +3094,10 @@ class EventNamespace:
                 event_actions["stopPropagation"] = stop_propagation
             if prevent_default is not None:
                 event_actions["preventDefault"] = prevent_default
-            if throttle is not None:
-                event_actions["throttle"] = throttle
-            if debounce is not None:
-                event_actions["debounce"] = debounce
+            if browser_throttle is not None:
+                event_actions["throttle"] = browser_throttle
+            if browser_debounce is not None:
+                event_actions["debounce"] = browser_debounce
             if temporal is not None:
                 event_actions["temporal"] = temporal
             return event_actions
@@ -3052,6 +3112,28 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if durable_config is not None:
+                if inspect.isasyncgenfunction(func) or inspect.isgeneratorfunction(
+                    func
+                ):
+                    msg = (
+                        "Durable event handlers commit exactly once and cannot be "
+                        "generators; return successor events instead of yielding."
+                    )
+                    raise WorkflowDefinitionError(msg)
+                if (
+                    durable_config.timeout is not None
+                    and not inspect.iscoroutinefunction(func)
+                ):
+                    msg = (
+                        "timeout= cannot bound a synchronous handler: it runs on "
+                        "a worker thread that cannot be interrupted, so the "
+                        "timeout would fire while the body kept running. Declare "
+                        "the handler 'async def', or drop timeout= and bound the "
+                        "work inside it."
+                    )
+                    raise WorkflowDefinitionError(msg)
+                setattr(func, workflow.DURABLE_EVENT_MARKER, durable_config)
             if supersedes is True:
                 setattr(func, SUPERSEDES_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):

@@ -1,0 +1,1 @@
+`rx.workflows.connect(...)` opens a client on a workflow store from any Python process — a script, a FastAPI route, a Django view — so it can start runs and read them without becoming a worker: nothing is claimed or executed inside the block. Workers stay separate processes.

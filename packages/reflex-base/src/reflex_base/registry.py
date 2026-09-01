@@ -247,6 +247,28 @@ class RegistrationContext(BaseContext):
         )
         return handler
 
+    @classmethod
+    def detach_workflow_state(cls, state_cls: type[BaseState]) -> None:
+        """Remove a workflow class from the session state tree.
+
+        Workflow state is run-scoped, so it must not be instantiated per
+        browser session, compiled into the client state schema, or reachable
+        from frontend event dispatch.
+
+        Args:
+            state_cls: The workflow class to detach.
+        """
+        ctx = cls.ensure_context()
+        ctx.base_states.pop(state_cls.get_full_name(), None)
+        parent = state_cls.get_parent_state()
+        if parent is not None:
+            ctx.base_state_substates.get(parent.get_full_name(), set()).discard(
+                state_cls
+            )
+        for full_name, registered in list(ctx.event_handlers.items()):
+            if state_cls in registered.states:
+                del ctx.event_handlers[full_name]
+
     def get_substates(
         self, base_state_cls: type[BaseState] | str
     ) -> set[type[BaseState]]:

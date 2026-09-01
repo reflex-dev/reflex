@@ -1,0 +1,1 @@
+`reflex workflows dev` runs a workflow in the foreground and narrates every transition, and `rx.workflows.submit()` returns a typed `RunHandle` carrying `result()`, `wait()`, `signal()`, and `cancel()`.

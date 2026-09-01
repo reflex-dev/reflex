@@ -1,0 +1,1 @@
+A child run's arrival at its parent's join now commits in the same transaction as the child's final transition, so a crash between them can no longer leave the join waiting forever; schedule catch-up cursors persist in the store, so a restart resumes instead of skipping missed occurrences.

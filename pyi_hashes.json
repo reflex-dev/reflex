@@ -118,7 +118,7 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "99ebcfc07868061bdc3c2010d85a153f",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "4f6c26f8c76543cc41e2b9dc400ece8a",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "f170ac685b6ba5892370166c80684db3",
-  "reflex/__init__.pyi": "a3e1782fab4a9aed55f66cc98af8c217",
+  "reflex/__init__.pyi": "e262febb9b65080eb177b4c14c41eda5",
   "reflex/components/__init__.pyi": "9facd05a776d0641432696bbf8e34388",
   "reflex/experimental/memo.pyi": "27a73a66e238746e5da5accf99a8fdfd"
 }

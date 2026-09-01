@@ -716,6 +716,13 @@ class BaseState(EvenMoreBasicBaseState):
             setattr(cls, name, handler)
 
         RegistrationContext.register_base_state(cls)
+        if "__workflow__" in cls.__dict__:
+            # A workflow class is run-scoped: it must never be instantiated per
+            # browser session or have its durable handlers reachable from the
+            # frontend. Detaching at class creation rather than at
+            # app.add_workflow() means forgetting to register one cannot leave
+            # its handlers dispatchable from a browser.
+            RegistrationContext.detach_workflow_state(cls)
 
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}

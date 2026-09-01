@@ -1,0 +1,1 @@
+The workflow store resolves from `REFLEX_WORKFLOW_DATABASE` when none is configured in code, so a hosted deployment points the app, its workers, and the CLI at managed Postgres with one environment variable.

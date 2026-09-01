@@ -1,0 +1,1 @@
+Webhooks configured on GitHub's `application/x-www-form-urlencoded` mode — where the JSON document arrives wrapped as `payload=<urlencoded JSON>` — are now understood. The signature is verified over the raw form bytes exactly as received; only the JSON extraction changes. A form body without a `payload` field is a 400 naming the problem.
