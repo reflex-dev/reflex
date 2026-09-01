@@ -1,9 +1,10 @@
 """A stable content hash over components, vars and the data they render to.
 
 :func:`deterministic_hash` digests values under a self-delimiting, type-tagged
-encoding: every type writes a distinct tag and a length-prefixed payload, so
-the encoding is injective. Unlike :func:`hash` it is stable across processes,
-which is what lets a digest name a generated file.
+encoding: every value writes a distinct type tag ahead of its payload, and
+strings and containers carry an explicit length, so the encoding is injective.
+Unlike :func:`hash` it is stable across processes, which is what lets a digest
+name a generated file.
 
 Encoders are resolved once per type, and the encodings of recurring values are
 cached until :func:`clear_hash_caches` drops them.
@@ -286,7 +287,13 @@ def _encode_hash_cached_dataclass(value: Any, out: bytearray, hasher: Any) -> No
         hasher: Unused; the fields are encoded into a private buffer that must
             not be drained, since the caller needs its full contents.
     """
-    encoded = _hash_dataclass_encodings.get(value)
+    try:
+        encoded = _hash_dataclass_encodings.get(value)
+    except TypeError:
+        # A field holds something its annotation does not admit, leaving the
+        # instance unhashable and so unusable as a cache key.
+        _encode_hash_dataclass_fields(type(value), value, out, hasher)
+        return
     if encoded is None:
         buffer = bytearray()
         _encode_hash_dataclass_fields(type(value), value, buffer, None)

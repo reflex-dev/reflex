@@ -309,6 +309,26 @@ def test_deterministic_hash_does_not_cache_numeric_frozen_dataclasses(
     assert not _hash_dataclass_encodings
 
 
+def test_deterministic_hash_dataclass_field_contradicting_its_annotation():
+    """A field holding something its annotation does not admit must still hash.
+
+    The value-keyed cache is gated on declared field types, so an instance that
+    contradicts them reaches the cache lookup and is not hashable as a key.
+    """
+    probe = _KeyedProbe(name=["not", "a", "str"])  # pyright: ignore [reportArgumentType]
+
+    assert deterministic_hash(probe) == deterministic_hash(
+        _KeyedProbe(name=["not", "a", "str"])  # pyright: ignore [reportArgumentType]
+    )
+    assert deterministic_hash(probe) != deterministic_hash(
+        _KeyedProbe(name=["other"])  # pyright: ignore [reportArgumentType]
+    )
+    # The well-typed instances alongside it still take the cached path.
+    assert deterministic_hash(_KeyedProbe(name="probe")) == deterministic_hash(
+        _KeyedProbe(name="probe")
+    )
+
+
 def test_deterministic_hash_tracks_dataclasses_that_can_still_change():
     """Dataclasses whose contents can change must be re-encoded every time."""
     mutable = _MutableProbe(value="before")

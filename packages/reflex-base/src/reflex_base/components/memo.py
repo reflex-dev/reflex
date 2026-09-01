@@ -1845,11 +1845,6 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     the body has to be part of the hash too: imports, hooks, custom code,
     dynamic imports, and app-wrap components.
 
-    Imports contribute their library names only. A body reaches an import
-    through the local name it binds, and any name it references is already in
-    its render, hooks or custom code, so the library names are what remain to
-    pin down. This does not separate two bodies that bind the same name from
-    the same library to a different export or in a different form.
 
     Args:
         component: The component whose memo body is being hashed.
@@ -1866,7 +1861,7 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     cls = type(component)
     yield f"{cls.__module__}.{cls.__qualname__}"
     if recursive:
-        yield sorted(component._get_all_imports())
+        yield component._get_all_imports()
         yield component._get_all_hooks_internal()
         yield component._get_all_hooks()
         yield component._get_all_custom_code()
@@ -1874,7 +1869,7 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
         yield sorted(component._get_all_dynamic_imports())
         yield component._get_all_app_wrap_components()
     else:
-        yield sorted(component._get_imports())
+        yield component._get_imports()
         yield component._get_hooks_internal()
         yield component._get_hooks()
         yield component._get_added_hooks()

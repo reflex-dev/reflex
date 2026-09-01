@@ -2121,18 +2121,61 @@ class _ImportLibraryProbe(Component):
 
 
 def test_component_hash_covers_import_libraries():
-    """The libraries a memo body imports from must reach the hash.
-
-    The hash carries library names rather than the ``ImportVar`` entries,
-    on the grounds that every binding a body references shows up in its render.
-    Which libraries those bindings come from still has to be part of the digest:
-    two bodies importing one name from different libraries compile to different
-    modules, and sharing a tag would give one of them the other's import.
-    """
+    """The libraries a memo body imports from must reach the hash."""
     a = _ImportLibraryProbe.create(marker="alpha")
     b = _ImportLibraryProbe.create(marker="beta")
 
     assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportPayloadProbe(Component):
+    """One class, one library, an ``ImportVar`` payload that varies by prop."""
+
+    library = "import-payload-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import a side-effect stylesheet whose path varies with the marker.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            "payload-lib": [ImportVar(tag=None, package_path=f"/{self.marker!s}.css")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_var_payloads():
+    """``ImportVar`` fields must reach the hash, not just the library name.
+
+    ``package_path`` and ``alias`` vary per instance in shipping components
+    (``Icon._get_imports`` builds both), and a tagless ``ImportVar`` defaults to
+    ``render=True``, so it emits as a side-effect import. Two such bodies render
+    identically under one library key; sharing a tag drops one body's import
+    from the compiled module with no error.
+    """
+    a = _ImportPayloadProbe.create(marker="light")
+    b = _ImportPayloadProbe.create(marker="dark")
+
+    assert a.render() == b.render()
+    assert sorted(dict(a._get_all_imports())) == sorted(dict(b._get_all_imports()))
     assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
     assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
     assert memo_tag(a) != memo_tag(b)
