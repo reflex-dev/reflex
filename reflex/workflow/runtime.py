@@ -8,6 +8,7 @@ start, cancel, and inspect runs without holding a kernel reference.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import os
 import random
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
     from reflex.workflow.store import DeliveryDisposition
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterable, Mapping
+    from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
 
     from reflex.state import BaseState
     from reflex.workflow.records import RunRecord, RunSnapshot, StartResult
@@ -56,6 +57,9 @@ _context_runtime: ContextVar[WorkflowRuntime | None] = ContextVar(
 )
 
 _default_runtime: WorkflowRuntime | None = None
+
+STARTUP_ATTEMPTS: Final = 5
+STARTUP_BACKOFF: Final = 0.5
 
 
 class WorkflowRuntime:
@@ -237,10 +241,17 @@ class WorkflowRuntime:
             queues=self._queues,
             release=self._release,
         )
-        if start_worker:
-            await self._kernel.start_worker()
-        else:
-            await self._kernel.recover()
+        kernel = self._kernel
+        try:
+            if start_worker:
+                await _retry_startup(kernel.start_worker, "worker startup")
+            else:
+                await _retry_startup(kernel.recover, "client startup")
+        except BaseException:
+            # Nothing started, so nothing is half-built: a later startup()
+            # gets a fresh kernel instead of one that recorded a failure.
+            self._kernel = None
+            raise
 
     async def shutdown(self, drain: DurationLike = 0) -> None:
         """Stop the worker.
@@ -276,6 +287,39 @@ class WorkflowRuntime:
         finally:
             _default_runtime = previous
             await self.shutdown(drain=drain)
+
+
+async def _retry_startup(step: Callable[[], Awaitable[Any]], what: str) -> None:
+    """Run a startup step, retrying a transient store error with backoff.
+
+    A worker booting during a database failover -- exactly when a rolling
+    deploy starts fresh workers -- must not die on the first refused
+    connection. The worker loop already retries store errors; this gives the
+    first recovery and the registration the same grace, bounded so a store
+    that stays unreachable still fails startup with its real error.
+
+    Args:
+        step: The startup step to run.
+        what: What it is, for the warning.
+
+    Raises:
+        Exception: The step's last error, once every attempt failed.
+    """
+    delay = STARTUP_BACKOFF
+    for attempt in range(1, STARTUP_ATTEMPTS + 1):
+        try:
+            await step()
+        except Exception as err:  # noqa: PERF203 -- a retry loop is a try in a loop
+            if attempt == STARTUP_ATTEMPTS:
+                raise
+            console.warn(
+                f"Workflow {what} failed (attempt {attempt} of {STARTUP_ATTEMPTS}): "
+                f"{err!r}; retrying in {delay:.1f}s."
+            )
+            await asyncio.sleep(delay)
+            delay *= 2
+        else:
+            return
 
 
 DRAIN_ENV: Final = "REFLEX_WORKFLOW_DRAIN"

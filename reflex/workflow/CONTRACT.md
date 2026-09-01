@@ -370,6 +370,14 @@ addresses, the event id deduplicates.
   returns, however short the drain budget: the budget bounds how long
   *cancellable* work is waited for, never how fast a thread can be made to
   stop. Sync handlers doing long work should be async around `rx.step`.
+- **Starting is not a decision about the store either.** A worker's first
+  recovery and its registration retry a transient store error with backoff
+  for a bounded budget (five attempts, about eight seconds) before the process
+  fails with the real error: a worker booting during a database failover --
+  exactly when a rolling deploy starts fresh workers -- must not crash-loop on
+  the first refused connection, and a store that stays unreachable must still
+  fail startup fast enough for a supervisor to notice. Clients starting through
+  `connect()` get the same grace.
 - **Clients are not workers.** A process that opens
   `rx.workflows.connect(...)` can admit runs, read them, signal and cancel
   them, and executes nothing: it claims no step and runs no handler. Only a

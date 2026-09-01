@@ -203,7 +203,11 @@ class Shipment(rx.State):
 
     @rx.event(durable=True, effect="idempotent_write")
     def close(self, payload):
-        """Record the shipment once.
+        """Hand the shipment to an idempotent provider.
+
+        The handler may re-execute after a kill or a lapsed lease (§2); the
+        provider dedupes on the idempotency key, and raw attempts are counted
+        so the soak can see how often that happened.
 
         Args:
             payload: The delivered payload.
@@ -211,7 +215,10 @@ class Shipment(rx.State):
         Returns:
             Completion.
         """
-        record(f"close:{payload['order']}")
+        context = current_run()
+        assert context is not None
+        record(f"close-attempt:{payload['order']}")
+        record_once(f"close:{payload['order']}", context.idempotency_key())
         return rx.complete(result=payload)
 
 

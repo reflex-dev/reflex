@@ -11,6 +11,7 @@ from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import WorkflowConfig, manual
 
 import reflex as rx
+from reflex.workflow import runtime as runtime_module
 from reflex.workflow.definition import compile_workflow
 from reflex.workflow.kernel import WorkflowKernel
 from reflex.workflow.records import RunStatus
@@ -199,3 +200,78 @@ async def test_connect_restores_whatever_runtime_was_active(
         pass
     with pytest.raises(WorkflowRuntimeError):
         await workflows.submit(ScopedFlow.start())
+
+
+class _BlippingStore(MemoryRunStore):
+    """A store whose first few calls fail the way a severed connection does."""
+
+    def __init__(self, failures: int):
+        """Fail the first ``failures`` clock reads.
+
+        Args:
+            failures: How many calls to refuse before behaving.
+        """
+        super().__init__()
+        self.failures = failures
+        self.calls = 0
+
+    async def epoch_time(self):
+        """Refuse while the budget of failures lasts.
+
+        Returns:
+            The base store's answer once the blip is over.
+
+        Raises:
+            ConnectionError: While failures remain.
+        """
+        self.calls += 1
+        if self.failures > 0:
+            self.failures -= 1
+            msg = "store unreachable"
+            raise ConnectionError(msg)
+        return await super().epoch_time()
+
+
+async def test_startup_survives_a_transient_store_error(
+    monkeypatch, forked_registration_context
+):
+    """A worker booting through a database blip comes up instead of dying.
+
+    The chaos soak found this: a worker respawned while connections were being
+    severed took the AdminShutdown straight out of startup and exited.
+
+    Args:
+        monkeypatch: Used to shorten the backoff.
+        forked_registration_context: Isolates workflow registration.
+    """
+    monkeypatch.setattr(runtime_module, "STARTUP_BACKOFF", 0.001)
+    store = _BlippingStore(failures=2)
+    runtime = WorkflowRuntime(store, alerts=None)
+    runtime.register(_flow())
+    await runtime.startup(start_worker=True)
+    assert store.failures == 0
+    assert store.calls >= 3, "two refusals, then the attempt that worked"
+    await runtime.shutdown()
+
+
+async def test_startup_fails_fast_once_the_retry_budget_is_spent(
+    monkeypatch, forked_registration_context
+):
+    """A store that stays unreachable still fails startup, with its real error.
+
+    Args:
+        monkeypatch: Used to shorten the backoff.
+        forked_registration_context: Isolates workflow registration.
+    """
+    monkeypatch.setattr(runtime_module, "STARTUP_BACKOFF", 0.001)
+    store = _BlippingStore(failures=99)
+    runtime = WorkflowRuntime(store, alerts=None)
+    runtime.register(_flow())
+    with pytest.raises(ConnectionError, match="store unreachable"):
+        await runtime.startup(start_worker=False)
+    assert store.calls == runtime_module.STARTUP_ATTEMPTS
+    assert runtime._kernel is None, "nothing half-built survives"  # pyright: ignore[reportPrivateUsage]
+
+    store.failures = 0
+    await runtime.startup(start_worker=False)
+    await runtime.shutdown()

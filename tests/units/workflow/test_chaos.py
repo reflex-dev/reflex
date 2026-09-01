@@ -286,7 +286,8 @@ async def test_the_engine_holds_under_random_worker_kills(
         assert ledger[f"settle:ch_{order}"] >= 1, (order, "settlement never landed")
         assert ledger[f"settle-flake:ch_{order}"] >= 2, (order, "the retry never ran")
     for order in shipments:
-        assert ledger[f"close:{order}"] == 1, (order, "one signal, one handling")
+        assert ledger[f"close-attempt:{order}"] >= 1, (order, "never handled")
+        assert ledger[f"close:{order}"] == 1, (order, "the provider saw one shipment")
     for order in rollouts:
         assert ledger[f"region:{order}:a"] == 1, (order, "guarded branch a once")
         assert ledger[f"region:{order}:b"] == 1, (order, "guarded branch b once")
@@ -296,6 +297,18 @@ async def test_the_engine_holds_under_random_worker_kills(
     for run in runs:
         snapshot = await kernel.get_run(run.run_id)
         assert snapshot is not None
+        if run.workflow_id == "chaos.shipment":
+            # The handler may run twice; the signal must have reached the run
+            # exactly once, whatever the kills did around it. It resolves the
+            # wait directly when the wait was already armed, and is buffered
+            # for the wait to consume on arming when it arrived first.
+            arrivals = sum(
+                1
+                for event in await store.get_history(run.run_id)
+                if event.type
+                in (HistoryEventType.WAIT_RESOLVED, HistoryEventType.SIGNAL_BUFFERED)
+            )
+            assert arrivals == 1, (run.run_id, "one signal reaches the run once")
         assert all(step.status is not StepStatus.CLAIMED for step in snapshot.steps), (
             run.run_id,
             "a finished run holds no claim",
