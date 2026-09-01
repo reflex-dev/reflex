@@ -758,10 +758,20 @@ class BaseState(EvenMoreBasicBaseState):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        # A framework attribute name this class defines itself (as a var, a
-        # backend var, an event handler or a marked override) must keep going
-        # through the full lookup in _get_attribute, so drop it from the fast
-        # path for this class and its subclasses.
+        cls._prune_fast_attr_names()
+
+        all_base_state_classes[cls.get_full_name()] = None
+
+    @classmethod
+    def _prune_fast_attr_names(cls) -> None:
+        """Drop framework attribute names this class defines itself from the fast path.
+
+        A name the state defines (as a var, a backend var, an event handler or
+        a marked method override) must keep going through the full lookup in
+        ``_get_attribute``. The set only ever shrinks, so it stays correct for
+        subclasses (which inherit it) and for vars or handlers registered after
+        class creation, whose registration sites call this again.
+        """
         cls._fast_attr_names = cls._fast_attr_names - (
             _FRAMEWORK_ATTR_NAMES
             & (
@@ -771,8 +781,6 @@ class BaseState(EvenMoreBasicBaseState):
                 | set(cls.event_handlers)
             )
         )
-
-        all_base_state_classes[cls.get_full_name()] = None
 
     @classmethod
     def _add_event_handler(
@@ -789,6 +797,7 @@ class BaseState(EvenMoreBasicBaseState):
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        cls._prune_fast_attr_names()
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -879,6 +888,7 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, unique_var_name, computed_var_func_arg)
         cls.computed_vars[unique_var_name] = computed_var_func_arg
         cls.vars[unique_var_name] = computed_var_func_arg
+        cls._prune_fast_attr_names()
         cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
 
@@ -1258,10 +1268,12 @@ class BaseState(EvenMoreBasicBaseState):
         # update the internal dicts so the new variable is correctly handled
         cls.base_vars.update({name: var})
         cls.vars.update({name: var})
+        cls._prune_fast_attr_names()
 
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
+            substate_class._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1388,6 +1400,7 @@ class BaseState(EvenMoreBasicBaseState):
                 else:
                     substate_class.vars.setdefault(name, var)
                     substate_class.inherited_vars.setdefault(name, var)
+                substate_class._prune_fast_attr_names()
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1459,6 +1472,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Update tracking dicts.
         cls.computed_vars.update(dynamic_vars)
         cls.vars.update(dynamic_vars)
+        cls._prune_fast_attr_names()
         cls._update_substate_inherited_vars(dynamic_vars)
 
     @classmethod

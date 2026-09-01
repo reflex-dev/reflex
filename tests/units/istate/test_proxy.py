@@ -778,3 +778,32 @@ def test_fast_path_skips_names_a_subclass_defines():
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"
     assert state._get_was_touched == 7
+
+
+def test_fast_path_prunes_names_registered_after_class_creation():
+    """Vars and handlers added after class creation also leave the fast path."""
+    from reflex_base.constants import RouteArgType
+
+    from reflex.state import BaseState
+
+    DynamicState = type(
+        "DynamicState",
+        (BaseState,),
+        {"__module__": __name__, "__qualname__": "DynamicState"},
+    )
+    DynamicSubState = type(
+        "DynamicSubState",
+        (DynamicState,),
+        {"__module__": __name__, "__qualname__": "DynamicSubState"},
+    )
+    assert {"get_value", "get_delta"} <= DynamicState._fast_attr_names
+    assert {"get_value", "get_delta"} <= DynamicSubState._fast_attr_names
+
+    DynamicState.setup_dynamic_args({"get_value": RouteArgType.SINGLE})
+    assert "get_value" not in DynamicState._fast_attr_names
+    # Inherited by the substate, so pruned there too.
+    assert "get_value" not in DynamicSubState._fast_attr_names
+
+    DynamicState._add_event_handler("get_delta", lambda self: None)
+    assert "get_delta" not in DynamicState._fast_attr_names
+    assert "dirty_vars" in DynamicState._fast_attr_names
