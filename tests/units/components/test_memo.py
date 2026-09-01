@@ -12,6 +12,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _HASH_MAX_CACHE_ENTRIES,
+    _HASH_MAX_CACHED_DATACLASS,
     _SPECS,
     DEFAULT_MEMO_WRAPPER,
     EMPTY_VAR_COMPONENT,
@@ -23,8 +24,9 @@ from reflex_base.components.memo import (
     MemoParamKind,
     _analyze_params,
     _deterministic_hash,
+    _hash_dataclass_encodings,
     _hash_dataclass_layouts,
-    _hash_import_var_encodings,
+    _hash_encoders,
     _hash_str_encodings,
     _LazyBody,
     _MemoCallBinding,
@@ -2058,6 +2060,220 @@ def test_deterministic_hash_rejects_unsupported_types():
         _deterministic_hash(object())
 
 
+class _AppWrapProbe(Component):
+    """A component whose only per-instance artifact is an app-wrap component."""
+
+    library = "app-wrap-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Wrap the app in a ``MarkdownComponentMap``-based component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(50, "AppWrapProbe"): rx.text(self.marker)}
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the app wrap differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dataclass_inheriting_app_wrap_components():
+    """App-wrap components that also inherit a dataclass must hash by render.
+
+    ``rx.text`` and friends inherit ``MarkdownComponentMap``, a dataclass with
+    no fields, so encoding the dataclass ahead of the component collapsed every
+    one of them to the same nine bytes -- and two memo bodies whose app wraps
+    differed only in such a component shared a tag, dropping one app wrap.
+    """
+    a = _AppWrapProbe.create(marker="alpha")
+    b = _AppWrapProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_deterministic_hash_encodes_dataclass_components_as_components():
+    """A component that also inherits a dataclass encodes its render."""
+    assert _deterministic_hash(rx.text("a")) != _deterministic_hash(rx.text("b"))
+    # A Var is a frozen dataclass too, and must keep encoding as a Var.
+    assert _deterministic_hash(Var("a")) != _deterministic_hash(Var("b"))
+
+
+@dataclasses.dataclass(frozen=True)
+class _KeyedProbe:
+    """A frozen dataclass whose declared fields are all safe to key on."""
+
+    name: str
+    flag: bool = False
+    alias: str | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class _DefaultsProbe:
+    """A frozen dataclass every field of which has a default."""
+
+    name: str = "default"
+
+
+class _PlainProbe:
+    """A plain class -- no encoding, and ``_DefaultsProbe``'s metaclass."""
+
+
+@dataclasses.dataclass(frozen=True)
+class _NumericProbe:
+    """A frozen dataclass with a field that ``==`` can conflate."""
+
+    value: int | bool
+
+
+@dataclasses.dataclass(frozen=True)
+class _ContainerProbe:
+    """A frozen dataclass holding something that can still change."""
+
+    items: list[int]
+
+
+@dataclasses.dataclass
+class _MutableProbe:
+    """An unfrozen dataclass, and so an unhashable cache key."""
+
+    value: str
+
+
+def test_deterministic_hash_caches_any_keyable_frozen_dataclass(
+    clean_hash_caches: None,
+):
+    """Frozen dataclasses of str/bool/None fields are cached, not just imports."""
+    probe = _KeyedProbe(name="probe")
+
+    digest = _deterministic_hash(probe)
+    assert _hash_dataclass_encodings.get(probe) is not None
+    # An equal instance reuses the entry and lands on the same digest; unequal
+    # ones must not.
+    assert _deterministic_hash(_KeyedProbe(name="probe")) == digest
+    assert _deterministic_hash(_KeyedProbe(name="probe", flag=True)) != digest
+    assert _deterministic_hash(_KeyedProbe(name="other")) != digest
+
+
+def test_deterministic_hash_does_not_cache_numeric_frozen_dataclasses(
+    clean_hash_caches: None,
+):
+    """A field that can hold a number is not keyable by value.
+
+    ``True == 1`` and the two hash alike, so a cache keyed on the instance would
+    hand ``_NumericProbe(1)`` the encoding of ``_NumericProbe(True)``.
+    """
+    boolean, numeric = _NumericProbe(value=True), _NumericProbe(value=1)
+
+    assert boolean == numeric
+    assert _deterministic_hash(boolean) != _deterministic_hash(numeric)
+    assert not _hash_dataclass_encodings
+
+
+def test_deterministic_hash_tracks_dataclasses_that_can_still_change():
+    """Dataclasses whose contents can change must be re-encoded every time."""
+    mutable = _MutableProbe(value="before")
+    digest = _deterministic_hash(mutable)
+    mutable.value = "after"
+    assert _deterministic_hash(mutable) != digest
+
+    # Frozen, but a field holds a mutable container.
+    container = _ContainerProbe(items=[1])
+    digest = _deterministic_hash(container)
+    container.items.append(2)
+    assert _deterministic_hash(container) != digest
+
+
+def test_deterministic_hash_handles_dataclasses_without_params():
+    """Classes that copy ``__dataclass_fields__`` without the decorator hash.
+
+    ``MutableProxy`` synthesizes its wrapper classes exactly this way:
+    ``dataclasses.is_dataclass`` is true, but ``__dataclass_params__`` never
+    comes along, so there is no ``frozen`` flag to read.
+    """
+    synthesized = type(
+        "_SynthesizedProbe",
+        (),
+        {
+            "__dataclass_fields__": _KeyedProbe.__dataclass_fields__,
+            "name": "probe",
+            "flag": False,
+            "alias": None,
+        },
+    )
+
+    assert _deterministic_hash(synthesized()) == _deterministic_hash(
+        _KeyedProbe(name="probe")
+    )
+
+
+def test_deterministic_hash_skips_oversized_dataclass_encodings(
+    clean_hash_caches: None,
+):
+    """Outsized encodings are not retained, keeping the cache's memory bounded."""
+    oversized = _KeyedProbe(name="x" * _HASH_MAX_CACHED_DATACLASS)
+
+    digest = _deterministic_hash(oversized)
+    assert not _hash_dataclass_encodings
+    assert _deterministic_hash(_KeyedProbe(name="x" * _HASH_MAX_CACHED_DATACLASS)) == (
+        digest
+    )
+
+
+def test_deterministic_hash_beyond_dataclass_cache_capacity(clean_hash_caches: None):
+    """Frozen dataclasses arriving after the cache fills still hash correctly."""
+    values = [
+        _KeyedProbe(name=f"capacity_probe_{i}")
+        for i in range(_HASH_MAX_CACHE_ENTRIES + 100)
+    ]
+    digests = [_deterministic_hash(value) for value in values]
+
+    assert len(set(digests)) == len(values)
+    assert [_deterministic_hash(value) for value in values] == digests
+
+
+def test_deterministic_hash_encoder_table_keeps_types_apart(clean_hash_caches: None):
+    """Memoizing an encoder per type must not route other types through it."""
+    # A str-keyed enum resolves to the enum encoder; plain strings must keep
+    # their own fast path, and the two must not collide.
+    position = Hooks.HookPosition.PRE_TRIGGER
+    assert _deterministic_hash(position) != _deterministic_hash(position.value)
+    assert _deterministic_hash(position.value) == _deterministic_hash(
+        str(position.value)
+    )
+    # Dataclass types are encoded from their defaults. A class's own type is
+    # its metaclass, which it shares with unrelated classes, so caching an
+    # encoder under it would send those down the dataclass path too.
+    assert type(_DefaultsProbe) is type(_PlainProbe)
+    assert _deterministic_hash(_DefaultsProbe) == _deterministic_hash(
+        _DefaultsProbe(name="default")
+    )
+    with pytest.raises(TypeError, match="Cannot hash value"):
+        _deterministic_hash(_PlainProbe)
+
+
+def test_deterministic_hash_unsupported_type_is_not_memoized(clean_hash_caches: None):
+    """A type with no encoder must raise every time, not just the first."""
+    with pytest.raises(TypeError, match="Cannot hash value"):
+        _deterministic_hash(object())
+    with pytest.raises(TypeError, match="Cannot hash value"):
+        _deterministic_hash(object())
+    assert not _hash_encoders
+
+
 class _CustomCodeProbe(Component):
     """A component whose only per-instance artifact is its custom code."""
 
@@ -2215,13 +2431,15 @@ def test_clear_hash_caches_drops_every_cache(clean_hash_caches: None):
 
     assert _hash_dataclass_layouts
     assert _hash_str_encodings
-    assert _hash_import_var_encodings
+    assert _hash_dataclass_encodings
+    assert _hash_encoders
 
     clear_hash_caches()
 
     assert not _hash_dataclass_layouts
     assert not _hash_str_encodings
-    assert not _hash_import_var_encodings
+    assert not _hash_dataclass_encodings
+    assert not _hash_encoders
     # Hashing rebuilds them from scratch and must land on the same digest.
     assert (
         _deterministic_hash({
