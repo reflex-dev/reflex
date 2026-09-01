@@ -953,3 +953,62 @@ def test_compile_vite_config_reads_minify_env(
     monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
     config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
     assert f"minify: {'true' if minify else 'false'}," in config
+
+
+@pytest.mark.parametrize("prod_react", [True, False])
+def test_vite_config_template_prod_react(prod_react: bool) -> None:
+    """REFLEX_DEV_PROD_REACT swaps the browser's prebundled React for production.
+
+    The swap lives in an optimizer-only plugin (never `resolve.alias`, which
+    would stop Vite externalizing React for SSR), compiles JSX with the non-dev
+    runtime, and changes the optimizer cache key via a define.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=prod_react,
+        experimental_hmr=False,
+        sourcemap=False,
+        prod_react=prod_react,
+    )
+    markers = (
+        "function prodReactPrebundle() {",
+        "plugins: [prodReactPrebundle()],",
+        'transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": \'"1"\' } },',
+        "jsx: { development: false },",
+        '"react-dom/client": "react-dom/cjs/react-dom-client.production.js",',
+    )
+    for marker in markers:
+        assert (marker in config) is prod_react, marker
+    assert "customResolver" not in config
+    assert ("[fullReload()]" in config) is prod_react
+
+
+@pytest.mark.parametrize("warmup_routes", [True, False])
+def test_vite_config_template_warmup_routes(warmup_routes: bool) -> None:
+    """REFLEX_VITE_WARMUP_ROUTES pre-transforms route modules at server start."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        warmup_routes=warmup_routes,
+    )
+    assert ('clientFiles: ["./app/routes/**/*.jsx"],' in config) is warmup_routes
+
+
+def test_compile_vite_config_prod_react_forces_full_reload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Production React cannot be hot-patched, so the env var also forces full reloads."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_DEV_PROD_REACT.name, "true")
+    config = frontend_skeleton._compile_vite_config(get_config())
+    assert "plugins: [prodReactPrebundle()]," in config
+    assert "[fullReload()]" in config

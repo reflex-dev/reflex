@@ -631,6 +631,8 @@ def vite_config_template(
     sourcemap: bool | Literal["inline", "hidden"],
     minify: bool = True,
     allowed_hosts: bool | list[str] = False,
+    prod_react: bool = False,
+    warmup_routes: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -642,6 +644,10 @@ def vite_config_template(
         sourcemap: The sourcemap configuration.
         minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        prod_react: Prebundle the browser's React from its production build
+            (dev server only; see REFLEX_DEV_PROD_REACT).
+        warmup_routes: Pre-transform every route module when the dev server
+            starts, so the first visit to a page does not wait on Vite.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -652,6 +658,78 @@ def vite_config_template(
         allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
+    # Dev-only: prebundle the browser's React from React's production files
+    # so the dev server renders with production React (no per-element dev
+    # validation, no StrictMode double-render). This is scoped to the
+    # dependency optimizer (`optimizeDeps` is a client-environment option),
+    # so SSR keeps resolving React from Node and every other dependency
+    # (react-refresh, the router, radix, emotion) keeps its development
+    # build. A `resolve.alias` would not do: Vite refuses to externalize any
+    # SSR import matching an alias, which breaks the server renderer. JSX is
+    # compiled with the non-dev runtime so nothing imports `jsxDEV`, which the
+    # production jsx-dev-runtime does not export. Fast Refresh cannot patch a
+    # production renderer, so this mode pairs with fullReload(). Absolute
+    # paths: React's package `exports` map does not expose ./cjs/*.
+    prod_react_str = (
+        """
+  oxc: {
+    jsx: { development: false },
+  },
+  optimizeDeps: {
+    rolldownOptions: {
+      // Not part of the optimizer's cache key (plugins are excluded), so the
+      // define below is what invalidates prebundled deps when this toggles.
+      transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": '"1"' } },
+      plugins: [prodReactPrebundle()],
+    },
+  },"""
+        if prod_react
+        else ""
+    )
+    prod_react_plugin_str = (
+        """
+function prodReactPrebundle() {
+  const production = {
+    react: "react/cjs/react.production.js",
+    "react/jsx-runtime": "react/cjs/react-jsx-runtime.production.js",
+    "react/jsx-dev-runtime": "react/cjs/react-jsx-dev-runtime.production.js",
+    "react-dom": "react-dom/cjs/react-dom.production.js",
+    "react-dom/client": "react-dom/cjs/react-dom-client.production.js",
+    scheduler: "scheduler/cjs/scheduler.production.js",
+  };
+  // Optimizer entries arrive as the packages' resolved entry files.
+  const entryFiles = {
+    "react/index.js": "react",
+    "react/jsx-runtime.js": "react/jsx-runtime",
+    "react/jsx-dev-runtime.js": "react/jsx-dev-runtime",
+    "react-dom/index.js": "react-dom",
+    "react-dom/client.js": "react-dom/client",
+    "scheduler/index.js": "scheduler",
+  };
+  const abs = (file) => fileURLToPath(new URL("./node_modules/" + file, import.meta.url));
+  return {
+    name: "reflex-prod-react-prebundle",
+    resolveId(id) {
+      if (id in production) return abs(production[id]);
+      for (const [suffix, bare] of Object.entries(entryFiles)) {
+        if (id.endsWith("/node_modules/" + suffix)) return abs(production[bare]);
+      }
+      return null;
+    },
+  };
+}
+"""
+        if prod_react
+        else ""
+    )
+    warmup_str = (
+        """
+    warmup: {
+      clientFiles: ["./app/routes/**/*.jsx"],
+    },"""
+        if warmup_routes
+        else ""
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
@@ -680,6 +758,7 @@ function alwaysUseReactDomServerNode() {{
   }};
 }}
 
+{prod_react_plugin_str}
 function fullReload() {{
   return {{
     name: "full-reload",
@@ -750,10 +829,10 @@ export default defineConfig((config) => ({{
   experimental: {{
     enableNativePlugin: false,
     hmr: {"true" if experimental_hmr else "false"},
-  }},
+  }},{prod_react_str}
   server: {{
     port: process.env.PORT,{allowed_hosts_line}
-    hmr: {"true" if hmr else "false"},
+    hmr: {"true" if hmr else "false"},{warmup_str}
     watch: {{
       ignored: [
         "**/.web/backend/**",
