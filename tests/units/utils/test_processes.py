@@ -16,6 +16,30 @@ from reflex.utils.processes import (
 )
 
 
+def _ipv6_available() -> bool:
+    """Check whether the host can actually bind IPv6 sockets.
+
+    `socket.has_ipv6` only reflects build-time support; sandboxes and containers
+    frequently compile it in but have no IPv6 stack, which makes
+    `is_process_on_port` report every port as occupied.
+
+    Returns:
+        Whether an IPv6 socket can be created and bound.
+    """
+    try:
+        with closing(socket.socket(socket.AF_INET6, socket.SOCK_STREAM)) as sock:
+            sock.bind(("", 0))
+    except OSError:
+        return False
+    return True
+
+
+requires_ipv6 = pytest.mark.skipif(
+    not _ipv6_available(), reason="IPv6 is not available on this system"
+)
+
+
+@requires_ipv6
 def test_is_process_on_port_free_port():
     """Test is_process_on_port returns False when port is free."""
     # Find a free port
@@ -27,6 +51,7 @@ def test_is_process_on_port_free_port():
     assert not is_process_on_port(free_port)
 
 
+@requires_ipv6
 def test_is_process_on_port_occupied_port():
     """Test is_process_on_port returns True when port is occupied."""
     # Create a server socket to occupy a port
@@ -43,26 +68,23 @@ def test_is_process_on_port_occupied_port():
         server_socket.close()
 
 
+@requires_ipv6
 def test_is_process_on_port_ipv6():
     """Test is_process_on_port works with IPv6."""
-    # Test with IPv6 socket
+    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    server_socket.bind(("", 0))
+    server_socket.listen(1)
+
+    occupied_port = server_socket.getsockname()[1]
+
     try:
-        server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        server_socket.bind(("", 0))
-        server_socket.listen(1)
-
-        occupied_port = server_socket.getsockname()[1]
-
-        try:
-            # Port should be occupied on IPv6
-            assert is_process_on_port(occupied_port)
-        finally:
-            server_socket.close()
-    except OSError:
-        # IPv6 might not be available on some systems
-        pytest.skip("IPv6 not available on this system")
+        # Port should be occupied on IPv6
+        assert is_process_on_port(occupied_port)
+    finally:
+        server_socket.close()
 
 
+@requires_ipv6
 def test_is_process_on_port_both_protocols():
     """Test is_process_on_port detects occupation on either IPv4 or IPv6."""
     # Create IPv4 server
@@ -118,6 +140,7 @@ def test_is_process_on_port_permission_error():
         assert result is True
 
 
+@requires_ipv6
 def test_is_process_on_port_concurrent_access():
     """Test is_process_on_port works correctly with concurrent access."""
     shared = None
