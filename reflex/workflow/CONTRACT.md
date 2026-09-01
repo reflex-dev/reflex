@@ -171,12 +171,16 @@ that turn it into effectively-once for side effects are, in order of strength:
 
 ## 4. Releases and versions
 
-A run is **not** pinned to the code that started it. On every claim the engine
-gates per step: the handler id must still exist and the recorded payload must
-still bind to its signature. If both hold, the current code runs — new fields,
-tuned retries, edited bodies all apply immediately. If either fails, the run
-suspends as `NEEDS_ATTENTION` naming the handler; `resume()` re-opens it after
-the operator ships a compatible release or intervenes.
+Two gates decide what code runs a step, and they answer different questions.
+The **structural** gate runs on every claim: the handler id must still exist
+and the recorded payload must still bind to its signature. If both hold, the
+claiming worker's code runs — new fields, tuned retries, edited bodies all
+apply. If either fails, the run suspends as `NEEDS_ATTENTION` naming the
+handler; `resume()` re-opens it after the operator ships a compatible release
+or intervenes. The **release** gate (below) decides *which worker* may claim
+at all: when both the run and the worker declare a release id, only a worker
+of the run's release claims it. A run or worker that declares none is
+unconstrained, and the structural gate is then the only one.
 
 Consequences, stated plainly:
 
@@ -184,17 +188,16 @@ Consequences, stated plainly:
 - Deleting a handler (or removing a parameter its recorded payloads carry)
   suspends exactly the runs whose *next* step needs it, and only when that
   step comes due.
-- Two releases running simultaneously (rolling deploy) may execute different
-  steps of one run with different code. Steps are the consistency boundary;
-  the contract makes no promise that one run sees one release.
+- Two releases running simultaneously (rolling deploy) execute different
+  steps of one run with different code **only when the run or the workers
+  declare no release**. Steps are the consistency boundary in that mode, and
+  the contract makes no promise there that one run sees one release. With
+  releases declared on both sides, one run drains on one release.
 
-The engine deliberately does not pin runs to releases, and nothing here
-should be read as planning to. Pinning is a *deployment* concern: a hosting
-layer that wants one run to see one release does it by routing — admitting
-new runs to the new release while old runs finish on the old one — not by
-asking the engine to keep old code alive. That routing is not built yet; when
-it is, it constrains which workers exist, and every rule above still holds
-underneath it.
+Pinning constrains which worker may claim; it never keeps old code alive by
+itself. A hosting layer that wants old runs to finish on the old release
+keeps that release's workers running until `fleet --can-retire` says nothing
+is pinned to it (§8 says what happens if it does not).
 
 ### Release-pinned execution
 
@@ -522,7 +525,11 @@ outcome.
 | attempt finishes after the run's deadline passed | the commit is refused (`deadline_passed`, `attempt_abandoned` in history), the slot is released, and the sweep finalizes the run `TIMED_OUT` — a run past its deadline has exactly one outcome, never COMPLETED-after-the-fact. Recorded substeps stand: this is crash-equivalent, not an undo |
 | signal or approval arrives for a run past its deadline | refused as `expired` — the continuation can never execute (claims exclude past-deadline runs), so answering "resolved" would record a decision the timeout sweep is about to discard |
 | store unreachable at commit | attempt abandoned (fence unverifiable); step recovered later; `rx.step` records already made stand |
-| everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule; a remainder beyond the cap is skipped with a **warning naming the count and window** (there is no run to attach history to), and can be started by hand |
+| everything down for an hour | timers/waits/retries fire on restart (due-time semantics); schedule occurrences catch up from the durable cursor, capped at `MAX_SCHEDULE_CATCHUP` per schedule; a remainder beyond the cap is skipped with a **warning naming the count and window** (there is no run to attach history to), counted as `schedule_occurrences_skipped` on both exporters, alerted as `schedule_skipped` (§7), and can be started by hand. A schedule that was **paused** through the outage catches up nothing: its cursor advances to now on the first sweep and resume never backfills (§7) |
+| after a channel delivery is acknowledged, before anything else | nothing is pending: the inbox row and its routing (to the run, to `PENDING`, or to a `DEAD` letter) were one transaction (§6); the provider's redelivery is a `duplicate`, and a run admitted later flushes its `PENDING` mail inside the admitting transaction |
+| before a channel delivery's transaction commits | no row exists and the provider got no ack; it redelivers and the event id admits it exactly once |
+| the last worker of release R dies holding claims on runs pinned to R | each lease lapses and *any* worker's recovery sweep returns the step to `RECOVERY_WAIT` (recovery is release-agnostic, like queues); only a worker of R — or one declaring no release — will then claim it, so the runs **wait**, visible as pinned to R, until such a worker returns. `reflex workflows fleet --can-retire R` exits nonzero while they do; stopping R early is exactly the mistake it exists to refuse |
+| killed with alerts still queued | those alerts are lost: the alert queue is in memory by design (§7), an alert is a notification and never the record. The conditions it described — the `FAILED` run, the dead letter, the skipped occurrences — are durable and stay visible in the store, the console, and the counters |
 
 ### Failures that are not crashes
 
@@ -564,7 +571,11 @@ undone); after an unguarded effect (repeats, §2, which is the cost `rx.step`
 exists to remove); after a substep journal write (replays, never repeats);
 and immediately after a parent's finalize transaction (branches are already
 marked on disk, §5 — the case that distinguishes an in-transaction close from
-follow-up).
+follow-up); and after a channel delivery's acknowledgement with the run not
+yet admitted (redelivered twice, run started later, exactly one signal
+arrives, §6). Release routing (`tests/units/workflow/test_release_routing.py`)
+and the alert sink (`test_alerts.py`) are held by in-process tests: neither
+claims anything about what reached the disk.
 
 ## 9. Operator actions
 

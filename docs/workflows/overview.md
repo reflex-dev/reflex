@@ -88,9 +88,16 @@ determinism rules: `datetime.now()`, `random`, and ordinary I/O are all fine ins
 | `"idempotent_write"` | a write that is safe to repeat | yes |
 | `"non_idempotent_write"` | a write that is not safe to repeat | never |
 
-A `non_idempotent_write` that fails gets exactly one attempt and suspends the run as
+A `non_idempotent_write` that fails gets exactly one business attempt and suspends the run as
 `NEEDS_ATTENTION`: the runtime cannot prove the write did not already land, so it asks a human
 rather than guessing and charging a customer twice.
+
+The effect class governs *retries*, not crash recovery. If the worker dies mid-attempt, the
+step's lease lapses and another worker re-executes the handler — so the write can still run
+twice. The effect class alone is not an exactly-once guarantee; nothing can be while a process
+can die between the provider call and any record of it. Money-moving code wraps the call in
+`rx.step` and hands the provider `rx.current_run().idempotency_key()`, which covers the one
+window `rx.step` cannot: a crash after the provider acted but before the record landed.
 
 ### Retries and timeouts
 
