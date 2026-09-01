@@ -1851,11 +1851,11 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
 
     moment = Moment.create(
         "2026-08-30",
-        trim="h [hours]",
+        trim="large",
         parse=["YYYY-MM-DD"],
     )
     props = moment.render()["props"]
-    assert 'trim:"h [hours]"' in props
+    assert 'trim:"large"' in props
     assert 'parse:["YYYY-MM-DD"]' in props
 
 

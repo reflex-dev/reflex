@@ -29,8 +29,14 @@ def MomentApp():
                 "2026-08-30",
                 format="YYYY-MM-DD",
                 parse=["YYYY-MM-DD"],
-                trim="h [hours]",
+                trim="large",
                 id="moment",
+            ),
+            rx.moment(
+                date="2026-08-30T05:30:00",
+                duration="2026-08-30T00:00:00",
+                format="h [hrs] m [min]",
+                id="moment-duration",
             ),
         )
 
@@ -75,3 +81,7 @@ def test_moment_2_props_render(driver: WebDriver) -> None:
         lambda: driver.find_element(By.ID, "moment")
     )
     AppHarness.expect(lambda: moment.text == "2026-08-30")
+    moment_duration = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "moment-duration")
+    )
+    AppHarness.expect(lambda: moment_duration.text == "5 hrs 30 min")

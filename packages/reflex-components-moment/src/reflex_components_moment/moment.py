@@ -8,7 +8,7 @@ from typing import Any
 
 from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
 from reflex_base.event import EventHandler, passthrough_event_spec
-from reflex_base.utils.imports import ImportDict
+from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 
 
@@ -133,5 +133,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
             imports[""] = "moment/min/locales"
         if self.tz is not None:
             imports["moment-timezone@0.6.2"] = ""
+        if self.duration is not None or self.duration_from_now is not None:
+            imports["moment-duration-format@2.2.2"] = ImportVar(tag=None)
 
         return imports
