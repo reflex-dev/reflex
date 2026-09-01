@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from pydantic import ValidationError
 from reflex_base.utils import console
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -383,6 +382,8 @@ def webhook_endpoint(
             route.channel.model if route.channel is not None else None
         )
         if model is not None:
+            from pydantic import ValidationError
+
             try:
                 # The canonical form -- coercions applied, defaults filled --
                 # is what goes onward. Validating and then passing the raw

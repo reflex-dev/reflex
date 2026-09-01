@@ -316,9 +316,9 @@ async def test_an_unknown_channel_is_rejected_at_the_sender(
         result = await harness.start(Waits.begin())
         assert result.run_id is not None
         await harness.run_until_idle()
-        with pytest.raises(WorkflowDefinitionError, match="approved"):
+        with pytest.raises(WorkflowDefinitionError, match="no_such_channel"):
             await harness.kernel.signal(
-                result.run_id, ChannelDelivery(channel="aproved", payload=None)
+                result.run_id, ChannelDelivery(channel="no_such_channel", payload=None)
             )
         assert (
             await harness.kernel.signal(result.run_id, Waits.approved(None))

@@ -3730,6 +3730,9 @@ db = [
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
+workflows = [
+    { name = "reflex-base", extra = ["pydantic"] },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -3796,6 +3799,7 @@ requires-dist = [
     { name = "redis", specifier = ">=6.4,<8.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'pydantic'", editable = "packages/reflex-base" },
+    { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'workflows'", editable = "packages/reflex-base" },
     { name = "reflex-components-code", editable = "packages/reflex-components-code" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-dataeditor", editable = "packages/reflex-components-dataeditor" },
@@ -3815,7 +3819,7 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.2" },
 ]
-provides-extras = ["db", "pydantic"]
+provides-extras = ["db", "pydantic", "workflows"]
 
 [package.metadata.requires-dev]
 dev = [

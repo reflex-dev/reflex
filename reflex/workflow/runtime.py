@@ -41,6 +41,7 @@ from reflex.workflow.kernel import (
 )
 from reflex.workflow.records import RunStatus
 from reflex.workflow.store import RunStore, resolve_store
+from reflex.workflow.validation import require_pydantic
 
 if TYPE_CHECKING:
     from reflex.workflow.store import DeliveryDisposition
@@ -105,6 +106,7 @@ class WorkflowRuntime:
                 none, which is what the test harness passes so a developer's
                 shell never pages anyone from a test run.
         """
+        require_pydantic()
         self._store = store
         self._clock = clock
         self._rng = rng

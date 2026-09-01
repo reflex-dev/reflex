@@ -20,6 +20,12 @@ import pytest
 import reflex.workflow.testing as testing
 from reflex.workflow.store import SqliteRunStore
 
+# The engine validates every payload with pydantic, an optional extra of Reflex
+# (`reflex[workflows]`). CI runs the suite once without the optional extras to
+# prove the framework still works; there, this whole directory is not
+# applicable rather than 300 tests failing the same way.
+pytest.importorskip("pydantic", reason="Reflex Workflows need the pydantic extra")
+
 POSTGRES_URL_VAR = "REFLEX_TEST_POSTGRES"
 
 

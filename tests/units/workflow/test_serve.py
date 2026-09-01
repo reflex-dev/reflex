@@ -223,10 +223,10 @@ def test_http_signals_share_python_signal_semantics(service):
 
     run_id = _start_order(service)
     unknown_channel = service.post(
-        f"/runs/{run_id}/signals/shiped", json={}, headers=_auth("tk_signal")
+        f"/runs/{run_id}/signals/no_such_channel", json={}, headers=_auth("tk_signal")
     )
     assert unknown_channel.status_code == 400
-    assert "shiped" in unknown_channel.json()["error"]
+    assert "no_such_channel" in unknown_channel.json()["error"]
 
 
 def test_operator_actions_answer_404_and_409_precisely(service):

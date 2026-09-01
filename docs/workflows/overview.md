@@ -9,10 +9,11 @@ Workflows are ordinary Reflex code. There is no separate service to operate, no 
 determinism rules to learn: a workflow is an `rx.State` class, a step is an `@rx.event` handler, and
 control flow is what the handler returns.
 
-You do not need a Reflex app, a page, or a frontend build to use them. The workflow-only path is
-three commands:
+You do not need a Reflex app, a page, or a frontend build to use them. Install the extra, then the
+workflow-only path is three commands:
 
 ```bash
+pip install "reflex[workflows]"   # pydantic, which validates every payload
 reflex init --workflow          # writes workflows.py: one runnable module, nothing else
 reflex workflows dev workflows.py Workflows.start --arg order=ord-1 --fast-forward   # run it once
 reflex workflows worker workflows.py                                # serve it; start runs from any code
@@ -496,7 +497,7 @@ checks rather than prose:
 
 ```python
 import pytest
-from reflex.workflow import CONFORMANCE_CHECKS
+from reflex.workflow.conformance import CONFORMANCE_CHECKS
 
 
 @pytest.mark.parametrize("check", CONFORMANCE_CHECKS, ids=lambda c: c.__name__)

@@ -49,7 +49,6 @@ from reflex.workflow.client import (
     RemoteWorkflowError,
     RemoteWorkflows,
 )
-from reflex.workflow.conformance import CONFORMANCE_CHECKS
 from reflex.workflow.context import RunContext, current_run
 from reflex.workflow.definition import (
     HandlerDefinition,
@@ -86,7 +85,6 @@ from reflex.workflow.store import (
 from reflex.workflow.testing import WorkflowTestHarness
 
 __all__ = [
-    "CONFORMANCE_CHECKS",
     "AlertObserver",
     "ChannelDelivery",
     "Debounce",

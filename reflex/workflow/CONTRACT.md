@@ -3,7 +3,7 @@
 This document freezes what the workflow engine promises. Every statement here
 is load-bearing: code that violates it is a bug even if every test passes, and
 a change that needs different semantics must change this document in the same
-commit. The conformance suite (`reflex.workflow.CONFORMANCE_CHECKS`) and the
+commit. The conformance suite (`reflex.workflow.conformance.CONFORMANCE_CHECKS`) and the
 crash tests are the executable form of this contract; prose here and checks
 there are meant to be read together.
 

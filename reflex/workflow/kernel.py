@@ -21,7 +21,6 @@ import traceback
 import uuid
 from typing import TYPE_CHECKING, Any, Final
 
-from pydantic import TypeAdapter, ValidationError
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
@@ -74,6 +73,8 @@ from reflex.workflow.validation import canonical_payload, mistyped_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
+
+    from pydantic import TypeAdapter
 
     from reflex.state import BaseState
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
@@ -1225,6 +1226,10 @@ class WorkflowKernel:
                 # including deliveries built without Signal.__call__, such
                 # as approval-token redemptions -- and what goes onward is
                 # the canonical form the model promises, not the raw input.
+                # pydantic is an optional extra of Reflex; a typed channel is
+                # the feature that needs it, so it is imported where it is used.
+                from pydantic import ValidationError
+
                 try:
                     payload = canonical_payload(channel.model, payload)
                 except ValidationError as error:
@@ -1502,6 +1507,8 @@ class WorkflowKernel:
                 for field in defn.fields
                 if field.name == field_name
             )
+            from pydantic import TypeAdapter
+
             adapter = TypeAdapter(annotated_type)
             self._field_adapters[key] = adapter
         return adapter

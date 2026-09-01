@@ -17,7 +17,10 @@ cannot change what the code declares.
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any
+import importlib.util
+from typing import TYPE_CHECKING, Any, Final
+
+from reflex_base.utils.exceptions import WorkflowRuntimeError
 
 from reflex.workflow.definition import channels_of, unbound_params
 
@@ -29,7 +32,30 @@ __all__ = [
     "channels_of",
     "missing_args",
     "mistyped_args",
+    "require_pydantic",
 ]
+
+WORKFLOWS_EXTRA: Final = 'pip install "reflex[workflows]"'
+
+
+def require_pydantic() -> None:
+    """Refuse to run workflows without the validation library they rest on.
+
+    pydantic is an optional extra of Reflex, and the workflow engine validates
+    every payload with it -- degrading to "no validation" when it is absent
+    would silently void the contract's boundary rules. Failing here, once,
+    with the install line beats a ``ModuleNotFoundError`` from inside the
+    first admission.
+
+    Raises:
+        WorkflowRuntimeError: If pydantic is not importable.
+    """
+    if importlib.util.find_spec("pydantic") is None:
+        msg = (
+            "Reflex Workflows need pydantic, which Reflex does not install by "
+            f"default: {WORKFLOWS_EXTRA}"
+        )
+        raise WorkflowRuntimeError(msg)
 
 
 @functools.lru_cache(maxsize=1024)

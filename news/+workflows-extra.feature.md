@@ -1,0 +1,1 @@
+Reflex Workflows are installed with `pip install "reflex[workflows]"`. The engine validates every payload with pydantic, which Reflex does not install by default; starting a workflow runtime without it now fails once with that install line instead of a `ModuleNotFoundError` from inside the first admission, and the `reflex` command line no longer imports pydantic just to exist.
