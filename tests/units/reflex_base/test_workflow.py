@@ -361,3 +361,34 @@ def test_backoff_saturates_instead_of_overflowing():
     policy = Retry(max_attempts=10_000, initial_delay="1s", max_delay="1h")
     assert policy.delay_for_attempt(500) == pytest.approx(3600.0)
     assert policy.delay_for_attempt(9_999) == pytest.approx(3600.0)
+
+
+def test_hmac_verifier_accepts_either_secret_during_a_rotation(monkeypatch):
+    """Old and new both verify while both are listed; a stranger never does."""
+    monkeypatch.setenv("ROT", " new-secret , old-secret ")
+    verify = hmac_signature(secret_env="ROT", header="X-Sig")
+    body = b'{"id": 1}'
+    for secret in ("old-secret", "new-secret"):
+        digest = hmac.new(secret.encode(), body, "sha256").hexdigest()
+        assert verify(body, {"x-sig": digest}), secret
+    stranger = hmac.new(b"other", body, "sha256").hexdigest()
+    assert not verify(body, {"x-sig": stranger})
+    monkeypatch.setenv("ROT", "new-secret")
+    old = hmac.new(b"old-secret", body, "sha256").hexdigest()
+    assert not verify(body, {"x-sig": old}), "dropping the old secret ends the window"
+
+
+def test_stripe_verifier_accepts_either_secret_during_a_rotation(monkeypatch):
+    """A delivery signed with the outgoing secret verifies until it is dropped."""
+    monkeypatch.setenv("WH", "whsec_new,whsec_old")
+    verify = stripe_signature(secret_env="WH", tolerance="5m")
+    body = b'{"type": "invoice.paid"}'
+    assert verify(
+        body, {"stripe-signature": _stripe_header("whsec_old", body, time.time())}
+    )
+    assert verify(
+        body, {"stripe-signature": _stripe_header("whsec_new", body, time.time())}
+    )
+    assert not verify(
+        body, {"stripe-signature": _stripe_header("whsec_other", body, time.time())}
+    )

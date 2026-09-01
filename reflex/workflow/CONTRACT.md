@@ -440,6 +440,13 @@ occurrences are said out loud in the worker log but feed no lost-work
 counter — they were asked for. Pause and resume are run-less actions and
 are audited (`pause_schedule`, `resume_schedule`) with actor and reason.
 
+Webhook secrets **rotate without a window of refusal**: a verifier's secret
+variable may hold several comma-separated secrets, and a delivery verifies
+if it was signed with any of them. Rotation is: add the new secret beside
+the old, cut the provider over, drop the old. This holds for `rx.hmac_signature`
+and `rx.stripe_signature` alike; `doctor`, `GET /connections`, and the console
+report the variable's presence, never its contents.
+
 ### Tenancy and who runs the workers
 
 Managed and customer-hosted are a deployment split, not a semantic one. A

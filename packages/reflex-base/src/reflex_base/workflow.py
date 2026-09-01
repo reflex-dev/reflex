@@ -392,6 +392,25 @@ def webhook(
     )
 
 
+def rotating_secrets(secret_env: str) -> list[str]:
+    """Read every secret a verifier should accept from one variable.
+
+    A webhook secret rotates by listing the new secret beside the old one,
+    comma-separated, for as long as the provider may still sign with either;
+    once the provider has cut over, the old one is dropped. Deliveries verify
+    against each in turn, so there is never a window in which one side has
+    rotated and the other has not.
+
+    Args:
+        secret_env: Name of the environment variable holding the secret(s).
+
+    Returns:
+        The configured secrets, in order, empty when the variable is unset.
+    """
+    raw = os.environ.get(secret_env) or ""
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
 @dataclasses.dataclass(frozen=True)
 class HmacVerifier:
     """A webhook verifier that checks an HMAC digest of the raw body.
@@ -402,7 +421,8 @@ class HmacVerifier:
     request through it.
 
     Attributes:
-        secret_env: Name of the environment variable holding the shared secret.
+        secret_env: Name of the environment variable holding the shared secret,
+            or several comma-separated secrets during a rotation.
         header: Request header carrying the provider's signature.
         algorithm: Hash algorithm name understood by ``hashlib``.
         prefix: Fixed prefix the provider puts before the digest.
@@ -423,12 +443,17 @@ class HmacVerifier:
         Returns:
             True when the presented digest matches one computed from the body.
         """
-        secret = os.environ.get(self.secret_env)
+        secrets = rotating_secrets(self.secret_env)
         presented = headers.get(self.header.lower()) or headers.get(self.header)
-        if not secret or not presented:
+        if not secrets or not presented:
             return False
-        expected = hmac.new(secret.encode(), body, self.algorithm).hexdigest()
-        return hmac.compare_digest(f"{self.prefix}{expected}", presented)
+        # Every configured secret is tried, in constant time each, so a
+        # rotation in progress accepts deliveries signed with either side.
+        matched = False
+        for secret in secrets:
+            expected = hmac.new(secret.encode(), body, self.algorithm).hexdigest()
+            matched |= hmac.compare_digest(f"{self.prefix}{expected}", presented)
+        return matched
 
 
 @dataclasses.dataclass(frozen=True)
@@ -464,9 +489,9 @@ class StripeVerifier:
             True when a presented ``v1`` digest matches the timestamped
             payload and the timestamp is inside the tolerance window.
         """
-        secret = os.environ.get(self.secret_env)
+        secrets = rotating_secrets(self.secret_env)
         presented = headers.get(self.header.lower()) or headers.get(self.header)
-        if not secret or not presented:
+        if not secrets or not presented:
             return False
         timestamp: str | None = None
         digests: list[str] = []
@@ -488,10 +513,13 @@ class StripeVerifier:
             return False
         if abs(time.time() - signed_at) > self.tolerance:
             return False
-        expected = hmac.new(
-            secret.encode(), f"{timestamp}.".encode() + body, "sha256"
-        ).hexdigest()
-        return any(hmac.compare_digest(expected, digest) for digest in digests)
+        signed = f"{timestamp}.".encode() + body
+        matched = False
+        for secret in secrets:
+            expected = hmac.new(secret.encode(), signed, "sha256").hexdigest()
+            for digest in digests:
+                matched |= hmac.compare_digest(expected, digest)
+        return matched
 
 
 def stripe_signature(
