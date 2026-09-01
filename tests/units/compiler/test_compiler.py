@@ -486,6 +486,7 @@ def test_compile_app_preserves_user_bundled_libraries(
 
     with RegistrationContext() as registration_context:
         bundle_library("lucide-react")
+        registration_context.bundled_libraries.append("stale-plugin")
         app = rx.App()
         config = rx.Config(app_name="testing", plugins=[])
 
@@ -507,6 +508,7 @@ def test_compile_app_preserves_user_bundled_libraries(
             compiler.compile_app(app, dry_run=True, use_rich=False)
 
         assert "lucide-react" in registration_context.bundled_libraries
+        assert "stale-plugin" not in registration_context.bundled_libraries
 
 
 def test_compile_contexts_has_default_color_mode_context():

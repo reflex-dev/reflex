@@ -8,6 +8,7 @@ from reflex_base.utils import serializers
 from reflex_base.vars.base import Var
 
 import reflex as rx
+from reflex.compiler import compiler
 from reflex.state import State
 
 STATE_JS_TEMPLATE = (
@@ -23,13 +24,23 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
 
         code = serializers.serialize(rx.icon("apple"))
         dynamic_code = serializers.serialize(rx.icon(Var("icon_name").to(str)))
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
 
     assert isinstance(code, str)
     assert 'from "lucide-react/dist/esm/icons/apple.mjs"' not in code
-    assert "const LucideApple = window.__reflex['lucide-react'].Apple" in code
+    assert (
+        "const LucideApple = "
+        "window.__reflex['lucide-react/dist/esm/icons/apple.mjs'].default"
+    ) in code
     assert isinstance(dynamic_code, str)
     assert 'from "lucide-react/dynamic.mjs"' not in dynamic_code
-    assert "const {DynamicIcon} = window.__reflex['lucide-react']" in dynamic_code
+    assert (
+        "const {DynamicIcon} = window.__reflex['lucide-react/dynamic.mjs']"
+    ) in dynamic_code
+    assert (
+        "import * as lucide_react_dist_esm_icons_apple_mjs "
+        'from "lucide-react/dist/esm/icons/apple.mjs";'
+    ) in app_root_code
 
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:

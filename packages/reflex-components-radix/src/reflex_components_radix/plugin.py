@@ -6,7 +6,7 @@ import dataclasses
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.dynamic import bundle_library
+from reflex_base.components.dynamic import _bundle_library
 from reflex_base.plugins.base import Plugin
 from reflex_base.utils import console
 
@@ -67,7 +67,7 @@ class RadixThemesPlugin(Plugin):
             return
 
         self.enabled = True
-        bundle_library(RADIX_THEMES_PACKAGE)
+        _bundle_library(RADIX_THEMES_PACKAGE)
         if not self._explicit and not self._app_theme_warning_emitted:
             console.deprecate(
                 feature_name="Implicit Radix Themes enablement",

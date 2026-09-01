@@ -130,7 +130,14 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
 
 
 def _compile_app(
@@ -1164,7 +1171,10 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1206,23 +1216,14 @@ def compile_app(
         app,
         config.plugins,
     )
-    registered_bundled_libraries = tuple(
-        RegistrationContext.ensure_context().bundled_libraries
-    )
-    reset_bundled_libraries()
-    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
-    bundled_libraries.extend(
-        library
-        for library in registered_bundled_libraries
-        if library not in bundled_libraries
-    )
+    _reset_bundled_libraries_for_compile()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
+            _bundle_library(dependency)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
