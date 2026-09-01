@@ -1,19 +1,12 @@
 """A stable content hash over components, vars and the data they render to.
 
-:func:`deterministic_hash` digests a value under a self-delimiting, type-tagged
+:func:`deterministic_hash` digests values under a self-delimiting, type-tagged
 encoding: every type writes a distinct tag and a length-prefixed payload, so
-the encoding is injective and two values that differ anywhere digest
-differently. Unlike :func:`hash`, it is stable across processes, which is what
-lets a digest name a generated file.
+the encoding is injective. Unlike :func:`hash` it is stable across processes,
+which is what lets a digest name a generated file.
 
-Values are encoded into a ``bytearray`` handed to the hasher in large chunks
-rather than one update per node. Encoders are resolved once per type, and the
-encodings of values that recur across a whole run -- short strings and frozen
-dataclasses -- are cached until :func:`clear_hash_caches` drops them.
-
-Auto-memoization is the caller today: it names every wrapper it generates after
-a digest of what the generated module will contain, so a collision silently
-drops one of the two bodies from the compiled output.
+Encoders are resolved once per type, and the encodings of recurring values are
+cached until :func:`clear_hash_caches` drops them.
 """
 
 from __future__ import annotations
@@ -36,34 +29,26 @@ _HASH_MAX_CACHED_STR = 128
 _HASH_MAX_CACHED_DATACLASS = 512
 _HASH_MAX_CACHE_ENTRIES = 4096
 
-# The declared field types a frozen dataclass may have and still be safe to key
-# an encoding cache on by value: equality between any two values drawn from
-# them implies an identical encoding. Numbers are deliberately absent --
-# ``True == 1 == 1.0`` holds and all three hash alike, yet each encodes
-# differently, so a lookup could hand back another value's bytes.
+# Field types for which ``==`` implies an identical encoding, so a frozen
+# dataclass of them can key an encoding cache by value. Numbers are excluded:
+# ``True == 1 == 1.0`` compare equal and hash alike but encode differently.
 _HASH_VALUE_KEYED_FIELD_TYPES = frozenset({str, bool, type(None)})
 
-# An encoder appends one value's encoding to a buffer. It takes the hasher its
-# buffer is flushed into so it can hand it to nested encodings.
+# Appends one value's encoding to a buffer, taking the hasher that buffer is
+# flushed into so it can pass it down to nested encodings.
 _HashEncoder = Callable[[Any, bytearray, Any], None]
 
-# Encoded forms of the values that recur across every component hashed during a
-# compile: short strings (dict keys, tags, module paths) and frozen dataclasses
-# (overwhelmingly ``ImportVar``), which make up the bulk of what a component
-# hash feeds in. All four caches are dropped by :func:`clear_hash_caches` once a
-# compile is done. Within a compile, the two value caches stop admitting new
-# entries at ``_HASH_MAX_CACHE_ENTRIES`` so a page rendering many one-off
-# strings can't balloon them; the recurring values get in first and stay.
+# Dropped together by :func:`clear_hash_caches`. The two value caches stop
+# admitting entries at ``_HASH_MAX_CACHE_ENTRIES``, so recurring values get in
+# first and a run of one-off values cannot grow them without bound.
 _hash_str_encodings: dict[str, bytes] = {}
 _hash_dataclass_encodings: dict[Any, bytes] = {}
 _hash_dataclass_layouts: dict[type, tuple[bytes, tuple[tuple[bytes, str], ...]]] = {}
 _hash_encoders: dict[type, _HashEncoder] = {}
 
-# Whether a frozen dataclass type's declared fields make it safe to key an
-# encoding cache on by value. Reading a class's annotations costs far more than
-# anything else here does per type, so unlike the caches above this one outlives
-# a compile -- weakly, so a dataclass defined inside a function body is still
-# collected with the frame that made it.
+# Whether a frozen dataclass type is safe to key by value. Resolving a class's
+# annotations is expensive enough that this outlives a single run, and weak keys
+# keep a dataclass defined in a function body collectable.
 _hash_value_keyed_types: WeakKeyDictionary[type, bool] = WeakKeyDictionary()
 
 
@@ -74,13 +59,18 @@ def _hash_dataclass_layout(cls: type) -> tuple[bytes, tuple[tuple[bytes, str], .
         cls: The dataclass type to describe.
 
     Returns:
-        The type tag plus field count, and each field's encoded and plain name.
+        The type tag, field count and defining class, and each field's encoded
+        and plain name.
     """
     layout = _hash_dataclass_layouts.get(cls)
     if layout is None:
         fields = dataclasses.fields(cls)  # pyright: ignore [reportArgumentType]
+        # The defining class is part of the header: two dataclasses with the
+        # same field names and values are different values.
         layout = (
-            b"D" + len(fields).to_bytes(8, "little"),
+            b"D"
+            + len(fields).to_bytes(8, "little")
+            + _encode_str_for_hash(f"{cls.__module__}.{cls.__qualname__}"),
             tuple((field.name.encode(), field.name) for field in fields),
         )
         _hash_dataclass_layouts[cls] = layout
@@ -90,11 +80,10 @@ def _hash_dataclass_layout(cls: type) -> tuple[bytes, tuple[tuple[bytes, str], .
 def _hash_dataclass_is_value_keyed(cls: type) -> bool:
     """Check whether instances of ``cls`` can key an encoding cache by value.
 
-    Two instances that compare equal have to encode alike, or a cache hit would
-    hand back the wrong bytes. That holds when every declared field type is
-    ``str``, ``bool`` or ``None``, and stops holding as soon as a number is in
-    play -- a field typed ``int | bool`` can hold ``1`` and ``True``, which are
-    equal, hash alike, and encode differently.
+    True when every declared field type is in
+    ``_HASH_VALUE_KEYED_FIELD_TYPES``, which is what makes ``==`` imply an
+    identical encoding. A field typed ``int | bool`` fails: ``1`` and ``True``
+    compare equal and hash alike but encode differently.
 
     Args:
         cls: The frozen dataclass type to check.
@@ -120,18 +109,12 @@ def _hash_dataclass_declares_keyed_fields(cls: type) -> bool:
         Whether every declared field type is drawn from
         ``_HASH_VALUE_KEYED_FIELD_TYPES``.
     """
-    # Deliberately not the cached wrapper in ``reflex_base.utils.types``: an
-    # ``lru_cache`` stores results but not exceptions, and the raising path is
-    # the one that recurs here -- ``VarData`` and its like cost ~170us every
-    # call. Caching the verdict instead, failures included, is what keeps this
-    # to once per type; that cache also holds its classes weakly, which an
-    # ``lru_cache`` cannot.
+    # Not the cached wrapper in ``reflex_base.utils.types``: its ``lru_cache``
+    # stores results but not exceptions, and holds its keys strongly.
     try:
         hints = get_type_hints(cls)
     except (NameError, TypeError):
-        # A class whose annotations name types that aren't resolvable at runtime
-        # (a class local to a function, a TYPE_CHECKING-only import) states no
-        # contract we can read, so it doesn't get cached.
+        # Annotations that don't resolve at runtime state no contract to read.
         return False
     for _, name in _hash_dataclass_layout(cls)[1]:
         hint = hints.get(name)
@@ -154,8 +137,8 @@ def _encode_str_for_hash(value: str) -> bytes:
     return b"s" + len(encoded).to_bytes(8, "little") + encoded
 
 
-def _encode_hash_number(value: float | enum.Enum, out: bytearray, hasher: Any) -> None:
-    """Append a number's or enum member's encoding to ``out``.
+def _encode_hash_number(value: float, out: bytearray, hasher: Any) -> None:
+    """Append a number's encoding to ``out``.
 
     Args:
         value: The value to encode.
@@ -164,6 +147,22 @@ def _encode_hash_number(value: float | enum.Enum, out: bytearray, hasher: Any) -
     """
     out += b"n"
     out += str(value).encode()
+
+
+def _encode_hash_enum(value: enum.Enum, out: bytearray, hasher: Any) -> None:
+    """Append an enum member's encoding to ``out``.
+
+    Encodes the member's identity rather than ``str(value)``, which for an
+    ``IntEnum`` is just its integer.
+
+    Args:
+        value: The enum member to encode.
+        out: The buffer to append the encoding to.
+        hasher: Unused; kept for the shared encoder signature.
+    """
+    cls = type(value)
+    out += b"e"
+    out += _encode_str_for_hash(f"{cls.__module__}.{cls.__qualname__}.{value.name}")
 
 
 def _encode_hash_str(value: str, out: bytearray, hasher: Any) -> None:
@@ -281,10 +280,6 @@ def _encode_hash_dataclass_type(value: type, out: bytearray, hasher: Any) -> Non
 def _encode_hash_cached_dataclass(value: Any, out: bytearray, hasher: Any) -> None:
     """Append a frozen dataclass instance's encoding to ``out``, caching it.
 
-    A compile builds a fresh ``ImportVar`` per component per import, so the same
-    handful of values is encoded thousands of times: one page hashed 1182 of
-    them across 22 distinct values.
-
     Args:
         value: The frozen dataclass instance to encode.
         out: The buffer to append the encoding to.
@@ -307,10 +302,9 @@ def _encode_hash_cached_dataclass(value: Any, out: bytearray, hasher: Any) -> No
 def _resolve_hash_encoder(value: Any) -> _HashEncoder:
     """Pick the encoder for a value whose exact type has no fast path.
 
-    Called once per type, since :func:`_encode_deterministic` memoizes what this
-    returns -- so subclasses of the fast-path types (notably ``str``-based
-    enums, which must encode as enums rather than as strings), vars, components
-    and dataclasses each walk this ladder once instead of once per value.
+    Called once per type: :func:`_encode_deterministic` memoizes the result.
+    Branch order matters where a value matches several -- a ``str``-based enum
+    must encode as an enum, not as a string.
 
     Args:
         value: A value of the type to resolve an encoder for.
@@ -329,7 +323,9 @@ def _resolve_hash_encoder(value: Any) -> _HashEncoder:
 
     # ``bool`` cannot be subclassed, so every bool is caught by the exact-type
     # fast path and none arrives here to be mistaken for a number.
-    if isinstance(value, (int, float, enum.Enum)):
+    if isinstance(value, enum.Enum):
+        return _encode_hash_enum
+    if isinstance(value, (int, float)):
         return _encode_hash_number
     if isinstance(value, str):
         return _encode_hash_str
@@ -339,18 +335,16 @@ def _resolve_hash_encoder(value: Any) -> _HashEncoder:
         return _encode_hash_sequence
     if isinstance(value, Var):
         return _encode_hash_var
+    # Ahead of the dataclass branch: a component that also inherits a dataclass
+    # (anything built on ``MarkdownComponentMap``) must encode as a component,
+    # not as that mixin's field list.
     if isinstance(value, BaseComponent):
-        # Ahead of the dataclass branch: components that also inherit a
-        # dataclass -- every one built on ``MarkdownComponentMap``, so ``rx.text``
-        # and friends -- would otherwise encode as that mixin's field list,
-        # which is empty, collapsing all of them to the same nine bytes.
         return _encode_hash_component
     if dataclasses.is_dataclass(value):
         if isinstance(value, type):
             return _encode_hash_dataclass_type
-        # ``is_dataclass`` only tests for ``__dataclass_fields__``, which classes
-        # synthesized at runtime (``MutableProxy``) copy over without the
-        # decorator's params -- and an unfrozen instance is unhashable anyway.
+        # Classes synthesized at runtime (``MutableProxy``) copy
+        # ``__dataclass_fields__`` without the decorator's params.
         params = getattr(type(value), "__dataclass_params__", None)
         if (
             params is not None
@@ -369,12 +363,11 @@ def _resolve_hash_encoder(value: Any) -> _HashEncoder:
 def _encode_deterministic(value: Any, out: bytearray, hasher: Any | None) -> None:
     """Append ``value``'s self-delimiting encoding to ``out``.
 
-    Dispatch is on the exact type so the common leaves (strings, bools,
-    containers) skip the ``isinstance`` ladder in :func:`_resolve_hash_encoder`,
-    which every other type walks once and then reaches through a memoized
-    per-type encoder. ``out`` is flushed into ``hasher`` at container boundaries
-    once it grows past ``_HASH_BUFFER_FLUSH_SIZE``, so encoding a large subtree
-    never buffers the whole thing.
+    Dispatch is on the exact type, so the common leaves skip the ``isinstance``
+    ladder in :func:`_resolve_hash_encoder`; every other type walks it once and
+    is then memoized in ``_hash_encoders``. ``out`` is flushed into ``hasher``
+    at container boundaries once it passes ``_HASH_BUFFER_FLUSH_SIZE``, so a
+    large subtree is never buffered whole.
 
     Args:
         value: The value to encode.
@@ -423,8 +416,8 @@ def _encode_deterministic(value: Any, out: bytearray, hasher: Any | None) -> Non
 def deterministic_hash(*values: object) -> str:
     """Fold values into a single digest, in the order given.
 
-    Every value shares one buffer, so a hash covering many values pays a
-    handful of hasher updates rather than one per value.
+    All values share one buffer, so a digest over many values costs a handful
+    of hasher updates rather than one per value.
 
     Args:
         *values: The values to hash.
@@ -446,11 +439,8 @@ def deterministic_hash(*values: object) -> str:
 def clear_hash_caches() -> None:
     """Drop the encoding caches.
 
-    Everything auto-memoization names is named during compilation, so once a
-    compile finishes these caches hold values nothing will ask for again --
-    including, in the pathological case, dataclass types defined inside a
-    function body, one fresh class object per compile, pinned by both the
-    layout cache and the encoder table.
+    Both the layout cache and the encoder table key on types, so leaving them
+    populated pins every dataclass type they have seen.
     """
     _hash_str_encodings.clear()
     _hash_dataclass_encodings.clear()

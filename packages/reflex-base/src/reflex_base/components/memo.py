@@ -1845,18 +1845,11 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     the body has to be part of the hash too: imports, hooks, custom code,
     dynamic imports, and app-wrap components.
 
-    Imports contribute their library names only, not the ``ImportVar`` entries
-    under them, which is where most of the hashing used to go. An import matters to a
-    body only through the local name it binds, and every name a body references
-    is already in its render, hooks or custom code -- Reflex aliases each tag to
-    a globally unique binding (``Trigger`` becomes ``RadixAccordionTrigger``),
-    and :func:`~reflex.compiler.utils.validate_imports` rejects one name bound
-    from two libraries. So identical bodies reference identical names, and the
-    library names pin where each one comes from. What this deliberately stops
-    distinguishing: two bodies that bind the *same* name from the *same* library
-    to a different export (``X as N`` versus ``Y as N``) or in a different form
-    (default versus named). Both would need one library to export two things a
-    component aliases to one name.
+    Imports contribute their library names only. A body reaches an import
+    through the local name it binds, and any name it references is already in
+    its render, hooks or custom code, so the library names are what remain to
+    pin down. This does not separate two bodies that bind the same name from
+    the same library to a different export or in a different form.
 
     Args:
         component: The component whose memo body is being hashed.
@@ -1868,11 +1861,8 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     Yields:
         Each artifact, in a fixed order.
     """
-    # Two classes can emit byte-identical bodies and still need separate memo
-    # modules -- the tag prefix already keeps them apart by qualname, so keep
-    # the digest consistent with that and include the defining module, which
-    # the prefix omits. Folding it in here rather than into the prefix avoids
-    # stretching every generated module filename by a dotted module path.
+    # The tag prefix carries the qualname but not the module, and a dotted
+    # module path in the prefix would stretch every generated filename.
     cls = type(component)
     yield f"{cls.__module__}.{cls.__qualname__}"
     if recursive:
@@ -1889,10 +1879,8 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
         yield component._get_hooks()
         yield component._get_added_hooks()
         yield component._get_custom_code()
-        # ``_get_all_custom_code`` folds in ``add_custom_code`` on the recursive
-        # side; the own-node side has to ask for it explicitly. It used not to,
-        # so two passthrough bodies differing only in ``add_custom_code`` output
-        # collided on a tag.
+        # ``_get_all_custom_code`` folds in ``add_custom_code`` on the
+        # recursive side; the own-node side has to ask for it explicitly.
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             yield clz.add_custom_code(component)
         yield component._get_dynamic_imports()
@@ -1918,12 +1906,11 @@ def component_hash(component: Component, *, recursive: bool) -> str:
 def memo_tag(component: Component) -> str:
     """Compute a stable tag name for the memo wrapping ``component``.
 
-    The class qualname is encoded directly in the tag prefix so that distinct
-    classes which happen to render identically never collide on a tag. Tag
-    collision would silently share a single cached memo wrapper across classes
-    and drop the later class's class-level metadata (e.g.
-    ``_get_app_wrap_components``, which carries providers like
-    ``UploadFilesProvider`` that must reach the app root).
+    The class qualname is in the tag prefix so distinct classes that render
+    identically never share a tag. Sharing one would reuse a single cached memo
+    wrapper across classes and drop the later class's class-level metadata,
+    such as the ``_get_app_wrap_components`` providers that must reach the app
+    root.
 
     Args:
         component: The component being memoized.

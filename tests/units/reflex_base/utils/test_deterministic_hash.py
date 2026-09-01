@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import enum
 from typing import Any
 
 import pytest
@@ -22,6 +23,38 @@ from reflex_base.vars.base import Var
 from reflex_components_core.base.bare import Bare
 
 import reflex as rx
+
+
+class _HashLevel(enum.IntEnum):
+    """An IntEnum, whose ``str()`` is just its integer."""
+
+    ONE = 1
+
+
+class _HashColor(enum.Enum):
+    """An enum sharing a member name with ``_HashShade``."""
+
+    RED = "red"
+
+
+class _HashShade(enum.Enum):
+    """A second enum with the same member name and value."""
+
+    RED = "red"
+
+
+@dataclasses.dataclass(frozen=True)
+class _ShapeAlpha:
+    """One of two dataclasses with identical field names and types."""
+
+    a: str
+
+
+@dataclasses.dataclass(frozen=True)
+class _ShapeBeta:
+    """The other; a distinct type holding the same values."""
+
+    a: str
 
 
 @pytest.fixture
@@ -66,8 +99,15 @@ def test_deterministic_hash_is_stable():
         ([1, [2]], [1, 2]),
         # str-keyed enums encode as enums, not as their string value.
         (Hooks.HookPosition.PRE_TRIGGER, Hooks.HookPosition.PRE_TRIGGER.value),
-        # Dataclasses of the same shape but different types stay distinct.
+        # Same dataclass type, different field values.
         (ImportVar(tag="a"), ImportVar(tag="a", alias="a")),
+        # Different dataclass types with the same field names and values.
+        (_ShapeAlpha(a="x"), _ShapeBeta(a="x")),
+        # An IntEnum member and the int it equals.
+        (_HashLevel.ONE, 1),
+        # Same member name on two enums, and a member against its own value.
+        (_HashColor.RED, _HashShade.RED),
+        (_HashColor.RED, _HashColor.RED.value),
     ],
 )
 def test_deterministic_hash_distinguishes(left: Any, right: Any):
@@ -254,7 +294,11 @@ def test_deterministic_hash_handles_dataclasses_without_params():
         },
     )
 
-    assert deterministic_hash(synthesized()) == deterministic_hash(
+    # Hashes without reaching for the missing ``frozen`` flag, and stably.
+    assert deterministic_hash(synthesized()) == deterministic_hash(synthesized())
+    # A distinct class, so a distinct digest from the one it copied its fields
+    # from, even holding the same values.
+    assert deterministic_hash(synthesized()) != deterministic_hash(
         _KeyedProbe(name="probe")
     )
 
