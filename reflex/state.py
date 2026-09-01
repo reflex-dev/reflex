@@ -360,6 +360,36 @@ def _is_user_descriptor(value: Any) -> bool:
 
 all_base_state_classes: dict[str, None] = {}
 
+# Instance bookkeeping fields and framework methods read on every event; they
+# are never user vars, so they can bypass the var-resolution logic below.
+_FRAMEWORK_ATTR_NAMES = frozenset({
+    "dirty_vars",
+    "dirty_substates",
+    "parent_state",
+    "substates",
+    "_backend_vars",
+    "_was_touched",
+    "_reflex_internal_links",
+    "get_fields",
+    "get_skip_vars",
+    "get_name",
+    "get_full_name",
+    "get_substate",
+    "get_value",
+    "get_delta",
+    "get_state",
+    "_get_resolved_delta",
+    "_get_root_state",
+    "_get_state_from_cache",
+    "_mark_dirty",
+    "_mark_dirty_computed_vars",
+    "_expired_computed_vars",
+    "_dirty_computed_vars",
+    "_clean",
+    "_update_was_touched",
+    "_get_was_touched",
+})
+
 CLASS_VAR_NAMES = frozenset({
     "vars",
     "base_vars",
@@ -1441,8 +1471,13 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The value of the var.
         """
-        # Fast path for dunder
-        if name.startswith("__") or name in CLASS_VAR_NAMES:
+        # Fast path for dunder, class-level tracking dicts, and the
+        # framework's own instance bookkeeping and methods.
+        if (
+            name.startswith("__")
+            or name in CLASS_VAR_NAMES
+            or name in _FRAMEWORK_ATTR_NAMES
+        ):
             return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
@@ -1835,11 +1870,29 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             Set of computed vars to include in the delta.
         """
+        # Only computed vars declared with an interval can expire; the class
+        # caches that subset so this stays O(interval vars), not O(all vars).
+        computed_vars = self.computed_vars
+        # __class__, not type(): a StateProxy reports the wrapped state's class.
         return {
             cvar
-            for cvar, cvar_obj in self.computed_vars.items()
-            if cvar_obj.needs_update(instance=self)
+            for cvar in self.__class__._interval_computed_var_names()
+            if computed_vars[cvar].needs_update(instance=self)
         }
+
+    @classmethod
+    @functools.lru_cache
+    def _interval_computed_var_names(cls) -> frozenset[str]:
+        """Names of computed vars on this class that expire on an interval.
+
+        Returns:
+            The computed var names with an update interval.
+        """
+        return frozenset(
+            name
+            for name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        )
 
     def _dirty_computed_vars(
         self, from_vars: set[str] | None = None, include_backend: bool = True

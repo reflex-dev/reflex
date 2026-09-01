@@ -713,3 +713,31 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
     ) as state:
         assert isinstance(state, CustomGetState)
         assert state.registry.entries == {"a": [1, 2]}
+
+
+def test_interval_computed_vars_resolve_through_state_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Marking dirty through a StateProxy resolves the class cache on the wrapped state.
+
+    `_expired_computed_vars` caches the interval-var names per class; looked up
+    via `type(self)` that would hit the proxy class and fail.
+
+    Args:
+        attached_mock_event_context: The attached mock event context fixture.
+    """
+    import datetime
+
+    import reflex as rx
+
+    class IntervalState(rx.State):
+        base: int = 0
+
+        @rx.var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            return self.base
+
+    state = IntervalState(_reflex_internal_init=True)
+    proxy = StateProxy(state)
+    assert proxy._expired_computed_vars() == {"timed"}
+    assert IntervalState._interval_computed_var_names() == frozenset({"timed"})

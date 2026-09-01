@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from collections.abc import Callable
 
@@ -205,6 +206,7 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         for keyworded_route, original_route in sorted_routes_by_specificity
     ]
 
+    @functools.lru_cache(maxsize=4096)
     def get_route(path: str) -> str | None:
         """Get the first matching route for a given path.
 
