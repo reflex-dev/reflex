@@ -1843,7 +1843,6 @@ def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> No
 
 def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     """The wrapper should support the changed react-moment 2.x prop types."""
-
     assert Moment.library == "react-moment@2.0.2"
     assert Moment.lib_dependencies == [
         "moment@2.30.1",
@@ -1855,8 +1854,9 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
         trim="h [hours]",
         parse=["YYYY-MM-DD"],
     )
-    assert str(moment.trim) == '"h [hours]"'
-    assert str(moment.parse) == '["YYYY-MM-DD"]'
+    props = moment.render()["props"]
+    assert 'trim:"h [hours]"' in props
+    assert 'parse:["YYYY-MM-DD"]' in props
 
 
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:

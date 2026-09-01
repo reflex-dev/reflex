@@ -41,7 +41,7 @@
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "2ce1c076ecf5c2fa4945b4abdbf2f91d",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "1e331a3d6420b97e5b1ce7f63ad53de8",
   "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "79d0a59b1ba12a2f2c4a09fa6b5c776f",
-  "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "b9b01a266a21fa7cbd400777adb37ab7",
+  "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "880ae7095693e0709ba4f5584ccae2d5",
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "beb057e382e527224597c320dbb72385",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "a77352f60fb6f4135b5d08a6e56efa6d",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/__init__.pyi": "bbd4d1a4fa73275a882c33ba485d0165",
