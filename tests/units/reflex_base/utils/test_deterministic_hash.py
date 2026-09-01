@@ -309,7 +309,9 @@ def test_deterministic_hash_does_not_cache_numeric_frozen_dataclasses(
     assert not _hash_dataclass_encodings
 
 
-def test_deterministic_hash_dataclass_field_contradicting_its_annotation():
+def test_deterministic_hash_dataclass_field_contradicting_its_annotation(
+    clean_hash_caches: None,
+):
     """A field holding something its annotation does not admit must still hash.
 
     The value-keyed cache is gated on declared field types, so an instance that
