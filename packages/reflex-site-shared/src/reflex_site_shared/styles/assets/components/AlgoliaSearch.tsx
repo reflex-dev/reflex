@@ -55,6 +55,33 @@ const RESULT_ICONS: Record<ResultSection, IconSvgElement> = {
   Reflex: ReflexIcon,
 };
 
+const RESULT_PATH_PREFIXES: Partial<Record<ResultSection, string[]>> = {
+  Docs: ["docs"],
+  Components: ["docs", "library"],
+  XY: ["docs", "xy"],
+  "API Reference": ["docs", "api-reference"],
+};
+
+const RESULT_PATH_LABELS: Record<string, string> = {
+  ai: "AI",
+  api: "API",
+  cli: "CLI",
+  css: "CSS",
+  html: "HTML",
+  http: "HTTP",
+  https: "HTTPS",
+  js: "JS",
+  json: "JSON",
+  llm: "LLM",
+  mcp: "MCP",
+  sql: "SQL",
+  ui: "UI",
+  url: "URL",
+  ux: "UX",
+  xml: "XML",
+  xy: "XY",
+};
+
 interface AlgoliaHit {
   objectID: string;
   url?: string;
@@ -93,7 +120,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-function normalizeResultUrl(hit: AlgoliaHit): string | null {
+function normalizeResultUrl(hit: AlgoliaHit): URL | null {
   const candidate = hit.url ?? hit.objectID;
   try {
     const url = new URL(candidate, "https://reflex.dev");
@@ -102,27 +129,26 @@ function normalizeResultUrl(hit: AlgoliaHit): string | null {
     if (!isReflexHost || !["http:", "https:"].includes(url.protocol)) {
       return null;
     }
-    return url.toString();
+    return url;
   } catch {
     return null;
   }
 }
 
-function resultSection(url: string): ResultSection {
-  const path = new URL(url).pathname;
-  if (path.startsWith("/docs/xy/")) {
+function resultSection(pathname: string): ResultSection {
+  if (pathname.startsWith("/docs/xy/")) {
     return "XY";
   }
-  if (path.startsWith("/docs/library/")) {
+  if (pathname.startsWith("/docs/library/")) {
     return "Components";
   }
-  if (path.startsWith("/docs/api-reference/")) {
+  if (pathname.startsWith("/docs/api-reference/")) {
     return "API Reference";
   }
-  if (path.startsWith("/docs/")) {
+  if (pathname.startsWith("/docs/")) {
     return "Docs";
   }
-  if (path.startsWith("/blog/")) {
+  if (pathname.startsWith("/blog/")) {
     return "Blog";
   }
   return "Reflex";
@@ -136,44 +162,55 @@ function resultTitle(hit: AlgoliaHit): string {
   return cleanResultLabel(hit.title || hit.headers?.at(-1) || "Reflex");
 }
 
-function resultBreadcrumbs(
-  hit: AlgoliaHit,
+function resultPathLabel(pathSegment: string): string {
+  return pathSegment
+    .split("-")
+    .map(
+      (word) =>
+        RESULT_PATH_LABELS[word] ??
+        `${word.charAt(0).toUpperCase()}${word.slice(1)}`,
+    )
+    .join(" ");
+}
+
+function resultPathBreadcrumbs(
+  pathname: string,
   section: ResultSection,
-  displayTitle: string,
 ): string[] {
-  const root = section === "Blog" ? "Blogs" : section;
-  if (
-    section === "API Reference" ||
-    section === "Blog" ||
-    section === "Reflex"
-  ) {
-    return [root];
+  const prefix = RESULT_PATH_PREFIXES[section];
+  if (!prefix) {
+    return [];
   }
 
-  const breadcrumbs = [root];
-  const seen = new Set([
-    root.toLocaleLowerCase(),
-    displayTitle.toLocaleLowerCase(),
-  ]);
-  for (const header of (hit.headers ?? []).slice(0, 2)) {
-    const label = cleanResultLabel(header);
-    const normalizedLabel = label.toLocaleLowerCase();
-    if (label && !seen.has(normalizedLabel)) {
-      breadcrumbs.push(label);
-      seen.add(normalizedLabel);
-    }
+  const pathSegments = pathname.split("/").filter(Boolean);
+  if (!prefix.every((segment, index) => pathSegments[index] === segment)) {
+    return [];
   }
-  return breadcrumbs;
+
+  return pathSegments.slice(prefix.length, -1).slice(0, 2).map(resultPathLabel);
+}
+
+function resultBreadcrumbs(pathname: string, section: ResultSection): string[] {
+  const root = section === "Blog" ? "Blogs" : section;
+  const normalizedRoot = root.toLowerCase();
+  return [
+    root,
+    ...resultPathBreadcrumbs(pathname, section).filter(
+      (breadcrumb) => breadcrumb.toLowerCase() !== normalizedRoot,
+    ),
+  ];
 }
 
 function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
   return hits.flatMap((hit) => {
-    const url = normalizeResultUrl(hit);
-    if (!url) {
+    const normalizedUrl = normalizeResultUrl(hit);
+    if (!normalizedUrl) {
       return [];
     }
 
-    const section = resultSection(url);
+    const url = normalizedUrl.toString();
+    const pathname = normalizedUrl.pathname;
+    const section = resultSection(pathname);
     const displayTitle = resultTitle(hit);
     return [
       {
@@ -181,7 +218,7 @@ function normalizeHits(hits: AlgoliaHit[]): SearchHit[] {
         url,
         section,
         displayTitle,
-        breadcrumbs: resultBreadcrumbs(hit, section, displayTitle),
+        breadcrumbs: resultBreadcrumbs(pathname, section),
       },
     ];
   });

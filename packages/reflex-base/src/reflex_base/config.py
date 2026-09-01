@@ -2,6 +2,7 @@
 
 import dataclasses
 import importlib
+import logging
 import os
 import sys
 import threading
@@ -29,8 +30,10 @@ from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -350,6 +353,10 @@ class Config(BaseConfig):
             env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
+        else:
+            # In managed (CLI) mode, make sure backend workers render records;
+            # outside the CLI this is a no-op and handlers stay untouched.
+            log.ensure_configured()
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
@@ -486,14 +493,14 @@ class Config(BaseConfig):
         """
         for plugin_class in environment.REFLEX_EXTRA_PLUGINS.get():
             if isinstance(plugin_class, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid REFLEX_EXTRA_PLUGINS entry {plugin_class.describe()}."
                 )
                 continue
             if any(
                 issubclass(plugin_class, disabled) for disabled in self.disable_plugins
             ):
-                console.debug(
+                logger.debug(
                     f"Skipping REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     "because its type is listed in disable_plugins.",
                 )
@@ -503,7 +510,7 @@ class Config(BaseConfig):
             try:
                 self.plugins.append(plugin_class())
             except Exception as exc:
-                console.warn(
+                logger.warning(
                     f"Ignoring REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     f"that could not be instantiated: {exc}"
                 )
@@ -519,7 +526,7 @@ class Config(BaseConfig):
         normalized: list[type[Plugin]] = []
         for entry in self.disable_plugins:
             if isinstance(entry, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid disable_plugins entry {entry.describe()}. "
                     "Check the REFLEX_DISABLE_PLUGINS import path(s)."
                 )
@@ -541,12 +548,12 @@ class Config(BaseConfig):
                         interpret_plugin_class_env(entry, "disable_plugins")
                     )
                 except Exception:
-                    console.warn(
+                    logger.warning(
                         f"Failed to import plugin from string {entry!r} in disable_plugins. "
                         "Please pass Plugin subclasses directly.",
                     )
             else:
-                console.warn(
+                logger.warning(
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
@@ -588,7 +595,7 @@ class Config(BaseConfig):
             plugin_name = plugin.__module__ + "." + plugin.__qualname__
             if plugin not in self.disable_plugins:
                 if not any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
                         "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
                         f"To disable this plugin, add `{plugin.__name__}` to the `disable_plugins` list.",
@@ -596,7 +603,7 @@ class Config(BaseConfig):
                     self.plugins.append(plugin())
             else:
                 if any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
@@ -675,7 +682,7 @@ class Config(BaseConfig):
 
     @property
     def app_module(self) -> ModuleType | None:
-        """Return the app module if `app_module_import` is set.
+        """The app module if `app_module_import` is set.
 
         Returns:
             The app module.
@@ -688,7 +695,7 @@ class Config(BaseConfig):
 
     @property
     def module(self) -> str:
-        """Get the module name of the app.
+        """The module name of the app.
 
         Returns:
             The module name.
@@ -734,9 +741,9 @@ class Config(BaseConfig):
                     environment_variable = "***"
 
                 if value != getattr(self, field.name):
-                    console.debug(
+                    logger.debug(
                         f"Overriding config value {field.name} with env var {field.name.upper()}={environment_variable}",
-                        dedupe=True,
+                        extra={"dedupe": True},
                     )
         return updated_values
 
@@ -891,16 +898,29 @@ def _load_config() -> Config:
             sys.path.extend(orig_sys_path)
 
 
-def get_config() -> Config:
+def get_config(reload: bool = False) -> Config:
     """Get the app config from the current RegistrationContext.
 
     The config is loaded from rxconfig.py once per RegistrationContext and
     cached on the context thereafter. If no context is currently attached,
     one is created and attached automatically.
 
+    Args:
+        reload: Deprecated; force a fresh load of the config. Use
+            reload_config() instead.
+
     Returns:
         The app config.
     """
+    if reload:
+        console.deprecate(
+            feature_name="get_config(reload=True)",
+            reason="Use reload_config() to force a fresh load of the config",
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        with _load_config_lock:
+            return reload_config()
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
         # Serialize check/load/set so threads sharing a context load once.

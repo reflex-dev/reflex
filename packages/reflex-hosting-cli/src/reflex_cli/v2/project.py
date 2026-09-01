@@ -1,12 +1,15 @@
 """Project commands for the Reflex Cloud CLI."""
 
 import json
+import logging
 
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -54,10 +57,10 @@ def create_project(
         )
         project = hosting.create_project(name=name, client=authenticated_client)
     except ValueError as err:
-        console.error(str(err))
+        logger.error(str(err))
         raise click.exceptions.Exit(1) from err
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
     if as_json:
@@ -111,13 +114,13 @@ def invite_user_to_project(
             role_id=role, user_id=user, client=authenticated_client
         )
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
     if "failed" in result:
-        console.error(f"Unable to invite user to project: {result}")
+        logger.error(f"Unable to invite user to project: {result}")
         raise click.exceptions.Exit(1)
-    console.success("Successfully invited user to project.")
+    logger.log(log.SUCCESS, "Successfully invited user to project.")
 
 
 @project_cli.command(name="select")
@@ -156,13 +159,13 @@ def select_project(
         if project_id:
             hosting.get_project(project_id, client=authenticated_client)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except httpx.HTTPStatusError as ex:
         try:
-            console.error(ex.response.json().get("detail"))
+            logger.error(ex.response.json().get("detail"))
         except json.JSONDecodeError:
-            console.error(ex.response.text)
+            logger.error(ex.response.text)
         raise click.exceptions.Exit(1) from ex
 
     if project_name and not project_id:
@@ -172,15 +175,15 @@ def select_project(
         project_id = result.get("id") if result else None
 
     if not project_id:
-        console.error("No project selected. Please provide a valid project ID or name.")
+        logger.error("No project selected. Please provide a valid project ID or name.")
         raise click.exceptions.Exit(1)
 
     console.set_log_level(loglevel)
     result = hosting.select_project(project=project_id, token=token)
     if "failed" in result:
-        console.error(result)
+        logger.error(result)
         raise click.exceptions.Exit(1)
-    console.success(result)
+    logger.log(log.SUCCESS, result)
 
 
 @project_cli.command(name="selected")
@@ -221,14 +224,14 @@ def get_select_project(
                 headers=["Selected Project ID", "Project Name"],
             )
         except NotAuthenticatedError:
-            console.error(
+            logger.error(
                 "You are not authenticated. Run `reflex login` to authenticate."
             )
             raise click.exceptions.Exit(1) from None
         except Exception as e:
-            console.error(f"Unable to get the currently selected project: {e}")
+            logger.error(f"Unable to get the currently selected project: {e}")
     else:
-        console.warn(
+        logger.warning(
             "no selected project. run `reflex cloud project select` to set one."
         )
 
@@ -290,10 +293,10 @@ def get_projects(
             # If returned empty list, print the empty
             console.print(str(projects))
     except NotAuthenticatedError:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from None
     except Exception as e:
-        console.error(f"Unable to get projects: {e}")
+        logger.error(f"Unable to get projects: {e}")
         raise click.exceptions.Exit(1) from e
 
 
@@ -348,7 +351,7 @@ def get_project_roles(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project roles --project-id \\[project_id]`"
             )
             raise click.exceptions.Exit(1)
@@ -371,7 +374,7 @@ def get_project_roles(
             # If returned empty list, print the empty
             console.print(str(roles))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -427,7 +430,7 @@ def get_project_role_permissions(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project role-permissions --project-id \\[project_id]`."
             )
             raise click.exceptions.Exit(1)
@@ -453,7 +456,7 @@ def get_project_role_permissions(
             # If returned empty list, print the empty
             console.print(str(permissions))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -508,7 +511,7 @@ def get_project_role_users(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project users --project-id \\[project_id]`"
             )
             raise click.exceptions.Exit(1)
@@ -531,5 +534,5 @@ def get_project_role_users(
             # If returned empty list, print the empty
             console.print(str(users))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err

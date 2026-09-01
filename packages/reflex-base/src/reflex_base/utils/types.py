@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import sys
 import types
+import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
@@ -35,17 +37,39 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 from typing_extensions import Self as Self
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
-from reflex_base.utils import console
+
+logger = logging.getLogger(__name__)
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
+
+# Potential TypeAliasType classes for isinstance checks. On 3.12+ the native
+# typing.TypeAliasType (produced by the `type` statement) and the
+# typing_extensions backport are distinct classes.
+TypeAliasTypes: tuple[type, ...] = (
+    (TypeAliasType, typing.TypeAliasType)
+    if sys.version_info >= (3, 12)
+    else (TypeAliasType,)
+)
+
+# Potential TypeVarTuple classes for isinstance checks (native on 3.11+,
+# typing_extensions backport otherwise).
+TypeVarTuples: tuple[type, ...] = (
+    (TypeVarTuple, typing.TypeVarTuple)
+    if sys.version_info >= (3, 11)
+    else (TypeVarTuple,)
+)
+
+# Potential type parameter classes for isinstance checks. The typing_extensions
+# ParamSpec instantiates the native class, so it needs no separate entry.
+TypeParams: tuple[type, ...] = (TypeVar, typing.ParamSpec, *TypeVarTuples)
 
 # Union of generic types.
 GenericType = type | _GenericAlias
@@ -208,6 +232,19 @@ def get_origin(tp: Any):
     )
 
 
+@lru_cache(maxsize=1024)
+def _get_args_cached(tp: Any) -> tuple[Any, ...]:
+    """Get the generic arguments of a type, memoized on the type.
+
+    Args:
+        tp: The type to get the arguments of.
+
+    Returns:
+        The generic arguments of the type.
+    """
+    return get_args(tp)
+
+
 @lru_cache
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
@@ -347,6 +384,151 @@ def is_classvar(a_type: Any) -> bool:
             type(a_type) is ForwardRef and a_type.__forward_arg__.startswith("ClassVar")
         )
     )
+
+
+def _match_type_args(
+    type_params: tuple[Any, ...], args: tuple[Any, ...]
+) -> dict[Any, Any]:
+    """Match subscription arguments to type parameters.
+
+    A TypeVarTuple absorbs the middle arguments (mapped to a tuple); plain
+    parameters before and after it match positionally from either end.
+
+    Args:
+        type_params: The alias's type parameters.
+        args: The subscription arguments.
+
+    Returns:
+        A mapping from each type parameter to its argument(s).
+    """
+    tvt_index = next(
+        (i for i, p in enumerate(type_params) if isinstance(p, TypeVarTuples)), None
+    )
+    if tvt_index is None:
+        return dict(zip(type_params, args, strict=False))
+    n_after = len(type_params) - tvt_index - 1
+    substitution: dict[Any, Any] = dict(
+        zip(type_params[:tvt_index], args[:tvt_index], strict=False)
+    )
+    substitution[type_params[tvt_index]] = args[tvt_index : len(args) - n_after]
+    if n_after:
+        substitution.update(zip(type_params[-n_after:], args[-n_after:], strict=False))
+    return substitution
+
+
+def _unpacked_type_var_tuple(arg: Any) -> Any | None:
+    """Get the TypeVarTuple an unpacked argument (``*Ts``) refers to.
+
+    Args:
+        arg: The argument to inspect.
+
+    Returns:
+        The TypeVarTuple, or None if the argument does not unpack one.
+    """
+    if isinstance(arg, TypeVarTuples):
+        return arg
+    args = get_args(arg)
+    return args[0] if len(args) == 1 and isinstance(args[0], TypeVarTuples) else None
+
+
+def _substitute_type_params(
+    cls: GenericType, substitution: dict[Any, Any]
+) -> GenericType:
+    """Substitute type parameters by rebuilding the type, expanding unpacked TypeVarTuples.
+
+    Args:
+        cls: The type to substitute into.
+        substitution: Mapping from type parameter to argument(s).
+
+    Returns:
+        The type with its parameters replaced.
+    """
+    if isinstance(cls, TypeParams):
+        return substitution.get(cls, cls)
+    if not getattr(cls, "__parameters__", ()):
+        return cls
+    args: list[Any] = []
+    for arg in get_args(cls):
+        if (tvt := _unpacked_type_var_tuple(arg)) is not None:
+            args.extend(substitution.get(tvt, (arg,)))
+        elif isinstance(arg, list):  # a Callable's parameter list
+            args.append([_substitute_type_params(a, substitution) for a in arg])
+        else:
+            args.append(_substitute_type_params(arg, substitution))
+    if is_union(cls):
+        return unionize(*args)
+    return get_origin(cls)[tuple(args)]
+
+
+def _apply_type_params(
+    value: GenericType, params: tuple[Any, ...], substitution: dict[Any, Any]
+) -> GenericType:
+    """Replace the type parameters of a generic type with their arguments.
+
+    Args:
+        value: The generic type to subscript.
+        params: The parameters of value, in appearance order.
+        substitution: Mapping from type parameter to argument(s).
+
+    Returns:
+        The type with its parameters replaced.
+    """
+    flattened: list[Any] = []
+    for param in params:
+        if isinstance(param, TypeVarTuples):
+            flattened.extend(substitution.get(param, (param,)))
+        else:
+            flattened.append(substitution.get(param, param))
+    try:
+        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+    except TypeError:
+        # Python 3.10 subscription predates PEP 646, and 3.11 rejects a ParamSpec
+        # next to an unpacked TypeVarTuple, so substitute by hand instead.
+        return _substitute_type_params(value, substitution)
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+
+    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
+    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    alias value), and aliases appearing as members of a union.
+
+    Args:
+        cls: The type to resolve.
+
+    Returns:
+        The resolved type, or the original type if it contains no alias.
+    """
+    origin = get_origin(cls)
+    # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
+    # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
+    # check against TypeAliasType and would lose its arguments.
+    if isinstance(origin, TypeAliasTypes):
+        value = resolve_type_alias(origin.__value__)
+        if params := getattr(value, "__parameters__", ()):
+            value = _apply_type_params(
+                value,
+                params,
+                _match_type_args(origin.__type_params__, get_args(cls)),
+            )
+        return resolve_type_alias(value)
+    if isinstance(cls, TypeAliasTypes):
+        return resolve_type_alias(cls.__value__)
+    if is_union(cls):
+        # Rebuild the union only when a member actually resolved, so the
+        # common alias-free case allocates nothing.
+        resolved_args = None
+        args = get_args(cls)
+        for index, arg in enumerate(args):
+            resolved = resolve_type_alias(arg)
+            if resolved is not arg:
+                if resolved_args is None:
+                    resolved_args = list(args)
+                resolved_args[index] = resolved
+        if resolved_args is not None:
+            return unionize(*resolved_args)
+    return cls
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:
@@ -546,7 +728,7 @@ def get_attribute_access_type(
             if name in hints:
                 return hints[name]
         except exceptions as e:
-            console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
 
@@ -633,6 +815,27 @@ def does_obj_satisfy_typed_dict(
     return required_keys.issubset(frozenset(obj))
 
 
+class _Unloaded:
+    """Stands in for the Var classes until they are first needed."""
+
+
+_Var: type = _Unloaded
+_LiteralVar: type = _Unloaded
+_Field: type = _Unloaded
+
+
+def _load_var_classes() -> None:
+    """Resolve the Var classes ``_isinstance`` compares against.
+
+    ``reflex_base.vars`` imports this module, so the import has to be deferred;
+    doing it per call is measurable when validating large containers.
+    """
+    global _Var, _LiteralVar, _Field
+    from reflex_base.vars import Field, LiteralVar, Var
+
+    _Var, _LiteralVar, _Field = Var, LiteralVar, Field
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,
@@ -656,15 +859,16 @@ def _isinstance(
     if cls is Any:
         return True
 
-    from reflex_base.vars import LiteralVar, Var
+    if _Var is _Unloaded:
+        _load_var_classes()
 
-    if cls is Var:
-        return isinstance(obj, Var)
-    if isinstance(obj, LiteralVar):
+    if cls is _Var:
+        return isinstance(obj, _Var)
+    if isinstance(obj, _LiteralVar):
         return treat_var_as_type and _isinstance(
             obj._var_value, cls, nested=nested, treat_var_as_type=True
         )
-    if isinstance(obj, Var):
+    if isinstance(obj, _Var):
         return treat_var_as_type and typehint_issubclass(
             obj._var_type,
             cls,
@@ -676,16 +880,22 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if cls is not None and is_union(cls):
+    # ``is_union``, ``is_literal`` and ``get_origin`` all start from this
+    # attribute; container checks call back in once per element, so read it once.
+    origin_attr = getattr(cls, "__origin__", None)
+
+    if origin_attr is Union or (
+        origin_attr is None and isinstance(cls, types.UnionType)
+    ):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
-            for arg in get_args(cls)
+            for arg in _get_args_cached(cls)
         )
 
-    if is_literal(cls):
-        return obj in get_args(cls)
+    if origin_attr is Literal:
+        return obj in _get_args_cached(cls)
 
-    origin = get_origin(cls)
+    origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
     if origin is None:
         # cls is a typed dict
@@ -705,9 +915,23 @@ def _isinstance(
             return isinstance(obj, (float, int))
 
         # cls is a simple class
-        return isinstance(obj, cls)
+        try:
+            return isinstance(obj, cls)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``isinstance``; unwrap it
+            # and re-dispatch. Alias members of a union resolve in the
+            # per-member recursion of the union branch above.
+            if isinstance(cls, TypeAliasTypes):
+                return _isinstance(
+                    obj,
+                    resolve_type_alias(cls),
+                    nested=nested,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
+            raise
 
-    args = get_args(cls)
+    args = _get_args_cached(cls)
 
     if not args:
         if treat_mutable_obj_as_immutable:
@@ -718,7 +942,7 @@ def _isinstance(
         # cls is a simple generic class
         return isinstance(obj, origin)
 
-    if origin is Var and args:
+    if origin is _Var and args:
         # cls is a Var
         return _isinstance(
             obj,
@@ -794,15 +1018,27 @@ def _isinstance(
                 for item in obj
             )
 
-    if args:
-        from reflex_base.vars import Field
+    if args and origin is _Field:
+        return _isinstance(
+            obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+        )
 
-        if origin is Field:
+    try:
+        return isinstance(obj, get_base_class(cls))
+    except TypeError:
+        # A subscripted PEP 695 type alias keeps the alias as its origin, so it
+        # matches none of the branches above and get_base_class hands the
+        # opaque alias back; unwrap it and re-dispatch. Checked lazily here so
+        # alias-free generic checks pay nothing.
+        if isinstance(origin, TypeAliasTypes):
             return _isinstance(
-                obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+                obj,
+                resolve_type_alias(cls),
+                nested=nested,
+                treat_var_as_type=treat_var_as_type,
+                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
-
-    return isinstance(obj, get_base_class(cls))
+        raise
 
 
 def is_dataframe(value: type) -> bool:
@@ -1025,7 +1261,22 @@ def typehint_issubclass(
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        try:
+            return issubclass(possible_subclass, possible_superclass)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``issubclass``; unwrap it
+            # and re-dispatch.
+            if isinstance(possible_subclass, TypeAliasTypes) or isinstance(
+                possible_superclass, TypeAliasTypes
+            ):
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    resolve_type_alias(possible_superclass),
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
+            raise
 
     if treat_literals_as_union_of_types and is_literal(possible_superclass):
         args = get_args(possible_superclass)
@@ -1065,6 +1316,18 @@ def typehint_issubclass(
 
     if accepted_type_origin is Union:
         if provided_type_origin is not Union:
+            if isinstance(provided_type_origin or possible_subclass, TypeAliasTypes):
+                # A PEP 695 type alias — bare (checked via the hint itself
+                # when the origin is None) or subscripted (the alias is the
+                # origin) — must unwrap before the member-wise comparison so
+                # an alias of a union is compared with union semantics.
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    possible_superclass,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
             return any(
                 typehint_issubclass(
                     possible_subclass,
@@ -1089,6 +1352,16 @@ def typehint_issubclass(
             for provided_arg in provided_args
         )
     if provided_type_origin is Union:
+        if isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+            # Same as above, mirrored: the union members must compare against
+            # the alias's resolved value, not the opaque alias.
+            return typehint_issubclass(
+                possible_subclass,
+                resolve_type_alias(possible_superclass),
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
         return all(
             typehint_issubclass(
                 provided_arg,
@@ -1098,6 +1371,19 @@ def typehint_issubclass(
                 treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
             )
             for provided_arg in provided_args
+        )
+
+    if isinstance(
+        provided_type_origin or possible_subclass, TypeAliasTypes
+    ) or isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+        # A PEP 695 type alias on either side is opaque to the origin
+        # comparison below, so unwrap it and re-dispatch.
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
         )
 
     provided_type_origin = provided_type_origin or possible_subclass

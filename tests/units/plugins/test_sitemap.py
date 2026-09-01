@@ -1,8 +1,10 @@
 """Unit tests for the sitemap plugin."""
 
 import datetime
+import logging
 from unittest.mock import MagicMock, patch
 
+import pytest
 from reflex_base.plugins.sitemap import (
     SitemapLink,
     generate_links_for_sitemap,
@@ -11,6 +13,23 @@ from reflex_base.plugins.sitemap import (
 
 import reflex as rx
 from reflex.app import UnevaluatedPage
+
+
+def _sitemap_warnings(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """Return the warnings the sitemap plugin itself emitted.
+
+    Args:
+        caplog: Pytest log capture fixture.
+
+    Returns:
+        The captured warning records logged by the sitemap plugin.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.name == "reflex_base.plugins.sitemap"
+        and record.levelno >= logging.WARNING
+    ]
 
 
 def test_generate_xml_empty_links():
@@ -71,15 +90,14 @@ def test_generate_xml_multiple_links_all_fields():
 
 
 @patch("reflex_base.config.get_config")
-@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_static_routes(
-    mock_warn: MagicMock, mock_get_config: MagicMock
+    mock_get_config: MagicMock, caplog: pytest.LogCaptureFixture
 ):
     """Test generate_links_for_sitemap with static routes.
 
     Args:
-        mock_warn: Mock for the console.warn function.
         mock_get_config: Mock for the get_config function.
+        caplog: Pytest log capture fixture.
     """
     mock_get_config.return_value.deploy_url = "https://example.com"
 
@@ -127,19 +145,18 @@ def test_generate_links_for_sitemap_static_routes(
         "priority": 0.7,
         "changefreq": "monthly",
     } in links
-    mock_warn.assert_not_called()
+    assert not _sitemap_warnings(caplog)
 
 
 @patch("reflex_base.config.get_config")
-@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_dynamic_routes(
-    mock_warn: MagicMock, mock_get_config: MagicMock
+    mock_get_config: MagicMock, caplog: pytest.LogCaptureFixture
 ):
     """Test generate_links_for_sitemap with dynamic routes.
 
     Args:
-        mock_warn: Mock for the console.warn function.
         mock_get_config: Mock for the get_config function.
+        caplog: Pytest log capture fixture.
     """
     mock_get_config.return_value.deploy_url = "https://sub.example.org"
     now = datetime.datetime(2023, 6, 13, 12, 0, 0)
@@ -193,22 +210,23 @@ def test_generate_links_for_sitemap_dynamic_routes(
         "priority": 0.9,
     }
     assert expected_link in links
-    assert mock_warn.call_count == 1
-    mock_warn.assert_any_call(
-        "Dynamic route 'user/[user_id]/profile' does not have a 'loc' in sitemap configuration. Skipping."
+    warnings = _sitemap_warnings(caplog)
+    assert len(warnings) == 1
+    assert (
+        warnings[0].getMessage()
+        == "Dynamic route 'user/[user_id]/profile' does not have a 'loc' in sitemap configuration. Skipping."
     )
 
 
 @patch("reflex_base.config.get_config")
-@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_404_route(
-    mock_warn: MagicMock, mock_get_config: MagicMock
+    mock_get_config: MagicMock, caplog: pytest.LogCaptureFixture
 ):
     """Test generate_links_for_sitemap with the 404 route.
 
     Args:
-        mock_warn: Mock for the console.warn function.
         mock_get_config: Mock for the get_config function.
+        caplog: Pytest log capture fixture.
     """
     mock_get_config.return_value.deploy_url = None  # No deploy URL
 
@@ -240,8 +258,11 @@ def test_generate_links_for_sitemap_404_route(
     links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "/custom-404", "priority": 0.1} in links
-    mock_warn.assert_called_once_with(
-        "Route 404 '404' does not have a 'loc' in sitemap configuration. Skipping."
+    warnings = _sitemap_warnings(caplog)
+    assert len(warnings) == 1
+    assert (
+        warnings[0].getMessage()
+        == "Route 404 '404' does not have a 'loc' in sitemap configuration. Skipping."
     )
 
 

@@ -17,8 +17,6 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
-
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import (
@@ -348,7 +346,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         if attribute_type is None:
             msg = (
-                f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
+                f"The State var `{self!s}` of type {self._var_type} has no attribute '{name}' or may have been annotated "
                 f"wrongly."
             )
             raise VarAttributeError(msg)

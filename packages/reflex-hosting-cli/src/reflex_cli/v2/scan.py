@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import time
 import zipfile
@@ -13,8 +14,10 @@ from typing import Any
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+
+logger = logging.getLogger(__name__)
 
 # Directory names whose contents are dependencies or build artifacts, never
 # app source. Mirrors the server-side code-map loader so the upload stays
@@ -87,12 +90,12 @@ def _zip_app_source(directory: Path) -> bytes:
                 file_count += 1
 
     if not file_count:
-        console.error(f"No reviewable source files found in {directory}.")
+        logger.error(f"No reviewable source files found in {directory}.")
         raise click.exceptions.Exit(1)
 
     data = buffer.getvalue()
     if len(data) > _MAX_ZIP_BYTES:
-        console.error(
+        logger.error(
             f"Project source is too large to scan (over {_MAX_ZIP_BYTES // (1024 * 1024)} MB). "
             "Remove large files or move them into an ignored directory."
         )
@@ -117,7 +120,7 @@ def _print_violations(result: dict[str, Any]) -> None:
         console.print(f"[bold]Summary:[/bold] {escape(summary)}", highlight=False)
 
     if not violations:
-        console.success("No issues found.")
+        logger.log(log.SUCCESS, "No issues found.")
         return
 
     console.rule("[bold]Security review findings[/bold]")
@@ -231,18 +234,18 @@ def scan_command(
                 if payload.get("status") != "pending":
                     break
                 if time.monotonic() >= deadline:
-                    console.error("Security review timed out. Try again later.")
+                    logger.error("Security review timed out. Try again later.")
                     raise click.exceptions.Exit(1)
                 time.sleep(_POLL_INTERVAL_SECONDS)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except hosting.SecurityReviewError as err:
-        console.error(f"Security review failed: {err}")
+        logger.error(f"Security review failed: {err}")
         raise click.exceptions.Exit(1) from err
 
     if payload.get("status") == "error":
-        console.error(f"Security review failed: {payload.get('error')}")
+        logger.error(f"Security review failed: {payload.get('error')}")
         raise click.exceptions.Exit(1)
 
     result = payload.get("result") or {}

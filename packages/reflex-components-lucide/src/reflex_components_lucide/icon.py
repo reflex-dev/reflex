@@ -1,10 +1,14 @@
 """Lucide Icon component."""
 
+import logging
+
 from reflex_base.components.component import Component, field
-from reflex_base.utils import console, format
+from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar, StringVar
+
+logger = logging.getLogger(__name__)
 
 LUCIDE_LIBRARY = "lucide-react@1.26.0"
 
@@ -79,7 +83,7 @@ class Icon(LucideIconComponent):
                 ),
                 reverse=True,
             )
-            console.warn(
+            logger.warning(
                 f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:10])}, ..."
                 "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. Using 'circle_help' icon instead."
             )

@@ -2,19 +2,20 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import zipfile
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.v2.deployments import hosting_cli
-from typer.main import Typer, get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
@@ -92,17 +93,25 @@ def test_scan_zip_excludes_build_dirs(mocker: MockFixture, tmp_path: Path):
     assert not any(".web" in name for name in names)
 
 
-def test_scan_no_files(mocker: MockFixture, tmp_path: Path):
-    """An empty project errors out without contacting the server."""
+def test_scan_no_files(
+    mocker: MockFixture, tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """An empty project errors out without contacting the server.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        tmp_path: Temporary directory path.
+        caplog: Pytest log capture fixture.
+    """
     _mock_auth(mocker)
     mock_submit = mocker.patch("reflex_cli.utils.hosting.submit_security_review")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["scan", str(tmp_path)])
 
     assert result.exit_code == 1
     mock_submit.assert_not_called()
-    mock_error.assert_called_once()
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
 
 
 def test_scan_renders_findings_with_markup_chars(mocker: MockFixture, tmp_path: Path):
@@ -238,8 +247,16 @@ def test_scan_polls_until_complete(mocker: MockFixture, tmp_path: Path):
     assert mock_get.call_count == 2
 
 
-def test_scan_server_error(mocker: MockFixture, tmp_path: Path):
-    """An errored job surfaces the server error and exits non-zero."""
+def test_scan_server_error(
+    mocker: MockFixture, tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """An errored job surfaces the server error and exits non-zero.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        tmp_path: Temporary directory path.
+        caplog: Pytest log capture fixture.
+    """
     _write_app(tmp_path)
     _mock_auth(mocker)
     mocker.patch(
@@ -253,44 +270,56 @@ def test_scan_server_error(mocker: MockFixture, tmp_path: Path):
             "error": "Security review failed.",
         },
     )
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["scan", str(tmp_path)])
 
     assert result.exit_code == 1
-    mock_error.assert_called_once_with(
-        "Security review failed: Security review failed."
-    )
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Security review failed: Security review failed."]
 
 
-def test_scan_submit_error(mocker: MockFixture, tmp_path: Path):
-    """A SecurityReviewError on submit surfaces the server detail verbatim."""
+def test_scan_submit_error(
+    mocker: MockFixture, tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """A SecurityReviewError on submit surfaces the server detail verbatim.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        tmp_path: Temporary directory path.
+        caplog: Pytest log capture fixture.
+    """
     _write_app(tmp_path)
     _mock_auth(mocker)
     mocker.patch(
         "reflex_cli.utils.hosting.submit_security_review",
         side_effect=hosting.SecurityReviewError("server says no"),
     )
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["scan", str(tmp_path)])
 
     assert result.exit_code == 1
-    mock_error.assert_called_once_with("Security review failed: server says no")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Security review failed: server says no"]
 
 
-def test_scan_not_authenticated(mocker: MockFixture, tmp_path: Path):
-    """An unauthenticated client produces the standard login prompt."""
+def test_scan_not_authenticated(
+    mocker: MockFixture, tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """An unauthenticated client produces the standard login prompt.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        tmp_path: Temporary directory path.
+        caplog: Pytest log capture fixture.
+    """
     _write_app(tmp_path)
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         side_effect=NotAuthenticatedError("not authenticated"),
     )
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["scan", str(tmp_path)])
 
     assert result.exit_code == 1
-    mock_error.assert_called_once_with(
-        "You are not authenticated. Run `reflex login` to authenticate."
-    )
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]

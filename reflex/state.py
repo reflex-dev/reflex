@@ -9,6 +9,7 @@ import copy
 import dataclasses
 import functools
 import inspect
+import logging
 import pickle
 import re
 import sys
@@ -78,6 +79,8 @@ from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -788,7 +791,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The ComputedVar.
         """
-        console.warn(
+        logger.warning(
             "The _evaluate method is experimental and may be removed in future versions."
         )
         from reflex_base.components.component import Component
@@ -809,8 +812,8 @@ class BaseState(EvenMoreBasicBaseState):
             result = f(state)
 
             if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
-                console.warn(
-                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
+                logger.warning(
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -1539,8 +1542,8 @@ class BaseState(EvenMoreBasicBaseState):
         if (field := fields.get(name)) is not None and field.is_var:
             field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
-                console.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
+                logger.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
@@ -2113,7 +2116,7 @@ class BaseState(EvenMoreBasicBaseState):
                 + "which may present performance issues. Consider reducing the size of this state."
             )
             if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
-                console.warn(msg)
+                logger.warning(msg)
             elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
                 raise StateTooLargeError(msg)
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
@@ -2453,6 +2456,9 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
+    # A newer navigation supersedes the previous unfinished on_load chain for
+    # the same client token, cancelling its stale work (#6593).
+    @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 

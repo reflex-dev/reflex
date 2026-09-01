@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
 from .utils import classproperty
+
+logger = logging.getLogger(__name__)
 
 
 # Bun config.
@@ -90,9 +93,7 @@ def _determine_react_router_version() -> str:
     # _determine_react_version in step when bumping.
     default_version = "8.3.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
-        from reflex_base.utils import console
-
-        console.warn(
+        logger.warning(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
@@ -102,9 +103,7 @@ def _determine_react_router_version() -> str:
 def _determine_react_version() -> str:
     default_version = "19.2.8"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
-        from reflex_base.utils import console
-
-        console.warn(
+        logger.warning(
             f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version

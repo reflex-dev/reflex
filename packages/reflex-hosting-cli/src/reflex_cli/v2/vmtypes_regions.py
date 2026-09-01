@@ -1,11 +1,14 @@
 """VMTypes and Regions commands for the Reflex Cloud CLI."""
 
 import json
+import logging
 
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -52,12 +55,12 @@ def create_token(
 
     if duration is None:
         duration = 90  # Default duration is 90 days
-        console.info("No duration specified. Using default duration of 90 days.")
+        logger.info("No duration specified. Using default duration of 90 days.")
 
     token = hosting.create_token(
         name=name, expiration=duration, client=authenticated_client
     )
-    console.success(f"Token: {token}")
+    logger.log(log.SUCCESS, f"Token: {token}")
 
 
 @vm_types_regions_cli.command("vmtypes")

@@ -51,7 +51,7 @@ class SelectBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the select component."""
+        """The import variable for the select component."""
         return ImportVar(tag="Select", package_path="", install=False)
 
 

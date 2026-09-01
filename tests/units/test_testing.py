@@ -187,3 +187,39 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def test_app_harness_frontend_env_has_development_condition(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, harness_mocks
+) -> None:
+    """The frontend dev server env enables the `development` export condition."""
+    harness = AppHarness(
+        app_name="testapp",
+        app_source=None,
+        app_path=tmp_path,
+        app_module_path=tmp_path / "testapp.py",
+    )
+    monkeypatch.setattr(
+        reflex_testing.js_runtimes,
+        "get_js_package_executor",
+        lambda raise_on_none: [["bun"]],
+    )
+    fake_socket = mock.Mock(getsockname=lambda: ("127.0.0.1", 8000))
+    monkeypatch.setattr(
+        AppHarness, "_poll_for_servers", lambda self, timeout: fake_socket
+    )
+    monkeypatch.setattr(
+        reflex_testing.reflex.utils.build, "setup_frontend", lambda path: None
+    )
+    captured: dict = {}
+
+    def fake_new_process(args, **kwargs):
+        captured.update(kwargs)
+        return mock.Mock()
+
+    monkeypatch.setattr(
+        reflex_testing.reflex.utils.processes, "new_process", fake_new_process
+    )
+    harness._start_frontend()
+    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
+        assert "--conditions=development" in captured["env"][options_var]

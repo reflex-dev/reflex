@@ -2,6 +2,7 @@
 
 import functools
 import json
+import logging
 import os
 import tempfile
 from collections.abc import Sequence
@@ -13,9 +14,12 @@ from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
+from rich.markup import escape
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
+
+logger = logging.getLogger(__name__)
 
 
 def check_node_version() -> bool:
@@ -47,7 +51,7 @@ def _get_version_of_executable(
     try:
         result = processes.new_process([executable_path, version_arg], run=True)
         if result.returncode != 0:
-            console.error(
+            logger.error(
                 f"Failed to run {executable_path} {version_arg} to get version. Return code: {result.returncode}. Standard error: {result.stderr!r}."
             )
             return None
@@ -55,7 +59,7 @@ def _get_version_of_executable(
     except (FileNotFoundError, TypeError):
         return None
     except version.InvalidVersion as e:
-        console.warn(
+        logger.warning(
             f"The detected version of {executable_path} ({e.args[0]}) is not valid. Defaulting to None."
         )
         return None
@@ -174,7 +178,7 @@ def is_outdated_nodejs_installed():
     if current_version is not None and current_version < version.parse(
         constants.Node.MIN_VERSION
     ):
-        console.warn(
+        logger.warning(
             f"Your version ({current_version}) of Node.js is out of date. Upgrade to {constants.Node.MIN_VERSION} or higher."
         )
         return True
@@ -233,12 +237,12 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     import httpx
 
     # Download the script
-    console.debug(f"Downloading {url}")
+    logger.debug(f"Downloading {url}")
     try:
         response = net.get(url)
         response.raise_for_status()
     except httpx.HTTPError as e:
-        console.error(
+        logger.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
         raise SystemExit(1) from None
@@ -265,11 +269,11 @@ def install_bun():
     """
     if npm_escape_hatch():
         if get_node_version() is not None:
-            console.info(
+            logger.info(
                 "Skipping bun installation as REFLEX_USE_NPM is set. Using npm instead."
             )
             return
-        console.error(
+        logger.error(
             "REFLEX_USE_NPM is set, but Node.js is not installed. Please install Node.js to use npm."
         )
         raise SystemExit(1)
@@ -282,7 +286,7 @@ def install_bun():
         and (current_version := get_bun_version(bun_path=bun_path))
         and current_version >= version.parse(constants.Bun.MIN_VERSION)
     ):
-        console.debug("Skipping bun installation as it is already installed.")
+        logger.debug("Skipping bun installation as it is already installed.")
         return
 
     if bun_path and path_ops.use_system_bun():
@@ -333,18 +337,19 @@ def validate_bun(bun_path: Path | None = None):
         return
 
     if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
-        console.info(f"Using custom Bun path: {bun_path}")
+        logger.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version(bun_path=bun_path)
         if bun_version is None:
-            console.error(
+            logger.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise SystemExit(1)
         if bun_version < version.parse(constants.Bun.MIN_VERSION):
-            console.warn(
+            logger.warning(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
-                f"that satisfies the minimum version requirement. You can upgrade bun by running [bold]bun upgrade[/bold]."
+                f"that satisfies the minimum version requirement. You can upgrade bun by running [bold]bun upgrade[/bold].",
+                extra={"rich": True},
             )
 
 
@@ -361,12 +366,12 @@ def validate_frontend_dependencies(init: bool = True):
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            console.error(f"Failed to find a valid package manager due to {e}.")
+            logger.error(f"Failed to find a valid package manager due to {e}.")
             raise SystemExit(1) from None
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()
-        console.error(
+        logger.error(
             f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
         )
         raise SystemExit(1)
@@ -374,7 +379,7 @@ def validate_frontend_dependencies(init: bool = True):
 
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
-    console.debug("Removing existing bun installation.")
+    logger.debug("Removing existing bun installation.")
     if Path(get_config().bun_path).exists():
         path_ops.rm(constants.Bun.ROOT_PATH)
 
@@ -434,7 +439,7 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
     try:
         data = json.loads(web_pkg_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
-        console.warn(
+        logger.warning(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )
         return set(), set()
@@ -507,18 +512,22 @@ def _run_initial_install(
 
     if any("lockfile had changes, but lockfile is frozen" in line for line in logs):
         root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
-        console.error(
+        logger.error(
             "The persisted lockfile is out of sync with the recovered "
-            f"package.json. Delete the [bold]{root_dir}[/bold] directory "
-            "and rerun so Reflex regenerates it from scratch."
+            f"package.json. Delete the [bold]{escape(str(root_dir))}[/bold] directory "
+            "and rerun so Reflex regenerates it from scratch.",
+            extra={"rich": True},
         )
         raise SystemExit(1)
 
     # Replay captured logs so the user can diagnose other failures (mirrors
     # show_status's default error path, which we suppressed above).
     for line in logs:
-        console.error(line, end="")
-    console.error("\nRun with [bold]--loglevel debug[/bold] for the full log.")
+        logger.error(line, extra={"end": ""})
+    logger.error(
+        "\nRun with [bold]--loglevel debug[/bold] for the full log.",
+        extra={"rich": True},
+    )
     raise SystemExit(1)
 
 

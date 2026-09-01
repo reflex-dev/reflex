@@ -13,6 +13,10 @@ from pathlib import Path
 
 ENTERPRISE_PACKAGE = "reflex-enterprise"
 
+# Towncrier writes each new release section directly after this marker, so
+# everything above it is hand-written preamble that should not be published.
+TOWNCRIER_MARKER = "<!-- towncrier release notes start -->"
+
 
 def discover_repo_changelogs(repo_root: Path) -> dict[str, Path]:
     """Find the changelogs maintained in this repo.
@@ -94,8 +98,10 @@ def normalize_changelog(source: str, title: str) -> str:
 
     Towncrier-generated changelogs have no top-level heading, while
     Keep-a-Changelog files (e.g. reflex-enterprise) start with a generic
-    ``# Changelog``. Replace any existing H1 with *title* so every changelog
-    page renders consistently.
+    ``# Changelog`` followed by prose explaining how the file is maintained.
+    Drop everything up to and including the towncrier marker when present,
+    then replace any existing H1 with *title* so every changelog page renders
+    consistently.
 
     Args:
         source: The raw changelog markdown.
@@ -104,8 +110,11 @@ def normalize_changelog(source: str, title: str) -> str:
     Returns:
         The normalized markdown.
     """
+    _, marker, releases = source.partition(TOWNCRIER_MARKER)
+    if marker:
+        source = releases
     lines = source.lstrip().splitlines()
     if lines and lines[0].startswith("# "):
         del lines[0]
     body = "\n".join(lines).strip("\n")
-    return f"# {title}\n\n{body}\n"
+    return f"# {title}\n\n{body}\n" if body else f"# {title}\n"

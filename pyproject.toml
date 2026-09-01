@@ -32,7 +32,7 @@ dependencies = [
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.2",
-  "reflex-base >= 0.9.8",
+  "reflex-base >= 0.9.9",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
@@ -45,7 +45,7 @@ dependencies = [
   "reflex-components-react-player >= 0.9.0",
   "reflex-components-recharts >= 0.9.0",
   "reflex-components-sonner >= 0.9.0",
-  "reflex-hosting-cli >= 0.1.66",
+  "reflex-hosting-cli >= 0.1.71",
 ]
 
 classifiers = [
@@ -105,7 +105,9 @@ dev = [
   "pytest-split",
   "pytest",
   "python-dotenv",
+  "pyyaml",
   "reflex-docgen",
+  "reflex-release",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -131,9 +133,13 @@ source = "uv-dynamic-versioning"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-include = ["reflex", "scripts/hatch_build.py"]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Leading slashes anchor to the repo root; unanchored patterns match nested
+# directories under packages/ too.
+include = ["/reflex"]
+# Include uncommitted pyi stubs generated for this package.
+artifacts = ["/reflex/**/*.pyi"]
+# The build hook is only needed to build the wheel from the sdist.
+targets.sdist.include = ["/reflex", "/scripts/hatch_build.py"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
@@ -151,6 +157,7 @@ extraPaths = [
   "packages/reflex-moment/src",
   "packages/reflex-plotly/src",
   "packages/reflex-radix/src",
+  "packages/reflex-release/src",
   "packages/reflex-react-player/src",
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
@@ -185,6 +192,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Background event handlers hold `async with self` across `yield` by design.
+  "ASYNC119",
   "BLE",
   "C901",
   "COM",
@@ -210,12 +219,18 @@ lint.ignore = [
   "PYI",
   "RUF012",
   "RUF067",
+  # State managers deliberately skip write-back when the `with` body raises.
+  "RUF075",
+  # `noqa` comments stay readable to non-ruff tooling and to older ruff versions.
+  "RUF105",
+  "RUF201",
   "S",
   "SLF",
   "SLOT",
   "TC",
   "TD",
   "TRY0",
+  "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -282,6 +297,7 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -321,6 +337,36 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "coverage_html_report"
+
+[tool.reflex-release]
+# The release path runs the reflex-release bundled in this repository, resolved
+# from uv.lock, rather than a version published to PyPI. That pins the whole
+# pipeline to one commit: the workflows below are generated from the templates
+# in packages/reflex-release, and the sync --check on every pull request
+# compares them against the templates of that same commit. A workflow edited by
+# hand and a template updated without regenerating are both drift, and both
+# fail the same check.
+cli-command = "uv run --frozen --package reflex-release reflex-release"
+root-package = "reflex"
+root-source-dirs = ["reflex"]
+packages-dir = "packages"
+package-source-subdirs = ["src"]
+# Changelog dates and r/pre-<date> branch names are stamped in the project's
+# home timezone, so an evening release is not dated tomorrow by a UTC runner.
+release-timezone = "America/Los_Angeles"
+# No changelog, no news fragments: patch-released on every push to main that
+# touches them.
+internal-packages = ["reflex-components-internal", "reflex-site-shared"]
+# Built for the docs site rather than published to PyPI: no release checkbox, no
+# changelog detection, no news fragment, and publish refuses it.
+never-publish-packages = ["integrations-docs"]
+
+# reflex's metadata pins reflex-base exactly, so the two always release together
+# at one version and reflex uploads only after reflex-base is on PyPI.
+[[tool.reflex-release.lockstep]]
+members = ["reflex", "reflex-base"]
+publish-last = ["reflex"]
+pin-exact = true
 
 [tool.towncrier]
 # Shared monorepo config. package/name intentionally empty — each invocation
@@ -421,6 +467,7 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
