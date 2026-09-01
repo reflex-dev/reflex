@@ -1497,7 +1497,12 @@ class BaseState(EvenMoreBasicBaseState):
         if (
             name.startswith("__")
             or name in CLASS_VAR_NAMES
-            or name in super().__getattribute__("_fast_attr_names")
+            or (
+                # Global set first: a user var must not pay the per-class
+                # lookup just to be rejected by it.
+                name in _FRAMEWORK_ATTR_NAMES
+                and name in super().__getattribute__("_fast_attr_names")
+            )
         ):
             return super().__getattribute__(name)
 
