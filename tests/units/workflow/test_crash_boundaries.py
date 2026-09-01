@@ -359,7 +359,12 @@ def test_a_child_finished_and_killed_still_reaches_its_parent(crash):
     """
     assert_killed(crash("burst", "after_commit:crash.quick:run_completed"))
     assert effects(crash.ledger) == ["quick:a"]
-    assert sorted(runs(crash.db).values()) == ["COMPLETED", "WAITING", "WAITING"]
+    # The sibling may be mid-attempt (RUNNING) or already parked on its timer
+    # (WAITING) at the instant of the kill; either is fine. What must hold is
+    # that exactly the killed child finished and nothing else is terminal.
+    statuses = sorted(runs(crash.db).values())
+    assert statuses.count("COMPLETED") == 1, statuses
+    assert all(status in ("RUNNING", "WAITING") for status in statuses[1:]), statuses
 
     assert_finished(crash("recover", CRASH_CLOCK_OFFSET="3700"))
     assert effects(crash.ledger) == ["quick:a", "deploy:eu", "burst-report"], (
