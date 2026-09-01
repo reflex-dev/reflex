@@ -177,6 +177,11 @@ CREATE TABLE IF NOT EXISTS workflow_audit (
     reason TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_audit_at ON workflow_audit (at);
+CREATE TABLE IF NOT EXISTS workflow_schedule_state (
+    key TEXT PRIMARY KEY,
+    paused BOOLEAN NOT NULL,
+    updated_at DOUBLE PRECISION NOT NULL
+);
 CREATE TABLE IF NOT EXISTS workflow_inbox (
     run_id TEXT NOT NULL,
     wait_key TEXT NOT NULL,
@@ -1859,6 +1864,51 @@ class PostgresRunStore:
                 params,
             )
             return tuple(_audit_from_row(row) for row in await cursor.fetchall())
+
+    async def set_schedule_paused(
+        self,
+        key: str,
+        paused: bool,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> None:
+        """Pause or resume a schedule, durably.
+
+        Args:
+            key: The schedule identity.
+            paused: Whether the schedule should skip its occurrences.
+            now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn, conn.transaction():
+            await conn.execute(
+                "INSERT INTO workflow_schedule_state (key, paused, updated_at)"
+                " VALUES (%s, %s, %s) ON CONFLICT (key) DO UPDATE SET"
+                " paused = EXCLUDED.paused, updated_at = EXCLUDED.updated_at",
+                (key, paused, now),
+            )
+            await self._audit_conn(
+                conn,
+                attribution,
+                "pause_schedule" if paused else "resume_schedule",
+                key,
+                {"paused": paused},
+                now,
+            )
+
+    async def paused_schedules(self) -> frozenset[str]:
+        """The schedules currently paused.
+
+        Returns:
+            Their keys.
+        """
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                "SELECT key FROM workflow_schedule_state WHERE paused"
+            )
+            return frozenset(row["key"] for row in await cursor.fetchall())
 
     async def admit_children(
         self,

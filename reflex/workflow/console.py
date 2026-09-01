@@ -792,6 +792,7 @@ class TriggersState(rx.State):
 
     rows: list[dict[str, str]] = []
     has_definitions: bool = True
+    notice: str = ""
 
     @rx.event
     async def refresh(self):
@@ -817,6 +818,7 @@ class TriggersState(rx.State):
         cursors = await schedule_cursors(
             definitions, runtime.kernel._store.read_schedule_cursor
         )
+        paused = await runtime.kernel._store.paused_schedules()
         self.rows = [
             {
                 "kind": row["kind"],
@@ -839,9 +841,42 @@ class TriggersState(rx.State):
                     else "in " + _age(2 * time.time() - row["next_fire"])
                 ),
                 "lag": "" if row.get("lag") is None else _age(time.time() - row["lag"]),
+                "key": str(row.get("key", "")),
+                "paused": "paused" if row.get("paused") else "",
             }
-            for row in describe_triggers(definitions, now, cursors)
+            for row in describe_triggers(definitions, now, cursors, paused)
         ]
+
+    @rx.event
+    async def toggle_schedule(self, key: str, pause: bool):
+        """Pause or resume a schedule from the page.
+
+        Args:
+            key: The schedule key.
+            pause: Whether to pause.
+        """
+        login = await self.get_state(LoginState)
+        await self.toggle_schedule_as(login, key, pause)
+
+    async def toggle_schedule_as(
+        self, login: LoginState, key: str, pause: bool
+    ) -> None:
+        """Pause or resume on behalf of a login; split out for testability.
+
+        Args:
+            login: The console login acting.
+            key: The schedule key.
+            pause: Whether to pause.
+        """
+        if not _admitted(login, "operate"):
+            self.notice = "pausing a schedule needs the operate scope"
+            return
+        runtime = await _client()
+        await runtime.kernel._store.set_schedule_paused(
+            key, pause, time.time(), {"actor": _operator(login)}
+        )
+        self.notice = f"{key} {'paused' if pause else 'resumed'}"
+        await self.load_triggers()
 
     @rx.event(background=True)
     async def watch(self):
@@ -1292,7 +1327,12 @@ def triggers_page() -> rx.Component:
                 color_scheme="amber",
             ),
         ),
-        rx.button("Refresh", on_click=TriggersState.refresh),
+        rx.hstack(
+            rx.button("Refresh", on_click=TriggersState.refresh),
+            rx.text(TriggersState.notice, color_scheme="gray"),
+            spacing="3",
+            align="center",
+        ),
         rx.table.root(
             rx.table.header(
                 rx.table.row(
@@ -1304,6 +1344,7 @@ def triggers_page() -> rx.Component:
                     rx.table.column_header_cell("guard"),
                     rx.table.column_header_cell("next"),
                     rx.table.column_header_cell("cursor lag"),
+                    rx.table.column_header_cell(""),
                 )
             ),
             rx.table.body(
@@ -1316,8 +1357,39 @@ def triggers_page() -> rx.Component:
                         rx.table.cell(row["detail"]),
                         rx.table.cell(row["path"]),
                         rx.table.cell(row["guard"]),
-                        rx.table.cell(row["next"]),
+                        rx.table.cell(
+                            rx.cond(
+                                row["paused"] != "",
+                                rx.badge("paused", color_scheme="amber"),
+                                rx.text(row["next"]),
+                            )
+                        ),
                         rx.table.cell(row["lag"]),
+                        rx.table.cell(
+                            rx.cond(
+                                row["kind"] == "schedule",
+                                rx.cond(
+                                    row["paused"] != "",
+                                    rx.button(
+                                        "Resume",
+                                        on_click=TriggersState.toggle_schedule(
+                                            row["key"], False
+                                        ),
+                                        size="1",
+                                        variant="soft",
+                                    ),
+                                    rx.button(
+                                        "Pause",
+                                        on_click=TriggersState.toggle_schedule(
+                                            row["key"], True
+                                        ),
+                                        size="1",
+                                        variant="soft",
+                                    ),
+                                ),
+                                rx.fragment(),
+                            )
+                        ),
                     ),
                 )
             ),

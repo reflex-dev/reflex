@@ -47,6 +47,7 @@ def describe_triggers(
     definitions: tuple[WorkflowDefinition, ...],
     now: float,
     cursors: Mapping[str, float] | None = None,
+    paused: frozenset[str] = frozenset(),
 ) -> list[dict[str, Any]]:
     """Summarize every trigger across a set of definitions.
 
@@ -55,6 +56,7 @@ def describe_triggers(
         now: Current time in epoch seconds, for the next occurrence.
         cursors: Durable schedule cursors keyed ``"{workflow_id}:{handler_id}"``,
             when the caller has the store to read them from.
+        paused: Schedule keys an operator has paused.
 
     Returns:
         One row per trigger: webhooks (roots and channels), schedules, manual
@@ -88,6 +90,8 @@ def describe_triggers(
                     "workflow": definition.workflow_id,
                     "target": handler.name,
                     "detail": trigger.cron,
+                    "key": key,
+                    "paused": key in paused,
                     "next_fire": CronSchedule(trigger.cron).next_after(now),
                     "cursor": cursor,
                     "lag": None if cursor is None else max(0.0, now - cursor),

@@ -431,6 +431,15 @@ webhooks and their declared reason, the approval key, the API token,
 schedules that need a serving process — reported by name and presence only,
 never by value.
 
+Schedules can be **paused** (`reflex workflows schedules pause KEY`,
+`POST /schedules/{key}/pause`, the console's Triggers page; `operate`
+scope). A paused schedule skips its occurrences and keeps its cursor
+moving, so resuming never backfills the pause: an operator who paused a
+nightly job for a week gets one run on resume, not seven. Skipped
+occurrences are said out loud in the worker log but feed no lost-work
+counter — they were asked for. Pause and resume are run-less actions and
+are audited (`pause_schedule`, `resume_schedule`) with actor and reason.
+
 ### Tenancy and who runs the workers
 
 Managed and customer-hosted are a deployment split, not a semantic one. A

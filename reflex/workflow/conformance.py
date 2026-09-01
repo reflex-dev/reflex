@@ -2039,6 +2039,30 @@ async def check_run_less_operator_actions_are_audited(store: RunStore) -> None:
     assert await store.list_audit(action="purge_runs") == (purge,)
 
 
+async def check_schedule_pause_is_durable_and_audited(store: RunStore) -> None:
+    """Pausing a schedule survives the process and names who paused it.
+
+    The flag is what the sweep consults; the audit entry is how an operator
+    later learns why the nightly job stopped. Unattributed toggles (a test
+    harness, automation) leave no entry.
+    """
+    key = "conformance.flow:nightly"
+    assert await store.paused_schedules() == frozenset()
+    await store.set_schedule_paused(key, True, NOW)
+    assert await store.paused_schedules() == frozenset({key})
+    assert await store.list_audit() == (), "no actor, no entry"
+
+    who = {"actor": "alex", "reason": "vendor outage"}
+    await store.set_schedule_paused(key, False, NOW + 1, who)
+    assert await store.paused_schedules() == frozenset()
+    await store.set_schedule_paused(key, True, NOW + 2, who)
+    entries = await store.list_audit()
+    assert [entry.action for entry in entries] == ["pause_schedule", "resume_schedule"]
+    assert entries[0].target == key
+    assert entries[0].detail == {"paused": True}
+    assert entries[0].reason == "vendor outage"
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -2066,6 +2090,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_release_counts_answer_the_retirement_question,
     check_operator_actions_carry_attribution,
     check_run_less_operator_actions_are_audited,
+    check_schedule_pause_is_durable_and_audited,
     check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,

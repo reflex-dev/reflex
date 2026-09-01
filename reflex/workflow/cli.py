@@ -1893,3 +1893,53 @@ def audit(database: str | None, action: str | None, limit: int):
             f"{entry.audit_id[:12]}  {entry.actor:<16} {entry.action:<14} "
             f"{entry.target}  {json.dumps(entry.detail)}{why}"
         )
+
+
+@workflows.group()
+def schedules():
+    """Pause and resume the schedules that start workflows."""
+
+
+def _toggle_schedule(database: str | None, key: str, paused: bool, reason: str | None):
+    """Set a schedule's paused flag, attributed to the invoking user.
+
+    Args:
+        database: Connection URL or SQLite path, or None for the default.
+        key: The schedule key, "{workflow_id}:{handler_id}".
+        paused: Whether to pause.
+        reason: Why, recorded in the audit log.
+    """
+    import time
+
+    async def act(store: RunStore) -> None:
+        """Write the flag.
+
+        Args:
+            store: The open run store.
+        """
+        await store.set_schedule_paused(
+            key, paused, time.time(), _cli_attribution(reason)
+        )
+
+    _with_store(database, act)
+    console.print(
+        f"Schedule {key} {'paused: occurrences are skipped until resumed' if paused else 'resumed: the next occurrence runs; the pause is not backfilled'}."
+    )
+
+
+@schedules.command("pause")
+@database_option
+@click.argument("key")
+@click.option("--reason", default=None, help="Why, recorded in the audit log.")
+def pause_schedule(database: str | None, key: str, reason: str | None):
+    """Pause a schedule; KEY is "{workflow_id}:{handler_id}" (see `triggers`)."""
+    _toggle_schedule(database, key, True, reason)
+
+
+@schedules.command("resume")
+@database_option
+@click.argument("key")
+@click.option("--reason", default=None, help="Why, recorded in the audit log.")
+def resume_schedule(database: str | None, key: str, reason: str | None):
+    """Resume a paused schedule without backfilling the pause."""
+    _toggle_schedule(database, key, False, reason)

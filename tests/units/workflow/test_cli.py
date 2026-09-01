@@ -510,3 +510,49 @@ def test_replay_and_audit_commands_account_for_the_operator(tmp_path):
     assert "alek" in listing.stdout
     assert "replay_parked" in listing.stdout
     assert "carrier back" in listing.stdout
+
+
+def test_schedules_pause_is_audited_from_the_cli(tmp_path):
+    """`schedules pause KEY --reason` writes an audit entry `audit` shows.
+
+    Args:
+        tmp_path: Working directory for the database.
+    """
+    import subprocess
+    import sys
+
+    db = tmp_path / "sched.db"
+    runner = "from reflex.workflow.cli import workflows; workflows()"
+    env = {**__import__("os").environ, "REFLEX_ACTOR": "alek"}
+    paused = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            runner,
+            "schedules",
+            "pause",
+            "cli.flow:tick",
+            "--reason",
+            "vendor outage",
+            "-d",
+            str(db),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert paused.returncode == 0, paused.stderr[-400:]
+    assert "paused" in paused.stdout
+    listing = subprocess.run(
+        [sys.executable, "-c", runner, "audit", "-d", str(db)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert "pause_schedule" in listing.stdout
+    assert "cli.flow:tick" in listing.stdout
+    assert "vendor outage" in listing.stdout

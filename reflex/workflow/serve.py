@@ -625,8 +625,9 @@ def triggers_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
             runtime.definitions,
             runtime.kernel._store.read_schedule_cursor,  # pyright: ignore[reportPrivateUsage]
         )
+        paused = await runtime.kernel._store.paused_schedules()  # pyright: ignore[reportPrivateUsage]
         return JSONResponse({
-            "triggers": describe_triggers(runtime.definitions, now, cursors)
+            "triggers": describe_triggers(runtime.definitions, now, cursors, paused)
         })
 
     return endpoint
@@ -659,6 +660,51 @@ def connections_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
         from reflex.workflow.health import describe_connections
 
         return JSONResponse({"connections": describe_connections(runtime.definitions)})
+
+    return endpoint
+
+
+def schedule_toggle_endpoint(
+    runtime: WorkflowRuntime, tokens: ScopedTokens, paused: bool
+):
+    """Build the endpoint that pauses or resumes a schedule.
+
+    Args:
+        runtime: The runtime owning the store.
+        tokens: The service's token scopes.
+        paused: Whether this endpoint pauses (True) or resumes (False).
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("operate")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """Set the flag, attributed to the caller.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The new state.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        payload, bad = await _read_json(request)
+        if bad is not None:
+            return bad
+        attribution = {"actor": tokens.actor_for(request)}
+        if isinstance(payload, dict) and payload.get("reason"):
+            attribution["reason"] = str(payload["reason"])
+        key = request.path_params["key"]
+        await runtime.kernel._store.set_schedule_paused(  # pyright: ignore[reportPrivateUsage]
+            key,
+            paused,
+            runtime.kernel._clock(),
+            attribution,  # pyright: ignore[reportPrivateUsage]
+        )
+        return JSONResponse({"key": key, "paused": paused}, status_code=202)
 
     return endpoint
 
@@ -907,6 +953,15 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                         "responses": {"200": {"description": "The dependencies"}},
                     }
                 },
+                **{
+                    f"/schedules/{{key}}/{action}": {
+                        "post": {
+                            "summary": f"{action.title()} a schedule (scope: operate)",
+                            "responses": {"202": {"description": "Applied"}},
+                        }
+                    }
+                    for action in ("pause", "resume")
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -1045,6 +1100,16 @@ def build_app(
                 "/connections",
                 connections_endpoint(runtime, tokens),
                 methods=["GET"],
+            ),
+            Route(
+                "/schedules/{key:path}/pause",
+                schedule_toggle_endpoint(runtime, tokens, True),
+                methods=["POST"],
+            ),
+            Route(
+                "/schedules/{key:path}/resume",
+                schedule_toggle_endpoint(runtime, tokens, False),
+                methods=["POST"],
             ),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a
             # minted approval link configured against an rx.App keeps working

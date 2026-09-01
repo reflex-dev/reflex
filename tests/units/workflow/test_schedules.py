@@ -254,3 +254,38 @@ async def test_skipped_catchup_is_counted_out_loud(forked_registration_context, 
     assert "missed more than" in err.out + err.err, (
         "the skipped remainder must be named, not silently jumped over"
     )
+
+
+async def test_a_paused_schedule_skips_and_resuming_never_backfills(
+    forked_registration_context,
+):
+    """Pause for three hours of an hourly schedule: zero runs, cursor moved.
+
+    Resuming then yields exactly the next occurrence -- an operator who paused
+    a nightly job for a week wants one run when they resume, not seven.
+    """
+    fired: list[float] = []
+
+    class Hourly(rx.State):
+        __workflow__ = WorkflowConfig(id="sched.pausable")
+
+        @rx.event(durable=True, trigger=schedule("0 * * * *"), effect="none")
+        def tick(self):
+            """Note the occurrence."""
+            fired.append(1)
+
+    store = MemoryRunStore()
+    async with WorkflowTestHarness(Hourly, store=store) as harness:
+        await harness.advance("61m")
+        assert len(fired) == 1, "the schedule works before it is paused"
+
+        await store.set_schedule_paused("sched.pausable:tick", True, harness.now)
+        await harness.advance("3h")
+        assert len(fired) == 1, "paused: three occurrences skipped"
+        cursor = await store.read_schedule_cursor("sched.pausable:tick")
+        assert cursor is not None
+        assert cursor >= harness.now - 60, "the cursor kept moving while paused"
+
+        await store.set_schedule_paused("sched.pausable:tick", False, harness.now)
+        await harness.advance("61m")
+        assert len(fired) == 2, "resumed: exactly the next occurrence, no backfill"

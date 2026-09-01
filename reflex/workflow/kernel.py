@@ -2650,6 +2650,9 @@ class WorkflowKernel:
             The number of runs admitted.
         """
         admitted = 0
+        paused = (
+            await self._store.paused_schedules() if self._schedules else frozenset()
+        )
         for defn, handler, schedule in self._schedules:
             key = f"{defn.workflow_id}:{handler.id}"
             cursor = self._schedule_cursor.get(key)
@@ -2666,6 +2669,22 @@ class WorkflowKernel:
                     self._started_at = self._clock()
                 cursor = stored if stored is not None else self._started_at
                 self._schedule_cursor[key] = cursor
+            if key in paused:
+                # A paused schedule skips its occurrences and keeps its cursor
+                # moving, so resuming never backfills the pause: an operator
+                # who paused a nightly job for a week wants one run when they
+                # resume, not seven. Skipped occurrences are not "lost work"
+                # -- they were asked for -- so they feed no alert counter,
+                # but they are said out loud.
+                skipped = schedule.count_between(cursor, now)
+                if skipped:
+                    console.warn(
+                        f"Schedule {key} is paused; skipping {skipped} "
+                        f"occurrence(s) between {cursor:.0f} and {now:.0f}."
+                    )
+                self._schedule_cursor[key] = now
+                await self._store.write_schedule_cursor(key, now)
+                continue
             occurrences = schedule.occurrences_between(
                 cursor, now, limit=MAX_SCHEDULE_CATCHUP + 1
             )

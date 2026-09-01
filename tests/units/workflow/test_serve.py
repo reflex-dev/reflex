@@ -14,6 +14,7 @@ from reflex_base.workflow import (
     Signal,
     WorkflowConfig,
     manual,
+    schedule,
     stripe_signature,
     webhook,
 )
@@ -752,3 +753,59 @@ def test_connections_are_reported_over_http_without_values(
     approval = next(row for row in rows if row["name"] == SECRET_ENV)
     assert approval["present"] is True
     assert "super-secret-value" not in response.text
+
+
+def test_schedules_pause_and_resume_over_http_with_audit(
+    forked_registration_context,
+):
+    """Pausing needs operate, shows on /triggers, and lands in the audit log.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+
+    class Nightly(rx.State):
+        __workflow__ = WorkflowConfig(id="serve.nightly")
+
+        @rx.event(durable=True, effect="none", trigger=schedule("0 3 * * *"))
+        def tick(self):
+            """Nightly."""
+
+    tokens = ScopedTokens(
+        grants={
+            "tk-read": frozenset({"read"}),
+            "tk-ops": frozenset({"read", "operate"}),
+        },
+        principals={"tk-ops": "night-shift"},
+    )
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Nightly)
+    app = build_app(runtime, worker=False, drain=0, tokens=tokens)
+    key = "serve.nightly:tick"
+    with TestClient(app) as client:
+        forbidden = client.post(f"/schedules/{key}/pause", headers=_auth("tk-read"))
+        assert forbidden.status_code == 403
+        paused = client.post(
+            f"/schedules/{key}/pause",
+            json={"reason": "vendor outage"},
+            headers=_auth("tk-ops"),
+        )
+        assert paused.status_code == 202
+        assert paused.json() == {"key": key, "paused": True}
+        row = next(
+            row
+            for row in client.get("/triggers", headers=_auth("tk-read")).json()[
+                "triggers"
+            ]
+            if row["kind"] == "schedule"
+        )
+        assert row["paused"] is True
+        resumed = client.post(f"/schedules/{key}/resume", headers=_auth("tk-ops"))
+        assert resumed.json()["paused"] is False
+        entries = client.get("/audit", headers=_auth("tk-read")).json()["entries"]
+    assert [entry["action"] for entry in entries] == [
+        "resume_schedule",
+        "pause_schedule",
+    ]
+    assert entries[1]["actor"] == "night-shift"
+    assert entries[1]["reason"] == "vendor outage"

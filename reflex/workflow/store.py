@@ -518,6 +518,35 @@ class RunStore(Protocol):
         """
         ...
 
+    async def set_schedule_paused(
+        self,
+        key: str,
+        paused: bool,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> None:
+        """Pause or resume a schedule, durably.
+
+        A paused schedule's occurrences are skipped -- its cursor still
+        advances, so resuming never backfills the pause -- and the decision
+        is written to the audit log in the same transaction when attributed.
+
+        Args:
+            key: The schedule identity, "{workflow_id}:{handler_id}".
+            paused: Whether the schedule should skip its occurrences.
+            now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
+        """
+        ...
+
+    async def paused_schedules(self) -> frozenset[str]:
+        """The schedules currently paused.
+
+        Returns:
+            Their keys.
+        """
+        ...
+
     async def sweep_parked(self, now: float, ttl: float) -> int:
         """Turn PENDING deliveries older than a ttl into DEAD letters.
 
@@ -1184,6 +1213,7 @@ class MemoryRunStore:
         self._schedule_cursors: dict[str, float] = {}
         self._parked: list[ParkedDelivery] = []
         self._audit: list[AuditEntry] = []
+        self._paused_schedules: set[str] = set()
         self._workers: dict[str, WorkerRecord] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
@@ -1534,6 +1564,43 @@ class MemoryRunStore:
                 if action is None or entry.action == action
             ]
             return tuple(rows[:limit])
+
+    async def set_schedule_paused(
+        self,
+        key: str,
+        paused: bool,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> None:
+        """Pause or resume a schedule, durably.
+
+        Args:
+            key: The schedule identity.
+            paused: Whether the schedule should skip its occurrences.
+            now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
+        """
+        async with self._lock:
+            if paused:
+                self._paused_schedules.add(key)
+            else:
+                self._paused_schedules.discard(key)
+            self._audit_locked(
+                attribution,
+                "pause_schedule" if paused else "resume_schedule",
+                key,
+                {"paused": paused},
+                now,
+            )
+
+    async def paused_schedules(self) -> frozenset[str]:
+        """The schedules currently paused.
+
+        Returns:
+            Their keys.
+        """
+        async with self._lock:
+            return frozenset(self._paused_schedules)
 
     async def sweep_parked(self, now: float, ttl: float) -> int:
         """Turn PENDING deliveries older than a ttl into DEAD letters.
@@ -3048,7 +3115,7 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
-SCHEMA_VERSION: Final = 6
+SCHEMA_VERSION: Final = 7
 """Stamped into PRAGMA user_version; bump when _SCHEMA or migrations change."""
 
 DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
@@ -3203,6 +3270,11 @@ CREATE TABLE IF NOT EXISTS workflow_audit (
     reason TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_audit_at ON workflow_audit (at);
+CREATE TABLE IF NOT EXISTS workflow_schedule_state (
+    key TEXT PRIMARY KEY,
+    paused INTEGER NOT NULL,
+    updated_at REAL NOT NULL
+);
 """
 
 _STEP_MIGRATIONS: Final = (
@@ -4284,6 +4356,68 @@ class SqliteRunStore:
                     params,
                 ).fetchall()
             return tuple(_audit_from_row(row) for row in rows)
+
+        return await asyncio.to_thread(work)
+
+    async def set_schedule_paused(
+        self,
+        key: str,
+        paused: bool,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> None:
+        """Pause or resume a schedule, durably.
+
+        Args:
+            key: The schedule identity.
+            paused: Whether the schedule should skip its occurrences.
+            now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
+        """
+
+        def work() -> None:
+            """Run the operation on the worker thread."""
+            with self._lock:
+                self._db.execute("BEGIN IMMEDIATE")
+                try:
+                    self._db.execute(
+                        "INSERT INTO workflow_schedule_state (key, paused, updated_at)"
+                        " VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET"
+                        " paused = excluded.paused, updated_at = excluded.updated_at",
+                        (key, int(paused), now),
+                    )
+                    self._audit_sql(
+                        attribution,
+                        "pause_schedule" if paused else "resume_schedule",
+                        key,
+                        {"paused": paused},
+                        now,
+                    )
+                    self._db.execute("COMMIT")
+                except BaseException:
+                    self._db.execute("ROLLBACK")
+                    raise
+
+        await asyncio.to_thread(work)
+
+    async def paused_schedules(self) -> frozenset[str]:
+        """The schedules currently paused.
+
+        Returns:
+            Their keys.
+        """
+
+        def work() -> frozenset[str]:
+            """Run the operation on the worker thread.
+
+            Returns:
+                The paused keys.
+            """
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT key FROM workflow_schedule_state WHERE paused = 1"
+                ).fetchall()
+            return frozenset(row["key"] for row in rows)
 
         return await asyncio.to_thread(work)
 

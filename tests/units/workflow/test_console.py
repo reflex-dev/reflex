@@ -526,3 +526,62 @@ def test_connections_page_counts_missing_secrets(tmp_path, monkeypatch):
     missing = next(row for row in state.rows if row["name"] == "CONSOLE_PAY_SECRET")
     assert missing["present"] == "NO"
     assert missing["color"] == "red"
+
+
+def test_schedule_toggle_needs_operate_and_shows_on_the_triggers_page(
+    tmp_path, monkeypatch
+):
+    """A read-only login is refused; an operator's pause shows as paused.
+
+    Args:
+        tmp_path: Where to write the module and database.
+        monkeypatch: Used to point the console at both and configure tokens.
+    """
+    from reflex.workflow.console import TriggersState
+
+    module = tmp_path / "night.py"
+    module.write_text(
+        "import reflex as rx\n"
+        "from reflex_base.workflow import WorkflowConfig, schedule\n\n"
+        "class Night(rx.State):\n"
+        "    __workflow__ = WorkflowConfig(id='console.night')\n\n"
+        "    @rx.event(durable=True, effect='none', trigger=schedule('0 2 * * *'))\n"
+        "    def tick(self):\n"
+        '        """Nightly."""\n'
+    )
+    monkeypatch.setenv(console_module.CONSOLE_DATABASE_ENV, str(tmp_path / "n.db"))
+    monkeypatch.setenv(console_module.CONSOLE_TARGET_ENV, str(module))
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_READ", "tok-read")
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_OPERATE", "tok-ops")
+    console_module._runtime = None  # pyright: ignore[reportPrivateUsage]
+
+    reader = LoginState()  # pyright: ignore[reportCallIssue]
+    reader.set_token("tok-read")
+    reader.login()
+    operator = LoginState()  # pyright: ignore[reportCallIssue]
+    operator.set_token("tok-ops")
+    operator.set_display_name("night-ops")
+    operator.login()
+
+    async def drive() -> tuple[str, str, str]:
+        """Attempt a pause as the reader, then as the operator.
+
+        Returns:
+            The reader's notice, the operator's notice, and the paused flag.
+        """
+        state = TriggersState()  # pyright: ignore[reportCallIssue]
+        await state.load_triggers()
+        key = next(row["key"] for row in state.rows if row["kind"] == "schedule")
+        await state.toggle_schedule_as(reader, key, True)
+        refused = state.notice
+        await state.toggle_schedule_as(operator, key, True)
+        flag = next(row["paused"] for row in state.rows if row["kind"] == "schedule")
+        return refused, state.notice, flag
+
+    try:
+        refused, applied, flag = asyncio.run(drive())
+    finally:
+        asyncio.run(console_module.close_client())
+    assert refused == "pausing a schedule needs the operate scope"
+    assert applied == "console.night:tick paused"
+    assert flag == "paused"
