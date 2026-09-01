@@ -749,9 +749,11 @@ def test_fast_path_skips_names_a_subclass_defines():
 
     The fast path bypasses var resolution, so it must not apply to a name the
     state itself defines (here a marked override of a BaseState method, and a
-    backend var named like a framework method).
+    backend var named like a framework method). The class is a detached root
+    (not a substate of ``State``) so the shadowed method never reaches the
+    framework paths that other tests exercise on the shared state tree.
     """
-    from reflex.state import BaseState, State
+    from reflex.state import BaseState
 
     def get_value(self, key: str):
         return f"shadow:{key}"
@@ -760,7 +762,7 @@ def test_fast_path_skips_names_a_subclass_defines():
 
     ShadowState = type(
         "ShadowState",
-        (State,),
+        (BaseState,),
         {
             "__module__": __name__,
             "__qualname__": "ShadowState",
