@@ -1657,7 +1657,7 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        from reflex_base.components.memo import clear_hash_caches
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
         ctx = TelemetryContext.start(trigger=trigger)
         try:

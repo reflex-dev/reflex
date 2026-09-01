@@ -4322,7 +4322,10 @@ def test_compile_releases_memo_naming_caches(
     release has to sit in the compile lifecycle -- and in a ``finally``, so a
     failed compile does not leave the caches behind either.
     """
-    from reflex_base.components.memo import _hash_str_encodings, clear_hash_caches
+    from reflex_base.utils.deterministic_hash import (
+        _hash_str_encodings,
+        clear_hash_caches,
+    )
 
     app = App()
 
