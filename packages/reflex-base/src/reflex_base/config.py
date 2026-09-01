@@ -868,45 +868,6 @@ def _record_imports() -> Iterator[_ImportRecorder]:
         _import_recorder.stop()
 
 
-def _get_config() -> Config:
-    """Import rxconfig.py fresh and return its config object.
-
-    Returns:
-        The app config.
-    """
-    # Never cache rxconfig or its project-local dependencies — each load goes
-    # to disk so different RegistrationContexts hold independent Config
-    # instances resolved against the current project. Evict before probing:
-    # find_spec answers from sys.modules, so modules left behind by another
-    # project directory would fake the existence check below.
-    sys.modules.pop(constants.Config.MODULE, None)
-    for dep in _config_module_deps:
-        sys.modules.pop(dep, None)
-    _config_module_deps.clear()
-    # only import the module if it exists. If a module spec exists then
-    # the module exists.
-    spec = find_spec(constants.Config.MODULE)
-    if not spec:
-        # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests or during `reflex init`.
-        return Config(app_name="", _skip_plugins_checks=True)
-    with _record_imports() as recorder:
-        try:
-            rxconfig = importlib.import_module(constants.Config.MODULE)
-        finally:
-            # Record even on failure so a retry evicts partially-imported deps.
-            project_root = Path.cwd()
-            for name in recorder.names:
-                origin = getattr(sys.modules.get(name), "__file__", None)
-                if (
-                    origin
-                    and (path := Path(origin)).is_relative_to(project_root)
-                    and "site-packages" not in path.parts
-                ):
-                    _config_module_deps.add(name)
-    return rxconfig.config
-
-
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
@@ -933,28 +894,90 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def _load_config() -> Config:
-    """Load the config from rxconfig.py with cwd prepended to sys.path.
+def _get_config(project_root: Path | None = None) -> Config:
+    """Import rxconfig.py fresh from the project root and return its config.
 
-    Prepending (not replacing sys.path) keeps concurrent imports in other
-    threads working while rxconfig resolves from the app directory first.
+    The project root is prepended to sys.path for the duration of the import so
+    rxconfig.py and its project-local imports resolve ahead of installed
+    packages. Prepending (not replacing sys.path) keeps concurrent imports in
+    other threads working.
+
+    Args:
+        project_root: Directory to load the config from. Defaults to the
+            current working directory, resolved once up front so an rxconfig.py
+            that changes the cwd cannot move the root that the sys.path entry
+            and the dependency classification below are based on.
 
     Returns:
         The app config.
     """
+    if project_root is None:
+        project_root = Path.cwd()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
         # identity: rxconfig.py may itself add or remove equal cwd entries,
         # which removal by value could confuse with caller-owned ones.
-        cwd = str(Path.cwd())
+        cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            return _get_config()
+            # Never cache rxconfig or its project-local dependencies — each load
+            # goes to disk so different RegistrationContexts hold independent
+            # Config instances resolved against the current project. Evict
+            # before probing: find_spec answers from sys.modules, so modules
+            # left behind by another project directory would fake the existence
+            # check below.
+            sys.modules.pop(constants.Config.MODULE, None)
+            for dep in _config_module_deps:
+                sys.modules.pop(dep, None)
+            _config_module_deps.clear()
+            # only import the module if it exists. If a module spec exists then
+            # the module exists.
+            if not find_spec(constants.Config.MODULE):
+                # we need this condition to ensure that a ModuleNotFound error is not thrown when
+                # running unit/integration tests or during `reflex init`.
+                return Config(app_name="", _skip_plugins_checks=True)
+            with _record_imports() as recorder:
+                try:
+                    rxconfig = importlib.import_module(constants.Config.MODULE)
+                finally:
+                    # Record even on failure so a retry evicts partially-imported deps.
+                    for name in recorder.names:
+                        origin = getattr(sys.modules.get(name), "__file__", None)
+                        if (
+                            origin
+                            and (path := Path(origin)).is_relative_to(project_root)
+                            and "site-packages" not in path.parts
+                        ):
+                            _config_module_deps.add(name)
+            return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):
                 if entry is cwd:
                     del sys.path[i]
                     break
+
+
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use _get_config() to load a config, or get_config() to read it")
+    def _load_config() -> Config: ...
+
+else:
+
+    def _load_config() -> Config:
+        """Load the config for the current working directory (deprecated).
+
+        Returns:
+            The app config.
+        """
+        console.deprecate(
+            feature_name="_load_config()",
+            reason="Use _get_config() to load a config from disk, or get_config() to read the config cached on the current RegistrationContext",
+            deprecation_version="0.9.9.post1",
+            removal_version="1.0",
+        )
+        return _get_config()
 
 
 def get_config(reload: bool = False) -> Config:
@@ -985,7 +1008,7 @@ def get_config(reload: bool = False) -> Config:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_load_config())
+                ctx._set_config(_get_config())
     return ctx.config
 
 
@@ -999,6 +1022,6 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _load_config()
+    config = _get_config()
     ctx._set_config(config)
     return config
