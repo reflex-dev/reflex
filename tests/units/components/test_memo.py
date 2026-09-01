@@ -2089,6 +2089,55 @@ def test_component_hash_covers_dataclass_inheriting_app_wrap_components():
     assert memo_tag(a) != memo_tag(b)
 
 
+class _ImportLibraryProbe(Component):
+    """One class whose import library varies with a prop ``_render`` drops."""
+
+    library = "import-library-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import the same binding from a marker-dependent library.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            f"probe-lib-{self.marker!s}": [ImportVar(tag="Thing")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_libraries():
+    """The libraries a memo body imports from must reach the hash.
+
+    The hash carries library names rather than the ``ImportVar`` entries,
+    on the grounds that every binding a body references shows up in its render.
+    Which libraries those bindings come from still has to be part of the digest:
+    two bodies importing one name from different libraries compile to different
+    modules, and sharing a tag would give one of them the other's import.
+    """
+    a = _ImportLibraryProbe.create(marker="alpha")
+    b = _ImportLibraryProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
 class _CustomCodeProbe(Component):
     """A component whose only per-instance artifact is its custom code."""
 

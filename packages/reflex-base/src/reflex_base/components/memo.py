@@ -1845,6 +1845,19 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     the body has to be part of the hash too: imports, hooks, custom code,
     dynamic imports, and app-wrap components.
 
+    Imports contribute their library names only, not the ``ImportVar`` entries
+    under them, which is where most of the hashing used to go. An import matters to a
+    body only through the local name it binds, and every name a body references
+    is already in its render, hooks or custom code -- Reflex aliases each tag to
+    a globally unique binding (``Trigger`` becomes ``RadixAccordionTrigger``),
+    and :func:`~reflex.compiler.utils.validate_imports` rejects one name bound
+    from two libraries. So identical bodies reference identical names, and the
+    library names pin where each one comes from. What this deliberately stops
+    distinguishing: two bodies that bind the *same* name from the *same* library
+    to a different export (``X as N`` versus ``Y as N``) or in a different form
+    (default versus named). Both would need one library to export two things a
+    component aliases to one name.
+
     Args:
         component: The component whose memo body is being hashed.
         recursive: Whether descendants' artifacts belong to this memo body.
@@ -1863,7 +1876,7 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
     cls = type(component)
     yield f"{cls.__module__}.{cls.__qualname__}"
     if recursive:
-        yield component._get_all_imports()
+        yield sorted(component._get_all_imports())
         yield component._get_all_hooks_internal()
         yield component._get_all_hooks()
         yield component._get_all_custom_code()
@@ -1871,7 +1884,7 @@ def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[A
         yield sorted(component._get_all_dynamic_imports())
         yield component._get_all_app_wrap_components()
     else:
-        yield component._get_imports()
+        yield sorted(component._get_imports())
         yield component._get_hooks_internal()
         yield component._get_hooks()
         yield component._get_added_hooks()
