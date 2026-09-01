@@ -8,6 +8,7 @@ import contextvars
 import dataclasses
 import functools
 import inspect
+import logging
 import os
 import platform
 import re
@@ -41,9 +42,12 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import console, js_runtimes
+from reflex.utils import js_runtimes
+from reflex.utils.exec import _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
+
+logger = logging.getLogger(__name__)
 
 try:
     from selenium import webdriver
@@ -381,7 +385,14 @@ class AppHarness:
                 "dev",
             ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
-            env={"PORT": "0", "NO_COLOR": "1"},
+            # The development condition keeps react-router's dev CLI from
+            # re-executing itself, which trips its restart guard on node-less
+            # (bun-only) installs.
+            env=_with_development_condition({
+                **os.environ,
+                "PORT": "0",
+                "NO_COLOR": "1",
+            }),
             **FRONTEND_POPEN_ARGS,
         )
 
@@ -412,7 +423,7 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    console.error(str(e))
+                    logger.debug(str(e))
                     break
                 if not line:
                     break

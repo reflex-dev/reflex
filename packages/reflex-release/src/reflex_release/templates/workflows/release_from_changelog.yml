@@ -55,9 +55,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
       - id: detect
         env:
           REF_NAME: ${{ github.ref_name }}
+        shell: bash
         run: @@CLI@@ detect
 
   publish:
@@ -121,22 +123,37 @@ jobs:
           DETECT: ${{ needs.detect.result }}
           PUBLISH: ${{ needs.publish.result }}
           PUBLISH_LAST: ${{ needs.publish-last.result }}
+          ANY: ${{ needs.detect.outputs.any }}
           ANY_LAST: ${{ needs.detect.outputs.any_last }}
+        shell: bash
         run: |
           set -euo pipefail
           echo "detect: $DETECT, publish: $PUBLISH, publish-last: $PUBLISH_LAST"
           failed=0
-          # Anything that is not success/skipped (failure, cancelled,
-          # timed_out, a rejected environment approval, ...) is a failed leg.
-          for leg in "detect:$DETECT" "publish:$PUBLISH" "publish-last:$PUBLISH_LAST"; do
-            case "${leg#*:}" in
-              success | skipped) ;;
-              *)
-                echo "::error::release leg '${leg%%:*}' ended '${leg#*:}'."
-                failed=1
-                ;;
-            esac
-          done
+          # A leg is healthy only in the state detect's findings call for:
+          # 'success' when it had packages to publish, 'skipped' only when it
+          # had none. Accepting every 'skipped' would report green on a leg
+          # GitHub skipped despite having work — a skipped job is neither
+          # failed nor cancelled, so nothing else here would catch it.
+          check_leg() {
+            local name=$1 result=$2 had_work=$3
+            if [[ "$result" == "success" ]]; then
+              return 0
+            fi
+            if [[ "$result" == "skipped" ]]; then
+              if [[ "$had_work" != "true" ]]; then
+                return 0
+              fi
+              echo "::error::release leg '$name' was skipped even though there were packages to publish."
+            else
+              # failure, cancelled, timed_out, a rejected environment approval...
+              echo "::error::release leg '$name' ended '$result'."
+            fi
+            failed=1
+          }
+          check_leg detect "$DETECT" true
+          check_leg publish "$PUBLISH" "$ANY"
+          check_leg publish-last "$PUBLISH_LAST" "$ANY_LAST"
           if [[ "$failed" -eq 1 ]]; then
             if [[ "$DETECT" != "success" ]]; then
               echo "::error::Changelog detection did not complete (check for a lockstep violation) — no packages were published."

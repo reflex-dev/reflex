@@ -33,7 +33,7 @@ class DialogBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the dialog component."""
+        """The import variable for the dialog component."""
         return ImportVar(tag="Dialog", package_path="", install=False)
 
 

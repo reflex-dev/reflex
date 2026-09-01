@@ -1,16 +1,17 @@
+import logging
 import tempfile
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
+from reflex_base.utils.log import SUCCESS
 from reflex_cli.utils import hosting
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
@@ -53,8 +54,13 @@ def test_get_secrets_success(mocker: MockFixture):
     assert result.exit_code == 0, result.output
 
 
-def test_get_secrets_error(mocker: MockFixture):
-    """Test failure to retrieve secrets."""
+def test_get_secrets_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test failure to retrieve secrets.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_get_secrets = mocker.patch(
         "reflex_cli.utils.hosting.get_secrets",
         return_value="failed to retrieve secrets.",
@@ -65,7 +71,6 @@ def test_get_secrets_error(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     app_id = "app_id"
 
@@ -79,7 +84,8 @@ def test_get_secrets_error(mocker: MockFixture):
         ),
     )
 
-    mock_console_error.assert_called_once_with("failed to retrieve secrets.")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["failed to retrieve secrets."]
 
     assert result.exit_code == 1
 
@@ -117,8 +123,13 @@ def test_get_secrets_json_output(mocker: MockFixture):
     assert result.exit_code == 0, result.output
 
 
-def test_delete_secret_success(mocker: MockFixture):
-    """Test successful deletion of a secret."""
+def test_delete_secret_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test successful deletion of a secret.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_delete_secret = mocker.patch(
         "reflex_cli.utils.hosting.delete_secret",
         return_value="Successfully deleted secret.",
@@ -129,7 +140,6 @@ def test_delete_secret_success(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_success = mocker.patch("reflex_cli.utils.console.success")
 
     result = runner.invoke(
         hosting_cli,
@@ -145,11 +155,17 @@ def test_delete_secret_success(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_success.assert_called_once_with("Successfully deleted secret.")
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    assert successes == ["Successfully deleted secret."]
 
 
-def test_delete_secret_failure(mocker: MockFixture):
-    """Test failure to delete a secret."""
+def test_delete_secret_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test failure to delete a secret.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_delete_secret = mocker.patch(
         "reflex_cli.utils.hosting.delete_secret",
         return_value="failed to delete secret.",
@@ -160,7 +176,6 @@ def test_delete_secret_failure(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(
         hosting_cli,
@@ -176,7 +191,8 @@ def test_delete_secret_failure(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_error.assert_called_once_with("failed to delete secret.")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["failed to delete secret."]
 
 
 def test_update_secrets_with_envfile(mocker: MockFixture):
@@ -194,7 +210,6 @@ def test_update_secrets_with_envfile(mocker: MockFixture):
         env_path.write_text(env_content)
 
         mocker.patch("reflex_cli.utils.hosting.update_secrets")
-        mocker.patch("reflex_cli.utils.console.warn")
 
         result = runner.invoke(
             hosting_cli,
@@ -243,20 +258,27 @@ def test_update_secrets_with_envs(mocker: MockFixture):
     )
 
 
-def test_update_secrets_missing_arguments(mocker: MockFixture):
-    """Test updating secrets with neither --envfile nor --env."""
+def test_update_secrets_missing_arguments(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test updating secrets with neither --envfile nor --env.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["secrets", "update", "app_id"])
 
     assert result.exit_code == 1
-    mock_console_error.assert_called_once_with("--envfile or --env must be provided")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["--envfile or --env must be provided"]
 
 
 def test_update_secrets_invalid_env_format(mocker: MockFixture):

@@ -10,6 +10,7 @@ import functools
 import importlib
 import inspect
 import json
+import logging
 import operator
 import sys
 import time
@@ -44,7 +45,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -102,6 +103,8 @@ from reflex.workflow.kernel import DEFAULT_MAX_CONCURRENCY, WorkflowObserver
 from reflex.workflow.runtime import WorkflowRuntime
 from reflex.workflow.store import RunStore
 
+logger = logging.getLogger(__name__)
+
 if sys.version_info < (3, 13):
     from typing_extensions import deprecated
 else:
@@ -127,7 +130,7 @@ def default_frontend_exception_handler(exception: Exception) -> None:
         exception: The exception.
 
     """
-    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+    logger.error(f"[Reflex Frontend Exception]\n {exception}\n")
 
 
 def default_backend_exception_handler(exception: Exception) -> EventSpec:
@@ -146,7 +149,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         type(exception), exception, exception.__traceback__
     )
 
-    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
+    logger.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
@@ -213,7 +216,7 @@ def _component_from_import_path(
 
         log_path = save_error(e)
 
-        console.error(
+        logger.error(
             f"Error loading {feature_name} {import_path}. Error saved to {log_path}"
         )
         return None
@@ -495,7 +498,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_namespace(self) -> EventNamespace | None:
-        """Get the event namespace.
+        """The event namespace.
 
         Returns:
             The event namespace.
@@ -504,7 +507,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_processor(self) -> EventProcessor:
-        """Get the event processor.
+        """The event processor.
 
         Raises:
             RuntimeError: If the event processor is not initialized.
@@ -957,7 +960,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def state_manager(self) -> StateManager:
-        """Get the state manager.
+        """The state manager.
 
         Returns:
             The initialized state manager.
@@ -1181,7 +1184,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     prepared,
                     page=page.merged_with(existing_page),
                 )
-                console.warn(
+                logger.warning(
                     f"Page {page.route} is being redefined with the same component."
                 )
             else:
@@ -1425,7 +1428,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
-        """Get the route computer function.
+        """The route computer function.
 
         Returns:
             The route computer function.
@@ -1497,22 +1500,29 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
+        replaced_new_route = replace_brackets_with_keywords(new_route)
         for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
                     return route, r, nr
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
         return None
 
     def _setup_admin_dash(self):
@@ -1574,7 +1584,7 @@ class App(MiddlewareMixin, LifespanMixin):
         filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:
-                console.warn(
+                logger.warning(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
@@ -1759,32 +1769,43 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
-            try:
-                did_real_compile = compiler.compile_app(
+        ctx = TelemetryContext.start(trigger=trigger)
+        try:
+            if ctx is None:
+                compiler.compile_app(
                     self,
                     prerender_routes=prerender_routes,
                     dry_run=dry_run,
                     use_rich=use_rich,
                 )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
-            finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                return
+
+            with ctx:
+                did_real_compile = False
+                try:
+                    did_real_compile = compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                except Exception as exc:
+                    ctx.set_exception(exc)
+                    did_real_compile = True
+                    raise
+                finally:
+                    if did_real_compile:
+                        telemetry_accounting.record_compile(self, ctx)
+        finally:
+            # Auto-memoization named every wrapper it will ever name during the
+            # compile, so its encoding caches are dead weight from here. This is
+            # the single funnel every compile goes through -- the CLI and export
+            # paths reach it via ``get_compiled_app`` and never touch
+            # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+            # from leaving them behind.
+            clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -2067,7 +2088,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Get token to SID mapping for backward compatibility.
+        """Token to SID mapping for backward compatibility.
 
         Note: this mapping is read-only.
 
@@ -2079,7 +2100,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """Get SID to token mapping for backward compatibility.
+        """SID to token mapping for backward compatibility.
 
         Returns:
             The SID to token mapping dict.
@@ -2102,11 +2123,11 @@ class EventNamespace(AsyncNamespace):
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
         else:
-            console.warn(f"No token provided in connection for session {sid}")
+            logger.warning(f"No token provided in connection for session {sid}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
-            console.warn(
+            logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
@@ -2132,7 +2153,7 @@ class EventNamespace(AsyncNamespace):
             task.add_done_callback(
                 lambda t: (
                     t.exception()
-                    and console.error(f"Token cleanup error: {t.exception()}")
+                    and logger.error(f"Token cleanup error: {t.exception()}")
                 )
             )
             return task
@@ -2156,15 +2177,19 @@ class EventNamespace(AsyncNamespace):
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
-                console.warn(
+                logger.warning(
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Await the emit directly: wrapping it in a task does not unblock the
+        # caller (awaiting the task blocks just the same) and only adds task
+        # creation/scheduling overhead on every update.
+        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The emit may complete without suspending (the packet is queued, not
+        # sent). Yield one loop tick so the websocket writer can flush the
+        # packet before the caller potentially blocks the event loop (e.g. a
+        # sync event handler resuming after a yield).
+        await asyncio.sleep(0)
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
@@ -2179,7 +2204,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
-            console.warn(
+            logger.warning(
                 f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
             )
             return
@@ -2187,7 +2212,7 @@ class EventNamespace(AsyncNamespace):
         fields = data
 
         if isinstance(fields, str):
-            console.warn(
+            logger.warning(
                 "Received event data as a string. This generally should not happen and may indicate a bug."
                 f" Event data: {fields}"
             )
@@ -2264,7 +2289,7 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-    async def on_client_error(self, sid: str, data: Any):
+    async def on_client_error(self, sid: str, data: Any = None):
         """Handle errors reported by the frontend.
 
         This is a dedicated socket event rather than a state event
@@ -2282,10 +2307,13 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
-            data: The error data from the client.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard below
+                then drops it without raising.
         """
         if not isinstance(data, dict):
-            console.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
             return
 
         # Check the sender and the rate limits before sanitizing: sanitizing is
@@ -2294,7 +2322,7 @@ class EventNamespace(AsyncNamespace):
         if sid not in self.sid_to_token:
             # Sockets without a linked token are not known clients; don't let
             # them write error-level entries into the backend logs.
-            console.debug(f"Ignoring client_error report from unknown SID {sid}.")
+            logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
             return
 
         # Rate limit per session so a client cannot flood the backend logs.
@@ -2314,7 +2342,7 @@ class EventNamespace(AsyncNamespace):
                 # and a flooding client cannot silently starve reports from
                 # other sessions.
                 self._client_error_window_count += 1
-                console.warn(
+                logger.warning(
                     f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
                     f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
                     "suppressing further reports for this window."

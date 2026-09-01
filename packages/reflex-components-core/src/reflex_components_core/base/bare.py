@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -9,12 +10,13 @@ from reflex_base.components.component import BaseComponent, Component, Component
 from reflex_base.components.tags import Tag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
-from reflex_base.utils import console
 from reflex_base.utils.decorator import once
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
 from reflex_base.vars.sequence import LiteralStringVar
+
+logger = logging.getLogger(__name__)
 
 
 @once
@@ -39,7 +41,7 @@ def validate_str(value: str):
     perf_mode = get_performance_mode()
     if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
         if perf_mode == PerformanceMode.WARN:
-            console.warn(
+            logger.warning(
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
             )
         elif perf_mode == PerformanceMode.RAISE:

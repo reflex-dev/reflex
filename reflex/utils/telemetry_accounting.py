@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable, Iterator
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, TypedDict
 
 from reflex_base.config import Config, get_config
 from reflex_base.telemetry_context import _KNOWN_FEATURES, TelemetryContext
-from reflex_base.utils import console
 from reflex_components_core.core.upload import Upload
 
 from reflex.istate.shared import SharedState
@@ -21,6 +21,8 @@ from reflex.istate.storage import (
 from reflex.model import ModelRegistry
 from reflex.route import get_route_args
 from reflex.utils import telemetry
+
+logger = logging.getLogger(__name__)
 
 _HAS_SQLALCHEMY = find_spec("sqlalchemy") is not None
 
@@ -79,7 +81,7 @@ def record_compile(app: App, ctx: TelemetryContext) -> None:
         payload = _collect_compile_event_payload(app, ctx)
         telemetry.send("compile", properties=dict(payload))
     except Exception as exc:
-        console.debug(f"compile telemetry event failed: {exc!r}")
+        logger.debug(f"compile telemetry event failed: {exc!r}")
 
 
 def _collect_compile_event_payload(

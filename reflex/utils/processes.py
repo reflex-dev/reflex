@@ -4,25 +4,30 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import logging
 import os
 import signal
 import socket
 import subprocess
 import sys
+import threading
+from _thread import interrupt_main
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
-import rich.markup
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from rich.markup import escape
 from rich.progress import Progress
 
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
+
+logger = logging.getLogger(__name__)
 
 
 def kill(pid: int):
@@ -54,7 +59,7 @@ def get_num_workers() -> int:
     try:
         redis_client.ping()
     except RedisError as re:
-        console.error(f"Unable to connect to Redis: {re}")
+        logger.error(f"Unable to connect to Redis: {re}")
         raise SystemExit(1) from None
     return (os.cpu_count() or 1) * 2 + 1
 
@@ -78,7 +83,7 @@ def _can_bind_at_port(
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind((address, port))
     except (OverflowError, PermissionError, OSError) as e:
-        console.warn(f"Unable to bind to {address}:{port} due to: {e}.")
+        logger.warning(f"Unable to bind to {address}:{port} due to: {e}.")
         return False
     return True
 
@@ -97,7 +102,7 @@ def _can_bind_at_any_port(address_family: socket.AddressFamily | int) -> bool:
             sock.bind(("", 0))  # Bind to any available port
             return True
     except (OverflowError, PermissionError, OSError) as e:
-        console.debug(f"Unable to bind to any port for {address_family}: {e}")
+        logger.debug(f"Unable to bind to any port for {address_family}: {e}")
         return False
 
 
@@ -138,7 +143,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     Raises:
         SystemExit:when the port is in use.
     """
-    console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
+    logger.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
 
     families = [
         address_family
@@ -147,35 +152,36 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     ]
 
     if not families:
-        console.error(
+        logger.error(
             f"Unable to bind to any port for {service_name}. "
             "Please check your network configuration."
         )
         raise SystemExit(1)
 
-    console.debug(
+    logger.debug(
         f"Checking if {service_name.capitalize()} port: {port} is in use for families: {families}."
     )
 
     if not is_process_on_port(port, families):
-        console.debug(f"{service_name.capitalize()} port: {port} is not in use.")
+        logger.debug(f"{service_name.capitalize()} port: {port} is not in use.")
         return port
 
     if auto_increment:
         for new_port in range(port + 1, MAXIMUM_PORT + 1):
             if not is_process_on_port(new_port, families):
-                console.info(
-                    f"The {service_name} will run on port [bold underline]{new_port}[/bold underline]."
+                logger.info(
+                    f"The {service_name} will run on port [bold underline]{new_port}[/bold underline].",
+                    extra={"rich": True},
                 )
                 return new_port
-            console.debug(
+            logger.debug(
                 f"{service_name.capitalize()} port: {new_port} is already in use."
             )
 
         # If we reach here, it means we couldn't find an available port.
-        console.error(f"Unable to find an available port for {service_name}")
+        logger.error(f"Unable to find an available port for {service_name}")
     else:
-        console.error(f"{service_name.capitalize()} port: {port} is already in use.")
+        logger.error(f"{service_name.capitalize()} port: {port} is already in use.")
 
     raise SystemExit(1)
 
@@ -221,7 +227,7 @@ def new_process(
     # Check for invalid command first.
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
     if isinstance(args, list) and len(non_empty_args) != len(args):
-        console.error(f"Invalid command: {args}")
+        logger.error(f"Invalid command: {args}")
         raise SystemExit(1)
 
     path_env: str = os.environ.get("PATH", "")
@@ -247,7 +253,7 @@ def new_process(
         "errors": "replace",  # Avoid UnicodeDecodeError in unknown command output
         **kwargs,
     }
-    console.debug(f"Running command: {non_empty_args}")
+    logger.debug(f"Running command: {non_empty_args}")
 
     def subprocess_p_open(args: subprocess._CMD, **kwargs):
         return subprocess.Popen(args, **kwargs)
@@ -258,11 +264,32 @@ def new_process(
     return fn(non_empty_args, **kwargs)
 
 
+def _interrupt_main_thread():
+    """Deliver a SIGINT to the main thread to break it out of a blocking call.
+
+    A real signal is required on POSIX so the main thread's blocking C call
+    (e.g. a lock wait or a server loop) returns with EINTR and runs the SIGINT
+    handler; `interrupt_main` alone only sets a pending flag there. On Windows
+    `interrupt_main` sets the SIGINT event that blocking waits monitor.
+    """
+    if sys.platform == "win32":
+        interrupt_main()
+    else:
+        main_ident = threading.main_thread().ident
+        if main_ident is not None:
+            signal.pthread_kill(main_ident, signal.SIGINT)
+
+
 @contextlib.contextmanager
 def run_concurrently_context(
     *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
+
+    If a function fails while the with-body is still executing, the main
+    thread is interrupted so the failure propagates promptly instead of being
+    swallowed while the body blocks (e.g. a fatal frontend preflight error
+    raising SystemExit while the backend serves on the main thread).
 
     Args:
         *fns: The functions to run.
@@ -278,20 +305,75 @@ def run_concurrently_context(
     # Convert the functions to tuples.
     fns = tuple(fn if isinstance(fn, tuple) else (fn,) for fn in fns)
 
+    in_body = True
+    interrupt_lock = threading.Lock()
+    interrupt_sent = False
+
+    def wake_main_thread(task: futures.Future):
+        """Interrupt the main thread once when a task fails during the body.
+
+        Args:
+            task: The completed future to inspect.
+        """
+        nonlocal interrupt_sent
+        if task.cancelled() or task.exception() is None:
+            return
+        if threading.current_thread() is threading.main_thread():
+            # Invoked inline on an already-failed task; the main thread is not
+            # blocked, so the pre-yield failure check below surfaces the error.
+            return
+        with interrupt_lock:
+            if in_body and not interrupt_sent:
+                interrupt_sent = True
+                _interrupt_main_thread()
+
+    def raise_first_failure(tasks: list[futures.Future]):
+        """Re-raise the first exception found among the completed tasks.
+
+        Args:
+            tasks: The futures to inspect.
+        """
+        for task in tasks:
+            if (
+                task.done()
+                and not task.cancelled()
+                and (exc := task.exception()) is not None
+            ):
+                raise exc from None
+
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]
+        for task in tasks:
+            task.add_done_callback(wake_main_thread)
 
-        # Yield control back to the main thread while tasks are running.
-        yield tasks
+        try:
+            try:
+                # Don't enter (and block in) the body if a task has already
+                # failed.
+                raise_first_failure(tasks)
 
-        # Get the results in the order completed to check any exceptions.
-        for task in futures.as_completed(tasks):
-            # if task throws something, we let it bubble up immediately
-            task.result()
+                # Yield control back to the main thread while tasks are running.
+                yield tasks
+            finally:
+                # Whether the pre-check or the body raised, stop interrupting
+                # the main thread: tasks outlive this context (shutdown below
+                # does not wait).
+                with interrupt_lock:
+                    in_body = False
+
+            # Get the results in the order completed to check any exceptions.
+            for task in futures.as_completed(tasks):
+                # if task throws something, we let it bubble up immediately
+                task.result()
+        except KeyboardInterrupt:
+            # Raised by wake_main_thread for a failed task, or a real Ctrl+C;
+            # surface the task's own error when there is one.
+            raise_first_failure(tasks)
+            raise
     finally:
         # Shutdown the executor
         if executor:
@@ -338,12 +420,17 @@ def stream_logs(
     # Store the tail of the logs.
     logs = collections.deque(maxlen=512)
     with process:
-        console.debug(message, progress=progress)
+        logger.debug(message, extra={"progress": progress})
         if process.stdout is None:
             return
         try:
+            # Resolved once: record allocation per output line is wasted
+            # work when debug logging is off.
+            debug_enabled = logger.isEnabledFor(logging.DEBUG)
+            debug_extra = {"end": "", "progress": progress}
             for line in process.stdout:
-                console.debug(rich.markup.escape(line), end="", progress=progress)
+                if debug_enabled:
+                    logger.debug(line, extra=debug_extra)
                 logs.append(line)
                 yield line
         except ValueError:
@@ -360,7 +447,7 @@ def stream_logs(
     # 130 is the exit code that react router returns when it is interrupted by a signal.
     accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
     if process.returncode not in accepted_return_codes and not suppress_errors:
-        console.error(f"{message} failed with exit code {process.returncode}")
+        logger.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
             bunfig = prerequisites.get_web_dir() / constants.Bun.CONFIG_PATH
             npm_registry_line = next(
@@ -375,20 +462,24 @@ def stream_logs(
                 npm_registry = get_npm_registry()
             else:
                 npm_registry = npm_registry_line.split("=")[1].strip()
-            console.error(
-                f"Failed to fetch securely from [bold]{npm_registry}[/bold]. Please check your network connection. "
+            logger.error(
+                f"Failed to fetch securely from [bold]{escape(npm_registry)}[/bold]. Please check your network connection. "
                 "You can try running the command again or changing the registry by setting the "
                 "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
-                "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
+                "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable.",
+                extra={"rich": True},
             )
             raise SystemExit(1)
         for set_of_logs in (*prior_logs, tuple(logs)):
             for line in set_of_logs:
-                console.error(line, end="")
-            console.error("\n\n")
+                logger.error(line, extra={"end": ""})
+            logger.error("\n\n")
         if analytics_enabled:
             telemetry.send("error", context=message)
-        console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
+        logger.error(
+            "Run with [bold]--loglevel debug [/bold] for the full log.",
+            extra={"rich": True},
+        )
         raise SystemExit(1)
 
 
@@ -461,7 +552,7 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
 
 def atexit_handler():
     """Display a custom message with the current time when exiting an app."""
-    console.log("Reflex app stopped.")
+    logger.info("Reflex app stopped.")
 
 
 def get_command_with_loglevel(command: list[str]) -> list[str]:
@@ -525,7 +616,7 @@ def run_process_with_fallbacks(
                 if isinstance(current_fallback, str)
                 else [*current_fallback, *args[1:]]
             )
-            console.warn(
+            logger.warning(
                 f"There was an error running command: {args}. Falling back to: {fallback_with_args}."
             )
             run_process_with_fallbacks(
@@ -550,7 +641,7 @@ def execute_command_and_return_output(command: str) -> str | None:
     try:
         return subprocess.check_output(command, shell=True).decode().strip()
     except subprocess.SubprocessError as err:
-        console.error(
+        logger.error(
             f"The command `{command}` failed with error: {err}. This will return None."
         )
         return None

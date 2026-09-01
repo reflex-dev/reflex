@@ -40,12 +40,12 @@ class PageDefinition(Protocol):
 
     @property
     def route(self) -> str:
-        """Return the route for this page definition."""
+        """The route for this page definition."""
         ...
 
     @property
     def component(self) -> PageComponent:
-        """Return the component or callable for this page definition."""
+        """The component or callable for this page definition."""
         ...
 
 

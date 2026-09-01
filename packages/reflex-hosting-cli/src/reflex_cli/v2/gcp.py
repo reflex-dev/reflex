@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import re
 import shutil
@@ -35,7 +36,9 @@ from urllib.parse import urljoin
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
+
+logger = logging.getLogger(__name__)
 
 GCP_MANIFEST_ENDPOINT = "/api/v1/cli/gcp-cloud-run-manifest"
 
@@ -276,7 +279,7 @@ def deploy_command(
     console.set_log_level(loglevel)
 
     if click.get_current_context().info_name == "deploy":
-        console.warn(
+        logger.warning(
             "DeprecationWarning: `reflex cloud deploy` is deprecated as of "
             "reflex-hosting-cli 0.1.70 and will be removed in 0.2.0. Use "
             "`reflex cloud gcp-standalone`, which it is now named so it cannot "
@@ -287,15 +290,15 @@ def deploy_command(
         )
 
     if not use_gcp:
-        console.error(
+        logger.error(
             "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
         )
         raise click.exceptions.Exit(2)
     if not gcp_project:
-        console.error("--gcp-project is required when using --gcp.")
+        logger.error("--gcp-project is required when using --gcp.")
         raise click.exceptions.Exit(2)
     if max_instances < min_instances:
-        console.error(
+        logger.error(
             f"--max-instances ({max_instances}) must be >= --min-instances ({min_instances})."
         )
         raise click.exceptions.Exit(2)
@@ -308,14 +311,12 @@ def deploy_command(
 
     bash_path = shutil.which("bash")
     if not bash_path:
-        console.error(
-            "`bash` was not found on PATH; required to run the deploy script."
-        )
+        logger.error("`bash` was not found on PATH; required to run the deploy script.")
         raise click.exceptions.Exit(1)
 
     gcloud_path = shutil.which("gcloud")
     if not gcloud_path:
-        console.error(
+        logger.error(
             "The `gcloud` CLI was not found on PATH. Install it from "
             "https://cloud.google.com/sdk/docs/install and run `gcloud auth login` "
             "and `gcloud auth application-default login` before retrying."
@@ -323,13 +324,13 @@ def deploy_command(
         raise click.exceptions.Exit(1)
 
     if not shutil.which("docker"):
-        console.error(
+        logger.error(
             "The `docker` CLI was not found on PATH; required to build the image."
         )
         raise click.exceptions.Exit(1)
 
     if not _get_active_gcp_account(gcloud_path):
-        console.error(
+        logger.error(
             "No active GCP account found. Run `gcloud auth login` and "
             "`gcloud auth application-default login`, then retry."
         )
@@ -344,7 +345,7 @@ def deploy_command(
     # explicitly asked for a private one — a silent privacy flip we'd rather
     # fail loud on.
     if not allow_unauthenticated and ENV_ALLOW_UNAUTHENTICATED not in deploy_script:
-        console.error(
+        logger.error(
             "The Reflex backend's deploy script doesn't yet recognize "
             f"{ENV_ALLOW_UNAUTHENTICATED} — without it, --no-allow-unauthenticated "
             "would be silently ignored and the service would deploy as PUBLIC. "
@@ -354,14 +355,14 @@ def deploy_command(
 
     source_path = Path(source_dir).resolve()
     if not source_path.is_dir():
-        console.error(f"Source directory does not exist: {source_path}")
+        logger.error(f"Source directory does not exist: {source_path}")
         raise click.exceptions.Exit(1)
 
     cloudbuild_yaml = _build_cloudbuild_yaml(dockerfile)
     try:
         deploy_script = _rewrite_builds_submit(deploy_script)
     except ValueError as ex:
-        console.error(str(ex))
+        logger.error(str(ex))
         raise click.exceptions.Exit(1) from ex
 
     version_value = version_tag or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -379,11 +380,11 @@ def deploy_command(
     }
     if service_account is not None:
         if not service_account:
-            console.error("--service-account cannot be an empty string.")
+            logger.error("--service-account cannot be an empty string.")
             raise click.exceptions.Exit(2)
         deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
-    console.info("Received deploy manifest from Reflex.")
+    logger.info("Received deploy manifest from Reflex.")
     console.print("")
     console.print(f"Source: {source_path}")
     console.print("Deploy environment:")
@@ -394,11 +395,11 @@ def deploy_command(
     console.print("─" * 60)
     console.print(deploy_script)
     console.print("─" * 60)
-    console.info(
+    logger.info(
         f"The script runs with a restricted env (only {len(DEPLOY_ENV_ALLOWLIST)} "
         "allowlisted host variables forwarded plus the deploy variables above)."
     )
-    console.info(
+    logger.info(
         "The Dockerfile is embedded in a Cloud Build config written to a "
         "tempfile; your source directory is not modified."
     )
@@ -422,7 +423,7 @@ def deploy_command(
             console.print("─" * 60)
             console.print(env_vars_yaml)
             console.print("─" * 60)
-        console.info("Dry run — nothing staged or executed.")
+        logger.info("Dry run — nothing staged or executed.")
         return
 
     if interactive:
@@ -430,7 +431,7 @@ def deploy_command(
             "Run the deploy script now?", choices=["y", "n"], default="y"
         )
         if answer != "y":
-            console.warn("Aborted by user.")
+            logger.warning("Aborted by user.")
             raise click.exceptions.Exit(1)
 
     with contextlib.ExitStack() as stack:
@@ -450,9 +451,9 @@ def deploy_command(
             env_overrides=env_overrides,
         )
     if exit_code != 0:
-        console.error(f"Deploy script exited with status {exit_code}.")
+        logger.error(f"Deploy script exited with status {exit_code}.")
         raise click.exceptions.Exit(exit_code)
-    console.success("Deployment finished.")
+    logger.log(log.SUCCESS, "Deployment finished.")
 
 
 def _get_active_gcp_account(gcloud_path: str) -> str | None:
@@ -480,7 +481,7 @@ def _get_active_gcp_account(gcloud_path: str) -> str | None:
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError) as ex:
-        console.debug(f"Failed to query gcloud auth list: {ex}")
+        logger.debug(f"Failed to query gcloud auth list: {ex}")
         return None
     account = result.stdout.strip().splitlines()
     return account[0] if account else None
@@ -516,36 +517,36 @@ def _request_manifest(token: str) -> tuple[str, str]:
         with contextlib.suppress(ValueError):
             detail = ex.response.json().get("detail", detail)
         if ex.response.status_code == 403:
-            console.error(
+            logger.error(
                 "Reflex denied the request (403). GCP Cloud Run deploys require an "
                 "Enterprise tier subscription."
             )
         else:
-            console.error(f"Reflex rejected the manifest request: {detail}")
+            logger.error(f"Reflex rejected the manifest request: {detail}")
         raise click.exceptions.Exit(1) from ex
     except httpx.HTTPError as ex:
-        console.error(f"Failed to reach Reflex at {url}: {ex}")
+        logger.error(f"Failed to reach Reflex at {url}: {ex}")
         raise click.exceptions.Exit(1) from ex
 
     try:
         body = response.json()
     except ValueError as ex:
-        console.error("Reflex returned a non-JSON response.")
+        logger.error("Reflex returned a non-JSON response.")
         raise click.exceptions.Exit(1) from ex
 
     if not isinstance(body, dict):
-        console.error("Reflex returned an unexpected response shape.")
+        logger.error("Reflex returned an unexpected response shape.")
         raise click.exceptions.Exit(1)
 
     dockerfile = body.get(FIELD_DOCKERFILE)
     deploy_command = body.get(FIELD_DEPLOY_COMMAND)
     if not isinstance(dockerfile, str) or not dockerfile.strip():
-        console.error(
+        logger.error(
             f"Reflex response is missing a non-empty {FIELD_DOCKERFILE!r} field."
         )
         raise click.exceptions.Exit(1)
     if not isinstance(deploy_command, str) or not deploy_command.strip():
-        console.error(
+        logger.error(
             f"Reflex response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
         )
         raise click.exceptions.Exit(1)
@@ -716,13 +717,13 @@ def _parse_envs(envfile: str | None, envs: tuple[str, ...]) -> dict[str, str]:
     from reflex_cli.utils import hosting
 
     if envfile and envs:
-        console.warn("--envfile is set; ignoring --env")
+        logger.warning("--envfile is set; ignoring --env")
 
     if envfile:
         try:
             from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
         except ImportError:
-            console.error(
+            logger.error(
                 'The `python-dotenv` package is required for --envfile. Run `pip install "python-dotenv>=1.0.1"`.'
             )
             raise click.exceptions.Exit(1) from None
@@ -793,6 +794,6 @@ def _run_deploy_script(
             stderr=sys.stderr,
         )
     except OSError as ex:
-        console.error(f"Failed to launch bash: {ex}")
+        logger.error(f"Failed to launch bash: {ex}")
         return 1
     return result.returncode

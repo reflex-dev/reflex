@@ -96,6 +96,9 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
         self._self_parent_state_proxy = parent_state_proxy
+        # Whether `async with self` was ever entered; a background handler that
+        # never did emitted no delta, so the processor flushes once for it.
+        self._self_entered_context = False
 
     def _is_mutable(self) -> bool:
         """Check if the state is mutable.
@@ -134,6 +137,7 @@ class StateProxy(wrapt.ObjectProxy):
                     State.get_class_substate(self._self_substate_path)
                 ),
             )
+            self._self_entered_context = True
             return self
         current_task = asyncio.current_task()
         if (
@@ -153,6 +157,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
+            self._self_entered_context = True
             super().__setattr__(
                 "__wrapped__", mutable_state.get_substate(self._self_substate_path)
             )

@@ -1,6 +1,7 @@
 """This module provides utility functions to initialize the frontend skeleton."""
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -12,9 +13,11 @@ from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
-from reflex.utils import console, net, path_ops
+from reflex.utils import net, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
+
+logger = logging.getLogger(__name__)
 
 
 def initialize_gitignore(
@@ -33,14 +36,14 @@ def initialize_gitignore(
         current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
     if files_to_ignore == current_ignore:
-        console.debug(f"{gitignore_file} already up to date.")
+        logger.debug(f"{gitignore_file} already up to date.")
         return
     files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
     files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
     gitignore_file.touch(exist_ok=True)
-    console.debug(f"Creating {gitignore_file}")
+    logger.debug(f"Creating {gitignore_file}")
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
@@ -116,7 +119,7 @@ def _apply_agents_md_action(
             content = managed_agents_md_text + (
                 f"\n\n{remainder}\n" if remainder else "\n"
             )
-    console.debug(f"Creating {file}")
+    logger.debug(f"Creating {file}")
     file.write_text(content)
 
 
@@ -140,12 +143,12 @@ def initialize_agents_md(
 
     import httpx
 
-    console.debug(f"Fetching {url}")
+    logger.debug(f"Fetching {url}")
     try:
         response = net.get(url, timeout=5)
         response.raise_for_status()
     except httpx.HTTPError as e:
-        console.warn(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
+        logger.warning(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
         return
 
     managed_agents_md_text = (
@@ -171,7 +174,7 @@ def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
     except UnicodeDecodeError:
         pass
     except Exception as e:
-        console.error(f"Failed to read {file_path} due to {e}.")
+        logger.error(f"Failed to read {file_path} due to {e}.")
         raise SystemExit(1) from None
 
     try:
@@ -179,7 +182,7 @@ def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
     except UnicodeDecodeError:
         return None, None
     except Exception as e:
-        console.error(f"Failed to read {file_path} due to {e}.")
+        logger.error(f"Failed to read {file_path} due to {e}.")
         raise SystemExit(1) from None
 
 
@@ -250,10 +253,10 @@ def initialize_requirements_txt(
         return True
 
     if _has_reflex_requirement_line(content):
-        console.debug(f"{requirements_file_path} already has reflex as dependency.")
+        logger.debug(f"{requirements_file_path} already has reflex as dependency.")
         return False
 
-    console.debug(
+    logger.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
     )
     with requirements_file_path.open("a", encoding=encoding) as f:
@@ -312,7 +315,7 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
     """
     if not src.exists():
         if dest.exists() and prune:
-            console.debug(f"Removing stale {dest}")
+            logger.debug(f"Removing stale {dest}")
             path_ops.rm(dest)
             return True
         return False
@@ -322,7 +325,7 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
 
     changed = dest.exists()
     path_ops.mkdir(dest.parent)
-    console.debug(f"Copying {src} to {dest}")
+    logger.debug(f"Copying {src} to {dest}")
     path_ops.cp(src, dest)
     return changed
 
@@ -397,7 +400,7 @@ def sync_web_lockfile_to_root(filename: str):
         return
     root = get_root_lockfile_path(filename)
     path_ops.mkdir(root.parent)
-    console.debug(f"Copying {web} to {root}")
+    logger.debug(f"Copying {web} to {root}")
     path_ops.cp(web, root)
 
 
@@ -422,10 +425,12 @@ def _read_package_json_object(package_json_path: Path) -> dict:
     try:
         parsed = json.loads(package_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
-        console.warn(f"Failed to read {package_json_path}: {e}; treating it as empty.")
+        logger.warning(
+            f"Failed to read {package_json_path}: {e}; treating it as empty."
+        )
         return {}
     if not isinstance(parsed, dict):
-        console.warn(
+        logger.warning(
             f"Expected {package_json_path} to contain a JSON object, "
             f"got {type(parsed).__name__}; treating it as empty."
         )
@@ -445,37 +450,37 @@ def _read_persisted_package_json() -> dict:
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
-    console.log("Initializing the web directory.")
+    logger.info("Initializing the web directory.")
 
     # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
-    console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
+    logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
-    console.debug("Restoring lockfiles.")
+    logger.debug("Restoring lockfiles.")
     sync_root_lockfiles_to_web()
 
-    console.debug("Initializing the web directory.")
+    logger.debug("Initializing the web directory.")
     initialize_package_json()
     sync_web_lockfiles_to_root()
 
-    console.debug("Initializing the bun config file.")
+    logger.debug("Initializing the bun config file.")
     initialize_bun_config()
 
-    console.debug("Initializing the .npmrc file.")
+    logger.debug("Initializing the .npmrc file.")
     initialize_npmrc()
 
-    console.debug("Initializing the public directory.")
+    logger.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
-    console.debug("Initializing the react-router.config.js file.")
+    logger.debug("Initializing the react-router.config.js file.")
     update_react_router_config()
 
-    console.debug("Initializing the vite.config.js file.")
+    logger.debug("Initializing the vite.config.js file.")
     initialize_vite_config()
 
-    console.debug("Initializing the reflex.json file.")
+    logger.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
 
@@ -592,7 +597,7 @@ def update_package_json_overrides() -> bool:
         return False
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
-    console.debug(f"Applying framework overrides to {package_json_path}")
+    logger.debug(f"Applying framework overrides to {package_json_path}")
     package_json_path.write_text(json.dumps(package_json))
     return True
 
@@ -633,7 +638,7 @@ def initialize_bun_config():
 
     if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
         bunfig_content = custom_bunfig.read_text()
-        console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
+        logger.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
     else:
         best_registry = get_npm_registry()
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
@@ -647,7 +652,7 @@ def initialize_npmrc():
 
     if (custom_npmrc := Path(constants.Node.CONFIG_PATH)).exists():
         npmrc_content = custom_npmrc.read_text()
-        console.info(f"Copying custom .npmrc inside {get_web_dir()} folder")
+        logger.info(f"Copying custom .npmrc inside {get_web_dir()} folder")
     else:
         best_registry = get_npm_registry()
         npmrc_content = constants.Node.DEFAULT_CONFIG.format(registry=best_registry)
@@ -666,12 +671,12 @@ def init_reflex_json(project_hash: int | None):
         project_hash: The app hash.
     """
     if project_hash is not None:
-        console.debug(f"Project hash is already set to {project_hash}.")
+        logger.debug(f"Project hash is already set to {project_hash}.")
     else:
         # Generate a uuid4 and persist its 128-bit integer form. Telemetry
         # re-encodes it as the canonical UUID string before sending.
         project_hash = uuid.uuid4().int
-        console.debug(f"Setting project hash to {project_hash}.")
+        logger.debug(f"Setting project hash to {project_hash}.")
 
     # Write the hash and version to the reflex json file.
     reflex_json = {

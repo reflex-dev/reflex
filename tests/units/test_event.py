@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
+from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
@@ -15,10 +16,17 @@ from reflex_base.event import (
     call_event_handler,
     event,
     fix_events,
+    on_submit_event,
+    on_submit_string_event,
 )
-from reflex_base.utils import format
-from reflex_base.utils.exceptions import EventHandlerValueError
+from reflex_base.utils import format, log
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
 from reflex_base.vars.base import Field, LiteralVar, Var, field
+from rich.console import Console
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
@@ -131,7 +139,6 @@ def test_call_event_handler_partial():
     assert (
         format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
-
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
     assert len(event_spec2.args) == 2
@@ -143,6 +150,98 @@ def test_call_event_handler_partial():
         format.format_event(event_spec2)
         == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
+
+
+_PayloadAlias = TypeAliasType("_PayloadAlias", dict[str, str])
+_NameAlias = TypeAliasType("_NameAlias", str)
+
+
+def test_call_event_handler_alias_annotated_arg():
+    """An uncalled handler with TypeAliasType-annotated args works as a trigger.
+
+    The trigger comparison runs typehint_issubclass on the raw annotations, so
+    a PEP 695 alias must compare like the annotation it stands for instead of
+    failing with an opaque TypeError at page compile; a genuine mismatch still
+    raises the same EventHandlerArgTypeMismatchError a plain annotation does.
+    """
+
+    class AliasTriggerState(BaseState):
+        @event
+        def on_plain(self, payload: dict[str, str], name: str):
+            pass
+
+        @event
+        def on_alias(self, payload: _PayloadAlias, name: _NameAlias):
+            pass
+
+        @event
+        def on_mismatch(self, payload: _NameAlias, name: _NameAlias):
+            pass
+
+    def args_spec(
+        payload: Var[dict[str, str]], name: Var[str]
+    ) -> tuple[Var[dict[str, str]], Var[str]]:
+        return (payload, name)
+
+    plain_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_plain), args_spec
+    )
+    alias_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_alias), args_spec
+    )
+    assert len(alias_spec.args) == len(plain_spec.args) == 2
+    for (alias_arg, alias_value), (plain_arg, plain_value) in zip(
+        alias_spec.args, plain_spec.args, strict=True
+    ):
+        assert alias_arg.equals(plain_arg)
+        assert alias_value.equals(plain_value)
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        call_event_handler(cast(EventHandler, AliasTriggerState.on_mismatch), args_spec)
+
+
+def test_state_event_handler_type_hints_are_stable_after_class_patch():
+    """Runtime state-class patches must not change handler annotations."""
+
+    class S(BaseState):
+        @event
+        def on_event(self, event: dict):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._get_type_hints()["event"] is dict
+
+    # Python 3.14 evaluates deferred method annotations in the owning class
+    # namespace, so this assignment would shadow the builtin ``dict``.
+    type.__setattr__(S, "dict", lambda self: {})
+
+    def args_spec(value: Var[dict]) -> list[Var[dict]]:
+        return [value]
+
+    call_event_handler(handler(), args_spec)
+    assert handler.prevent_default._type_hints is handler._type_hints
+
+
+def test_state_event_handler_caches_unresolved_type_hints():
+    """Unresolved annotations should be retried after their type is defined."""
+
+    class S(BaseState):
+        @event
+        def on_event(
+            self,
+            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        ):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._type_hints is None
+    assert handler._get_type_hints() == {}
+
+    globals()["_LateBoundEventType"] = dict
+    try:
+        assert handler._get_type_hints()["event"] is dict
+    finally:
+        del globals()["_LateBoundEventType"]
 
 
 @pytest.mark.parametrize(
@@ -1238,3 +1337,33 @@ def test_decentralized_event_global_state():
     """Test the decentralized event with a global state."""
     _ = rx.input(on_change=f("foo"))
     _ = rx.input(on_change=f)
+
+
+def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
+    """The arg-mismatch warning renders bracketed type names without escapes.
+
+    The rich console sink prints records with markup disabled, so the message
+    must not carry rich-markup escapes: the backslashes would print literally.
+    """
+
+    def handle_submit(form_data: dict[str, str]):
+        pass
+
+    handle_submit.__qualname__ = "handle_submit"
+
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
+    # A wide console so the long warning is not line-wrapped mid-assertion.
+    monkeypatch.setattr(log, "_console", Console(highlight=False, width=1000))
+    log.configure()
+    try:
+        call_event_handler(
+            EventHandler(fn=handle_submit),
+            (on_submit_event, on_submit_string_event),
+            key="on_submit",
+        )
+        out, _ = capsys.readouterr()
+    finally:
+        log._reset()
+    assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
+    assert "\\" not in out

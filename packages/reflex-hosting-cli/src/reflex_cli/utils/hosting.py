@@ -6,15 +6,21 @@ import contextlib
 import dataclasses
 import importlib.metadata
 import json
+import logging
+import os
 import platform
 import re
 import subprocess
 import sys
+import tempfile
+import threading
 import time
 import uuid
 import webbrowser
-from collections.abc import Mapping
+from collections.abc import Callable, Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
+from functools import partial
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, TypedDict
@@ -24,9 +30,10 @@ import click
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, dependency, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
+    ArchiveUploadError,
     GetAppError,
     NotAuthenticatedError,
     ResponseError,
@@ -35,6 +42,28 @@ from reflex_cli.utils.exceptions import (
     TokenAccessDeniedError,
     TokenValidationError,
 )
+
+logger = logging.getLogger(__name__)
+
+# The reserve endpoint's key for each of a build's archives, and the file it
+# signs a destination for.
+ARCHIVES = {"backend": "backend.zip", "frontend": "frontend.zip"}
+
+# Read size for a streamed archive PUT: small enough that the progress bar moves
+# on a slow uplink, large enough not to syscall per kilobyte.
+UPLOAD_CHUNK_SIZE = 256 * 1024
+
+# Per socket operation, not per upload. A link that cannot move one chunk in
+# this long -- roughly 17 kbps -- cannot finish an upload inside the window its
+# signature was issued for either, and hanging on it tells the user nothing.
+UPLOAD_CONNECT_TIMEOUT = 30.0
+UPLOAD_IO_TIMEOUT = 120.0
+
+# A signature that lapsed mid-upload is recovered by reserving again, and a
+# fresh reservation mints a fresh deployment id -- so the retry re-uploads both
+# archives under the new prefix rather than resuming the one that expired. Past
+# two signed windows the link is the problem, and saying so beats looping.
+UPLOAD_ATTEMPTS = 2
 
 
 class ScaleType(str, Enum):
@@ -188,7 +217,7 @@ class ScaleParams:
             )
 
         if scale_type is not None and cli_args.is_valid:
-            console.warn(
+            logger.warning(
                 "using --scale-type with --regions or --vmtype will have no effect"
             )
 
@@ -297,7 +326,7 @@ def get_authenticated_client(
     """
     env_token = get_existing_access_token() if not token else ""
     if not token and not env_token and not interactive:
-        console.error("Token is required for non-interactive mode.")
+        logger.error("Token is required for non-interactive mode.")
         raise click.exceptions.Exit(1)
 
     client = get_authentication_client(token)
@@ -344,6 +373,47 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
 webbrowser.BackgroundBrowser = SilentBackgroundBrowser
 
 
+class TokenSource(str, Enum):
+    """Where an access token was loaded from."""
+
+    CONFIG = "config file"
+    ENVIRONMENT = "REFLEX_ACCESS_TOKEN environment variable"
+    OPTION = "--token option"
+    NONE = "none"
+
+
+def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
+    """Fetch the access token from the environment or existing config, and say where it came from.
+
+    ``REFLEX_ACCESS_TOKEN`` takes precedence: exporting it is an explicit
+    choice for this invocation, while the config file is ambient state left
+    behind by an earlier ``reflex login``.
+
+    Returns:
+        The access token and the source it was loaded from.
+        If not found, return empty string and ``TokenSource.NONE`` instead.
+
+    """
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
+    logger.debug("Fetching token from existing config...")
+    try:
+        access_token = stored_access_token()
+    except (OSError, ValueError) as ex:
+        logger.debug(
+            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+        )
+        return "", TokenSource.NONE
+
+    if access_token:
+        return access_token, TokenSource.CONFIG
+
+    return "", TokenSource.NONE
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -352,25 +422,7 @@ def get_existing_access_token() -> str:
         If not found, return empty string for it instead.
 
     """
-    import os
-
-    console.debug("Fetching token from existing config...")
-    access_token = ""
-    try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            access_token = hosting_config.get("access_token", "")
-    except Exception as ex:
-        console.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
-        )
-
-    if not access_token:
-        access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-        if access_token:
-            console.debug("Using REFLEX_ACCESS_TOKEN from environment")
-
-    return access_token
+    return get_existing_access_token_with_source()[0]
 
 
 def is_reflex_enterprise_installed() -> bool:
@@ -445,40 +497,112 @@ def validate_token(token: str) -> dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except httpx.RequestError as re:
-        console.debug(
+        logger.debug(
             f"Request to auth server failed due to {re} (request id: {request_id})"
         )
         raise TokenValidationError(str(re), request_id=request_id) from re
     except httpx.HTTPError as ex:
-        console.debug(
+        logger.debug(
             f"Unable to validate the token due to: {ex} (request id: {request_id})"
         )
         raise TokenValidationError("server error", request_id=request_id) from ex
     except ValueError as ve:
-        console.debug(f"Access denied (request id: {request_id})")
+        logger.debug(f"Access denied (request id: {request_id})")
         raise TokenAccessDeniedError("access denied", request_id=request_id) from ve
     except Exception as ex:
-        console.debug(f"Unexpected error: {ex} (request id: {request_id})")
+        logger.debug(f"Unexpected error: {ex} (request id: {request_id})")
         raise TokenValidationError("internal errors", request_id=request_id) from ex
+
+
+def _read_hosting_config() -> dict[str, Any]:
+    """Read the hosting config file.
+
+    A config that exists but cannot be read is reported rather than treated as
+    empty, so callers do not overwrite entries they were unable to see.
+
+    Returns:
+        The stored config, or an empty dict if the file does not exist.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold a JSON object.
+
+    """
+    try:
+        with constants.Hosting.HOSTING_JSON.open(encoding="utf-8") as config_file:
+            hosting_config = json.load(config_file)
+    except FileNotFoundError:
+        return {}
+    # Valid JSON is not necessarily the object every caller indexes into.
+    if not isinstance(hosting_config, dict):
+        msg = f"{constants.Hosting.HOSTING_JSON} does not hold a JSON object"
+        raise ValueError(msg)
+    return hosting_config
+
+
+def stored_access_token() -> str:
+    """Read the access token held in the config file.
+
+    Unlike ``get_existing_access_token`` this ignores ``REFLEX_ACCESS_TOKEN``
+    and reports read failures, so callers can tell "no token stored" apart from
+    "cannot tell what is stored".
+
+    Returns:
+        The stored token, or an empty string if the config holds none.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
+
+    """
+    return _read_hosting_config().get("access_token", "")
+
+
+def _write_hosting_config(hosting_config: dict[str, Any]):
+    """Write the hosting config file atomically.
+
+    The config is written to a temporary file alongside the target and moved
+    into place, so a failed or interrupted write leaves the previous
+    credentials intact rather than truncating them.
+
+    Args:
+        hosting_config: The config to persist.
+
+    """
+    target = constants.Hosting.HOSTING_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Close the handle before replacing: Windows cannot rename an open file.
+    temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as config_file:
+            json.dump(hosting_config, config_file)
+            config_file.flush()
+            os.fsync(config_file.fileno())
+        temp_path.replace(target)
+    except BaseException:
+        temp_path.unlink(missing_ok=True)
+        raise
 
 
 def delete_token_from_config():
     """Delete the invalid token from the config file if applicable."""
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                hosting_config = json.load(config_file)
+            hosting_config = _read_hosting_config()
             hosting_config.pop("access_token", None)
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-                json.dump(hosting_config, config_file)
+            _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
-            console.debug(
+            logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
-    # Delete the previous hosting service data if present.
-    if constants.Hosting.HOSTING_JSON_V0.exists():
-        constants.Hosting.HOSTING_JSON_V0.unlink()
+    # Delete the previous hosting service data if present. Best efforts, like
+    # the rest of this function: the legacy file holds no token the CLI reads.
+    try:
+        constants.Hosting.HOSTING_JSON_V0.unlink(missing_ok=True)
+    except OSError as ex:
+        logger.debug(f"Unable to remove {constants.Hosting.HOSTING_JSON_V0}: {ex}")
 
 
 def save_token_to_config(token: str):
@@ -489,20 +613,19 @@ def save_token_to_config(token: str):
 
     """
     try:
-        if not Path(constants.Reflex.DIR).exists():
-            Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
-        hosting_config: dict[str, str] = {}
-        if constants.Hosting.HOSTING_JSON.exists():
-            try:
-                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                    hosting_config = json.load(config_file)
-            except (OSError, ValueError):
-                hosting_config = {}
+        try:
+            hosting_config = _read_hosting_config()
+        except (OSError, ValueError) as ex:
+            # An unreadable config must not block re-authenticating; the token
+            # is what makes the file useful, so start over from an empty one.
+            logger.debug(
+                f"Discarding unreadable {constants.Hosting.HOSTING_JSON}: {ex}"
+            )
+            hosting_config = {}
         hosting_config["access_token"] = token
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            json.dump(hosting_config, config_file)
+        _write_hosting_config(hosting_config)
     except Exception as ex:
-        console.warn(
+        logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
 
@@ -556,7 +679,7 @@ def requires_access_token() -> str:
 
     access_token = get_existing_access_token()
     if not access_token:
-        console.debug("No access token found from the existing config.")
+        logger.debug("No access token found from the existing config.")
 
     return access_token
 
@@ -628,7 +751,7 @@ def interactive_resolve_project_or_app_name_conflicts(
         The selected item as a dictionary
 
     """
-    console.warn(conflict_warn_msg)
+    logger.warning(conflict_warn_msg)
     console.print_table(rows, headers=list(headers))
     option = console.ask(
         conflict_ask_msg,
@@ -684,7 +807,7 @@ def search_app(
     apps = response.json()
 
     if len(apps) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple apps with the name {app_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
@@ -747,7 +870,7 @@ def search_project(
     projects = response.json()
 
     if len(projects) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple projects with the name {project_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
@@ -847,7 +970,7 @@ def create_app(
         timeout=constants.Hosting.TIMEOUT,
     )
     if response.status_code == HTTPStatus.FORBIDDEN:
-        console.debug(f"Server responded with 403: {response.text}")
+        logger.debug(f"Server responded with 403: {response.text}")
         raise ValueError(f"{response.text}")
     response.raise_for_status()
     response_json = response.json()
@@ -984,7 +1107,7 @@ def gcp_deploy_available(client: AuthenticatedClient) -> dict | None:
     try:
         status = get_gcp_provider_status(org_id, client)
     except Exception as ex:
-        console.debug(f"Unable to determine GCP availability: {ex}")
+        logger.debug(f"Unable to determine GCP availability: {ex}")
         return None
     if status.get("configured") and status.get("allowed"):
         return status
@@ -1029,6 +1152,7 @@ def set_app_provider(
     provider: str,
     client: AuthenticatedClient,
     provider_account_id: str | None = None,
+    service_name: str | None = None,
 ) -> str:
     """Choose which hosting platform an app deploys to.
 
@@ -1045,6 +1169,9 @@ def set_app_provider(
             through (GCP only). None keeps the connection the app already has
             when it stays on GCP, and means the org's default connection when
             GCP is first chosen.
+        service_name: The Cloud Run service name the app deploys as (GCP only).
+            None keeps the app's current name, or lets the server mint one from
+            the app name; the server refuses a change once the app has deployed.
 
     Returns:
         The provider now set on the app, or a ``"... failed: ..."`` string on
@@ -1061,6 +1188,8 @@ def set_app_provider(
     payload: dict[str, Any] = {"provider": provider}
     if provider_account_id is not None:
         payload["provider_account_id"] = provider_account_id
+    if service_name is not None:
+        payload["service_name"] = service_name
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/provider"),
         json=payload,
@@ -1557,10 +1686,10 @@ def create_project(name: str, client: AuthenticatedClient) -> dict:
     )
     response_json = response.json()
     if response.status_code == HTTPStatus.BAD_REQUEST:
-        console.debug(f"Server responded with 400: {response_json.get('detail')}")
+        logger.debug(f"Server responded with 400: {response_json.get('detail')}")
         raise ValueError(f"{response_json.get('detail', 'bad request')}")
     if response.status_code == HTTPStatus.CONFLICT:
-        console.debug(f"Duplicate project name: {response_json.get('detail')}")
+        logger.debug(f"Duplicate project name: {response_json.get('detail')}")
         raise ValueError(
             f"A project named '{name}' already exists. Please use a different name."
         )
@@ -1618,7 +1747,7 @@ def get_selected_project() -> str | None:
             hosting_config = json.load(config_file)
             return normalize_project_id(hosting_config.get("project"))
     except Exception as ex:
-        console.debug(
+        logger.debug(
             f"Unable to read selected project from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
     return None
@@ -1866,6 +1995,268 @@ def validate_deployment_args(
     return "success"
 
 
+def _response_detail(response: Any, fallback: str) -> str:
+    """Read the server's explanation for a refusal out of its body.
+
+    Args:
+        response: The refused response.
+        fallback: What to say when the body does not carry an explanation.
+
+    Returns:
+        What the server said, or the fallback.
+
+    """
+    try:
+        detail = response.json()["detail"]
+    except (ValueError, KeyError, TypeError):
+        detail = None
+    # Every refusal this CLI can provoke carries a sentence. A body shaped some
+    # other way -- a validation report, an HTML error page from something in
+    # front of the service -- is not one, and pasting its repr at the user is
+    # worse than the fallback.
+    return detail if isinstance(detail, str) else fallback
+
+
+def reserve_archive_upload(
+    app_id: str, sizes: dict[str, int], client: AuthenticatedClient
+) -> dict[str, Any] | None:
+    """Ask the control plane where to put a build's archives.
+
+    Nothing this endpoint itself refuses with is a 404 -- an unknown app, a
+    missing permission and an out-of-range size are all 400 or 403 -- so a 404
+    means the route is not there, on a control plane older than it. The caller
+    relays the archives through it instead.
+
+    Args:
+        app_id: The app the build belongs to.
+        sizes: Each archive's exact byte count, keyed as in ``ARCHIVES``. The
+            count is signed into the URL, so a build that changes afterwards
+            needs a new reservation rather than a retry of the same upload.
+        client: The authenticated client.
+
+    Returns:
+        A deployment id with a signed target for each archive, or None if this
+        control plane cannot hand one out.
+
+    """
+    import httpx
+
+    response = httpx.post(
+        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments/reserve"),
+        json={
+            "app_id": app_id,
+            "backend_size": sizes["backend"],
+            "frontend_size": sizes["frontend"],
+        },
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    if response.status_code == HTTPStatus.NOT_FOUND:
+        return None
+    response.raise_for_status()
+    return response.json()
+
+
+class _UploadAbandonedError(Exception):
+    """The other archive's upload failed, so finishing this one buys nothing."""
+
+
+def _archive_chunks(
+    path: Path, advance: Callable[[int], None], abandoned: threading.Event
+) -> Iterator[bytes]:
+    """Read an archive in chunks, reporting each one once it is on the wire.
+
+    Args:
+        path: The archive to read.
+        advance: Called with a chunk's size after it has been written out.
+        abandoned: Set once the other archive's upload has failed.
+
+    Yields:
+        Successive chunks of the archive.
+
+    Raises:
+        _UploadAbandonedError: The other archive's upload failed partway through.
+
+    """
+    with path.open("rb") as archive:
+        while chunk := archive.read(UPLOAD_CHUNK_SIZE):
+            if abandoned.is_set():
+                raise _UploadAbandonedError
+            yield chunk
+            advance(len(chunk))
+
+
+def presigned_put(target: dict[str, Any], content: Any, size: int) -> None:
+    """Upload a body to the presigned key it was signed for.
+
+    Content-Length is set here rather than left to httpx, and that is the whole
+    reason this is one function. The signature pins the exact byte count, so the
+    request has to carry it: for a bytes body httpx would derive the same value
+    anyway, but for a stream it cannot, and falls back to a chunked body that
+    the signature does not match. Getting that wrong is silent until storage
+    refuses the upload.
+
+    No authorization header goes with it. The signature is the credential, and
+    the destination is not ours to authenticate against.
+
+    Args:
+        target: The ``url`` and any required ``headers`` from the signing call.
+        content: The body, as bytes or as an iterator of byte chunks.
+        size: The body's exact byte count, as signed.
+
+    """
+    import httpx
+
+    response = httpx.put(
+        target["url"],
+        headers={**target.get("headers", {}), "Content-Length": str(size)},
+        content=content,
+        timeout=httpx.Timeout(
+            connect=UPLOAD_CONNECT_TIMEOUT,
+            read=UPLOAD_IO_TIMEOUT,
+            write=UPLOAD_IO_TIMEOUT,
+            pool=UPLOAD_CONNECT_TIMEOUT,
+        ),
+    )
+    response.raise_for_status()
+
+
+def _put_archive(
+    path: Path,
+    target: dict[str, Any],
+    size: int,
+    advance: Callable[[int], None],
+    abandoned: threading.Event,
+) -> None:
+    """Stream one archive to the key it was signed for.
+
+    Args:
+        path: The archive to upload.
+        target: The ``url`` and required ``headers`` from the reservation.
+        size: The archive's byte count, as reserved.
+        advance: Called with a chunk's size after it has been written out.
+        abandoned: Set once the other archive's upload has failed.
+
+    """
+    presigned_put(target, _archive_chunks(path, advance, abandoned), size)
+
+
+def _put_reserved_archives(
+    zip_dir: Path, reservation: dict[str, Any], sizes: dict[str, int]
+) -> None:
+    """Upload both of a build's archives to their signed keys, concurrently.
+
+    They are independent objects under the same prefix, so nothing orders them.
+    But neither is worth finishing alone: this build submits under one id, and
+    if the other archive never lands there is nothing to submit. So the first
+    failure abandons its sibling mid-stream rather than leaving the user
+    watching a large upload complete into a deployment that cannot happen.
+
+    Whatever the first archive to genuinely fail raised comes back out of here.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        reservation: The response from ``reserve_archive_upload``.
+        sizes: Each archive's byte count, keyed as in ``ARCHIVES``.
+
+    """
+    abandoned = threading.Event()
+
+    def upload(
+        filename: str,
+        target: dict[str, Any],
+        size: int,
+        advance: Callable[[int], None],
+    ) -> None:
+        try:
+            _put_archive(zip_dir / filename, target, size, advance, abandoned)
+        except _UploadAbandonedError:
+            # Stopping on purpose is not a failure of its own, and it never
+            # sets the flag: the archive that did fail is holding the reason,
+            # and its future is the one that should carry it out of here.
+            pass
+        except BaseException:
+            abandoned.set()
+            raise
+
+    with (
+        console.transfer_progress() as progress,
+        ThreadPoolExecutor(max_workers=len(ARCHIVES)) as pool,
+    ):
+        uploads = []
+        for key, filename in ARCHIVES.items():
+            task = progress.add_task(filename, total=sizes[key])
+            uploads.append(
+                pool.submit(
+                    upload,
+                    filename,
+                    reservation[key],
+                    sizes[key],
+                    partial(progress.advance, task),
+                )
+            )
+        for future in uploads:
+            future.result()
+
+
+def upload_archives(
+    zip_dir: Path, app_id: str, sizes: dict[str, int], client: AuthenticatedClient
+) -> str | None:
+    """Push a build's archives straight to storage, without relaying them.
+
+    A 403 on a PUT is a lapsed signature, and the recovery is a new reservation.
+    That mints a new deployment id naming a new prefix, so both archives go up
+    again under it -- the one that succeeded under the old id is not somewhere
+    the new deployment will look.
+
+    Args:
+        zip_dir: The directory holding the archives.
+        app_id: The app the build belongs to.
+        sizes: Each archive's byte count, keyed as in ``ARCHIVES``.
+        client: The authenticated client.
+
+    Returns:
+        The deployment id the archives now live under, or None if this control
+        plane has no reserve endpoint and they have to be relayed instead.
+
+    Raises:
+        ArchiveUploadError: The archives could not be put where they belong.
+
+    """
+    import httpx
+
+    for attempt in range(UPLOAD_ATTEMPTS):
+        try:
+            reservation = reserve_archive_upload(app_id, sizes, client)
+        except httpx.HTTPStatusError as ex:
+            raise ArchiveUploadError(
+                _response_detail(ex.response, f"HTTP {ex.response.status_code}")
+            ) from ex
+        except httpx.HTTPError as ex:
+            raise ArchiveUploadError(
+                f"could not reach the deployment service: {ex}"
+            ) from ex
+        if reservation is None:
+            return None
+        try:
+            _put_reserved_archives(zip_dir, reservation, sizes)
+        except httpx.HTTPStatusError as ex:
+            if ex.response.status_code != HTTPStatus.FORBIDDEN:
+                raise ArchiveUploadError(
+                    f"could not upload the build to storage: HTTP {ex.response.status_code}"
+                ) from ex
+            if attempt < UPLOAD_ATTEMPTS - 1:
+                logger.warning("the upload window expired; reserving another one")
+        except httpx.HTTPError as ex:
+            raise ArchiveUploadError(f"could not upload the build: {ex}") from ex
+        else:
+            return reservation["deployment_id"]
+    raise ArchiveUploadError(
+        "the upload did not finish before its window closed; this usually means "
+        "the connection is too slow for the size of the build"
+    )
+
+
 def create_deployment(
     zip_dir: Path,
     client: AuthenticatedClient,
@@ -1909,22 +2300,6 @@ def create_deployment(
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
     cli_version = importlib.metadata.version("reflex-hosting-cli")
-    zips = [
-        (
-            "files",
-            (
-                "backend.zip",
-                (zip_dir / "backend.zip").open("rb"),
-            ),
-        ),
-        (
-            "files",
-            (
-                "frontend.zip",
-                (zip_dir / "frontend.zip").open("rb"),
-            ),
-        ),
-    ]
     payload: dict[str, Any] = {
         "app_id": app_id,
         "app_name": app_name,
@@ -1950,13 +2325,34 @@ def create_deployment(
     if description:
         payload["description"] = description
 
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
-        data=payload,
-        files=zips,
-        headers=authorization_header(client.token),
-        timeout=55,
-    )
+    # The archives go straight to storage where the control plane can sign for
+    # them, and only their id is submitted here. Relaying them through it is the
+    # fallback for a control plane that cannot, and for a caller with no app id
+    # to reserve against.
+    stored_build_id = None
+    if app_id is not None:
+        sizes = {key: (zip_dir / name).stat().st_size for key, name in ARCHIVES.items()}
+        try:
+            stored_build_id = upload_archives(zip_dir, app_id, sizes, client)
+        except ArchiveUploadError as ex:
+            return f"deployment failed: {ex}"
+
+    with contextlib.ExitStack() as archives:
+        zips = None
+        if stored_build_id is not None:
+            payload["stored_build_id"] = stored_build_id
+        else:
+            zips = [
+                ("files", (name, archives.enter_context((zip_dir / name).open("rb"))))
+                for name in ARCHIVES.values()
+            ]
+        response = httpx.post(
+            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
+            data=payload,
+            files=zips,
+            headers=authorization_header(client.token),
+            timeout=55,
+        )
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError as ex:
@@ -1993,10 +2389,7 @@ def _security_review_detail(response: Any) -> str:
         a JSON object with a ``detail`` field.
 
     """
-    try:
-        return str(response.json()["detail"])
-    except (ValueError, TypeError, KeyError):
-        return "internal server error"
+    return _response_detail(response, "internal server error")
 
 
 def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str:
@@ -2040,17 +2433,9 @@ def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str
         raise SecurityReviewError(_security_review_detail(ex.response)) from ex
     upload = upload_url_response.json()
 
-    # 2. Upload the bytes to storage. The presigned URL pins the content length
-    #    and type, so send the returned headers verbatim and let httpx derive
-    #    Content-Length from the body — setting it manually breaks the signature.
-    put_response = httpx.put(
-        upload["url"],
-        content=zip_bytes,
-        headers=upload.get("headers", {}),
-        timeout=120,
-    )
+    # 2. Upload the bytes to storage, under the length and type the URL pins.
     try:
-        put_response.raise_for_status()
+        presigned_put(upload, zip_bytes, len(zip_bytes))
     except httpx.HTTPStatusError as ex:
         raise SecurityReviewError("failed to upload app source for review") from ex
 
@@ -2186,7 +2571,7 @@ def delete_app(app_id: str, client: AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
     app = get_app(app_id=app_id, client=client)
     if not app:
-        console.warn("no app with given id found")
+        logger.warning("no app with given id found")
         return None
     response = httpx.delete(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app['id']}/delete"),
@@ -2233,10 +2618,10 @@ def get_app_logs(
     try:
         app = get_app(app_id=app_id, client=client)
     except GetAppError:
-        console.warn(f"No application found with ID '{app_id}'")
+        logger.warning(f"No application found with ID '{app_id}'")
         return None
     if not app:
-        console.warn("no app with given id found")
+        logger.warning("no app with given id found")
         return None
     params: dict[str, str | int | None] = (
         {"offset": offset} if offset else {"start": start, "end": end}
@@ -2488,6 +2873,145 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
     return response.json()
 
 
+# Terminal control sequences, which a build log is not entitled to emit into
+# somebody's terminal. Ordered so a full sequence is consumed before the bare
+# ESC that starts it: OSC first (it runs until its own terminator and is the
+# one that writes the clipboard and forges hyperlinks), then CSI, then the
+# two-character escapes, then anything left over.
+_TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
+    r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
+    # Every other escape sequence, in the general ECMA-48 shape: optional
+    # intermediates then one final byte in 0x30-0x7E. Narrower classes leave
+    # the final byte behind once the catch-all below eats the ESC -- `\x1b7`
+    # (DECSC) printing a stray "7", `\x1bc` (full terminal reset) a stray "c".
+    r"|\x1b[ -/]*[0-~]"
+    r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """*text* with terminal control sequences removed.
+
+    A build log is the output of building the user's own app, dependencies
+    included, and this excerpt is printed without anyone asking for it -- on
+    any failed deploy, rather than only when `reflex cloud apps build-logs` is
+    run. Colour is not worth carrying for that: the same sequences let the
+    output erase the lines above it, forge a hyperlink, or write the
+    clipboard, and none of that should be reachable from a dependency's build
+    script. `markup=False` stops rich reading the text as its own markup and
+    does nothing about escape sequences.
+
+    Args:
+        text: The text to strip.
+
+    Returns:
+        The text with terminal control sequences removed.
+
+    """
+    return _TERMINAL_CONTROL_RE.sub("", text)
+
+
+def _get_deployment_failure(deployment_id: str, token: str) -> dict | None:
+    """Why a deployment failed, in fields, or None when that cannot be had.
+
+    None covers every way of not getting an answer, and they are one case to
+    the caller: a control plane predating this endpoint 404s, an older
+    self-hosted one may not route it at all, and the network may simply be
+    down. All three mean the same thing here -- report the failure the way the
+    CLI always has, from the status string.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+
+    Returns:
+        The failure report, or None if it could not be read.
+
+    """
+    import httpx
+
+    try:
+        response = httpx.get(
+            urljoin(
+                constants.Hosting.HOSTING_SERVICE,
+                f"/api/v1/deployments/{deployment_id}/failure",
+            ),
+            headers=authorization_header(token),
+            timeout=constants.Hosting.TIMEOUT,
+        )
+        response.raise_for_status()
+        report = response.json()
+    # Wider than json.JSONDecodeError, because a malformed body has more than
+    # one way to fail: an undecodable encoding raises UnicodeDecodeError (a
+    # ValueError) and a deeply nested document raises RecursionError (a
+    # RuntimeError). Either escaping would abort the watch over an answer this
+    # function is contracted to treat as no answer at all.
+    except (httpx.RequestError, httpx.HTTPStatusError, ValueError, RecursionError):
+        return None
+    return report if isinstance(report, dict) else None
+
+
+def _report_deployment_failure(
+    deployment_id: str,
+    token: str,
+    status: str,
+    *,
+    offer_build_logs: bool,
+) -> None:
+    """Tell the user why their deploy failed and what to do about it.
+
+    The build log is offered only where the control plane says it is the
+    answer. A failure in our pipeline reported as a build failure sends
+    somebody hunting for a bug in an app that does not have one, which is the
+    more expensive of the two mistakes and the reason the fault is asked about
+    at all.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        token: The authentication token.
+        status: The status string the watch loop ended on.
+        offer_build_logs: Whether to point at the build log when no structured
+            report can be read, preserving what this arm printed before.
+
+    """
+    report = _get_deployment_failure(deployment_id, token)
+    if report is None:
+        logger.warning(status)
+        if offer_build_logs:
+            logger.warning(
+                f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+
+    logger.error(report.get("reason") or status)
+    if guidance := report.get("guidance"):
+        logger.warning(guidance)
+
+    excerpt = report.get("build_log_excerpt")
+    # Typed as a string by the endpoint, checked because this one is not ours:
+    # the CLI is versioned apart from the control plane and talks to
+    # self-hosted ones, so a non-string here would raise in the sanitiser and
+    # take down a report that had already read fine.
+    if not excerpt or not isinstance(excerpt, str):
+        # A log the server holds but could not read is not a build that
+        # produced none, and saying nothing here reads as the latter.
+        if report.get("build_log_unreadable"):
+            logger.warning(
+                "the build log could not be read right now; try again with:\n"
+                f" reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+    # Raw build output: paths, versions and tracebacks, all of which rich would
+    # read as markup given the chance, plus whatever escape sequences the
+    # build printed.
+    console.print("\nthe end of the build log:")
+    console.print(_strip_terminal_controls(excerpt), markup=False)
+    console.print(
+        f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
+    )
+
+
 def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
     """Continuously watch the status of a specific deployment.
 
@@ -2512,31 +3036,35 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 deployment_id=deployment_id, token=client.token
             )
             if "completed successfully" in status:
-                console.success(status)
+                logger.log(log.SUCCESS, status)
                 break
             if "AwaitingApproval" in status:
-                console.success(
-                    "build submitted for approval; it will deploy automatically once an approver approves it."
+                logger.log(
+                    log.SUCCESS,
+                    "build submitted for approval; it will deploy automatically once an approver approves it.",
                 )
                 break
             if "build error" in status:
-                console.warn(status)
-                console.warn(
-                    f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=True
                 )
                 return False
             if "unable to find status for given id" in status:
-                console.error(status)
+                # Not a failed deployment but an id that resolves to nothing,
+                # so there is no row to report on and nothing to ask for.
+                logger.error(status)
                 return False
             if "error" in status:
-                console.warn(status)
+                _report_deployment_failure(
+                    deployment_id, client.token, status, offer_build_logs=False
+                )
                 return False
             if "bad response" in status:
-                console.warn(status)
+                logger.warning(status)
                 return True
             if status != current_status:
                 current_status = status
-                console.info(status)
+                logger.info(status)
             time.sleep(0.5)
     return True
 
@@ -2610,15 +3138,15 @@ def fetch_token(request_id: str) -> str:
         project_id = resp_json.get("user_id", "")
         select_project(project=project_id)
     except httpx.RequestError as re:
-        console.debug(f"Unable to fetch token due to request error: {re}")
+        logger.debug(f"Unable to fetch token due to request error: {re}")
     except httpx.HTTPError as he:
-        console.debug(f"Unable to fetch token due to {he}")
+        logger.debug(f"Unable to fetch token due to {he}")
     except json.JSONDecodeError as jde:
-        console.debug(f"Server did not respond with valid json: {jde}")
+        logger.debug(f"Server did not respond with valid json: {jde}")
     except KeyError as ke:
-        console.debug(f"Server response format unexpected: {ke}")
+        logger.debug(f"Server response format unexpected: {ke}")
     except Exception as ex:
-        console.debug(f"Unexpected errors: {ex}")
+        logger.debug(f"Unexpected errors: {ex}")
 
     return token
 
@@ -2639,7 +3167,7 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
     )
 
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
-        console.error(
+        logger.error(
             f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
         )
         raise click.exceptions.Exit(1)
@@ -2651,7 +3179,7 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
     )
 
     if not webbrowser.open(auth_url):
-        console.warn(
+        logger.warning(
             f"Unable to automatically open the browser. Please go to {auth_url} to authenticate."
         )
     validated_info = {}
@@ -2699,11 +3227,11 @@ def validate_token_with_retries(access_token: str) -> dict[str, Any]:
         except ValueError as ex:
             # getattr: mocks/foreign ValueErrors don't carry a request id.
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
-            console.error(f"Access denied (auth request id: {request_id})")
+            logger.error(f"Access denied (auth request id: {request_id})")
             delete_token_from_config()
         except Exception as ex:
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
-            console.warn(
+            logger.warning(
                 f"Unable to validate access token: {ex} (auth request id: {request_id})"
             )
     return {}
@@ -2770,11 +3298,11 @@ def generate_config(interactive: bool = True, token: str | None = None):
     try:
         import yaml
     except ImportError:
-        console.error("Please install PyYAML to use this command: pip install pyyaml")
+        logger.error("Please install PyYAML to use this command: pip install pyyaml")
         return
 
     if Path("cloud.yml").exists():
-        console.error("cloud.yml already exists.")
+        logger.error("cloud.yml already exists.")
         return
 
     try:
@@ -2782,7 +3310,7 @@ def generate_config(interactive: bool = True, token: str | None = None):
             token=token, interactive=interactive
         )
     except click.exceptions.Exit:
-        console.error("Authentication required to generate prefilled config.")
+        logger.error("Authentication required to generate prefilled config.")
         raise
 
     current_dir_name = Path.cwd().name
@@ -2797,11 +3325,11 @@ def generate_config(interactive: bool = True, token: str | None = None):
     except click.exceptions.Exit:
         raise
     except Exception as ex:
-        console.warn(f"Could not search for apps: {ex}")
+        logger.warning(f"Could not search for apps: {ex}")
         app = None
 
     if app:
-        console.info(f"Found app '{app['name']}' - prefilling config with app data.")
+        logger.info(f"Found app '{app['name']}' - prefilling config with app data.")
         default = {"name": app["name"]}
 
         if app.get("id"):
@@ -2811,15 +3339,15 @@ def generate_config(interactive: bool = True, token: str | None = None):
         if app.get("project_id"):
             default["project"] = app["project_id"]
     else:
-        console.info(
+        logger.info(
             f"No app found with name '{current_dir_name}' - creating config with minimal defaults."
         )
         default = {"name": current_dir_name}
 
     with Path("cloud.yml").open("w") as config_file:
         yaml.dump(default, config_file, default_flow_style=False, sort_keys=False)
-    console.success("cloud.yml created successfully.")
-    console.info(
+    logger.log(log.SUCCESS, "cloud.yml created successfully.")
+    logger.info(
         "For more configuration options, see: https://reflex.dev/docs/hosting/config-file/"
     )
     return
@@ -2831,7 +3359,7 @@ def log_out_on_browser():
         delete_token_from_config()
     console.print(f"Opening {constants.Hosting.HOSTING_SERVICE_UI} ...")
     if not webbrowser.open(constants.Hosting.HOSTING_SERVICE_UI):
-        console.warn(
+        logger.warning(
             f"Unable to open the browser automatically. Please go to {constants.Hosting.HOSTING_SERVICE_UI} to log out."
         )
 
@@ -2853,17 +3381,17 @@ def get_vm_types() -> list[dict]:
         response.raise_for_status()
         response_json = response.json()
         if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
+            logger.error("Expect server to return a list ")
             return []
         if (
             response_json
             and response_json[0] is not None
             and not isinstance(response_json[0], dict)
         ):
-            console.error("Expect return values are dict's")
+            logger.error("Expect return values are dict's")
             return []
     except Exception as ex:
-        console.error(f"Unable to get vmtypes due to {ex}.")
+        logger.error(f"Unable to get vmtypes due to {ex}.")
         return []
     else:
         return response_json
@@ -2886,18 +3414,18 @@ def get_regions() -> list[dict]:
         response.raise_for_status()
         response_json = response.json()
         if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
+            logger.error("Expect server to return a list ")
             return []
         if (
             response_json
             and response_json[0] is not None
             and not isinstance(response_json[0], dict)
         ):
-            console.error("Expect return values are dict's")
+            logger.error("Expect return values are dict's")
             return []
         return [
             {"name": region["name"], "code": region["code"]} for region in response_json
         ]
     except Exception as ex:
-        console.error(f"Unable to get regions due to {ex}.")
+        logger.error(f"Unable to get regions due to {ex}.")
         return []

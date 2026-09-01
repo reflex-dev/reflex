@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 import importlib
+import logging
 import os
 from collections.abc import Sequence
 from functools import lru_cache
@@ -26,6 +27,8 @@ from reflex_base.constants.base import LogLevel
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 from reflex_base.utils.types import GenericType, is_union, value_inside_optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_default_value_for_field(field: dataclasses.Field) -> Any:
@@ -627,6 +630,12 @@ class EnvironmentVariables:
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
+    # Whether to keep React's development-build owner-stack capture in dev mode.
+    # Reflex disables it by default because the per-element Error() capture
+    # dominates dev-mode render CPU on large pages; enable it to restore full
+    # owner stacks in React DevTools and dev warnings.
+    REFLEX_REACT_OWNER_STACKS: EnvVar[bool] = env_var(False)
+
     # Whether to run the backend only. Exclusive with REFLEX_FRONTEND_ONLY.
     REFLEX_BACKEND_ONLY: EnvVar[bool] = env_var(False)
 
@@ -705,6 +714,9 @@ class EnvironmentVariables:
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
 
+    # Emit logs as machine-readable JSON records instead of rich console output.
+    REFLEX_LOG_JSON: EnvVar[bool] = env_var(False)
+
     # Whether to enable hot module replacement
     VITE_HMR: EnvVar[bool] = env_var(True)
 
@@ -747,6 +759,10 @@ class EnvironmentVariables:
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 
+    # Referrer identifier appended (urlencoded) to the "Built with Reflex"
+    # badge link as https://reflex.dev/?ref=<value>. Read at compile time.
+    REFLEX_REFERRER_PARAM: EnvVar[str | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
@@ -781,13 +797,11 @@ def _load_dotenv_from_files(files: list[Path]):
     Args:
         files: A list of Path objects representing the environment variable files.
     """
-    from reflex_base.utils import console
-
     if not files:
         return
 
     if load_dotenv is None:
-        console.error(
+        logger.error(
             """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.1.0"`."""
         )
         return

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.metadata
+import logging
 from collections.abc import Callable
 from unittest.mock import MagicMock
 
@@ -9,8 +10,22 @@ import httpx
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture, MockFixture
+from reflex_base.utils.log import SUCCESS
 from reflex_cli.utils import hosting
 from reflex_cli.v2 import cli
+
+
+def _log_messages(caplog: pytest.LogCaptureFixture, level: int) -> list[str]:
+    """Return the captured log messages emitted at the given level.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        level: The numeric log level to filter records by.
+
+    Returns:
+        The formatted messages of the matching records.
+    """
+    return [r.getMessage() for r in caplog.records if r.levelno == level]
 
 
 def test_login_success_existing_token(mocker: MockFixture):
@@ -53,17 +68,14 @@ def test_login_failure(mocker: MockFixture):
     mock_authenticate_on_browser.assert_called_once()
 
 
-def test_logout(mocker: MockFixture):
+def test_logout(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
     mock_delete_token = mocker.patch(
         "reflex_cli.utils.hosting.delete_token_from_config",
-    )
-    mock_success = mocker.patch(
-        "reflex_cli.utils.console.success",
     )
 
     cli.logout()
     mock_delete_token.assert_called_once()
-    mock_success.assert_called_once_with("Successfully logged out.")
+    assert _log_messages(caplog, SUCCESS) == ["Successfully logged out."]
 
 
 @pytest.fixture
@@ -281,6 +293,7 @@ def test_deploy_non_interactive_project_name(
 def test_deploy_non_interactive_project_name_multiple_values(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    caplog: pytest.LogCaptureFixture,
 ):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
@@ -328,7 +341,6 @@ def test_deploy_non_interactive_project_name_multiple_values(
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
-    console_error = mocker.patch("reflex_cli.utils.console.error")
 
     with pytest.raises(click.exceptions.Exit):
         cli.deploy(
@@ -337,9 +349,9 @@ def test_deploy_non_interactive_project_name_multiple_values(
             interactive=False,
             project_name="fake-project",
         )
-    console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "Multiple projects with the name 'fake-project' found. Please provide a unique name."
-    )
+    ]
 
 
 def test_deploy_interactive_project_name_multiple_values(
@@ -426,7 +438,10 @@ def test_deploy_interactive_project_name_multiple_values(
     ],
 )
 def test_deploy_non_interactive_no_app_name_and_id(
-    mocker: MockerFixture, app_name: str | None, app_id: str | None
+    mocker: MockerFixture,
+    app_name: str | None,
+    app_id: str | None,
+    caplog: pytest.LogCaptureFixture,
 ):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
@@ -441,16 +456,14 @@ def test_deploy_non_interactive_no_app_name_and_id(
     mocker.patch(
         "reflex_cli.utils.hosting.get_project",
     )
-    console_error = mocker.patch("reflex_cli.utils.console.error")
-
     with pytest.raises(click.exceptions.Exit):
         cli.deploy(
             app_name=app_name, app_id=app_id, export_fn=MagicMock(), interactive=False
         )
 
-    console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "Please provide a valid app name or ID for the deployed instance."
-    )
+    ]
 
 
 def test_deploy_non_interactive_export_failure(
@@ -504,8 +517,15 @@ def test_deploy_non_interactive_export_failure(
 def test_deploy_envfile_missing_python_dotenv_exits(
     mocker: MockerFixture,
     mock_export_fn: MagicMock,
+    caplog: pytest.LogCaptureFixture,
 ):
-    """Deploy should exit when --envfile is used without python-dotenv."""
+    """Deploy should exit when --envfile is used without python-dotenv.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked export function.
+        caplog: The pytest log capture fixture.
+    """
     import builtins
 
     mocker.patch(
@@ -545,8 +565,6 @@ def test_deploy_envfile_missing_python_dotenv_exits(
         "reflex_cli.utils.hosting.watch_deployment_status",
         return_value={"status": "ready"},
     )
-    console_error = mocker.patch("reflex_cli.utils.console.error")
-
     real_import = builtins.__import__
 
     def _mock_import(name: str, *args, **kwargs):
@@ -564,15 +582,18 @@ def test_deploy_envfile_missing_python_dotenv_exits(
             envfile=".env",
         )
 
-    console_error.assert_any_call(
+    assert (
         """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+        in _log_messages(caplog, logging.ERROR)
     )
     mock_export_fn.assert_not_called()
     create_deployment.assert_not_called()
     watch_deployment.assert_not_called()
 
 
-def test_deploy_non_interactive_with_invalid_project(mocker: MockFixture):
+def test_deploy_non_interactive_with_invalid_project(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -587,9 +608,6 @@ def test_deploy_non_interactive_with_invalid_project(mocker: MockFixture):
             response=mocker.Mock(json=lambda: {"detail": "project does not exist"}),
         ),
     )
-    mock_error = mocker.patch(
-        "reflex_cli.utils.console.error",
-    )
     with pytest.raises(click.exceptions.Exit):
         cli.deploy(
             app_name="app-name",
@@ -598,12 +616,14 @@ def test_deploy_non_interactive_with_invalid_project(mocker: MockFixture):
             interactive=False,
         )
 
-    mock_error.assert_called_with("project does not exist")
+    errors = _log_messages(caplog, logging.ERROR)
+    assert errors[-1] == "project does not exist"
 
 
 def test_deploy_create_deployment_multiple_apps_non_interactive(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    caplog: pytest.LogCaptureFixture,
 ):
     mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project",
@@ -623,7 +643,6 @@ def test_deploy_create_deployment_multiple_apps_non_interactive(
     mocker.patch(
         "reflex_cli.utils.hosting.get_project",
     )
-    console_error = mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.authenticated_token",
         return_value=("fake-code", {}),
@@ -640,9 +659,9 @@ def test_deploy_create_deployment_multiple_apps_non_interactive(
             interactive=False,
             token="fake-token",
         )
-    console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "Multiple apps with the name 'fake-app' found. Please provide a unique name."
-    )
+    ]
 
 
 def test_deploy_create_deployment_multiple_apps_interactive(
@@ -1176,11 +1195,11 @@ def test_deploy_warns_when_bounds_outlive_a_failed_submit(
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
     submit_result: dict[str, object],
     expected_exc: type[BaseException],
+    caplog: pytest.LogCaptureFixture,
 ):
     """Bounds that stuck without a deployment are called out on every exit path."""
     recorder = _deploy_call_recorder(mocker)
     recorder.create_deployment.configure_mock(**submit_result)
-    console_warn = mocker.patch("reflex_cli.utils.console.warn")
 
     with pytest.raises(expected_exc):
         cli.deploy(
@@ -1191,19 +1210,19 @@ def test_deploy_warns_when_bounds_outlive_a_failed_submit(
         )
 
     assert any(
-        "even though this deploy failed" in call.args[0]
-        for call in console_warn.call_args_list
+        "even though this deploy failed" in msg
+        for msg in _log_messages(caplog, logging.WARNING)
     )
 
 
 def test_deploy_hedges_when_the_bounds_response_is_lost(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    caplog: pytest.LogCaptureFixture,
 ):
     """A dropped response leaves the outcome unknown, so neither is asserted."""
     recorder = _deploy_call_recorder(mocker)
     recorder.set_instance_bounds.side_effect = httpx.ConnectError("no route")
-    console_warn = mocker.patch("reflex_cli.utils.console.warn")
 
     with pytest.raises(httpx.ConnectError):
         cli.deploy(
@@ -1214,9 +1233,9 @@ def test_deploy_hedges_when_the_bounds_response_is_lost(
         )
 
     warning = next(
-        call.args[0]
-        for call in console_warn.call_args_list
-        if "instance bounds" in call.args[0]
+        msg
+        for msg in _log_messages(caplog, logging.WARNING)
+        if "instance bounds" in msg
     )
     assert "may or may not have been applied" in warning
     recorder.create_deployment.assert_not_called()
@@ -1225,17 +1244,17 @@ def test_deploy_hedges_when_the_bounds_response_is_lost(
 def test_deploy_does_not_warn_about_bounds_it_never_applied(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    caplog: pytest.LogCaptureFixture,
 ):
     """A deploy that failed without touching the bounds stays quiet about them."""
     recorder = _deploy_call_recorder(mocker)
     recorder.create_deployment.return_value = "deployment failed: too large"
-    console_warn = mocker.patch("reflex_cli.utils.console.warn")
 
     with pytest.raises(click.exceptions.Exit):
         cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
 
     assert not any(
-        "instance bounds" in call.args[0] for call in console_warn.call_args_list
+        "instance bounds" in msg for msg in _log_messages(caplog, logging.WARNING)
     )
 
 
@@ -1251,11 +1270,11 @@ def test_deploy_rejected_instance_bounds_aborts_before_submitting(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
     detail: str,
+    caplog: pytest.LogCaptureFixture,
 ):
     """A rejected bound surfaces the server message and stops the deploy."""
     recorder = _deploy_call_recorder(mocker)
     recorder.set_instance_bounds.return_value = detail
-    console_error = mocker.patch("reflex_cli.utils.console.error")
 
     with pytest.raises(click.exceptions.Exit):
         cli.deploy(
@@ -1266,7 +1285,7 @@ def test_deploy_rejected_instance_bounds_aborts_before_submitting(
             max_instances=1,
         )
 
-    console_error.assert_called_once_with(detail)
+    assert _log_messages(caplog, logging.ERROR) == [detail]
     recorder.create_deployment.assert_not_called()
 
 
@@ -1394,21 +1413,22 @@ def test_apply_full_deploy_skips_the_call_when_turning_it_off_elsewhere(
     set_full_deploy.assert_not_called()
 
 
-def test_apply_full_deploy_hedges_when_the_response_is_lost(mocker: MockFixture):
+def test_apply_full_deploy_hedges_when_the_response_is_lost(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     """A dropped connection may still have stopped the app; say so."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
     mocker.patch(
         "reflex_cli.utils.hosting.set_app_full_deploy",
         side_effect=ConnectionError("dropped"),
     )
-    warn = mocker.patch("reflex_cli.utils.console.warn")
 
     with pytest.raises(ConnectionError):
         cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
 
     # The warning context is never entered on this path, so the hedge has to
     # come from the call itself.
-    assert "Lost contact" in warn.call_args.args[0]
+    assert "Lost contact" in _log_messages(caplog, logging.WARNING)[-1]
 
 
 def test_deploy_full_deploy_on_reflex_cloud_never_reaches_the_server(
@@ -1443,8 +1463,78 @@ def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
     )
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id=None
+        "app-1", "gcp", client=client, provider_account_id=None, service_name=None
     )
+
+
+def test_resolve_deploy_provider_hostname_names_the_gcp_service(
+    mocker: MockFixture,
+):
+    """On the deploy that first lands on GCP, --hostname doubles as the service name."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=True,
+        client=client,
+        hostname="Sales-Dashboard",
+    )
+    assert result == "gcp"
+    # Lowercased into the service-name grammar before it is sent.
+    mock_set.assert_called_once_with(
+        "app-1",
+        "gcp",
+        client=client,
+        provider_account_id=None,
+        service_name="sales-dashboard",
+    )
+
+
+def test_resolve_deploy_provider_unusable_hostname_lets_the_server_mint(
+    mocker: MockFixture,
+):
+    """A hostname the service-name grammar refuses is skipped, not fatal."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=True,
+        client=client,
+        # Valid DNS label, invalid Cloud Run service name (leading digit).
+        hostname="2048game",
+    )
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id=None, service_name=None
+    )
+
+
+def test_gcp_service_name_from_hostname_grammar():
+    """Only hostnames Cloud Run would accept as service names pass through."""
+    assert cli._gcp_service_name_from_hostname("sales-dashboard") == "sales-dashboard"
+    assert cli._gcp_service_name_from_hostname("MyApp") == "myapp"
+    assert cli._gcp_service_name_from_hostname(None) is None
+    assert cli._gcp_service_name_from_hostname("") is None
+    assert cli._gcp_service_name_from_hostname("2048game") is None
+    assert cli._gcp_service_name_from_hostname("-dash") is None
+    assert cli._gcp_service_name_from_hostname("dash-") is None
+    assert cli._gcp_service_name_from_hostname("a" * 50) is None
+    # The derived-name namespace of apps that store no name is reserved.
+    assert (
+        cli._gcp_service_name_from_hostname("app-8b2f4a1c-1234-5678-9abc-def012345678")
+        is None
+    )
+    assert cli._gcp_service_name_from_hostname("app-metrics") == "app-metrics"
 
 
 def test_resolve_deploy_provider_reflex_cloud_no_switch(mocker: MockFixture):
@@ -1596,7 +1686,7 @@ def test_resolve_deploy_provider_named_connection_is_pinned(mocker: MockFixture)
 
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id="conn-2"
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
     )
 
 
@@ -1625,7 +1715,41 @@ def test_resolve_deploy_provider_repoints_without_a_provider_switch(
 
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id="conn-2"
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
+    )
+
+
+def test_resolve_deploy_provider_gcp_redeploy_keeps_the_pinned_name(
+    mocker: MockFixture,
+):
+    """An app already on GCP never re-sends a service name.
+
+    The name is pinned to a live service by then, so a --hostname on a later
+    deploy must not reach the server as a rename request.
+    """
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[{"id": "conn-2", "name": "eu-prod"}],
+    )
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "gcp"}
+
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=False,
+        client=client,
+        gcp_connection="eu-prod",
+        hostname="sales-dashboard",
+    )
+
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
     )
 
 
@@ -1730,17 +1854,18 @@ def test_apply_full_deploy_reports_a_stopped_app(mocker: MockFixture):
     mock_set.assert_called_once_with("app-1", True, client=client)
 
 
-def test_apply_full_deploy_warns_on_an_unconfirmed_stop(mocker: MockFixture):
+def test_apply_full_deploy_warns_on_an_unconfirmed_stop(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     """An unconfirmed teardown is surfaced: the deploy may be refused."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
     mocker.patch(
         "reflex_cli.utils.hosting.set_app_full_deploy",
         return_value={"full_deploy": True, "stopped": True, "stop_confirmed": False},
     )
-    warn = mocker.patch("reflex_cli.utils.console.warn")
 
     assert cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
-    assert "did not confirm" in warn.call_args.args[0]
+    assert "did not confirm" in _log_messages(caplog, logging.WARNING)[-1]
 
 
 def test_apply_full_deploy_refusal_aborts(mocker: MockFixture):
@@ -1755,9 +1880,8 @@ def test_apply_full_deploy_refusal_aborts(mocker: MockFixture):
         cli._apply_full_deploy({"id": "a", "name": "myapp"}, True, "gcp", client)
 
 
-def test_warn_if_full_deploy_outlives_deploy(mocker: MockFixture):
+def test_warn_if_full_deploy_outlives_deploy(caplog: pytest.LogCaptureFixture):
     """A stopped app whose deploy then failed is reported as still down."""
-    warn = mocker.patch("reflex_cli.utils.console.warn")
     error = RuntimeError("export failed")
 
     with (
@@ -1766,14 +1890,13 @@ def test_warn_if_full_deploy_outlives_deploy(mocker: MockFixture):
     ):
         raise error
 
-    assert "stays down" in warn.call_args.args[0]
+    assert "stays down" in _log_messages(caplog, logging.WARNING)[-1]
 
 
 def test_warn_if_full_deploy_outlives_deploy_stays_quiet_when_nothing_stopped(
-    mocker: MockFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     """Nothing was stopped, so a failed deploy left nothing behind to report."""
-    warn = mocker.patch("reflex_cli.utils.console.warn")
     error = RuntimeError("export failed")
 
     with (
@@ -1782,4 +1905,4 @@ def test_warn_if_full_deploy_outlives_deploy_stays_quiet_when_nothing_stopped(
     ):
         raise error
 
-    warn.assert_not_called()
+    assert _log_messages(caplog, logging.WARNING) == []
