@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import logging
 import multiprocessing
 import os
@@ -939,10 +940,9 @@ def test_load_config_keeps_sys_path_intact_for_other_threads(
         "import reflex as rx\nconfig = rx.Config(app_name='race')\n"
     )
     monkeypatch.chdir(tmp_path)
-    # A private probe module at the end of sys.path, in a sibling directory:
-    # nothing else imports it (a shared stdlib module would race the config
-    # loader's own imports), and it sits outside the project root, so the
-    # loader never evicts it from sys.modules either.
+    # A private module at the end of sys.path. Probing it with find_spec walks
+    # sys.path the way an import does but never registers anything in
+    # sys.modules, so the loader's own module bookkeeping cannot interfere.
     probe_dir = tmp_path_factory.mktemp("rx_race_probe")
     (probe_dir / "rx_race_probe.py").write_text("VALUE = 1\n")
     sys.path.append(str(probe_dir))
@@ -961,13 +961,14 @@ def test_load_config_keeps_sys_path_intact_for_other_threads(
     thread = threading.Thread(target=loader)
     thread.start()
     try:
-        for _ in range(200):
-            sys.modules.pop("rx_race_probe", None)
-            importlib.import_module("rx_race_probe")
+        missing = 0
+        for _ in range(500):
+            if importlib.util.find_spec("rx_race_probe") is None:
+                missing += 1
     finally:
         stop.set()
         thread.join()
-        sys.modules.pop("rx_race_probe", None)
         sys.path[:] = [p for p in sys.path if p not in (str(tmp_path), str(probe_dir))]
     assert not loader_errors
+    assert missing == 0
     assert sys.path[0] != str(tmp_path)
