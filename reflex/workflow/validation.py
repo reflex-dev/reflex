@@ -68,7 +68,12 @@ def mistyped_args(handler: HandlerDefinition, args: dict[str, Any]) -> list[str]
         if name.startswith("__"):
             continue
         hint = handler.type_hints.get(name)
-        adapter = _adapter(hint) if hint is not None else None
+        try:
+            adapter = _adapter(hint) if hint is not None else None
+        except TypeError:
+            # An unhashable hint (Annotated with dict metadata, say) cannot be
+            # cached and is the author's business; it does not fail callers.
+            adapter = None
         if adapter is None:
             continue
         try:

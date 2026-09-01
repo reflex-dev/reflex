@@ -1766,3 +1766,110 @@ def resume(database: str | None, run_id: str, reason: str | None):
         console.error(f"Run {run_id!r} is not suspended.")
         raise click.exceptions.Exit(1)
     console.print(f"Resumed {run_id}; its next step will run.")
+
+
+CONSOLE_APP_NAME = "workflow_console"
+
+
+def materialize_console_project(root: Path) -> Path:
+    """Write the minimal Reflex project that serves the operator console.
+
+    A Reflex app needs a project directory -- ``rxconfig.py`` and an app
+    module -- and the console is a library module, so the CLI writes that
+    scaffold rather than asking the operator to. Rewritten on every launch,
+    so an upgrade never serves a stale scaffold.
+
+    Args:
+        root: The directory to write the project into.
+
+    Returns:
+        The project root.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "rxconfig.py").write_text(
+        f"import reflex as rx\n\nconfig = rx.Config(app_name={CONSOLE_APP_NAME!r})\n"
+    )
+    package = root / CONSOLE_APP_NAME
+    package.mkdir(exist_ok=True)
+    (package / "__init__.py").write_text("")
+    (package / f"{CONSOLE_APP_NAME}.py").write_text(
+        '"""The operator console, served by `reflex workflows console`."""\n\n'
+        "from reflex.workflow.console import console_app\n\n"
+        "app = console_app()\n"
+    )
+    return root
+
+
+def _run_console_project(root: Path, host: str, port: int, env: dict) -> None:
+    """Launch ``reflex run`` in the console project; separated for tests.
+
+    Args:
+        root: The materialized project root.
+        host: The backend bind address.
+        port: The frontend port.
+        env: The environment for the child process.
+    """
+    import subprocess
+
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "reflex",
+            "run",
+            "--backend-host",
+            host,
+            "--frontend-port",
+            str(port),
+        ],
+        cwd=root,
+        env=env,
+        check=False,
+    )
+
+
+@workflows.command(name="console")
+@database_option
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    help=(
+        "Interface to bind. Loopback by default: the console has no login of "
+        "its own, so exposing it is a deliberate choice behind your proxy."
+    ),
+)
+@click.option("--port", default=3000, type=int, help="Port to serve on.")
+@click.option(
+    "--project-dir",
+    default=None,
+    help="Where to write the console's Reflex project; defaults to a cache dir.",
+)
+def console_command(
+    database: str | None, host: str, port: int, project_dir: str | None
+):
+    """Serve the operator console: runs, one run's story, fleet, and events.
+
+    Every action taken here goes through the same operations as the CLI,
+    carries your name (REFLEX_ACTOR, else the login user) and your reason,
+    and lands in the run's own history. The console never executes steps;
+    it reads and repairs.
+    """
+    from reflex.workflow.store import DATABASE_ENV
+
+    root = (
+        Path(project_dir)
+        if project_dir
+        else Path.home() / ".cache" / "reflex-workflows" / "console"
+    )
+    materialize_console_project(root)
+    env = dict(os.environ)
+    if database:
+        env[DATABASE_ENV] = database
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        console.warn(
+            f"Binding the console to {host}: it has no login of its own. Put "
+            "it behind a proxy that authenticates operators and stamps "
+            "REFLEX_ACTOR, or keep it on loopback."
+        )
+    console.print(f"Serving the operator console on http://{host}:{port}")
+    _run_console_project(root, host, port, env)

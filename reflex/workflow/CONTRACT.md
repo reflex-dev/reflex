@@ -398,6 +398,21 @@ and signed link tokens respectively. HTTP signal deliveries pass through
 the same kernel path as Python ones, so dispositions, channel validation,
 and payload canonicalization are identical by construction.
 
+### The operator console
+
+`reflex workflows console` serves a Reflex app over the store — runs, one
+run's story (state, steps, attempts, history, children), the worker fleet
+with per-release active counts, and channel deliveries with replay — so an
+operator finds and repairs a stuck run without SQL or the CLI. It is a
+read-and-repair surface, never a worker: its runtime opens the store
+without claiming anything, exactly like `rx.workflows.connect`. Every
+action goes through the same kernel operations the CLI uses and carries
+the operator's name (`REFLEX_ACTOR`, else the login user) and reason, so
+it lands in the run's history like any other operator mutation (§9). The
+console has no login of its own: it binds loopback by default, and
+exposing it is a deliberate choice behind a proxy that authenticates
+operators and stamps `REFLEX_ACTOR`.
+
 ### Tenancy and who runs the workers
 
 Managed and customer-hosted are a deployment split, not a semantic one. A
