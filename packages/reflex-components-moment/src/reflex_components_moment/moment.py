@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from typing import Any
 
 from reflex_base.components.component import MemoizationLeaf, NoSSRComponent, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -44,11 +43,11 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     )
 
     trim: Var[bool | str] = field(
-        doc="When formatting duration time, the largest-magnitude tokens are automatically trimmed when they have no value."
+        doc='When formatting duration time, the largest-magnitude tokens are automatically trimmed when they have no value. Also accepts a trim template: "large", "small", "both", "all", "final", "left" or "right".'
     )
 
-    parse: Var[str | list[Any]] = field(
-        doc=" Use the parse attribute to tell moment how to parse the given date when non-standard."
+    parse: Var[str | list[str]] = field(
+        doc=" Use the parse attribute to tell moment how to parse the given date when non-standard. Accepts a single format string or a list of formats to try."
     )
 
     add: Var[MomentDelta] = field(
