@@ -13,19 +13,25 @@ import asyncio
 import os
 import signal
 import sys
+import time
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from reflex_base.workflow import Retry, WorkflowConfig, manual
 
 import reflex as rx
+from reflex.workflow.kernel import WorkflowObserver
 from reflex.workflow.records import HistoryEventType, RunStatus
 from reflex.workflow.runtime import WorkflowRuntime
 from reflex.workflow.store import SqliteRunStore
 
 LEDGER = Path(os.environ["CRASH_LEDGER"])
 CRASH_AT = os.environ["CRASH_AT"]
+# "Everything down for an hour" is a restart with the clock moved on, so the
+# recovering process may be told how far.
+CLOCK_OFFSET = float(os.environ.get("CRASH_CLOCK_OFFSET", "0"))
 
 
 def record(name: str) -> None:
@@ -52,6 +58,54 @@ def die_at(point: str) -> None:
     """
     if point == CRASH_AT:
         os.kill(os.getpid(), signal.SIGKILL)
+
+
+class KillingObserver(WorkflowObserver):
+    """Dies inside the post-commit notification.
+
+    The observer runs after a commit's transaction and before any of the
+    worker's follow-ups -- wakeups, loser cancellation, the next claim -- so
+    ``after_commit:<workflow>:<event>`` is the row "killed after commit (any
+    transition)" made real.
+    """
+
+    def on_event(
+        self,
+        event_type: HistoryEventType,
+        run_id: str,
+        workflow_id: str,
+        data: dict[str, Any],
+    ) -> None:
+        """Die if this commit is the chosen boundary.
+
+        Args:
+            event_type: What was just committed.
+            run_id: The run it happened to.
+            workflow_id: That run's workflow identity.
+            data: The event payload.
+        """
+        die_at(f"after_commit:{workflow_id}:{event_type.value}")
+
+
+class KillingStore(SqliteRunStore):
+    """A store that can die right after its recovery sweep commits."""
+
+    async def recover_orphans(self, now: float, max_recoveries: int):
+        """Sweep, then die if the sweep is the chosen boundary.
+
+        Args:
+            now: The current time.
+            max_recoveries: The recovery budget per step.
+
+        Returns:
+            What the sweep returned.
+        """
+        result = await super().recover_orphans(now, max_recoveries)
+        die_at("after_recover_orphans")
+        return result
+
+
+IN_FLIGHT: set[int] = set()
 
 
 class Charge(rx.State):
@@ -215,17 +269,178 @@ class Order(rx.State):
         return rx.complete(result=shipment)
 
 
+class Chain(rx.State):
+    """Two steps; the first's commit schedules the second."""
+
+    __workflow__ = WorkflowConfig(id="crash.chain")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def first(self):
+        """Run, and schedule the successor.
+
+        Returns:
+            The deferral.
+        """
+        record("first")
+        return rx.after("1s", Chain.second())
+
+    @rx.event(durable=True, effect="none")
+    def second(self):
+        """Run the successor.
+
+        Returns:
+            Completion.
+        """
+        record("second")
+        return rx.complete(result={"ok": True})
+
+
+class Quick(rx.State):
+    """A branch that finishes at once."""
+
+    __workflow__ = WorkflowConfig(id="crash.quick")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def go(self, name: str):
+        """Finish.
+
+        Args:
+            name: The branch's name.
+
+        Returns:
+            Completion.
+        """
+        record(f"quick:{name}")
+        return rx.complete(result=name)
+
+
+class Burst(rx.State):
+    """A parent with one fast branch and one that sleeps an hour."""
+
+    __workflow__ = WorkflowConfig(id="crash.burst")
+
+    @rx.event(durable=True, trigger=manual(), effect="none")
+    def begin(self):
+        """Fan out.
+
+        Returns:
+            The fan-out.
+        """
+        return rx.parallel(Quick.go("a"), Region.start("eu"), then=Burst.report)
+
+    @rx.event(durable=True, effect="none")
+    def report(self, results: list):
+        """Report once both branches arrived.
+
+        Args:
+            results: One entry per branch.
+
+        Returns:
+            Completion.
+        """
+        record("burst-report")
+        return rx.complete(result={"branches": len(results)})
+
+
+class Slow(rx.State):
+    """An attempt that holds its claim long enough for a peer to join it."""
+
+    __workflow__ = WorkflowConfig(id="crash.slow")
+
+    @rx.event(
+        durable=True, trigger=manual(), effect="none", retry=Retry(max_attempts=1)
+    )
+    async def go(self, n: int):
+        """Record, then hold the claim; die once two are held.
+
+        Args:
+            n: Which run this is.
+
+        Returns:
+            Completion.
+        """
+        record(f"slow:{n}")
+        IN_FLIGHT.add(n)
+        if len(IN_FLIGHT) == 2:
+            die_at("both_claimed")
+        await asyncio.sleep(0.5)
+        return rx.complete(result=n)
+
+
+class Sleepy(rx.State):
+    """One step whose attempt can die mid-way."""
+
+    __workflow__ = WorkflowConfig(id="crash.sleepy")
+
+    @rx.event(
+        durable=True, trigger=manual(), effect="none", retry=Retry(max_attempts=1)
+    )
+    def go(self):
+        """Record, maybe die, finish.
+
+        Returns:
+            Completion.
+        """
+        record("sleepy")
+        die_at("mid_attempt")
+        return rx.complete(result={"ok": True})
+
+
 async def main() -> None:
     """Drive one phase of a crash scenario against a shared SQLite store."""
     db, _, phase = sys.argv[1], sys.argv[2], sys.argv[3]
-    store = SqliteRunStore(Path(db))
-    runtime = WorkflowRuntime(store, lease_duration=1.0)
-    for workflow_cls in (Charge, Region, Rollout, Order):
+    store = KillingStore(Path(db))
+    runtime = WorkflowRuntime(
+        store,
+        lease_duration=1.0,
+        clock=lambda: time.time() + CLOCK_OFFSET,
+        observer=KillingObserver(),
+    )
+    for workflow_cls in (
+        Charge,
+        Region,
+        Rollout,
+        Order,
+        Chain,
+        Quick,
+        Burst,
+        Slow,
+        Sleepy,
+    ):
         runtime.register(workflow_cls)
     await runtime.startup(start_worker=False)
     kernel = runtime.kernel
 
-    if phase == "ingest_shipment":
+    if phase == "admit_only":
+        # Admitted, durable, and killed before anything could acknowledge it.
+        started = await kernel.start(Charge.guarded(), request_key="charge_1")
+        assert started.disposition == "started", started.disposition
+        record("admitted")
+        die_at("after_admit")
+    elif phase == "readmit":
+        # The provider's redelivery from a fresh process: same key, same run.
+        started = await kernel.start(Charge.guarded(), request_key="charge_1")
+        assert started.disposition == "deduplicated", started.disposition
+        record("deduplicated")
+        await kernel.run_until_idle()
+    elif phase == "chain":
+        await kernel.start(Chain.first())
+        await kernel.run_until_idle()
+    elif phase == "burst":
+        await kernel.start(Burst.begin())
+        await kernel.run_until_idle()
+    elif phase == "slow_pair":
+        await kernel.start(Slow.go(1))
+        await kernel.start(Slow.go(2))
+        await kernel.run_until_idle()
+    elif phase == "pinned":
+        await kernel.start(Sleepy.go())
+        await kernel.run_until_idle()
+    elif phase == "sleeper":
+        await kernel.start(Region.start("us-west"))
+        await kernel.run_until_idle()
+        die_at("asleep")
+    elif phase == "ingest_shipment":
         # The provider's first delivery: durable, acked, then the process is
         # killed with nothing else done -- the crash-after-ack window.
         disposition = await kernel.ingest_channel(

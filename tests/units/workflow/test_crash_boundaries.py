@@ -53,19 +53,28 @@ def crash(tmp_path):
     db = tmp_path / "crash.db"
     ledger = tmp_path / "ledger.txt"
 
-    def run(phase: str, crash_at: str = "none") -> subprocess.CompletedProcess:
+    def run(
+        phase: str, crash_at: str = "none", **env: str
+    ) -> subprocess.CompletedProcess:
         """Run one phase of the worker.
 
         Args:
             phase: Which scenario the worker should drive.
             crash_at: The boundary at which it should die.
+            env: Extra environment for the worker, such as its release id or
+                how far its clock has moved on.
 
         Returns:
             The finished process.
         """
         return subprocess.run(
             [sys.executable, str(WORKER), str(db), str(ledger), phase],
-            env={**os.environ, "CRASH_LEDGER": str(ledger), "CRASH_AT": crash_at},
+            env={
+                **os.environ,
+                "CRASH_LEDGER": str(ledger),
+                "CRASH_AT": crash_at,
+                **env,
+            },
             capture_output=True,
             timeout=120,
             check=False,
@@ -111,6 +120,50 @@ def runs(db: Path) -> dict[str, str]:
         }
     finally:
         connection.close()
+
+
+def query(db: Path, sql: str) -> list[tuple]:
+    """Read rows straight out of the database, bypassing the store.
+
+    Args:
+        db: The SQLite file.
+        sql: The query.
+
+    Returns:
+        The rows.
+    """
+    import sqlite3
+
+    connection = sqlite3.connect(db)
+    try:
+        return connection.execute(sql).fetchall()
+    finally:
+        connection.close()
+
+
+def history_count(db: Path, event_type: str) -> int:
+    """Count one kind of history event across every run.
+
+    Args:
+        db: The SQLite file.
+        event_type: The event type's value.
+
+    Returns:
+        How many were recorded.
+    """
+    ((count,),) = query(
+        db, f"SELECT COUNT(*) FROM workflow_history WHERE type = '{event_type}'"
+    )
+    return count
+
+
+def assert_finished(finished: subprocess.CompletedProcess) -> None:
+    """Confirm a recovering worker ran to completion.
+
+    Args:
+        finished: The finished process.
+    """
+    assert finished.returncode == 0, finished.stderr.decode()[-800:]
 
 
 def assert_killed(finished: subprocess.CompletedProcess) -> None:
@@ -253,3 +306,157 @@ def test_a_shipment_acked_then_crashed_lands_exactly_once(crash):
     assert inbox_rows == 1, "exactly one signal reached the run"
     assert channel_rows == 1, "three deliveries are one durable event"
     assert delivered_rows == 1
+
+
+def test_a_run_admitted_then_killed_is_the_same_run_when_redelivered(crash):
+    """Row: killed after admission, before the ack.
+
+    The provider never heard back, so it retries; the request key must return
+    the run the dead process admitted rather than a second one.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("admit_only", "after_admit"))
+    assert effects(crash.ledger) == ["admitted"]
+    assert len(runs(crash.db)) == 1, "the admission was durable before the kill"
+
+    assert_finished(crash("readmit"))
+    assert effects(crash.ledger) == ["admitted", "deduplicated", "guarded"]
+    assert list(runs(crash.db).values()) == ["COMPLETED"], "still exactly one run"
+
+
+def test_a_successor_scheduled_by_a_commit_outlives_its_committer(crash):
+    """Row: killed after commit, before any follow-up.
+
+    The process dies inside the post-commit notification of the step that
+    scheduled the successor -- no wakeup, no next claim, nothing. The
+    successor must already be on disk.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("chain", "after_commit:crash.chain:attempt_succeeded"))
+    assert effects(crash.ledger) == ["first"]
+
+    time.sleep(LEASE_LAPSE)
+    assert_finished(crash("recover"))
+    assert effects(crash.ledger) == ["first", "second"], (
+        "the successor was part of the commit; the first step never re-runs"
+    )
+    assert list(runs(crash.db).values()) == ["COMPLETED"]
+
+
+def test_a_child_finished_and_killed_still_reaches_its_parent(crash):
+    """Row: killed between a child's terminal commit and anything else.
+
+    The fast branch completes and the process dies in that commit's
+    notification. If the parent arrival were follow-up work, the join would
+    wait forever once the slow branch finished; it must already be counted.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("burst", "after_commit:crash.quick:run_completed"))
+    assert effects(crash.ledger) == ["quick:a"]
+    assert sorted(runs(crash.db).values()) == ["COMPLETED", "WAITING", "WAITING"]
+
+    assert_finished(crash("recover", CRASH_CLOCK_OFFSET="3700"))
+    assert effects(crash.ledger) == ["quick:a", "deploy:eu", "burst-report"], (
+        "the join heard the dead process's child exactly once"
+    )
+    assert sorted(runs(crash.db).values()) == ["COMPLETED"] * 3
+
+
+def test_a_worker_dying_with_two_claims_has_each_recovered(crash):
+    """Row: worker dies holding N claims.
+
+    Both attempts are in flight when the process dies. Each lease lapses and
+    each step is recovered on its own; neither is lost and neither is skipped.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("slow_pair", "both_claimed"))
+    assert sorted(effects(crash.ledger)) == ["slow:1", "slow:2"]
+    claimed = query(
+        crash.db, "SELECT status FROM workflow_steps WHERE status = 'CLAIMED'"
+    )
+    assert len(claimed) == 2, "both claims were on disk when the worker died"
+
+    time.sleep(LEASE_LAPSE)
+    assert_finished(crash("recover"))
+    assert sorted(effects(crash.ledger)) == ["slow:1", "slow:1", "slow:2", "slow:2"], (
+        "each unguarded attempt re-executes once, independently"
+    )
+    assert sorted(runs(crash.db).values()) == ["COMPLETED", "COMPLETED"]
+    assert history_count(crash.db, "step_recovered") == 2
+
+
+def test_a_killed_recovery_sweep_is_redone_not_doubled(crash):
+    """Row: killed during the recovery sweep.
+
+    The sweep's transaction commits and the process dies before the kernel
+    does anything with the result. The next process's sweep finds nothing
+    left to recover and the step runs exactly once.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("unguarded", "after_claim"))
+    time.sleep(LEASE_LAPSE)
+
+    assert_killed(crash("recover", "after_recover_orphans"))
+    assert effects(crash.ledger) == [], "recovered, not yet run"
+    assert history_count(crash.db, "step_recovered") == 1
+
+    assert_finished(crash("recover"))
+    assert effects(crash.ledger) == ["unguarded"]
+    assert history_count(crash.db, "step_recovered") == 1, "the sweep is idempotent"
+    assert list(runs(crash.db).values()) == ["COMPLETED"]
+
+
+def test_runs_pinned_to_a_dead_release_wait_for_it(crash):
+    """Row: the last worker of release R dies holding claims.
+
+    A v2 worker recovers the lapsed lease but must not claim the step; the
+    run waits, visibly pinned, until a v1 worker returns and finishes it.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("pinned", "mid_attempt", REFLEX_RELEASE_ID="v1"))
+    assert effects(crash.ledger) == ["sleepy"]
+    time.sleep(LEASE_LAPSE)
+
+    assert_finished(crash("recover", REFLEX_RELEASE_ID="v2"))
+    assert effects(crash.ledger) == ["sleepy"], "v2 must not run v1's step"
+    assert history_count(crash.db, "step_recovered") == 1, "v2 did recover it"
+    ((status, release),) = query(
+        crash.db, "SELECT status, release_id FROM workflow_runs"
+    )
+    assert (status, release) == ("RUNNING", "v1"), "waiting, and saying for whom"
+
+    assert_finished(crash("recover", REFLEX_RELEASE_ID="v1"))
+    assert effects(crash.ledger) == ["sleepy", "sleepy"]
+    assert list(runs(crash.db).values()) == ["COMPLETED"]
+
+
+def test_an_hour_of_downtime_fires_the_timer_on_restart(crash):
+    """Row: everything down for an hour.
+
+    The run is asleep on a one-hour timer when the process dies. A restart
+    an hour later fires it; a restart a moment later does not.
+
+    Args:
+        crash: The worker runner.
+    """
+    assert_killed(crash("sleeper", "asleep"))
+    assert effects(crash.ledger) == []
+
+    assert_finished(crash("recover"))
+    assert effects(crash.ledger) == [], "not due yet"
+
+    assert_finished(crash("recover", CRASH_CLOCK_OFFSET="3700"))
+    assert effects(crash.ledger) == ["deploy:us-west"]
+    assert list(runs(crash.db).values()) == ["COMPLETED"]

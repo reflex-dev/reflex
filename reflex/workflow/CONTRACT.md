@@ -566,16 +566,24 @@ claims and only one of them is evidence about crashes.
   exiting — a scenario whose worker exits cleanly proves nothing while
   passing everything.
 
-Boundaries covered by real kills: between claim and handler (work simply
-undone); after an unguarded effect (repeats, §2, which is the cost `rx.step`
-exists to remove); after a substep journal write (replays, never repeats);
-and immediately after a parent's finalize transaction (branches are already
+Boundaries covered by real kills, each the row of the matrix it names:
+after admission and before the ack (redelivery is the same run); between
+claim and handler (work simply undone); after an unguarded effect (repeats,
+§2, which is the cost `rx.step` exists to remove); after a substep journal
+write (replays, never repeats); inside the post-commit notification of a
+step that scheduled a successor (the successor is already on disk); inside
+the post-commit notification of a child's completion (the parent's join has
+already counted it); with two claims in flight (each recovered on its own);
+after the recovery sweep's transaction (the next sweep finds nothing to redo);
+mid-attempt on the last worker of a release (a worker of another release
+recovers the lease but never claims the step; the run waits for its release);
+asleep on a timer through an hour of downtime (fires on restart, not before);
+immediately after a parent's finalize transaction (branches are already
 marked on disk, §5 — the case that distinguishes an in-transaction close from
 follow-up); and after a channel delivery's acknowledgement with the run not
 yet admitted (redelivered twice, run started later, exactly one signal
-arrives, §6). Release routing (`tests/units/workflow/test_release_routing.py`)
-and the alert sink (`test_alerts.py`) are held by in-process tests: neither
-claims anything about what reached the disk.
+arrives, §6). The alert sink (`test_alerts.py`) is held by in-process tests
+only: losing its queue is its documented outcome, not a claim about disk.
 
 ## 9. Operator actions
 
