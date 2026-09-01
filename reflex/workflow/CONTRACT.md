@@ -594,6 +594,16 @@ yet admitted (redelivered twice, run started later, exactly one signal
 arrives, §6). The alert sink (`test_alerts.py`) is held by in-process tests
 only: losing its queue is its documented outcome, not a claim about disk.
 
+Above the named boundaries sits a chaos soak (`test_chaos.py`): real workers
+serving a mixed load — guarded charges, durable timers, a retry that flakes
+once, correlated signals, fan-out joins — are SIGKILLed at random and
+restarted for the duration, on SQLite with one worker and on Postgres with
+several. Afterwards every run must be `COMPLETED`, every guarded effect must
+appear in the fsynced ledger exactly once, every signal handled exactly once,
+no claim left held, and at least one kill must have landed on a held claim,
+or the soak proved nothing. It runs small on every push and scales by
+environment (`REFLEX_CHAOS_SECONDS`, `_RUNS`, `_WORKERS`) into a real soak.
+
 ## 9. Operator actions
 
 Every operator mutation records **who asked and why** when the surface

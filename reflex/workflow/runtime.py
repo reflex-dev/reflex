@@ -415,7 +415,7 @@ class WorkflowsNamespace:
         Args:
             target: The root event, e.g. ``MyWorkflow.start(payload)``.
             request_key: Idempotent admission key.
-            labels: Server-derived indexing labels.
+            labels: Indexing labels, searchable on every operator surface.
 
         Returns:
             The admission result.
