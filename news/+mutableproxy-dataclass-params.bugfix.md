@@ -1,0 +1,1 @@
+Mutable proxies over dataclass state values now expose `__dataclass_params__` on their class, so code that reads a dataclass's declaration flags (`frozen`, `eq`, ...) after `dataclasses.is_dataclass` no longer raises `AttributeError` on a proxied value.

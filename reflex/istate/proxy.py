@@ -40,6 +40,17 @@ _UNREFRESHABLE_ACCESS_SPEC: _AccessSpec = ("unrefreshable", None)
 # from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
 _DATACLASSES_FILE = dataclasses.__file__
 
+# Class-level metadata that `@dataclass` writes, copied onto the proxy class
+# synthesized per wrapped dataclass type. `__dataclass_fields__` is what
+# `dataclasses.is_dataclass` tests for, and `__dataclass_params__` carries the
+# decorator's flags (`frozen`, `eq`, `slots`, ...) that callers read right after
+# that test, so copying only the first yields a class that answers yes to
+# `is_dataclass` and then raises on how it was declared.
+_DATACLASS_CLASS_ATTRS = (
+    dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
+    dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
+)
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
@@ -453,16 +464,15 @@ class MutableProxy(wrapt.ObjectProxy):
             wrapper_cls_key = (cls, wrapped_cls)
             # Find the associated class
             if wrapper_cls_key not in cls.__dataclass_proxies__:
-                # Create a new class that has the __dataclass_fields__ defined
+                # Create a new class carrying the wrapped type's dataclass metadata.
                 wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
                 cls.__dataclass_proxies__[wrapper_cls_key] = type(
                     wrapper_cls_name,
                     (cls,),
                     {
-                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
-                            wrapped_cls,
-                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
-                        ),
+                        attr: getattr(wrapped_cls, attr)
+                        for attr in _DATACLASS_CLASS_ATTRS
+                        if hasattr(wrapped_cls, attr)
                     },
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_key]

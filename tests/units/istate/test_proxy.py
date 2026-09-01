@@ -713,3 +713,33 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
     ) as state:
         assert isinstance(state, CustomGetState)
         assert state.registry.entries == {"a": [1, 2]}
+
+
+@dataclasses.dataclass(frozen=True)
+class FrozenTaggedModel:
+    """A frozen dataclass for dataclass-protocol tests."""
+
+    tag: str = "a"
+
+
+@pytest.mark.parametrize(
+    ("model", "frozen"),
+    [
+        (TaggedModel(ls=[{"tag": 1}]), False),
+        (FrozenTaggedModel(), True),
+    ],
+)
+def test_dataclass_proxy_class_carries_dataclass_metadata(
+    model: Any, frozen: bool
+) -> None:
+    """The proxy class synthesized per dataclass type exposes its metadata."""
+    proxy = MutableProxy(model, DataclassMutableProxyState(), "dc")
+    proxy_cls = type(proxy)
+
+    assert proxy_cls is not type(model)
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert dataclasses.fields(proxy_cls) == dataclasses.fields(type(model))
+    # `is_dataclass` only tests for `__dataclass_fields__`, so a class that
+    # answers it must also answer how the dataclass was declared.
+    assert proxy_cls.__dataclass_params__ is type(model).__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__dataclass_params__.frozen is frozen  # pyright: ignore [reportAttributeAccessIssue]
