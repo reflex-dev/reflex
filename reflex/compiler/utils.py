@@ -562,6 +562,42 @@ def compile_experimental_function_memo(
     )
 
 
+def _literalize_static_ids(component: BaseComponent) -> None:
+    """Replace static component IDs with literal variables, recursively.
+
+    Args:
+        component: The component or nested component to update in place.
+    """
+    if not isinstance(component, Component):
+        return
+    if component.id is not None and not isinstance(component.id, Var):
+        component.id = Var.create(component.id)
+    for child in component.children:
+        _literalize_static_ids(child)
+    for child in component._get_components_in_props():
+        _literalize_static_ids(child)
+
+
+def _without_static_id_refs(component: Component) -> Component:
+    """Copy a head component so its static IDs do not generate refs.
+
+    Document roots cannot contain hooks, but a static component ID normally
+    creates a ``useRef`` hook. Preserve the ID as an HTML attribute while making
+    it a literal variable so it does not create a ref in the document root.
+
+    Args:
+        component: The head component to copy.
+
+    Returns:
+        A copied component with static IDs represented as literal variables.
+    """
+    if not component._get_all_refs():
+        return component
+    component = copy.deepcopy(component)
+    _literalize_static_ids(component)
+    return component
+
+
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
@@ -581,39 +617,6 @@ def create_document_root(
         The document root.
     """
     from reflex.utils.misc import preload_color_theme
-
-    def document_root_component(component: Component) -> Component:
-        """Copy a head component without generating refs from static IDs.
-
-        Document roots cannot contain hooks, but a static component ID normally
-        creates a ``useRef`` hook. Preserve the ID as an HTML attribute while
-        making it a literal variable so it does not create a ref in the
-        document root.
-
-        Returns:
-            A copied component with static IDs represented as literal variables.
-        """
-        if not component._get_all_refs():
-            return component
-        component = copy.deepcopy(component)
-
-        def literalize_static_ids(component: BaseComponent) -> None:
-            """Replace static component IDs with literal variables recursively.
-
-            Args:
-                component: The component or nested component to update.
-            """
-            if not isinstance(component, Component):
-                return
-            if component.id is not None and not isinstance(component.id, Var):
-                component.id = Var.create(component.id)
-            for child in component.children:
-                literalize_static_ids(child)
-            for child in component._get_components_in_props():
-                literalize_static_ids(child)
-
-        literalize_static_ids(component)
-        return component
 
     existing_meta_types = set()
 
@@ -660,7 +663,7 @@ def create_document_root(
 
     head_components = [
         *theme_preload_components,
-        *(document_root_component(component) for component in head_components or []),
+        *(_without_static_id_refs(component) for component in head_components or []),
         *maybe_head_components,
         *always_head_components,
     ]
