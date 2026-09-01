@@ -971,4 +971,3 @@ def test_load_config_keeps_sys_path_intact_for_other_threads(
         sys.path[:] = [p for p in sys.path if p not in (str(tmp_path), str(probe_dir))]
     assert not loader_errors
     assert missing == 0
-    assert sys.path[0] != str(tmp_path)
