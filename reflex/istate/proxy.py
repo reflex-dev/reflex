@@ -40,15 +40,26 @@ _UNREFRESHABLE_ACCESS_SPEC: _AccessSpec = ("unrefreshable", None)
 # from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
 _DATACLASSES_FILE = dataclasses.__file__
 
-# Class-level metadata that `@dataclass` writes, copied onto the proxy class
-# synthesized per wrapped dataclass type. `__dataclass_fields__` is what
-# `dataclasses.is_dataclass` tests for, and `__dataclass_params__` carries the
-# decorator's flags (`frozen`, `eq`, `slots`, ...) that callers read right after
-# that test, so copying only the first yields a class that answers yes to
-# `is_dataclass` and then raises on how it was declared.
+# The class-level data `@dataclass` writes, copied onto the proxy class
+# synthesized per wrapped dataclass type: `__dataclass_fields__` is what
+# `dataclasses.is_dataclass` tests for, `__dataclass_params__` carries the
+# decorator's flags (`frozen`, `eq`, `slots`, ...) and `__match_args__` the
+# positional field names. All three are read off the class, which is where the
+# proxy's instance-level forwarding cannot answer for them; copying only the
+# first yields a class that says yes to `is_dataclass` and then raises on
+# everything asked next about how it was declared.
+#
+# The rest of what `@dataclass` writes stays off the proxy class deliberately.
+# Its generated methods (`__init__`, `__repr__`, `__eq__`, the ordering set, the
+# frozen `__setattr__`/`__delattr__` pair, `__replace__`, `__getstate__`) are
+# already reached through the wrapped object, and rebinding them here would
+# sidestep the proxy's dirty tracking. Field defaults, ClassVars and `__slots__`
+# would be worse: a class attribute is found before `__getattr__` runs, so
+# copying those would shadow the wrapped instance's own values.
 _DATACLASS_CLASS_ATTRS = (
     dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
     dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
+    "__match_args__",  # absent when declared `@dataclass(match_args=False)`
 )
 
 

@@ -722,24 +722,100 @@ class FrozenTaggedModel:
     tag: str = "a"
 
 
+@dataclasses.dataclass(match_args=False)
+class UnmatchableModel:
+    """A dataclass declared without `__match_args__`."""
+
+    tag: str = "a"
+
+
+@dataclasses.dataclass(slots=True)
+class SlottedModel:
+    """A slots dataclass, whose layout must not leak onto the proxy class."""
+
+    tag: str = "default"
+    ls: list[int] = dataclasses.field(default_factory=list)
+
+
+def _dataclass_proxy(model: Any) -> Any:
+    """Build a proxy for a dataclass value held by a state field.
+
+    Args:
+        model: The dataclass instance to proxy.
+
+    Returns:
+        The MutableProxy wrapping the model.
+    """
+    return MutableProxy(model, DataclassMutableProxyState(), "dc")
+
+
 @pytest.mark.parametrize(
     ("model", "frozen"),
     [
         (TaggedModel(ls=[{"tag": 1}]), False),
         (FrozenTaggedModel(), True),
+        (SlottedModel(), False),
     ],
 )
 def test_dataclass_proxy_class_carries_dataclass_metadata(
     model: Any, frozen: bool
 ) -> None:
     """The proxy class synthesized per dataclass type exposes its metadata."""
-    proxy = MutableProxy(model, DataclassMutableProxyState(), "dc")
-    proxy_cls = type(proxy)
+    proxy_cls = type(_dataclass_proxy(model))
+    model_cls = type(model)
 
-    assert proxy_cls is not type(model)
+    assert proxy_cls is not model_cls
     assert dataclasses.is_dataclass(proxy_cls)
-    assert dataclasses.fields(proxy_cls) == dataclasses.fields(type(model))
+    assert dataclasses.fields(proxy_cls) == dataclasses.fields(model_cls)
     # `is_dataclass` only tests for `__dataclass_fields__`, so a class that
     # answers it must also answer how the dataclass was declared.
-    assert proxy_cls.__dataclass_params__ is type(model).__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__dataclass_params__ is model_cls.__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
     assert proxy_cls.__dataclass_params__.frozen is frozen  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__match_args__ == model_cls.__match_args__  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_dataclass_proxy_class_omits_absent_metadata() -> None:
+    """Metadata the wrapped dataclass was declared without is not invented."""
+    proxy_cls = type(_dataclass_proxy(UnmatchableModel()))
+
+    assert not hasattr(UnmatchableModel, "__match_args__")
+    assert not hasattr(proxy_cls, "__match_args__")
+
+
+def test_dataclass_proxy_class_copies_no_behavior() -> None:
+    """Only metadata is copied: everything else resolves through the wrapped object."""
+    model = SlottedModel(tag="instance", ls=[1])
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    # Copying the generated methods would rebind them to the proxy and bypass
+    # its dirty tracking; copying `__slots__`, a field default or a ClassVar
+    # would shadow the wrapped instance, since a class attribute is found
+    # before `__getattr__` runs.
+    for attr in (
+        "__init__",
+        "__repr__",
+        "__eq__",
+        "__setattr__",
+        "__delattr__",
+        "__slots__",
+        "tag",
+    ):
+        assert attr not in vars(proxy_cls)
+
+    assert proxy.tag == "instance"
+    assert dataclasses.asdict(proxy) == {"tag": "instance", "ls": [1]}
+
+    proxy.ls.append(2)
+    assert model.ls == [1, 2]
+
+    proxy.tag = "mutated"
+    assert model.tag == "mutated"
+
+
+def test_frozen_dataclass_proxy_rejects_mutation() -> None:
+    """A frozen dataclass stays frozen through its proxy."""
+    proxy = _dataclass_proxy(FrozenTaggedModel())
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        proxy.tag = "b"
