@@ -658,15 +658,19 @@ class EventProcessor:
             entry=entry, registered_handler=registered_handler
         )
         name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
-        if sys.version_info >= (3, 12) and not registered_handler.handler.is_background:
+        loop = asyncio.get_running_loop()
+        if (
+            sys.version_info >= (3, 12)
+            and not registered_handler.handler.is_background
+            and loop.get_task_factory() is None
+        ):
             # Start a foreground handler synchronously instead of after another
             # loop iteration: the common event runs its handler and emits its
             # delta before its first real suspension point. Background tasks
             # keep the deferred start so their interleaving with later events
-            # is unchanged.
-            task = asyncio.Task(
-                coro, loop=asyncio.get_running_loop(), name=name, eager_start=True
-            )
+            # is unchanged, and a loop with a custom task factory keeps going
+            # through it.
+            task = asyncio.Task(coro, loop=loop, name=name, eager_start=True)
         else:
             task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):

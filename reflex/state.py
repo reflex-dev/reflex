@@ -360,8 +360,11 @@ def _is_user_descriptor(value: Any) -> bool:
 
 all_base_state_classes: dict[str, None] = {}
 
-# Instance bookkeeping fields and framework methods read on every event; they
-# are never user vars, so they can bypass the var-resolution logic below.
+# Instance bookkeeping fields and framework methods read on every event. They
+# bypass the var-resolution logic below, so nothing stored in `_backend_vars`
+# (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
+# may appear here. A subclass that defines one of these names itself (as a var
+# or an event handler) drops it from its own `_fast_attr_names`.
 _FRAMEWORK_ATTR_NAMES = frozenset({
     "dirty_vars",
     "dirty_substates",
@@ -369,7 +372,6 @@ _FRAMEWORK_ATTR_NAMES = frozenset({
     "substates",
     "_backend_vars",
     "_was_touched",
-    "_reflex_internal_links",
     "get_fields",
     "get_skip_vars",
     "get_name",
@@ -391,6 +393,7 @@ _FRAMEWORK_ATTR_NAMES = frozenset({
 })
 
 CLASS_VAR_NAMES = frozenset({
+    "_fast_attr_names",
     "vars",
     "base_vars",
     "computed_vars",
@@ -440,6 +443,10 @@ class BaseState(EvenMoreBasicBaseState):
 
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
+
+    # Framework attributes this class reads through the fast path; a subclass
+    # that defines one of these names itself drops it (see __init_subclass__).
+    _fast_attr_names: ClassVar[frozenset[str]] = _FRAMEWORK_ATTR_NAMES
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -750,6 +757,20 @@ class BaseState(EvenMoreBasicBaseState):
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
+
+        # A framework attribute name this class defines itself (as a var, a
+        # backend var, an event handler or a marked override) must keep going
+        # through the full lookup in _get_attribute, so drop it from the fast
+        # path for this class and its subclasses.
+        cls._fast_attr_names = cls._fast_attr_names - (
+            _FRAMEWORK_ATTR_NAMES
+            & (
+                set(cls.__dict__)
+                | set(cls.vars)
+                | set(cls.backend_vars)
+                | set(cls.event_handlers)
+            )
+        )
 
         all_base_state_classes[cls.get_full_name()] = None
 
@@ -1476,7 +1497,7 @@ class BaseState(EvenMoreBasicBaseState):
         if (
             name.startswith("__")
             or name in CLASS_VAR_NAMES
-            or name in _FRAMEWORK_ATTR_NAMES
+            or name in super().__getattribute__("_fast_attr_names")
         ):
             return super().__getattribute__(name)
 

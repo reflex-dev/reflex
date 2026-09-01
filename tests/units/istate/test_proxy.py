@@ -728,16 +728,51 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     """
     import datetime
 
-    import reflex as rx
+    from reflex.state import State
+    from reflex.vars.base import computed_var
 
-    class IntervalState(rx.State):
+    class IntervalState(State):
         base: int = 0
 
-        @rx.var(interval=datetime.timedelta(seconds=30))
+        @computed_var(interval=datetime.timedelta(seconds=30))
         def timed(self) -> int:
             return self.base
 
-    state = IntervalState(_reflex_internal_init=True)
+    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     proxy = StateProxy(state)
     assert proxy._expired_computed_vars() == {"timed"}
     assert IntervalState._interval_computed_var_names() == frozenset({"timed"})
+
+
+def test_fast_path_skips_names_a_subclass_defines():
+    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+
+    The fast path bypasses var resolution, so it must not apply to a name the
+    state itself defines (here a marked override of a BaseState method, and a
+    backend var named like a framework method).
+    """
+    from reflex.state import BaseState, State
+
+    def get_value(self, key: str):
+        return f"shadow:{key}"
+
+    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+
+    ShadowState = type(
+        "ShadowState",
+        (State,),
+        {
+            "__module__": __name__,
+            "__qualname__": "ShadowState",
+            "__annotations__": {"_get_was_touched": int},
+            "_get_was_touched": 7,
+            "get_value": get_value,
+        },
+    )
+    assert "get_value" in BaseState._fast_attr_names
+    assert "get_value" not in ShadowState._fast_attr_names
+    assert "_get_was_touched" not in ShadowState._fast_attr_names
+    assert "dirty_vars" in ShadowState._fast_attr_names
+    state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.get_value("k") == "shadow:k"
+    assert state._get_was_touched == 7
