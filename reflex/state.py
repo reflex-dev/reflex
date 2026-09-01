@@ -764,15 +764,22 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     def _prune_fast_attr_names(cls) -> None:
-        """Drop framework attribute names this class defines itself from the fast path.
+        """Recompute which framework attribute names this state tree may fast-path.
 
         A name the state defines (as a var, a backend var, an event handler or
         a marked method override) must keep going through the full lookup in
-        ``_get_attribute``. The set only ever shrinks, so it stays correct for
-        subclasses (which inherit it) and for vars or handlers registered after
-        class creation, whose registration sites call this again.
+        ``_get_attribute``. The set is rebuilt from the parent's current set
+        minus this class's own names, then recomputed for every substate, so a
+        var or handler registered after class creation (dynamic route args,
+        ``add_var``, ...) drops the name for the whole subtree that inherits it.
         """
-        cls._fast_attr_names = cls._fast_attr_names - (
+        parent_state = cls.get_parent_state()
+        inherited = (
+            parent_state._fast_attr_names
+            if parent_state is not None
+            else _FRAMEWORK_ATTR_NAMES
+        )
+        cls._fast_attr_names = inherited - (
             _FRAMEWORK_ATTR_NAMES
             & (
                 set(cls.__dict__)
@@ -781,6 +788,8 @@ class BaseState(EvenMoreBasicBaseState):
                 | set(cls.event_handlers)
             )
         )
+        for substate_class in cls.get_substates():
+            substate_class._prune_fast_attr_names()
 
     @classmethod
     def _add_event_handler(
@@ -888,7 +897,6 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, unique_var_name, computed_var_func_arg)
         cls.computed_vars[unique_var_name] = computed_var_func_arg
         cls.vars[unique_var_name] = computed_var_func_arg
-        cls._prune_fast_attr_names()
         cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
 
@@ -1268,12 +1276,11 @@ class BaseState(EvenMoreBasicBaseState):
         # update the internal dicts so the new variable is correctly handled
         cls.base_vars.update({name: var})
         cls.vars.update({name: var})
-        cls._prune_fast_attr_names()
 
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
-            substate_class._prune_fast_attr_names()
+        cls._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1400,10 +1407,10 @@ class BaseState(EvenMoreBasicBaseState):
                 else:
                     substate_class.vars.setdefault(name, var)
                     substate_class.inherited_vars.setdefault(name, var)
-                substate_class._prune_fast_attr_names()
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
+        cls._prune_fast_attr_names()
 
     @classmethod
     def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
@@ -1472,7 +1479,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Update tracking dicts.
         cls.computed_vars.update(dynamic_vars)
         cls.vars.update(dynamic_vars)
-        cls._prune_fast_attr_names()
         cls._update_substate_inherited_vars(dynamic_vars)
 
     @classmethod

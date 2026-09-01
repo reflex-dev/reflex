@@ -796,14 +796,21 @@ def test_fast_path_prunes_names_registered_after_class_creation():
         (DynamicState,),
         {"__module__": __name__, "__qualname__": "DynamicSubState"},
     )
-    assert {"get_value", "get_delta"} <= DynamicState._fast_attr_names
-    assert {"get_value", "get_delta"} <= DynamicSubState._fast_attr_names
+    DynamicGrandChild = type(
+        "DynamicGrandChild",
+        (DynamicSubState,),
+        {"__module__": __name__, "__qualname__": "DynamicGrandChild"},
+    )
+    tree = (DynamicState, DynamicSubState, DynamicGrandChild)
+    for cls in tree:
+        assert {"get_value", "get_delta", "get_state"} <= cls._fast_attr_names
 
     DynamicState.setup_dynamic_args({"get_value": RouteArgType.SINGLE})
-    assert "get_value" not in DynamicState._fast_attr_names
-    # Inherited by the substate, so pruned there too.
-    assert "get_value" not in DynamicSubState._fast_attr_names
-
     DynamicState._add_event_handler("get_delta", lambda self: None)
-    assert "get_delta" not in DynamicState._fast_attr_names
-    assert "dirty_vars" in DynamicState._fast_attr_names
+    DynamicState.add_var("get_state", int, 0)
+    # Registered on the root and inherited down the tree, so pruned everywhere.
+    for cls in tree:
+        assert "get_value" not in cls._fast_attr_names
+        assert "get_delta" not in cls._fast_attr_names
+        assert "get_state" not in cls._fast_attr_names
+        assert "dirty_vars" in cls._fast_attr_names
