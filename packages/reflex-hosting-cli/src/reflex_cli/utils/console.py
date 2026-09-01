@@ -133,14 +133,25 @@ else:
         return _console.status(*args, **kwargs)
 
 
-def set_log_level(log_level: LogLevel | str):
-    """Set the log level, accepting legacy string values.
+def set_log_level(log_level: LogLevel | str | None):
+    """Set the log level, accepting legacy string values and foreign enums.
+
+    Older reflex releases call the CLI's entrypoints directly rather than
+    through click, handing over their own ``reflex.constants.LogLevel``. That is
+    a different class from this package's -- and, before the enum grew
+    ``to_logging_level``, one the CLI cannot use -- so it is resolved by value,
+    the way a legacy plain string is. An unrecognized value falls back to INFO.
 
     Args:
-        log_level: The log level to set.
+        log_level: The log level to set, or None to leave it unchanged.
     """
-    if isinstance(log_level, str):
-        log_level = LogLevel.from_string(log_level) or LogLevel.INFO
+    if log_level is not None and not isinstance(log_level, LogLevel):
+        # A foreign LogLevel carries the level in ``value``; a plain string is
+        # already the value. Either way it resolves by name.
+        log_level = (
+            LogLevel.from_string(getattr(log_level, "value", log_level))
+            or LogLevel.INFO
+        )
     _set_log_level(log_level)
 
 

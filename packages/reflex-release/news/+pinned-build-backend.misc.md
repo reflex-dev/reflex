@@ -1,1 +1,0 @@
-Pin `hatchling` and `uv-dynamic-versioning` exactly in this package's `[build-system] requires`. Build requirements are resolved fresh rather than locked, so a repository that vendors the tool — running it from its own lockfile rather than PyPI — no longer has the backend that builds its release tooling move underneath it.

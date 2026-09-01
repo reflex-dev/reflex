@@ -134,13 +134,14 @@ def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwa
 def log_file_console():
     """Create a console that logs to a file.
 
-    Writes through the stream of the logging pipeline's file handler, so the
-    legacy helpers and the ``logging`` sinks share one full-logging file.
+    Writes through a proxy to the logging pipeline's file-handler stream, so
+    the legacy helpers and the ``logging`` sinks share one full-logging file
+    even after an external logging re-config closes and reopens the handler.
 
     Returns:
         A Console object that logs to a file.
     """
-    return Console(file=_log.log_file_stream())
+    return Console(file=_log.log_file_proxy())
 
 
 @once

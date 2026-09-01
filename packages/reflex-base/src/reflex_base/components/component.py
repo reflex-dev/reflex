@@ -17,7 +17,6 @@ from dataclasses import _MISSING_TYPE, MISSING
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
-from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 from reflex_base import constants
@@ -584,7 +583,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
         )
         logger.warning(
             "Passing None to a Var that is not explicitly marked as Optional (| None) is deprecated. "
-            f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}."
+            f"Passed {obj!s} of type {type(obj) if not isinstance(obj, Var) else obj._var_type} to {type_hint}."
         )
         return True
     return False
@@ -607,6 +606,42 @@ def _components_from(
     if isinstance(component_or_var, BaseComponent):
         return (component_or_var,)
     return ()
+
+
+PROHIBITED_LIBRARY_IMPORTS: dict[str, str] = {
+    "react-router-dom": (
+        "React Router 8 removed the `react-router-dom` package and Reflex no "
+        'longer installs it. Use `library = "react-router"` instead, or '
+        '`"react-router/dom"` for `RouterProvider`/`HydratedRouter`.'
+    ),
+}
+
+
+def _check_prohibited_imports(import_names: Iterable[str], component_name: str) -> None:
+    """Reject imports that resolve to a package in PROHIBITED_LIBRARY_IMPORTS.
+
+    Versioned (``pkg@1.0.0``) and subpath (``pkg/sub``) forms of a prohibited
+    package are rejected as well.
+
+    Args:
+        import_names: The import paths contributed by a component.
+        component_name: The name of the component contributing them.
+
+    Raises:
+        ValueError: If an import path resolves to a prohibited package.
+    """
+    for import_name in import_names:
+        for package, reason in PROHIBITED_LIBRARY_IMPORTS.items():
+            if not import_name.startswith(package):
+                continue
+            suffix = import_name[len(package) :]
+            if suffix and suffix[0] not in "@/":
+                continue
+            msg = (
+                f"The component `{component_name}` references `{import_name}`, "
+                f"but {reason}"
+            )
+            raise ValueError(msg)
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
@@ -1825,6 +1860,7 @@ class Component(BaseComponent, ABC):
             *var_imports,
             *added_import_dicts,
         )
+        _check_prohibited_imports(result, type(self).__name__)
         self._imports_cache = result
         return result
 

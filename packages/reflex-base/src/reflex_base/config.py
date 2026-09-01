@@ -898,16 +898,29 @@ def _load_config() -> Config:
             sys.path.extend(orig_sys_path)
 
 
-def get_config() -> Config:
+def get_config(reload: bool = False) -> Config:
     """Get the app config from the current RegistrationContext.
 
     The config is loaded from rxconfig.py once per RegistrationContext and
     cached on the context thereafter. If no context is currently attached,
     one is created and attached automatically.
 
+    Args:
+        reload: Deprecated; force a fresh load of the config. Use
+            reload_config() instead.
+
     Returns:
         The app config.
     """
+    if reload:
+        console.deprecate(
+            feature_name="get_config(reload=True)",
+            reason="Use reload_config() to force a fresh load of the config",
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        with _load_config_lock:
+            return reload_config()
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
         # Serialize check/load/set so threads sharing a context load once.

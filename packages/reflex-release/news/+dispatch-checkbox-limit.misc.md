@@ -1,1 +1,0 @@
-Raise the package-checkbox limit on the Dispatch release form from ten to twenty, matching GitHub's actual `workflow_dispatch` input limit. Repositories with between nine and nineteen releasable packages (or lockstep groups) keep the checkboxes under `dispatch-package-inputs = "auto"` instead of falling back to the comma-separated field.
