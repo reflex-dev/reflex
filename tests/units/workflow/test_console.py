@@ -79,6 +79,7 @@ def seeded(tmp_path, monkeypatch):
                 state_version=1,
                 next_ordinal=1,
                 error={"reason": "boom"},
+                labels={"tenant": "acme"},
                 created_at=NOW - 600,
                 updated_at=NOW - 60,
             ),
@@ -144,7 +145,35 @@ def test_runs_page_lists_and_filters(seeded):
     assert [row["run_id"] for row in unfiltered] == ["failedrun001"]
     assert unfiltered[0]["status"] == "FAILED"
     assert unfiltered[0]["color"] == "red"
+    assert unfiltered[0]["labels"] == "tenant=acme"
     assert filtered == []
+
+
+def test_runs_page_filters_by_label_the_way_the_cli_does(seeded):
+    """`tenant=acme` finds the run; a pair it does not carry hides it.
+
+    Args:
+        seeded: The seeded database.
+    """
+
+    async def drive() -> tuple[int, int, int]:
+        """Filter by a matching pair, a mismatching pair, then junk.
+
+        Returns:
+            Row counts for each.
+        """
+        state = RunsState()  # pyright: ignore[reportCallIssue]
+        state.set_label_filter("tenant=acme")
+        await state.load_runs()
+        matching = len(state.rows)
+        state.set_label_filter("tenant=acme, region=eu")
+        await state.load_runs()
+        mismatching = len(state.rows)
+        state.set_label_filter("not a pair")
+        await state.load_runs()
+        return matching, mismatching, len(state.rows)
+
+    assert asyncio.run(drive()) == (1, 0, 1)
 
 
 def test_run_detail_shows_the_story_and_repairs_with_attribution(seeded):

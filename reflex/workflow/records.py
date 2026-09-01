@@ -186,7 +186,8 @@ class RunRecord:
         parent_close: What happens to this run when its parent reaches a
             terminal state: ``"cancel"`` or ``"abandon"``.
         request_key: Idempotent admission key, if one was supplied.
-        labels: Server-derived indexing labels.
+        labels: Indexing labels supplied at admission (``labels=`` on start,
+            ``"labels"`` in ``POST /runs``); searchable on every surface.
         release_id: Immutable identity of the deployed artifact that admitted
             this run. Runs pin to their admitting release: a worker of a
             different release does not claim them, so one run never silently
@@ -424,7 +425,7 @@ class RunQuery:
             non-terminal ``statuses``, the "can this release's workers
             retire" question.
         statuses: Restrict to these run statuses; empty means any.
-        labels: Require every one of these server-derived label values.
+        labels: Require every one of these label values (all must match).
         created_before: Pagination cursor, as the ``(created_at, run_id)`` of
             the last row of the previous page. A fan-out stamps every child
             with the same time, so the run id breaks the tie and no run is

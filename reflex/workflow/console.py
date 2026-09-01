@@ -305,12 +305,33 @@ STATUS_COLORS: dict[str, str] = {
 }
 
 
+def _parse_labels(text: str) -> dict[str, str] | None:
+    """Read ``key=value`` pairs typed into a filter box.
+
+    The same shape the CLI's ``--label key=value`` takes, so an operator
+    moving between the two types the same thing.
+
+    Args:
+        text: Pairs separated by spaces or commas; anything without ``=`` is
+            ignored.
+
+    Returns:
+        The labels every run must carry, or None when nothing was typed.
+    """
+    pairs = (part.split("=", 1) for part in text.replace(",", " ").split())
+    labels = {
+        key.strip(): value.strip() for key, value in (p for p in pairs if len(p) == 2)
+    }
+    return labels or None
+
+
 class RunsState(rx.State):
     """The runs page: list, filter, and jump into a run."""
 
     rows: list[dict[str, str]] = []
     workflow_filter: str = ""
     status_filter: str = ""
+    label_filter: str = ""
     loading: bool = False
 
     @rx.event
@@ -340,6 +361,7 @@ class RunsState(rx.State):
             RunQuery(
                 workflow_id=self.workflow_filter or None,
                 statuses=statuses,
+                labels=_parse_labels(self.label_filter),
                 limit=200,
             )
         )
@@ -350,6 +372,7 @@ class RunsState(rx.State):
                 "workflow": run.workflow_id,
                 "status": run.status.value,
                 "color": STATUS_COLORS.get(run.status.value, "gray"),
+                "labels": " ".join(f"{k}={v}" for k, v in (run.labels or {}).items()),
                 "release": run.release_id or "-",
                 "age": _age(run.created_at),
                 "updated": _age(run.updated_at),
@@ -365,6 +388,16 @@ class RunsState(rx.State):
             value: The workflow id substring.
         """
         self.workflow_filter = value
+
+    @rx.event
+    def set_label_filter(self, value: str):
+        """Set the label filter.
+
+        Args:
+            value: ``key=value`` pairs, space or comma separated; every pair
+                must match.
+        """
+        self.label_filter = value
 
     @rx.event
     def set_status_filter(self, value: str):
@@ -1012,6 +1045,11 @@ def runs_page() -> rx.Component:
                 placeholder="workflow id",
                 on_change=RunsState.set_workflow_filter,
                 width="240px",
+            ),
+            rx.input(
+                placeholder="labels: tenant=acme region=eu",
+                on_change=RunsState.set_label_filter,
+                width="280px",
             ),
             rx.select(
                 ["all", *[status.value for status in RunStatus]],

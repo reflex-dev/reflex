@@ -9,6 +9,7 @@ output.
 
 import json
 import sys
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -303,6 +304,32 @@ def test_init_writes_a_workflow_that_compiles(tmp_path, forked_registration_cont
         again = runner.invoke(group, ["init", "orders"])
         assert again.exit_code == 1
         assert "already exists" in again.output
+
+
+def test_reflex_init_workflow_is_the_same_scaffold(tmp_path):
+    """`reflex init --workflow` is the roadmap's spelling of `workflows init`.
+
+    Both write the same module and print the same next steps; the app
+    scaffold's template and AI options make no sense for it and are refused
+    rather than ignored.
+    """
+    from reflex.reflex import cli
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as cwd:
+        written = runner.invoke(cli, ["init", "--workflow", "--name", "orders"])
+        assert written.exit_code == 0, written.output
+        assert (Path(cwd) / "orders.py").exists()
+        assert not (Path(cwd) / "rxconfig.py").exists(), "no app was scaffolded"
+        assert "reflex workflows dev orders.py Orders.start" in written.output
+
+        default = runner.invoke(cli, ["init", "--workflow"])
+        assert default.exit_code == 0, default.output
+        assert (Path(cwd) / "workflows.py").exists()
+
+        refused = runner.invoke(cli, ["init", "--workflow", "--template", "blank"])
+        assert refused.exit_code == 1
+        assert "--template" in refused.output
 
 
 TRIGGERED = '''

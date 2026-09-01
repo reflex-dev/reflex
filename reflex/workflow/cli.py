@@ -527,7 +527,25 @@ def init_workflow(name: str):
     durable step, a recorded side effect, a retry policy, and a timer that
     survives restarts -- and the commands printed afterwards run it.
     """
-    module = Path(f"{name}.py")
+    write_scaffold(name)
+
+
+def write_scaffold(name: str) -> Path:
+    """Write the workflow-only scaffold and print the commands that run it.
+
+    Shared by ``reflex workflows init`` and ``reflex init --workflow``, so
+    the two spellings cannot drift apart.
+
+    Args:
+        name: The module name, with or without ``.py``.
+
+    Returns:
+        The module written.
+
+    Raises:
+        click.exceptions.Exit: If the module already exists.
+    """
+    module = Path(name if name.endswith(".py") else f"{name}.py")
     if module.exists():
         console.error(f"{module} already exists; choose another name.")
         raise click.exceptions.Exit(1)
@@ -558,6 +576,7 @@ def init_workflow(name: str):
     console.print("  From a script, a FastAPI route, or a Django view:")
     click.echo(f"    async with rx.workflows.connect({klass}):")
     click.echo(f"        await rx.workflows.submit({klass}.start(order='ord-1'))")
+    return module
 
 
 @workflows.command()

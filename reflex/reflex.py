@@ -119,7 +119,18 @@ def _init(
 @click.option(
     "--name",
     metavar="APP_NAME",
-    help="The name of the app to initialize.",
+    help=(
+        "The name of the app to initialize; with --workflow, the module to "
+        "write (default: workflows)."
+    ),
+)
+@click.option(
+    "--workflow",
+    is_flag=True,
+    help=(
+        "Scaffold a workflow-only module instead of an app: one runnable file, "
+        "no frontend, no rxconfig. Same as `reflex workflows init`."
+    ),
 )
 @click.option(
     "--template",
@@ -137,11 +148,23 @@ def _init(
 )
 def init(
     name: str,
+    workflow: bool,
     template: str | None,
     ai: bool,
     agents: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
+    if workflow:
+        if template or ai:
+            console.error(
+                "--workflow scaffolds a workflow-only module and takes no "
+                "--template or --ai."
+            )
+            raise click.exceptions.Exit(1)
+        from reflex.workflow.cli import write_scaffold
+
+        write_scaffold(name or "workflows")
+        return
     _init(name, template, ai, agents)
 
 

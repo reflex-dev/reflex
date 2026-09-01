@@ -9,6 +9,19 @@ Workflows are ordinary Reflex code. There is no separate service to operate, no 
 determinism rules to learn: a workflow is an `rx.State` class, a step is an `@rx.event` handler, and
 control flow is what the handler returns.
 
+You do not need a Reflex app, a page, or a frontend build to use them. The workflow-only path is
+three commands:
+
+```bash
+reflex init --workflow          # writes workflows.py: one runnable module, nothing else
+reflex workflows dev workflows.py Workflows.start --fast-forward   # run it once, watching each step
+reflex workflows worker workflows.py                                # serve it; start runs from any code
+```
+
+`reflex workflows doctor workflows.py` checks what a deployment needs before you deploy it, and
+`reflex workflows serve workflows.py` runs ingress, API, and worker in one process for a
+workflow-only service.
+
 ```python
 import reflex as rx
 
