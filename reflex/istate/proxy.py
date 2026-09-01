@@ -56,9 +56,8 @@ _DATACLASSES_FILE = dataclasses.__file__
 # sidestep the proxy's dirty tracking. Field defaults, ClassVars and `__slots__`
 # would be worse: a class attribute is found before `__getattr__` runs, so
 # copying those would shadow the wrapped instance's own values.
-_DATACLASS_FIELDS: str = dataclasses._FIELDS  # pyright: ignore [reportAttributeAccessIssue]
 _DATACLASS_CLASS_ATTRS = (
-    _DATACLASS_FIELDS,
+    dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
     dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
     "__match_args__",
 )
@@ -73,7 +72,12 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
     Returns:
         The metadata attributes to copy, keyed by name.
     """
-    fields = getattr(wrapped_cls, _DATACLASS_FIELDS)
+    # `fields()` lists the real instance fields, skipping the ClassVar and
+    # InitVar entries that `__dataclass_fields__` also carries -- which is the
+    # distinction that matters below, since those two keep their value on the
+    # class and are read from there through the proxy like any other class
+    # attribute.
+    instance_fields = {field.name for field in dataclasses.fields(wrapped_cls)}  # pyright: ignore [reportArgumentType]
     return {
         attr: getattr(wrapped_cls, attr)
         # A dataclass may declare a field named like one of these attributes,
@@ -81,7 +85,7 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
         # wrapped object, since a class attribute is found before `__getattr__`
         # forwards. `@dataclass(match_args=False)` leaves nothing to copy.
         for attr in _DATACLASS_CLASS_ATTRS
-        if attr not in fields and hasattr(wrapped_cls, attr)
+        if attr not in instance_fields and hasattr(wrapped_cls, attr)
     }
 
 

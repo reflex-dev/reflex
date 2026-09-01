@@ -5,7 +5,7 @@ import dataclasses
 import pickle
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 from reflex_base.event.context import EventContext
@@ -831,6 +831,52 @@ def test_dataclass_proxy_class_never_shadows_a_field() -> None:
     assert proxy.__match_args__ == ("live",)
     assert proxy.__dataclass_params__ == 7
     assert dataclasses.asdict(proxy) == dataclasses.asdict(model)
+
+
+@dataclasses.dataclass
+class DunderClassVarModel:
+    """A dataclass declaring the copied metadata names as class-level entries."""
+
+    __match_args__: ClassVar[tuple[str, ...]] = ("custom",)
+    __dataclass_fields__: ClassVar[dict[str, Any]] = {}
+    other: int = 0
+
+
+@dataclasses.dataclass
+class DunderInitVarModel:
+    """A dataclass declaring a copied metadata name as an InitVar."""
+
+    __match_args__: dataclasses.InitVar[tuple[str, ...]] = ("initvar",)
+    other: int = 0
+
+    def __post_init__(self, __match_args__: tuple[str, ...]) -> None:
+        """Accept the InitVar.
+
+        Args:
+            __match_args__: The InitVar value, unused.
+        """
+
+
+@pytest.mark.parametrize(
+    ("model", "match_args"),
+    [
+        (DunderClassVarModel(other=1), ("custom",)),
+        (DunderInitVarModel(other=1), ("initvar",)),
+    ],
+)
+def test_dataclass_proxy_class_copies_class_level_pseudo_fields(
+    model: Any, match_args: tuple[str, ...]
+) -> None:
+    """ClassVar and InitVar entries keep their value on the class, so they are copied."""
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    # `__dataclass_fields__` lists these alongside the real fields, but only a
+    # real field would be shadowed by the copy.
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert proxy_cls.__match_args__ == match_args  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy.__match_args__ == match_args
+    assert dataclasses.asdict(proxy) == {"other": 1}
 
 
 def test_frozen_dataclass_proxy_rejects_mutation() -> None:
