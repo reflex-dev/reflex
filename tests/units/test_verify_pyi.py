@@ -97,6 +97,16 @@ def test_generates_stubs_from_sdist_artifacts_only():
     })
 
 
+def test_generates_stubs_from_top_level_artifacts():
+    assert verify_pyi.generates_stubs({"artifacts": ["/reflex/**/*.pyi"]})
+
+
+def test_generates_stubs_from_target_hook():
+    assert verify_pyi.generates_stubs({
+        "targets": {"wheel": {"hooks": {"reflex-pyi": {}}}}
+    })
+
+
 def test_generates_stubs_ignores_unrelated_hooks_and_artifacts():
     assert not verify_pyi.generates_stubs({
         "hooks": {"custom": {"path": "scripts/other_build.py"}},

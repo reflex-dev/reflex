@@ -67,12 +67,15 @@ def generates_stubs(build: Mapping[str, Any]) -> bool:
     """Report whether a package is expected to ship generated .pyi stubs.
 
     Either signal is enough on its own. A package declaring the stub-generating
-    build hook must ship stubs, and so must one declaring ``*.pyi`` as a build
+    build hook must ship stubs, and so must one declaring a ``*.pyi`` build
     artifact — the root ``reflex`` package generates its stubs from a custom
     hook and is only recognizable by the latter. Reading the hook independently
     of the artifact declaration is what catches a package that generates stubs
     but never declares them: ``*.pyi`` is gitignored, so hatchling leaves the
     generated files out of the artifact unless they are listed.
+
+    Hatch accepts ``hooks`` and ``artifacts`` both at the top of the build table
+    and under an individual target, and every scope is read.
 
     Args:
         build: The package's ``[tool.hatch.build]`` table.
@@ -80,12 +83,10 @@ def generates_stubs(build: Mapping[str, Any]) -> bool:
     Returns:
         Whether the package's built artifacts must contain .pyi files.
     """
-    if PYI_HOOK in build.get("hooks", {}):
-        return True
     return any(
-        pattern.endswith(".pyi")
-        for target in build.get("targets", {}).values()
-        for pattern in target.get("artifacts", ())
+        PYI_HOOK in scope.get("hooks", {})
+        or any(pattern.endswith(".pyi") for pattern in scope.get("artifacts", ()))
+        for scope in (build, *build.get("targets", {}).values())
     )
 
 
