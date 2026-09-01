@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -696,6 +697,27 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the compile path,
+    so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -706,10 +728,8 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_base.utils import serializers
-
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", serializers.serialize)
+    kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
 

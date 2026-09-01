@@ -865,6 +865,29 @@ def test_vite_config_template_minify(minify: bool) -> None:
     assert f"cssMinify: {expected}," in config
 
 
+def test_vite_config_template_valid_rolldown_options() -> None:
+    """The vite config only emits options accepted by rolldown-vite.
+
+    rolldown-vite rejects `rollupOptions.jsx` ("Invalid input options") and
+    deprecates `output.advancedChunks` in favor of `output.codeSplitting`
+    (same shape), so the template must emit neither legacy option while
+    keeping the reflex-env chunk group.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "jsx: {}" not in config
+    assert "advancedChunks" not in config
+    assert "codeSplitting: {" in config
+    assert 'name: "reflex-env",' in config
+
+
 def test_vite_config_template_pins_preview_host() -> None:
     """The vite config pins the preview server to an IPv4 loopback address.
 
@@ -883,6 +906,43 @@ def test_vite_config_template_pins_preview_host() -> None:
     )
     assert "preview: {" in config
     assert 'host: "127.0.0.1",' in config
+
+
+def test_vite_config_template_imports_plugin_with_extension() -> None:
+    """Local plugin imports carry a file extension.
+
+    Vite's native config loader (planned to become the default) cannot resolve
+    extensionless relative imports and warns about them today.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert 'from "./vite-plugin-safari-cachebust.js"' in config
+
+
+def test_vite_config_template_filters_react_dom_server_resolve_hook() -> None:
+    """The react-dom/server resolveId hook declares a hook filter.
+
+    Without a filter, rolldown calls the hook for every import in the module
+    graph, which dominates build time on large apps.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "filter: { id: /react-dom\\/server/ }," in config
+    assert "handler(source, importer) {" in config
 
 
 @pytest.mark.parametrize("minify", [True, False])

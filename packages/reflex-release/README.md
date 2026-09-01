@@ -511,6 +511,27 @@ distribution files by bare filename — exactly the files that went to PyPI — 
 `sha256sum -c SHA256SUMS` works in a directory holding the downloaded wheel and
 sdist, years later.
 
+`create-release` then reads the release back from GitHub rather than trusting
+`gh`'s exit status, since the next step hands the tag to your [post-release
+workflow](#post-release-workflow) and a `gh` call can succeed on a release whose
+asset upload did not: the release has to be on that tag, published rather than
+drafted, flagged and titled the way this run asked for, and carrying the
+manifest at exactly the size that was built. Anything else fails the job before
+the tag is handed on.
+
+A read that fails is not an absent release: gh answers "there is no such
+release" and "GitHub could not be asked" the same way, so a not-found is
+believed only once the repository itself reads back, and anything else stops
+the job saying what gh reported. Otherwise a rate-limited or unauthenticated
+read would look exactly like a tag with no release yet.
+
+A re-run of a release whose tag already has a release verifies it the same way
+instead of taking its existence as success. A missing or stale manifest is the
+one partial state a re-run finishes by itself — the attempt that died during the
+asset upload — so it is attached again; a release that is drafted, flagged or
+titled differently is one this run did not make, and it stops the job for a
+human to look at rather than being passed off as this version's release.
+
 For cryptographic provenance rather than a self-attested manifest — a PyPI
 [attestation](https://docs.pypi.org/attestations/) tying the artifact to the
 workflow that built it — publish with `pypa/gh-action-pypi-publish` in place of
@@ -867,6 +888,12 @@ The dispatch is the last thing a release does, so a failure there never leaves a
 half-published version — but it does fail the run, loudly, naming the tag whose
 follow-up did not start.
 
+It is also reached only through a release that was verified after it was created
+(see [what the approval covers](#what-the-approval-actually-covers)), so a workflow that
+publishes docs or images against the release can rely on the release being
+complete — the tag published, correctly flagged, with its checksum manifest
+attached — rather than merely existing.
+
 ## Keeping the workflows current
 
 Bump `cli-command` in `pyproject.toml`, run `reflex-release sync`, commit the
@@ -920,6 +947,64 @@ a flag for running the same command by hand.
   front — the first *Dispatch release* creates one. With no tags and no
   changelog, `release-minor` produces `0.1.0`. Publishing it still needs an
   explicit version: only `internal-packages` may publish without a changelog.
+
+## Troubleshooting
+
+### A stray tag blocks the next version
+
+*Dispatch release* refuses to plan a version whose tag already exists — a tag
+means "this is on PyPI", so republishing over it would fail at upload anyway:
+
+```
+tag v0.0.7a1 already exists
+```
+
+A hand-pushed alpha tag can also surface as the baseline itself, for a package
+that has no changelog yet:
+
+```
+new-prerelease-* would abandon the in-progress 0.0.7a1 train for mypkg
+```
+
+Both come from the same place: a tag that was pushed by hand — before the
+pipeline was adopted, or by an aborted release — for a version that was never
+uploaded. There is deliberately no version override on the dispatch form: the
+changelog and the tags are the only inputs to the next version, so the fix is to
+correct whichever of the two is wrong.
+
+**The version was never uploaded.** Delete the tag; nothing else refers to it.
+
+```bash
+git push origin :refs/tags/v0.0.7a1
+git tag -d v0.0.7a1
+gh release delete v0.0.7a1 --yes   # only if a GitHub release exists for it
+```
+
+Dispatch the same action again — it plans the same version, this time with
+nothing in the way.
+
+**The version really is on PyPI.** That number is spent, so the changelog has to
+say so before the train can move past it. On the train's `r/pre-*` branch —
+create it from the main branch if there is no train yet — add the section by
+hand at the top of the package's `CHANGELOG.md`, matching towncrier's heading
+format:
+
+```markdown
+## 0.0.7a1 (2026-08-25)
+
+No significant changes.
+```
+
+Push that commit straight to the `r/pre-*` branch: the hand-written-heading
+guard runs only on pull requests, so going through one would additionally need
+the `changelog-version-edit` label. The push starts `release_from_changelog`,
+which finds the tag, reports "already tagged" and publishes nothing. Then
+dispatch `continued-prerelease` on that branch — the baseline is now the alpha
+you seeded, so it plans `0.0.7a2` and consumes the pending news fragments into
+it.
+
+The same shape recovers a final version: seed `## 1.2.3 (<date>)` and dispatch
+`release-patch` to land on `1.2.4`.
 
 ## Why the pipeline is shaped this way
 

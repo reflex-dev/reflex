@@ -813,7 +813,7 @@ class BaseState(EvenMoreBasicBaseState):
 
             if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 logger.warning(
-                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -1543,7 +1543,7 @@ class BaseState(EvenMoreBasicBaseState):
             field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 logger.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
