@@ -30,6 +30,8 @@ import urllib.request
 VERSION_HEADING = re.compile(r"^##\s+v?([0-9][^\s]*)", re.MULTILINE)
 PROJECT_NAME = re.compile(r"^name\s*=\s*[\"']([^\"']+)[\"']", re.MULTILINE)
 QUOTED = re.compile(r"[\"']([^\"']+)[\"']")
+ROOT_PACKAGE = re.compile(r"^root-package\s*=\s*[\"']([^\"']+)[\"']", re.MULTILINE)
+PACKAGE_CHANGELOG = re.compile(r"packages/[^/]+/CHANGELOG\.md")
 # Packages whose CHANGELOG.md does not name a release version, for two different
 # reasons: never-published ones have no PyPI release at all, and internal ones are
 # patch-released on every push to main rather than through the changelog.
@@ -56,21 +58,24 @@ def git_show(ref: str, path: str, repo: str) -> str | None:
     return result.stdout if result.returncode == 0 else None
 
 
-def excluded_packages(ref: str, repo: str) -> set[str]:
-    """Read the packages whose changelog does not name a release version.
+def excluded_changelogs(ref: str, repo: str) -> set[str]:
+    """Read the changelogs that do not name a release version.
 
-    A changelog in one of these must not be read as the version this train ships: a
-    never-published package has no PyPI release for it to name, and an internal package
-    is patch-released outside the changelog flow, so its heading would be checked against
-    a version that was never cut. Either way the result would be a false blocker. Parsed
-    with a regex rather than a TOML library to keep this script dependency-free on 3.10.
+    A changelog in one of these packages must not be read as the version this train
+    ships: a never-published package has no PyPI release for it to name, and an
+    internal package is patch-released outside the changelog flow, so its heading
+    would be checked against a version that was never cut. Either way the result would
+    be a false blocker. Both lists name packages, and reflex-release resolves those
+    names against the root package as well as the directories under ``packages-dir``,
+    so the root changelog is excluded on the same terms as any other. Parsed with a
+    regex rather than a TOML library to keep this script dependency-free on 3.10.
 
     Args:
         ref: The git ref to read the root ``pyproject.toml`` from.
         repo: Path to the reflex checkout.
 
     Returns:
-        The set of package directory names to skip.
+        The set of repo-relative changelog paths to skip.
     """
     content = git_show(ref, "pyproject.toml", repo) or ""
     skip: set[str] = set()
@@ -78,7 +83,12 @@ def excluded_packages(ref: str, repo: str) -> set[str]:
         match = re.search(rf"^{key}\s*=\s*\[([^\]]*)\]", content, re.MULTILINE)
         if match:
             skip.update(QUOTED.findall(match.group(1)))
-    return skip
+    root_match = ROOT_PACKAGE.search(content)
+    root = root_match.group(1) if root_match else None
+    return {
+        "CHANGELOG.md" if name == root else f"packages/{name}/CHANGELOG.md"
+        for name in skip
+    }
 
 
 def changelog_paths(ref: str, repo: str) -> list[str]:
@@ -89,7 +99,8 @@ def changelog_paths(ref: str, repo: str) -> list[str]:
         repo: Path to the reflex checkout.
 
     Returns:
-        Paths of the root ``CHANGELOG.md`` and every ``packages/*/CHANGELOG.md``.
+        Paths of the root ``CHANGELOG.md`` and every ``packages/*/CHANGELOG.md``,
+        minus the packages excluded by the release configuration.
 
     Raises:
         LookupError: The ref does not exist in that checkout.
@@ -105,17 +116,13 @@ def changelog_paths(ref: str, repo: str) -> list[str]:
         # traceback buries that under a stack it has no use for.
         msg = f"cannot read ref {ref!r} in {repo}: {result.stderr.strip()}"
         raise LookupError(msg)
-    listing = result.stdout.splitlines()
-    skip = excluded_packages(ref, repo)
-    paths = []
-    for path in listing:
-        if path == "CHANGELOG.md":
-            paths.append(path)
-            continue
-        match = re.fullmatch(r"packages/([^/]+)/CHANGELOG.md", path)
-        if match and match.group(1) not in skip:
-            paths.append(path)
-    return paths
+    skip = excluded_changelogs(ref, repo)
+    return [
+        path
+        for path in result.stdout.splitlines()
+        if path not in skip
+        and (path == "CHANGELOG.md" or PACKAGE_CHANGELOG.fullmatch(path))
+    ]
 
 
 def dist_name(changelog_path: str, ref: str, repo: str) -> str:
