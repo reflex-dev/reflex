@@ -8,7 +8,9 @@ from typing import Any
 
 import pytest
 from reflex_base.constants import Hooks
+from reflex_base.utils import deterministic_hash as deterministic_hash_module
 from reflex_base.utils.deterministic_hash import (
+    _HASH_BUFFER_FLUSH_SIZE,
     _HASH_MAX_CACHE_ENTRIES,
     _HASH_MAX_CACHED_DATACLASS,
     _hash_dataclass_encodings,
@@ -162,6 +164,51 @@ def test_deterministic_hash_flushes_large_payloads():
     assert deterministic_hash(payload) == deterministic_hash(dict(payload))
     mutated = {**payload, "key_0": "w" * 200}
     assert deterministic_hash(payload) != deterministic_hash(mutated)
+
+
+def test_deterministic_hash_var_larger_than_the_flush_buffer():
+    """A Var whose payload passes the flush size hashes correctly.
+
+    A single leaf is appended whole, so the buffer holds it in full before the
+    first flush can run -- the one value the flush size cannot bound.
+    """
+    size = _HASH_BUFFER_FLUSH_SIZE * 3
+    big = rx.Var.create("x" * size)
+    same = rx.Var.create("x" * size)
+    differs_in_last_char = rx.Var.create("x" * (size - 1) + "y")
+
+    assert len(big._js_expr) > _HASH_BUFFER_FLUSH_SIZE
+    assert deterministic_hash(big) == deterministic_hash(same)
+    assert deterministic_hash(big) != deterministic_hash(differs_in_last_char)
+    # Nested, where the enclosing container flushes between items.
+    assert deterministic_hash([big, big]) != deterministic_hash([
+        big,
+        differs_in_last_char,
+    ])
+
+
+@pytest.mark.parametrize("flush_size", [1, 64, _HASH_BUFFER_FLUSH_SIZE, 1 << 30])
+def test_deterministic_hash_is_independent_of_the_flush_size(
+    monkeypatch: pytest.MonkeyPatch, flush_size: int
+):
+    """Where the buffer is handed to the hasher must not change the digest.
+
+    Flushing only moves bytes from the buffer into the hasher, so every flush
+    size has to agree -- including one that flushes after every item and one
+    that never flushes at all.
+    """
+    payload = {
+        "var": rx.Var.create("x" * (_HASH_BUFFER_FLUSH_SIZE * 2)),
+        "items": [f"item_{i}" for i in range(500)],
+        "nested": {"deep": [{"k": "v" * 300} for _ in range(50)]},
+    }
+    expected = deterministic_hash(payload)
+
+    monkeypatch.setattr(
+        deterministic_hash_module, "_HASH_BUFFER_FLUSH_SIZE", flush_size
+    )
+    clear_hash_caches()
+    assert deterministic_hash(payload) == expected
 
 
 def test_deterministic_hash_components_and_vars():
