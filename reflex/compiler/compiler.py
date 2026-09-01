@@ -1206,7 +1206,16 @@ def compile_app(
         app,
         config.plugins,
     )
+    registered_bundled_libraries = tuple(
+        RegistrationContext.ensure_context().bundled_libraries
+    )
     reset_bundled_libraries()
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    bundled_libraries.extend(
+        library
+        for library in registered_bundled_libraries
+        if library not in bundled_libraries
+    )
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).

@@ -14,6 +14,9 @@ from reflex.testing import AppHarness
 def DynamicComponents():
     """App with var operations."""
     import reflex as rx
+    from reflex.components.dynamic import bundle_library
+
+    bundle_library("lucide-react")
 
     class DynamicComponentsState(rx.State):
         value: int = 10
@@ -84,6 +87,15 @@ def DynamicComponents():
                 ),
             )
 
+        @rx.var
+        def icon_component(self) -> rx.Component:
+            """Get a dynamic component with a bundled-library subpath import.
+
+            Returns:
+                A Lucide icon component.
+            """
+            return rx.icon("apple", id="dynamic-icon")
+
     app = rx.App()
 
     def factorial(n: int) -> int:
@@ -97,6 +109,7 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             DynamicComponentsState.counter_component,
+            DynamicComponentsState.icon_component,
             rx.text(
                 DynamicComponentsState._evaluate(
                     lambda state: factorial(state.value), of_type=int
@@ -175,6 +188,10 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         lambda: driver.find_element(By.ID, "factorial")
     )
     assert factorial.text == "3628800"
+
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "dynamic-icon")
+    )
 
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")

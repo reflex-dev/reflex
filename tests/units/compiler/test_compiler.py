@@ -476,6 +476,39 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
+def test_compile_app_preserves_user_bundled_libraries(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Frontend compilation should retain explicit bundle registrations."""
+
+    class StopCompile(Exception):
+        """Stop after bundled libraries are prepared."""
+
+    with RegistrationContext() as registration_context:
+        bundle_library("lucide-react")
+        app = rx.App()
+        config = rx.Config(app_name="testing", plugins=[])
+
+        mocker.patch.object(app, "_apply_decorated_pages")
+        mocker.patch.object(app, "_should_compile", return_value=True)
+        mocker.patch.object(compiler, "get_config", return_value=config)
+        mocker.patch.object(
+            compiler.prerequisites, "get_backend_dir", return_value=tmp_path
+        )
+        mocker.patch.object(compiler, "_register_plugin_routes")
+        mocker.patch.object(
+            compiler,
+            "_resolve_radix_themes_plugin",
+            return_value=([], mocker.Mock()),
+        )
+        mocker.patch.object(compiler, "CompileContext", side_effect=StopCompile)
+
+        with pytest.raises(StopCompile):
+            compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert "lucide-react" in registration_context.bundled_libraries
+
+
 def test_compile_contexts_has_default_color_mode_context():
     """ColorModeContext should have a safe fallback value without Radix."""
     _, code = compiler.compile_contexts(None, None)

@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
+from reflex_base.components.dynamic import bundle_library
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
+from reflex_base.vars.base import Var
 
 import reflex as rx
 from reflex.state import State
@@ -11,6 +14,22 @@ STATE_JS_TEMPLATE = (
     Path(__file__).parents[3]
     / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
 )
+
+
+def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
+    """Bundled library subpaths should resolve through the window namespace."""
+    with RegistrationContext():
+        bundle_library("lucide-react")
+
+        code = serializers.serialize(rx.icon("apple"))
+        dynamic_code = serializers.serialize(rx.icon(Var("icon_name").to(str)))
+
+    assert isinstance(code, str)
+    assert 'from "lucide-react/dist/esm/icons/apple.mjs"' not in code
+    assert "const LucideApple = window.__reflex['lucide-react'].Apple" in code
+    assert isinstance(dynamic_code, str)
+    assert 'from "lucide-react/dynamic.mjs"' not in dynamic_code
+    assert "const {DynamicIcon} = window.__reflex['lucide-react']" in dynamic_code
 
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:

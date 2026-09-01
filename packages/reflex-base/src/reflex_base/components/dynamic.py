@@ -138,6 +138,7 @@ def load_dynamic_serializer():
         compiler._apply_common_imports(component_imports)
 
         imports = {}
+        bundled_subpath_imports: dict[str, tuple[str, str | None]] = {}
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             if (
@@ -148,9 +149,53 @@ def load_dynamic_serializer():
                 imports[get_cdn_url(lib)] = names
             else:
                 imports[lib] = names
+                if formatted_lib_name in libs_in_window:
+                    for name in names:
+                        if name.package_path == "/":
+                            continue
+                        import_path = formatted_lib_name + name.package_path
+                        bundled_library, default_export = bundled_subpath_imports.get(
+                            import_path, (formatted_lib_name, None)
+                        )
+                        bundled_subpath_imports[import_path] = (
+                            bundled_library,
+                            name.tag if name.is_default else default_export,
+                        )
+
+        compiled_imports = utils.compile_imports(imports)
+        bundled_subpath_rewrites = {}
+        for module in compiled_imports:
+            bundled_subpath = bundled_subpath_imports.get(module["lib"])
+            if bundled_subpath is None:
+                continue
+
+            bundled_library, default_export = bundled_subpath
+            window_library = f"window.__reflex['{bundled_library}']"
+            statements = []
+            if module["default"]:
+                statements.append(
+                    f"const {module['default']} = "
+                    f"{window_library}.{default_export or 'default'}"
+                )
+
+            named_imports = []
+            for imported_name in module["rest"]:
+                if imported_name.startswith("* as "):
+                    statements.append(
+                        f"const {imported_name.removeprefix('* as ')} = {window_library}"
+                    )
+                else:
+                    named_imports.append(imported_name.replace(" as ", ": "))
+            if named_imports:
+                statements.append(
+                    f"const {{{','.join(named_imports)}}} = {window_library}"
+                )
+
+            if statements:
+                bundled_subpath_rewrites[module["lib"]] = "\n".join(statements)
 
         module_code_lines = templates.dynamic_components_module_template(
-            imports=utils.compile_imports(imports),
+            imports=compiled_imports,
             memoized_code="\n".join(rendered_components),
         ).splitlines()
 
@@ -166,6 +211,14 @@ def load_dynamic_serializer():
                         + "]"
                     )
                 else:
+                    subpath_rewritten = False
+                    for import_path, replacement in bundled_subpath_rewrites.items():
+                        if line.endswith(f'from "{import_path}"'):
+                            module_code_lines[ix] = replacement
+                            subpath_rewritten = True
+                            break
+                    if subpath_rewritten:
+                        continue
                     for lib in libs_in_window:
                         if f'from "{lib}"' in line:
                             module_code_lines[ix] = (
