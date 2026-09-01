@@ -632,6 +632,37 @@ def triggers_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
     return endpoint
 
 
+def connections_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that reports connections and secrets.
+
+    Args:
+        runtime: The runtime whose definitions are inspected.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("read")
+
+    async def endpoint(request: Request) -> JSONResponse:  # noqa: RUF029
+        """List every dependency and whether it is satisfied.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The connection rows; secret values are never included.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        from reflex.workflow.health import describe_connections
+
+        return JSONResponse({"connections": describe_connections(runtime.definitions)})
+
+    return endpoint
+
+
 def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: str):
     """Build one operator action endpoint.
 
@@ -868,6 +899,14 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                         "responses": {"200": {"description": "The triggers"}},
                     }
                 },
+                "/connections": {
+                    "get": {
+                        "summary": (
+                            "Secrets and connections, present or missing (scope: read)"
+                        ),
+                        "responses": {"200": {"description": "The dependencies"}},
+                    }
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -1002,6 +1041,11 @@ def build_app(
             ),
             Route("/audit", audit_endpoint(runtime, tokens), methods=["GET"]),
             Route("/triggers", triggers_endpoint(runtime, tokens), methods=["GET"]),
+            Route(
+                "/connections",
+                connections_endpoint(runtime, tokens),
+                methods=["GET"],
+            ),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a
             # minted approval link configured against an rx.App keeps working
             # when the deployment moves to the standalone service.

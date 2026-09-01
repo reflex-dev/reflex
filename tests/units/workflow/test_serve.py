@@ -727,3 +727,28 @@ def test_triggers_are_listed_over_http(forked_registration_context):
     manual_rows = [row for row in rows if row["kind"] == "manual"]
     assert manual_rows
     assert manual_rows[0]["workflow"] == "serve.orders"
+
+
+def test_connections_are_reported_over_http_without_values(
+    monkeypatch, forked_registration_context
+):
+    """The service lists dependencies by name and presence, never by value.
+
+    Args:
+        monkeypatch: Used to shape the environment.
+        forked_registration_context: Isolated state registry.
+    """
+    from reflex.workflow.approvals import SECRET_ENV
+
+    monkeypatch.setenv(SECRET_ENV, "super-secret-value")
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Orders)
+    app = build_app(runtime, worker=False, drain=0, tokens=_tokens(tk="all"))
+    with TestClient(app) as client:
+        assert client.get("/connections").status_code == 401
+        response = client.get("/connections", headers=_auth("tk"))
+    assert response.status_code == 200
+    rows = response.json()["connections"]
+    approval = next(row for row in rows if row["name"] == SECRET_ENV)
+    assert approval["present"] is True
+    assert "super-secret-value" not in response.text

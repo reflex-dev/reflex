@@ -857,6 +857,61 @@ class TriggersState(rx.State):
                 await self.load_triggers()
 
 
+class ConnectionsState(rx.State):
+    """Secrets and connections the deployment depends on."""
+
+    rows: list[dict[str, str]] = []
+    problem_count: int = 0
+
+    @rx.event
+    async def refresh(self):
+        """Load the connection summary.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
+        await self.load_connections()
+        return None
+
+    async def load_connections(self) -> None:
+        """Summarize dependencies from the registered definitions."""
+        from reflex.workflow.health import describe_connections
+
+        runtime = await _client()
+        rows = describe_connections(runtime.definitions)
+        self.problem_count = sum(1 for row in rows if row["severity"] == "problem")
+        self.rows = [
+            {
+                "kind": row["kind"],
+                "name": row["name"],
+                "present": "yes" if row["present"] else "NO",
+                "severity": row["severity"],
+                "color": {"problem": "red", "note": "amber"}.get(
+                    row["severity"], "green"
+                ),
+                "used_by": ", ".join(row["used_by"]),
+                "message": row["message"],
+            }
+            for row in rows
+        ]
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep the connection view current while the page is mounted."""
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/connections"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_connections()
+
+
 def _shell(*children: Any) -> rx.Component:
     """Wrap a page in the console chrome.
 
@@ -875,6 +930,7 @@ def _shell(*children: Any) -> rx.Component:
             rx.link("Events", href="/events"),
             rx.link("Audit", href="/audit"),
             rx.link("Triggers", href="/triggers"),
+            rx.link("Connections", href="/connections"),
             rx.cond(
                 LoginState.authenticated,
                 rx.hstack(
@@ -1270,6 +1326,56 @@ def triggers_page() -> rx.Component:
     )
 
 
+def connections_page() -> rx.Component:
+    """Secrets and connections, present or missing.
+
+    Returns:
+        The page component.
+    """
+    return _shell(
+        rx.hstack(
+            rx.button("Refresh", on_click=ConnectionsState.refresh),
+            rx.cond(
+                ConnectionsState.problem_count > 0,
+                rx.badge(
+                    ConnectionsState.problem_count.to_string()  # pyright: ignore[reportAttributeAccessIssue]
+                    + " problem(s)",
+                    color_scheme="red",
+                ),
+                rx.badge("all declared secrets present", color_scheme="green"),
+            ),
+            spacing="3",
+            align="center",
+        ),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("kind"),
+                    rx.table.column_header_cell("name"),
+                    rx.table.column_header_cell("present"),
+                    rx.table.column_header_cell("severity"),
+                    rx.table.column_header_cell("used by"),
+                    rx.table.column_header_cell("message"),
+                )
+            ),
+            rx.table.body(
+                rx.foreach(
+                    ConnectionsState.rows,
+                    lambda row: rx.table.row(
+                        rx.table.cell(row["kind"]),
+                        rx.table.cell(row["name"]),
+                        rx.table.cell(row["present"]),
+                        rx.table.cell(_status_badge(row["severity"], row["color"])),
+                        rx.table.cell(row["used_by"]),
+                        rx.table.cell(row["message"]),
+                    ),
+                )
+            ),
+            width="100%",
+        ),
+    )
+
+
 def console_app() -> rx.App:
     """Build the operator console application.
 
@@ -1327,5 +1433,11 @@ def console_app() -> rx.App:
         route="/triggers",
         on_load=[TriggersState.refresh, TriggersState.watch],
         title="Triggers",
+    )
+    app.add_page(
+        connections_page,
+        route="/connections",
+        on_load=[ConnectionsState.refresh, ConnectionsState.watch],
+        title="Connections",
     )
     return app

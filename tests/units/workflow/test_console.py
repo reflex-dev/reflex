@@ -480,3 +480,49 @@ def test_triggers_page_reads_the_workflow_module(tmp_path, monkeypatch):
     nightly = next(row for row in state.rows if row["kind"] == "schedule")
     assert nightly["detail"] == "0 4 * * *"
     assert nightly["next"].startswith("in ")
+
+
+def test_connections_page_counts_missing_secrets(tmp_path, monkeypatch):
+    """A verifier whose secret is unset shows as a problem the operator can see.
+
+    Args:
+        tmp_path: Where to write the module and database.
+        monkeypatch: Used to point the console at both and unset the secret.
+    """
+    from reflex.workflow.console import ConnectionsState
+
+    module = tmp_path / "pay.py"
+    module.write_text(
+        "import reflex as rx\n"
+        "from reflex_base.workflow import WorkflowConfig, hmac_signature, webhook\n\n"
+        "class Pay(rx.State):\n"
+        "    __workflow__ = WorkflowConfig(id='console.pay')\n\n"
+        "    @rx.event(durable=True, effect='none', trigger=webhook('paid',\n"
+        "        dedupe_by='id',\n"
+        "        verify=hmac_signature(secret_env='CONSOLE_PAY_SECRET', header='X-Sig')))\n"
+        "    def on_paid(self, id: str):\n"
+        '        """Paid."""\n'
+    )
+    monkeypatch.delenv("CONSOLE_PAY_SECRET", raising=False)
+    monkeypatch.setenv(console_module.CONSOLE_DATABASE_ENV, str(tmp_path / "c.db"))
+    monkeypatch.setenv(console_module.CONSOLE_TARGET_ENV, str(module))
+    console_module._runtime = None  # pyright: ignore[reportPrivateUsage]
+
+    async def drive() -> ConnectionsState:
+        """Load the connection summary.
+
+        Returns:
+            The state after loading.
+        """
+        state = ConnectionsState()  # pyright: ignore[reportCallIssue]
+        await state.load_connections()
+        return state
+
+    try:
+        state = asyncio.run(drive())
+    finally:
+        asyncio.run(console_module.close_client())
+    assert state.problem_count == 1
+    missing = next(row for row in state.rows if row["name"] == "CONSOLE_PAY_SECRET")
+    assert missing["present"] == "NO"
+    assert missing["color"] == "red"

@@ -423,7 +423,13 @@ definitions read-only and shows what starts each workflow — every webhook
 URL with whether it is verified and whether its verifier's secret is
 present, every schedule with its next occurrence and durable-cursor lag —
 from the same summary `reflex workflows triggers` and `GET /triggers`
-report, so the three surfaces cannot disagree.
+report, so the three surfaces cannot disagree. The same holds for connections and
+secrets: `reflex workflows doctor`, `GET /connections`, and the console's
+Connections page share one summary of every dependency a deployment relies
+on — each verifier's secret variable and whether it is present, unverified
+webhooks and their declared reason, the approval key, the API token,
+schedules that need a serving process — reported by name and presence only,
+never by value.
 
 ### Tenancy and who runs the workers
 
