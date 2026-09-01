@@ -64,9 +64,8 @@ team_notes/
     └── team_notes.py       # state, pages, app
 ```
 
-The notes live in an `rx.SharedState` (available from reflex 0.8.23) linked
-to one team token, so every signed-in user reads and writes the same board
-and edits propagate live. A real app would also persist the notes to a
+The notes live in an `rx.SharedState` linked to one team token, so every
+signed-in user reads and writes the same board and edits propagate live. A real app would also persist the notes to a
 database — shared state is memory-resident — but nothing about the auth
 pattern changes.
 
@@ -192,9 +191,8 @@ Four things to notice:
 
 - **The notes are genuinely shared.** `NotesState` is an
   [`rx.SharedState`](/docs/state-structure/shared-state/): every signed-in
-  user links to the same `"team-notes"` token (linked tokens may not contain
-  underscores), so an added or cleared note propagates to everyone on the
-  dashboard. The protected `join_team_board` event does the linking, and the
+  user links to the same `"team-notes"` token, so an added or cleared note
+  propagates to everyone on the dashboard. The protected `join_team_board` event does the linking, and the
   page guard guarantees a resolved user before it runs.
 - **`UserExtras` exists for the UI, not for security.** The common claims
   (`name`, `email`, `sub`, `picture`) are already frontend Vars on `User`; any
