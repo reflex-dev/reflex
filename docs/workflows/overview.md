@@ -14,7 +14,7 @@ three commands:
 
 ```bash
 reflex init --workflow          # writes workflows.py: one runnable module, nothing else
-reflex workflows dev workflows.py Workflows.start --fast-forward   # run it once, watching each step
+reflex workflows dev workflows.py Workflows.start --arg order=ord-1 --fast-forward   # run it once
 reflex workflows worker workflows.py                                # serve it; start runs from any code
 ```
 
