@@ -1,3 +1,5 @@
+import importlib
+import importlib.util
 import logging
 import multiprocessing
 import os
@@ -972,6 +974,64 @@ def clean_config_modules() -> Generator[None, None, None]:
         for name in names:
             sys.modules.pop(name, None)
         reflex_base.config._config_module_deps.clear()
+
+
+def test_load_config_keeps_sys_path_intact_for_other_threads(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    clean_config_modules: None,
+):
+    """Loading rxconfig must not shrink sys.path while other threads import.
+
+    `reflex run` loads the config from the frontend thread while the main
+    thread is still importing the backend; the import system walks sys.path
+    by index, so shrinking it under another thread turns unrelated imports
+    into ModuleNotFoundError. Unlike the gated test above, this one drives a
+    real rxconfig load in a loop, so it also covers the path the loader takes
+    around the actual import rather than a stubbed _get_config.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        tmp_path: The pytest tmp_path fixture.
+        tmp_path_factory: The pytest tmp_path_factory fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='race')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    # A private module at the end of sys.path. Probing it with find_spec walks
+    # sys.path the way an import does but never registers anything in
+    # sys.modules, so the loader's own module bookkeeping cannot interfere.
+    probe_dir = tmp_path_factory.mktemp("rx_race_probe")
+    (probe_dir / "rx_race_probe.py").write_text("VALUE = 1\n")
+    sys.path.append(str(probe_dir))
+    importlib.invalidate_caches()
+    stop = threading.Event()
+    loader_errors: list[BaseException] = []
+
+    def loader() -> None:
+        while not stop.is_set():
+            try:
+                reflex_base.config._load_config()
+            except BaseException as e:
+                loader_errors.append(e)
+                return
+
+    thread = threading.Thread(target=loader)
+    thread.start()
+    try:
+        missing = 0
+        for _ in range(500):
+            if importlib.util.find_spec("rx_race_probe") is None:
+                missing += 1
+    finally:
+        stop.set()
+        thread.join()
+        sys.path.remove(str(probe_dir))
+    assert not loader_errors
+    assert missing == 0
 
 
 def test_concurrent_import_not_recorded_as_rxconfig_dep(
