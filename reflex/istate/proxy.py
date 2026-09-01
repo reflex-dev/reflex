@@ -40,22 +40,9 @@ _UNREFRESHABLE_ACCESS_SPEC: _AccessSpec = ("unrefreshable", None)
 # from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
 _DATACLASSES_FILE = dataclasses.__file__
 
-# The class-level data `@dataclass` writes, copied onto the proxy class
-# synthesized per wrapped dataclass type: `__dataclass_fields__` is what
-# `dataclasses.is_dataclass` tests for, `__dataclass_params__` carries the
-# decorator's flags (`frozen`, `eq`, `slots`, ...) and `__match_args__` the
-# positional field names. All three are read off the class, which is where the
-# proxy's instance-level forwarding cannot answer for them; copying only the
-# first yields a class that says yes to `is_dataclass` and then raises on
-# everything asked next about how it was declared.
-#
-# The rest of what `@dataclass` writes stays off the proxy class deliberately.
-# Its generated methods (`__init__`, `__repr__`, `__eq__`, the ordering set, the
-# frozen `__setattr__`/`__delattr__` pair, `__replace__`, `__getstate__`) are
-# already reached through the wrapped object, and rebinding them here would
-# sidestep the proxy's dirty tracking. Field defaults, ClassVars and `__slots__`
-# would be worse: a class attribute is found before `__getattr__` runs, so
-# copying those would shadow the wrapped instance's own values.
+# The data `@dataclass` writes on the class. Callers read it off the class,
+# which the proxy's instance-level forwarding cannot answer for; the methods
+# `@dataclass` writes need no copy, resolving through the wrapped object.
 _DATACLASS_CLASS_ATTRS = (
     dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
     dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
@@ -72,19 +59,16 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
     Returns:
         The metadata attributes to copy, keyed by name.
     """
-    # `fields()` lists the real instance fields, skipping the ClassVar and
-    # InitVar entries that `__dataclass_fields__` also carries -- which is the
-    # distinction that matters below, since those two keep their value on the
-    # class and are read from there through the proxy like any other class
-    # attribute.
+    # A class attribute is found before `__getattr__` forwards, so a name the
+    # dataclass declares as an instance field must not be copied. `fields()`
+    # lists exactly those, excluding the ClassVar and InitVar entries that
+    # `__dataclass_fields__` also carries, which stay class-level regardless.
     instance_fields = {field.name for field in dataclasses.fields(wrapped_cls)}  # pyright: ignore [reportArgumentType]
     return {
         attr: getattr(wrapped_cls, attr)
-        # A dataclass may declare a field named like one of these attributes,
-        # and that value belongs to the instance: copying it would shadow the
-        # wrapped object, since a class attribute is found before `__getattr__`
-        # forwards. `@dataclass(match_args=False)` leaves nothing to copy.
         for attr in _DATACLASS_CLASS_ATTRS
+        # `hasattr` skips metadata the class was declared without, such as
+        # `__match_args__` under `@dataclass(match_args=False)`.
         if attr not in instance_fields and hasattr(wrapped_cls, attr)
     }
 

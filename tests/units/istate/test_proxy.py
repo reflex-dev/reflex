@@ -767,8 +767,6 @@ def test_dataclass_proxy_class_carries_dataclass_metadata(
     assert proxy_cls is not model_cls
     assert dataclasses.is_dataclass(proxy_cls)
     assert dataclasses.fields(proxy_cls) == dataclasses.fields(model_cls)
-    # `is_dataclass` only tests for `__dataclass_fields__`, so a class that
-    # answers it must also answer how the dataclass was declared.
     assert proxy_cls.__dataclass_params__ is model_cls.__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
     assert proxy_cls.__dataclass_params__.frozen is frozen  # pyright: ignore [reportAttributeAccessIssue]
     assert proxy_cls.__match_args__ == model_cls.__match_args__  # pyright: ignore [reportAttributeAccessIssue]
@@ -788,10 +786,6 @@ def test_dataclass_proxy_class_copies_no_behavior() -> None:
     proxy = _dataclass_proxy(model)
     proxy_cls = type(proxy)
 
-    # Copying the generated methods would rebind them to the proxy and bypass
-    # its dirty tracking; copying `__slots__`, a field default or a ClassVar
-    # would shadow the wrapped instance, since a class attribute is found
-    # before `__getattr__` runs.
     for attr in (
         "__init__",
         "__repr__",
@@ -871,8 +865,6 @@ def test_dataclass_proxy_class_copies_class_level_pseudo_fields(
     proxy = _dataclass_proxy(model)
     proxy_cls = type(proxy)
 
-    # `__dataclass_fields__` lists these alongside the real fields, but only a
-    # real field would be shadowed by the copy.
     assert dataclasses.is_dataclass(proxy_cls)
     assert proxy_cls.__match_args__ == match_args  # pyright: ignore [reportAttributeAccessIssue]
     assert proxy.__match_args__ == match_args
