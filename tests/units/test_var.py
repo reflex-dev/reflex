@@ -2416,3 +2416,22 @@ def test_number_and_boolean_vars_are_hashable():
 
     assert NumberVar.__hash__ is not None
     assert BooleanVar.__hash__ is not None
+
+
+@pytest.mark.parametrize("value", [5, 5.5, True])
+def test_numeric_literal_var_hashability_is_load_bearing(value):
+    """Numeric literals must stay hashable so they survive interpolation.
+
+    NumberVar defines __eq__, which drops the inherited __hash__ unless it is
+    restored explicitly. Var.__format__ hashes the var to register it in
+    _global_vars, so an unhashable numeric literal raises TypeError on any
+    f-string interpolation rather than failing anywhere near the cause.
+    """
+    var = LiteralVar.create(value)
+    assert type(var).__hash__ is not None
+
+    var_data, _ = _decode_var_immutable(
+        f"{var._replace(merge_var_data=VarData(hooks='const A = 1'))}"
+    )
+    assert var_data is not None
+    assert var_data.hooks == ("const A = 1",)

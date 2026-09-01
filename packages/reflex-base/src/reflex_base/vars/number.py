@@ -59,8 +59,10 @@ def raise_unsupported_operand_types(
 class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     """Base class for immutable number vars."""
 
-    # Defining __eq__ below would otherwise drop the inherited hash, leaving
-    # NumberVar and BooleanVar unhashable.
+    # Load-bearing: defining __eq__ below drops the inherited hash, which would
+    # leave every numeric var unhashable, including LiteralNumberVar. Var.__format__
+    # hashes, so removing this breaks interpolating any numeric literal into a
+    # string. test_numeric_literal_var_hashability_is_load_bearing pins it.
     __hash__ = Var.__hash__
 
     def __add__(self, other: number_types) -> NumberVar:
