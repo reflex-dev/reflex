@@ -707,6 +707,25 @@ def channels_of(state_cls: type) -> dict[str, Signal]:
     return channels
 
 
+def discover_workflows(module: Any) -> list[type]:
+    """Find the workflow classes a module defines.
+
+    A workflow is an ``rx.State`` subclass declaring ``__workflow__`` on its
+    own class body; inherited declarations are not re-registered.
+
+    Args:
+        module: The imported module.
+
+    Returns:
+        The workflow classes, in definition order.
+    """
+    return [
+        value
+        for value in vars(module).values()
+        if isinstance(value, type) and "__workflow__" in vars(value)
+    ]
+
+
 def unbound_params(handler: HandlerDefinition, supplied: set[str]) -> set[str]:
     """Parameters a handler requires that a recorded payload cannot fill.
 

@@ -710,3 +710,20 @@ def test_dead_letter_replay_is_audited_with_the_actor(forked_registration_contex
     assert entries[0]["target"] == parked_id
     assert entries[0]["reason"] == "carrier fixed the feed"
     assert entries[0]["detail"] == {"disposition": "parked"}
+
+
+def test_triggers_are_listed_over_http(forked_registration_context):
+    """The service describes what starts its workflows.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Orders)
+    app = build_app(runtime, worker=False, drain=0, tokens=_tokens(tk="all"))
+    with TestClient(app) as client:
+        assert client.get("/triggers").status_code == 401
+        rows = client.get("/triggers", headers=_auth("tk")).json()["triggers"]
+    manual_rows = [row for row in rows if row["kind"] == "manual"]
+    assert manual_rows
+    assert manual_rows[0]["workflow"] == "serve.orders"

@@ -417,7 +417,13 @@ the console is open — that is the loopback default, and exposing it then is
 a deliberate choice behind an authenticating proxy. Pages stay live by
 re-reading the store every few seconds while mounted; because the store is
 what every worker shares, the view survives any worker restart without
-depending on one being alive.
+depending on one being alive. Started with the workflow module
+(`reflex workflows console workflows.py`), the console also registers the
+definitions read-only and shows what starts each workflow — every webhook
+URL with whether it is verified and whether its verifier's secret is
+present, every schedule with its next occurrence and durable-cursor lag —
+from the same summary `reflex workflows triggers` and `GET /triggers`
+report, so the three surfaces cannot disagree.
 
 ### Tenancy and who runs the workers
 

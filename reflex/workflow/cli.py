@@ -1858,10 +1858,19 @@ def _run_console_project(root: Path, host: str, port: int, env: dict) -> None:
     default=None,
     help="Where to write the console's Reflex project; defaults to a cache dir.",
 )
+@click.argument("target", required=False)
 def console_command(
-    database: str | None, host: str, port: int, project_dir: str | None
+    database: str | None,
+    host: str,
+    port: int,
+    project_dir: str | None,
+    target: str | None,
 ):
     """Serve the operator console: runs, one run's story, fleet, and events.
+
+    Pass TARGET -- the module of workflow classes -- to also see what starts
+    each workflow: webhook URLs and their verification, schedules and their
+    next occurrence. The console registers them read-only.
 
     Every action taken here goes through the same operations as the CLI,
     carries your name (REFLEX_ACTOR, else the login user) and your reason,
@@ -1879,6 +1888,12 @@ def console_command(
     env = dict(os.environ)
     if database:
         env[DATABASE_ENV] = database
+    if target:
+        # Resolved to an absolute path so the scaffold's working directory
+        # does not change what the console imports.
+        env["REFLEX_WORKFLOW_CONSOLE_TARGET"] = (
+            str(Path(target).resolve()) if Path(target).exists() else target
+        )
     if host not in ("127.0.0.1", "localhost", "::1"):
         console.warn(
             f"Binding the console to {host}: it has no login of its own. Put "

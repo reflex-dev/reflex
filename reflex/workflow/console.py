@@ -33,6 +33,13 @@ if TYPE_CHECKING:
     from reflex.workflow.runtime import WorkflowRuntime
 
 CONSOLE_DATABASE_ENV = "REFLEX_WORKFLOW_DATABASE"
+CONSOLE_TARGET_ENV = "REFLEX_WORKFLOW_CONSOLE_TARGET"
+"""A module of workflow classes to register read-only, for the Triggers page.
+
+The store knows runs; only the code knows what starts them. Given the
+module, the console can show every webhook URL, whether it is verified, and
+when each schedule next fires -- without ever executing a step.
+"""
 
 _runtime: WorkflowRuntime | None = None
 _runtime_lock = asyncio.Lock()
@@ -56,6 +63,10 @@ async def _client() -> WorkflowRuntime:
             runtime = WorkflowRuntime(
                 resolve_store(os.environ.get(CONSOLE_DATABASE_ENV))
             )
+            target = os.environ.get(CONSOLE_TARGET_ENV)
+            if target:
+                for workflow_cls in _load_target_workflows(target):
+                    runtime.register(workflow_cls)
             await runtime.startup(start_worker=False)
             _runtime = runtime
     return _runtime
@@ -71,6 +82,35 @@ async def close_client() -> None:
             await _runtime.shutdown()
             await _close_store(_runtime.store)
             _runtime = None
+
+
+def _load_target_workflows(target: str) -> list[type]:
+    """Import the workflow module named by the console's target.
+
+    Args:
+        target: A path to a ``.py`` file or a dotted module name.
+
+    Returns:
+        The workflow classes the module defines.
+    """
+    import importlib
+    import importlib.util
+    import sys
+    from pathlib import Path as _Path
+
+    from reflex.workflow.definition import discover_workflows
+
+    path = _Path(target)
+    if path.suffix == ".py" and path.exists():
+        spec = importlib.util.spec_from_file_location(path.stem, path)
+        assert spec is not None
+        assert spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[path.stem] = module
+        spec.loader.exec_module(module)
+    else:
+        module = importlib.import_module(target)
+    return discover_workflows(module)
 
 
 def _actor() -> str:
@@ -747,6 +787,76 @@ class AuditState(rx.State):
                 await self.load_audit()
 
 
+class TriggersState(rx.State):
+    """What starts each workflow, and where each schedule stands."""
+
+    rows: list[dict[str, str]] = []
+    has_definitions: bool = True
+
+    @rx.event
+    async def refresh(self):
+        """Load the trigger summary.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
+        await self.load_triggers()
+        return None
+
+    async def load_triggers(self) -> None:
+        """Summarize triggers from the registered definitions."""
+        from reflex.workflow.triggers import describe_triggers, schedule_cursors
+
+        runtime = await _client()
+        definitions = runtime.definitions
+        self.has_definitions = bool(definitions)
+        now = time.time()
+        cursors = await schedule_cursors(
+            definitions, runtime.kernel._store.read_schedule_cursor
+        )
+        self.rows = [
+            {
+                "kind": row["kind"],
+                "workflow": row["workflow"],
+                "target": row["target"],
+                "detail": str(row["detail"]),
+                "path": str(row.get("path", "")),
+                "guard": (
+                    ""
+                    if row["kind"] != "webhook"
+                    else "unverified"
+                    if not row["verified"]
+                    else "verified"
+                    if row.get("secret_present") is not False
+                    else "verified, SECRET MISSING"
+                ),
+                "next": (
+                    ""
+                    if not row.get("next_fire")
+                    else "in " + _age(2 * time.time() - row["next_fire"])
+                ),
+                "lag": "" if row.get("lag") is None else _age(time.time() - row["lag"]),
+            }
+            for row in describe_triggers(definitions, now, cursors)
+        ]
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep the trigger view current while the page is mounted."""
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/triggers"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_triggers()
+
+
 def _shell(*children: Any) -> rx.Component:
     """Wrap a page in the console chrome.
 
@@ -764,6 +874,7 @@ def _shell(*children: Any) -> rx.Component:
             rx.link("Fleet", href="/fleet"),
             rx.link("Events", href="/events"),
             rx.link("Audit", href="/audit"),
+            rx.link("Triggers", href="/triggers"),
             rx.cond(
                 LoginState.authenticated,
                 rx.hstack(
@@ -1109,6 +1220,56 @@ def audit_page() -> rx.Component:
     )
 
 
+def triggers_page() -> rx.Component:
+    """Webhooks, schedules, and manual roots.
+
+    Returns:
+        The page component.
+    """
+    return _shell(
+        rx.cond(
+            TriggersState.has_definitions,
+            rx.fragment(),
+            rx.callout(
+                "Start the console with your workflow module "
+                "(reflex workflows console workflows.py) to see triggers.",
+                color_scheme="amber",
+            ),
+        ),
+        rx.button("Refresh", on_click=TriggersState.refresh),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("kind"),
+                    rx.table.column_header_cell("workflow"),
+                    rx.table.column_header_cell("target"),
+                    rx.table.column_header_cell("detail"),
+                    rx.table.column_header_cell("path"),
+                    rx.table.column_header_cell("guard"),
+                    rx.table.column_header_cell("next"),
+                    rx.table.column_header_cell("cursor lag"),
+                )
+            ),
+            rx.table.body(
+                rx.foreach(
+                    TriggersState.rows,
+                    lambda row: rx.table.row(
+                        rx.table.cell(row["kind"]),
+                        rx.table.cell(row["workflow"]),
+                        rx.table.cell(row["target"]),
+                        rx.table.cell(row["detail"]),
+                        rx.table.cell(row["path"]),
+                        rx.table.cell(row["guard"]),
+                        rx.table.cell(row["next"]),
+                        rx.table.cell(row["lag"]),
+                    ),
+                )
+            ),
+            width="100%",
+        ),
+    )
+
+
 def console_app() -> rx.App:
     """Build the operator console application.
 
@@ -1160,5 +1321,11 @@ def console_app() -> rx.App:
         route="/audit",
         on_load=[AuditState.refresh, AuditState.watch],
         title="Audit",
+    )
+    app.add_page(
+        triggers_page,
+        route="/triggers",
+        on_load=[TriggersState.refresh, TriggersState.watch],
+        title="Triggers",
     )
     return app

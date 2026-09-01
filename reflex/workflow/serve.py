@@ -594,6 +594,44 @@ def audit_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
     return endpoint
 
 
+def triggers_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that summarizes what starts each workflow.
+
+    Args:
+        runtime: The runtime whose definitions are summarized.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("read")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """List webhooks, schedules, and manual roots.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The trigger rows.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        from reflex.workflow.triggers import describe_triggers, schedule_cursors
+
+        now = runtime.kernel._clock()  # pyright: ignore[reportPrivateUsage]
+        cursors = await schedule_cursors(
+            runtime.definitions,
+            runtime.kernel._store.read_schedule_cursor,  # pyright: ignore[reportPrivateUsage]
+        )
+        return JSONResponse({
+            "triggers": describe_triggers(runtime.definitions, now, cursors)
+        })
+
+    return endpoint
+
+
 def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: str):
     """Build one operator action endpoint.
 
@@ -822,6 +860,14 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                         "responses": {"200": {"description": "The entries"}},
                     }
                 },
+                "/triggers": {
+                    "get": {
+                        "summary": (
+                            "Webhooks, schedules, and manual roots (scope: read)"
+                        ),
+                        "responses": {"200": {"description": "The triggers"}},
+                    }
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -955,6 +1001,7 @@ def build_app(
                 methods=["POST"],
             ),
             Route("/audit", audit_endpoint(runtime, tokens), methods=["GET"]),
+            Route("/triggers", triggers_endpoint(runtime, tokens), methods=["GET"]),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a
             # minted approval link configured against an rx.App keeps working
             # when the deployment moves to the standalone service.
