@@ -366,7 +366,12 @@ def test_a_child_finished_and_killed_still_reaches_its_parent(crash):
     assert statuses.count("COMPLETED") == 1, statuses
     assert all(status in ("RUNNING", "WAITING") for status in statuses[1:]), statuses
 
+    # If the sibling was mid-attempt at the kill, recovery re-executes its
+    # first step, which arms a fresh one-hour timer from the shifted clock; a
+    # second restart another hour on fires it. Either way the join must
+    # already hold the dead process's arrival.
     assert_finished(crash("recover", CRASH_CLOCK_OFFSET="3700"))
+    assert_finished(crash("recover", CRASH_CLOCK_OFFSET="7400"))
     assert effects(crash.ledger) == ["quick:a", "deploy:eu", "burst-report"], (
         "the join heard the dead process's child exactly once"
     )

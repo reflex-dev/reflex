@@ -598,10 +598,15 @@ Above the named boundaries sits a chaos soak (`test_chaos.py`): real workers
 serving a mixed load — guarded charges, durable timers, a retry that flakes
 once, correlated signals, fan-out joins — are SIGKILLed at random and
 restarted for the duration, on SQLite with one worker and on Postgres with
-several. Afterwards every run must be `COMPLETED`, every guarded effect must
-appear in the fsynced ledger exactly once, every signal handled exactly once,
-no claim left held, and at least one kill must have landed on a held claim,
-or the soak proved nothing. It runs small on every push and scales by
+several. On Postgres the soak also severs every connection to the store from
+the server side at random (`pg_terminate_backend`), so "the store became
+unreachable at commit" is exercised for real: a worker whose transaction is
+cut must abandon the attempt and recover its pool rather than exit, and the
+driver, cut too, retries with its idempotency keys as a client should.
+Afterwards every run must be `COMPLETED`, every guarded effect must appear in
+the fsynced ledger exactly once, every signal handled exactly once, no claim
+left held, no worker may have exited on its own, and at least one kill must
+have landed on a held claim, or the soak proved nothing. It runs small on every push and scales by
 environment (`REFLEX_CHAOS_SECONDS`, `_RUNS`, `_WORKERS`) into a real soak.
 
 ## 9. Operator actions
