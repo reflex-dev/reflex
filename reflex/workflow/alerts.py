@@ -18,12 +18,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import os
 import time
 from collections import deque
 from typing import TYPE_CHECKING, Any, Final
-
-from reflex_base.utils import console
 
 from reflex.workflow.kernel import WorkflowObserver
 from reflex.workflow.records import HistoryEventType
@@ -32,6 +31,8 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
 
     import httpx
+
+logger = logging.getLogger(__name__)
 
 ALERT_WEBHOOK_ENV: Final = "REFLEX_WORKFLOW_ALERT_WEBHOOK"
 ALERT_KINDS_ENV: Final = "REFLEX_WORKFLOW_ALERT_KINDS"
@@ -277,7 +278,7 @@ class AlertObserver(WorkflowObserver):
             within: Seconds to give the queue before stopping regardless.
         """
         if not await self.flush(within):
-            console.warn(
+            logger.warning(
                 f"Stopping with {_plural(len(self._queue) + 1, 'alert', 'alerts')} "
                 f"still undelivered to {self.url}."
             )
@@ -304,7 +305,7 @@ class AlertObserver(WorkflowObserver):
             self.dropped += 1
             if not self._overflowing:
                 self._overflowing = True
-                console.warn(
+                logger.warning(
                     f"Alert queue is full ({self._max_queued}); dropping the "
                     f"oldest alerts until {self.url} catches up."
                 )
@@ -360,7 +361,7 @@ class AlertObserver(WorkflowObserver):
                 self.sent += 1
                 return
         self.failed += 1
-        console.warn(
+        logger.warning(
             f"Alert {payload['kind']!r} could not be delivered to {self.url} "
             f"after {_plural(attempts, 'attempt', 'attempts')}: {last}"
         )

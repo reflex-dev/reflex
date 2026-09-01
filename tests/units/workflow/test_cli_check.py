@@ -118,13 +118,15 @@ def test_json_output_is_machine_readable(tmp_path, forked_registration_context):
     assert "inline" in by_class["Broken"]["error"]
 
 
-def test_a_module_with_no_workflows_fails(tmp_path, forked_registration_context):
+def test_a_module_with_no_workflows_fails(
+    tmp_path, forked_registration_context, caplog
+):
     """Producing nothing is a failure a generator must hear about."""
     module = tmp_path / "flows_empty.py"
     module.write_text("x = 1\n")
     result = CliRunner().invoke(workflows, ["check", str(module)])
     assert result.exit_code == 1
-    assert "No workflow classes" in result.output
+    assert "No workflow classes" in caplog.text
 
 
 def test_a_missing_target_fails_cleanly(tmp_path, forked_registration_context):
@@ -181,7 +183,7 @@ class Batch(rx.State):
 
 
 def test_the_worker_refuses_a_module_with_no_workflows(
-    tmp_path, forked_registration_context
+    tmp_path, forked_registration_context, caplog
 ):
     """Starting a worker that would serve nothing is an error, not a hang.
 
@@ -192,17 +194,21 @@ def test_the_worker_refuses_a_module_with_no_workflows(
     module.write_text("x = 1\n")
     result = CliRunner().invoke(workflows, ["worker", str(module)])
     assert result.exit_code == 1
-    assert "No workflow classes" in result.output
+    assert "No workflow classes" in caplog.text
 
 
-def test_the_worker_refuses_an_unloadable_target(tmp_path, forked_registration_context):
+def test_the_worker_refuses_an_unloadable_target(
+    tmp_path, forked_registration_context, caplog
+):
     """A bad path is named, not raised as a traceback."""
     result = CliRunner().invoke(workflows, ["worker", str(tmp_path / "nope.py")])
     assert result.exit_code == 1
-    assert "Could not load" in result.output
+    assert "Could not load" in caplog.text
 
 
-def test_the_worker_names_a_compile_error(tmp_path, forked_registration_context):
+def test_the_worker_names_a_compile_error(
+    tmp_path, forked_registration_context, caplog
+):
     """A workflow that does not compile stops the worker with the reason.
 
     Starting a worker is the moment a deployment finds out its code is wrong.
@@ -213,7 +219,7 @@ def test_the_worker_names_a_compile_error(tmp_path, forked_registration_context)
     module.write_text(BROKEN)
     result = CliRunner().invoke(workflows, ["worker", str(module)])
     assert result.exit_code == 1
-    assert "runs it inline" in result.output
+    assert "runs it inline" in caplog.text
 
 
 HOOKED = '''
@@ -278,7 +284,9 @@ def test_webhook_roots_are_named_for_the_worker(forked_registration_context):
     assert names == ["check.mixed.on_hook"], names
 
 
-def test_init_writes_a_workflow_that_compiles(tmp_path, forked_registration_context):
+def test_init_writes_a_workflow_that_compiles(
+    tmp_path, forked_registration_context, caplog
+):
     """The scaffold must be correct code, not a sketch.
 
     It is the first thing a new developer runs, and the commands it prints
@@ -303,7 +311,7 @@ def test_init_writes_a_workflow_that_compiles(tmp_path, forked_registration_cont
         # A second init does not quietly overwrite the first.
         again = runner.invoke(group, ["init", "orders"])
         assert again.exit_code == 1
-        assert "already exists" in again.output
+        assert "already exists" in caplog.text
 
 
 def test_reflex_init_workflow_is_the_same_scaffold(tmp_path):

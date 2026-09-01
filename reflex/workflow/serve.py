@@ -18,10 +18,10 @@ from __future__ import annotations
 
 import hmac
 import json
+import logging
 import os
 from typing import TYPE_CHECKING, Any, Final
 
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import ChannelDelivery
 from starlette.applications import Starlette
@@ -44,6 +44,8 @@ if TYPE_CHECKING:
     from starlette.requests import Request
 
     from reflex.workflow.runtime import WorkflowRuntime
+
+logger = logging.getLogger(__name__)
 
 SCOPES: Final = ("read", "start", "signal", "operate")
 SCOPE_TOKEN_ENVS: Final = {scope: f"{TOKEN_ENV}_{scope.upper()}" for scope in SCOPES}
@@ -1040,7 +1042,7 @@ def build_app(
         )
 
         if not tokens:
-            console.warn(
+            logger.warning(
                 f"No API token configured ({TOKEN_ENV} or scoped variants); "
                 "the run API is refusing every request. Webhooks still work: "
                 "they authenticate with their own signatures."

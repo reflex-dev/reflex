@@ -23,13 +23,13 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import math
 import os
 import time
 from html import escape
 from typing import TYPE_CHECKING, Any, Final
 
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowRuntimeError
 from reflex_base.workflow import ChannelDelivery, parse_duration
 from starlette.responses import HTMLResponse, JSONResponse, Response
@@ -45,6 +45,8 @@ if TYPE_CHECKING:
     from starlette.requests import Request
 
     from reflex.workflow.runtime import WorkflowRuntime
+
+logger = logging.getLogger(__name__)
 
 SECRET_ENV: Final = "REFLEX_WORKFLOW_APPROVAL_SECRET"
 APPROVAL_ROUTE: Final = "/_workflow/approve/{token:path}"
@@ -338,7 +340,7 @@ def approval_endpoint(
             # A server with no secret cannot tell a good link from a forged
             # one. Saying "expired" would send an operator hunting a data
             # problem instead of a configuration one.
-            console.error(f"Approval link rejected: {err}")
+            logger.error(f"Approval link rejected: {err}")
             message = "Approvals are not configured on this server."
             if _wants_json(request):
                 return JSONResponse({"error": message}, status_code=500)

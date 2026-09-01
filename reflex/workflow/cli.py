@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import inspect
 import json
+import logging
 import operator
 import os
 import sys
@@ -28,6 +29,9 @@ if TYPE_CHECKING:
 
     from reflex.workflow.definition import WorkflowDefinition
     from reflex.workflow.store import RunStore
+
+
+logger = logging.getLogger(__name__)
 
 
 def webhook_root_names(definitions: Iterable[WorkflowDefinition]) -> list[str]:
@@ -96,7 +100,7 @@ def _operator_action(database: str | None, run_id: str, action: str, **extra):
 
     applied = _with_store(database, apply)
     if not applied:
-        console.error(
+        logger.error(
             f"Run {run_id!r} is not in a state that allows {action.split('_')[0]!r}."
         )
         raise click.exceptions.Exit(1)
@@ -144,7 +148,7 @@ async def _resolve_run_id(store: RunStore, run_id: str) -> str:
         # `reflex workflows cancel "$RUN_ID"` with RUN_ID unset arrives here as
         # an empty string, which prefixes every run. With exactly one run in
         # the database that resolved and cancelled it, reporting success.
-        console.error("No run id given. Pass the run to act on.")
+        logger.error("No run id given. Pass the run to act on.")
         raise click.exceptions.Exit(1)
     if await store.get_run(run_id) is not None:
         return run_id
@@ -158,7 +162,7 @@ async def _resolve_run_id(store: RunStore, run_id: str) -> str:
         # may match another run just outside the window, and resolving it
         # would cancel or complete the wrong one. There is no prefix query in
         # the store protocol to do better, so say what is true.
-        console.error(
+        logger.error(
             f"This database holds more than {_PREFIX_SCAN_LIMIT:,} runs, so "
             f"{run_id!r} cannot be shown to match only one. Pass the full run "
             "id (reflex workflows list prints them), or purge finished runs."
@@ -167,11 +171,11 @@ async def _resolve_run_id(store: RunStore, run_id: str) -> str:
     if len(matches) == 1:
         return matches[0]
     if not matches:
-        console.error(f"No run {run_id!r} in this database.")
+        logger.error(f"No run {run_id!r} in this database.")
         raise click.exceptions.Exit(1)
     listed = ", ".join(match[:12] for match in matches[:5])
     more = f" and {len(matches) - 5} more" if len(matches) > 5 else ""
-    console.error(f"{run_id!r} matches several runs: {listed}{more}.")
+    logger.error(f"{run_id!r} matches several runs: {listed}{more}.")
     raise click.exceptions.Exit(1)
 
 
@@ -216,7 +220,7 @@ def _with_store(database: str | None, work: Callable[[RunStore], Awaitable[Any]]
             raise
         # Bounded contention against a busy worker is an operational fact,
         # not a traceback: say what happened and what to do.
-        console.error(
+        logger.error(
             "The store is busy (a worker holds its write lock). Retry in a moment."
         )
         raise click.exceptions.Exit(1) from None
@@ -407,7 +411,7 @@ def triggers(target: str, as_json: bool):
     try:
         module = _load_module(target)
     except Exception as err:
-        console.error(f"Could not load {target!r}: {err}")
+        logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
 
     rows: list[dict[str, Any]] = []
@@ -489,12 +493,12 @@ def doctor(database: str | None, target: str):
     try:
         module = _load_module(target)
     except Exception as err:
-        console.error(f"Could not load {target!r}: {err}")
+        logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
 
     definitions = tuple(compile_workflow(cls) for cls in discover_workflows(module))
     if not definitions:
-        console.error(f"No workflow classes in {target!r}.")
+        logger.error(f"No workflow classes in {target!r}.")
         raise click.exceptions.Exit(1)
 
     rows = describe_connections(definitions)
@@ -511,7 +515,7 @@ def doctor(database: str | None, target: str):
         if row["severity"] == "note":
             console.print(f"note: {row['message']}")
     for problem in failures:
-        console.error(problem)
+        logger.error(problem)
     if failures:
         raise click.exceptions.Exit(1)
     console.print(f"{len(definitions)} workflow(s) ready to serve.")
@@ -547,7 +551,7 @@ def write_scaffold(name: str) -> Path:
     """
     module = Path(name if name.endswith(".py") else f"{name}.py")
     if module.exists():
-        console.error(f"{module} already exists; choose another name.")
+        logger.error(f"{module} already exists; choose another name.")
         raise click.exceptions.Exit(1)
 
     stem = module.stem.replace("-", "_")
@@ -633,7 +637,7 @@ def dev(
     try:
         module = _load_module(target)
     except Exception as err:
-        console.error(f"Could not load {target!r}: {err}")
+        logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
 
     classes = {
@@ -642,7 +646,7 @@ def dev(
         if isinstance(value, type) and "__workflow__" in vars(value)
     }
     if not classes:
-        console.error(f"No workflow classes in {target!r}.")
+        logger.error(f"No workflow classes in {target!r}.")
         raise click.exceptions.Exit(1)
 
     finished = asyncio.Event()
@@ -728,7 +732,7 @@ def dev(
             for workflow_cls in classes.values():
                 runtime.register(workflow_cls)
         except WorkflowDefinitionError as err:
-            console.error(f"Cannot serve {target!r}: {err}")
+            logger.error(f"Cannot serve {target!r}: {err}")
             raise click.exceptions.Exit(1) from None
 
         async with runtime.running():
@@ -739,7 +743,7 @@ def dev(
             class_name, _, handler_name = start.partition(".")
             workflow_cls = classes.get(class_name)
             if workflow_cls is None or not handler_name:
-                console.error(
+                logger.error(
                     f"{start!r} is not Workflow.handler; available: "
                     f"{', '.join(sorted(classes))}."
                 )
@@ -817,13 +821,13 @@ def worker(
         try:
             drain_seconds = parse_duration(drain)
         except Exception as err:
-            console.error(f"--drain {drain!r} is not a duration: {err}")
+            logger.error(f"--drain {drain!r} is not a duration: {err}")
             raise click.exceptions.Exit(1) from None
 
     try:
         module = _load_module(target)
     except Exception as err:
-        console.error(f"Could not load {target!r}: {err}")
+        logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
 
     classes = [
@@ -832,7 +836,7 @@ def worker(
         if isinstance(value, type) and "__workflow__" in vars(value)
     ]
     if not classes:
-        console.error(
+        logger.error(
             f"No workflow classes in {target!r}. A workflow is an rx.State "
             "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
         )
@@ -856,7 +860,7 @@ def worker(
             # worker's startup names only the compiler. Refusing to start at
             # all beats serving a half-registered set, where the workflows
             # that did compile run and the rest vanish silently.
-            console.error(f"Cannot serve {target!r}: {err}")
+            logger.error(f"Cannot serve {target!r}: {err}")
             raise click.exceptions.Exit(1) from None
         served = ", ".join(sorted(d.workflow_id for d in runtime.definitions))
         console.print(
@@ -869,7 +873,7 @@ def worker(
             # receive the requests that start these. Left unsaid, the symptom
             # is a workflow that simply never runs and a worker that looks
             # perfectly healthy.
-            console.warn(
+            logger.warning(
                 f"{', '.join(webhook_roots)} start from webhooks, which this "
                 "worker does not serve. Run the app (or another process "
                 "serving the workflow endpoints) to receive them; this worker "
@@ -1015,7 +1019,7 @@ def purge(
     try:
         cutoff = time.time() - parse_duration(older_than)
     except Exception as err:
-        console.error(f"--older-than {older_than!r} is not a duration: {err}")
+        logger.error(f"--older-than {older_than!r} is not a duration: {err}")
         raise click.exceptions.Exit(1) from None
     if not yes:
         click.confirm(
@@ -1121,7 +1125,7 @@ def show(database: str | None, run_id: str, as_json: bool, history: bool):
 
     run, steps, events = _with_store(database, load)
     if run is None:
-        console.error(f"No run {run_id!r} in this database.")
+        logger.error(f"No run {run_id!r} in this database.")
         raise click.exceptions.Exit(1)
 
     if as_json:
@@ -1200,7 +1204,7 @@ def check(target: str, as_json: bool):
         if as_json:
             click.echo(json.dumps({"ok": False, "error": str(err), "workflows": []}))
         else:
-            console.error(f"Could not load {target!r}: {err}")
+            logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
 
     classes = [
@@ -1238,7 +1242,7 @@ def check(target: str, as_json: bool):
             payload["error"] = "no workflow classes found"
         click.echo(json.dumps(payload, indent=2))
     elif not reports:
-        console.error(
+        logger.error(
             f"No workflow classes in {target!r}. A workflow is an rx.State "
             "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
         )
@@ -1364,7 +1368,7 @@ def serve(
     from reflex.workflow.store import resolve_store
 
     if ingress_only and worker_only:
-        console.error("--ingress-only and --worker-only exclude each other.")
+        logger.error("--ingress-only and --worker-only exclude each other.")
         raise click.exceptions.Exit(1)
     if drain is None:
         drain_seconds = configured_drain()
@@ -1372,13 +1376,13 @@ def serve(
         try:
             drain_seconds = parse_duration(drain)
         except Exception as err:
-            console.error(f"--drain {drain!r} is not a duration: {err}")
+            logger.error(f"--drain {drain!r} is not a duration: {err}")
             raise click.exceptions.Exit(1) from None
 
     try:
         module = _load_module(target)
     except Exception as err:
-        console.error(f"Could not load {target!r}: {err}")
+        logger.error(f"Could not load {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
     classes = [
         value
@@ -1386,7 +1390,7 @@ def serve(
         if isinstance(value, type) and "__workflow__" in vars(value)
     ]
     if not classes:
-        console.error(
+        logger.error(
             f"No workflow classes in {target!r}. A workflow is an rx.State "
             "subclass with __workflow__ = rx.WorkflowConfig(id=...)."
         )
@@ -1397,7 +1401,7 @@ def serve(
         for workflow_cls in classes:
             runtime.register(workflow_cls)
     except WorkflowDefinitionError as err:
-        console.error(f"Cannot serve {target!r}: {err}")
+        logger.error(f"Cannot serve {target!r}: {err}")
         raise click.exceptions.Exit(1) from None
     app = build_app(
         runtime,
@@ -1465,7 +1469,7 @@ def fleet(database: str | None, retire_release: str | None):
     if retire_release is not None:
         held = counts.get(retire_release, 0)
         if held:
-            console.error(
+            logger.error(
                 f"Release {retire_release!r} still owns {held} active "
                 f"run{'s' if held != 1 else ''}; retiring its workers now "
                 "would strand them until their leases lapse."
@@ -1590,7 +1594,7 @@ def cancel(database: str | None, run_id: str, reason: str | None):
 
     recorded = _with_store(database, request)
     if not recorded:
-        console.error(f"Run {run_id!r} is unknown or already finished.")
+        logger.error(f"Run {run_id!r} is unknown or already finished.")
         raise click.exceptions.Exit(1)
     console.print(f"Cancellation requested for {run_id}.")
 
@@ -1674,7 +1678,7 @@ def _finalize(
 
     finalized = _with_store(database, finish)
     if not finalized:
-        console.error(
+        logger.error(
             f"Run {run_id!r} is unknown, already finished, or has a step a "
             "worker still holds. Cancel it first if a worker is on it."
         )
@@ -1707,7 +1711,7 @@ def complete(
         try:
             result = json.loads(result_json)
         except json.JSONDecodeError as err:
-            console.error(f"--result is not JSON: {err}")
+            logger.error(f"--result is not JSON: {err}")
             raise click.exceptions.Exit(1) from None
     _finalize(database, run_id, RunStatus.COMPLETED, result=result, reason=reason)
 
@@ -1752,7 +1756,7 @@ def resume(database: str | None, run_id: str, reason: str | None):
 
     resumed = _with_store(database, reopen)
     if not resumed:
-        console.error(f"Run {run_id!r} is not suspended.")
+        logger.error(f"Run {run_id!r} is not suspended.")
         raise click.exceptions.Exit(1)
     console.print(f"Resumed {run_id}; its next step will run.")
 
@@ -1870,7 +1874,7 @@ def console_command(
             str(Path(target).resolve()) if Path(target).exists() else target
         )
     if host not in ("127.0.0.1", "localhost", "::1"):
-        console.warn(
+        logger.warning(
             f"Binding the console to {host}: it has no login of its own. Put "
             "it behind a proxy that authenticates operators and stamps "
             "REFLEX_ACTOR, or keep it on loopback."

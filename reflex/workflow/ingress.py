@@ -10,9 +10,9 @@ through the trigger's deduplication key rather than starting a second one.
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING, Any
 
-from reflex_base.utils import console
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
     from reflex.workflow.runtime import WorkflowRuntime
+
+logger = logging.getLogger(__name__)
 
 MAX_BODY_BYTES = 1_048_576
 
@@ -352,7 +354,7 @@ def webhook_endpoint(
             try:
                 verified = route.trigger.verify(body, headers)
             except Exception:
-                console.warn(f"Webhook verifier raised for topic {topic!r}.")
+                logger.warning(f"Webhook verifier raised for topic {topic!r}.")
                 verified = False
             if not verified:
                 return JSONResponse({"error": "invalid signature"}, status_code=401)

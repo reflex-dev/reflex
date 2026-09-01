@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import logging
 import operator
 import os
 import random
@@ -22,7 +23,6 @@ import uuid
 from typing import TYPE_CHECKING, Any, Final
 
 from reflex_base.event.processor.base_state_processor import _transform_event_payload
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
@@ -78,6 +78,8 @@ if TYPE_CHECKING:
 
     from reflex.state import BaseState
     from reflex.workflow.definition import HandlerDefinition, WorkflowDefinition
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_POLL_INTERVAL = 0.25
 
@@ -422,9 +424,9 @@ class LoggingObserver(WorkflowObserver):
         )
         line = f"workflow={workflow_id} run={run_id} event={event_type.value} {detail}"
         if "error" in data:
-            console.warn(f"{line} error={data['error']}")
+            logger.warning(f"{line} error={data['error']}")
         else:
-            console.debug(line)
+            logger.debug(line)
 
 
 class _SuccessorSpec:
@@ -2290,7 +2292,7 @@ class WorkflowKernel:
             for event_type, data in events:
                 self._observer.on_event(event_type, run.run_id, run.workflow_id, data)
         except Exception as err:
-            console.warn(f"Workflow observer raised, ignoring: {err}")
+            logger.warning(f"Workflow observer raised, ignoring: {err}")
 
     def _notify_dead_letter(
         self,
@@ -2312,7 +2314,7 @@ class WorkflowKernel:
         try:
             self._observer.on_dead_letter(workflow_id, channel, count, reason)
         except Exception as err:
-            console.warn(f"Workflow observer raised, ignoring: {err}")
+            logger.warning(f"Workflow observer raised, ignoring: {err}")
 
     def _acquire_lease(self, claim: Claim) -> _Lease:
         """Register an in-flight claim and start renewing its lease.
@@ -2351,13 +2353,13 @@ class WorkflowKernel:
             # attempt rather than keep running work this kernel can no longer
             # prove it owns -- recovery is about to hand the step to someone else.
             if lease.expires_at - now <= self._lease_renew_interval:
-                console.warn(
+                logger.warning(
                     "Workflow lease renewal keeps failing and the lease is about "
                     f"to lapse; abandoning the attempt: {err}"
                 )
                 self._lose_lease(lease)
             else:
-                console.debug(f"Workflow lease renewal failed, retrying: {err}")
+                logger.debug(f"Workflow lease renewal failed, retrying: {err}")
             return
         if not held:
             self._lose_lease(lease)
@@ -2774,7 +2776,7 @@ class WorkflowKernel:
                 # but they are said out loud.
                 skipped = schedule.count_between(cursor, now)
                 if skipped:
-                    console.warn(
+                    logger.warning(
                         f"Schedule {key} is paused; skipping {skipped} "
                         f"occurrence(s) between {cursor:.0f} and {now:.0f}."
                     )
@@ -2801,7 +2803,7 @@ class WorkflowKernel:
                 if self._observer is not None:
                     with contextlib.suppress(Exception):
                         self._observer.on_schedule_skip(key, max(dropped, 1))
-                console.warn(
+                logger.warning(
                     f"Schedule {key} missed more than {MAX_SCHEDULE_CATCHUP} "
                     f"occurrences between {cursor:.0f} and {now:.0f}; catching "
                     f"up the first {MAX_SCHEDULE_CATCHUP} and skipping the "
@@ -3374,7 +3376,7 @@ class WorkflowKernel:
         now = self._clock()
         swept = await self._store.sweep_parked(now, PARKED_DELIVERY_TTL)
         if swept:
-            console.warn(
+            logger.warning(
                 f"{swept} parked channel deliver{'y' if swept == 1 else 'ies'} "
                 "went unclaimed past the TTL and became dead letters; "
                 "list them with the store's list_parked and replay any that "
@@ -3472,7 +3474,7 @@ class WorkflowKernel:
                 # gone back to polling.
                 raise
             except Exception as err:
-                console.error(f"Workflow worker error, retrying: {err!r}")
+                logger.error(f"Workflow worker error, retrying: {err!r}")
                 await asyncio.sleep(self._poll_interval)
 
     async def start_worker(self) -> None:

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import os
 import random
 import time
@@ -18,7 +19,6 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import WorkflowDefinitionError, WorkflowRuntimeError
 from reflex_base.workflow import (
     DEFAULT_LEASE_DURATION,
@@ -52,6 +52,8 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex.workflow.records import RunRecord, RunSnapshot, StartResult
 
+
+logger = logging.getLogger(__name__)
 
 _context_runtime: ContextVar[WorkflowRuntime | None] = ContextVar(
     "reflex_workflow_runtime", default=None
@@ -314,7 +316,7 @@ async def _retry_startup(step: Callable[[], Awaitable[Any]], what: str) -> None:
         except Exception as err:  # noqa: PERF203 -- a retry loop is a try in a loop
             if attempt == STARTUP_ATTEMPTS:
                 raise
-            console.warn(
+            logger.warning(
                 f"Workflow {what} failed (attempt {attempt} of {STARTUP_ATTEMPTS}): "
                 f"{err!r}; retrying in {delay:.1f}s."
             )
@@ -343,7 +345,7 @@ def configured_drain() -> float:
     try:
         return parse_duration(raw)
     except Exception:
-        console.warn(f"{DRAIN_ENV}={raw!r} is not a duration; not draining.")
+        logger.warning(f"{DRAIN_ENV}={raw!r} is not a duration; not draining.")
         return 0.0
 
 

@@ -239,7 +239,7 @@ def test_fail_records_the_operator_s_reason(seeded):
     assert "provider retired" in json.dumps(payload["error"])
 
 
-def test_finalizing_an_unknown_run_fails(seeded):
+def test_finalizing_an_unknown_run_fails(seeded, caplog):
     """Nothing to finalize is an error, not a silent success.
 
     A run that does not exist now says exactly that. The older message
@@ -249,32 +249,34 @@ def test_finalizing_an_unknown_run_fails(seeded):
 
     Args:
         seeded: The database and its run ids.
+        caplog: Captured log records.
     """
     database, _, _ = seeded
     result = _invoke("complete", "-d", database, "no-such-run")
     assert result.exit_code == 1
-    assert "No run" in result.output
+    assert "No run" in caplog.text
 
 
-def test_finalizing_a_finished_run_says_why(seeded):
+def test_finalizing_a_finished_run_says_why(seeded, caplog):
     """A run that exists but cannot be finalized keeps the fuller message.
 
     Args:
         seeded: The database and its run ids.
+        caplog: Captured log records.
     """
     database, waiting, _ = seeded
     assert _invoke("complete", "-d", database, waiting).exit_code == 0
     again = _invoke("complete", "-d", database, waiting)
     assert again.exit_code == 1
-    assert "already finished" in again.output
+    assert "already finished" in caplog.text
 
 
-def test_complete_refuses_a_result_that_is_not_json(seeded):
+def test_complete_refuses_a_result_that_is_not_json(seeded, caplog):
     """A typo in --result must not be recorded as the string the operator typed."""
     database, waiting, _ = seeded
     result = _invoke("complete", "-d", database, waiting, "--result", "{oops")
     assert result.exit_code == 1
-    assert "not JSON" in result.output
+    assert "not JSON" in caplog.text
 
 
 def test_purge_deletes_only_stale_terminal_runs(seeded):
@@ -329,16 +331,17 @@ def test_an_ambiguous_prefix_refuses_and_names_the_candidates(seeded):
     assert "matches several runs" in result.output
 
 
-def test_an_unknown_prefix_still_says_so(seeded):
+def test_an_unknown_prefix_still_says_so(seeded, caplog):
     """The no-match message must not be lost to the new prefix path.
 
     Args:
         seeded: The database and its run ids.
+        caplog: Captured log records.
     """
     database, _, _ = seeded
     result = _invoke("show", "-d", database, "nosuchrun")
     assert result.exit_code == 1
-    assert "No run" in result.output
+    assert "No run" in caplog.text
 
 
 def test_operator_actions_take_a_prefix_too(seeded):

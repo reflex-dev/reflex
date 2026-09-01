@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import hmac
 import json
+import logging
 import os
 from typing import TYPE_CHECKING, Any, Final
 
-from reflex_base.utils import console
 from starlette.responses import JSONResponse, PlainTextResponse
 
 from reflex.workflow.definition import unbound_params
@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     from starlette.responses import Response
 
     from reflex.workflow.runtime import WorkflowRuntime
+
+logger = logging.getLogger(__name__)
 
 TOKEN_ENV: Final = "REFLEX_WORKFLOW_API_TOKEN"
 START_ROUTE: Final = "/_workflow/api/runs"
@@ -197,7 +199,7 @@ def start_endpoint(
             # A rejected start is the caller's problem to see, not a 500: the
             # usual cause is a handler that is not a manual root, or args that
             # do not fit it.
-            console.warn(f"Workflow API start refused: {err}")
+            logger.warning(f"Workflow API start refused: {err}")
             return JSONResponse({"error": str(err)}, status_code=400)
         return JSONResponse(
             {"disposition": result.disposition, "run_id": result.run_id},

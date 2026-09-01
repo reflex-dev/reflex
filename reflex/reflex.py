@@ -180,7 +180,7 @@ def init(
     """Initialize a new Reflex app in the current directory."""
     if workflow:
         if template or ai:
-            console.error(
+            logger.error(
                 "--workflow scaffolds a workflow-only module and takes no "
                 "--template or --ai."
             )
@@ -921,7 +921,7 @@ def _refuse_workflow_only_deploy() -> None:
     ]
     if not holding:
         return
-    console.error(
+    logger.error(
         f"{', '.join(holding)} define workflows, but this is not a Reflex app "
         f"({Config.FILE} is absent) and hosting cannot deploy a project with "
         "no frontend yet. Run the workers yourself against your own "
