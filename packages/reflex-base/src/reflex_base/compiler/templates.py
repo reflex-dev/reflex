@@ -688,33 +688,47 @@ def vite_config_template(
     )
     prod_react_plugin_str = (
         """
+import path from "path";
+import { createRequire } from "module";
+
 function prodReactPrebundle() {
+  // Resolve each package the way Node does from where it is actually used,
+  // so a nested install (e.g. react-dom/node_modules/scheduler) still works.
+  const packageRoot = (name, from) =>
+    path.dirname(createRequire(from).resolve(name + "/package.json"));
+  const reactRoot = packageRoot("react", import.meta.url);
+  const reactDomRoot = packageRoot("react-dom", import.meta.url);
+  const schedulerRoot = packageRoot("scheduler", path.join(reactDomRoot, "package.json"));
   const production = {
-    react: "react/cjs/react.production.js",
-    "react/jsx-runtime": "react/cjs/react-jsx-runtime.production.js",
-    "react/jsx-dev-runtime": "react/cjs/react-jsx-dev-runtime.production.js",
-    "react-dom": "react-dom/cjs/react-dom.production.js",
-    "react-dom/client": "react-dom/cjs/react-dom-client.production.js",
-    scheduler: "scheduler/cjs/scheduler.production.js",
+    react: path.join(reactRoot, "cjs/react.production.js"),
+    "react/jsx-runtime": path.join(reactRoot, "cjs/react-jsx-runtime.production.js"),
+    "react/jsx-dev-runtime": path.join(reactRoot, "cjs/react-jsx-dev-runtime.production.js"),
+    "react-dom": path.join(reactDomRoot, "cjs/react-dom.production.js"),
+    "react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),
+    scheduler: path.join(schedulerRoot, "cjs/scheduler.production.js"),
   };
-  // Optimizer entries arrive as the packages' resolved entry files.
-  const entryFiles = {
-    "react/index.js": "react",
-    "react/jsx-runtime.js": "react/jsx-runtime",
-    "react/jsx-dev-runtime.js": "react/jsx-dev-runtime",
-    "react-dom/index.js": "react-dom",
-    "react-dom/client.js": "react-dom/client",
-    "scheduler/index.js": "scheduler",
+  // Optimizer entries arrive as the packages' resolved entry files (with the
+  // platform's separators, hence the normalization).
+  const key = (file) => {
+    const normalized = path.normalize(file);
+    return process.platform === "win32" ? normalized.toLowerCase() : normalized;
   };
-  const abs = (file) => fileURLToPath(new URL("./node_modules/" + file, import.meta.url));
+  const entryFiles = Object.fromEntries(
+    Object.entries({
+      react: path.join(reactRoot, "index.js"),
+      "react/jsx-runtime": path.join(reactRoot, "jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.join(reactRoot, "jsx-dev-runtime.js"),
+      "react-dom": path.join(reactDomRoot, "index.js"),
+      "react-dom/client": path.join(reactDomRoot, "client.js"),
+      scheduler: path.join(schedulerRoot, "index.js"),
+    }).map(([bare, file]) => [key(file), bare]),
+  );
   return {
     name: "reflex-prod-react-prebundle",
     resolveId(id) {
-      if (id in production) return abs(production[id]);
-      for (const [suffix, bare] of Object.entries(entryFiles)) {
-        if (id.endsWith("/node_modules/" + suffix)) return abs(production[bare]);
-      }
-      return null;
+      if (id in production) return production[id];
+      const bare = entryFiles[key(id)];
+      return bare ? production[bare] : null;
     },
   };
 }

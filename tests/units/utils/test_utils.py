@@ -978,7 +978,8 @@ def test_vite_config_template_prod_react(prod_react: bool) -> None:
         "plugins: [prodReactPrebundle()],",
         'transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": \'"1"\' } },',
         "jsx: { development: false },",
-        '"react-dom/client": "react-dom/cjs/react-dom-client.production.js",',
+        '"react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),',
+        'packageRoot("scheduler", path.join(reactDomRoot, "package.json"))',
     )
     for marker in markers:
         assert (marker in config) is prod_react, marker
