@@ -22,16 +22,23 @@ from reflex_base.workflow import (
 )
 
 from reflex.workflow.kernel import WorkflowObserver
-from reflex.workflow.records import RunStatus
+from reflex.workflow.records import TERMINAL_RUN_STATUSES, RunStatus
 from reflex.workflow.runtime import WorkflowRuntime, _context_runtime
 from reflex.workflow.store import MemoryRunStore
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from reflex_base.workflow import DurationLike
 
     from reflex.state import BaseState
     from reflex.workflow.kernel import WorkflowKernel
-    from reflex.workflow.records import RunSnapshot, StartResult
+    from reflex.workflow.records import (
+        HistoryEvent,
+        RunRecord,
+        RunSnapshot,
+        StartResult,
+    )
     from reflex.workflow.store import RunStore
 
 DEFAULT_START_TIME = 1_000_000.0
@@ -97,19 +104,30 @@ class WorkflowTestHarness:
         # pooled store open leaks its connections and its worker threads into
         # every later test in the process.
         self._owned_store = MemoryRunStore() if store is None else None
-        self._runtime = WorkflowRuntime(
-            store if store is not None else self._owned_store,
-            clock=self._clock,
-            rng=lambda: 1.0,
-            lease_duration=parse_duration(lease_duration),
-            lease_renew_interval=lease_renew_interval,
-            observer=observer,
-            max_recoveries=max_recoveries,
-            max_concurrency=max_concurrency,
-        )
-        for workflow_cls in workflow_classes:
-            self._runtime.register(workflow_cls)
+        self._store: RunStore = store if store is not None else self._owned_store  # pyright: ignore[reportAttributeAccessIssue]
+        self._workflow_classes = workflow_classes
+        self._runtime_kwargs: dict[str, Any] = {
+            "lease_duration": parse_duration(lease_duration),
+            "lease_renew_interval": lease_renew_interval,
+            "observer": observer,
+            "max_recoveries": max_recoveries,
+            "max_concurrency": max_concurrency,
+        }
+        self._runtime = self._build_runtime()
         self._token = None
+
+    def _build_runtime(self) -> WorkflowRuntime:
+        """Construct a runtime on the harness's store, clock, and classes.
+
+        Returns:
+            The registered, not yet started, runtime.
+        """
+        runtime = WorkflowRuntime(
+            self._store, clock=self._clock, rng=lambda: 1.0, **self._runtime_kwargs
+        )
+        for workflow_cls in self._workflow_classes:
+            runtime.register(workflow_cls)
+        return runtime
 
     @property
     def now(self) -> float:
@@ -307,6 +325,159 @@ class WorkflowTestHarness:
         skipped = await self.kernel.skip(run_id)
         await self.kernel.run_until_idle()
         return skipped
+
+    async def history(self, run_id: str) -> tuple[HistoryEvent, ...]:
+        """A run's whole recorded story, oldest first.
+
+        Args:
+            run_id: The run.
+
+        Returns:
+            Its history events.
+        """
+        return await self._store.get_history(run_id)
+
+    async def children(self, run_id: str) -> tuple[RunRecord, ...]:
+        """The child runs a run fanned out to, across all of its join slots.
+
+        Args:
+            run_id: The parent run.
+
+        Returns:
+            The children, in join-slot order.
+        """
+        snapshot = await self.get_run(run_id)
+        if snapshot is None:
+            return ()
+        kids: tuple[RunRecord, ...] = ()
+        for step in snapshot.steps:
+            if step.origin == "join":
+                kids = (*kids, *await self._store.list_children(run_id, step.ordinal))
+        return kids
+
+    async def run_until_terminal(
+        self, run_id: str, *, within: DurationLike = "30d"
+    ) -> RunSnapshot:
+        """Drive a run to a terminal state, advancing time as its waits need.
+
+        Runs everything currently due, then jumps the virtual clock to the
+        next timer or schedule and repeats -- the test says what should
+        happen, not how long each wait was.
+
+        Args:
+            run_id: The run to finish.
+            within: The most virtual time to spend before giving up.
+
+        Returns:
+            The terminal snapshot.
+
+        Raises:
+            AssertionError: If the run is not terminal within the budget, or
+                nothing is due and nothing ever will be -- a run waiting on a
+                signal no test sends.
+        """
+        deadline = self.now + parse_duration(within)
+        while True:
+            await self.run_until_idle()
+            snapshot = await self.get_run(run_id)
+            assert snapshot is not None, f"no run {run_id!r}"
+            if snapshot.status in TERMINAL_RUN_STATUSES:
+                return snapshot
+            due = [
+                when
+                for when in (
+                    await self._store.next_due(self.now),
+                    self.kernel._next_schedule_due(self.now),
+                )
+                if when is not None
+            ]
+            if not due:
+                msg = (
+                    f"Run {run_id!r} is {snapshot.status.value} with nothing due: "
+                    "it is waiting on a signal or approval this test never sends."
+                )
+                raise AssertionError(msg)
+            target = max(min(due), self.now + 1e-3)
+            if target > deadline:
+                msg = (
+                    f"Run {run_id!r} is still {snapshot.status.value} after "
+                    f"{within}; the next wake is {target - self.now:.0f}s out."
+                )
+                raise AssertionError(msg)
+            await self.advance(target - self.now)
+
+    async def webhook(
+        self,
+        topic: str,
+        payload: Any,
+        *,
+        headers: Mapping[str, str] | None = None,
+        body: bytes | None = None,
+    ) -> tuple[int, Any]:
+        """Deliver a provider webhook to the runtime's ingress, in-process.
+
+        Drives the same endpoint a deployment mounts, on this loop, so
+        verification, deduplication, correlation, and parking all run for
+        real; only the network is skipped.
+
+        Args:
+            topic: The webhook topic.
+            payload: The JSON payload; ignored when ``body`` is given.
+            headers: Request headers, e.g. a signature.
+            body: The raw body to send instead of encoding ``payload``.
+
+        Returns:
+            The response status and decoded JSON body.
+        """
+        import json
+
+        from starlette.requests import Request
+
+        from reflex.workflow.ingress import webhook_endpoint
+
+        raw = body if body is not None else json.dumps(payload).encode()
+        sent = {"content-type": "application/json", **(headers or {})}
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": f"/_workflow/webhook/{topic}",
+            "path_params": {"topic": topic},
+            "query_string": b"",
+            "headers": [
+                (name.lower().encode(), value.encode()) for name, value in sent.items()
+            ],
+        }
+        delivered = False
+
+        async def receive() -> dict[str, Any]:  # noqa: RUF029
+            """Hand the body to the request exactly once.
+
+            Returns:
+                The ASGI receive message.
+            """
+            nonlocal delivered
+            if delivered:
+                return {"type": "http.disconnect"}
+            delivered = True
+            return {"type": "http.request", "body": raw, "more_body": False}
+
+        response = await webhook_endpoint(self._runtime)(Request(scope, receive))
+        return response.status_code, json.loads(bytes(response.body) or b"null")
+
+    async def restart(self) -> None:
+        """Replace the runtime with a fresh one on the same store and clock.
+
+        The test for "would this survive a deploy": every run, cursor, lease,
+        and parked delivery is whatever the store says it is, and the new
+        runtime has to pick up from there with nothing carried in memory.
+        """
+        if self._token is not None:
+            _context_runtime.reset(self._token)
+            self._token = None
+        await self._runtime.shutdown()
+        self._runtime = self._build_runtime()
+        await self._runtime.startup(start_worker=False)
+        self._token = _context_runtime.set(self._runtime)
 
     async def force_complete(self, run_id: str, result: Any = None) -> bool:
         """Finish a drained run by operator decision, then drain.

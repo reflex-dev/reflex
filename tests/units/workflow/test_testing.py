@@ -241,3 +241,242 @@ async def test_the_harness_drives_retry_skip_and_force(forked_registration_conte
         assert snapshot.status is RunStatus.FAILED
         assert snapshot.error is not None
         assert snapshot.error["message"] == "not worth repairing"
+
+
+async def test_run_until_terminal_drives_a_timer_chain_to_completion(
+    forked_registration_context,
+):
+    """The test says what should happen; the harness finds the waits itself."""
+
+    class Slow(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.slow")
+        hops: int = 0
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Start a chain of delayed hops.
+
+            Returns:
+                The first hop, an hour out.
+            """
+            return rx.after("1h", Slow.hop)
+
+        @rx.event(durable=True, effect="none")
+        def hop(self):
+            """Take one hop, then another after a day, then finish.
+
+            Returns:
+                The next hop or completion.
+            """
+            self.hops += 1
+            if self.hops < 3:
+                return rx.after("1d", Slow.hop)
+            return rx.complete(result=self.hops)
+
+    async with WorkflowTestHarness(Slow) as harness:
+        started = await harness.start(Slow.begin())
+        assert started.run_id is not None
+        before = harness.now
+        snapshot = await harness.run_until_terminal(started.run_id)
+        assert snapshot.status is RunStatus.COMPLETED
+        assert snapshot.result == 3
+        assert harness.now - before >= 2 * 86_400, "time advanced through the waits"
+
+
+async def test_run_until_terminal_refuses_to_wait_for_a_signal_nobody_sends(
+    forked_registration_context,
+):
+    """A run parked on a signal is a test bug, not something to spin on."""
+
+    class Waits(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.waits")
+        go = rx.Signal()
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Wait forever for a signal.
+
+            Returns:
+                The wait.
+            """
+            return rx.wait_for(Waits.go, then=Waits.done, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def done(self, payload):
+            """Finish.
+
+            Args:
+                payload: The delivered payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=payload)
+
+    async with WorkflowTestHarness(Waits) as harness:
+        started = await harness.start(Waits.begin())
+        assert started.run_id is not None
+        with pytest.raises(AssertionError, match="never sends"):
+            await harness.run_until_terminal(started.run_id)
+        await harness.signal(started.run_id, Waits.go("now"))
+        snapshot = await harness.run_until_terminal(started.run_id)
+        assert snapshot.result == "now"
+
+
+async def test_history_and_children_read_the_run_and_its_branches(
+    forked_registration_context,
+):
+    """History is the run's whole story; children are its fan-out branches."""
+    from reflex.workflow.records import HistoryEventType
+
+    class Branch(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.branch")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def work(self, label: str):
+            """Finish a branch.
+
+            Args:
+                label: Which branch.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=label)
+
+    class Parent(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.parent")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Fan out to two branches.
+
+            Returns:
+                The fan-out.
+            """
+            return rx.parallel(Branch.work("a"), Branch.work("b"), then=Parent.join)
+
+        @rx.event(durable=True, effect="none")
+        def join(self, results):
+            """Finish with the branch results.
+
+            Args:
+                results: The branch outcomes.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=[r["result"] for r in results])
+
+    async with WorkflowTestHarness(Parent, Branch) as harness:
+        started = await harness.start(Parent.begin())
+        assert started.run_id is not None
+        snapshot = await harness.run_until_terminal(started.run_id)
+        assert snapshot.result == ["a", "b"]
+        kids = await harness.children(started.run_id)
+        assert len(kids) == 2
+        assert all(kid.parent_run_id == started.run_id for kid in kids)
+        events = [event.type for event in await harness.history(started.run_id)]
+        assert events[0] is HistoryEventType.RUN_ADMITTED
+        assert events[-1] is HistoryEventType.RUN_COMPLETED
+
+
+async def test_webhook_drives_the_real_ingress_in_process(
+    monkeypatch, forked_registration_context
+):
+    """Verification and admission run for real; only the network is skipped.
+
+    Args:
+        monkeypatch: Used to install the webhook secret.
+        forked_registration_context: Isolated state registry.
+    """
+    import hashlib
+    import hmac as hmac_mod
+    import json
+
+    from reflex_base.workflow import hmac_signature, webhook
+
+    monkeypatch.setenv("TESTING_WEBHOOK_SECRET", "s3cret")
+
+    class Paid(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.paid")
+
+        @rx.event(
+            durable=True,
+            effect="none",
+            trigger=webhook(
+                "invoice_paid",
+                dedupe_by="id",
+                verify=hmac_signature(
+                    secret_env="TESTING_WEBHOOK_SECRET", header="X-Signature"
+                ),
+            ),
+        )
+        def on_paid(self, id: str):
+            """Record the invoice.
+
+            Args:
+                id: The invoice.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=id)
+
+    payload = {"id": "inv_1"}
+    body = json.dumps(payload).encode()
+    signature = hmac_mod.new(b"s3cret", body, hashlib.sha256).hexdigest()
+    async with WorkflowTestHarness(Paid) as harness:
+        status, _ = await harness.webhook(
+            "invoice_paid", payload, headers={"X-Signature": "bad"}
+        )
+        assert status == 401
+        status, answer = await harness.webhook(
+            "invoice_paid", payload, headers={"X-Signature": signature}, body=body
+        )
+        assert status == 202
+        assert answer["disposition"] == "started"
+        status, again = await harness.webhook(
+            "invoice_paid", payload, headers={"X-Signature": signature}, body=body
+        )
+        assert again["disposition"] == "deduplicated"
+        snapshot = await harness.run_until_terminal(answer["run_id"])
+        assert snapshot.result == "inv_1"
+
+
+async def test_restart_resumes_from_the_store_alone(forked_registration_context):
+    """A run mid-wait survives a runtime replaced from scratch."""
+
+    class Later(rx.State):
+        __workflow__ = WorkflowConfig(id="testing.later")
+
+        @rx.event(durable=True, trigger=manual(), effect="none")
+        def begin(self):
+            """Wait a day.
+
+            Returns:
+                The deferred finish.
+            """
+            return rx.after("1d", Later.finish)
+
+        @rx.event(durable=True, effect="none")
+        def finish(self):
+            """Finish.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result="survived")
+
+    async with WorkflowTestHarness(Later) as harness:
+        started = await harness.start(Later.begin())
+        assert started.run_id is not None
+        await harness.run_until_idle()
+        first_kernel = harness.kernel
+        await harness.restart()
+        assert harness.kernel is not first_kernel, "a genuinely new runtime"
+        snapshot = await harness.get_run(started.run_id)
+        assert snapshot is not None
+        assert snapshot.status is RunStatus.WAITING
+        finished = await harness.run_until_terminal(started.run_id)
+        assert finished.result == "survived"
