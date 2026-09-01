@@ -126,6 +126,11 @@ single string, and Python's `in` on a string is a substring test —
 `"admins" in "not-admins"` is true. Checking the type first fails closed on
 any unexpected claim shape.
 
+```md alert warning
+# The claim has to come back from the userinfo endpoint
+`extra_scopes` asks the provider for a scope, but the claims your check reads are whatever the provider's **userinfo endpoint** returns — that response is what populates `ctx.auth_user_state.userinfo`. A `groups` claim mapped only into the ID token never reaches the check, which then returns `False` for everyone with nothing in the logs to explain it. Map the claim onto the userinfo response, and confirm it arrived by printing `ctx.auth_user_state.userinfo` once rather than assuming. Claims are cached for about 30 minutes, so a group added at the identity provider is not immediate.
+```
+
 Annotating `ctx` with the `AuthContext` union makes `is_admin` usable on any
 surface — an event, a field, a var, or the plugin's global default. A check
 never runs for an anonymous caller, and a check that raises fails closed. See
@@ -328,6 +333,55 @@ linked to the shared `"team-notes"` state. The clear button appears only if
 your IdP puts you in the `admins` group — and refuses everyone else even if
 they dispatch the event by hand.
 
+## When the roles are your app's, not your provider's
+
+`is_admin` reads a group the identity provider already manages, which is the
+cheapest check there is: `ctx.auth_user_state.userinfo` is a dict resolved once
+at sign-in and held in memory, so it costs nothing per event.
+
+That only works when the organization models the role in the IdP. Many apps
+have roles the provider has never heard of — `author`, `editor`, `reviewer` —
+and need an admin to promote someone *from inside the app*, which no OIDC flow
+can do: there is no write-back to the identity provider. Those roles live in
+your own table, and the check reads them through a state:
+
+```python
+# team_notes/roles.py
+class RoleState(rx.State):
+    """The signed-in member's role, loaded once per session."""
+
+    role: str = ""
+
+    @rxe.event
+    async def load_role(self):
+        claims = await User.current() or {}
+        if subject := str(claims.get("sub") or ""):
+            self.role = await member_role(subject)  # your table
+
+
+# team_notes/authz.py
+async def is_editor(ctx: AuthContext) -> bool:
+    """Editors and admins. Reads the row RoleState already loaded."""
+    roles = await ctx.auth_user_state.get_state(RoleState)
+    return roles.role in ("editor", "admin")
+```
+
+Run the loader on the pages that need it (`on_load=RoleState.load_role`), and
+again after any write that changes a role so the cached value stays honest.
+
+Two rules keep this both safe and fast:
+
+- **Load once, read many.** A check runs on *every* gated event, so opening a
+  database session inside one puts a query behind every click. Load the row
+  into a state at sign-in and let the check read memory.
+- **Key the row on `sub`, not `email`.** `sub` is the stable identifier for an
+  identity; `email` is optional in OIDC and can change. In a multi-provider app
+  key on `(provider_name, sub)`, since `sub` is unique only per issuer.
+
+An async check is also where you call an external authorization service, or
+re-read a permission that must not be up to 30 minutes stale. See
+[authorization checks](/docs/enterprise/auth/secure-by-default/#authorization-checks).
+
 ## The rules this app follows
 
 1. **Never hand-roll authentication.** No login form, no password column, no
@@ -359,6 +413,9 @@ they dispatch the event by hand.
   and protected vars their `initial_value` until login. Mark truly public
   surfaces `auth=False`, and give the rest placeholders that read as
   intentional.
+- **Querying the database inside a check.** A check runs on every gated event,
+  so a session opened there is a query per click. Load the role into a state at
+  sign-in and have the check read that state.
 - **`redirect_uri_mismatch` at the IdP.** The exact callback URL (scheme,
   host, and path) is not registered with the identity provider. Register the
   full URL for each environment. See
