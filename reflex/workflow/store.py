@@ -34,6 +34,7 @@ from reflex.workflow.records import (
     CLAIMABLE_STEP_STATUSES,
     TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
+    AuditEntry,
     HistoryEvent,
     HistoryEventType,
     ParkedDelivery,
@@ -479,20 +480,41 @@ class RunStore(Protocol):
         """
         ...
 
-    async def replay_parked(self, parked_id: str, now: float) -> DeliveryDisposition:
+    async def replay_parked(
+        self,
+        parked_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> DeliveryDisposition:
         """Re-attempt routing of a parked or dead delivery.
 
         The operator's answer to a dead letter whose cause is fixed: the row
         goes through the same routing as ingest, with the same idempotency,
         so replaying a delivery that already reached its run is a
-        ``duplicate``, never a second signal.
+        ``duplicate``, never a second signal. With attribution, the replay is
+        written to the audit log in the same transaction.
 
         Args:
             parked_id: The delivery to replay.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             The routing outcome, or ``unknown_key`` if no such delivery.
+        """
+        ...
+
+    async def list_audit(
+        self, *, action: str | None = None, limit: int = 100
+    ) -> tuple[AuditEntry, ...]:
+        """List audited operator actions, newest first.
+
+        Args:
+            action: Restrict to one action name.
+            limit: Maximum entries.
+
+        Returns:
+            The matching entries.
         """
         ...
 
@@ -595,7 +617,13 @@ class RunStore(Protocol):
         """
         ...
 
-    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+    async def purge_runs(
+        self,
+        before: float,
+        *,
+        workflow_id: str | None = None,
+        attribution: Mapping[str, str] | None = None,
+    ) -> int:
         """Delete terminal runs not updated since a cutoff, and all their data.
 
         Terminal data otherwise grows forever. Purging a run also forgets its
@@ -606,6 +634,7 @@ class RunStore(Protocol):
         Args:
             before: Delete runs whose last update is older than this.
             workflow_id: Restrict to one workflow identity.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             How many runs were deleted.
@@ -1154,6 +1183,7 @@ class MemoryRunStore:
         self._substeps: dict[tuple[str, int], dict[str, Any]] = {}
         self._schedule_cursors: dict[str, float] = {}
         self._parked: list[ParkedDelivery] = []
+        self._audit: list[AuditEntry] = []
         self._workers: dict[str, WorkerRecord] = {}
         self._history: dict[str, list[HistoryEvent]] = {}
         self._dedupe: dict[tuple[str, str], str] = {}
@@ -1416,27 +1446,94 @@ class MemoryRunStore:
             rows.sort(key=lambda parked: parked.created_at, reverse=True)
             return tuple(rows[:limit])
 
-    async def replay_parked(self, parked_id: str, now: float) -> DeliveryDisposition:
+    async def replay_parked(
+        self,
+        parked_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> DeliveryDisposition:
         """Re-attempt routing of a parked or dead delivery.
 
         Args:
             parked_id: The delivery to replay.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             The routing outcome, or ``unknown_key`` if no such delivery.
         """
         async with self._lock:
+            disposition: DeliveryDisposition = "unknown_key"
             for index, parked in enumerate(self._parked):
                 if parked.parked_id != parked_id:
                     continue
                 if parked.status is ParkedStatus.DELIVERED:
-                    return "duplicate"
+                    disposition = "duplicate"
+                    break
                 self._parked[index] = dataclasses.replace(
                     parked, status=ParkedStatus.PENDING, reason=None, updated_at=now
                 )
-                return self._route_parked_locked(index, now)
-            return "unknown_key"
+                disposition = self._route_parked_locked(index, now)
+                break
+            self._audit_locked(
+                attribution,
+                "replay_parked",
+                parked_id,
+                {"disposition": disposition},
+                now,
+            )
+            return disposition
+
+    def _audit_locked(
+        self,
+        attribution: Mapping[str, str] | None,
+        action: str,
+        target: str,
+        detail: dict[str, Any],
+        now: float,
+    ) -> None:
+        """Append one audit entry, with the lock held, when there is an actor.
+
+        Args:
+            attribution: Who asked and why; nothing is written without it.
+            action: What was done.
+            target: What it was done to.
+            detail: Outcome and parameters.
+            now: Current time in epoch seconds.
+        """
+        if not attribution:
+            return
+        self._audit.append(
+            AuditEntry(
+                audit_id=uuid.uuid4().hex,
+                at=now,
+                actor=attribution.get("actor", "unknown"),
+                action=action,
+                target=target,
+                detail=detail,
+                reason=attribution.get("reason"),
+            )
+        )
+
+    async def list_audit(
+        self, *, action: str | None = None, limit: int = 100
+    ) -> tuple[AuditEntry, ...]:
+        """List audited operator actions, newest first.
+
+        Args:
+            action: Restrict to one action name.
+            limit: Maximum entries.
+
+        Returns:
+            The matching entries.
+        """
+        async with self._lock:
+            rows = [
+                entry
+                for entry in reversed(self._audit)
+                if action is None or entry.action == action
+            ]
+            return tuple(rows[:limit])
 
     async def sweep_parked(self, now: float, ttl: float) -> int:
         """Turn PENDING deliveries older than a ttl into DEAD letters.
@@ -2046,12 +2143,19 @@ class MemoryRunStore:
                 )
             return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
-    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+    async def purge_runs(
+        self,
+        before: float,
+        *,
+        workflow_id: str | None = None,
+        attribution: Mapping[str, str] | None = None,
+    ) -> int:
         """Delete terminal runs not updated since a cutoff, and all their data.
 
         Args:
             before: Delete runs whose last update is older than this.
             workflow_id: Restrict to one workflow identity.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             How many runs were deleted.
@@ -2074,6 +2178,13 @@ class MemoryRunStore:
                     del self._substeps[key]
                 if run.request_key is not None:
                     self._dedupe.pop((run.workflow_id, run.request_key), None)
+            self._audit_locked(
+                attribution,
+                "purge_runs",
+                workflow_id or "*",
+                {"before": before, "deleted": len(doomed)},
+                before,
+            )
             return len(doomed)
 
     async def epoch_time(self) -> float | None:
@@ -2937,7 +3048,7 @@ class MemoryRunStore:
             return min(due_times) if due_times else None
 
 
-SCHEMA_VERSION: Final = 5
+SCHEMA_VERSION: Final = 6
 """Stamped into PRAGMA user_version; bump when _SCHEMA or migrations change."""
 
 DATABASE_ENV: Final = "REFLEX_WORKFLOW_DATABASE"
@@ -3082,6 +3193,16 @@ CREATE TABLE IF NOT EXISTS workflow_channel_inbox (
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_channel_inbox_route
     ON workflow_channel_inbox (workflow_id, correlation_key, status);
+CREATE TABLE IF NOT EXISTS workflow_audit (
+    audit_id TEXT PRIMARY KEY,
+    at REAL NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    reason TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_audit_at ON workflow_audit (at);
 """
 
 _STEP_MIGRATIONS: Final = (
@@ -3252,6 +3373,26 @@ def _child_admission_events(
             HistoryEventType.STEP_SCHEDULED,
             {"ordinal": child_step.ordinal, "handler_id": child_step.handler_id},
         ),
+    )
+
+
+def _audit_from_row(row: Mapping[str, Any]) -> AuditEntry:
+    """Build an audit entry from a database row.
+
+    Args:
+        row: The ``workflow_audit`` row.
+
+    Returns:
+        The entry.
+    """
+    return AuditEntry(
+        audit_id=row["audit_id"],
+        at=row["at"],
+        actor=row["actor"],
+        action=row["action"],
+        target=row["target"],
+        detail=json.loads(row["detail"]),
+        reason=row["reason"],
     )
 
 
@@ -3976,12 +4117,18 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def replay_parked(self, parked_id: str, now: float) -> DeliveryDisposition:
+    async def replay_parked(
+        self,
+        parked_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> DeliveryDisposition:
         """Re-attempt routing of a parked or dead delivery.
 
         Args:
             parked_id: The delivery to replay.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             The routing outcome, or ``unknown_key`` if no such delivery.
@@ -4001,11 +4148,25 @@ class SqliteRunStore:
                         (parked_id,),
                     ).fetchone()
                     if row is None:
+                        self._audit_sql(
+                            attribution,
+                            "replay_parked",
+                            parked_id,
+                            {"disposition": "unknown_key"},
+                            now,
+                        )
                         self._db.execute("COMMIT")
                         return "unknown_key"
                     if row["status"] == ParkedStatus.DELIVERED.value:
                         # Replaying what already reached its run must never
                         # signal twice.
+                        self._audit_sql(
+                            attribution,
+                            "replay_parked",
+                            parked_id,
+                            {"disposition": "duplicate"},
+                            now,
+                        )
                         self._db.execute("COMMIT")
                         return "duplicate"
                     self._db.execute(
@@ -4014,6 +4175,13 @@ class SqliteRunStore:
                         (ParkedStatus.PENDING.value, now, parked_id),
                     )
                     disposition = self._route_parked_in_txn(parked_id, now)
+                    self._audit_sql(
+                        attribution,
+                        "replay_parked",
+                        parked_id,
+                        {"disposition": disposition},
+                        now,
+                    )
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")
@@ -4052,6 +4220,70 @@ class SqliteRunStore:
                     ),
                 )
                 return cursor.rowcount
+
+        return await asyncio.to_thread(work)
+
+    def _audit_sql(
+        self,
+        attribution: Mapping[str, str] | None,
+        action: str,
+        target: str,
+        detail: dict[str, Any],
+        now: float,
+    ) -> None:
+        """Insert one audit entry inside the current transaction, if attributed.
+
+        Args:
+            attribution: Who asked and why; nothing is written without it.
+            action: What was done.
+            target: What it was done to.
+            detail: Outcome and parameters.
+            now: Current time in epoch seconds.
+        """
+        if not attribution:
+            return
+        self._db.execute(
+            "INSERT INTO workflow_audit (audit_id, at, actor, action, target,"
+            " detail, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                uuid.uuid4().hex,
+                now,
+                attribution.get("actor", "unknown"),
+                action,
+                target,
+                json.dumps(detail),
+                attribution.get("reason"),
+            ),
+        )
+
+    async def list_audit(
+        self, *, action: str | None = None, limit: int = 100
+    ) -> tuple[AuditEntry, ...]:
+        """List audited operator actions, newest first.
+
+        Args:
+            action: Restrict to one action name.
+            limit: Maximum entries.
+
+        Returns:
+            The matching entries.
+        """
+
+        def work() -> tuple[AuditEntry, ...]:
+            """Run the operation on the worker thread.
+
+            Returns:
+                The operation's result.
+            """
+            where = " WHERE action = ?" if action is not None else ""
+            params: tuple = (action, limit) if action is not None else (limit,)
+            with self._lock:
+                rows = self._db.execute(
+                    f"SELECT * FROM workflow_audit{where}"
+                    " ORDER BY at DESC, rowid DESC LIMIT ?",
+                    params,
+                ).fetchall()
+            return tuple(_audit_from_row(row) for row in rows)
 
         return await asyncio.to_thread(work)
 
@@ -4192,12 +4424,19 @@ class SqliteRunStore:
 
         return await asyncio.to_thread(work)
 
-    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+    async def purge_runs(
+        self,
+        before: float,
+        *,
+        workflow_id: str | None = None,
+        attribution: Mapping[str, str] | None = None,
+    ) -> int:
         """Delete terminal runs not updated since a cutoff, and all their data.
 
         Args:
             before: Delete runs whose last update is older than this.
             workflow_id: Restrict to one workflow identity.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             How many runs were deleted.
@@ -4241,6 +4480,13 @@ class SqliteRunStore:
                         self._db.execute(
                             "DELETE FROM workflow_runs WHERE run_id = ?", (run_id,)
                         )
+                    self._audit_sql(
+                        attribution,
+                        "purge_runs",
+                        workflow_id or "*",
+                        {"before": before, "deleted": len(doomed)},
+                        before,
+                    )
                     self._db.execute("COMMIT")
                 except BaseException:
                     self._db.execute("ROLLBACK")

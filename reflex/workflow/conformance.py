@@ -1998,6 +1998,47 @@ async def check_operator_actions_carry_attribution(store: RunStore) -> None:
     assert failed.data["reason"] == "customer asked"
 
 
+async def check_run_less_operator_actions_are_audited(store: RunStore) -> None:
+    """Replay and purge have no run to carry history, so they carry an audit.
+
+    Run-level actions ride the run's own history (attribution check above);
+    these two would otherwise be the only operator mutations nobody could
+    account for. The entry is written in the operation's own transaction
+    and only when there is an actor to name: unattributed automation leaves
+    no entry, so the log is operator decisions, not noise.
+    """
+    who = {"actor": "alex", "reason": "vendor fixed"}
+    await store.ingest_channel_delivery(
+        "conformance.flow", "shipped", "order_9", "evt_9", {"n": 9}, NOW
+    )
+    rows = await store.list_parked(status=ParkedStatus.PENDING)
+    parked_id = rows[0].parked_id
+
+    assert await store.replay_parked(parked_id, NOW + 1) == "parked"
+    assert await store.list_audit() == (), "no actor, no entry"
+
+    assert await store.replay_parked(parked_id, NOW + 2, who) == "parked"
+    await store.admit(
+        make_run("old1", status=RunStatus.COMPLETED),
+        make_step("old1", status=StepStatus.SUCCEEDED),
+        _ADMITTED,
+    )
+    assert await store.purge_runs(NOW + 10, attribution=who) == 1
+
+    entries = await store.list_audit()
+    assert [entry.action for entry in entries] == ["purge_runs", "replay_parked"], (
+        "newest first"
+    )
+    purge, replay = entries
+    assert replay.actor == "alex"
+    assert replay.reason == "vendor fixed"
+    assert replay.target == parked_id
+    assert replay.detail == {"disposition": "parked"}
+    assert purge.target == "*"
+    assert purge.detail["deleted"] == 1
+    assert await store.list_audit(action="purge_runs") == (purge,)
+
+
 CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_admit_creates_a_run,
     check_reads_do_not_alias_stored_state,
@@ -2024,6 +2065,7 @@ CONFORMANCE_CHECKS: tuple[Callable[[RunStore], Awaitable[None]], ...] = (
     check_worker_registry_roundtrip,
     check_release_counts_answer_the_retirement_question,
     check_operator_actions_carry_attribution,
+    check_run_less_operator_actions_are_audited,
     check_a_delivery_to_a_past_deadline_run_is_refused,
     check_a_duplicate_delivery_is_recorded_in_history,
     check_an_early_delivery_is_buffered_then_consumed,

@@ -338,6 +338,33 @@ class WorkerRecord:
     heartbeat_at: float
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class AuditEntry:
+    """One operator action that has no run to carry it in history.
+
+    Run-level actions live in the run's history (§9); this is the record for
+    everything else -- replaying a dead letter, purging finished runs -- so
+    an operator's every mutation is attributable somewhere.
+
+    Attributes:
+        audit_id: Stable identity of the entry.
+        at: When it happened, in epoch seconds.
+        actor: Who asked.
+        action: What was done, e.g. ``replay_parked`` or ``purge_runs``.
+        target: What it was done to, e.g. a parked id or a workflow id.
+        detail: Outcome and parameters, JSON-compatible.
+        reason: Why, if the operator said.
+    """
+
+    audit_id: str
+    at: float
+    actor: str
+    action: str
+    target: str
+    detail: dict[str, Any]
+    reason: str | None
+
+
 class ParkedStatus(str, enum.Enum):
     """Lifecycle of a correlated webhook delivery in the channel inbox."""
 

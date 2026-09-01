@@ -674,7 +674,9 @@ class EventsState(rx.State):
             return
         runtime = await _client()
         store = runtime.kernel._store
-        disposition = await store.replay_parked(parked_id, time.time())
+        disposition = await store.replay_parked(
+            parked_id, time.time(), {"actor": _operator(login)}
+        )
         self.notice = f"replay: {disposition}"
         await self.load_deliveries()
 
@@ -697,6 +699,54 @@ class EventsState(rx.State):
                 await self.load_deliveries()
 
 
+class AuditState(rx.State):
+    """Operator actions with no run to carry them: replays and purges."""
+
+    rows: list[dict[str, str]] = []
+
+    @rx.event
+    async def refresh(self):
+        """Load the audit log.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
+        await self.load_audit()
+        return None
+
+    async def load_audit(self) -> None:
+        """Load the newest audited actions."""
+        runtime = await _client()
+        entries = await runtime.kernel._store.list_audit(limit=200)
+        self.rows = [
+            {
+                "at": _age(entry.at) + " ago",
+                "actor": entry.actor,
+                "action": entry.action,
+                "target": entry.target,
+                "detail": json.dumps(entry.detail, default=str),
+                "reason": entry.reason or "",
+            }
+            for entry in entries
+        ]
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep the audit log current while the page is mounted."""
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/audit"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_audit()
+
+
 def _shell(*children: Any) -> rx.Component:
     """Wrap a page in the console chrome.
 
@@ -713,6 +763,7 @@ def _shell(*children: Any) -> rx.Component:
             rx.link("Runs", href="/"),
             rx.link("Fleet", href="/fleet"),
             rx.link("Events", href="/events"),
+            rx.link("Audit", href="/audit"),
             rx.cond(
                 LoginState.authenticated,
                 rx.hstack(
@@ -1021,6 +1072,43 @@ def login_page() -> rx.Component:
     )
 
 
+def audit_page() -> rx.Component:
+    """Run-less operator actions, newest first.
+
+    Returns:
+        The page component.
+    """
+    return _shell(
+        rx.button("Refresh", on_click=AuditState.refresh),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("when"),
+                    rx.table.column_header_cell("who"),
+                    rx.table.column_header_cell("action"),
+                    rx.table.column_header_cell("target"),
+                    rx.table.column_header_cell("detail"),
+                    rx.table.column_header_cell("reason"),
+                )
+            ),
+            rx.table.body(
+                rx.foreach(
+                    AuditState.rows,
+                    lambda row: rx.table.row(
+                        rx.table.cell(row["at"]),
+                        rx.table.cell(row["actor"]),
+                        rx.table.cell(row["action"]),
+                        rx.table.cell(row["target"]),
+                        rx.table.cell(row["detail"]),
+                        rx.table.cell(row["reason"]),
+                    ),
+                )
+            ),
+            width="100%",
+        ),
+    )
+
+
 def console_app() -> rx.App:
     """Build the operator console application.
 
@@ -1066,5 +1154,11 @@ def console_app() -> rx.App:
         route="/events",
         on_load=[EventsState.refresh, EventsState.watch],
         title="Events",
+    )
+    app.add_page(
+        audit_page,
+        route="/audit",
+        on_load=[AuditState.refresh, AuditState.watch],
+        title="Audit",
     )
     return app

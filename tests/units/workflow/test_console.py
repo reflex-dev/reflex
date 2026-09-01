@@ -402,3 +402,33 @@ def test_every_page_registers_a_live_watcher():
     for state in (RunsState, RunDetailState, FleetState, EventsState):
         assert hasattr(state, "watch")
     console_app()
+
+
+def test_console_replays_are_audited_under_the_operators_name(seeded):
+    """The console's replay lands in the audit log as the login's name.
+
+    Args:
+        seeded: The seeded database.
+    """
+    from reflex.workflow.console import AuditState
+
+    async def drive() -> tuple[list[dict[str, str]], str]:
+        """Replay the parked delivery as a named login, then read the log.
+
+        Returns:
+            The audit rows and the replaying login's name.
+        """
+        login = LoginState()  # pyright: ignore[reportCallIssue]
+        login.name = "ops-console"
+        events = EventsState()  # pyright: ignore[reportCallIssue]
+        events.set_status_filter("PENDING")
+        await events.load_deliveries()
+        await events.replay_as(login, events.rows[0]["parked_id"])
+        audit = AuditState()  # pyright: ignore[reportCallIssue]
+        await audit.load_audit()
+        return audit.rows, login.name
+
+    rows, name = asyncio.run(drive())
+    assert len(rows) == 1
+    assert rows[0]["actor"] == name
+    assert rows[0]["action"] == "replay_parked"

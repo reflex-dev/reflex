@@ -523,12 +523,73 @@ def deadletter_replay_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
         refused = authorize(request)
         if refused is not None:
             return refused
-        disposition = await runtime.kernel._store.replay_parked(  # pyright: ignore[reportPrivateUsage]
+
+        payload, bad = await _read_json(request)
+
+        if bad is not None:
+            return bad
+
+        attribution = {"actor": tokens.actor_for(request)}
+
+        if isinstance(payload, dict) and payload.get("reason"):
+            attribution["reason"] = str(payload["reason"])
+        disposition = await runtime.kernel._store.replay_parked(
+            # pyright: ignore[reportPrivateUsage]
             request.path_params["parked_id"],
-            runtime.kernel._clock(),  # pyright: ignore[reportPrivateUsage]
+            runtime.kernel._clock(),  # pyright: ignore[reportPrivateUsage],
+            attribution,
         )
         status = {"unknown_key": 404, "dead_letter": 409}.get(disposition, 202)
         return JSONResponse({"disposition": disposition}, status_code=status)
+
+    return endpoint
+
+
+def audit_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens):
+    """Build the endpoint that lists audited run-less operator actions.
+
+    Args:
+        runtime: The runtime owning the store.
+        tokens: The service's token scopes.
+
+    Returns:
+        The endpoint callable.
+    """
+    authorize = tokens.require("read")
+
+    async def endpoint(request: Request) -> JSONResponse:
+        """List audit entries, newest first.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The entries.
+        """
+        refused = authorize(request)
+        if refused is not None:
+            return refused
+        try:
+            limit = min(int(request.query_params.get("limit", "50")), 500)
+        except ValueError:
+            return JSONResponse({"error": "limit must be an integer"}, 400)
+        entries = await runtime.kernel._store.list_audit(  # pyright: ignore[reportPrivateUsage]
+            action=request.query_params.get("action"), limit=limit
+        )
+        return JSONResponse({
+            "entries": [
+                {
+                    "audit_id": entry.audit_id,
+                    "at": entry.at,
+                    "actor": entry.actor,
+                    "action": entry.action,
+                    "target": entry.target,
+                    "detail": entry.detail,
+                    "reason": entry.reason,
+                }
+                for entry in entries
+            ]
+        })
 
     return endpoint
 
@@ -753,6 +814,14 @@ def openapi_endpoint(runtime: WorkflowRuntime):
                         "responses": {"202": {"description": "Routed"}},
                     }
                 },
+                "/audit": {
+                    "get": {
+                        "summary": (
+                            "List audited run-less operator actions (scope: read)"
+                        ),
+                        "responses": {"200": {"description": "The entries"}},
+                    }
+                },
                 "/healthz": {"get": {"summary": "Liveness", "security": []}},
                 "/readyz": {"get": {"summary": "Readiness", "security": []}},
                 "/metrics": {"get": {"summary": "Prometheus metrics (scope: read)"}},
@@ -885,6 +954,7 @@ def build_app(
                 deadletter_replay_endpoint(runtime, tokens),
                 methods=["POST"],
             ),
+            Route("/audit", audit_endpoint(runtime, tokens), methods=["GET"]),
             # The embedded-mode paths, kept byte-for-byte: a Stripe URL or a
             # minted approval link configured against an rx.App keeps working
             # when the deployment moves to the standalone service.

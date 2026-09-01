@@ -445,3 +445,68 @@ def test_cancel_records_the_operator_and_their_reason(tmp_path, monkeypatch):
     finally:
         connection.close()
     assert rows == [{"actor": "alek", "reason": "fat-fingered order"}]
+
+
+def test_replay_and_audit_commands_account_for_the_operator(tmp_path):
+    """`deadletters --replay --reason` writes an audit entry `audit` shows.
+
+    Args:
+        tmp_path: Working directory for the database.
+    """
+    import asyncio
+    import subprocess
+    import sys
+
+    from reflex.workflow.store import SqliteRunStore
+
+    db = tmp_path / "audit.db"
+
+    async def seed() -> str:
+        """Park one delivery.
+
+        Returns:
+            Its parked id.
+        """
+        store = SqliteRunStore(db)
+        await store.ingest_channel_delivery(
+            "cli.audit", "shipped", "order_1", "evt_1", {"n": 1}, 1_000_000.0
+        )
+        rows = await store.list_parked()
+        store.close()
+        return rows[0].parked_id
+
+    parked_id = asyncio.run(seed())
+    runner = "from reflex.workflow.cli import workflows; workflows()"
+    env = {**__import__("os").environ, "REFLEX_ACTOR": "alek"}
+    replay = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            runner,
+            "deadletters",
+            "--replay",
+            parked_id,
+            "--reason",
+            "carrier back",
+            "-d",
+            str(db),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert replay.returncode == 1, "still parked: no run for the key yet"
+    listing = subprocess.run(
+        [sys.executable, "-c", runner, "audit", "-d", str(db)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert listing.returncode == 0, listing.stderr[-400:]
+    assert "alek" in listing.stdout
+    assert "replay_parked" in listing.stdout
+    assert "carrier back" in listing.stdout

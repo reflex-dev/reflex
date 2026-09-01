@@ -637,3 +637,76 @@ def test_a_principal_bound_token_names_its_actor(
     assert actors[bound_run] == "deploy-bot", "the credential beats the header"
     assert actors[anon_run] == "ops@example.com", "unbound: the header's claim"
     assert actors[plain_run] == "api", "neither: name the surface"
+
+
+def test_dead_letter_replay_is_audited_with_the_actor(forked_registration_context):
+    """A replay has no run to carry history, so it lands in the audit log.
+
+    Args:
+        forked_registration_context: Isolated state registry.
+    """
+
+    class Parcel(rx.State):
+        __workflow__ = WorkflowConfig(id="serve.parcel")
+
+        arrived = Signal(
+            trigger=webhook(
+                "parcel_arrived",
+                dedupe_by="event_id",
+                correlate_by="parcel_id",
+                allow_unverified=True,
+                unverified_reason="test-only channel",
+            )
+        )
+
+        @rx.event(durable=True, effect="none", trigger=manual())
+        def begin(self):
+            """Wait for arrival.
+
+            Returns:
+                The wait.
+            """
+            return rx.wait_for(Parcel.arrived, then=Parcel.close, timeout=rx.never)
+
+        @rx.event(durable=True, effect="none")
+        def close(self, event):
+            """Finish.
+
+            Args:
+                event: The payload.
+
+            Returns:
+                Completion.
+            """
+            return rx.complete(result=event)
+
+    tokens = ScopedTokens(
+        grants={"tok-ops": frozenset({"read", "operate"})},
+        principals={"tok-ops": "night-shift"},
+    )
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Parcel)
+    app = build_app(runtime, worker=False, drain=0, tokens=tokens)
+    with TestClient(app) as client:
+        client.post(
+            "/_workflow/webhook/parcel_arrived",
+            json={"event_id": "evt_a", "parcel_id": "p_1"},
+        )
+        parked_id = client.get(
+            "/deadletters?status=pending", headers=_auth("tok-ops")
+        ).json()["deliveries"][0]["parked_id"]
+        replayed = client.post(
+            f"/deadletters/{parked_id}/replay",
+            json={"reason": "carrier fixed the feed"},
+            headers=_auth("tok-ops"),
+        )
+        assert replayed.status_code == 202
+        entries = client.get("/audit", headers=_auth("tok-ops")).json()["entries"]
+        forbidden = client.get("/audit")
+    assert forbidden.status_code == 401
+    assert len(entries) == 1
+    assert entries[0]["actor"] == "night-shift", "the bound principal, not a header"
+    assert entries[0]["action"] == "replay_parked"
+    assert entries[0]["target"] == parked_id
+    assert entries[0]["reason"] == "carrier fixed the feed"
+    assert entries[0]["detail"] == {"disposition": "parked"}

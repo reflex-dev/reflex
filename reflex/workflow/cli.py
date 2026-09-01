@@ -1018,7 +1018,14 @@ def stats(
 )
 @click.option("--workflow", "-w", default=None, help="Only this workflow id.")
 @click.option("--yes", is_flag=True, help="Delete without asking.")
-def purge(database: str | None, older_than: str, workflow: str | None, yes: bool):
+@click.option("--reason", default=None, help="Why, recorded in the audit log.")
+def purge(
+    database: str | None,
+    older_than: str,
+    workflow: str | None,
+    yes: bool,
+    reason: str | None,
+):
     """Delete finished runs older than a cutoff, reclaiming the store.
 
     Terminal data grows forever otherwise. Purging a run also forgets its
@@ -1042,7 +1049,10 @@ def purge(database: str | None, older_than: str, workflow: str | None, yes: bool
             abort=True,
         )
     deleted = _with_store(
-        database, lambda store: store.purge_runs(cutoff, workflow_id=workflow)
+        database,
+        lambda store: store.purge_runs(
+            cutoff, workflow_id=workflow, attribution=_cli_attribution(reason)
+        ),
     )
     console.print(f"Purged {deleted} run(s).")
 
@@ -1518,11 +1528,13 @@ def fleet(database: str | None, retire_release: str | None):
     default=None,
     help="Re-attempt routing of one delivery by its id.",
 )
+@click.option("--reason", default=None, help="Why, recorded in the audit log.")
 def deadletters(
     database: str | None,
     status: str | None,
     show_all: bool,
     replay_id: str | None,
+    reason: str | None,
 ):
     """Inspect and replay correlated webhook deliveries.
 
@@ -1542,7 +1554,9 @@ def deadletters(
             The rows to render, or the replay disposition.
         """
         if replay_id is not None:
-            return await store.replay_parked(replay_id, time.time())
+            return await store.replay_parked(
+                replay_id, time.time(), _cli_attribution(reason)
+            )
         chosen = (
             None
             if show_all
@@ -1873,3 +1887,38 @@ def console_command(
         )
     console.print(f"Serving the operator console on http://{host}:{port}")
     _run_console_project(root, host, port, env)
+
+
+@workflows.command()
+@database_option
+@click.option("--action", default=None, help="Show only this action.")
+@click.option("--limit", default=50, type=int, help="Entries to show.")
+def audit(database: str | None, action: str | None, limit: int):
+    """Show operator actions that have no run to carry them.
+
+    Run-level actions live in each run's history (see `show --history`);
+    this is the log for the rest -- dead-letter replays and purges -- with
+    who asked and why.
+    """
+
+    async def read(store: RunStore):
+        """List the entries.
+
+        Args:
+            store: The open run store.
+
+        Returns:
+            The entries, newest first.
+        """
+        return await store.list_audit(action=action, limit=limit)
+
+    entries = _with_store(database, read)
+    if not entries:
+        console.print("No audited actions.")
+        return
+    for entry in entries:
+        why = f"  -- {entry.reason}" if entry.reason else ""
+        console.print(
+            f"{entry.audit_id[:12]}  {entry.actor:<16} {entry.action:<14} "
+            f"{entry.target}  {json.dumps(entry.detail)}{why}"
+        )

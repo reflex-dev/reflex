@@ -532,6 +532,15 @@ else `api` (naming the surface beats naming nobody), and takes the body's
 in the same transactions, as the mutations they describe — the record that
 answers "what happened" answers "who did this", and cannot drift from it.
 
+Actions with **no run** to carry history — replaying a dead letter, purging
+finished runs — are written to a separate append-only **audit log**
+(`list_audit`; `reflex workflows audit`; `GET /audit`) in the operation's
+own transaction, with actor, action, target, outcome, and reason. Only
+attributed actions are recorded: automation (the TTL sweep, recovery) leaves
+no entry, so the log is operator decisions rather than noise. This mirrors
+the split Temporal makes between workflow history and its control-plane
+audit stream.
+
 Every action is legal only from the states listed; anything else is a refused
 no-op with a reason.
 

@@ -26,6 +26,7 @@ from reflex.workflow.records import (
     CLAIMABLE_STEP_STATUSES,
     TERMINAL_RUN_STATUSES,
     TERMINAL_STEP_STATUSES,
+    AuditEntry,
     HistoryEvent,
     HistoryEventType,
     ParkedDelivery,
@@ -166,6 +167,16 @@ CREATE TABLE IF NOT EXISTS workflow_channel_inbox (
 );
 CREATE INDEX IF NOT EXISTS idx_workflow_channel_inbox_route
     ON workflow_channel_inbox (workflow_id, correlation_key, status);
+CREATE TABLE IF NOT EXISTS workflow_audit (
+    audit_id TEXT PRIMARY KEY,
+    at DOUBLE PRECISION NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL,
+    detail JSONB NOT NULL,
+    reason TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_audit_at ON workflow_audit (at);
 CREATE TABLE IF NOT EXISTS workflow_inbox (
     run_id TEXT NOT NULL,
     wait_key TEXT NOT NULL,
@@ -244,6 +255,26 @@ def _json(value: Any) -> Any:
         The wrapped value, or None.
     """
     return None if value is None else Jsonb(value)
+
+
+def _audit_from_row(row: Mapping[str, Any]) -> AuditEntry:
+    """Build an audit entry from a database row.
+
+    Args:
+        row: The ``workflow_audit`` row.
+
+    Returns:
+        The entry.
+    """
+    return AuditEntry(
+        audit_id=row["audit_id"],
+        at=row["at"],
+        actor=row["actor"],
+        action=row["action"],
+        target=row["target"],
+        detail=row["detail"],
+        reason=row["reason"],
+    )
 
 
 def _parked_from_row(row: Mapping[str, Any]) -> ParkedDelivery:
@@ -919,12 +950,19 @@ class PostgresRunStore:
                 )
         return FlowAdmission("started", run.run_id, cancelled=tuple(cancelled))
 
-    async def purge_runs(self, before: float, *, workflow_id: str | None = None) -> int:
+    async def purge_runs(
+        self,
+        before: float,
+        *,
+        workflow_id: str | None = None,
+        attribution: Mapping[str, str] | None = None,
+    ) -> int:
         """Delete terminal runs not updated since a cutoff, and all their data.
 
         Args:
             before: Delete runs whose last update is older than this.
             workflow_id: Restrict to one workflow identity.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             How many runs were deleted.
@@ -961,6 +999,14 @@ class PostgresRunStore:
             await conn.execute(
                 "DELETE FROM workflow_runs WHERE run_id = ANY(%s)", (doomed,)
             )
+        await self._audit_conn(
+            conn,
+            attribution,
+            "purge_runs",
+            workflow_id or "*",
+            {"before": before, "deleted": len(doomed)},
+            before,
+        )
         return len(doomed)
 
     async def epoch_time(self) -> float | None:
@@ -1685,12 +1731,18 @@ class PostgresRunStore:
             )
             return tuple(_parked_from_row(row) for row in await cursor.fetchall())
 
-    async def replay_parked(self, parked_id: str, now: float) -> DeliveryDisposition:
+    async def replay_parked(
+        self,
+        parked_id: str,
+        now: float,
+        attribution: Mapping[str, str] | None = None,
+    ) -> DeliveryDisposition:
         """Re-attempt routing of a parked or dead delivery.
 
         Args:
             parked_id: The delivery to replay.
             now: Current time in epoch seconds.
+            attribution: Who asked and why, recorded in the audit log.
 
         Returns:
             The routing outcome, or ``unknown_key`` if no such delivery.
@@ -1704,17 +1756,27 @@ class PostgresRunStore:
             )
             row = await cursor.fetchone()
             if row is None:
-                return "unknown_key"
-            if row["status"] == ParkedStatus.DELIVERED.value:
+                disposition: DeliveryDisposition = "unknown_key"
+            elif row["status"] == ParkedStatus.DELIVERED.value:
                 # Replaying what already reached its run must never signal
                 # twice.
-                return "duplicate"
-            await conn.execute(
-                "UPDATE workflow_channel_inbox SET status = %s, reason = NULL,"
-                " updated_at = %s WHERE parked_id = %s",
-                (ParkedStatus.PENDING.value, now, parked_id),
+                disposition = "duplicate"
+            else:
+                await conn.execute(
+                    "UPDATE workflow_channel_inbox SET status = %s, reason = NULL,"
+                    " updated_at = %s WHERE parked_id = %s",
+                    (ParkedStatus.PENDING.value, now, parked_id),
+                )
+                disposition = await self._route_parked_conn(conn, parked_id, now)
+            await self._audit_conn(
+                conn,
+                attribution,
+                "replay_parked",
+                parked_id,
+                {"disposition": disposition},
+                now,
             )
-            return await self._route_parked_conn(conn, parked_id, now)
+            return disposition
 
     async def sweep_parked(self, now: float, ttl: float) -> int:
         """Turn PENDING deliveries older than a ttl into DEAD letters.
@@ -1740,6 +1802,63 @@ class PostgresRunStore:
                 ),
             )
             return cursor.rowcount
+
+    async def _audit_conn(
+        self,
+        conn: Any,
+        attribution: Mapping[str, str] | None,
+        action: str,
+        target: str,
+        detail: dict[str, Any],
+        now: float,
+    ) -> None:
+        """Insert one audit entry inside the caller's transaction, if attributed.
+
+        Args:
+            conn: The connection inside an open transaction.
+            attribution: Who asked and why; nothing is written without it.
+            action: What was done.
+            target: What it was done to.
+            detail: Outcome and parameters.
+            now: Current time in epoch seconds.
+        """
+        if not attribution:
+            return
+        await conn.execute(
+            "INSERT INTO workflow_audit (audit_id, at, actor, action, target,"
+            " detail, reason) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (
+                uuid.uuid4().hex,
+                now,
+                attribution.get("actor", "unknown"),
+                action,
+                target,
+                Jsonb(detail),
+                attribution.get("reason"),
+            ),
+        )
+
+    async def list_audit(
+        self, *, action: str | None = None, limit: int = 100
+    ) -> tuple[AuditEntry, ...]:
+        """List audited operator actions, newest first.
+
+        Args:
+            action: Restrict to one action name.
+            limit: Maximum entries.
+
+        Returns:
+            The matching entries.
+        """
+        where = " WHERE action = %s" if action is not None else ""
+        params: tuple = (action, limit) if action is not None else (limit,)
+        pool = await self._open()
+        async with pool.connection() as conn:
+            cursor = await conn.execute(
+                f"SELECT * FROM workflow_audit{where} ORDER BY at DESC LIMIT %s",
+                params,
+            )
+            return tuple(_audit_from_row(row) for row in await cursor.fetchall())
 
     async def admit_children(
         self,
