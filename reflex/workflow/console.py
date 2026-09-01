@@ -230,6 +230,28 @@ def _operator(login: LoginState) -> str:
     return login.name or _actor()
 
 
+POLL_SECONDS = 3.0
+"""How often a mounted page re-reads the store.
+
+Polling, not a push channel, on purpose: the store is the one thing every
+worker shares, so reading it is what survives a worker restart -- a stream
+from a worker would not. Three seconds is faster than a person reads.
+"""
+
+
+def _still_on(path: str, route: str) -> bool:
+    """Whether the browser is still on the page a watcher serves.
+
+    Args:
+        path: The router's current path.
+        route: The watcher's route prefix.
+
+    Returns:
+        True while the page is mounted.
+    """
+    return path == route or (route != "/" and path.startswith(route))
+
+
 STATUS_COLORS: dict[str, str] = {
     "PENDING": "gray",
     "RUNNING": "blue",
@@ -312,6 +334,24 @@ class RunsState(rx.State):
             value: The status value, or empty for all.
         """
         self.status_filter = "" if value == "all" else value
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep this page current while it is mounted.
+
+        Re-reads the store every ``POLL_SECONDS`` and stops when the browser
+        leaves the page. Reading the store is what makes this survive a
+        worker restart: nothing here depends on any worker being alive.
+        """
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_runs()
 
 
 class RunDetailState(rx.State):
@@ -477,6 +517,24 @@ class RunDetailState(rx.State):
         self.reason = ""
         await self.load_run(self.run)
 
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep this page current while it is mounted.
+
+        Re-reads the store every ``POLL_SECONDS`` and stops when the browser
+        leaves the page. Reading the store is what makes this survive a
+        worker restart: nothing here depends on any worker being alive.
+        """
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/run/"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_run(self.run)
+
 
 class FleetState(rx.State):
     """Workers, their releases, and what each release still owns."""
@@ -523,6 +581,24 @@ class FleetState(rx.State):
             }
             for name in names
         ]
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep this page current while it is mounted.
+
+        Re-reads the store every ``POLL_SECONDS`` and stops when the browser
+        leaves the page. Reading the store is what makes this survive a
+        worker restart: nothing here depends on any worker being alive.
+        """
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/fleet"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_fleet()
 
 
 class EventsState(rx.State):
@@ -601,6 +677,24 @@ class EventsState(rx.State):
         disposition = await store.replay_parked(parked_id, time.time())
         self.notice = f"replay: {disposition}"
         await self.load_deliveries()
+
+    @rx.event(background=True)
+    async def watch(self):
+        """Keep this page current while it is mounted.
+
+        Re-reads the store every ``POLL_SECONDS`` and stops when the browser
+        leaves the page. Reading the store is what makes this survive a
+        worker restart: nothing here depends on any worker being alive.
+        """
+        while True:
+            await asyncio.sleep(POLL_SECONDS)
+            async with self:
+                if not _still_on(self.router.page.path, "/events"):
+                    return
+                login = await self.get_state(LoginState)
+                if not _admitted(login, "read"):
+                    return
+                await self.load_deliveries()
 
 
 def _shell(*children: Any) -> rx.Component:
@@ -949,15 +1043,28 @@ def console_app() -> rx.App:
 
     app.register_lifespan_task(hold_client_open)
     app.add_page(login_page, route="/login", title="Sign in")
-    app.add_page(runs_page, route="/", on_load=RunsState.refresh, title="Runs")
+    app.add_page(
+        runs_page,
+        route="/",
+        on_load=[RunsState.refresh, RunsState.watch],
+        title="Runs",
+    )
     app.add_page(
         run_detail_page,
         route="/run/[run_id]",
-        on_load=RunDetailState.load,
+        on_load=[RunDetailState.load, RunDetailState.watch],
         title="Run",
     )
-    app.add_page(fleet_page, route="/fleet", on_load=FleetState.refresh, title="Fleet")
     app.add_page(
-        events_page, route="/events", on_load=EventsState.refresh, title="Events"
+        fleet_page,
+        route="/fleet",
+        on_load=[FleetState.refresh, FleetState.watch],
+        title="Fleet",
+    )
+    app.add_page(
+        events_page,
+        route="/events",
+        on_load=[EventsState.refresh, EventsState.watch],
+        title="Events",
     )
     return app

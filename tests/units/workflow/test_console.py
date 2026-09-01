@@ -13,6 +13,7 @@ import pytest
 
 from reflex.workflow import console as console_module
 from reflex.workflow.console import (
+    POLL_SECONDS,
     EventsState,
     FleetState,
     LoginState,
@@ -20,6 +21,7 @@ from reflex.workflow.console import (
     RunsState,
     _admitted,
     _age,
+    _still_on,
     console_app,
     events_page,
     fleet_page,
@@ -383,3 +385,20 @@ def test_a_read_only_login_cannot_repair(seeded, monkeypatch):
     assert status == "FAILED", "nothing changed"
     assert notice == "retry needs the operate scope"
     assert replay_notice == "replay needs the operate scope"
+
+
+def test_watchers_stop_when_the_browser_leaves_their_page():
+    """A page watcher polls only while its page is mounted."""
+    assert _still_on("/", "/")
+    assert not _still_on("/fleet", "/")
+    assert _still_on("/run/abc123", "/run/")
+    assert not _still_on("/", "/run/")
+    assert _still_on("/events", "/events")
+    assert POLL_SECONDS < 5, "faster than a person reads, slower than a busy loop"
+
+
+def test_every_page_registers_a_live_watcher():
+    """Each page state has a watcher and the app still registers with them."""
+    for state in (RunsState, RunDetailState, FleetState, EventsState):
+        assert hasattr(state, "watch")
+    console_app()

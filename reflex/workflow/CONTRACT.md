@@ -414,7 +414,10 @@ mutates. A token bound to a principal (`REFLEX_WORKFLOW_API_TOKEN_PRINCIPALS`,
 `name=token;name=token`) signs actions as that principal; an unbound token
 records the name the operator typed, as a claim. With no token configured
 the console is open — that is the loopback default, and exposing it then is
-a deliberate choice behind an authenticating proxy.
+a deliberate choice behind an authenticating proxy. Pages stay live by
+re-reading the store every few seconds while mounted; because the store is
+what every worker shares, the view survives any worker restart without
+depending on one being alive.
 
 ### Tenancy and who runs the workers
 
