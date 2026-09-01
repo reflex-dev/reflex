@@ -70,12 +70,12 @@ def _tokens(**grants: str) -> ScopedTokens:
     Returns:
         The scope mapping.
     """
-    tokens = ScopedTokens.__new__(ScopedTokens)
-    tokens.grants = {
-        token: frozenset(SCOPES) if scope == "all" else frozenset({scope})
-        for token, scope in grants.items()
-    }
-    return tokens
+    return ScopedTokens(
+        grants={
+            token: frozenset(SCOPES) if scope == "all" else frozenset({scope})
+            for token, scope in grants.items()
+        }
+    )
 
 
 def _auth(token: str) -> dict[str, str]:
@@ -563,3 +563,77 @@ def test_operator_actions_record_who_and_why(forked_registration_context):
     )
     assert cancel_event.data["actor"] == "ops@example.com"
     assert cancel_event.data["reason"] == "duplicate order"
+
+
+def test_a_principal_bound_token_names_its_actor(
+    monkeypatch, forked_registration_context
+):
+    """The credential names the actor; the header is only a fallback claim.
+
+    Args:
+        monkeypatch: Used to configure tokens and principals.
+        forked_registration_context: Isolated state registry.
+    """
+    from reflex.workflow.records import HistoryEventType
+
+    tokens = ScopedTokens(
+        grants={
+            "tok-start": frozenset({"start"}),
+            "tok-bound": frozenset({"operate"}),
+            "tok-anon": frozenset({"operate"}),
+        },
+        principals={"tok-bound": "deploy-bot"},
+    )
+
+    runtime = WorkflowRuntime(testing.MemoryRunStore())
+    runtime.register(Orders)
+    app = build_app(runtime, worker=False, drain=0, tokens=tokens)
+
+    def start(client: TestClient, order: str) -> str:
+        """Start one order.
+
+        Args:
+            client: The service client.
+            order: The order id.
+
+        Returns:
+            The run id.
+        """
+        response = client.post(
+            "/runs",
+            json={
+                "workflow": "serve.orders",
+                "handler": "place",
+                "args": {"order_id": order},
+            },
+            headers=_auth("tok-start"),
+        )
+        return response.json()["run_id"]
+
+    with TestClient(app) as client:
+        bound_run = start(client, "o-bound")
+        anon_run = start(client, "o-anon")
+        plain_run = start(client, "o-plain")
+        client.post(
+            f"/runs/{bound_run}/cancel",
+            json={"reason": "rollout"},
+            headers={**_auth("tok-bound"), "X-Actor": "spoofed"},
+        )
+        client.post(
+            f"/runs/{anon_run}/cancel",
+            headers={**_auth("tok-anon"), "X-Actor": "ops@example.com"},
+        )
+        client.post(f"/runs/{plain_run}/cancel", headers=_auth("tok-anon"))
+        assert client.portal is not None
+        store = runtime.kernel._store  # pyright: ignore[reportPrivateUsage]
+        actors = {
+            run_id: next(
+                event.data.get("actor")
+                for event in client.portal.call(store.get_history, run_id)
+                if event.type is HistoryEventType.RUN_CANCEL_REQUESTED
+            )
+            for run_id in (bound_run, anon_run, plain_run)
+        }
+    assert actors[bound_run] == "deploy-bot", "the credential beats the header"
+    assert actors[anon_run] == "ops@example.com", "unbound: the header's claim"
+    assert actors[plain_run] == "api", "neither: name the surface"

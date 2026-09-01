@@ -407,11 +407,14 @@ operator finds and repairs a stuck run without SQL or the CLI. It is a
 read-and-repair surface, never a worker: its runtime opens the store
 without claiming anything, exactly like `rx.workflows.connect`. Every
 action goes through the same kernel operations the CLI uses and carries
-the operator's name (`REFLEX_ACTOR`, else the login user) and reason, so
-it lands in the run's history like any other operator mutation (§9). The
-console has no login of its own: it binds loopback by default, and
-exposing it is a deliberate choice behind a proxy that authenticates
-operators and stamps `REFLEX_ACTOR`.
+the operator's name and reason, so it lands in the run's history like any
+other operator mutation (§9). Login reuses the service's token model: an
+operator signs in with a scoped API token; `read` views, `operate`
+mutates. A token bound to a principal (`REFLEX_WORKFLOW_API_TOKEN_PRINCIPALS`,
+`name=token;name=token`) signs actions as that principal; an unbound token
+records the name the operator typed, as a claim. With no token configured
+the console is open — that is the loopback default, and exposing it then is
+a deliberate choice behind an authenticating proxy.
 
 ### Tenancy and who runs the workers
 
@@ -519,9 +522,10 @@ follow-up).
 
 Every operator mutation records **who asked and why** when the surface
 knows: the CLI stamps the invoking user (`REFLEX_ACTOR` overrides) and its
-`--reason`; the HTTP API records the caller's `X-Actor` claim (default
-`api` — tokens are anonymous, and an authenticating proxy can stamp the
-header) and the body's `reason`. Attribution rides the same history events,
+`--reason`; the HTTP API names the actor from the credential when the token
+is bound to a principal, else records the caller's `X-Actor` claim as given,
+else `api` (naming the surface beats naming nobody), and takes the body's
+`reason`. Attribution rides the same history events,
 in the same transactions, as the mutations they describe — the record that
 answers "what happened" answers "who did this", and cannot drift from it.
 

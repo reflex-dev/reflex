@@ -15,8 +15,10 @@ from reflex.workflow import console as console_module
 from reflex.workflow.console import (
     EventsState,
     FleetState,
+    LoginState,
     RunDetailState,
     RunsState,
+    _admitted,
     _age,
     console_app,
     events_page,
@@ -130,12 +132,10 @@ def test_runs_page_lists_and_filters(seeded):
             The rows before and after filtering.
         """
         state = RunsState()  # pyright: ignore[reportCallIssue]
-        async for _ in state.refresh():  # pyright: ignore[reportGeneralTypeIssues]
-            pass
+        await state.load_runs()
         first = list(state.rows)
         state.set_status_filter("COMPLETED")
-        async for _ in state.refresh():  # pyright: ignore[reportGeneralTypeIssues]
-            pass
+        await state.load_runs()
         return first, list(state.rows)
 
     unfiltered, filtered = asyncio.run(drive())
@@ -165,7 +165,7 @@ def test_run_detail_shows_the_story_and_repairs_with_attribution(seeded):
         assert state.steps[0]["handler"] == "place"
         assert '"total": 3' in state.state_json
         state.set_reason("vendor is back")
-        await state.act("retry")
+        await state.act_as(LoginState(), "retry")  # pyright: ignore[reportCallIssue]
         return state
 
     state = asyncio.run(drive())
@@ -213,10 +213,10 @@ def test_events_page_lists_parked_deliveries_and_replays(seeded):
         """
         state = EventsState()  # pyright: ignore[reportCallIssue]
         state.set_status_filter("PENDING")
-        await state.refresh()
+        await state.load_deliveries()
         assert len(state.rows) == 1
         assert state.rows[0]["key"] == "order_x"
-        await state.replay(state.rows[0]["parked_id"])
+        await state.replay_as(LoginState(), state.rows[0]["parked_id"])  # pyright: ignore[reportCallIssue]
         return state
 
     state = asyncio.run(drive())
@@ -237,7 +237,7 @@ def test_fleet_page_reads_the_registry(seeded):
             The refreshed state.
         """
         state = FleetState()  # pyright: ignore[reportCallIssue]
-        await state.refresh()
+        await state.load_fleet()
         return state
 
     state = asyncio.run(drive())
@@ -295,3 +295,91 @@ def test_the_cli_materializes_a_runnable_console_project(tmp_path, monkeypatch):
     source = (root / "workflow_console" / "workflow_console.py").read_text()
     assert "from reflex.workflow.console import console_app" in source
     assert "app = console_app()" in source
+
+
+def test_login_accepts_scoped_tokens_and_names_the_principal(monkeypatch):
+    """A bound token signs as its principal; an unbound one as the typed name.
+
+    Args:
+        monkeypatch: Used to configure tokens.
+    """
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_READ", "tok-read")
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_OPERATE", "tok-ops")
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_PRINCIPALS", "alek=tok-ops")
+
+    wrong = LoginState()  # pyright: ignore[reportCallIssue]
+    wrong.set_token("nope")
+    assert wrong.login() is None
+    assert wrong.error == "that token is not recognized"
+    assert not wrong.authenticated
+
+    bound = LoginState()  # pyright: ignore[reportCallIssue]
+    bound.set_token("tok-ops")
+    bound.set_display_name("ignored when bound")
+    assert bound.login() is not None, "success redirects to the runs page"
+    assert bound.scopes == ["operate"]
+    assert bound.name == "alek"
+    assert bound.token == "", "the secret is not kept in state after login"
+
+    typed = LoginState()  # pyright: ignore[reportCallIssue]
+    typed.set_token("tok-read")
+    typed.set_display_name("guest reader")
+    typed.login()
+    assert typed.scopes == ["read"]
+    assert typed.name == "guest reader"
+
+
+def test_scopes_gate_reads_and_mutations_only_when_tokens_exist(monkeypatch):
+    """No tokens means an open console; any token means scopes are enforced.
+
+    Args:
+        monkeypatch: Used to configure tokens.
+    """
+    for var in (
+        "REFLEX_WORKFLOW_API_TOKEN",
+        "REFLEX_WORKFLOW_API_TOKEN_READ",
+        "REFLEX_WORKFLOW_API_TOKEN_OPERATE",
+    ):
+        monkeypatch.delenv(var, raising=False)
+    anonymous = LoginState()  # pyright: ignore[reportCallIssue]
+    assert _admitted(anonymous, "read")
+    assert _admitted(anonymous, "operate")
+
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_READ", "tok-read")
+    assert not _admitted(anonymous, "read"), "a configured token makes login mandatory"
+    reader = LoginState()  # pyright: ignore[reportCallIssue]
+    reader.set_token("tok-read")
+    reader.login()
+    assert _admitted(reader, "read")
+    assert not _admitted(reader, "operate")
+
+
+def test_a_read_only_login_cannot_repair(seeded, monkeypatch):
+    """The operate scope gates every mutation, with a notice not a crash.
+
+    Args:
+        seeded: The seeded database.
+        monkeypatch: Used to configure tokens.
+    """
+    monkeypatch.setenv("REFLEX_WORKFLOW_API_TOKEN_READ", "tok-read")
+    reader = LoginState()  # pyright: ignore[reportCallIssue]
+    reader.set_token("tok-read")
+    reader.login()
+
+    async def drive() -> tuple[str, str, str]:
+        """Attempt a retry and a replay as the reader.
+
+        Returns:
+            The run's status after the attempt and both notices.
+        """
+        detail = RunDetailState()  # pyright: ignore[reportCallIssue]
+        await detail.load_run("failedrun001")
+        await detail.act_as(reader, "retry")
+        events = EventsState()  # pyright: ignore[reportCallIssue]
+        await events.replay_as(reader, "whatever")
+        return detail.status, detail.notice, events.notice
+
+    status, notice, replay_notice = asyncio.run(drive())
+    assert status == "FAILED", "nothing changed"
+    assert notice == "retry needs the operate scope"
+    assert replay_notice == "replay needs the operate scope"

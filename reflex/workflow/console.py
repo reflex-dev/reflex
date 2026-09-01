@@ -107,6 +107,129 @@ def _age(then: float) -> str:
     return f"{seconds / 86_400:.0f}d"
 
 
+class LoginState(rx.State):
+    """Who is at the console, proven by a scoped API token.
+
+    The console reuses the service's token model: ``REFLEX_WORKFLOW_API_TOKEN``
+    and its scoped variants admit, ``_PRINCIPALS`` names. With no token
+    configured at all the console is open -- the loopback default and the
+    CLI's warning are the guard then -- because a console nobody can log in
+    to protects nothing.
+    """
+
+    token: str = ""
+    display_name: str = ""
+    scopes: list[str] = []
+    name: str = ""
+    error: str = ""
+
+    @rx.var
+    def authenticated(self) -> bool:
+        """Whether a token was accepted.
+
+        Returns:
+            True once scopes were granted.
+        """
+        return bool(self.scopes)
+
+    @rx.var
+    def can_operate(self) -> bool:
+        """Whether this login may mutate runs.
+
+        Returns:
+            True with the ``operate`` scope, or with no tokens configured.
+        """
+        return "operate" in self.scopes or not _tokens_configured()
+
+    @rx.event
+    def set_token(self, value: str):
+        """Take the token field.
+
+        Args:
+            value: The token text.
+        """
+        self.token = value
+
+    @rx.event
+    def set_display_name(self, value: str):
+        """Take the name field, used when the token is not bound to one.
+
+        Args:
+            value: The operator's name as they typed it.
+        """
+        self.display_name = value
+
+    @rx.event
+    def login(self):
+        """Check the token against the configured scopes.
+
+        Returns:
+            A redirect to the runs page on success.
+        """
+        from reflex.workflow.serve import ScopedTokens
+
+        tokens = ScopedTokens()
+        granted = tokens.scopes_of(self.token)
+        if granted is None:
+            self.error = "that token is not recognized"
+            self.scopes = []
+            return None
+        self.scopes = sorted(granted)
+        # The credential names the actor when it can; the typed name is the
+        # claim recorded otherwise, exactly as X-Actor is on the API.
+        self.name = tokens.principal_of(self.token) or self.display_name or _actor()
+        self.error = ""
+        self.token = ""
+        return rx.redirect("/")
+
+    @rx.event
+    def logout(self):
+        """Forget the login.
+
+        Returns:
+            A redirect to the login page.
+        """
+        self.scopes = []
+        self.name = ""
+        return rx.redirect("/login")
+
+
+def _tokens_configured() -> bool:
+    """Whether any API token exists, making login mandatory.
+
+    Returns:
+        True when the environment configures at least one token.
+    """
+    from reflex.workflow.serve import ScopedTokens
+
+    return bool(ScopedTokens())
+
+
+def _admitted(login: LoginState, scope: str) -> bool:
+    """Whether a login may use a page or action needing a scope.
+
+    Args:
+        login: The console login.
+        scope: The scope the page or action needs.
+
+    Returns:
+        True when no tokens are configured, or the login holds the scope.
+    """
+    return not _tokens_configured() or scope in login.scopes
+
+
+def _operator(login: LoginState) -> str:
+    """The actor to record for a login's actions.
+
+    Args:
+        login: The console login.
+
+    Returns:
+        The principal or typed name, else the process's own identity.
+    """
+    return login.name or _actor()
+
+
 STATUS_COLORS: dict[str, str] = {
     "PENDING": "gray",
     "RUNNING": "blue",
@@ -130,9 +253,23 @@ class RunsState(rx.State):
 
     @rx.event
     async def refresh(self):
-        """Load runs matching the current filters."""
+        """Load runs matching the current filters.
+
+        Yields:
+            A redirect to the login page when a token is required and none
+            was given, else the loading states.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            yield rx.redirect("/login")
+            return
         self.loading = True
         yield
+        await self.load_runs()
+        self.loading = False
+
+    async def load_runs(self) -> None:
+        """Load runs matching the current filters."""
         runtime = await _client()
         statuses = ()
         if self.status_filter:
@@ -157,7 +294,6 @@ class RunsState(rx.State):
             }
             for run in runs
         ]
-        self.loading = False
 
     @rx.event
     def set_workflow_filter(self, value: str):
@@ -211,8 +347,15 @@ class RunDetailState(rx.State):
         the state itself, so a declared field of that name would shadow it
         and is refused at page registration; it is read from the router and
         kept under ``run`` instead.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
         """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
         await self.load_run(self.router.page.params.get("run_id", ""))
+        return None
 
     @rx.event
     async def load_run(self, run_id: str):
@@ -302,12 +445,29 @@ class RunDetailState(rx.State):
         Args:
             action: One of cancel, retry, skip, or resume.
         """
+        login = await self.get_state(LoginState)
+        await self.act_as(login, action)
+
+    async def act_as(self, login: LoginState, action: str) -> None:
+        """Apply one operator action on behalf of a login.
+
+        Split from ``act`` so the scope rule is testable without an event
+        context; the console's page handler resolves the login and calls
+        this.
+
+        Args:
+            login: The console login acting.
+            action: One of cancel, retry, skip, or resume.
+        """
         method = self._actions.get(action)
         if method is None:
             return
+        if not _admitted(login, "operate"):
+            self.notice = f"{action} needs the operate scope"
+            return
         runtime = await _client()
         applied = await getattr(runtime.kernel, method)(
-            self.run, actor=_actor(), reason=self.reason or None
+            self.run, actor=_operator(login), reason=self.reason or None
         )
         self.notice = (
             f"{action} applied"
@@ -326,6 +486,18 @@ class FleetState(rx.State):
 
     @rx.event
     async def refresh(self):
+        """Load the registry and per-release active counts.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
+        await self.load_fleet()
+        return None
+
+    async def load_fleet(self) -> None:
         """Load the registry and per-release active counts."""
         runtime = await _client()
         store = runtime.kernel._store
@@ -362,6 +534,18 @@ class EventsState(rx.State):
 
     @rx.event
     async def refresh(self):
+        """Load deliveries in the selected state.
+
+        Returns:
+            A redirect to the login page when login is required and absent.
+        """
+        login = await self.get_state(LoginState)
+        if not _admitted(login, "read"):
+            return rx.redirect("/login")
+        await self.load_deliveries()
+        return None
+
+    async def load_deliveries(self) -> None:
         """Load deliveries in the selected state."""
         runtime = await _client()
         store = runtime.kernel._store
@@ -399,11 +583,24 @@ class EventsState(rx.State):
         Args:
             parked_id: The delivery to replay.
         """
+        login = await self.get_state(LoginState)
+        await self.replay_as(login, parked_id)
+
+    async def replay_as(self, login: LoginState, parked_id: str) -> None:
+        """Replay on behalf of a login; split out for testability.
+
+        Args:
+            login: The console login acting.
+            parked_id: The delivery to replay.
+        """
+        if not _admitted(login, "operate"):
+            self.notice = "replay needs the operate scope"
+            return
         runtime = await _client()
         store = runtime.kernel._store
         disposition = await store.replay_parked(parked_id, time.time())
         self.notice = f"replay: {disposition}"
-        await self.refresh()
+        await self.load_deliveries()
 
 
 def _shell(*children: Any) -> rx.Component:
@@ -422,6 +619,18 @@ def _shell(*children: Any) -> rx.Component:
             rx.link("Runs", href="/"),
             rx.link("Fleet", href="/fleet"),
             rx.link("Events", href="/events"),
+            rx.cond(
+                LoginState.authenticated,
+                rx.hstack(
+                    rx.text(LoginState.name, color_scheme="gray"),
+                    rx.button(
+                        "Log out", on_click=LoginState.logout, size="1", variant="soft"
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.fragment(),
+            ),
             spacing="4",
             align="center",
             padding_y="12px",
@@ -684,6 +893,40 @@ def events_page() -> rx.Component:
     )
 
 
+def login_page() -> rx.Component:
+    """The token login page.
+
+    Returns:
+        The page component.
+    """
+    return rx.container(
+        rx.vstack(
+            rx.heading("Workflows console", size="5"),
+            rx.text(
+                "Sign in with an API token. A token bound to a principal signs "
+                "your actions with that name; otherwise the name you enter is "
+                "recorded with them."
+            ),
+            rx.input(
+                placeholder="API token",
+                type="password",
+                on_change=LoginState.set_token,
+                width="360px",
+            ),
+            rx.input(
+                placeholder="your name (if the token is not bound to one)",
+                on_change=LoginState.set_display_name,
+                width="360px",
+            ),
+            rx.button("Sign in", on_click=LoginState.login),
+            rx.text(LoginState.error, color_scheme="red"),
+            spacing="3",
+            padding_y="48px",
+        ),
+        size="2",
+    )
+
+
 def console_app() -> rx.App:
     """Build the operator console application.
 
@@ -705,6 +948,7 @@ def console_app() -> rx.App:
             await close_client()
 
     app.register_lifespan_task(hold_client_open)
+    app.add_page(login_page, route="/login", title="Sign in")
     app.add_page(runs_page, route="/", on_load=RunsState.refresh, title="Runs")
     app.add_page(
         run_detail_page,

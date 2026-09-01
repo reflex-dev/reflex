@@ -47,6 +47,13 @@ if TYPE_CHECKING:
 
 SCOPES: Final = ("read", "start", "signal", "operate")
 SCOPE_TOKEN_ENVS: Final = {scope: f"{TOKEN_ENV}_{scope.upper()}" for scope in SCOPES}
+PRINCIPALS_ENV: Final = f"{TOKEN_ENV}_PRINCIPALS"
+"""Binds names to tokens: ``alek=tok1;deploy-bot=tok2``.
+
+A bound token attributes its actions to its principal, so the audit answers
+"who" from the credential rather than from a header the caller wrote. Tokens
+named here must still be granted scopes by the scope variables above.
+"""
 
 
 def _bearer(request: Request) -> str:
@@ -70,9 +77,25 @@ class ScopedTokens:
         grants: Token to granted scopes.
     """
 
-    def __init__(self):
-        """Read every configured token."""
+    def __init__(
+        self,
+        grants: dict[str, frozenset[str]] | None = None,
+        principals: dict[str, str] | None = None,
+    ):
+        """Read every configured token and principal binding.
+
+        Args:
+            grants: Explicit token-to-scopes mapping; the environment is read
+                when omitted.
+            principals: Explicit token-to-name bindings; the environment is
+                read when omitted.
+        """
+        if grants is not None or principals is not None:
+            self.grants = dict(grants or {})
+            self.principals = dict(principals or {})
+            return
         self.grants: dict[str, frozenset[str]] = {}
+        self.principals: dict[str, str] = {}
         universal = os.environ.get(TOKEN_ENV)
         if universal:
             self.grants[universal] = frozenset(SCOPES)
@@ -81,6 +104,61 @@ class ScopedTokens:
             if token:
                 merged = self.grants.get(token, frozenset()) | {scope}
                 self.grants[token] = merged
+        for binding in filter(None, os.environ.get(PRINCIPALS_ENV, "").split(";")):
+            name, _, token = binding.partition("=")
+            if name.strip() and token.strip():
+                self.principals[token.strip()] = name.strip()
+
+    def scopes_of(self, token: str) -> frozenset[str] | None:
+        """Resolve the scopes a raw token grants.
+
+        Args:
+            token: The presented token.
+
+        Returns:
+            The granted scopes, or None when no configured token matches.
+        """
+        if not token:
+            return None
+        for candidate, scopes in self.grants.items():
+            # Compared in constant time, every candidate every time, so the
+            # comparison count does not leak which token was close.
+            if hmac.compare_digest(token, candidate):
+                return scopes
+        return None
+
+    def principal_of(self, token: str) -> str | None:
+        """The name a token is bound to, if any.
+
+        Args:
+            token: The presented token.
+
+        Returns:
+            The principal name, or None for an anonymous token.
+        """
+        for candidate, name in self.principals.items():
+            if hmac.compare_digest(token, candidate):
+                return name
+        return None
+
+    def actor_for(self, request: Request) -> str:
+        """Who a request acts as, for the run's history.
+
+        The credential wins: a token bound to a principal names that
+        principal. Otherwise the caller's ``X-Actor`` claim is recorded as
+        given, and failing that ``api`` -- naming the surface beats naming
+        nobody.
+
+        Args:
+            request: The incoming request.
+
+        Returns:
+            The actor to record.
+        """
+        bound = self.principal_of(_bearer(request))
+        if bound is not None:
+            return bound
+        return request.headers.get("x-actor") or "api"
 
     def __bool__(self) -> bool:
         """Whether any token is configured.
@@ -99,15 +177,7 @@ class ScopedTokens:
         Returns:
             The granted scopes, or None when no configured token matches.
         """
-        presented = _bearer(request)
-        if not presented:
-            return None
-        for token, scopes in self.grants.items():
-            # Compared in constant time, every candidate every time, so the
-            # comparison count does not leak which token was close.
-            if hmac.compare_digest(presented, token):
-                return scopes
-        return None
+        return self.scopes_of(_bearer(request))
 
     def require(self, scope: str) -> Callable[[Request], JSONResponse | None]:
         """Build an authorizer demanding one scope.
@@ -495,10 +565,7 @@ def operator_endpoint(runtime: WorkflowRuntime, tokens: ScopedTokens, action: st
         if bad is not None:
             return bad
         reason = payload.get("reason") if isinstance(payload, dict) else None
-        # Tokens are anonymous; X-Actor is the caller's claim of identity,
-        # recorded as given. An audit that names "api" beats one that names
-        # nobody, and a proxy that authenticates people can stamp the header.
-        actor = request.headers.get("x-actor") or "api"
+        actor = tokens.actor_for(request)
         applied = await getattr(runtime.kernel, action)(
             run_id, actor=actor, reason=reason
         )
