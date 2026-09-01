@@ -22,6 +22,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.utils import memo_paths
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
@@ -1842,7 +1843,7 @@ def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> No
 
 
 def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
-    """The wrapper should support the changed react-moment 2.x prop types."""
+    """The wrapper exposes the react-moment 2.x props and dependencies."""
     assert Moment.library == "react-moment@2.0.2"
     assert Moment.lib_dependencies == [
         "moment@2.30.1",
@@ -1857,6 +1858,14 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     props = moment.render()["props"]
     assert 'trim:"large"' in props
     assert 'parse:["YYYY-MM-DD"]' in props
+
+    duration_from_now = Moment.create(
+        "2026-08-30",
+        duration_from_now=True,
+    )
+    assert duration_from_now.add_imports()["moment-duration-format@2.2.2"] == ImportVar(
+        tag=None
+    )
 
 
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
