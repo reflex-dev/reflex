@@ -219,7 +219,7 @@ retirement gate is a count — `reflex workflows fleet --can-retire R` exits
 nonzero while any active run is pinned to R, because stopping R's workers
 early strands those runs until their leases lapse.
 
-## 5. Cancellation, deadlines, and children## 5. Cancellation, deadlines, and children
+## 5. Cancellation, deadlines, and children
 
 - `cancel(run_id)` records intent and cancels any in-flight attempt
   cooperatively. The run finalizes `CANCELLED` only once no step is claimed
@@ -484,6 +484,23 @@ Credentials follow the same rule everywhere. Webhook secrets, approval-link
 signing keys, and the API token are read from the environment at use time, so
 they never enter run state, history, or a browser bundle, and rotating one is
 a restart rather than a migration.
+
+### Alerts
+
+Metrics say what happened; an alert says look now. When
+`REFLEX_WORKFLOW_ALERT_WEBHOOK` is set, every runtime — app, worker, or
+service — posts one JSON document per alert to it: a run that failed, timed
+out, or needs attention (`run_failed`, `run_timed_out`,
+`run_needs_attention`), a schedule that dropped occurrences
+(`schedule_skipped`), and deliveries that became dead letters
+(`dead_letter`, on arrival at a terminal run or when parked past the TTL).
+`REFLEX_WORKFLOW_ALERT_KINDS` narrows the set. Each payload carries a
+`text` line beside its structured fields, so a Slack-compatible incoming
+webhook accepts it unchanged. Delivery is best effort and off the kernel's
+path: alerts queue (bounded; the oldest drop first) and post with retries,
+so a slow or dead sink loses alerts, never runs, and a run's outcome is
+never conditional on its alert. Dead letters also count as
+`deliveries_dead_lettered` on both metrics exporters.
 
 ## 8. The failure matrix
 

@@ -167,6 +167,28 @@ class WorkflowObserver:
             skipped: How many were dropped.
         """
 
+    def on_dead_letter(
+        self,
+        workflow_id: str | None,
+        channel: str | None,
+        count: int,
+        reason: str,
+    ) -> None:
+        """Handle channel deliveries that became dead letters.
+
+        A delivery that can never be delivered -- its run had already ended
+        when it arrived, or its parked wait outlived the TTL -- belongs to no
+        run history, so without this the only trace of a lost event is a log
+        line.
+
+        Args:
+            workflow_id: The addressed workflow, when the delivery named one.
+            channel: The addressed channel, when the delivery named one.
+            count: How many deliveries became dead letters.
+            reason: ``"undeliverable"`` when the run was terminal or past its
+                deadline on arrival, ``"unclaimed"`` when parked past the TTL.
+        """
+
 
 class CompositeObserver(WorkflowObserver):
     """Fans one transition out to several observers.
@@ -221,6 +243,25 @@ class CompositeObserver(WorkflowObserver):
         for observer in self.observers:
             with contextlib.suppress(Exception):
                 observer.on_schedule_skip(schedule_key, skipped)
+
+    def on_dead_letter(
+        self,
+        workflow_id: str | None,
+        channel: str | None,
+        count: int,
+        reason: str,
+    ) -> None:
+        """Pass dead-lettered deliveries to every observer.
+
+        Args:
+            workflow_id: The addressed workflow, when the delivery named one.
+            channel: The addressed channel, when the delivery named one.
+            count: How many deliveries became dead letters.
+            reason: Why they did.
+        """
+        for observer in self.observers:
+            with contextlib.suppress(Exception):
+                observer.on_dead_letter(workflow_id, channel, count, reason)
 
 
 def _branch_index(request_key: str | None) -> int | None:
@@ -294,6 +335,30 @@ class MetricsObserver(WorkflowObserver):
         by_key["schedule_occurrences_skipped"] = (
             by_key.get("schedule_occurrences_skipped", 0) + skipped
         )
+
+    def on_dead_letter(
+        self,
+        workflow_id: str | None,
+        channel: str | None,
+        count: int,
+        reason: str,
+    ) -> None:
+        """Count deliveries that became dead letters.
+
+        Args:
+            workflow_id: The addressed workflow, when the delivery named one.
+            channel: The addressed channel, when the delivery named one.
+            count: How many deliveries became dead letters.
+            reason: Why they did.
+        """
+        self.totals["deliveries_dead_lettered"] = (
+            self.totals.get("deliveries_dead_lettered", 0) + count
+        )
+        if workflow_id:
+            counts = self.by_workflow.setdefault(workflow_id, {})
+            counts["deliveries_dead_lettered"] = (
+                counts.get("deliveries_dead_lettered", 0) + count
+            )
 
     def on_event(
         self,
@@ -1088,6 +1153,8 @@ class WorkflowKernel:
         )
         if disposition == "resolved":
             self._wakeup.set()
+        elif disposition == "dead_letter":
+            self._notify_dead_letter(workflow_id, channel_name, 1, "undeliverable")
         return disposition
 
     async def signal_by_key(
@@ -2218,6 +2285,28 @@ class WorkflowKernel:
         except Exception as err:
             console.warn(f"Workflow observer raised, ignoring: {err}")
 
+    def _notify_dead_letter(
+        self,
+        workflow_id: str | None,
+        channel: str | None,
+        count: int,
+        reason: str,
+    ) -> None:
+        """Tell the observer deliveries became dead letters, if one is installed.
+
+        Args:
+            workflow_id: The addressed workflow, when the delivery named one.
+            channel: The addressed channel, when the delivery named one.
+            count: How many deliveries became dead letters.
+            reason: Why they did.
+        """
+        if self._observer is None:
+            return
+        try:
+            self._observer.on_dead_letter(workflow_id, channel, count, reason)
+        except Exception as err:
+            console.warn(f"Workflow observer raised, ignoring: {err}")
+
     def _acquire_lease(self, claim: Claim) -> _Lease:
         """Register an in-flight claim and start renewing its lease.
 
@@ -3284,6 +3373,7 @@ class WorkflowKernel:
                 "list them with the store's list_parked and replay any that "
                 "matter."
             )
+            self._notify_dead_letter(None, None, swept, "unclaimed")
         self._next_recovery_at = now + self._recovery_interval
         recovered, failed = await self._store.recover_orphans(now, self._max_recoveries)
         for run_id in failed:

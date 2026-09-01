@@ -94,7 +94,7 @@ class OpenTelemetryObserver(WorkflowObserver):
         self._tracer = (tracer_provider or trace).get_tracer(INSTRUMENTATION_NAME)
         meter = (meter_provider or metrics).get_meter(INSTRUMENTATION_NAME)
         names = set(MetricsObserver._COUNTED.values())  # pyright: ignore[reportPrivateUsage]
-        names.add("schedule_occurrences_skipped")
+        names.update(("schedule_occurrences_skipped", "deliveries_dead_lettered"))
         self._counters = {
             name: meter.create_counter(f"reflex.workflow.{name}") for name in names
         }
@@ -132,6 +132,30 @@ class OpenTelemetryObserver(WorkflowObserver):
         """
         self._counters["schedule_occurrences_skipped"].add(
             skipped, {"workflow.schedule_key": schedule_key}
+        )
+
+    def on_dead_letter(
+        self,
+        workflow_id: str | None,
+        channel: str | None,
+        count: int,
+        reason: str,
+    ) -> None:
+        """Count deliveries that became dead letters.
+
+        Args:
+            workflow_id: The addressed workflow, when the delivery named one.
+            channel: The addressed channel, when the delivery named one.
+            count: How many deliveries became dead letters.
+            reason: Why they did.
+        """
+        self._counters["deliveries_dead_lettered"].add(
+            count,
+            {
+                "workflow.id": workflow_id or "",
+                "workflow.channel": channel or "",
+                "workflow.reason": reason,
+            },
         )
 
     def _count(self, event_type: HistoryEventType, workflow_id: str) -> None:

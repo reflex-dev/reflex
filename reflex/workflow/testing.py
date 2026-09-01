@@ -122,8 +122,14 @@ class WorkflowTestHarness:
         Returns:
             The registered, not yet started, runtime.
         """
+        # alerts=None: a developer's shell may name a real Slack hook, and a
+        # test that fails a run on purpose must never page anyone.
         runtime = WorkflowRuntime(
-            self._store, clock=self._clock, rng=lambda: 1.0, **self._runtime_kwargs
+            self._store,
+            clock=self._clock,
+            rng=lambda: 1.0,
+            alerts=None,
+            **self._runtime_kwargs,
         )
         for workflow_cls in self._workflow_classes:
             runtime.register(workflow_cls)

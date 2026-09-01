@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.workflow import ScheduleTrigger, WebhookTrigger
 
+from reflex.workflow.alerts import ALERT_WEBHOOK_ENV
 from reflex.workflow.api import TOKEN_ENV
 from reflex.workflow.approvals import SECRET_ENV
 
@@ -104,6 +105,22 @@ def describe_connections(
             if token_set
             else f"{TOKEN_ENV} (or a scoped variant) is unset, so the HTTP API is "
             "not mounted. Runs start from Python only."
+        ),
+    })
+    alert_url = os.environ.get(ALERT_WEBHOOK_ENV, "").strip()
+    rows.append({
+        "kind": "sink",
+        "name": ALERT_WEBHOOK_ENV,
+        "present": bool(alert_url),
+        "severity": "ok" if alert_url else "note",
+        "used_by": ["alerts"],
+        "message": (
+            "Alerts post to the configured webhook."
+            if alert_url
+            else f"{ALERT_WEBHOOK_ENV} is unset, so failed runs, runs needing "
+            "attention, dropped schedule occurrences, and dead letters are "
+            "visible only in the console and the store. Set it to a "
+            "Slack-compatible incoming webhook URL to be paged."
         ),
     })
     return rows

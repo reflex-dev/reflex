@@ -163,3 +163,19 @@ async def test_the_counters_agree_with_the_other_exporter(
     ):
         assert metrics_observer.totals.get(name, 0) == expected, name
         assert _counter(reader, f"reflex.workflow.{name}") == expected, name
+
+
+def test_dead_letters_are_counted_by_both_exporters(otel):
+    """A lost delivery must show up in whichever exporter the deployment reads.
+
+    Args:
+        otel: The observer and its collectors.
+    """
+    observer, _, reader = otel
+    metrics_observer = MetricsObserver()
+    both = CompositeObserver(observer, metrics_observer)
+    both.on_dead_letter("orders", "shipped", 2, "undeliverable")
+    both.on_dead_letter(None, None, 3, "unclaimed")
+
+    assert metrics_observer.totals["deliveries_dead_lettered"] == 5
+    assert _counter(reader, "reflex.workflow.deliveries_dead_lettered") == 5

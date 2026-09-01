@@ -41,6 +41,7 @@ from reflex_base.workflow import (
     webhook,
 )
 
+from reflex.workflow.alerts import AlertObserver
 from reflex.workflow.approvals import approval_link
 from reflex.workflow.conformance import CONFORMANCE_CHECKS
 from reflex.workflow.context import RunContext, current_run
@@ -80,6 +81,7 @@ from reflex.workflow.testing import WorkflowTestHarness
 
 __all__ = [
     "CONFORMANCE_CHECKS",
+    "AlertObserver",
     "ChannelDelivery",
     "Debounce",
     "DeliveryDisposition",

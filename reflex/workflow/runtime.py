@@ -14,7 +14,7 @@ import random
 import time
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
@@ -27,6 +27,7 @@ from reflex_base.workflow import (
     parse_duration,
 )
 
+from reflex.workflow.alerts import AlertObserver
 from reflex.workflow.definition import WorkflowDefinition, compile_workflow
 from reflex.workflow.handle import RunHandle
 from reflex.workflow.kernel import (
@@ -75,6 +76,7 @@ class WorkflowRuntime:
         max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
         queues: Iterable[str] | None = None,
         release: str | None = None,
+        alerts: AlertObserver | Literal["env"] | None = "env",
     ):
         """Initialize the runtime.
 
@@ -94,6 +96,10 @@ class WorkflowRuntime:
             queues: Queues this process's worker serves; None serves all.
             release: The deployed artifact identity this runtime's worker
                 runs, read from REFLEX_RELEASE_ID by the kernel when omitted.
+            alerts: The alert sink. ``"env"`` builds one from
+                REFLEX_WORKFLOW_ALERT_WEBHOOK when it is set; None installs
+                none, which is what the test harness passes so a developer's
+                shell never pages anyone from a test run.
         """
         self._store = store
         self._clock = clock
@@ -103,13 +109,16 @@ class WorkflowRuntime:
         self._lease_renew_interval = lease_renew_interval
         self._recovery_interval = recovery_interval
         self.metrics = MetricsObserver()
+        self.alerts = AlertObserver.from_env() if alerts == "env" else alerts
         # Always counting: a deployment that has to reconfigure and restart to
         # find out how many runs failed learns it too late. The user's
         # observer, when there is one, still sees every event.
-        self._observer = (
-            self.metrics
-            if observer is None
-            else CompositeObserver(self.metrics, observer)
+        installed = [
+            self.metrics,
+            *(each for each in (self.alerts, observer) if each is not None),
+        ]
+        self._observer: WorkflowObserver = (
+            installed[0] if len(installed) == 1 else CompositeObserver(*installed)
         )
         self._max_recoveries = max_recoveries
         self._max_concurrency = max_concurrency
@@ -244,6 +253,8 @@ class WorkflowRuntime:
         if self._kernel is not None:
             await self._kernel.aclose(drain=parse_duration(drain))
             self._kernel = None
+        if self.alerts is not None:
+            await self.alerts.aclose()
 
     @asynccontextmanager
     async def running(self, drain: DurationLike = 0) -> AsyncIterator[WorkflowRuntime]:
