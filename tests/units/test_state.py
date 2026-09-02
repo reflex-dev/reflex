@@ -1280,6 +1280,118 @@ def test_dirty_computed_var_from_backend_var(
     }
 
 
+class ParityState(BaseState):
+    """A chain where the middle computed var often keeps its value."""
+
+    n: int = 0
+
+    @rx.var
+    def parity(self) -> int:
+        """Depends on n, but only changes when n crosses an odd/even boundary.
+
+        Returns:
+            n modulo 2.
+        """
+        return self.n % 2
+
+    @rx.var
+    def parity_label(self) -> str:
+        """Depends on parity only.
+
+        Returns:
+            "even" or "odd".
+        """
+        return "even" if self.parity == 0 else "odd"
+
+
+def test_unchanged_write_is_not_dirty(
+    interdependent_state: InterdependentState,
+) -> None:
+    """Assigning the value a scalar var already holds must not dirty anything.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.x = interdependent_state.x
+    assert not interdependent_state.dirty_vars
+    assert interdependent_state.get_delta() == {}
+
+
+def test_unchanged_write_keeps_computed_var_cache(
+    interdependent_state: InterdependentState,
+) -> None:
+    """Assigning an unchanged value must not invalidate dependent computed vars.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    v1x2 = InterdependentState.computed_vars["v1x2"]
+    assert hasattr(interdependent_state, v1x2._cache_attr)
+    interdependent_state.v1 = interdependent_state.v1
+    assert hasattr(interdependent_state, v1x2._cache_attr)
+    assert interdependent_state.get_delta() == {}
+
+
+def test_computed_var_equal_value_stops_cascade() -> None:
+    """A computed var that recomputes to an equal value must not dirty its dependents."""
+    s = ParityState()
+    s.dict()
+    s._clean()
+    s.n = 2  # parity stays 0, so parity_label must not be recomputed or sent
+    assert s.get_delta() == {s.get_full_name(): {"n" + FIELD_MARKER: 2}}
+    s._clean()
+    s.n = 3  # parity flips, so the whole chain is sent
+    assert s.get_delta() == {
+        s.get_full_name(): {
+            "n" + FIELD_MARKER: 3,
+            "parity" + FIELD_MARKER: 1,
+            "parity_label" + FIELD_MARKER: "odd",
+        }
+    }
+
+
+def test_computed_var_fresh_after_each_write(
+    interdependent_state: InterdependentState,
+) -> None:
+    """Reading a computed var between writes in one handler sees each new value.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.v1 = 1
+    assert interdependent_state.v1x2x2 == 4
+    interdependent_state.v1 = 2
+    assert interdependent_state.v1x2x2 == 8
+    assert interdependent_state.get_delta()[interdependent_state.get_full_name()] == {
+        "v1" + FIELD_MARKER: 2,
+        "v1x2" + FIELD_MARKER: 4,
+        "v1x2x2" + FIELD_MARKER: 8,
+    }
+
+
+def test_computed_var_recomputes_once_per_read() -> None:
+    """Several writes followed by one read run the getter once, not per write."""
+    calls: list[int] = []
+
+    class CountingState(BaseState):
+        v: int = 0
+
+        @rx.var
+        def double(self) -> int:
+            calls.append(self.v)
+            return self.v * 2
+
+    s = CountingState()
+    s.dict()
+    s._clean()
+    calls.clear()
+    s.v = 1
+    s.v = 2
+    s.v = 3
+    assert s.double == 6
+    assert calls == [3]
+
+
 def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:
     """Set backend var on one instance, expect no affect in other instances.
 
