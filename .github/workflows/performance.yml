@@ -37,7 +37,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.14"
+          python-version: "3.15"
+          allow-prereleases: true
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
@@ -61,7 +62,7 @@ jobs:
 
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: "3.14"
+          python-version: "3.15"
           node-version: "22"
           run-uv-sync: true
 
