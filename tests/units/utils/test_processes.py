@@ -24,7 +24,6 @@ requires_ipv6 = pytest.mark.skipif(
 )
 
 
-@requires_ipv6
 def test_is_process_on_port_free_port():
     """Test is_process_on_port returns False when port is free."""
     # Find a free port
@@ -33,10 +32,9 @@ def test_is_process_on_port_free_port():
         free_port = sock.getsockname()[1]
 
     # Port should be free after socket is closed
-    assert not is_process_on_port(free_port)
+    assert not is_process_on_port(free_port, (socket.AF_INET,))
 
 
-@requires_ipv6
 def test_is_process_on_port_occupied_port():
     """Test is_process_on_port returns True when port is occupied."""
     # Create a server socket to occupy a port
@@ -48,7 +46,7 @@ def test_is_process_on_port_occupied_port():
 
     try:
         # Port should be occupied
-        assert is_process_on_port(occupied_port)
+        assert is_process_on_port(occupied_port, (socket.AF_INET,))
     finally:
         server_socket.close()
 
@@ -69,7 +67,6 @@ def test_is_process_on_port_ipv6():
         server_socket.close()
 
 
-@requires_ipv6
 def test_is_process_on_port_both_protocols():
     """Test is_process_on_port detects occupation on either IPv4 or IPv6."""
     # Create IPv4 server
@@ -81,7 +78,7 @@ def test_is_process_on_port_both_protocols():
 
     try:
         # Should detect IPv4 occupation
-        assert is_process_on_port(port)
+        assert is_process_on_port(port, (socket.AF_INET,))
     finally:
         ipv4_socket.close()
 
@@ -125,7 +122,6 @@ def test_is_process_on_port_permission_error():
         assert result is True
 
 
-@requires_ipv6
 def test_is_process_on_port_concurrent_access():
     """Test is_process_on_port works correctly with concurrent access."""
     shared = None
@@ -156,7 +152,7 @@ def test_is_process_on_port_concurrent_access():
 
         # Port should be occupied while server is running (both bound-only and listening)
         assert AppHarness._poll_for(
-            lambda: shared is not None and is_process_on_port(shared)
+            lambda: shared is not None and is_process_on_port(shared, (socket.AF_INET,))
         )
     finally:
         do_close.set()
@@ -164,7 +160,7 @@ def test_is_process_on_port_concurrent_access():
 
     # Give it a moment for the socket to be fully released
     assert AppHarness._poll_for(
-        lambda: shared is not None and not is_process_on_port(shared)
+        lambda: shared is not None and not is_process_on_port(shared, (socket.AF_INET,))
     )
 
 
