@@ -141,7 +141,11 @@ def _normalize_library_name(lib: str) -> str:
 
 
 def _get_window_libraries() -> list[tuple[str, str]]:
-    """Build unique aliases for the libraries exposed through ``window.__reflex``."""
+    """Build unique aliases for libraries exposed through ``window.__reflex``.
+
+    Returns:
+        Library aliases paired with their original package names.
+    """
     used_aliases: set[str] = set()
     seen_libraries: set[str] = set()
     window_libraries: list[tuple[str, str]] = []
