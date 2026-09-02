@@ -911,8 +911,7 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
-    if project_root is None:
-        project_root = Path.cwd()
+    project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
         # identity: rxconfig.py may itself add or remove equal cwd entries,
