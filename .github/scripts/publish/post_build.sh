@@ -5,16 +5,15 @@
 set -euo pipefail
 
 : "${PACKAGE:?}"
+: "${BUILD_DIR:?}"
 : "${DIST_DIR:?}"
 
-# The reflex wheel carries the generated .pyi stubs (scripts/hatch_build.py).
-# A build that silently produced none would ship a release with no type
-# information, so it must not reach the approver.
-if [ "$PACKAGE" = "reflex" ]; then
-  if unzip -l "$DIST_DIR"/*.whl | grep '\.pyi$'; then
-    echo "✓ .pyi files found in distribution"
-  else
-    echo "Error: No .pyi files found in wheel"
-    exit 1
-  fi
-fi
+# Every package whose build generates .pyi stubs — reflex itself and the
+# component packages alike — must ship them, or the release carries no type
+# information. Which packages those are is derived from the package being built,
+# not listed anywhere: see scripts/verify_pyi.py.
+#
+# Located relative to this hook rather than to the working directory, which is
+# what DIST_DIR is relative to.
+exec uv run --no-config --script \
+  "$(dirname "$0")/../../../scripts/verify_pyi.py"
