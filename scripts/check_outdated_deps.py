@@ -259,7 +259,7 @@ def frontend_packages(web_dir: Path) -> tuple[list[str], list[str]]:
         ``(outdated, declared)`` package names.
 
     Raises:
-        CheckError: If ``package.json`` is missing or unparseable.
+        CheckError: If ``package.json`` is missing or unparsable.
     """
     outdated = parse_bun_outdated(_run(["bun", "outdated"], cwd=web_dir))
 
