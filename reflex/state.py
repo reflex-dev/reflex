@@ -58,6 +58,7 @@ from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance
 from reflex_base.vars import Field, VarData, field
 from reflex_base.vars.base import (
+    AsyncComputedVar,
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
@@ -369,6 +370,9 @@ CLASS_VAR_NAMES = frozenset({
     "inherited_backend_vars",
     "event_handlers",
     "_var_dependencies",
+    "_computed_var_deps",
+    "_frontend_computed_vars",
+    "_interval_computed_vars",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
     "_potentially_dirty_states",
@@ -402,6 +406,15 @@ class BaseState(EvenMoreBasicBaseState):
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
     _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
 
+    # Mapping of computed var name to the (state_full_name, var_name) pairs it reads.
+    _computed_var_deps: ClassVar[builtins.dict[str, tuple[tuple[str, str], ...]]] = {}
+
+    # Cached computed vars that are sent to the frontend.
+    _frontend_computed_vars: ClassVar[set[str]] = set()
+
+    # Computed vars with an update_interval.
+    _interval_computed_vars: ClassVar[set[str]] = set()
+
     # Set of vars which always need to be recomputed
     _always_dirty_computed_vars: ClassVar[set[str]] = set()
 
@@ -424,6 +437,9 @@ class BaseState(EvenMoreBasicBaseState):
 
     # The set of dirty substates.
     dirty_substates: set[str] = field(default_factory=set, is_var=False)
+
+    # Cached computed vars whose dependencies changed and that have not been re-read yet.
+    _stale_computed_vars: set[str] = field(default_factory=set, is_var=False)
 
     # The routing path that triggered the state
     router_data: builtins.dict[str, Any] = field(
@@ -830,6 +846,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.vars[unique_var_name] = computed_var_func_arg
         cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
+        cls._frontend_computed_vars.add(unique_var_name)
 
         return getattr(cls, unique_var_name)
 
@@ -894,10 +911,22 @@ class BaseState(EvenMoreBasicBaseState):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
+        cls._computed_var_deps = {}
+        cls._frontend_computed_vars = {
+            cvar_name
+            for cvar_name, cvar in cls.computed_vars.items()
+            if not cvar._backend
+        }
+        cls._interval_computed_vars = {
+            cvar_name
+            for cvar_name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        }
         for cvar_name, cvar in cls.computed_vars.items():
             if not cvar._cache:
                 # Do not perform dep calculation when cache=False (these are always dirty).
                 continue
+            forward_deps: list[tuple[str, str]] = []
             for state_name, dvar_set in cvar._deps(objclass=cls).items():
                 state_cls = cls.get_root_state().get_class_substate(state_name)
                 for dvar in dvar_set:
@@ -916,6 +945,8 @@ class BaseState(EvenMoreBasicBaseState):
                     defining_state_cls._potentially_dirty_states.add(
                         cls.get_full_name()
                     )
+                    forward_deps.append((defining_state_cls.get_full_name(), dvar))
+            cls._computed_var_deps[cvar_name] = tuple(forward_deps)
 
         # ComputedVar with cache=False always need to be recomputed
         cls._always_dirty_computed_vars = {
@@ -1802,30 +1833,70 @@ class BaseState(EvenMoreBasicBaseState):
             return await value
         return value
 
-    def _mark_dirty_computed_vars(self) -> None:
-        """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        # Append expired computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._expired_computed_vars())
-        # Append always dirty computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._always_dirty_computed_vars)
+    def _get_state_by_full_name(self, full_name: str) -> BaseState | None:
+        """Get a loaded state instance from this tree by its full name.
 
+        Args:
+            full_name: The full dotted name of the state.
+
+        Returns:
+            The state instance, or None when it is not loaded in this tree.
+        """
+        if full_name == self.get_full_name():
+            return self
+        try:
+            return self._get_root_state().get_substate(tuple(full_name.split(".")))
+        except ValueError:
+            return None
+
+    def _mark_dirty_computed_vars(self, from_vars: set[str] | None = None) -> None:
+        """Mark ComputedVars that depend on changed vars as stale.
+
+        A stale computed var is re-read lazily: on access, or in ``get_delta``.
+        Marking stops at a var that is already stale, so repeated writes in one
+        event do not re-walk the dependency graph.
+
+        Args:
+            from_vars: The changed vars to cascade from. Defaults to ``dirty_vars``
+                plus expired and always-dirty computed vars.
+        """
         dirty_vars = self.dirty_vars
-        while dirty_vars:
-            calc_vars, dirty_vars = dirty_vars, set()
+        if from_vars is None:
+            if self._interval_computed_vars:
+                dirty_vars.update(self._expired_computed_vars())
+            dirty_vars.update(self._always_dirty_computed_vars)
+            from_vars = dirty_vars
+
+        stale = self._stale_computed_vars
+        computed_vars = self.computed_vars
+        full_name = self.get_full_name()
+        while from_vars:
+            calc_vars, from_vars = from_vars, set()
             for state_name, cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                if state_name == self.get_full_name():
-                    defining_state = self
+                if state_name == full_name:
+                    if cvar in stale:
+                        continue
+                    actual_var = computed_vars[cvar]
+                    if isinstance(actual_var, AsyncComputedVar):
+                        # Async getters cannot be resolved on a sync read.
+                        actual_var.mark_dirty(instance=self)
+                        dirty_vars.add(cvar)
+                    else:
+                        stale.add(cvar)
+                    from_vars.add(cvar)
                 else:
                     defining_state = self._get_root_state().get_substate(
                         tuple(state_name.split("."))
                     )
-                defining_state.dirty_vars.add(cvar)
-                actual_var = defining_state.computed_vars.get(cvar)
-                if actual_var is not None:
-                    actual_var.mark_dirty(instance=defining_state)
-                if defining_state is self:
-                    dirty_vars.add(cvar)
-                else:
+                    if cvar in defining_state._stale_computed_vars:
+                        continue
+                    defining_state._mark_dirty_computed_vars(from_vars={cvar})
+                    actual_var = defining_state.computed_vars[cvar]
+                    if isinstance(actual_var, AsyncComputedVar):
+                        actual_var.mark_dirty(instance=defining_state)
+                        defining_state.dirty_vars.add(cvar)
+                    else:
+                        defining_state._stale_computed_vars.add(cvar)
                     # mark dirty where this var is defined
                     defining_state._mark_dirty()
 
@@ -1835,10 +1906,11 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             Set of computed vars to include in the delta.
         """
+        computed_vars = self.computed_vars
         return {
             cvar
-            for cvar, cvar_obj in self.computed_vars.items()
-            if cvar_obj.needs_update(instance=self)
+            for cvar in self._interval_computed_vars
+            if computed_vars[cvar].needs_update(instance=self)
         }
 
     def _dirty_computed_vars(
@@ -1869,9 +1941,12 @@ class BaseState(EvenMoreBasicBaseState):
         delta = {}
 
         self._mark_dirty_computed_vars()
-        frontend_computed_vars: set[str] = {
-            name for name, cv in self.computed_vars.items() if not cv._backend
-        }
+        frontend_computed_vars = self._frontend_computed_vars
+        if stale := self._stale_computed_vars:
+            # Re-read stale frontend computed vars; the ones that changed join dirty_vars.
+            computed_vars = self.computed_vars
+            for name in [cvar for cvar in stale if cvar in frontend_computed_vars]:
+                computed_vars[name]._resolve_stale(self)
 
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
@@ -1958,6 +2033,11 @@ class BaseState(EvenMoreBasicBaseState):
         # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
+        if stale := self._stale_computed_vars:
+            computed_vars = self.computed_vars
+            for name in stale:
+                computed_vars[name].mark_dirty(instance=self)
+            stale.clear()
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field (without proxying).

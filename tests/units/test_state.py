@@ -719,17 +719,20 @@ def test_set_dirty_var(test_state):
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
 
-    # Setting a var should mark it as dirty.
+    # Setting a var should mark it dirty and its dependent computed var stale.
     test_state.num1 = 1
-    assert test_state.dirty_vars == {"num1", "sum"}
+    assert test_state.dirty_vars == {"num1"}
+    assert test_state._stale_computed_vars == {"sum"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    assert test_state.dirty_vars == {"num1", "num2", "sum"}
+    assert test_state.dirty_vars == {"num1", "num2"}
+    assert test_state._stale_computed_vars == {"sum"}
 
-    # Cleaning the state should remove all dirty vars.
+    # Cleaning the state should remove all dirty and stale vars.
     test_state._clean()
     assert test_state.dirty_vars == set()
+    assert test_state._stale_computed_vars == set()
 
 
 def test_set_dirty_substate(
@@ -801,11 +804,9 @@ def test_reset(test_state: TestState, child_state: ChildState):
         "num1",
         "num2",
         "obj",
-        "upper",
         "complex",
         "fig",
         "key",
-        "sum",
         "array",
         "map_key",
         "mapping",
@@ -816,8 +817,9 @@ def test_reset(test_state: TestState, child_state: ChildState):
         "asynctest",
     }
 
-    # The dirty vars should be reset.
+    # The dirty vars should be reset; dependent computed vars are stale.
     assert test_state.dirty_vars == expected_dirty_vars
+    assert test_state._stale_computed_vars == {"sum", "upper"}
     assert child_state.dirty_vars == {"count", "value"}
 
     # The dirty substates should be reset.
@@ -1280,6 +1282,90 @@ def test_dirty_computed_var_from_backend_var(
     }
 
 
+class ParityState(BaseState):
+    """A chain where the middle computed var often keeps its value."""
+
+    n: int = 0
+
+    @rx.var
+    def parity(self) -> int:
+        """Depends on n, but only changes when n crosses an odd/even boundary.
+
+        Returns:
+            n modulo 2.
+        """
+        return self.n % 2
+
+    @rx.var
+    def parity_label(self) -> str:
+        """Depends on parity only.
+
+        Returns:
+            "even" or "odd".
+        """
+        return "even" if self.parity == 0 else "odd"
+
+
+def test_computed_var_equal_value_stops_cascade() -> None:
+    """A computed var that recomputes to an equal value must not dirty its dependents."""
+    s = ParityState()
+    s.dict()
+    s._clean()
+    s.n = 2  # parity stays 0, so parity_label must not be recomputed or sent
+    assert s.get_delta() == {s.get_full_name(): {"n" + FIELD_MARKER: 2}}
+    s._clean()
+    s.n = 3  # parity flips, so the whole chain is sent
+    assert s.get_delta() == {
+        s.get_full_name(): {
+            "n" + FIELD_MARKER: 3,
+            "parity" + FIELD_MARKER: 1,
+            "parity_label" + FIELD_MARKER: "odd",
+        }
+    }
+
+
+def test_computed_var_fresh_after_each_write(
+    interdependent_state: InterdependentState,
+) -> None:
+    """Reading a computed var between writes in one handler sees each new value.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.v1 = 1
+    assert interdependent_state.v1x2x2 == 4
+    interdependent_state.v1 = 2
+    assert interdependent_state.v1x2x2 == 8
+    assert interdependent_state.get_delta()[interdependent_state.get_full_name()] == {
+        "v1" + FIELD_MARKER: 2,
+        "v1x2" + FIELD_MARKER: 4,
+        "v1x2x2" + FIELD_MARKER: 8,
+    }
+
+
+def test_computed_var_recomputes_once_per_read() -> None:
+    """Several writes followed by one read run the getter once, not per write."""
+    calls: list[int] = []
+
+    class CountingState(BaseState):
+        v: int = 0
+
+        @rx.var
+        def double(self) -> int:
+            calls.append(self.v)
+            return self.v * 2
+
+    s = CountingState()
+    s.dict()
+    s._clean()
+    calls.clear()
+    s.v = 1
+    s.v = 2
+    s.v = 3
+    assert s.double == 6
+    assert calls == [3]
+
+
 def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:
     """Set backend var on one instance, expect no affect in other instances.
 
@@ -1456,13 +1542,13 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
-    }
+    # dep_v is recomputed but still equal, so only the uncached var is sent.
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
-    assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
+    assert cs.dirty_vars == {"v", "no_cache_v"}
+    assert cs._stale_computed_vars == {"comp_v", "dep_v"}
     assert cs.get_delta() == {
         cs.get_name(): {
             "v" + FIELD_MARKER: 1,
@@ -1473,14 +1559,9 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
-    cs._clean()
-    assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    # The uncached var is always sent; dep_v is recomputed each time but only
+    # sent when its value changes.
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
 
@@ -3746,7 +3827,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     # Reassign router var
     state.router = state.router
     assert rx_state.dirty_vars == {"router"}
-    assert state.dirty_vars == {"foo"}
+    assert state._stale_computed_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
 

@@ -2261,6 +2261,27 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     return isinstance(obj, FakeComputedVarBaseClass)
 
 
+_MISSING: Any = object()
+
+# Computed var results compared by equality before dependents are cascaded.
+_CUTOFF_TYPES = frozenset({int, float, str, bool, type(None)})
+
+
+def _is_unchanged(old: Any, new: Any) -> bool:
+    """Whether a recomputed value is observably the same as the cached one.
+
+    Only scalars are compared; objects are always treated as changed.
+
+    Args:
+        old: The cached value.
+        new: The recomputed value.
+
+    Returns:
+        True when both are scalars of the same type and compare equal.
+    """
+    return type(new) in _CUTOFF_TYPES and type(old) is type(new) and old == new
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -2594,19 +2615,61 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not self._cache:
             value = self.fget(instance)
         else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+            if self._name in instance._stale_computed_vars:
+                self._resolve_stale(instance)
+            elif not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+                self._recompute(instance)
             value = getattr(instance, self._cache_attr)
 
         self._check_deprecated_return_type(instance, value)
 
         return value
+
+    def _recompute(self, instance: BaseState) -> None:
+        """Run the getter and store its value in the instance cache.
+
+        Args:
+            instance: The state instance to compute the value for.
+        """
+        setattr(instance, self._cache_attr, self.fget(instance))
+        # Ensure the computed var gets serialized to redis.
+        instance._was_touched = True
+        # Set the last updated timestamp on the state instance.
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
+
+    def _resolve_stale(self, instance: BaseState) -> None:
+        """Settle a stale cached value: recompute it only if a dependency changed.
+
+        A dependency counts as changed when it is in its state's ``dirty_vars``.
+        Stale computed var dependencies are resolved first, so a chain settles
+        from the changed base var outward. When the getter returns a value equal
+        to the cached one, the cache is kept and the var stays out of
+        ``dirty_vars``, which stops the cascade at this point.
+
+        Args:
+            instance: The state instance holding the stale cache.
+        """
+        name = self._name
+        instance._stale_computed_vars.discard(name)
+        cache_attr = self._cache_attr
+        changed = not hasattr(instance, cache_attr) or self.needs_update(instance)
+        if not changed:
+            state_cls = type(instance)
+            for state_name, dep in state_cls._computed_var_deps.get(name, ()):
+                dep_state = instance._get_state_by_full_name(state_name)
+                if dep_state is None:
+                    continue
+                if dep in dep_state._stale_computed_vars:
+                    dep_state.computed_vars[dep]._resolve_stale(dep_state)
+                if dep in dep_state.dirty_vars:
+                    changed = True
+                    break
+        if not changed:
+            return
+        old = getattr(instance, cache_attr, _MISSING)
+        self._recompute(instance)
+        if not _is_unchanged(old, getattr(instance, cache_attr)):
+            instance.dirty_vars.add(name)
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):

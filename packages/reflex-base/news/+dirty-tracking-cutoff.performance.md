@@ -1,0 +1,1 @@
+Cached computed vars are now resolved lazily: a stale value is recomputed only when one of its dependencies actually changed, and an unchanged result keeps the cache and does not cascade to dependents.
