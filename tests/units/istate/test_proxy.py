@@ -741,7 +741,7 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     proxy = StateProxy(state)
     assert proxy._expired_computed_vars() == {"timed"}
-    assert IntervalState._interval_computed_var_names() == frozenset({"timed"})
+    assert IntervalState._interval_computed_var_names == frozenset({"timed"})
 
 
 def test_fast_path_skips_names_a_subclass_defines():

@@ -448,6 +448,10 @@ class BaseState(EvenMoreBasicBaseState):
     # that defines one of these names itself drops it (see __init_subclass__).
     _fast_attr_names: ClassVar[frozenset[str]] = _FRAMEWORK_ATTR_NAMES
 
+    # Computed vars on this class that expire on an interval; recomputed with
+    # the dependency dicts, i.e. at class creation and after any var is added.
+    _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -963,6 +967,11 @@ class BaseState(EvenMoreBasicBaseState):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
+        cls._interval_computed_var_names = frozenset(
+            name
+            for name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        )
         for cvar_name, cvar in cls.computed_vars.items():
             if not cvar._cache:
                 # Do not perform dep calculation when cache=False (these are always dirty).
@@ -1917,28 +1926,14 @@ class BaseState(EvenMoreBasicBaseState):
             Set of computed vars to include in the delta.
         """
         # Only computed vars declared with an interval can expire; the class
-        # caches that subset so this stays O(interval vars), not O(all vars).
+        # keeps that subset so this stays O(interval vars), not O(all vars).
         computed_vars = self.computed_vars
         # __class__, not type(): a StateProxy reports the wrapped state's class.
         return {
             cvar
-            for cvar in self.__class__._interval_computed_var_names()
+            for cvar in self.__class__._interval_computed_var_names
             if computed_vars[cvar].needs_update(instance=self)
         }
-
-    @classmethod
-    @functools.lru_cache
-    def _interval_computed_var_names(cls) -> frozenset[str]:
-        """Names of computed vars on this class that expire on an interval.
-
-        Returns:
-            The computed var names with an update interval.
-        """
-        return frozenset(
-            name
-            for name, cvar in cls.computed_vars.items()
-            if cvar._update_interval is not None
-        )
 
     def _dirty_computed_vars(
         self, from_vars: set[str] | None = None, include_backend: bool = True
