@@ -1,0 +1,1 @@
+Skip dirty tracking when a scalar state var is assigned the value it already holds, and stop re-sending a cached computed var whose recomputed value is unchanged. Repeated writes in one event handler no longer re-walk the computed var dependency graph.

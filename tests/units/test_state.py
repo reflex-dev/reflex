@@ -719,17 +719,20 @@ def test_set_dirty_var(test_state):
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
 
-    # Setting a var should mark it as dirty.
+    # Setting a var should mark it dirty and its dependent computed var stale.
     test_state.num1 = 1
-    assert test_state.dirty_vars == {"num1", "sum"}
+    assert test_state.dirty_vars == {"num1"}
+    assert test_state._stale_computed_vars == {"sum"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    assert test_state.dirty_vars == {"num1", "num2", "sum"}
+    assert test_state.dirty_vars == {"num1", "num2"}
+    assert test_state._stale_computed_vars == {"sum"}
 
-    # Cleaning the state should remove all dirty vars.
+    # Cleaning the state should remove all dirty and stale vars.
     test_state._clean()
     assert test_state.dirty_vars == set()
+    assert test_state._stale_computed_vars == set()
 
 
 def test_set_dirty_substate(
@@ -797,35 +800,26 @@ def test_reset(test_state: TestState, child_state: ChildState):
     assert test_state._backend == 0
     assert child_state.value == ""
 
+    # Scalars that already held their default are not dirty; objects always are.
     expected_dirty_vars = {
         "num1",
         "num2",
         "obj",
-        "upper",
         "complex",
         "fig",
-        "key",
-        "sum",
         "array",
-        "map_key",
         "mapping",
         "dt",
         "_backend",
-        "mixin",
-        "_mixin_backend",
-        "asynctest",
     }
 
     # The dirty vars should be reset.
     assert test_state.dirty_vars == expected_dirty_vars
-    assert child_state.dirty_vars == {"count", "value"}
+    assert test_state._stale_computed_vars == {"sum"}
+    assert child_state.dirty_vars == {"value"}
 
-    # The dirty substates should be reset.
-    assert test_state.dirty_substates == {
-        ChildState.get_name(),
-        ChildState2.get_name(),
-        ChildState3.get_name(),
-    }
+    # Only the substate whose value actually changed is dirty.
+    assert test_state.dirty_substates == {ChildState.get_name()}
 
 
 def test_reset_does_not_reset_inherited_backend_vars(
@@ -1568,13 +1562,13 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
-    }
+    # dep_v is recomputed but still equal, so only the uncached var is sent.
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
-    assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
+    assert cs.dirty_vars == {"v", "no_cache_v"}
+    assert cs._stale_computed_vars == {"comp_v", "dep_v"}
     assert cs.get_delta() == {
         cs.get_name(): {
             "v" + FIELD_MARKER: 1,
@@ -1585,14 +1579,9 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
-    cs._clean()
-    assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    # The uncached var is always sent; dep_v is recomputed each time but only
+    # sent when its value changes.
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
 
@@ -3858,7 +3847,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     # Reassign router var
     state.router = state.router
     assert rx_state.dirty_vars == {"router"}
-    assert state.dirty_vars == {"foo"}
+    assert state._stale_computed_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
 
