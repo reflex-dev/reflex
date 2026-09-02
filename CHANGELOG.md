@@ -65,6 +65,18 @@
 - The `reflex deploy` command implementation moved out of the `reflex` package into `reflex-hosting-cli`, so cloud code is no longer shipped inside the framework. Flags and behavior are unchanged, and `reflex-hosting-cli` remains a dependency of `reflex`, so `reflex deploy` and `reflex cloud` stay available out of the box. If the package is not installed, these commands now report which package to install instead of failing with a missing-command error. ([#6924](https://github.com/reflex-dev/reflex/issues/6924))
 
 
+## v0.9.8.post1 (2026-08-18)
+
+### Features
+
+- `reflex deploy` accepts `--min-instances` and `--max-instances` to set the autoscaling bounds of an app deployed to Google Cloud. Omitted bounds are left unchanged. ([#6884](https://github.com/reflex-dev/reflex/issues/6884))
+- `reflex deploy` gains `--gcp-connection`, to pick which of your organization's connected GCP accounts an app deploys through; `--full-deploy`, to serve the frontend from the provider's own container instead of Reflex's CDN; and `--strategy`, which was previously only settable in the config file. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+
+### Documentation
+
+- Documented the `provider`, `gcp_connection` and `full_deploy` cloud config settings, including which settings a Google Cloud target ignores and why `full_deploy` is left unset rather than false by default. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+
+
 ## v0.9.8 (2026-08-04)
 
 ### Features

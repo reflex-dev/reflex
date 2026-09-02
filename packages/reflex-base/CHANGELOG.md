@@ -1,3 +1,14 @@
+## v0.9.10.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+
 ## v0.9.10 (2026-09-01)
 
 ### Bug Fixes
@@ -8,6 +19,17 @@
 ### Performance
 
 - Compiling an app with many components is substantially faster. Imports are now deduplicated as they are merged rather than only at the end, so naming a memoized component no longer costs work proportional to the size of its subtree. An app with 80 routes and 42,268 components went from 263s to 48s. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+
+## v0.9.9.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
 
 
 ## v0.9.9 (2026-08-28)
