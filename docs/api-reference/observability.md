@@ -87,7 +87,9 @@ The compiled frontend then
 `endpoint` defaults to `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, then
 `OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/traces`, then
 `http://localhost:4318/v1/traces`; it must accept OTLP/HTTP from the browser
-(CORS). `service_name` defaults to `<app_name>-frontend`. `headers` are
+(CORS). The first failed export on a page is reported through the app's
+`frontend_exception_handler`, so a rejected collector shows up in the backend
+terminal as an `OtelExportError`. `service_name` defaults to `<app_name>-frontend`. `headers` are
 compiled into the public bundle, so never put secrets in them. `sample_rate`
 (default `1.0`) samples browser traces at the root; a parent-based backend
 sampler follows that decision, so it also bounds the backend event traces.

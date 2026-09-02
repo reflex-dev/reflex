@@ -12,7 +12,10 @@
  */
 import { createElement, Profiler } from "react";
 import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
-import { W3CTraceContextPropagator } from "@opentelemetry/core";
+import {
+  setGlobalErrorHandler,
+  W3CTraceContextPropagator,
+} from "@opentelemetry/core";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
@@ -40,6 +43,28 @@ const provider = new WebTracerProvider({
   ],
 });
 const tracer = provider.getTracer("reflex", config.version);
+
+// The exporter swallows its own failures (a collector missing CORS headers
+// surfaces only as the browser's console line), so route the first one through
+// the same path as any other frontend exception: it reaches the backend's
+// frontend_exception_handler and the terminal. Once per page: exports retry on
+// every batch and would otherwise repeat the report.
+let exportFailureReported = false;
+setGlobalErrorHandler((error) => {
+  if (exportFailureReported || typeof window.onerror !== "function") {
+    return;
+  }
+  exportFailureReported = true;
+  const cause = error?.cause ? ` (${error.cause})` : "";
+  const hint = error?.cause
+    ? " A collector on another origin must allow CORS requests from this page."
+    : "";
+  const report = new Error(
+    `OtelPlugin: exporting browser spans to ${config.endpoint} failed: ${error?.message ?? error}${cause}.${hint}`,
+  );
+  report.name = "OtelExportError";
+  window.onerror(report.message, null, null, null, report);
+});
 const propagator = new W3CTraceContextPropagator();
 
 const setter = {
