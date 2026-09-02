@@ -14,6 +14,7 @@ from typing import cast
 import pytest
 
 import reflex as rx
+import reflex.assets as assets_module
 import reflex.constants as constants
 from reflex.assets import (
     AssetPathStr,
@@ -306,6 +307,81 @@ def test_link_shared_asset_with_long_filename(tmp_path: Path) -> None:
     assert (dst_dir / name).is_symlink()
     assert (dst_dir / name).resolve() == src_file.resolve()
     assert [p.name for p in dst_dir.iterdir()] == [name]
+
+
+def _staged_link_fixture(tmp_path: Path) -> tuple[Path, Path]:
+    """Create a source asset and an empty destination directory.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+
+    Returns:
+        The source asset and the destination the link should be created at.
+    """
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    src_file = src_dir / "custom_script.js"
+    src_file.write_text("script")
+    dst_dir = tmp_path / "dst"
+    dst_dir.mkdir()
+    return src_file, dst_dir / "custom_script.js"
+
+
+def test_link_shared_asset_concedes_denied_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A replace denied by the process that linked the same asset is conceded.
+
+    Windows denies a replace while another process is replacing the same
+    destination, so this cannot be reached on POSIX without the patch.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+
+    def denied_replace(self: Path, target) -> Path:
+        _REAL_SYMLINK(src_file, dst_file)
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == src_file.resolve()
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_raises_when_replace_stays_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A destination that never becomes linkable surfaces the error.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    attempts = 0
+
+    def denied_replace(self: Path, target) -> Path:
+        nonlocal attempts
+        attempts += 1
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+    monkeypatch.setattr(assets_module, "_LINK_RETRY_DELAY", 0)
+
+    with pytest.raises(PermissionError):
+        _link_shared_asset(dst_file, src_file)
+
+    assert attempts == assets_module._MAX_LINK_ATTEMPTS
+    # The staged link is cleaned up rather than left in the assets directory.
+    assert list(dst_file.parent.iterdir()) == []
 
 
 @pytest.mark.parametrize(

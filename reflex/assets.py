@@ -20,6 +20,8 @@ _MAX_HASH_ATTEMPTS = 3
 # uuid and separators this stays well inside the 255-byte component limit
 # common to ext4, APFS and NTFS, whatever the asset itself is called.
 _TMP_NAME_PREFIX_LEN = 64
+_MAX_LINK_ATTEMPTS = 3
+_LINK_RETRY_DELAY = 0.01
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -206,6 +208,19 @@ def remove_stale_external_asset_symlinks():
             dirpath.rmdir()
 
 
+def _links_to(dst_file: Path, src_file: Path) -> bool:
+    """Check whether dst_file is already a symlink to src_file.
+
+    Args:
+        dst_file: The path to inspect.
+        src_file: The asset the symlink should point at.
+
+    Returns:
+        Whether dst_file is a symlink resolving to src_file.
+    """
+    return dst_file.is_symlink() and dst_file.resolve() == src_file.resolve()
+
+
 def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     """Point dst_file at src_file with a symlink, regardless of what is there.
 
@@ -217,17 +232,21 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     leaves no window to interleave with. Whichever process wins the race,
     dst_file is a symlink to src_file once this returns.
 
+    Windows is the exception: replacing a destination that another process is
+    itself replacing is denied rather than serialised, so the rename is retried
+    there, conceding as soon as the other process turns out to have linked the
+    same asset.
+
     Args:
         dst_file: The symlink to create in the app's external assets directory.
         src_file: The asset file the symlink should point at.
+
+    Raises:
+        PermissionError: If the destination could not be replaced.
     """
-    try:
+    if _links_to(dst_file, src_file):
         # Already correct: leave it alone so file watchers see no change.
-        if dst_file.readlink() == src_file:
-            return
-    except OSError:
-        # Missing, or not a symlink: fall through and replace it.
-        pass
+        return
 
     # Only a prefix of the asset name is kept, for the benefit of anyone who
     # finds a temporary link left behind by a killed process: appending to a
@@ -237,10 +256,21 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     )
     try:
         tmp_file.symlink_to(src_file)
-        tmp_file.replace(dst_file)
-    except OSError:
+        for attempt in range(_MAX_LINK_ATTEMPTS):
+            try:
+                tmp_file.replace(dst_file)
+            except PermissionError:  # noqa: PERF203  # bounded, and dwarfed by the syscall
+                if _links_to(dst_file, src_file):
+                    # The process that denied us wanted the same link.
+                    return
+                if attempt == _MAX_LINK_ATTEMPTS - 1:
+                    raise
+                time.sleep(_LINK_RETRY_DELAY * (attempt + 1))
+            else:
+                return
+    finally:
+        # A no-op once the rename succeeded, and the cleanup if it did not.
         tmp_file.unlink(missing_ok=True)
-        raise
 
 
 def asset(
