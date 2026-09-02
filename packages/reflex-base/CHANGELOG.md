@@ -1,3 +1,14 @@
+## v0.9.10.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+
 ## v0.9.10 (2026-09-01)
 
 ### Bug Fixes
@@ -8,6 +19,17 @@
 ### Performance
 
 - Compiling an app with many components is substantially faster. Imports are now deduplicated as they are merged rather than only at the end, so naming a memoized component no longer costs work proportional to the size of its subtree. An app with 80 routes and 42,268 components went from 263s to 48s. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+
+## v0.9.9.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
 
 
 ## v0.9.9 (2026-08-28)
@@ -60,6 +82,11 @@
 - Bump bundled `vite` from 8.0.16 to 8.2.0. ([#6857](https://github.com/reflex-dev/reflex/issues/6857))
 - Internal logging in reflex-base migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
 - Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). `Field.default`, `Field.default_factory` and `Field.default_value()` now admit `None`, matching what they already hold for a field whose annotated type has no computed default, and `chain_updates()` declares its `events` parameter as `Any`, matching the runtime validation it delegates to. ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+
+
+## v0.9.8.post1 (2026-08-18)
+
+No significant changes.
 
 
 ## v0.9.8 (2026-08-04)
