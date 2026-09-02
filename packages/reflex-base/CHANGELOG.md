@@ -1,3 +1,15 @@
+## v0.9.10 (2026-09-01)
+
+### Bug Fixes
+
+- Enqueuing an event chained from a parent event that has already finished no longer raises `RuntimeError: Cannot add a child to an EventFuture that is already done.`. Such a late-chained event skips registration under the completed parent and is processed normally. ([#6801](https://github.com/reflex-dev/reflex/issues/6801))
+- Compiling unchanged source twice now produces the same files. Import order came from a `set`, whose iteration order varies with `PYTHONHASHSEED`, and a library's imports were not deduplicated against themselves; both fed the content hash a memoized component is named from, so each compile renamed those components and invalidated downstream build caches for no reason. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+### Performance
+
+- Compiling an app with many components is substantially faster. Imports are now deduplicated as they are merged rather than only at the end, so naming a memoized component no longer costs work proportional to the size of its subtree. An app with 80 routes and 42,268 components went from 263s to 48s. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+
 ## v0.9.9 (2026-08-28)
 
 ### Breaking Changes
