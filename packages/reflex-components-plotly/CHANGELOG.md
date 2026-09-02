@@ -1,3 +1,14 @@
+## v0.9.5 (2026-08-28)
+
+### Features
+
+- The generated client-only wrapper for each plotly component now carries the component's name, so React DevTools shows `ClientSide(Plot)` instead of an anonymous wrapper. ([#6945](https://github.com/reflex-dev/reflex/issues/6945))
+
+### Miscellaneous
+
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+
+
 ## v0.9.4 (2026-08-04)
 
 ### Miscellaneous

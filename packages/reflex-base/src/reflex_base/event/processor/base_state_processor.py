@@ -459,29 +459,48 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
-        await process_event(
-            handler=registered_handler.handler,
-            state=proxy,
-            payload=event.payload,
-            root_state=None,
-        )
-        if not proxy._self_entered_context:
-            # A handler that never entered `async with self` emitted nothing,
-            # but every background event used to flush a delta (refreshing
-            # uncached computed vars, and any dirty vars the preamble left,
-            # like router_data). Preserve that, under the lock this time.
-            async with ctx.state_manager.modify_state_with_links(
-                BaseStateToken(
-                    ident=ctx.token,
-                    cls=registered_handler.states[0],
-                ),
-                event=event,
-            ) as flush_state:
-                await chain_updates(
-                    None,
-                    root_state=flush_state._get_root_state(),
-                    handler_name=registered_handler.handler.fn.__qualname__,
-                )
+        handler_error: BaseException | None = None
+        try:
+            await process_event(
+                handler=registered_handler.handler,
+                state=proxy,
+                payload=event.payload,
+                root_state=None,
+            )
+        except BaseException as ex:
+            handler_error = ex
+            raise
+        finally:
+            if not proxy._self_entered_context:
+                # A handler that never entered `async with self` emitted nothing,
+                # but every background event used to flush a delta (refreshing
+                # uncached computed vars, and any dirty vars the preamble left,
+                # like router_data). Preserve that, under the lock this time --
+                # also when the handler raises, so the client gets the same
+                # refresh regardless of how the task ended.
+                try:
+                    async with ctx.state_manager.modify_state_with_links(
+                        BaseStateToken(
+                            ident=ctx.token,
+                            cls=registered_handler.states[0],
+                        ),
+                        event=event,
+                    ) as flush_state:
+                        await chain_updates(
+                            None,
+                            root_state=flush_state._get_root_state(),
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
+                except Exception:
+                    if handler_error is None:
+                        raise
+                    # The handler's exception is the actionable one; log the
+                    # flush failure instead of letting it mask the exception
+                    # already propagating to the backend exception handler.
+                    logger.exception(
+                        "Error flushing delta after background handler "
+                        f"{registered_handler.handler.fn.__qualname__} raised:"
+                    )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None

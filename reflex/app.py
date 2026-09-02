@@ -585,6 +585,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
+                # Handlers here only parse and enqueue (or emit a pong), so run
+                # them inline on the socket's receive loop instead of paying a
+                # task creation and a loop hop per incoming message.
+                async_handlers=False,
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -1657,32 +1661,43 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
-            try:
-                did_real_compile = compiler.compile_app(
+        ctx = TelemetryContext.start(trigger=trigger)
+        try:
+            if ctx is None:
+                compiler.compile_app(
                     self,
                     prerender_routes=prerender_routes,
                     dry_run=dry_run,
                     use_rich=use_rich,
                 )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
-            finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                return
+
+            with ctx:
+                did_real_compile = False
+                try:
+                    did_real_compile = compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                except Exception as exc:
+                    ctx.set_exception(exc)
+                    did_real_compile = True
+                    raise
+                finally:
+                    if did_real_compile:
+                        telemetry_accounting.record_compile(self, ctx)
+        finally:
+            # Auto-memoization named every wrapper it will ever name during the
+            # compile, so its encoding caches are dead weight from here. This is
+            # the single funnel every compile goes through -- the CLI and export
+            # paths reach it via ``get_compiled_app`` and never touch
+            # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+            # from leaving them behind.
+            clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""

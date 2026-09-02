@@ -32,7 +32,7 @@ dependencies = [
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.2",
-  "reflex-base >= 0.9.8",
+  "reflex-base >= 0.9.10.post1",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
@@ -45,11 +45,7 @@ dependencies = [
   "reflex-components-react-player >= 0.9.0",
   "reflex-components-recharts >= 0.9.0",
   "reflex-components-sonner >= 0.9.0",
-  # `reflex deploy` now lives in reflex_cli.v2.deploy, which older releases do
-  # not carry. Until the release that adds it ships, this is the workspace
-  # development version, following the same convention as the other unreleased
-  # sibling pins; replace it with the published version at release.
-  "reflex-hosting-cli >= 0.1.70.post18.dev0",
+  "reflex-hosting-cli >= 0.1.71",
 ]
 
 classifiers = [
@@ -273,6 +269,7 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "scripts/check_min_deps.py" = ["T201"]
+"scripts/verify_pyi.py" = ["T201"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"

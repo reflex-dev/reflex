@@ -1,1 +1,0 @@
-The `vite preview` server that react-router prerendering fetches pages from is now pinned to `127.0.0.1`, fixing `reflex export` failing with `Prerender: Request failed for /: ECONNREFUSED` in environments where `localhost` resolves to both IPv4 and IPv6 loopback addresses (such as docker containers).
