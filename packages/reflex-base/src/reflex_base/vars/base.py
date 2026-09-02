@@ -2263,19 +2263,18 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
 
 _MISSING: Any = object()
 
-# Values compared by equality before a write is treated as a change.
+# Computed var results compared by equality before dependents are cascaded.
 _CUTOFF_TYPES = frozenset({int, float, str, bool, type(None)})
 
 
 def _is_unchanged(old: Any, new: Any) -> bool:
-    """Whether assigning ``new`` over ``old`` changes nothing observable.
+    """Whether a recomputed value is observably the same as the cached one.
 
-    Only scalars are compared; objects are always treated as changed so that
-    reassigning a mutated object still marks it dirty.
+    Only scalars are compared; objects are always treated as changed.
 
     Args:
-        old: The stored value.
-        new: The value being assigned.
+        old: The cached value.
+        new: The recomputed value.
 
     Returns:
         True when both are scalars of the same type and compare equal.

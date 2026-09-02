@@ -800,26 +800,34 @@ def test_reset(test_state: TestState, child_state: ChildState):
     assert test_state._backend == 0
     assert child_state.value == ""
 
-    # Scalars that already held their default are not dirty; objects always are.
     expected_dirty_vars = {
         "num1",
         "num2",
         "obj",
         "complex",
         "fig",
+        "key",
         "array",
+        "map_key",
         "mapping",
         "dt",
         "_backend",
+        "mixin",
+        "_mixin_backend",
+        "asynctest",
     }
 
-    # The dirty vars should be reset.
+    # The dirty vars should be reset; dependent computed vars are stale.
     assert test_state.dirty_vars == expected_dirty_vars
-    assert test_state._stale_computed_vars == {"sum"}
-    assert child_state.dirty_vars == {"value"}
+    assert test_state._stale_computed_vars == {"sum", "upper"}
+    assert child_state.dirty_vars == {"count", "value"}
 
-    # Only the substate whose value actually changed is dirty.
-    assert test_state.dirty_substates == {ChildState.get_name()}
+    # The dirty substates should be reset.
+    assert test_state.dirty_substates == {
+        ChildState.get_name(),
+        ChildState2.get_name(),
+        ChildState3.get_name(),
+    }
 
 
 def test_reset_does_not_reset_inherited_backend_vars(
@@ -1296,34 +1304,6 @@ class ParityState(BaseState):
             "even" or "odd".
         """
         return "even" if self.parity == 0 else "odd"
-
-
-def test_unchanged_write_is_not_dirty(
-    interdependent_state: InterdependentState,
-) -> None:
-    """Assigning the value a scalar var already holds must not dirty anything.
-
-    Args:
-        interdependent_state: A state with varying Var dependencies.
-    """
-    interdependent_state.x = interdependent_state.x
-    assert not interdependent_state.dirty_vars
-    assert interdependent_state.get_delta() == {}
-
-
-def test_unchanged_write_keeps_computed_var_cache(
-    interdependent_state: InterdependentState,
-) -> None:
-    """Assigning an unchanged value must not invalidate dependent computed vars.
-
-    Args:
-        interdependent_state: A state with varying Var dependencies.
-    """
-    v1x2 = InterdependentState.computed_vars["v1x2"]
-    assert hasattr(interdependent_state, v1x2._cache_attr)
-    interdependent_state.v1 = interdependent_state.v1
-    assert hasattr(interdependent_state, v1x2._cache_attr)
-    assert interdependent_state.get_delta() == {}
 
 
 def test_computed_var_equal_value_stops_cascade() -> None:

@@ -58,14 +58,12 @@ from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance
 from reflex_base.vars import Field, VarData, field
 from reflex_base.vars.base import (
-    _MISSING,
     AsyncComputedVar,
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
     ToOperation,
     Var,
-    _is_unchanged,
     computed_var,
     dispatch,
     is_computed_var,
@@ -1551,8 +1549,6 @@ class BaseState(EvenMoreBasicBaseState):
             return
 
         if name in self.backend_vars:
-            if _is_unchanged(self._backend_vars.get(name, _MISSING), value):
-                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1575,8 +1571,6 @@ class BaseState(EvenMoreBasicBaseState):
         fields = self.get_fields()
 
         if (field := fields.get(name)) is not None and field.is_var:
-            if _is_unchanged(self.__dict__.get(name, _MISSING), value):
-                return
             field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 logger.error(
@@ -2388,7 +2382,7 @@ class State(BaseState):
         self._reset_client_storage()
 
         # Mark state as not hydrated (until on_loads are complete)
-        self._set_is_hydrated(False)
+        self.is_hydrated = False
 
         # Get the initial state if needed.
         ctx = EventContext.get()
@@ -2405,21 +2399,7 @@ class State(BaseState):
         Args:
             value: The hydrated state.
         """
-        self._set_is_hydrated(value)
-
-    def _set_is_hydrated(self, value: bool) -> None:
-        """Write ``is_hydrated`` and always include it in the next delta.
-
-        The client resets ``is_hydrated`` locally when navigation starts and
-        flushes its queued events only when a delta carries it back.
-
-        Args:
-            value: The hydrated state.
-        """
-        root = self._get_root_state()
-        root.is_hydrated = value
-        root.dirty_vars.add(constants.CompileVars.IS_HYDRATED)
-        root._mark_dirty()
+        self.is_hydrated = value
 
 
 T = TypeVar("T", bound=BaseState)
@@ -2569,9 +2549,9 @@ class OnLoadInternalState(State):
             self.router.url.path
         )
         if not load_events:
-            self._set_is_hydrated(True)
+            self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
-        self._set_is_hydrated(False)
+        self.is_hydrated = False
         return [
             *Event.from_event_type(
                 load_events,
