@@ -15,7 +15,11 @@ import pytest
 
 import reflex as rx
 import reflex.constants as constants
-from reflex.assets import AssetPathStr, remove_stale_external_asset_symlinks
+from reflex.assets import (
+    AssetPathStr,
+    _link_shared_asset,
+    remove_stale_external_asset_symlinks,
+)
 
 
 def _asset_hash(path: Path) -> str:
@@ -276,6 +280,32 @@ def test_shared_asset_is_thread_safe(mock_asset_path: Path) -> None:
     assert dst_file.resolve() == source_file.resolve()
     # No temporary link is left behind in the destination directory.
     assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_with_long_filename(tmp_path: Path) -> None:
+    """An asset named up to the filesystem's limit still links.
+
+    The temporary name the link is staged under has to stay within the same
+    limit, so it cannot simply append to an already maximal basename.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+    """
+    # 250 bytes: under the 255-byte component limit of ext4, APFS and NTFS,
+    # but with no room left for a suffix.
+    name = "a" * 247 + ".js"
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    src_file = src_dir / name
+    src_file.write_text("script")
+    dst_dir = tmp_path / "dst"
+    dst_dir.mkdir()
+
+    _link_shared_asset(dst_dir / name, src_file)
+
+    assert (dst_dir / name).is_symlink()
+    assert (dst_dir / name).resolve() == src_file.resolve()
+    assert [p.name for p in dst_dir.iterdir()] == [name]
 
 
 @pytest.mark.parametrize(
