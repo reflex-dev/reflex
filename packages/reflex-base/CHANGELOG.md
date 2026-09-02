@@ -1,3 +1,14 @@
+## v0.9.10.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+
 ## v0.9.10 (2026-09-01)
 
 ### Bug Fixes
