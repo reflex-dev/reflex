@@ -84,11 +84,6 @@
 - Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). `Field.default`, `Field.default_factory` and `Field.default_value()` now admit `None`, matching what they already hold for a field whose annotated type has no computed default, and `chain_updates()` declares its `events` parameter as `Any`, matching the runtime validation it delegates to. ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
 
 
-## v0.9.8.post1 (2026-08-18)
-
-No significant changes.
-
-
 ## v0.9.8 (2026-08-04)
 
 ### Features

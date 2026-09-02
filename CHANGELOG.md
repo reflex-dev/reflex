@@ -1,19 +1,9 @@
-## v0.9.10.post1 (2026-09-01)
-
-No significant changes.
-
-
 ## v0.9.10 (2026-09-01)
 
 ### Bug Fixes
 
 - Shared state updates now reach linked clients connected to other backend instances — the fan-out previously skipped any client whose websocket was not connected to the instance processing the event, so with redis and multiple workers only same-instance clients received live updates. ([#6934](https://github.com/reflex-dev/reflex/issues/6934))
 - Allow static IDs on document-root head components without generating React hooks. ([#7005](https://github.com/reflex-dev/reflex/issues/7005))
-
-
-## v0.9.9.post1 (2026-09-01)
-
-No significant changes.
 
 
 ## v0.9.9 (2026-08-28)
