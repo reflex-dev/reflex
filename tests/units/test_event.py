@@ -7,6 +7,7 @@ from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_MARKER,
     Event,
     EventChain,
     EventChainVar,
@@ -914,6 +915,23 @@ def test_event_decorator_backward_compatibility():
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
     assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
+
+
+def test_event_decorator_marks_function():
+    """The decorator marks every function it wraps, with or without options."""
+
+    def plain(self):
+        pass
+
+    def with_actions(self):
+        pass
+
+    async def background(self):
+        pass
+
+    assert getattr(event(plain), EVENT_MARKER, False) is True
+    assert getattr(event(stop_propagation=True)(with_actions), EVENT_MARKER, False)
+    assert getattr(event(background=True)(background), EVENT_MARKER, False) is True
 
 
 def test_event_var_in_rx_cond():
