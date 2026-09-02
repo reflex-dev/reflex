@@ -1847,7 +1847,6 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     assert Moment.library == "react-moment@2.0.2"
     assert Moment.lib_dependencies == [
         "moment@2.30.1",
-        "moment-duration-format@2.2.2",
     ]
 
     moment = Moment.create(
@@ -1866,6 +1865,7 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     assert duration_from_now.add_imports()["moment-duration-format@2.2.2"] == ImportVar(
         tag=None
     )
+    assert "moment-duration-format@2.2.2" not in moment.add_imports()
 
 
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:

@@ -32,7 +32,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment@2.0.2"
-    lib_dependencies: list[str] = ["moment@2.30.1", "moment-duration-format@2.2.2"]
+    lib_dependencies: list[str] = ["moment@2.30.1"]
 
     interval: Var[int] = field(
         doc="How often the date update (how often time update / 0 to disable)."
