@@ -140,6 +140,30 @@ def _normalize_library_name(lib: str) -> str:
     )
 
 
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build unique aliases for the libraries exposed through ``window.__reflex``."""
+    used_aliases: set[str] = set()
+    seen_libraries: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+
+    for library in RegistrationContext.ensure_context().bundled_libraries:
+        if library in seen_libraries:
+            continue
+        seen_libraries.add(library)
+
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+
+    return window_libraries
+
+
 def _compile_app(
     app_root: Component, hydrate_fallback_export: str | None = None
 ) -> str:
@@ -153,12 +177,7 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    window_libraries = [
-        (_normalize_library_name(name), name)
-        for name in RegistrationContext.ensure_context().bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -167,7 +186,7 @@ def _compile_app(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,

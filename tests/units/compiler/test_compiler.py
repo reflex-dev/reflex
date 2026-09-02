@@ -511,6 +511,20 @@ def test_compile_app_preserves_user_bundled_libraries(
         assert "stale-plugin" not in registration_context.bundled_libraries
 
 
+def test_compile_app_root_uses_unique_window_library_aliases():
+    """Bundled library aliases should remain unique after normalization."""
+    with RegistrationContext():
+        bundle_library("foo.bar")
+        bundle_library("foo_bar")
+
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert 'import * as foo_bar from "foo.bar";' in code
+    assert 'import * as foo_bar_2 from "foo_bar";' in code
+    assert '"foo.bar": foo_bar' in code
+    assert '"foo_bar": foo_bar_2' in code
+
+
 def test_compile_contexts_has_default_color_mode_context():
     """ColorModeContext should have a safe fallback value without Radix."""
     _, code = compiler.compile_contexts(None, None)
