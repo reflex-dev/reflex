@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from http.client import HTTPConnection
 from urllib.parse import urlsplit
 
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness, TimeoutType
+from reflex.testing import DEFAULT_TIMEOUT, POLL_INTERVAL, AppHarness, TimeoutType
 
 
 def request_raw(
@@ -70,35 +72,35 @@ def click_element(
     value: str,
     timeout: TimeoutType = None,
 ) -> None:
-    """Locate an element and click it, retrying until the click lands.
+    """Locate an element and click it, re-locating it if it goes stale.
 
     Client-side navigation swaps the DOM after the URL changes, so an element
-    located right after navigating can go stale before the click is dispatched.
-    Re-locating on each attempt clicks whichever node is currently rendered.
+    located right after navigating can be unmounted before the click is
+    dispatched. Only a stale reference is retried: it is raised before the
+    click reaches the browser, so the click is never dispatched twice.
 
     Args:
         driver: WebDriver instance.
         by: Locator strategy, one of the `By` constants.
         value: Locator value.
-        timeout: Time to wait for the click to succeed.
+        timeout: How long to keep re-locating a stale element.
 
     Raises:
-        TimeoutError: if the element could not be clicked within the timeout.
+        TimeoutError: if the element remained stale for the whole timeout.
     """
-    last_exc: Exception | None = None
-
-    def _click() -> bool:
-        nonlocal last_exc
+    deadline = time.monotonic() + (
+        DEFAULT_TIMEOUT if timeout is None else float(timeout)
+    )
+    while True:
         try:
             driver.find_element(by, value).click()
-        except Exception as exc:
-            last_exc = exc
-            raise
-        return True
-
-    if not AppHarness._poll_for(_click, timeout=timeout):
-        msg = f"Could not click element {by}={value!r} while polling: {last_exc}"
-        raise TimeoutError(msg)
+        except StaleElementReferenceException as exc:
+            if time.monotonic() >= deadline:
+                msg = f"Element {by}={value!r} remained stale while polling."
+                raise TimeoutError(msg) from exc
+            time.sleep(POLL_INTERVAL)
+        else:
+            return
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
