@@ -10,32 +10,17 @@ import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
 from reflex.utils.processes import (
+    _can_bind_at_any_port,
     is_process_on_port,
     run_concurrently,
     run_concurrently_context,
 )
 
-
-def _ipv6_available() -> bool:
-    """Check whether the host can actually bind IPv6 sockets.
-
-    `socket.has_ipv6` only reflects build-time support; sandboxes and containers
-    frequently compile it in but have no IPv6 stack, which makes
-    `is_process_on_port` report every port as occupied.
-
-    Returns:
-        Whether an IPv6 socket can be created and bound.
-    """
-    try:
-        with closing(socket.socket(socket.AF_INET6, socket.SOCK_STREAM)) as sock:
-            sock.bind(("", 0))
-    except OSError:
-        return False
-    return True
-
-
+# `socket.has_ipv6` only reflects build-time support; without a runtime IPv6
+# stack every port looks occupied to `is_process_on_port`'s default families.
 requires_ipv6 = pytest.mark.skipif(
-    not _ipv6_available(), reason="IPv6 is not available on this system"
+    not _can_bind_at_any_port(socket.AF_INET6),
+    reason="IPv6 is not available on this system",
 )
 
 
