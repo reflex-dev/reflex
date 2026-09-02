@@ -203,15 +203,15 @@ def remove_stale_external_asset_symlinks():
 
 
 def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
-    """Point dst_file at src_file with a symlink, whatever is already there.
+    """Point dst_file at src_file with a symlink, regardless of what is there.
 
     Several processes routinely compile into the same assets/external/
     directory at once: pytest-xdist workers, parallel builds, or containers
-    sharing a bind mount. Every step therefore has to tolerate another process
-    doing the same work concurrently, so the link is created under a unique
-    temporary name in the destination directory and renamed into place, which
-    atomically overwrites whatever the loser of the race left behind. Whichever
-    process wins, dst_file is a symlink to src_file once this returns.
+    sharing a bind mount. Linking in place would be check-then-act, so the link
+    is built under a unique temporary name in the destination directory and
+    renamed over dst_file instead, which is one atomic replace on POSIX and
+    leaves no window to interleave with. Whichever process wins the race,
+    dst_file is a symlink to src_file once this returns.
 
     Args:
         dst_file: The symlink to create in the app's external assets directory.

@@ -83,8 +83,16 @@ def test_shared_asset(mock_asset_path: Path) -> None:
     assert not Path(mock_asset_path / "assets" / "external").exists()
 
 
+# Captured before any patching so the simulated competitor below can write
+# symlinks without recursing back into the fake that wraps `os.symlink`.
+_REAL_SYMLINK = os.symlink
+
+
 def _shared_dst_file(mock_asset_path: Path) -> Path:
     """Return the symlink `rx.asset(shared=True)` creates for this test module.
+
+    The `test_assets` component is the calling module's name, which is what
+    `asset()` derives the external subfolder from.
 
     Args:
         mock_asset_path: The mock current working directory.
@@ -99,9 +107,6 @@ def _shared_dst_file(mock_asset_path: Path) -> Path:
         / "test_assets"
         / "custom_script.js"
     )
-
-
-_REAL_SYMLINK = os.symlink
 
 
 def _competitor_links(dst_file: Path, target: Path) -> None:
@@ -127,6 +132,11 @@ def _simulate_competing_process(
     window a check-then-act implementation depends on. The last entry is reused
     once the script is exhausted.
 
+    Patching `os.symlink` rather than the asset code keeps the simulation
+    implementation-agnostic: an implementation that links straight to the
+    destination sees the competitor's writes collide with its own, while one
+    that links to a private temporary name is untouched by them.
+
     Args:
         monkeypatch: A pytest fixture for patching.
         script: The (before, after) callbacks to apply to successive calls.
@@ -150,8 +160,9 @@ def test_shared_asset_survives_concurrent_removal(
 ) -> None:
     """A competitor that creates then removes the link must not break `asset()`.
 
-    Regression test: the destination existing when we link and being gone again
-    when we clean up used to escape as `FileNotFoundError` from `dst_file.unlink()`.
+    Regression test: a destination that existed when the link was created but
+    was gone again by the time it was cleaned up escaped as `FileNotFoundError`
+    from `dst_file.unlink()`.
 
     Args:
         mock_asset_path: The mock current working directory.
@@ -186,7 +197,7 @@ def test_shared_asset_survives_concurrent_recreation(
 ) -> None:
     """A competitor recreating the link on every attempt must not break `asset()`.
 
-    Regression test: the retry after `FileExistsError` used to raise a second,
+    Regression test: the retry after `FileExistsError` raised a second,
     unhandled `FileExistsError` when the destination reappeared in between.
 
     Args:
