@@ -803,10 +803,12 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py; evicted
-# before the next load so projects don't reuse each other's dependencies.
-# Only mutated under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py and the root
+# that supplied them. They are evicted before loading a different project so
+# projects don't reuse each other's dependencies. Only mutated under
+# _load_config_lock.
 _config_module_deps: set[str] = set()
+_config_module_deps_root: Path | None = None
 
 
 class _ImportRecorder:
@@ -894,7 +896,9 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def _get_config(project_root: Path | None = None) -> Config:
+def _get_config(
+    project_root: Path | None = None, *, reload_dependencies: bool = True
+) -> Config:
     """Import rxconfig.py fresh from the project root and return its config.
 
     The project root is prepended to sys.path for the duration of the import so
@@ -907,10 +911,15 @@ def _get_config(project_root: Path | None = None) -> Config:
             current working directory, resolved once up front so an rxconfig.py
             that changes the cwd cannot move the root that the sys.path entry
             and the dependency classification below are based on.
+        reload_dependencies: Whether to reload project-local modules imported by
+            rxconfig.py. A config reload in an existing RegistrationContext
+            keeps them so state classes are not redefined.
 
     Returns:
         The app config.
     """
+    global _config_module_deps_root
+
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
@@ -919,16 +928,17 @@ def _get_config(project_root: Path | None = None) -> Config:
         cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            # Never cache rxconfig or its project-local dependencies — each load
-            # goes to disk so different RegistrationContexts hold independent
-            # Config instances resolved against the current project. Evict
-            # before probing: find_spec answers from sys.modules, so modules
-            # left behind by another project directory would fake the existence
-            # check below.
+            # Always reload rxconfig, but retain its dependencies when reloading
+            # the same project. Re-importing a helper that defines State would
+            # redefine the class in the active RegistrationContext. Before
+            # switching projects, evict dependencies so find_spec and imports
+            # cannot reuse modules from the prior root.
             sys.modules.pop(constants.Config.MODULE, None)
-            for dep in _config_module_deps:
-                sys.modules.pop(dep, None)
-            _config_module_deps.clear()
+            if reload_dependencies or _config_module_deps_root != project_root:
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+            _config_module_deps_root = project_root
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):
@@ -1021,6 +1031,6 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _get_config()
+    config = _get_config(reload_dependencies=ctx._config is None)
     ctx._set_config(config)
     return config

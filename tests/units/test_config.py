@@ -1029,6 +1029,97 @@ def test_get_config_accepts_explicit_project_root(
     assert reflex_base.config._get_config(project).app_name == "explicit"
 
 
+def test_reload_config_does_not_redefine_project_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config does not re-import project modules that define state.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "config_reload_state_module.py").write_text(
+        "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / "rxconfig.py").write_text(
+        "import config_reload_state_module\nimport reflex as rx\n\n"
+        "config = rx.Config(app_name='state_reload')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "state_reload"
+        assert reflex_base.config.reload_config().app_name == "state_reload"
+
+
+def test_get_config_reloads_project_state_for_each_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Initial config loads register project state in each context.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "config_reload_state_module.py").write_text(
+        "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / "rxconfig.py").write_text(
+        "import config_reload_state_module\nimport reflex as rx\n\n"
+        "config = rx.Config(app_name='state_reload')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext() as first_context:
+        reflex_base.config.get_config()
+        first_state = next(
+            state
+            for state in first_context.base_states.values()
+            if state.__module__ == "config_reload_state_module"
+        )
+
+    with RegistrationContext() as second_context:
+        reflex_base.config.get_config()
+        second_state = next(
+            state
+            for state in second_context.base_states.values()
+            if state.__module__ == "config_reload_state_module"
+        )
+
+    assert second_state is not first_state
+
+
+def test_get_config_evicts_dependencies_from_another_project(
+    tmp_path: Path, clean_config_modules: None
+):
+    """Loading another project does not reuse a same-named local dependency.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    first_project = tmp_path / "first"
+    second_project = tmp_path / "second"
+    for project, app_name in ((first_project, "first"), (second_project, "second")):
+        project.mkdir()
+        (project / "config_reload_dependency.py").write_text(
+            f"APP_NAME = {app_name!r}\n"
+        )
+        (project / "rxconfig.py").write_text(
+            "import config_reload_dependency\nimport reflex as rx\n\n"
+            "config = rx.Config(app_name=config_reload_dependency.APP_NAME)\n"
+        )
+
+    assert reflex_base.config._get_config(first_project).app_name == "first"
+    assert reflex_base.config._get_config(second_project).app_name == "second"
+
+
 @pytest.fixture
 def clean_config_modules() -> Generator[None, None, None]:
     """Drop the modules and dep records a real rxconfig load leaves behind.
@@ -1036,13 +1127,20 @@ def clean_config_modules() -> Generator[None, None, None]:
     Yields:
         None, once the module table is clean.
     """
-    names = ("rxconfig", "side_module", "chdir_dep_module")
+    names = (
+        "rxconfig",
+        "side_module",
+        "chdir_dep_module",
+        "config_reload_state_module",
+        "config_reload_dependency",
+    )
     try:
         yield
     finally:
         for name in names:
             sys.modules.pop(name, None)
         reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
 
 
 # Reruns: taking the prepended entry back out is itself a sys.path shrink, so
