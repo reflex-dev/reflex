@@ -98,19 +98,64 @@ def test_sdk_disabled_keeps_trace_points_off(
     assert otel.enabled is False
 
 
-@pytest.mark.parametrize("preset", [None, "http/dup"])
+_SEMCONV_PROBE = """
+import asyncio, os
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from reflex_base import otel
+from reflex_otel import ReflexInstrumentor
+
+exporter = InMemorySpanExporter()
+provider = TracerProvider()
+provider.add_span_processor(SimpleSpanProcessor(exporter))
+ReflexInstrumentor().instrument(tracer_provider=provider)
+
+async def app(scope, receive, send):
+    await send({"type": "http.response.start", "status": 200, "headers": []})
+    await send({"type": "http.response.body", "body": b""})
+
+async def receive():
+    return {"type": "http.request", "body": b"", "more_body": False}
+
+async def send(message):
+    pass
+
+scope = {"type": "http", "method": "GET", "path": "/x", "raw_path": b"/x", "query_string": b"",
+         "headers": [], "scheme": "http", "server": ("localhost", 80), "http_version": "1.1"}
+asyncio.run(otel.asgi_middleware(app)(scope, receive, send))
+(span,) = exporter.get_finished_spans()
+print(os.environ["OTEL_SEMCONV_STABILITY_OPT_IN"], sorted(span.attributes))
+"""
+
+
+@pytest.mark.parametrize(
+    ("preset", "expect_new", "expect_old"),
+    [(None, True, False), ("http/dup", True, True)],
+)
 def test_opts_into_stable_http_semconv(
-    instrumentor: ReflexInstrumentor,
-    monkeypatch: pytest.MonkeyPatch,
-    preset: str | None,
+    preset: str | None, expect_new: bool, expect_old: bool
 ):
-    """The middleware uses the stable HTTP names unless the operator chose otherwise."""
-    if preset is None:
-        monkeypatch.delenv("OTEL_SEMCONV_STABILITY_OPT_IN", raising=False)
-    else:
-        monkeypatch.setenv("OTEL_SEMCONV_STABILITY_OPT_IN", preset)
-    instrumentor.instrument(tracer_provider=TracerProvider())
-    assert os.environ["OTEL_SEMCONV_STABILITY_OPT_IN"] == (preset or "http")
+    """The middleware emits the stable HTTP names unless the operator chose otherwise.
+
+    The contrib packages read the variable once per process, so this runs in a
+    fresh interpreter.
+    """
+    env = {k: v for k, v in os.environ.items() if k != "OTEL_SEMCONV_STABILITY_OPT_IN"}
+    if preset is not None:
+        env["OTEL_SEMCONV_STABILITY_OPT_IN"] = preset
+    out = subprocess.run(
+        [sys.executable, "-c", _SEMCONV_PROBE],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    ).stdout
+    value, _, keys = out.partition(" ")
+    assert value == (preset or "http")
+    # Server spans carry url.scheme/url.path under the stable conventions.
+    assert ("url.scheme" in keys) is expect_new
+    assert ("http.scheme" in keys) is expect_old
 
 
 def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):

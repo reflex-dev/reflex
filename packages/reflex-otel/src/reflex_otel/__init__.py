@@ -19,6 +19,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Reflex's own attributes follow the current semantic conventions; the contrib
+# ASGI middleware still defaults to the old HTTP names unless opted in, which
+# would mix both generations in one trace. The contrib packages read the
+# variable once per process, the first time any instrumentor's instrument()
+# runs, so it is set as early as this package can: at import.
+os.environ.setdefault("OTEL_SEMCONV_STABILITY_OPT_IN", "http")
+
 # Must match the `instruments` extra in pyproject.toml (a test enforces it).
 # Re-pin both to the first reflex-base release that ships reflex_base/otel.py
 # before publishing: earlier releases satisfy this floor but lack the module.
@@ -181,11 +188,6 @@ class ReflexInstrumentor(BaseInstrumentor):
             # The SDK is a no-op; skip the per-event trace points as well.
             logger.info("OTEL_SDK_DISABLED is set; Reflex trace points stay off.")
             return
-        # Reflex's own attributes follow the current semantic conventions; the
-        # ASGI middleware still defaults to the old HTTP names unless opted in,
-        # which would mix both generations in one trace. The variable is read
-        # once per process, before the first middleware is built.
-        os.environ.setdefault("OTEL_SEMCONV_STABILITY_OPT_IN", "http")
         # Imported here so `from reflex_otel import OtelPlugin` in rxconfig.py
         # stays cheap for CLI processes that never instrument.
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
