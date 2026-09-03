@@ -199,6 +199,56 @@ def test_remote_context_uses_traceparent(otel_exporter: InMemorySpanExporter):
     assert format(span.parent.span_id, "016x") == "b7ad6b7169203331"
 
 
+@pytest.mark.parametrize(
+    "carrier",
+    [
+        {"traceparent": 123},
+        {"traceparent": None},
+        {"traceparent": ["a"]},
+        {"traceparent": {"x": 1}},
+        {"traceparent": "garbage"},
+        {"traceparent": "00-" + "0" * 32 + "-b7ad6b7169203331-01"},
+        {
+            "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+            "tracestate": 5,
+        },
+        {
+            "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+            "tracestate": "==,,bad",
+        },
+        {"baggage": 7},
+    ],
+)
+def test_remote_context_never_raises_on_unusable_fields(
+    carrier: dict, otel_exporter: InMemorySpanExporter
+):
+    """Hostile or malformed payload fields are ignored, never an exception."""
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    with otel.remote_context(carrier):
+        ctx = _ctx().fork()
+    with otel.event_span(Event(name="e"), ctx, registered):
+        pass
+    (span,) = otel_exporter.get_finished_spans()
+    if (
+        isinstance(carrier.get("traceparent"), str)
+        and "0af7651916cd" in carrier["traceparent"]
+    ):
+        assert span.parent is not None
+        assert (
+            format(span.parent.trace_id, "032x") == "0af7651916cd43dd8448eb211c80319c"
+        )
+    else:
+        assert span.parent is None
+
+
+def test_remote_context_ignores_baggage():
+    """Only the trace context is taken from the client, never baggage."""
+    from opentelemetry import baggage
+
+    with otel.remote_context({"baggage": "user=admin,tenant=evil"}):
+        assert baggage.get_all() == {}
+
+
 def test_remote_context_without_traceparent_starts_new_trace(
     otel_exporter: InMemorySpanExporter,
 ):

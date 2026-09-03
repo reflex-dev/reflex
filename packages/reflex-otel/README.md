@@ -30,8 +30,14 @@ Traces:
 - One span per event handler run, named after the event: `CONSUMER` for
   events sent by the frontend (a new trace, or a child of the browser's
   `PRODUCER` span when the event carries a `traceparent` field), `INTERNAL`
-  for chained events, which are children of the span that enqueued them. `traceparent`/`tracestate`
-  are consumed and never reach the handler.
+  for chained events, which are children of the span that enqueued them.
+  Only string `traceparent`/`tracestate` fields are read from the event;
+  they never reach the handler, and `baggage` or anything else a client
+  sends is ignored. The sampled flag of a client `traceparent` is honoured
+  by the SDK's default parent-based sampler, so a client decides whether its
+  own events are recorded; use `ParentBased(root=..., remote_parent_sampled=...,
+  remote_parent_not_sampled=...)` or `OTEL_TRACES_SAMPLER=always_on` to keep
+  that decision on the server.
 - HTTP requests and the websocket connection are wrapped in the standard
   OpenTelemetry ASGI middleware (per-message websocket spans are off).
 

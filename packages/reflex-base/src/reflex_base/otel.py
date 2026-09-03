@@ -18,9 +18,10 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from opentelemetry import context as otel_context
-from opentelemetry import metrics, propagate, trace
+from opentelemetry import metrics, trace
 from opentelemetry.context import Context
 from opentelemetry.trace import SpanKind
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from reflex_base.constants.base import Reflex
 
@@ -47,8 +48,14 @@ METRIC_STATE_ACQUIRE_DURATION = "reflex.state.acquire.duration"
 METRIC_WEBSOCKET_MESSAGE_SIZE = "reflex.websocket.message.size"
 METRIC_WEBSOCKET_CONNECTIONS = "reflex.websocket.connections"
 
-# Key of the W3C trace context carried in an event payload sent by the frontend.
+# Keys of the W3C trace context carried in an event payload sent by the frontend.
 TRACEPARENT_FIELD = "traceparent"
+TRACESTATE_FIELD = "tracestate"
+
+# The event payload is unauthenticated client input, so only the W3C trace
+# context is read from it (never the global propagator: a client could
+# otherwise plant baggage that every instrumented downstream call forwards).
+_remote_propagator = TraceContextTextMapPropagator()
 
 # Histogram bucket advisories: seconds (semconv http.server.request.duration) and bytes.
 _DURATION_BUCKETS = (
@@ -204,9 +211,11 @@ class _AttachedContext:
 def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     """Make the trace context carried by a frontend event the current context.
 
-    Only call when ``enabled``. Events that carry no ``traceparent`` start a
-    new trace: the websocket connection span (if any) is deliberately not
-    used as their parent.
+    Only call when ``enabled``. Events that carry no usable ``traceparent``
+    start a new trace: the websocket connection span (if any) is deliberately
+    not used as their parent. Only string ``traceparent``/``tracestate``
+    fields are read; anything else a client sends is ignored, so this never
+    raises on hostile input.
 
     Args:
         carrier: The raw event fields received from the frontend.
@@ -214,7 +223,11 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     Returns:
         A context manager to run the enqueue under.
     """
-    return _AttachedContext(propagate.extract(carrier, context=Context()))
+    fields: dict[str, str] = {}
+    for key in (TRACEPARENT_FIELD, TRACESTATE_FIELD):
+        if isinstance(value := carrier.get(key), str):
+            fields[key] = value
+    return _AttachedContext(_remote_propagator.extract(fields, context=Context()))
 
 
 def _code_function_name(fn: Callable[..., Any], fallback: str) -> str:
