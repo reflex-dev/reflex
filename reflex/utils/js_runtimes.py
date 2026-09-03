@@ -234,7 +234,10 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     Raises:
         SystemExit: If the script fails to download.
     """
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     # Download the script
     logger.debug(f"Downloading {url}")

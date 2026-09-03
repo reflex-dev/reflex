@@ -141,7 +141,10 @@ def initialize_agents_md(
     """
     plan = _plan_agents_md(agents_file, claude_file)
 
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     logger.debug(f"Fetching {url}")
     try:

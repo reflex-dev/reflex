@@ -122,7 +122,10 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         SystemExit: If any download, file operations fail or unexpected zip file format.
 
     """
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     # Create a temp directory for the zip download.
     try:

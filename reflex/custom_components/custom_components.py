@@ -634,7 +634,10 @@ def _collect_details_for_gallery():
     Raises:
         SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
     from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")

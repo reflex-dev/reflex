@@ -41,7 +41,10 @@ def _wrap_https_func(
 
     @functools.wraps(func)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-        import httpx
+        try:
+            import httpx2 as httpx
+        except ModuleNotFoundError:
+            import httpx
 
         url = args[0]
         logger.debug(f"Sending HTTPS request to {args[0]}")
@@ -95,7 +98,10 @@ def _is_ipv4_supported() -> bool:
     Returns:
         True if the system supports IPv4, False otherwise.
     """
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     try:
         httpx.head("http://1.1.1.1", timeout=3)
@@ -111,7 +117,10 @@ def _is_ipv6_supported() -> bool:
     Returns:
         True if the system supports IPv6, False otherwise.
     """
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     try:
         httpx.head("http://[2606:4700:4700::1111]", timeout=3)
@@ -150,8 +159,12 @@ def _httpx_client():
     Returns:
         An HTTPX client.
     """
-    import httpx
-    from httpx._utils import get_environment_proxies
+    try:
+        import httpx2 as httpx
+        from httpx2._utils import get_environment_proxies
+    except ModuleNotFoundError:
+        import httpx
+        from httpx._utils import get_environment_proxies
 
     verify_setting = _httpx_verify_kwarg()
     return httpx.Client(
