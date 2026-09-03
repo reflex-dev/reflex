@@ -291,6 +291,13 @@ def event_span(
     with _tracer.start_as_current_span(
         event.name, context=ctx.otel_context, kind=kind, attributes=attributes
     ) as span:
+        # From here on the event context describes this event's execution:
+        # anything chained from it, including the events the backend exception
+        # handler returns after a failure, parents under this span. The
+        # context is frozen; this is the one place that extends it.
+        object.__setattr__(
+            ctx, "otel_context", trace.set_span_in_context(span, ctx.otel_context)
+        )
         # Record while the span is still current: exporter latency stays out
         # of the sample and exemplars keep the trace/span IDs.
         start = perf_counter()
