@@ -1,8 +1,8 @@
 /**
  * Browser-side OpenTelemetry for Reflex apps, installed by reflex_otel.OtelPlugin.
  *
- * - Every event sent to the backend gets a CLIENT span and a W3C `traceparent`,
- *   so the backend event span joins the browser trace.
+ * - Every event and file upload sent to the backend gets a PRODUCER span and
+ *   a W3C `traceparent`, so the backend event span joins the browser trace.
  * - Web vitals (LCP, CLS, INP, FCP, TTFB) are reported as spans.
  * - React commits are reported as `react.render` spans via a root <Profiler>
  *   (opt-in; production builds need the react-dom profiling alias the plugin adds).
@@ -96,20 +96,29 @@ const epoch = (offset) => performance.timeOrigin + offset;
 
 let connectCount = 0;
 
+// Fire-and-forget to the backend: a PRODUCER span that marks the send. The
+// browser has no completion signal for an event, so it has no duration. An
+// unsampled span carries no traceparent: the backend then samples the event
+// as a root of its own instead of inheriting "not sampled".
+const markSend = (name, carrier) => {
+  const span = tracer.startSpan(name, {
+    kind: SpanKind.PRODUCER,
+    attributes: { "reflex.event.name": name },
+  });
+  if (span.spanContext().traceFlags & TraceFlags.SAMPLED) {
+    propagator.inject(trace.setSpan(context.active(), span), carrier, setter);
+  }
+  span.end();
+};
+
 window.__reflex_otel = {
   onEventSend(event) {
-    // Fire-and-forget over the socket: a PRODUCER span that marks the send. The
-    // browser has no completion signal for an event, so it has no duration.
-    const span = tracer.startSpan(event.name, {
-      kind: SpanKind.PRODUCER,
-      attributes: { "reflex.event.name": event.name },
-    });
-    // An unsampled span carries no traceparent: the backend then samples the
-    // event as a root of its own instead of inheriting "not sampled".
-    if (span.spanContext().traceFlags & TraceFlags.SAMPLED) {
-      propagator.inject(trace.setSpan(context.active(), span), event, setter);
-    }
-    span.end();
+    markSend(event.name, event);
+  },
+  onUploadSend(handler, headers) {
+    // The upload is an HTTP request: the traceparent travels as a header and
+    // the backend's request span, then the handler span, join the trace.
+    markSend(handler, headers);
   },
   onSocketConnect() {
     connectCount += 1;

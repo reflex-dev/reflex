@@ -36,6 +36,9 @@ def test_frontend_dependencies_and_asset():
     ((path, source),) = plugin.get_static_assets()
     assert path == Path(BROWSER_MODULE)
     assert "window.__reflex_otel" in source
+    # Socket events and uploads both carry a traceparent.
+    assert "onEventSend(" in source
+    assert "onUploadSend(" in source
     # Export failures are forwarded through the frontend exception path.
     assert "setGlobalErrorHandler" in source
     assert "window.onerror(" in source

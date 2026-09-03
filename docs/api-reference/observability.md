@@ -77,8 +77,9 @@ config = rx.Config(
 
 The compiled frontend then
 
-- sends a W3C `traceparent` with every event, so each user interaction is one
-  trace: browser span → backend event span → chained events;
+- sends a W3C `traceparent` with every event and file upload, so each user
+  interaction is one trace: browser span → backend event span → chained
+  events;
 - reports web vitals (`web_vital.LCP`, `CLS`, `INP`, `FCP`, `TTFB`) as spans;
 - with `render_timing=True`, reports React commits as `react.render` spans
   (one per commit; uses the `react-dom/profiling` build);
