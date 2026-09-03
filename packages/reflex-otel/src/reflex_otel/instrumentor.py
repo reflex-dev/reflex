@@ -9,7 +9,7 @@ from typing import Any, Literal
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from reflex_base import otel
 
-_instruments = ("reflex-base >= 0.9.7.post45.dev0",)
+_instruments = ("reflex-base >= 0.9.10.post2.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]
