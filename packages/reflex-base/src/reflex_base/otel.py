@@ -246,16 +246,17 @@ def event_span(
         ATTR_SESSION_ID: ctx.token,
         ATTR_CODE_FUNCTION_NAME: getattr(handler.fn, "__qualname__", event.name),
     }
-    if ctx.parent_txid:
-        attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
     # An event whose parent span is local (a chained event) is an internal
     # step of that request; anything else is a new inbound request.
     parent = trace.get_current_span(ctx.otel_context).get_span_context()
-    kind = (
-        SpanKind.INTERNAL
-        if parent.is_valid and not parent.is_remote
-        else SpanKind.SERVER
-    )
+    if parent.is_valid and not parent.is_remote:
+        kind = SpanKind.INTERNAL
+        # Only a chained event has a parent event. A top-level event is forked
+        # from the processor's root context, whose txid carries no information.
+        if ctx.parent_txid:
+            attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
+    else:
+        kind = SpanKind.SERVER
     with _tracer.start_as_current_span(
         event.name, context=ctx.otel_context, kind=kind, attributes=attributes
     ) as span:

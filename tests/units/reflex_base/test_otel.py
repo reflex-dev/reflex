@@ -65,12 +65,28 @@ def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
     assert finished.attributes == {
         otel.ATTR_EVENT_NAME: "state.sub.handler",
         otel.ATTR_EVENT_TXID: ctx.txid,
-        otel.ATTR_EVENT_PARENT_TXID: "parent123",
         otel.ATTR_EVENT_BACKGROUND: False,
         otel.ATTR_SESSION_ID: "tok",
         otel.ATTR_CODE_FUNCTION_NAME: "_handler",
     }
     assert finished.status.status_code == StatusCode.UNSET
+
+
+def test_parent_txid_only_for_chained_events(otel_exporter: InMemorySpanExporter):
+    """Top-level events are forked from the root context; its txid is noise."""
+    registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    with otel.remote_context({"traceparent": traceparent}):
+        remote_ctx = _ctx().fork()
+    with otel.event_span(Event(name="top"), remote_ctx, registered):
+        chained_ctx = _ctx().fork()
+    with otel.event_span(Event(name="chained"), chained_ctx, registered):
+        pass
+    top, chained = otel_exporter.get_finished_spans()
+    assert top.attributes is not None
+    assert chained.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in top.attributes
+    assert chained.attributes[otel.ATTR_EVENT_PARENT_TXID] == chained_ctx.parent_txid
 
 
 def test_event_span_records_exception(otel_exporter: InMemorySpanExporter):
