@@ -67,7 +67,7 @@ def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
         otel.ATTR_EVENT_TXID: ctx.txid,
         otel.ATTR_EVENT_BACKGROUND: False,
         otel.ATTR_SESSION_ID: "tok",
-        otel.ATTR_CODE_FUNCTION_NAME: "_handler",
+        otel.ATTR_CODE_FUNCTION_NAME: f"{__name__}._handler",
     }
     assert finished.status.status_code == StatusCode.UNSET
 

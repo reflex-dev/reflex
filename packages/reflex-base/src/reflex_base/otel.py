@@ -217,6 +217,23 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     return _AttachedContext(propagate.extract(carrier, context=Context()))
 
 
+def _code_function_name(fn: Callable[..., Any], fallback: str) -> str:
+    """Fully qualified name of a handler, per the ``code.*`` semantic conventions.
+
+    Args:
+        fn: The handler function.
+        fallback: Value to use when the function has no qualified name.
+
+    Returns:
+        ``module.qualname``, or the fallback.
+    """
+    qualname = getattr(fn, "__qualname__", None)
+    if qualname is None:
+        return fallback
+    module = getattr(fn, "__module__", None)
+    return f"{module}.{qualname}" if module else qualname
+
+
 @contextmanager
 def event_span(
     event: Event, ctx: EventContext, registered_handler: RegisteredEventHandler
@@ -244,7 +261,7 @@ def event_span(
         **metric_attributes,
         ATTR_EVENT_TXID: ctx.txid,
         ATTR_SESSION_ID: ctx.token,
-        ATTR_CODE_FUNCTION_NAME: getattr(handler.fn, "__qualname__", event.name),
+        ATTR_CODE_FUNCTION_NAME: _code_function_name(handler.fn, event.name),
     }
     # An event whose parent span is local (a chained event) is an internal
     # step of that request; anything else is a new inbound request.
