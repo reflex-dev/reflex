@@ -69,6 +69,7 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.utils import build
 from reflex.utils import exec as exec_utils
 
 from .conftest import chdir, metric_points
@@ -4426,6 +4427,43 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
     assert point.value == 1
     # Release t2 so a shared token store (redis) does not leak into other tests.
     await ns._token_manager.disconnect_all()
+
+
+def test_compile_installs_browser_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context,
+):
+    """A real compile with OtelPlugin ships the browser module and patches the entry.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
+    from reflex_base.constants.base import ReactRouter
+    from reflex_base.constants.compiler import Embed
+    from reflex_otel import OtelPlugin
+
+    plugin = OtelPlugin(endpoint="http://collector/v1/traces", render_timing=True)
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing", plugins=[plugin]),
+    )
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app._compile()
+    build.set_env_json()
+    assert "window.__reflex_otel" in (web_dir / "utils" / "otel.js").read_text()
+    env = json.loads((web_dir / constants.Dirs.ENV_JSON).read_text())
+    assert env["OTEL"]["endpoint"] == "http://collector/v1/traces"
+    assert env["OTEL"]["service_name"] == "testing-frontend"
+    entry = (web_dir / Embed.ENTRY_PATH).read_text()
+    assert 'import { OtelRoot } from "$/utils/otel";' in entry
+    assert "createElement(OtelRoot, null, createElement(HydratedRouter))" in entry
+    vite_config = (web_dir / ReactRouter.VITE_CONFIG_FILE).read_text()
+    assert "react-dom/profiling" in vite_config
 
 
 def test_compile_emits_stage_spans(
