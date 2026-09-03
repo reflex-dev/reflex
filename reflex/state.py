@@ -2155,6 +2155,16 @@ class BaseState(EvenMoreBasicBaseState):
         state.pop("parent_state", None)
         state.pop("substates", None)
         state.pop("_was_touched", None)
+        if stale := self._stale_computed_vars:
+            # A stale mark is only meaningful together with the marks it
+            # cascaded to, and those may sit in substates that are persisted
+            # separately or not at all. Persist the invalidation instead: drop
+            # the stale caches so a reload recomputes them, and the persisted
+            # dirty_vars re-mark the dependents.
+            computed_vars = self.computed_vars
+            for name in stale:
+                state.pop(computed_vars[name]._cache_attr, None)
+            state["_stale_computed_vars"] = set()
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state.pop(inherited_var_name, None)

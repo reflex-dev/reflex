@@ -4549,6 +4549,50 @@ def test_fallback_pickle():
         _ = state3._serialize()
 
 
+@pytest.mark.asyncio
+async def test_stale_marks_do_not_survive_redis_roundtrip(
+    state_manager_redis: StateManagerRedis, token: str
+):
+    """Dependents of a stale computed var recompute after a partial persist.
+
+    Mirrors socket connect: the root is modified and persisted without a clean,
+    while the substate holding the dependent computed var is not written back.
+
+    Args:
+        state_manager_redis: A redis state manager.
+        token: A token.
+    """
+
+    class StaleRoot(BaseState):
+        num: int = 0
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.num * 2
+
+    class StaleSub(StaleRoot):
+        @rx.var
+        def doubled_str(self) -> str:
+            return str(self.doubled)
+
+    root_token = BaseStateToken(ident=token, cls=StaleRoot)
+    # Populate and persist the caches.
+    async with state_manager_redis.modify_state(root_token) as root:
+        sub = await root.get_state(StaleSub)
+        assert sub.doubled_str == "0"
+        root._clean()
+    # Change the base var and exit without cleaning; only the root is touched.
+    async with state_manager_redis.modify_state(root_token) as root:
+        root.num = 5
+    async with state_manager_redis.modify_state(root_token) as root:
+        sub = await root.get_state(StaleSub)
+        delta = root.get_delta()
+        assert delta.get(StaleSub.get_full_name()) == {
+            "doubled_str" + FIELD_MARKER: "10"
+        }
+        assert sub.doubled_str == "10"
+
+
 def test_typed_state() -> None:
     class TypedState(rx.State):
         field: rx.Field[str] = rx.field("")
