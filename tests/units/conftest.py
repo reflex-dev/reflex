@@ -579,7 +579,6 @@ def active_tracer() -> trace.Tracer:
     Returns:
         The tracer.
     """
-    assert otel._tracer is not None
     return otel._tracer
 
 

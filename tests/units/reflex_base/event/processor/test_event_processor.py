@@ -1099,7 +1099,8 @@ async def test_no_spans_when_otel_disabled(
     """
     assert otel.enabled is False
     tracer = Mock()
-    monkeypatch.setattr(otel, "_tracer", tracer)
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(noop_event())[0])
     tracer.start_as_current_span.assert_not_called()

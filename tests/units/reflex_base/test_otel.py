@@ -79,7 +79,7 @@ def test_enable_disable_toggle():
     assert otel.capture_context() is not None
     otel.disable()
     assert otel.enabled is False
-    assert otel._tracer is None
+    assert otel.capture_context() is None
 
 
 def test_enable_is_idempotent_until_disabled():

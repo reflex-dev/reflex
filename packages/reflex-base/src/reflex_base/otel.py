@@ -60,8 +60,8 @@ TRACESTATE_FIELD = "tracestate"
 # The event payload is unauthenticated client input, so only the W3C trace
 # context is read from it (never the global propagator: a client could
 # otherwise plant baggage that every instrumented downstream call forwards).
-# Created by enable().
-_remote_propagator: TextMapPropagator | None = None
+# Bound by enable().
+_remote_propagator: TextMapPropagator
 
 # Histogram bucket advisories: seconds (semconv http.server.request.duration) and bytes.
 _DURATION_BUCKETS = (
@@ -115,8 +115,8 @@ class _NoOpInstrument:
 
 _NOOP_INSTRUMENT = _NoOpInstrument()
 
-# Set by enable(); the trace points only run while enabled.
-_tracer: trace.Tracer | None = None
+# Bound by enable(); the trace points only run while enabled.
+_tracer: trace.Tracer
 _event_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _state_acquire_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _message_size: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
@@ -202,10 +202,12 @@ def enable(
 
 
 def disable() -> None:
-    """Turn the trace points off and drop the tracer and instruments."""
+    """Turn the trace points off and reset the metric instruments.
+
+    The tracer, the propagator and the API modules stay bound: the trace
+    points only run while enabled, and :func:`enable` rebinds them.
+    """
     global \
-        _tracer, \
-        _remote_propagator, \
         enabled, \
         asgi_middleware, \
         _event_duration, \
@@ -214,8 +216,6 @@ def disable() -> None:
         _ws_connections
     enabled = False
     asgi_middleware = None
-    _tracer = None
-    _remote_propagator = None
     _event_duration = _state_acquire_duration = _NOOP_INSTRUMENT
     _message_size = _ws_connections = _NOOP_INSTRUMENT
 
@@ -282,7 +282,6 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     Returns:
         A context manager to run the enqueue under.
     """
-    assert _remote_propagator is not None
     fields: dict[str, str] = {}
     for key in (TRACEPARENT_FIELD, TRACESTATE_FIELD):
         if isinstance(value := carrier.get(key), str):
@@ -344,7 +343,6 @@ def event_span(
     Yields:
         The active span.
     """
-    assert _tracer is not None
     handler = registered_handler.handler
     metric_attributes = {
         ATTR_EVENT_NAME: event.name,
