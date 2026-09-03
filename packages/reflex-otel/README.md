@@ -64,7 +64,8 @@ Plus the ASGI middleware's `http.server.*` metrics.
 (comma-separated URL patterns skipped by the ASGI middleware; defaults to
 `OTEL_PYTHON_REFLEX_EXCLUDED_URLS`, else `OTEL_PYTHON_EXCLUDED_URLS`, else
 `/ping` plus the compiled frontend's `/assets/` when the backend serves it,
-as `reflex run --env prod` does on one port; pass `""` to exclude nothing) and the ASGI hooks
+as `reflex run --env prod` does on one port; pass `""`, or set the variable
+to an empty string, to exclude nothing) and the ASGI hooks
 `server_request_hook`, `client_request_hook`, `client_response_hook`.
 Call `instrument()` before the app is served: `uninstrument()` turns the
 framework trace points off again, but an ASGI middleware that was already

@@ -76,6 +76,37 @@ def test_excluded_urls_only_defaults_when_omitted(
     assert wrapped.excluded_urls.url_disabled("/ping") is ping_disabled
 
 
+@pytest.mark.parametrize(
+    ("variable", "value", "ping_disabled"),
+    [
+        ("OTEL_PYTHON_REFLEX_EXCLUDED_URLS", "", False),
+        ("OTEL_PYTHON_EXCLUDED_URLS", "", False),
+        ("OTEL_PYTHON_REFLEX_EXCLUDED_URLS", "/health", False),
+        ("OTEL_PYTHON_EXCLUDED_URLS", "/ping,/health", True),
+    ],
+)
+def test_excluded_urls_env_empty_means_none(
+    instrumentor: ReflexInstrumentor,
+    monkeypatch: pytest.MonkeyPatch,
+    variable: str,
+    value: str,
+    ping_disabled: bool,
+):
+    """A variable set to an empty string disables the defaults, like an empty kwarg."""
+    monkeypatch.delenv("OTEL_PYTHON_REFLEX_EXCLUDED_URLS", raising=False)
+    monkeypatch.delenv("OTEL_PYTHON_EXCLUDED_URLS", raising=False)
+    monkeypatch.setenv(variable, value)
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert otel.asgi_middleware is not None
+
+    async def app(scope, receive, send): ...
+
+    wrapped = otel.asgi_middleware(app)
+    assert isinstance(wrapped, OpenTelemetryMiddleware)
+    assert isinstance(wrapped.excluded_urls, ExcludeList)
+    assert wrapped.excluded_urls.url_disabled("/ping") is ping_disabled
+
+
 @pytest.mark.parametrize("mounted", [False, True])
 def test_default_exclusions_cover_mounted_frontend_assets(
     instrumentor: ReflexInstrumentor, monkeypatch: pytest.MonkeyPatch, mounted: bool

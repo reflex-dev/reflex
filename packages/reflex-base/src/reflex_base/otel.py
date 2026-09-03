@@ -132,6 +132,9 @@ def enable(
 ) -> None:
     """Turn the trace points and metrics on.
 
+    A second call while enabled is ignored: call :func:`disable` first to
+    switch providers.
+
     Args:
         tracer_provider: The provider to obtain the tracer from. Defaults to
             the global provider, which may be configured later; the returned
@@ -143,6 +146,10 @@ def enable(
             builds its ASGI app.
     """
     global _tracer, enabled, asgi_middleware
+    if enabled:
+        # Re-creating the instruments on another meter would log duplicate
+        # instrument warnings; reconfiguring goes through disable() first.
+        return
     _tracer = trace.get_tracer(
         INSTRUMENTATION_NAME, Reflex.VERSION, tracer_provider=tracer_provider
     )
@@ -356,3 +363,34 @@ def record_connection(delta: int) -> None:
         delta: ``1`` on connect, ``-1`` on disconnect.
     """
     _ws_connections.add(delta)
+
+
+__all__ = [
+    "ATTR_CODE_FUNCTION_NAME",
+    "ATTR_ERROR_TYPE",
+    "ATTR_EVENT_BACKGROUND",
+    "ATTR_EVENT_NAME",
+    "ATTR_EVENT_PARENT_TXID",
+    "ATTR_EVENT_TXID",
+    "ATTR_NETWORK_IO_DIRECTION",
+    "ATTR_SESSION_ID",
+    "INSTRUMENTATION_NAME",
+    "METRIC_EVENT_DURATION",
+    "METRIC_STATE_ACQUIRE_DURATION",
+    "METRIC_WEBSOCKET_CONNECTIONS",
+    "METRIC_WEBSOCKET_MESSAGE_SIZE",
+    "TRACEPARENT_FIELD",
+    "TRACESTATE_FIELD",
+    "ASGIApp",
+    "asgi_middleware",
+    "attach_context",
+    "capture_context",
+    "disable",
+    "enable",
+    "enabled",
+    "event_span",
+    "record_connection",
+    "record_message_size",
+    "record_state_acquired",
+    "remote_context",
+]

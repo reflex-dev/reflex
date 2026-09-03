@@ -44,6 +44,29 @@ def test_enable_disable_toggle():
     assert isinstance(otel._tracer, trace.NoOpTracer)
 
 
+def test_enable_is_idempotent_until_disabled():
+    """A second enable() keeps the first providers; disable() resets."""
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+    first, second = InMemorySpanExporter(), InMemorySpanExporter()
+    providers = []
+    for exporter in (first, second):
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        providers.append(provider)
+    try:
+        otel.enable(tracer_provider=providers[0])
+        otel.enable(tracer_provider=providers[1])
+        with otel._tracer.start_as_current_span("x"):
+            pass
+        assert len(first.get_finished_spans()) == 1
+        assert second.get_finished_spans() == ()
+    finally:
+        otel.disable()
+    assert otel.enabled is False
+
+
 def test_capture_context_returns_current(otel_exporter: InMemorySpanExporter):
     with otel._tracer.start_as_current_span("outer") as span:
         captured = otel.capture_context()

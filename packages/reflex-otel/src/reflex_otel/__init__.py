@@ -19,8 +19,12 @@ _instruments = ("reflex-base >= 0.9.7.post45.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]
-# Frontend health polling; override with excluded_urls / OTEL_PYTHON_REFLEX_EXCLUDED_URLS.
+# Frontend health polling; override with excluded_urls or the variables below.
 _DEFAULT_EXCLUDED_URLS = "/ping"
+_EXCLUDED_URLS_ENV_VARS = (
+    "OTEL_PYTHON_REFLEX_EXCLUDED_URLS",
+    "OTEL_PYTHON_EXCLUDED_URLS",
+)
 # The websocket connects with ?token=<client token>; the token authorizes access
 # to the session's state, so it is stripped from the URL attributes the ASGI
 # middleware records (old and current HTTP semantic conventions).
@@ -128,9 +132,11 @@ class ReflexInstrumentor(BaseInstrumentor):
         meter_provider = kwargs.get("meter_provider")
         excluded_urls = kwargs.get("excluded_urls")
         if excluded_urls is None:
-            excluded_urls = os.environ.get(
-                "OTEL_PYTHON_REFLEX_EXCLUDED_URLS"
-            ) or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
+            # A variable set to "" means "exclude nothing", like an empty kwarg.
+            for name in _EXCLUDED_URLS_ENV_VARS:
+                if (value := os.environ.get(name)) is not None:
+                    excluded_urls = value
+                    break
 
         def asgi_middleware(app: otel.ASGIApp) -> otel.ASGIApp:
             # Defaults resolve when the app builds its ASGI callable: only then
