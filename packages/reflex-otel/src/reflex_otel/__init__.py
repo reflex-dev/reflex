@@ -26,12 +26,6 @@ logger = logging.getLogger(__name__)
 # runs, so it is set as early as this package can: at import.
 os.environ.setdefault("OTEL_SEMCONV_STABILITY_OPT_IN", "http")
 
-# Must match the `instruments` extra in pyproject.toml (a test enforces it).
-# A dev floor above every published reflex-base release: the release tooling
-# lifts it to the earliest published version that satisfies it, which is the
-# first release to ship reflex_base/otel.py.
-_instruments = ("reflex-base >= 0.9.10.post2.dev0",)
-
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]
 # Frontend health polling; override with excluded_urls or the variables below.
@@ -162,12 +156,16 @@ class ReflexInstrumentor(BaseInstrumentor):
         super().instrument(**kwargs)
 
     def instrumentation_dependencies(self) -> Collection[str]:
-        """Return the packages this instrumentor targets.
+        """Return the requirements the base class checks before instrumenting.
+
+        Empty on purpose: reflex-base is a hard dependency of this package, so
+        the resolver already enforces its floor at install time. A runtime
+        re-check would only reject the workspace's own development builds.
 
         Returns:
-            The dependency specifiers for the instrumented package.
+            No requirements.
         """
-        return _instruments
+        return ()
 
     def _instrument(self, **kwargs: Any) -> None:
         """Turn on the Reflex trace points.

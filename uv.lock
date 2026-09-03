@@ -4255,20 +4255,13 @@ dependencies = [
     { name = "reflex-base" },
 ]
 
-[package.optional-dependencies]
-instruments = [
-    { name = "reflex-base" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "opentelemetry-api", specifier = ">=1.30.0,<2.0" },
     { name = "opentelemetry-instrumentation", specifier = ">=0.49b0,<1.0" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.49b0,<1.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-base", marker = "extra == 'instruments'", editable = "packages/reflex-base" },
 ]
-provides-extras = ["instruments"]
 
 [[package]]
 name = "reflex-pyplot"
