@@ -336,6 +336,27 @@ def _staged_link_fixture(tmp_path: Path) -> tuple[Path, Path]:
     return src_file, dst_dir / "custom_script.js"
 
 
+def test_link_shared_asset_replaces_symlink_loop(tmp_path: Path) -> None:
+    """A destination caught in a symlink loop is replaced, not reported.
+
+    Resolving a loop raises `RuntimeError` on Python below 3.13, so a
+    destination left in that state by a crashed or racing writer would
+    otherwise abort the compile.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    partner = dst_file.parent / "loop_partner.js"
+    dst_file.symlink_to(partner)
+    partner.symlink_to(dst_file)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == src_file.resolve()
+
+
 def test_link_shared_asset_concedes_denied_replace(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

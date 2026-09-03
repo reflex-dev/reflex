@@ -219,7 +219,13 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
     Returns:
         Whether dst_file is a symlink resolving to src_file.
     """
-    return dst_file.is_symlink() and dst_file.resolve() == src_file.resolve()
+    try:
+        return dst_file.is_symlink() and dst_file.resolve() == src_file.resolve()
+    except (OSError, RuntimeError):
+        # An unresolvable destination, such as the symlink loop a crashed or
+        # racing writer can leave behind, which Python below 3.13 reports as
+        # RuntimeError. It is not the link we want either way, so replace it.
+        return False
 
 
 def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
