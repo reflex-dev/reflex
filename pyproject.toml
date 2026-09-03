@@ -269,6 +269,10 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "scripts/check_min_deps.py" = ["T201"]
+"scripts/check_outdated_deps.py" = ["T201"]
+"scripts/verify_pyi.py" = ["T201"]
+# Skill helper scripts are CLIs whose whole job is printing a report.
+".claude/skills/*/scripts/*.py" = ["T201"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
@@ -414,6 +418,34 @@ showcontent = true
 directory = "misc"
 name = "Miscellaneous"
 showcontent = true
+
+# Packages that must not be reported by scripts/check_outdated_deps.py. An entry matches by
+# exact name, or by prefix when it ends in `*`.
+#
+# `*_held` is for packages blocked on work we own: the script errors if one is already at its
+# latest version, since that means the blocker is gone and the entry should be deleted.
+# `*_pinned` is for packages we do not drive -- pinned by policy or owned by another repo --
+# where reaching latest says nothing about whether the entry can go, so staleness is not
+# checked.
+[tool.check-outdated-deps]
+backend_held = []
+backend_pinned = [
+    # Linters are pinned deliberately and bumped on their own cadence.
+    "pyright",
+    "ruff",
+]
+frontend_held = []
+frontend_pinned = [
+    # Pinned in other repos (reflex-enterprise and friends), so their versions are not
+    # ours to advance.
+    "@chakra-ui/*",
+    "lucide-react",
+    "@splinetool/runtime",
+    "framer-motion",
+    # ag-grid-community, -enterprise and -react release in lockstep; the shell filter
+    # needed both `ag-grid` and `ag-grid-react` to cover them.
+    "ag-grid*",
+]
 
 [tool.uv]
 required-version = ">=0.9.17"
