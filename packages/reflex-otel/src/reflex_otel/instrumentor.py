@@ -9,8 +9,6 @@ from typing import Any, Literal
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from reflex_base import otel
 
-_instruments = ("reflex-base >= 0.9.10.post2.dev0",)
-
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]
 # Frontend health polling; override with excluded_urls / OTEL_PYTHON_REFLEX_EXCLUDED_URLS.
@@ -34,12 +32,16 @@ class ReflexInstrumentor(BaseInstrumentor):
     """
 
     def instrumentation_dependencies(self) -> Collection[str]:
-        """Return the packages this instrumentor targets.
+        """Return the requirements the base class checks before instrumenting.
+
+        Empty on purpose: reflex-base is a hard dependency of this package, so
+        the resolver already enforces its floor at install time. A runtime
+        re-check would only reject the workspace's own development builds.
 
         Returns:
-            The dependency specifiers for the instrumented package.
+            No requirements.
         """
-        return _instruments
+        return ()
 
     def _instrument(self, **kwargs: Any) -> None:
         """Turn on the Reflex trace points.

@@ -56,7 +56,10 @@ Plus the ASGI middleware's `http.server.*` metrics.
 # rxconfig.py
 from reflex_otel import OtelPlugin
 
-config = rx.Config(app_name="myapp", plugins=[OtelPlugin(endpoint="https://collector.example.com/v1/traces")])
+config = rx.Config(
+    app_name="myapp",
+    plugins=[OtelPlugin(endpoint="https://collector.example.com/v1/traces")],
+)
 ```
 
 The plugin compiles a small OpenTelemetry web bundle into the frontend:

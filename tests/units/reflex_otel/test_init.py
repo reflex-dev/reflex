@@ -57,9 +57,9 @@ def test_instrument_is_idempotent(instrumentor: ReflexInstrumentor):
     assert otel.enabled is True
 
 
-def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):
-    (dep,) = instrumentor.instrumentation_dependencies()
-    assert dep.startswith("reflex-base")
+def test_no_runtime_dependency_check(instrumentor: ReflexInstrumentor):
+    """reflex-base is a hard dependency: the resolver enforces the floor, not instrument()."""
+    assert instrumentor.instrumentation_dependencies() == ()
 
 
 def test_instrument_installs_asgi_middleware(instrumentor: ReflexInstrumentor):
