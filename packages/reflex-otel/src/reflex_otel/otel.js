@@ -139,7 +139,8 @@ window.__reflex_otel = {
     span.end();
     // Unload disconnects happen after the processor's own pagehide flush ran,
     // so the span would otherwise sit in the queue while the page tears down.
-    provider.forceFlush();
+    // Export failures are already reported by the global error handler.
+    provider.forceFlush().catch(() => {});
   },
 };
 

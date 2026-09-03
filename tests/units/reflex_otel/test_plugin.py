@@ -87,6 +87,12 @@ def test_pre_compile_patches_entry(caplog: pytest.LogCaptureFixture):
     assert patched.startswith('import { OtelRoot } from "$/utils/otel";\n')
     assert "createElement(OtelRoot, null, createElement(HydratedRouter))" in patched
     assert fn(patched) == patched
+    # The embed entry renders a second root into the host page.
+    embed = (
+        "createRoot(target).render(createElement(RouterProvider, { router }));\n"
+        "hydrateRoot(document, createElement(HydratedRouter));\n"
+    )
+    assert fn(embed).count("createElement(OtelRoot, null, ") == 2
     with caplog.at_level("WARNING"):
         assert _patch_entry_client("other();\n") == (
             'import { OtelRoot } from "$/utils/otel";\nother();\n'
@@ -112,8 +118,19 @@ def test_render_timing_aliases_react_dom_profiling():
         'find: "react-dom/client", replacement: "react-dom/profiling"' in resolve_block
     )
     assert fn(patched) == patched
+    # Whitespace changes in the template must not break the anchor.
+    reflowed = config.replace("resolve: {\n", "resolve:  {\n\n").replace(
+        "alias: [\n", "alias:\t[\n"
+    )
+    assert "react-dom/profiling" in fn(reflowed)
     with pytest.raises(RuntimeError, match="render_timing"):
         _patch_vite_config("export default {};\n")
+
+
+def test_plugin_repr_and_hash_hide_headers():
+    plugin = OtelPlugin(endpoint="http://c", headers={"authorization": "secret"})
+    assert "secret" not in repr(plugin)
+    assert hash(plugin) == hash(plugin)
 
 
 @pytest.mark.parametrize("rate", [-0.1, 1.5])
