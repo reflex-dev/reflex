@@ -360,6 +360,38 @@ def test_link_shared_asset_replaces_symlink_loop(tmp_path: Path) -> None:
     assert dst_file.resolve() == src_file.resolve()
 
 
+def test_link_shared_asset_leaves_destination_on_source_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A source that cannot be resolved surfaces, without touching the link.
+
+    Only the destination is inspected defensively; swallowing a source error
+    would replace a good link on the way to failing on the source anyway.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    decoy = tmp_path / "decoy.js"
+    decoy.write_text("decoy")
+    dst_file.symlink_to(decoy)
+    real_resolve = Path.resolve
+
+    def fake_resolve(self: Path, *args, **kwargs) -> Path:
+        if self == src_file:
+            msg = "Symlink loop"
+            raise RuntimeError(msg)
+        return real_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    with pytest.raises(RuntimeError):
+        _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.readlink() == decoy
+
+
 def test_link_shared_asset_concedes_denied_replace(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
