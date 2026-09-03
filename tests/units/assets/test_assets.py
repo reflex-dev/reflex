@@ -286,11 +286,14 @@ def test_shared_asset_is_thread_safe(mock_asset_path: Path) -> None:
 @pytest.mark.parametrize(
     "stem",
     [
-        # Both are just under the 255-byte component limit of ext4, APFS and
-        # NTFS, with no room left for a suffix. The multi-byte case additionally
-        # covers a prefix cut by character rather than by encoded byte.
+        # All are just under the 255-byte component limit of ext4, APFS and
+        # NTFS, with no room left for a suffix. The multi-byte names guard a
+        # staged name derived from the asset name by slicing it: whether the
+        # slice is taken in characters or in bytes, and if in bytes, whether it
+        # splits an encoded character (which `off_boundary` does at 64 bytes).
         pytest.param("a" * 247, id="ascii"),
         pytest.param("😀" * 61, id="multibyte"),
+        pytest.param("a" + "😀" * 60, id="multibyte_off_boundary"),
     ],
 )
 def test_link_shared_asset_with_long_filename(tmp_path: Path, stem: str) -> None:
