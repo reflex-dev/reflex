@@ -1,0 +1,1 @@
+`ComputedVar` now records a key for the value an uncached (`cache=False`) var last sent to each client, so `BaseState.get_delta` can leave the var out of the delta when a recomputation produces the same value.

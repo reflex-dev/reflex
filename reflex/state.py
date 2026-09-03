@@ -14,7 +14,7 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -307,6 +307,30 @@ async def _resolve_delta(delta: Delta) -> Delta:
         else:
             delta[state_name][var_name] = resolved
     return delta
+
+
+async def _drop_unchanged_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Coroutine[None, None, Any],
+    token: str,
+) -> Any:
+    """Await an async uncached computed var, dropping it if the value did not change.
+
+    Args:
+        cvar: The computed var that produced the coroutine.
+        instance: The state instance the computed var is attached to.
+        value: The coroutine returned by the computed var.
+        token: The client token the delta is being produced for.
+
+    Returns:
+        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+        value that was sent to the client.
+    """
+    resolved = await value
+    if not cvar._record_delta_value(instance, resolved, token):
+        return _DROP_FROM_DELTA
+    return resolved
 
 
 RETURN = TypeVar("RETURN")
@@ -1954,8 +1978,14 @@ class BaseState(EvenMoreBasicBaseState):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def get_delta(self) -> Delta:
+    def get_delta(self, record_values: bool = True) -> Delta:
         """Get the delta for the state.
+
+        Args:
+            record_values: Whether the values of uncached computed vars should be
+                recorded as sent to the client. Pass False when the delta is
+                computed for its side effects and then discarded, otherwise the
+                unsent values would be omitted from the next delta.
 
         Returns:
             The delta for the state.
@@ -1973,11 +2003,23 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+        always_dirty_computed_vars = self._always_dirty_computed_vars
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if always_dirty_computed_vars else ""
+        subdelta: dict[str, Any] = {}
+        for prop in delta_vars:
+            if types.is_backend_base_variable(prop, type(self)):
+                continue
+            value = self.get_value(prop)
+            if record_values and prop in always_dirty_computed_vars:
+                # Uncached computed vars are recomputed for every delta; only
+                # send them when the recomputed value actually changed.
+                cvar = self.computed_vars[prop]
+                if inspect.iscoroutine(value):
+                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+                elif not cvar._record_delta_value(self, value, token):
+                    continue
+            subdelta[prop + FIELD_MARKER] = value
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -1985,18 +2027,22 @@ class BaseState(EvenMoreBasicBaseState):
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
-            delta.update(substates[substate].get_delta())
+            delta.update(substates[substate].get_delta(record_values=record_values))
 
         # Return the delta.
         return delta
 
-    async def _get_resolved_delta(self) -> Delta:
+    async def _get_resolved_delta(self, record_values: bool = True) -> Delta:
         """Get the delta for the state after resolving all coroutines.
+
+        Args:
+            record_values: Whether the values of uncached computed vars should be
+                recorded as sent to the client. See `get_delta`.
 
         Returns:
             The resolved delta for the state.
         """
-        return await _resolve_delta(self.get_delta())
+        return await _resolve_delta(self.get_delta(record_values=record_values))
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""

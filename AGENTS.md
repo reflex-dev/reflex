@@ -115,6 +115,17 @@ documentation — write it under `docs/` and let the fragment link there.
 CI requires a fragment for every package whose source the PR touches; the
 `skip-changelog` label waives it for changes that are genuinely not user-facing.
 
+Which `news/` directory a fragment lands in is decided purely by changed path:
+`reflex/**` -> repo-root `news/`; `packages/<name>/src/**` ->
+`packages/<name>/news/`. A PR spanning `reflex/` and `packages/reflex-base/src/`
+therefore needs a fragment in both. Paths outside those (tests, `docs/`, CI,
+`scripts/`) require none on their own. Check the way CI does, once per affected
+package:
+
+```
+uv run towncrier check --config pyproject.toml --dir <pkg-dir> --compare-with origin/main
+```
+
 ## Breaking changes and deprecation
 
 Reflex has downstream users — don't break them. Provide a fallback path during deprecation.
