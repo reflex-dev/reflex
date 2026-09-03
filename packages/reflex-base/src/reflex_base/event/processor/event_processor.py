@@ -422,7 +422,10 @@ class EventProcessor:
                 # tracker since this event will never enter the queue.
                 tracked.cancel()
                 return tracked
-            parent_future.add_child(tracked)
+            # Skip registration if the parent is already done (late-chained
+            # event) so the child runs instead of crashing.
+            if not parent_future.done():
+                parent_future.add_child(tracked)
         if parent_future is None:
             self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
@@ -651,12 +654,25 @@ class EventProcessor:
         Returns:
             The created asyncio.Task.
         """
-        task = asyncio.create_task(
-            self._process_event_queue_entry(
-                entry=entry, registered_handler=registered_handler
-            ),
-            name=f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}",
+        coro = self._process_event_queue_entry(
+            entry=entry, registered_handler=registered_handler
         )
+        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+        loop = asyncio.get_running_loop()
+        if (
+            sys.version_info >= (3, 12)
+            and not registered_handler.handler.is_background
+            and loop.get_task_factory() is None
+        ):
+            # Start a foreground handler synchronously instead of after another
+            # loop iteration: the common event runs its handler and emits its
+            # delta before its first real suspension point. Background tasks
+            # keep the deferred start so their interleaving with later events
+            # is unchanged, and a loop with a custom task factory keeps going
+            # through it.
+            task = asyncio.Task(coro, loop=loop, name=name, eager_start=True)
+        else:
+            task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         self._tasks[entry.ctx.txid] = task
