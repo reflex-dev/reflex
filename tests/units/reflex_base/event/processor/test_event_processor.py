@@ -1120,7 +1120,7 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
     parent = spans["_chaining_handler"]
     child = spans["_logging_handler"]
     assert parent.parent is None
-    assert parent.kind == SpanKind.SERVER
+    assert parent.kind == SpanKind.CONSUMER
     assert child.parent is not None
     assert child.parent.span_id == parent.context.span_id
     assert child.kind == SpanKind.INTERNAL

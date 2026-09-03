@@ -241,8 +241,9 @@ def event_span(
     """Open the span for one event handler execution and record its duration.
 
     Chained events are INTERNAL children of the span that enqueued them;
-    events that arrive from the frontend are SERVER spans (a new trace, or a
-    child of the browser's remote span).
+    events that arrive from the frontend are CONSUMER spans (a new trace, or
+    a child of the browser's PRODUCER span): the browser fires an event over
+    the socket and does not wait for it, which is messaging, not RPC.
 
     Args:
         event: The event being processed.
@@ -264,7 +265,7 @@ def event_span(
         ATTR_CODE_FUNCTION_NAME: _code_function_name(handler.fn, event.name),
     }
     # An event whose parent span is local (a chained event) is an internal
-    # step of that request; anything else is a new inbound request.
+    # step of that request; anything else is a new inbound message.
     parent = trace.get_current_span(ctx.otel_context).get_span_context()
     if parent.is_valid and not parent.is_remote:
         kind = SpanKind.INTERNAL
@@ -273,7 +274,7 @@ def event_span(
         if ctx.parent_txid:
             attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
     else:
-        kind = SpanKind.SERVER
+        kind = SpanKind.CONSUMER
     with _tracer.start_as_current_span(
         event.name, context=ctx.otel_context, kind=kind, attributes=attributes
     ) as span:

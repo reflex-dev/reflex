@@ -27,10 +27,10 @@ if not ReflexInstrumentor().is_instrumented_by_opentelemetry:
 
 Traces:
 
-- One span per event handler run, named after the event: `SERVER` for events
-  sent by the frontend (a new trace, or a child of the browser span when the
-  event carries a `traceparent` field), `INTERNAL` for chained events, which
-  are children of the span that enqueued them. `traceparent`/`tracestate`
+- One span per event handler run, named after the event: `CONSUMER` for
+  events sent by the frontend (a new trace, or a child of the browser's
+  `PRODUCER` span when the event carries a `traceparent` field), `INTERNAL`
+  for chained events, which are children of the span that enqueued them. `traceparent`/`tracestate`
   are consumed and never reach the handler.
 - HTTP requests and the websocket connection are wrapped in the standard
   OpenTelemetry ASGI middleware (per-message websocket spans are off).

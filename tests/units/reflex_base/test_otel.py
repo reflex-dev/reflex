@@ -60,7 +60,7 @@ def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
         assert trace.get_current_span() is span
     (finished,) = otel_exporter.get_finished_spans()
     assert finished.name == "state.sub.handler"
-    assert finished.kind == SpanKind.SERVER
+    assert finished.kind == SpanKind.CONSUMER
     assert finished.parent is None
     assert finished.attributes == {
         otel.ATTR_EVENT_NAME: "state.sub.handler",
@@ -192,7 +192,7 @@ def test_remote_context_uses_traceparent(otel_exporter: InMemorySpanExporter):
     with otel.event_span(Event(name="e"), ctx, registered):
         pass
     (span,) = otel_exporter.get_finished_spans()
-    assert span.kind == SpanKind.SERVER
+    assert span.kind == SpanKind.CONSUMER
     assert span.parent is not None
     assert span.parent.is_remote
     assert format(span.parent.trace_id, "032x") == "0af7651916cd43dd8448eb211c80319c"
