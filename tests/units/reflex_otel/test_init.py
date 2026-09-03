@@ -1,9 +1,12 @@
 """Tests for the reflex_otel instrumentor."""
 
 import os
+import sys
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
+import reflex_otel
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -11,7 +14,12 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from opentelemetry.util.http import ExcludeList
 from reflex_base import otel
 from reflex_base.environment import environment
-from reflex_otel import ReflexInstrumentor
+from reflex_otel import ReflexInstrumentor, _instruments
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 @pytest.fixture
@@ -66,6 +74,16 @@ def test_opts_into_stable_http_semconv(
 def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):
     (dep,) = instrumentor.instrumentation_dependencies()
     assert dep.startswith("reflex-base")
+
+
+def test_instruments_match_pyproject_extra():
+    """The floor the instrumentor checks at runtime is the one the package declares."""
+    pyproject = Path(reflex_otel.__file__).parents[2] / "pyproject.toml"
+    extra = tomllib.loads(pyproject.read_text())["project"]["optional-dependencies"]
+    assert list(_instruments) == extra["instruments"]
+    assert [
+        str(dep) for dep in ReflexInstrumentor().instrumentation_dependencies()
+    ] == extra["instruments"]
 
 
 def test_instrument_installs_asgi_middleware(instrumentor: ReflexInstrumentor):

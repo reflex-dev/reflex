@@ -15,6 +15,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Keep in sync with _instruments in reflex_otel/__init__.py; re-pin to the first
+# reflex-base release that ships reflex_base/otel.py before publishing.
 instruments = ["reflex-base >= 0.9.7.post45.dev0"]
 
 [project.entry-points.opentelemetry_instrumentor]

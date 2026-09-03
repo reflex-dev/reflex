@@ -18,6 +18,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Must match the `instruments` extra in pyproject.toml (a test enforces it).
+# Re-pin both to the first reflex-base release that ships reflex_base/otel.py
+# before publishing: earlier releases satisfy this floor but lack the module.
 _instruments = ("reflex-base >= 0.9.7.post45.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
