@@ -495,6 +495,9 @@ class EventProcessor:
                 self._root_context,
                 token=token,
                 emit_delta_impl=_emit_delta_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 

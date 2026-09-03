@@ -1104,6 +1104,27 @@ async def test_no_spans_when_otel_disabled(
     tracer.start_as_current_span.assert_not_called()
 
 
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with otel._tracer.start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
+
+
 async def test_event_spans_chain_parent_child(token: str, otel_exporter):
     """Each event gets a span; chained events are children of the enqueuing span.
 
