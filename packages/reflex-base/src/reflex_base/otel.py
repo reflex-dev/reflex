@@ -12,6 +12,7 @@ provider is available.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Awaitable, Callable, Iterator, Mapping
 from contextlib import contextmanager
 from time import perf_counter
@@ -230,6 +231,22 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     return _AttachedContext(_remote_propagator.extract(fields, context=Context()))
 
 
+def _session_id(token: str) -> str:
+    """Pseudonymous session id for a client token.
+
+    The token authorizes access to the session's state, so it must not leave
+    the process in telemetry; a truncated digest still correlates one
+    session's spans.
+
+    Args:
+        token: The client token.
+
+    Returns:
+        The first 16 hex digits of the token's SHA-256.
+    """
+    return hashlib.sha256(token.encode()).hexdigest()[:16]
+
+
 def _code_function_name(fn: Callable[..., Any], fallback: str) -> str:
     """Fully qualified name of a handler, per the ``code.*`` semantic conventions.
 
@@ -274,7 +291,7 @@ def event_span(
     attributes: dict[str, Any] = {
         **metric_attributes,
         ATTR_EVENT_TXID: ctx.txid,
-        ATTR_SESSION_ID: ctx.token,
+        ATTR_SESSION_ID: _session_id(ctx.token),
         ATTR_CODE_FUNCTION_NAME: _code_function_name(handler.fn, event.name),
     }
     # An event whose parent span is local (a chained event) is an internal

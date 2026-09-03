@@ -66,10 +66,19 @@ def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
         otel.ATTR_EVENT_NAME: "state.sub.handler",
         otel.ATTR_EVENT_TXID: ctx.txid,
         otel.ATTR_EVENT_BACKGROUND: False,
-        otel.ATTR_SESSION_ID: "tok",
+        otel.ATTR_SESSION_ID: otel._session_id("tok"),
         otel.ATTR_CODE_FUNCTION_NAME: f"{__name__}._handler",
     }
     assert finished.status.status_code == StatusCode.UNSET
+
+
+def test_session_id_is_not_the_token():
+    """The token authorizes state access; only a stable digest is exported."""
+    digest = otel._session_id("secret-token")
+    assert "secret-token" not in digest
+    assert len(digest) == 16
+    assert digest == otel._session_id("secret-token")
+    assert digest != otel._session_id("other-token")
 
 
 def test_parent_txid_only_for_chained_events(otel_exporter: InMemorySpanExporter):

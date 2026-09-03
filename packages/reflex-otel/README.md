@@ -41,6 +41,12 @@ Traces:
 - HTTP requests and the websocket connection are wrapped in the standard
   OpenTelemetry ASGI middleware (per-message websocket spans are off).
 
+What leaves the process: event and handler names, a pseudonymous
+`session.id` (a truncated SHA-256 of the client token, never the token
+itself), exception types, messages and stack traces of failed handlers, and
+the ASGI middleware's request attributes with the `token` query parameter of
+the websocket URL redacted. Event payloads and state are never recorded.
+
 Metrics:
 
 | Instrument | Type | Unit | Attributes |

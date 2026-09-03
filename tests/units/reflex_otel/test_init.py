@@ -5,6 +5,8 @@ from collections.abc import Generator
 import pytest
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.util.http import ExcludeList
 from reflex_base import otel
 from reflex_otel import ReflexInstrumentor
@@ -71,6 +73,50 @@ def test_excluded_urls_only_defaults_when_omitted(
     # .url_disabled() on them; always hand it a parsed ExcludeList.
     assert isinstance(wrapped.excluded_urls, ExcludeList)
     assert wrapped.excluded_urls.url_disabled("/ping") is ping_disabled
+
+
+async def test_asgi_span_redacts_client_token(instrumentor: ReflexInstrumentor):
+    """The websocket connect URL carries the client token; spans must not."""
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    seen: list[str] = []
+    instrumentor.instrument(
+        tracer_provider=provider,
+        server_request_hook=lambda span, scope: seen.append(scope["path"]),
+    )
+    assert otel.asgi_middleware is not None
+
+    async def app(scope, receive, send):
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    async def receive():  # noqa: RUF029
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        pass
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/_event/",
+        "raw_path": b"/_event/",
+        "query_string": b"token=secret-token&transport=websocket&EIO=4",
+        "headers": [],
+        "scheme": "http",
+        "server": ("localhost", 80),
+        "http_version": "1.1",
+    }
+    await otel.asgi_middleware(app)(scope, receive, send)
+    (span,) = exporter.get_finished_spans()
+    assert span.attributes is not None
+    urls = [v for v in span.attributes.values() if isinstance(v, str) and "token=" in v]
+    assert urls, span.attributes
+    assert all("secret-token" not in v and "token=REDACTED" in v for v in urls)
+    assert all("secret-token" not in str(v) for v in span.attributes.values())
+    # The user's own hook still runs, after the redaction.
+    assert seen == ["/_event/"]
 
 
 async def test_asgi_middleware_handles_requests(instrumentor: ReflexInstrumentor):

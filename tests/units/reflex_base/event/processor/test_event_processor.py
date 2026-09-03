@@ -1149,4 +1149,4 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         child.attributes[otel.ATTR_EVENT_PARENT_TXID]
         == parent.attributes[otel.ATTR_EVENT_TXID]
     )
-    assert child.attributes[otel.ATTR_SESSION_ID] == token
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
