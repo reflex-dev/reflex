@@ -270,6 +270,8 @@ preview = true
 "docs/package/scripts/*.py" = ["INP001"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
+# Skill helper scripts are CLIs whose whole job is printing a report.
+".claude/skills/*/scripts/*.py" = ["T201"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
