@@ -71,7 +71,7 @@ from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
-from .conftest import chdir, metric_points
+from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -4408,7 +4408,7 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     ns._token_manager.sid_to_token["sid"] = "tok"
 
     traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    with otel._tracer.start_as_current_span("websocket"):
+    with active_tracer().start_as_current_span("websocket"):
         await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
         await ns.on_event("sid", {"name": "state.h"})
     remote, fresh = seen

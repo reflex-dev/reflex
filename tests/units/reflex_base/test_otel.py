@@ -1,6 +1,8 @@
 """Tests for the reflex_base.otel trace points."""
 
 import asyncio
+import subprocess
+import sys
 from time import perf_counter
 
 import pytest
@@ -14,7 +16,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.registry import RegisteredEventHandler
 
 from reflex.event import Event, EventHandler
-from tests.units.conftest import metric_points
+from tests.units.conftest import active_tracer, metric_points
 
 
 def _ctx(token: str = "tok", parent_txid: str | None = None) -> EventContext:
@@ -30,6 +32,18 @@ async def _handler():
     """A no-op handler."""
 
 
+def test_disabled_path_imports_no_opentelemetry():
+    """reflex-base does not depend on opentelemetry-api; nothing loads it until enable()."""
+    code = (
+        "import sys; import reflex_base.otel; import reflex_base.event.context; "
+        "print(sorted(m for m in sys.modules if m.startswith('opentelemetry')))"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], check=True, capture_output=True, text=True
+    )
+    assert out.stdout.strip() == "[]"
+
+
 def test_disabled_by_default():
     assert otel.enabled is False
     assert otel.capture_context() is None
@@ -41,7 +55,7 @@ def test_enable_disable_toggle():
     assert otel.capture_context() is not None
     otel.disable()
     assert otel.enabled is False
-    assert isinstance(otel._tracer, trace.NoOpTracer)
+    assert otel._tracer is None
 
 
 def test_enable_is_idempotent_until_disabled():
@@ -58,7 +72,7 @@ def test_enable_is_idempotent_until_disabled():
     try:
         otel.enable(tracer_provider=providers[0])
         otel.enable(tracer_provider=providers[1])
-        with otel._tracer.start_as_current_span("x"):
+        with active_tracer().start_as_current_span("x"):
             pass
         assert len(first.get_finished_spans()) == 1
         assert second.get_finished_spans() == ()
@@ -68,7 +82,7 @@ def test_enable_is_idempotent_until_disabled():
 
 
 def test_capture_context_returns_current(otel_exporter: InMemorySpanExporter):
-    with otel._tracer.start_as_current_span("outer") as span:
+    with active_tracer().start_as_current_span("outer") as span:
         captured = otel.capture_context()
     assert captured is not None
     assert trace.get_current_span(captured) is span
@@ -138,7 +152,7 @@ def test_event_span_parents_under_captured_context(
     otel_exporter: InMemorySpanExporter,
 ):
     registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
-    with otel._tracer.start_as_current_span("root") as root:
+    with active_tracer().start_as_current_span("root") as root:
         child_ctx = _ctx().fork()
     assert child_ctx.otel_context is not None
     with otel.event_span(Event(name="child"), child_ctx, registered):
@@ -273,7 +287,7 @@ def test_remote_context_never_raises_on_unusable_fields(
         assert span.parent is None
 
 
-def test_remote_context_ignores_baggage():
+def test_remote_context_ignores_baggage(otel_exporter: InMemorySpanExporter):
     """Only the trace context is taken from the client, never baggage."""
     from opentelemetry import baggage
 
@@ -285,7 +299,7 @@ def test_remote_context_without_traceparent_starts_new_trace(
     otel_exporter: InMemorySpanExporter,
 ):
     registered = RegisteredEventHandler(handler=EventHandler(fn=_handler), states=())
-    with otel._tracer.start_as_current_span("websocket"), otel.remote_context({}):
+    with active_tracer().start_as_current_span("websocket"), otel.remote_context({}):
         ctx = _ctx().fork()
     with otel.event_span(Event(name="e"), ctx, registered):
         pass
@@ -303,7 +317,7 @@ def test_asgi_middleware_hook_toggles():
 
 
 def test_attach_context(otel_exporter: InMemorySpanExporter):
-    with otel._tracer.start_as_current_span("outer") as outer:
+    with active_tracer().start_as_current_span("outer") as outer:
         captured = otel.capture_context()
     otel.attach_context(None)
     assert not trace.get_current_span().get_span_context().is_valid

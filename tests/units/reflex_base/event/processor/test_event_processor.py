@@ -21,6 +21,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -1115,7 +1116,7 @@ async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
     ep.configure()
     async with ep:
         event = Event.from_event_type(delta_event())[0]
-        with otel._tracer.start_as_current_span("POST /_upload") as http_span:
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
             async for _ in ep.enqueue_stream_delta(token, event):
                 pass
     spans = {s.name: s for s in otel_exporter.get_finished_spans()}

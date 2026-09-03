@@ -3,8 +3,8 @@
 The framework calls into this module at a small number of fixed points (event
 dispatch, event context forks, state acquisition, socket messages). Every entry
 point checks the module-level ``enabled`` flag first, so with no
-instrumentation installed the cost is one attribute read: no span is started
-and nothing is recorded (only no-op API objects exist, created at import).
+instrumentation installed the cost is one attribute read: no span is started,
+nothing is recorded, and nothing from ``opentelemetry`` is imported.
 
 The ``reflex-otel`` package flips the flag via :func:`enable` once a tracer
 provider is available.
@@ -18,15 +18,15 @@ from contextlib import contextmanager
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
-from opentelemetry import context as otel_context
-from opentelemetry import metrics, trace
-from opentelemetry.context import Context
-from opentelemetry.trace import SpanKind
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-
 from reflex_base.constants.base import Reflex
 
 if TYPE_CHECKING:
+    # opentelemetry-api is a dependency of reflex-otel, not of reflex-base:
+    # it is imported lazily, by enable() and the trace points it turns on.
+    from opentelemetry import metrics, trace
+    from opentelemetry.context import Context
+    from opentelemetry.propagators.textmap import TextMapPropagator
+
     from reflex_base.event import Event
     from reflex_base.event.context import EventContext
     from reflex_base.registry import RegisteredEventHandler
@@ -56,7 +56,8 @@ TRACESTATE_FIELD = "tracestate"
 # The event payload is unauthenticated client input, so only the W3C trace
 # context is read from it (never the global propagator: a client could
 # otherwise plant baggage that every instrumented downstream call forwards).
-_remote_propagator = TraceContextTextMapPropagator()
+# Created by enable().
+_remote_propagator: TextMapPropagator | None = None
 
 # Histogram bucket advisories: seconds (semconv http.server.request.duration) and bytes.
 _DURATION_BUCKETS = (
@@ -85,12 +86,37 @@ enabled: bool = False
 # Wraps the app's ASGI callable when set (installed by enable()).
 asgi_middleware: Callable[[ASGIApp], ASGIApp] | None = None
 
-_tracer: trace.Tracer = trace.NoOpTracer()
-_noop_meter = metrics.NoOpMeter(INSTRUMENTATION_NAME)
-_event_duration = _noop_meter.create_histogram(METRIC_EVENT_DURATION)
-_state_acquire_duration = _noop_meter.create_histogram(METRIC_STATE_ACQUIRE_DURATION)
-_message_size = _noop_meter.create_histogram(METRIC_WEBSOCKET_MESSAGE_SIZE)
-_ws_connections = _noop_meter.create_up_down_counter(METRIC_WEBSOCKET_CONNECTIONS)
+
+class _NoOpInstrument:
+    """Stand-in for the metric instruments while instrumentation is off."""
+
+    __slots__ = ()
+
+    def record(self, *args: Any, **kwargs: Any) -> None:
+        """Drop a measurement.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+        """
+
+    def add(self, *args: Any, **kwargs: Any) -> None:
+        """Drop an increment.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+        """
+
+
+_NOOP_INSTRUMENT = _NoOpInstrument()
+
+# Set by enable(); the trace points only run while enabled.
+_tracer: trace.Tracer | None = None
+_event_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_state_acquire_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_message_size: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_ws_connections: metrics.UpDownCounter | _NoOpInstrument = _NOOP_INSTRUMENT
 
 
 def _create_instruments(meter: metrics.Meter) -> None:
@@ -145,11 +171,17 @@ def enable(
             e.g. the OpenTelemetry ASGI middleware. Applied by the app when it
             builds its ASGI app.
     """
-    global _tracer, enabled, asgi_middleware
+    global _tracer, _remote_propagator, enabled, asgi_middleware
     if enabled:
         # Re-creating the instruments on another meter would log duplicate
         # instrument warnings; reconfiguring goes through disable() first.
         return
+    from opentelemetry import metrics, trace
+    from opentelemetry.trace.propagation.tracecontext import (
+        TraceContextTextMapPropagator,
+    )
+
+    _remote_propagator = TraceContextTextMapPropagator()
     _tracer = trace.get_tracer(
         INSTRUMENTATION_NAME, Reflex.VERSION, tracer_provider=tracer_provider
     )
@@ -164,11 +196,21 @@ def enable(
 
 def disable() -> None:
     """Turn the trace points off and drop the tracer and instruments."""
-    global _tracer, enabled, asgi_middleware
+    global \
+        _tracer, \
+        _remote_propagator, \
+        enabled, \
+        asgi_middleware, \
+        _event_duration, \
+        _state_acquire_duration, \
+        _message_size, \
+        _ws_connections
     enabled = False
     asgi_middleware = None
-    _tracer = trace.NoOpTracer()
-    _create_instruments(_noop_meter)
+    _tracer = None
+    _remote_propagator = None
+    _event_duration = _state_acquire_duration = _NOOP_INSTRUMENT
+    _message_size = _ws_connections = _NOOP_INSTRUMENT
 
 
 def capture_context() -> Context | None:
@@ -177,7 +219,11 @@ def capture_context() -> Context | None:
     Returns:
         The current context when tracing is enabled, otherwise None.
     """
-    return otel_context.get_current() if enabled else None
+    if not enabled:
+        return None
+    from opentelemetry import context as otel_context
+
+    return otel_context.get_current()
 
 
 def attach_context(context: Context | None) -> None:
@@ -187,6 +233,8 @@ def attach_context(context: Context | None) -> None:
         context: The context to attach; None is ignored.
     """
     if context is not None:
+        from opentelemetry import context as otel_context
+
         otel_context.attach(context)
 
 
@@ -205,6 +253,8 @@ class _AttachedContext:
 
     def __enter__(self) -> None:
         """Attach the context."""
+        from opentelemetry import context as otel_context
+
         self._token = otel_context.attach(self._context)
 
     def __exit__(self, *exc_info: object) -> None:
@@ -213,6 +263,8 @@ class _AttachedContext:
         Args:
             *exc_info: Ignored exception details.
         """
+        from opentelemetry import context as otel_context
+
         otel_context.detach(self._token)
 
 
@@ -231,6 +283,9 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     Returns:
         A context manager to run the enqueue under.
     """
+    from opentelemetry.context import Context
+
+    assert _remote_propagator is not None
     fields: dict[str, str] = {}
     for key in (TRACEPARENT_FIELD, TRACESTATE_FIELD):
         if isinstance(value := carrier.get(key), str):
@@ -290,6 +345,10 @@ def event_span(
     Yields:
         The active span.
     """
+    from opentelemetry import trace
+    from opentelemetry.trace import SpanKind
+
+    assert _tracer is not None
     handler = registered_handler.handler
     metric_attributes = {
         ATTR_EVENT_NAME: event.name,

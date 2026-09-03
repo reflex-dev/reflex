@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
+from opentelemetry import trace
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace import TracerProvider
@@ -570,6 +571,16 @@ def otel_metrics(otel_sdk) -> InMemoryMetricReader:
         The metric reader.
     """
     return otel_sdk[1]
+
+
+def active_tracer() -> trace.Tracer:
+    """The tracer bound by the enabled otel_sdk fixture.
+
+    Returns:
+        The tracer.
+    """
+    assert otel._tracer is not None
+    return otel._tracer
 
 
 def metric_points(reader: InMemoryMetricReader, name: str) -> list:
