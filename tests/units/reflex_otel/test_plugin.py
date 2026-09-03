@@ -36,6 +36,8 @@ def test_frontend_dependencies_and_asset():
     assert "setGlobalErrorHandler" in source
     assert "window.onerror(" in source
     assert "export const OtelRoot" in source
+    # Unsampled browser spans must not hand the backend a "not sampled" parent.
+    assert "TraceFlags.SAMPLED" in source
 
 
 def test_env_json_entry():

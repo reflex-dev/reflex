@@ -91,5 +91,6 @@ The compiled frontend then
 `frontend_exception_handler`, so a rejected collector shows up in the backend
 terminal as an `OtelExportError`. `service_name` defaults to `<app_name>-frontend`. `headers` are
 compiled into the public bundle, so never put secrets in them. `sample_rate`
-(default `1.0`) samples browser traces at the root; a parent-based backend
-sampler follows that decision, so it also bounds the backend event traces.
+(default `1.0`) samples browser traces at the root. Only sampled browser spans
+send a `traceparent`, so the backend joins those traces and samples every
+other event on its own; a low browser rate does not cap backend tracing.

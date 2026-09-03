@@ -11,7 +11,13 @@
  * Configuration comes from `env.json` (`OTEL` key), written by the plugin.
  */
 import { createElement, Profiler } from "react";
-import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
+import {
+  context,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+  TraceFlags,
+} from "@opentelemetry/api";
 import {
   setGlobalErrorHandler,
   W3CTraceContextPropagator,
@@ -31,8 +37,9 @@ const config = env.OTEL ?? {};
 
 const provider = new WebTracerProvider({
   resource: resourceFromAttributes({ "service.name": config.service_name }),
-  // Browser spans are trace roots: their sampled flag travels in `traceparent`
-  // and a parent-based backend sampler follows it, so sample here.
+  // Browser spans are trace roots. Only a sampled span injects a `traceparent`
+  // (see onEventSend), so the backend inherits a positive decision and makes
+  // its own for everything else.
   sampler: new ParentBasedSampler({
     root: new TraceIdRatioBasedSampler(config.sample_rate ?? 1),
   }),
@@ -86,7 +93,11 @@ window.__reflex_otel = {
       kind: SpanKind.PRODUCER,
       attributes: { "reflex.event.name": event.name },
     });
-    propagator.inject(trace.setSpan(context.active(), span), event, setter);
+    // An unsampled span carries no traceparent: the backend then samples the
+    // event as a root of its own instead of inheriting "not sampled".
+    if (span.spanContext().traceFlags & TraceFlags.SAMPLED) {
+      propagator.inject(trace.setSpan(context.active(), span), event, setter);
+    }
     span.end();
   },
   onSocketConnect() {
