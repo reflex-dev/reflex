@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -41,21 +40,6 @@ _VITE_CONFIG_ANCHOR = (
 _VITE_PROFILING_ALIAS = (
     '      { find: "react-dom/client", replacement: "react-dom/profiling" },\n'
 )
-
-
-def _default_endpoint() -> str:
-    """Resolve the OTLP/HTTP traces URL the browser exports to.
-
-    Mirrors the SDK environment variables so one configuration covers both
-    the backend exporter and the browser.
-
-    Returns:
-        The traces endpoint URL.
-    """
-    if traces := os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
-        return traces
-    base = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
-    return base.rstrip("/") + "/v1/traces"
 
 
 def _patch_entry_client(content: str) -> str:
@@ -116,8 +100,10 @@ class OtelPlugin(Plugin):
     are compiled into the public bundle, so never put secrets there.
     """
 
-    # OTLP/HTTP traces URL; defaults follow OTEL_EXPORTER_OTLP_* env vars.
-    endpoint: str = field(default_factory=_default_endpoint)
+    # OTLP/HTTP traces URL the browser exports to. Deliberately no default and
+    # no OTEL_EXPORTER_OTLP_* fallback: those name the backend's collector,
+    # usually on a private network. Without it no exporter is installed.
+    endpoint: str | None = None
     # Resource service.name of the browser spans; defaults to "<app_name>-frontend".
     service_name: str | None = None
     # Extra HTTP headers sent by the browser exporter (public!).
@@ -168,6 +154,10 @@ class OtelPlugin(Plugin):
         Args:
             context: The pre-compile plugin context.
         """
+        if self.endpoint is None:
+            logger.warning(
+                "OtelPlugin: no endpoint configured; browser spans are not exported."
+            )
         context["add_modify_task"](Embed.ENTRY_PATH, _patch_entry_client)
         if self.render_timing:
             context["add_modify_task"](ReactRouter.VITE_CONFIG_FILE, _patch_vite_config)

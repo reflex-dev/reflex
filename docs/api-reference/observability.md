@@ -84,10 +84,11 @@ The compiled frontend then
   (one per commit; uses the `react-dom/profiling` build);
 - records `socket.connect` / `socket.disconnect` spans.
 
-`endpoint` defaults to `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, then
-`OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/traces`, then
-`http://localhost:4318/v1/traces`; it must accept OTLP/HTTP from the browser
-(CORS). The first failed export on a page is reported through the app's
+`endpoint` is required to export: a URL the browser can reach that accepts
+OTLP/HTTP (CORS). It has no default and the backend's `OTEL_EXPORTER_OTLP_*`
+variables are not consulted, since they usually name a collector on a private
+network. Without it the plugin installs no exporter and browser spans are
+dropped. The first failed export on a page is reported through the app's
 `frontend_exception_handler`, so a rejected collector shows up in the backend
 terminal as an `OtelExportError`. `service_name` defaults to `<app_name>-frontend`. `headers` are
 compiled into the public bundle, so never put secrets in them. `sample_rate`

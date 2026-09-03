@@ -25,6 +25,7 @@ import {
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
+  AlwaysOffSampler,
   BatchSpanProcessor,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
@@ -34,20 +35,30 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB } from "web-vitals";
 import env from "$/env.json";
 
 const config = env.OTEL ?? {};
+// No endpoint, no exporter: nothing is sampled, so no traceparent is injected
+// either and the backend keeps tracing on its own.
+const exporting = Boolean(config.endpoint);
 
 const provider = new WebTracerProvider({
   resource: resourceFromAttributes({ "service.name": config.service_name }),
   // Browser spans are trace roots. Only a sampled span injects a `traceparent`
   // (see onEventSend), so the backend inherits a positive decision and makes
   // its own for everything else.
-  sampler: new ParentBasedSampler({
-    root: new TraceIdRatioBasedSampler(config.sample_rate ?? 1),
-  }),
-  spanProcessors: [
-    new BatchSpanProcessor(
-      new OTLPTraceExporter({ url: config.endpoint, headers: config.headers }),
-    ),
-  ],
+  sampler: exporting
+    ? new ParentBasedSampler({
+        root: new TraceIdRatioBasedSampler(config.sample_rate ?? 1),
+      })
+    : new AlwaysOffSampler(),
+  spanProcessors: exporting
+    ? [
+        new BatchSpanProcessor(
+          new OTLPTraceExporter({
+            url: config.endpoint,
+            headers: config.headers,
+          }),
+        ),
+      ]
+    : [],
 });
 const tracer = provider.getTracer("reflex", config.version);
 

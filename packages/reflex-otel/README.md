@@ -56,7 +56,7 @@ Plus the ASGI middleware's `http.server.*` metrics.
 # rxconfig.py
 from reflex_otel import OtelPlugin
 
-config = rx.Config(app_name="myapp", plugins=[OtelPlugin()])
+config = rx.Config(app_name="myapp", plugins=[OtelPlugin(endpoint="https://collector.example.com/v1/traces")])
 ```
 
 The plugin compiles a small OpenTelemetry web bundle into the frontend:
@@ -73,9 +73,9 @@ The plugin compiles a small OpenTelemetry web bundle into the frontend:
 - `socket.connect` / `socket.disconnect` spans for reconnect tracking
   (unintentional disconnects are marked as errors).
 
-Options: `endpoint` (OTLP/HTTP traces URL, defaults from
-`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT`, else
-`http://localhost:4318/v1/traces`), `service_name` (default
+Options: `endpoint` (OTLP/HTTP traces URL reachable from the browser; required
+to export, with no default and no `OTEL_EXPORTER_OTLP_*` fallback: without it
+no exporter is installed and browser spans are dropped), `service_name` (default
 `<app_name>-frontend`), `headers` (compiled into the public bundle — no
 secrets), `web_vitals`, `render_timing`. The endpoint must allow CORS from the
 app origin.

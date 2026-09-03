@@ -15,14 +15,18 @@ from reflex_otel.plugin import (
 )
 
 
-def test_default_endpoint_follows_otel_env(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", raising=False)
-    monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
-    assert OtelPlugin().endpoint == "http://localhost:4318/v1/traces"
+def test_endpoint_is_explicit(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """The browser endpoint never comes from the backend's OTEL_EXPORTER_OTLP_* variables."""
     monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318/")
-    assert OtelPlugin().endpoint == "http://collector:4318/v1/traces"
     monkeypatch.setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "https://x/t")
-    assert OtelPlugin().endpoint == "https://x/t"
+    plugin = OtelPlugin()
+    assert plugin.endpoint is None
+    assert plugin.update_env_json()["OTEL"]["endpoint"] is None
+    with caplog.at_level("WARNING"):
+        _pre_compile_tasks(plugin)
+    assert "no endpoint" in caplog.text
     assert OtelPlugin(endpoint="http://y").endpoint == "http://y"
 
 
@@ -36,6 +40,8 @@ def test_frontend_dependencies_and_asset():
     assert "setGlobalErrorHandler" in source
     assert "window.onerror(" in source
     assert "export const OtelRoot" in source
+    # Without an endpoint nothing is sampled, exported, or propagated.
+    assert "AlwaysOffSampler" in source
     # Unsampled browser spans must not hand the backend a "not sampled" parent.
     assert "TraceFlags.SAMPLED" in source
 
