@@ -27,9 +27,10 @@ logger = logging.getLogger(__name__)
 os.environ.setdefault("OTEL_SEMCONV_STABILITY_OPT_IN", "http")
 
 # Must match the `instruments` extra in pyproject.toml (a test enforces it).
-# Re-pin both to the first reflex-base release that ships reflex_base/otel.py
-# before publishing: earlier releases satisfy this floor but lack the module.
-_instruments = ("reflex-base >= 0.9.7.post45.dev0",)
+# A dev floor above every published reflex-base release: the release tooling
+# lifts it to the earliest published version that satisfies it, which is the
+# first release to ship reflex_base/otel.py.
+_instruments = ("reflex-base >= 0.9.10.post2.dev0",)
 
 # Per-message websocket spans are noise; Reflex emits one span per event instead.
 _ASGI_EXCLUDED_SPANS: list[Literal["receive", "send"]] = ["receive", "send"]

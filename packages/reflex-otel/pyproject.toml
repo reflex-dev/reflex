@@ -11,13 +11,15 @@ dependencies = [
   "opentelemetry-api >=1.30.0,<2.0",
   "opentelemetry-instrumentation >=0.49b0,<1.0",
   "opentelemetry-instrumentation-asgi >=0.49b0,<1.0",
-  "reflex-base >= 0.9.7.post45.dev0",
+  "reflex-base >= 0.9.10.post2.dev0",
 ]
 
 [project.optional-dependencies]
-# Keep in sync with _instruments in reflex_otel/__init__.py; re-pin to the first
-# reflex-base release that ships reflex_base/otel.py before publishing.
-instruments = ["reflex-base >= 0.9.7.post45.dev0"]
+# Keep in sync with _instruments in reflex_otel/__init__.py (a test enforces it).
+# A dev floor above every published reflex-base release: the release tooling
+# lifts it to the earliest published version that satisfies it, so it must
+# exclude the releases that lack reflex_base/otel.py.
+instruments = ["reflex-base >= 0.9.10.post2.dev0"]
 
 [project.entry-points.opentelemetry_instrumentor]
 reflex = "reflex_otel:ReflexInstrumentor"
