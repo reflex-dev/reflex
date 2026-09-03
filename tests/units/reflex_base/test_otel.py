@@ -1,6 +1,8 @@
 """Tests for the reflex_base.otel trace points."""
 
 import asyncio
+import dis
+import inspect
 import subprocess
 import sys
 from time import perf_counter
@@ -42,6 +44,28 @@ def test_disabled_path_imports_no_opentelemetry():
         [sys.executable, "-c", code], check=True, capture_output=True, text=True
     )
     assert out.stdout.strip() == "[]"
+
+
+def test_trace_points_carry_no_import_statement():
+    """The per-event trace points do not pay for an import lookup on every call.
+
+    enable() binds the API modules once; an import statement inside a trace
+    point would still cost a ``sys.modules`` lookup after the module is loaded.
+    """
+    trace_points = (
+        otel.capture_context,
+        otel.attach_context,
+        otel.remote_context,
+        inspect.unwrap(otel.event_span),
+        otel._AttachedContext.__enter__,
+        otel._AttachedContext.__exit__,
+        otel.record_state_acquired,
+        otel.record_message_size,
+        otel.record_connection,
+    )
+    for trace_point in trace_points:
+        opnames = {inst.opname for inst in dis.get_instructions(trace_point)}
+        assert "IMPORT_NAME" not in opnames, trace_point.__qualname__
 
 
 def test_disabled_by_default():

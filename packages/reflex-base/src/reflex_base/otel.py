@@ -7,7 +7,10 @@ instrumentation installed the cost is one attribute read: no span is started,
 nothing is recorded, and nothing from ``opentelemetry`` is imported.
 
 The ``reflex-otel`` package flips the flag via :func:`enable` once a tracer
-provider is available.
+provider is available. ``enable`` also binds the OpenTelemetry API modules the
+trace points use as globals of this module: a trace point runs per event, so
+it must not carry an import statement, which costs a ``sys.modules`` lookup
+even when the module is already loaded.
 """
 
 from __future__ import annotations
@@ -21,8 +24,9 @@ from typing import TYPE_CHECKING, Any
 from reflex_base.constants.base import Reflex
 
 if TYPE_CHECKING:
-    # opentelemetry-api is a dependency of reflex-otel, not of reflex-base:
-    # it is imported lazily, by enable() and the trace points it turns on.
+    # opentelemetry-api is a dependency of reflex-otel, not of reflex-base: it
+    # is imported by enable(), which binds ``context_api`` and ``trace`` here.
+    from opentelemetry import context as context_api
     from opentelemetry import metrics, trace
     from opentelemetry.context import Context
     from opentelemetry.propagators.textmap import TextMapPropagator
@@ -171,11 +175,14 @@ def enable(
             e.g. the OpenTelemetry ASGI middleware. Applied by the app when it
             builds its ASGI app.
     """
-    global _tracer, _remote_propagator, enabled, asgi_middleware
+    global _tracer, _remote_propagator, enabled, asgi_middleware, context_api, trace
     if enabled:
         # Re-creating the instruments on another meter would log duplicate
         # instrument warnings; reconfiguring goes through disable() first.
         return
+    # The API modules stay bound after disable(): the trace points only run
+    # while enabled, and attach_context() may still see a captured context.
+    from opentelemetry import context as context_api
     from opentelemetry import metrics, trace
     from opentelemetry.trace.propagation.tracecontext import (
         TraceContextTextMapPropagator,
@@ -221,9 +228,7 @@ def capture_context() -> Context | None:
     """
     if not enabled:
         return None
-    from opentelemetry import context as otel_context
-
-    return otel_context.get_current()
+    return context_api.get_current()
 
 
 def attach_context(context: Context | None) -> None:
@@ -233,9 +238,7 @@ def attach_context(context: Context | None) -> None:
         context: The context to attach; None is ignored.
     """
     if context is not None:
-        from opentelemetry import context as otel_context
-
-        otel_context.attach(context)
+        context_api.attach(context)
 
 
 class _AttachedContext:
@@ -253,9 +256,7 @@ class _AttachedContext:
 
     def __enter__(self) -> None:
         """Attach the context."""
-        from opentelemetry import context as otel_context
-
-        self._token = otel_context.attach(self._context)
+        self._token = context_api.attach(self._context)
 
     def __exit__(self, *exc_info: object) -> None:
         """Detach the context.
@@ -263,9 +264,7 @@ class _AttachedContext:
         Args:
             *exc_info: Ignored exception details.
         """
-        from opentelemetry import context as otel_context
-
-        otel_context.detach(self._token)
+        context_api.detach(self._token)
 
 
 def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
@@ -283,14 +282,14 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     Returns:
         A context manager to run the enqueue under.
     """
-    from opentelemetry.context import Context
-
     assert _remote_propagator is not None
     fields: dict[str, str] = {}
     for key in (TRACEPARENT_FIELD, TRACESTATE_FIELD):
         if isinstance(value := carrier.get(key), str):
             fields[key] = value
-    return _AttachedContext(_remote_propagator.extract(fields, context=Context()))
+    return _AttachedContext(
+        _remote_propagator.extract(fields, context=context_api.Context())
+    )
 
 
 def _session_id(token: str) -> str:
@@ -345,9 +344,6 @@ def event_span(
     Yields:
         The active span.
     """
-    from opentelemetry import trace
-    from opentelemetry.trace import SpanKind
-
     assert _tracer is not None
     handler = registered_handler.handler
     metric_attributes = {
@@ -364,13 +360,13 @@ def event_span(
     # step of that request; anything else is a new inbound message.
     parent = trace.get_current_span(ctx.otel_context).get_span_context()
     if parent.is_valid and not parent.is_remote:
-        kind = SpanKind.INTERNAL
+        kind = trace.SpanKind.INTERNAL
         # Only a chained event has a parent event. A top-level event is forked
         # from the processor's root context, whose txid carries no information.
         if ctx.parent_txid:
             attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
     else:
-        kind = SpanKind.CONSUMER
+        kind = trace.SpanKind.CONSUMER
     with _tracer.start_as_current_span(
         event.name, context=ctx.otel_context, kind=kind, attributes=attributes
     ) as span:
