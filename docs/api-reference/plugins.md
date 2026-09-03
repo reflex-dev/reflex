@@ -65,6 +65,62 @@ The sitemap configuration supports the following options:
 - `changefreq`: How frequently the page changes (`"always"`, `"hourly"`, `"daily"`, `"weekly"`, `"monthly"`, `"yearly"`, `"never"`)
 - `priority`: Priority of this URL relative to other URLs (0.0 to 1.0)
 
+### WebMCPPlugin
+
+The `WebMCPPlugin`, shipped in the separate `reflex-webmcp` package
+(`pip install reflex-webmcp`), automatically exposes backend Reflex events already bound to
+components through the browser's imperative WebMCP API. Compatible agents can
+discover the tools while the page is open and invoke the same event pipeline as
+the normal interface, using the same signed-in browser session.
+
+No separate tool definitions or JavaScript handlers are required:
+
+```python
+import reflex as rx
+from reflex_webmcp import WebMCPPlugin
+
+
+class CatalogState(rx.State):
+    results: list[str] = []
+
+    def search_catalog(self, query: str, limit: int = 10):
+        """Search the product catalog visible on this page."""
+        self.results = search_products(query, limit=limit)
+
+
+def catalog():
+    return rx.input(on_change=CatalogState.search_catalog)
+
+
+config = rx.Config(
+    app_name="my_app",
+    plugins=[WebMCPPlugin()],
+)
+```
+
+During compilation, the plugin finds backend `EventSpec` objects in component
+event chains, including rows rendered by `rx.foreach`. Each unique state
+handler becomes one tool named `reflex_<StateClass>_<handler>`, the handler's
+docstring supplies its description, and its Python parameter annotations and
+defaults become the JSON input schema. Annotate form handlers with a `TypedDict`
+rather than `dict` to give agents a field-level schema. Tool execution queues the same `ReflexEvent` through `addEvents`,
+so existing state management, authentication, event processing, and input
+conversion remain in effect.
+
+Arguments already fixed by the component, such as
+`on_click=CatalogState.select_item("sku-42")`, remain fixed in the generated
+tool and are removed from its input schema. Distinct fixed event instances get
+distinct tool names. Arguments that are runtime `Var`s, such as `task.id` inside
+an `rx.foreach` row, stay in the schema for the agent to supply. Existing event actions such as debounce, throttle, and
+temporal behavior are preserved.
+
+Frontend-only events, lifecycle triggers, upload handlers, dynamic event vars,
+and variadic handlers are not exposed because they cannot be represented as a
+narrow backend object payload. The plugin prevents duplicate registration and
+checks for browser support. Browsers without WebMCP continue to use the normal
+interface. See the [OpenAI Site Tools documentation](https://learn.chatgpt.com/docs/webmcp)
+for availability, security guidance, and current browser limitations.
+
 ### TailwindV4Plugin
 
 The `TailwindV4Plugin` provides support for Tailwind CSS v4, which is the recommended version for new projects and includes performance improvements and new features.

@@ -109,6 +109,7 @@ dev = [
   "reflex-docgen",
   "reflex-release",
   "reflex-site-shared",
+  "reflex-webmcp",
   "ruff",
   "selenium",
   "sqlalchemy",
@@ -162,6 +163,7 @@ extraPaths = [
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
+  "packages/reflex-webmcp/src",
   "packages/reflex-components-internal/src",
   "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
@@ -442,6 +444,7 @@ reflex-components-radix = false
 reflex-components-react-player = false
 reflex-components-recharts = false
 reflex-components-sonner = false
+reflex-webmcp = false
 reflex-enterprise = false
 reflex-hosting-cli = false
 # Pulled in transitively (docs app -> reflex-enterprise -> joserfc), so there is no floor
@@ -467,6 +470,7 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-webmcp.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true

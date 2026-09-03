@@ -142,6 +142,10 @@ on:
         description: "reflex-release"
         type: boolean
         default: false
+      reflex_webmcp:
+        description: "reflex-webmcp"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -191,6 +195,7 @@ jobs:
             ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
             ${{ inputs.reflex_release && 'reflex-release' || '' }}
+            ${{ inputs.reflex_webmcp && 'reflex-webmcp' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan
       - name: Materialize changelogs
