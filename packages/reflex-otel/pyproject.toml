@@ -1,7 +1,7 @@
 [project]
-name = "reflex-base"
+name = "reflex-otel"
 dynamic = ["version"]
-description = "Core types for the Reflex framework."
+description = "OpenTelemetry instrumentation for the Reflex framework."
 license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -9,24 +9,23 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
   "opentelemetry-api >=1.30.0,<2.0",
-  "packaging >=24.2,<27",
-  "rich >=13,<16",
-  "typing_extensions >=4.13.0",
-  "platformdirs >=4.3.7,<5.0",
+  "opentelemetry-instrumentation >=0.49b0,<1.0",
+  "opentelemetry-instrumentation-asgi >=0.49b0,<1.0",
+  "reflex-base >= 0.9.7.post45.dev0",
 ]
 
 [project.optional-dependencies]
-pydantic = ["pydantic >=2.12.0,<3.0"]
+instruments = ["reflex-base >= 0.9.7.post45.dev0"]
+
+[project.entry-points.opentelemetry_instrumentor]
+reflex = "reflex_otel:ReflexInstrumentor"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
-pattern-prefix = "reflex-base-"
+pattern-prefix = "reflex-otel-"
 fallback-version = "0.0.0dev0"
-
-[tool.hatch.build]
-artifacts = [".templates/**"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
