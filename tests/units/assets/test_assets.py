@@ -389,7 +389,10 @@ def test_link_shared_asset_leaves_destination_on_source_error(
     with pytest.raises(RuntimeError):
         _link_shared_asset(dst_file, src_file)
 
-    assert dst_file.readlink() == decoy
+    # Compared after resolution: Windows reads a symlink back with a `\\?\`
+    # prefix, so the raw target is not comparable to the path it was made from.
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == decoy.resolve()
 
 
 def test_link_shared_asset_concedes_denied_replace(
