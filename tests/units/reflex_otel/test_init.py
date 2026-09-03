@@ -1,5 +1,6 @@
 """Tests for the reflex_otel instrumentor."""
 
+import os
 from collections.abc import Generator
 
 import pytest
@@ -45,6 +46,21 @@ def test_sdk_disabled_keeps_trace_points_off(
     assert otel.asgi_middleware is None
     instrumentor.uninstrument()
     assert otel.enabled is False
+
+
+@pytest.mark.parametrize("preset", [None, "http/dup"])
+def test_opts_into_stable_http_semconv(
+    instrumentor: ReflexInstrumentor,
+    monkeypatch: pytest.MonkeyPatch,
+    preset: str | None,
+):
+    """The middleware uses the stable HTTP names unless the operator chose otherwise."""
+    if preset is None:
+        monkeypatch.delenv("OTEL_SEMCONV_STABILITY_OPT_IN", raising=False)
+    else:
+        monkeypatch.setenv("OTEL_SEMCONV_STABILITY_OPT_IN", preset)
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert os.environ["OTEL_SEMCONV_STABILITY_OPT_IN"] == (preset or "http")
 
 
 def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):

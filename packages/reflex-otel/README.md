@@ -56,7 +56,10 @@ Metrics:
 | `reflex.websocket.message.size` | histogram | By | `network.io.direction` (`transmit`/`receive`); default `sio` only |
 | `reflex.websocket.connections` | up-down counter | `{connection}` | |
 
-Plus the ASGI middleware's `http.server.*` metrics.
+Plus the ASGI middleware's `http.server.*` metrics. The instrumentor opts the
+middleware into the stable HTTP semantic conventions
+(`OTEL_SEMCONV_STABILITY_OPT_IN=http`) unless that variable is already set,
+so request attributes use the same generation of names as Reflex's own.
 
 ## Options
 
