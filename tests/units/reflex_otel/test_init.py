@@ -35,6 +35,18 @@ def test_instrument_is_idempotent(instrumentor: ReflexInstrumentor):
     assert otel.enabled is True
 
 
+def test_sdk_disabled_keeps_trace_points_off(
+    instrumentor: ReflexInstrumentor, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("OTEL_SDK_DISABLED", "true")
+    instrumentor.instrument()
+    assert instrumentor.is_instrumented_by_opentelemetry
+    assert otel.enabled is False
+    assert otel.asgi_middleware is None
+    instrumentor.uninstrument()
+    assert otel.enabled is False
+
+
 def test_dependencies_target_reflex_base(instrumentor: ReflexInstrumentor):
     (dep,) = instrumentor.instrumentation_dependencies()
     assert dep.startswith("reflex-base")

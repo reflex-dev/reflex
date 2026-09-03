@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from collections.abc import Callable, Collection
@@ -14,6 +15,8 @@ from reflex_base.environment import environment
 
 if TYPE_CHECKING:
     from opentelemetry.trace import Span
+
+logger = logging.getLogger(__name__)
 
 _instruments = ("reflex-base >= 0.9.7.post45.dev0",)
 
@@ -123,6 +126,10 @@ class ReflexInstrumentor(BaseInstrumentor):
                 ``server_request_hook``, ``client_request_hook`` and
                 ``client_response_hook`` are forwarded to the ASGI middleware.
         """
+        if os.environ.get("OTEL_SDK_DISABLED", "").strip().lower() == "true":
+            # The SDK is a no-op; skip the per-event trace points as well.
+            logger.info("OTEL_SDK_DISABLED is set; Reflex trace points stay off.")
+            return
         # Imported here so `from reflex_otel import OtelPlugin` in rxconfig.py
         # stays cheap for CLI processes that never instrument.
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
