@@ -3,6 +3,7 @@
 import hashlib
 import inspect
 import logging
+import os
 import time
 import uuid
 from pathlib import Path
@@ -16,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
-# Asset name prefix retained in a staged symlink's name. Together with the
-# uuid and separators this stays well inside the 255-byte component limit
+# Bytes of the asset name retained in a staged symlink's name. Together with
+# the uuid and separators this stays well inside the 255-byte component limit
 # common to ext4, APFS and NTFS, whatever the asset itself is called.
-_TMP_NAME_PREFIX_LEN = 64
+_TMP_NAME_PREFIX_BYTES = 64
 _MAX_LINK_ATTEMPTS = 3
 _LINK_RETRY_DELAY = 0.01
 
@@ -250,10 +251,11 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
 
     # Only a prefix of the asset name is kept, for the benefit of anyone who
     # finds a temporary link left behind by a killed process: appending to a
-    # basename that is already at the filesystem's limit would not fit.
-    tmp_file = dst_file.with_name(
-        f".{dst_file.name[:_TMP_NAME_PREFIX_LEN]}.{uuid.uuid4().hex}.tmp"
-    )
+    # basename that is already at the filesystem's limit would not fit. The
+    # limit counts bytes, so the prefix is cut with the filesystem encoding
+    # rather than by character, which also round-trips undecodable names.
+    prefix = os.fsdecode(os.fsencode(dst_file.name)[:_TMP_NAME_PREFIX_BYTES])
+    tmp_file = dst_file.with_name(f".{prefix}.{uuid.uuid4().hex}.tmp")
     try:
         tmp_file.symlink_to(src_file)
         for attempt in range(_MAX_LINK_ATTEMPTS):

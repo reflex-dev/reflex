@@ -283,7 +283,17 @@ def test_shared_asset_is_thread_safe(mock_asset_path: Path) -> None:
     assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
 
 
-def test_link_shared_asset_with_long_filename(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "stem",
+    [
+        # Both are just under the 255-byte component limit of ext4, APFS and
+        # NTFS, with no room left for a suffix. The multi-byte case additionally
+        # covers a prefix cut by character rather than by encoded byte.
+        pytest.param("a" * 247, id="ascii"),
+        pytest.param("😀" * 61, id="multibyte"),
+    ],
+)
+def test_link_shared_asset_with_long_filename(tmp_path: Path, stem: str) -> None:
     """An asset named up to the filesystem's limit still links.
 
     The temporary name the link is staged under has to stay within the same
@@ -291,10 +301,9 @@ def test_link_shared_asset_with_long_filename(tmp_path: Path) -> None:
 
     Args:
         tmp_path: A temporary directory provided by pytest.
+        stem: The asset name, without its extension.
     """
-    # 250 bytes: under the 255-byte component limit of ext4, APFS and NTFS,
-    # but with no room left for a suffix.
-    name = "a" * 247 + ".js"
+    name = stem + ".js"
     src_dir = tmp_path / "src"
     src_dir.mkdir()
     src_file = src_dir / name
