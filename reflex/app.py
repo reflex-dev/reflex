@@ -1940,6 +1940,20 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _utf8_size(data: str) -> int:
+    """Size of a serialized message in UTF-8 bytes.
+
+    ASCII payloads (the common case) are sized without encoding a copy.
+
+    Args:
+        data: The serialized message.
+
+    Returns:
+        The number of bytes the message occupies on the wire.
+    """
+    return len(data) if data.isascii() else len(data.encode())
+
+
 def _sio_dumps(obj: Any, **kwargs: Any) -> str:
     """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
 
@@ -1952,7 +1966,7 @@ def _sio_dumps(obj: Any, **kwargs: Any) -> str:
     """
     data = format.json_dumps(obj, **kwargs)
     if otel.enabled:
-        otel.record_message_size(len(data.encode()), "transmit")
+        otel.record_message_size(_utf8_size(data), "transmit")
     return data
 
 
@@ -1968,7 +1982,7 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
     """
     if otel.enabled:
         otel.record_message_size(
-            len(data.encode()) if isinstance(data, str) else len(data), "receive"
+            _utf8_size(data) if isinstance(data, str) else len(data), "receive"
         )
     return json.loads(data, **kwargs)
 

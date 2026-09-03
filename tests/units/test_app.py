@@ -4369,18 +4369,24 @@ def test_call_app_wraps_with_otel_asgi_middleware():
 
 
 def test_sio_json_records_message_sizes(otel_metrics):
-    """Socket.IO packet serialization records sizes in both directions."""
+    """Socket.IO packet serialization records UTF-8 sizes in both directions."""
     data = _sio_dumps({"a": "é"}, separators=(",", ":"))
     assert data == '{"a":"é"}'
     assert _sio_loads(data) == {"a": "é"}
     assert _sio_loads(data.encode()) == {"a": "é"}
+    # ASCII payloads take the fast path that sizes without encoding a copy.
+    ascii_data = _sio_dumps({"b": "x"}, separators=(",", ":"))
+    assert _sio_loads(ascii_data) == {"b": "x"}
     points = {
         p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
         for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
     }
     size = len(data.encode())
     assert size == len(data) + 1
-    assert points == {"transmit": size, "receive": 2 * size}
+    assert points == {
+        "transmit": size + len(ascii_data),
+        "receive": 2 * size + len(ascii_data),
+    }
 
 
 @pytest.mark.asyncio
