@@ -8,20 +8,30 @@ from reflex_otel import ReflexInstrumentor
 ReflexInstrumentor().instrument()
 ```
 
-The package registers an `opentelemetry_instrumentor` entry point, so
-`opentelemetry-instrument reflex run` enables it too (the auto-instrumentation
-`sitecustomize` reaches the backend worker through the inherited `PYTHONPATH`).
-Configure a tracer provider and a meter provider (for example with
-`opentelemetry-sdk`) to export the data.
+Nothing in the app module needs guarding: a second `instrument()` is a silent
+no-op, so the line above can run every time the module is imported.
 
-Reflex hot reload re-imports the app module in-process, so guard one-time SDK
-setup:
+Configure the SDK the way you prefer:
 
-```python
-if not ReflexInstrumentor().is_instrumented_by_opentelemetry:
-    trace.set_tracer_provider(provider)
-    ReflexInstrumentor().instrument(tracer_provider=provider)
-```
+- Set the standard variables and let `instrument()` do it. When
+  `OTEL_TRACES_EXPORTER` or `OTEL_METRICS_EXPORTER` is set and no SDK provider
+  has been installed yet, `instrument()` configures `opentelemetry-sdk` from
+  the `OTEL_*` environment, exactly as `opentelemetry-instrument` would:
+
+  ```bash
+  OTEL_SERVICE_NAME=myapp OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp \
+  OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 reflex run
+  ```
+
+- Or build the providers yourself and pass them:
+  `ReflexInstrumentor().instrument(tracer_provider=provider, meter_provider=meter_provider)`.
+  Do that from a module that is imported once (not the app module, which
+  test harnesses may re-import) or the SDK warns about overriding providers.
+
+- Or use no code at all: the package registers an `opentelemetry_instrumentor`
+  entry point, so `opentelemetry-instrument reflex run` enables it (the
+  auto-instrumentation `sitecustomize` reaches the backend worker through the
+  inherited `PYTHONPATH`).
 
 ## What you get
 

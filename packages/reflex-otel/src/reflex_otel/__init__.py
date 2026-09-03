@@ -8,6 +8,7 @@ import re
 from collections.abc import Callable, Collection
 from typing import TYPE_CHECKING, Any, Literal
 
+from opentelemetry import trace
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from reflex_base import otel
 from reflex_base.config import get_config
@@ -35,6 +36,8 @@ _EXCLUDED_URLS_ENV_VARS = (
 # to the session's state, so it is stripped from the URL attributes the ASGI
 # middleware records (old and current HTTP semantic conventions).
 _URL_ATTRIBUTES = ("http.url", "url.full", "url.query")
+# Setting either asks for the SDK to be configured from the environment.
+_EXPORTER_ENV_VARS = ("OTEL_TRACES_EXPORTER", "OTEL_METRICS_EXPORTER")
 _TOKEN_PARAM = re.compile(r"\btoken=[^&#]*")
 _REDACTED_TOKEN = "token=REDACTED"
 
@@ -52,6 +55,36 @@ def _default_excluded_urls() -> str:
         assets = re.escape(get_config().prepend_frontend_path("/assets/"))
         patterns.append(f"^[a-z]+://[^/]+{assets}")
     return ",".join(patterns)
+
+
+def _configure_sdk_from_environment() -> None:
+    """Install SDK providers from the ``OTEL_*`` environment when nobody has yet.
+
+    Runs only when an exporter is requested through ``OTEL_TRACES_EXPORTER``
+    or ``OTEL_METRICS_EXPORTER`` and the global tracer provider is still the
+    API's proxy, i.e. neither the app nor ``opentelemetry-instrument`` set the
+    SDK up. It is what lets an app module enable telemetry with a single,
+    repeatable ``instrument()`` call instead of building providers itself.
+    """
+    if not any(os.environ.get(name) for name in _EXPORTER_ENV_VARS):
+        return
+    if not isinstance(trace.get_tracer_provider(), trace.ProxyTracerProvider):
+        return
+    try:
+        # The configurator behind opentelemetry-instrument and the distro package.
+        from opentelemetry.sdk._configuration import _OTelSDKConfigurator
+    except ImportError:
+        logger.warning(
+            "OTEL_TRACES_EXPORTER / OTEL_METRICS_EXPORTER are set but "
+            "opentelemetry-sdk is not installed; nothing is exported."
+        )
+        return
+    try:
+        _OTelSDKConfigurator().configure()
+    except Exception:
+        logger.exception(
+            "Configuring the OpenTelemetry SDK from the environment failed:"
+        )
 
 
 def _redact_token(span: Span, scope: Any) -> None:
@@ -107,6 +140,19 @@ class ReflexInstrumentor(BaseInstrumentor):
     HTTP metrics as well.
     """
 
+    def instrument(self, **kwargs: Any) -> None:
+        """Turn the Reflex trace points on, once per process.
+
+        A second call is a silent no-op, so the call needs no guard even when
+        the app module is imported more than once (test harnesses do that).
+
+        Args:
+            **kwargs: See :meth:`_instrument`.
+        """
+        if self.is_instrumented_by_opentelemetry:
+            return
+        super().instrument(**kwargs)
+
     def instrumentation_dependencies(self) -> Collection[str]:
         """Return the packages this instrumentor targets.
 
@@ -120,7 +166,9 @@ class ReflexInstrumentor(BaseInstrumentor):
 
         Args:
             **kwargs: ``tracer_provider`` and ``meter_provider`` select the
-                providers (default: the global ones). ``excluded_urls`` is a
+                providers (default: the global ones; when neither is given,
+                ``OTEL_TRACES_EXPORTER`` / ``OTEL_METRICS_EXPORTER`` set and no
+                SDK installed yet, the SDK is configured from ``OTEL_*``). ``excluded_urls`` is a
                 comma-separated list of URL patterns the ASGI middleware skips
                 (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``, else
                 ``OTEL_PYTHON_EXCLUDED_URLS``, else ``/ping`` plus the compiled
@@ -145,6 +193,8 @@ class ReflexInstrumentor(BaseInstrumentor):
 
         tracer_provider = kwargs.get("tracer_provider")
         meter_provider = kwargs.get("meter_provider")
+        if tracer_provider is None and meter_provider is None:
+            _configure_sdk_from_environment()
         excluded_urls = kwargs.get("excluded_urls")
         if excluded_urls is None:
             # A variable set to "" means "exclude nothing", like an empty kwarg.

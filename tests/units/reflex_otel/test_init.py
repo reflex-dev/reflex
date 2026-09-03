@@ -1,6 +1,7 @@
 """Tests for the reflex_otel instrumentor."""
 
 import os
+import subprocess
 import sys
 from collections.abc import Generator
 from pathlib import Path
@@ -38,10 +39,51 @@ def test_instrument_toggles_trace_points(instrumentor: ReflexInstrumentor):
     assert otel.enabled is False
 
 
-def test_instrument_is_idempotent(instrumentor: ReflexInstrumentor):
-    instrumentor.instrument()
-    instrumentor.instrument()
+def test_instrument_is_idempotent(
+    instrumentor: ReflexInstrumentor, caplog: pytest.LogCaptureFixture
+):
+    """A re-imported app module calls instrument() again; that must stay silent."""
+    with caplog.at_level("WARNING"):
+        instrumentor.instrument()
+        instrumentor.instrument()
     assert otel.enabled is True
+    assert "already instrumented" not in caplog.text
+
+
+def test_instrument_configures_sdk_from_environment():
+    """With OTEL_*_EXPORTER set and no SDK installed, instrument() sets the SDK up."""
+    code = (
+        "from opentelemetry import trace; from reflex_base import otel; "
+        "from reflex_otel import ReflexInstrumentor; "
+        "ReflexInstrumentor().instrument(); ReflexInstrumentor().instrument(); "
+        "print(type(trace.get_tracer_provider()).__name__, otel.enabled)"
+    )
+    env = {
+        **os.environ,
+        "OTEL_TRACES_EXPORTER": "console",
+        "OTEL_METRICS_EXPORTER": "none",
+        "OTEL_LOGS_EXPORTER": "none",
+    }
+    out = subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert out.stdout.split() == ["TracerProvider", "True"]
+    assert "already instrumented" not in out.stderr
+    # Without the exporter variables the SDK is left alone (proxy provider).
+    env.pop("OTEL_TRACES_EXPORTER")
+    env["OTEL_METRICS_EXPORTER"] = ""
+    out = subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert out.stdout.split() == ["ProxyTracerProvider", "True"]
 
 
 def test_sdk_disabled_keeps_trace_points_off(
