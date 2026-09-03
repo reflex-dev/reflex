@@ -1,6 +1,9 @@
 """Tests for the reflex_otel instrumentor."""
 
+import subprocess
+import sys
 from collections.abc import Generator
+from importlib.metadata import entry_points
 
 import pytest
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
@@ -16,6 +19,28 @@ def instrumentor() -> Generator[ReflexInstrumentor, None, None]:
     yield inst
     if inst._is_instrumented_by_opentelemetry:
         inst.uninstrument()
+
+
+def test_plugin_import_does_not_load_the_instrumentor():
+    """rxconfig.py imports OtelPlugin in every CLI process; keep that cheap."""
+    code = (
+        "import sys; from reflex_otel import OtelPlugin; "
+        "print('opentelemetry.instrumentation.instrumentor' in sys.modules); "
+        "from reflex_otel import ReflexInstrumentor; print(ReflexInstrumentor.__name__)"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], check=True, capture_output=True, text=True
+    ).stdout.split()
+    assert out == ["False", "ReflexInstrumentor"]
+
+
+def test_entry_point_resolves_the_instrumentor():
+    (ep,) = [
+        e
+        for e in entry_points(group="opentelemetry_instrumentor")
+        if e.name == "reflex"
+    ]
+    assert ep.load() is ReflexInstrumentor
 
 
 def test_instrument_toggles_trace_points(instrumentor: ReflexInstrumentor):
