@@ -9,6 +9,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.util.http import ExcludeList
 from reflex_base import otel
+from reflex_base.environment import environment
 from reflex_otel import ReflexInstrumentor
 
 
@@ -73,6 +74,28 @@ def test_excluded_urls_only_defaults_when_omitted(
     # .url_disabled() on them; always hand it a parsed ExcludeList.
     assert isinstance(wrapped.excluded_urls, ExcludeList)
     assert wrapped.excluded_urls.url_disabled("/ping") is ping_disabled
+
+
+@pytest.mark.parametrize("mounted", [False, True])
+def test_default_exclusions_cover_mounted_frontend_assets(
+    instrumentor: ReflexInstrumentor, monkeypatch: pytest.MonkeyPatch, mounted: bool
+):
+    """Static chunks served by the backend in prod mode get no spans by default."""
+    monkeypatch.setenv(
+        environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.name, str(mounted).lower()
+    )
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert otel.asgi_middleware is not None
+
+    async def app(scope, receive, send): ...
+
+    wrapped = otel.asgi_middleware(app)
+    assert isinstance(wrapped, OpenTelemetryMiddleware)
+    excluded = wrapped.excluded_urls
+    assert isinstance(excluded, ExcludeList)
+    assert excluded.url_disabled("http://h/ping")
+    assert excluded.url_disabled("http://h/assets/index-abc.js") is mounted
+    assert not excluded.url_disabled("http://h/api/assets/list")
 
 
 async def test_asgi_span_redacts_client_token(instrumentor: ReflexInstrumentor):

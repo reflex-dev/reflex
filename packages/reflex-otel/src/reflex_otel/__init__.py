@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from reflex_base import otel
+from reflex_base.config import get_config
+from reflex_base.environment import environment
 
 if TYPE_CHECKING:
     from opentelemetry.trace import Span
@@ -25,6 +27,21 @@ _DEFAULT_EXCLUDED_URLS = "/ping"
 _URL_ATTRIBUTES = ("http.url", "url.full", "url.query")
 _TOKEN_PARAM = re.compile(r"\btoken=[^&#]*")
 _REDACTED_TOKEN = "token=REDACTED"
+
+
+def _default_excluded_urls() -> str:
+    """URL patterns the ASGI middleware skips unless configured otherwise.
+
+    Returns:
+        The frontend health poll, plus the compiled frontend's static assets
+        when the backend serves them (``reflex run --env prod`` on one port),
+        where every chunk of a page load would otherwise get a span.
+    """
+    patterns = [_DEFAULT_EXCLUDED_URLS]
+    if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
+        assets = re.escape(get_config().prepend_frontend_path("/assets/"))
+        patterns.append(f"^[a-z]+://[^/]+{assets}")
+    return ",".join(patterns)
 
 
 def _redact_token(span: Span, scope: Any) -> None:
@@ -96,8 +113,9 @@ class ReflexInstrumentor(BaseInstrumentor):
                 providers (default: the global ones). ``excluded_urls`` is a
                 comma-separated list of URL patterns the ASGI middleware skips
                 (default: ``OTEL_PYTHON_REFLEX_EXCLUDED_URLS``, else
-                ``OTEL_PYTHON_EXCLUDED_URLS``, else ``/ping``; pass ``""`` to
-                exclude nothing).
+                ``OTEL_PYTHON_EXCLUDED_URLS``, else ``/ping`` plus the compiled
+                frontend's ``/assets/`` when the backend serves it; pass ``""``
+                to exclude nothing).
                 ``server_request_hook``, ``client_request_hook`` and
                 ``client_response_hook`` are forwarded to the ASGI middleware.
         """
@@ -110,20 +128,21 @@ class ReflexInstrumentor(BaseInstrumentor):
         meter_provider = kwargs.get("meter_provider")
         excluded_urls = kwargs.get("excluded_urls")
         if excluded_urls is None:
-            excluded_urls = (
-                os.environ.get("OTEL_PYTHON_REFLEX_EXCLUDED_URLS")
-                or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
-                or _DEFAULT_EXCLUDED_URLS
-            )
-        # opentelemetry-instrumentation-asgi < 0.56b0 stores a str verbatim and
-        # then calls .url_disabled() on it, failing every request; parse first.
-        if isinstance(excluded_urls, str):
-            excluded_urls = parse_excluded_urls(excluded_urls)
+            excluded_urls = os.environ.get(
+                "OTEL_PYTHON_REFLEX_EXCLUDED_URLS"
+            ) or os.environ.get("OTEL_PYTHON_EXCLUDED_URLS")
 
         def asgi_middleware(app: otel.ASGIApp) -> otel.ASGIApp:
+            # Defaults resolve when the app builds its ASGI callable: only then
+            # is it known whether the compiled frontend is mounted into it.
+            urls = _default_excluded_urls() if excluded_urls is None else excluded_urls
+            # opentelemetry-instrumentation-asgi < 0.56b0 stores a str verbatim
+            # and then calls .url_disabled() on it, failing every request.
+            if isinstance(urls, str):
+                urls = parse_excluded_urls(urls)
             return OpenTelemetryMiddleware(
                 app,
-                excluded_urls=excluded_urls,
+                excluded_urls=urls,
                 server_request_hook=_server_request_hook(
                     kwargs.get("server_request_hook")
                 ),
