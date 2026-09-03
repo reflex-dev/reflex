@@ -28,6 +28,7 @@ def get_sidebar_items_api_reference():
                 api_reference.plugins,
                 api_reference.utils,
                 api_reference.telemetry,
+                api_reference.observability,
             ],
         )
     ]
