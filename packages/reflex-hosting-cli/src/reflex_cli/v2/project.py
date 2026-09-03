@@ -204,7 +204,11 @@ def get_select_project(
                 project_id=project, client=authenticated_client
             )
             if as_json:
-                print_json({"project_id": project, "name": project_details["name"]})
+                print_json({
+                    "project_id": project,
+                    "name": project_details["name"],
+                    "error": None,
+                })
                 return
             console.print_table(
                 [[project, project_details["name"]]],
@@ -217,8 +221,14 @@ def get_select_project(
             raise click.exceptions.Exit(1) from None
         except Exception as e:
             logger.error(f"Unable to get the currently selected project: {e}")
+            if as_json:
+                # Not the empty-selection document below: silence on stdout
+                # with a zero exit reads as "nothing is selected", which is a
+                # different answer from "the lookup failed".
+                print_json({"project_id": project, "name": None, "error": str(e)})
+            raise click.exceptions.Exit(1) from None
     elif as_json:
-        print_json({"project_id": None, "name": None})
+        print_json({"project_id": None, "name": None, "error": None})
     else:
         logger.warning(
             "no selected project. run `reflex cloud project select` to set one."

@@ -1082,7 +1082,8 @@ def test_app_logs_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         cursor=None,
     )
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["Unable to retrieve logs."]
+    # The server said why; our own generic line would lose it.
+    assert warnings == ["get app logs failed: Unable to retrieve logs"]
 
 
 def test_app_logs_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -1116,7 +1117,7 @@ def test_app_logs_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixtu
 
     assert result.exit_code == 0, result.output
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["Unable to retrieve logs."]
+    assert warnings == ["get app logs failed: Invalid token"]
 
 
 def test_list_apps_no_project(mocker: MockFixture):
@@ -2232,3 +2233,74 @@ def test_json_output_keeps_human_messages_off_stdout(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == [{"id": "1", "name": "App1"}]
+
+
+@pytest.mark.parametrize(
+    ("status", "success"),
+    [
+        ("deployment completed successfully", True),
+        ("Deployment is running smoothly.", True),
+        ("AwaitingApproval", True),
+        ("build error", False),
+        ("deployment failed", False),
+        ("error: something went wrong", False),
+        ("unable to find status for given id", False),
+    ],
+)
+def test_deployment_status_json_agrees_with_watch(
+    mocker: MockFixture, status: str, success: bool
+):
+    """The polled document classifies a status the way --watch does.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        status: The status string the hosting service returned.
+        success: Whether that status should be reported as a success.
+    """
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_deployment_status", return_value=status)
+
+    result = runner.invoke(hosting_cli, ["apps", "status", "12345", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "deployment_id": "12345",
+        "status": status,
+        "success": success,
+    }
+
+
+def test_app_logs_json_output_names_the_servers_reason(mocker: MockFixture):
+    """A refusal the server explained is reported in its own words."""
+    _authed(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_app_logs",
+        return_value="get app logs failed: app is not running",
+    )
+
+    result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "entries": [],
+        "cursor": None,
+        "error": "get app logs failed: app is not running",
+    }
+
+
+def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
+    """The one exit here that is zero still says the app was not deleted."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_app", return_value=None)
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_app")
+
+    result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "deleted": False,
+        "message": "App with ID 'app123' not found.",
+    }
+    delete.assert_not_called()

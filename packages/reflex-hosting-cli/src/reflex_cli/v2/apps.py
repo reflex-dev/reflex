@@ -385,14 +385,19 @@ def deployment_status(
             status = hosting.get_deployment_status(
                 deployment_id=deployment_id, client=authenticated_client
             )
+            failed = hosting.deployment_status_failed(status)
             if as_json:
+                # Classified by the predicate --watch settles on, rather than
+                # by a substring of its own: a "build error" answered
+                # `"success": true` here while --watch called the same string a
+                # failure, and it is this path an agent polls.
                 print_json({
                     "deployment_id": deployment_id,
                     "status": status,
-                    "success": "failed" not in status,
+                    "success": not failed,
                 })
                 return
-            logger.error(status) if "failed" in status else console.print(status)
+            logger.error(status) if failed else console.print(status)
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
@@ -597,6 +602,15 @@ def delete_app(
                 return
             if not app_result:
                 logger.warning(f"App with ID '{app_id}' not found.")
+                if as_json:
+                    # The one exit here that is zero, so nothing else says the
+                    # app was not deleted. The branches that exit non-zero
+                    # answer through their status.
+                    print_json({
+                        "app_id": app_id,
+                        "deleted": False,
+                        "message": f"App with ID '{app_id}' not found.",
+                    })
                 raise click.exceptions.Exit(0)
 
         if not app_id:
@@ -753,7 +767,12 @@ def app_logs(
                 cursor=cursor,
             )
             if not isinstance(result, list):
-                logger.warning("Unable to retrieve logs.")
+                # A string is the server's own reason; None is a request or a
+                # decode that failed, which has none to give.
+                reason = (
+                    result if isinstance(result, str) else "Unable to retrieve logs."
+                )
+                logger.warning(reason)
                 if as_json:
                     # Kept apart from an empty page: "we could not read them"
                     # and "there are none" call for different next steps.
@@ -761,7 +780,7 @@ def app_logs(
                         "app_id": app_id,
                         "entries": [],
                         "cursor": None,
-                        "error": "Unable to retrieve logs.",
+                        "error": reason,
                     })
                 return
             if len(result) == 2 and isinstance(result[1], str):

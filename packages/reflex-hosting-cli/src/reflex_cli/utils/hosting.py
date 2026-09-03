@@ -2640,20 +2640,24 @@ def get_app_logs(
                 timeout=constants.Hosting.TIMEOUT,
             )
             response.raise_for_status()
+    # None rather than an empty list on every path that failed to read: a
+    # caller cannot tell "there are no logs" from "we could not fetch them" out
+    # of `[]`, and the two call for opposite next steps -- one is an answer,
+    # the other is worth retrying.
     except httpx.RequestError:
-        return []
+        return None
     except httpx.HTTPStatusError as ex:
         try:
             ex_details = ex.response.json().get("detail")
         except json.JSONDecodeError:
-            return []
+            return None
         else:
             return f"get app logs failed: {ex_details}"
     else:
         try:
             return response.json()
         except json.JSONDecodeError:
-            return []
+            return None
 
 
 def list_apps(client: AuthenticatedClient, project: str | None = None) -> list[dict]:
@@ -3012,6 +3016,54 @@ def _report_deployment_failure(
     )
 
 
+# The phrases a deployment status is read for. Named here because two callers
+# classify the same string -- the watch loop below, which decides how to report
+# a failure, and `reflex cloud apps status`, which states one as a boolean an
+# agent branches on. A marker spelled twice is two answers waiting to disagree.
+_STATUS_BUILD_ERROR = "build error"
+_STATUS_UNKNOWN_ID = "unable to find status for given id"
+_STATUS_ERROR = "error"
+_STATUS_BAD_RESPONSE = "bad response"
+_STATUS_SUCCEEDED = "completed successfully"
+_STATUS_AWAITING_APPROVAL = "AwaitingApproval"
+# "failed" is not a phrase the watch loop tests for -- "error" already covers
+# the statuses it sees -- and is kept because it is what this predicate
+# replaced. Dropping it could only ever make the answer less strict.
+_STATUS_FAILED = "failed"
+
+
+def deployment_status_failed(status: str) -> bool:
+    """Check whether a deployment status reports a failure.
+
+    Success is asked first, the order `watch_deployment_status` settles it in:
+    a status that has completed is a completed one whatever else it mentions.
+
+    Args:
+        status: The status string the hosting service returned.
+
+    Returns:
+        True if the status says the deployment did not make it.
+    """
+    if any(
+        marker in status
+        for marker in (
+            _STATUS_SUCCEEDED,
+            _STATUS_AWAITING_APPROVAL,
+            _STATUS_BAD_RESPONSE,
+        )
+    ):
+        return False
+    return any(
+        marker in status
+        for marker in (
+            _STATUS_BUILD_ERROR,
+            _STATUS_UNKNOWN_ID,
+            _STATUS_ERROR,
+            _STATUS_FAILED,
+        )
+    )
+
+
 def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
     """Continuously watch the status of a specific deployment.
 
@@ -3035,31 +3087,31 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
             status = _get_deployment_status(
                 deployment_id=deployment_id, token=client.token
             )
-            if "completed successfully" in status:
+            if _STATUS_SUCCEEDED in status:
                 logger.log(log.SUCCESS, status)
                 break
-            if "AwaitingApproval" in status:
+            if _STATUS_AWAITING_APPROVAL in status:
                 logger.log(
                     log.SUCCESS,
                     "build submitted for approval; it will deploy automatically once an approver approves it.",
                 )
                 break
-            if "build error" in status:
+            if _STATUS_BUILD_ERROR in status:
                 _report_deployment_failure(
                     deployment_id, client.token, status, offer_build_logs=True
                 )
                 return False
-            if "unable to find status for given id" in status:
+            if _STATUS_UNKNOWN_ID in status:
                 # Not a failed deployment but an id that resolves to nothing,
                 # so there is no row to report on and nothing to ask for.
                 logger.error(status)
                 return False
-            if "error" in status:
+            if _STATUS_ERROR in status:
                 _report_deployment_failure(
                     deployment_id, client.token, status, offer_build_logs=False
                 )
                 return False
-            if "bad response" in status:
+            if _STATUS_BAD_RESPONSE in status:
                 logger.warning(status)
                 return True
             if status != current_status:

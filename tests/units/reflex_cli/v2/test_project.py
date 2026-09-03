@@ -927,7 +927,11 @@ def test_get_selected_project_json_output(mocker: MockFixture):
     result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {"project_id": "p1", "name": "My Project"}
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": "My Project",
+        "error": None,
+    }
 
 
 def test_get_selected_project_json_output_when_none(mocker: MockFixture):
@@ -938,4 +942,27 @@ def test_get_selected_project_json_output_when_none(mocker: MockFixture):
     result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {"project_id": None, "name": None}
+    assert json.loads(result.stdout) == {
+        "project_id": None,
+        "name": None,
+        "error": None,
+    }
+
+
+def test_get_selected_project_json_output_when_the_lookup_fails(mocker: MockFixture):
+    """A failed lookup is not the same document as nothing being selected."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="p1")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        side_effect=RuntimeError("project service unavailable"),
+    )
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": None,
+        "error": "project service unavailable",
+    }
