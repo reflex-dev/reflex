@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import os
 import sys
@@ -13,6 +12,7 @@ import click
 from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import TokenValidationError
+from reflex_cli.utils.output import json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +83,7 @@ _loglevel_option = click.option(
 @click.command()
 @click.option("--token", help="The authentication token.")
 @_loglevel_option
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
+@json_option
 def whoami_command(token: str | None, loglevel: str, as_json: bool):
     """Show which account the Reflex Cloud CLI is authenticating as.
 
@@ -131,7 +125,7 @@ def whoami_command(token: str | None, loglevel: str, as_json: bool):
     # terminal width, which corrupts JSON and truncates the identifiers this
     # command exists to hand back.
     if as_json:
-        click.echo(json.dumps(identity))
+        print_json(identity)
         return
 
     width = max(map(len, identity))

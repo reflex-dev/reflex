@@ -4,10 +4,15 @@ import ast
 import inspect
 import subprocess
 import sys
+from unittest import mock
 
 import click.testing
+import pytest
+from pytest_mock import MockFixture
+from reflex_base.constants import LogLevel
 from reflex_cli.v2.deploy import deploy
 
+from reflex import hosting
 from reflex.reflex import cli
 
 EXPECTED_DEPLOY_PARAMS = {
@@ -77,6 +82,21 @@ def test_deploy_keeps_log_options():
     assert {"--loglevel", "--log-level", "--json"} <= option_names
 
 
+def test_deploy_interactive_spellings_are_pinned():
+    """The exact spellings `--interactive` answers to, including the `-i` alias.
+
+    Adopting the shared option brought `-i` with it, which the parameter-name
+    check above cannot see: it compares names, and the name did not move. A
+    later edit to the shared option would change what `reflex deploy` accepts
+    on the command line, so what it accepts is pinned here rather than left to
+    be noticed by whoever's script stops working.
+    """
+    interactive = next(param for param in deploy.params if param.name == "interactive")
+
+    assert set(interactive.opts) == {"--interactive", "-i"}
+    assert set(interactive.secondary_opts) == {"--no-interactive"}
+
+
 def test_deploy_uses_only_the_supported_framework_interface():
     """The command imports the framework only through `reflex.hosting`.
 
@@ -106,3 +126,77 @@ def test_deploy_help():
     result = click.testing.CliRunner().invoke(cli, ["deploy", "--help"])
     assert result.exit_code == 0
     assert "Deploy the app to the Reflex hosting service." in result.output
+
+
+@pytest.fixture
+def driven(mocker: MockFixture) -> mock.MagicMock:
+    """Stub everything the deploy body reaches for beyond the flags.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The mock standing in for the hosting CLI's own deploy.
+    """
+    mocker.patch("reflex_cli.v2.deployments.check_version")
+    mocker.patch("reflex_cli.utils.dependency.check_requirements")
+    mocker.patch(
+        "reflex.hosting.prepare_deploy",
+        return_value=hosting.DeployPrep(
+            app_name="app", loglevel=LogLevel.INFO, ssr=True
+        ),
+    )
+    return mocker.patch("reflex_cli.v2.cli.deploy")
+
+
+@pytest.mark.parametrize(
+    ("argv", "tty", "expected"),
+    [
+        ([], False, False),
+        ([], True, True),
+        (["--interactive"], False, True),
+        (["-i"], False, True),
+        (["--no-interactive"], True, False),
+    ],
+)
+def test_deploy_interactive_follows_the_terminal(
+    mocker: MockFixture,
+    driven: mock.MagicMock,
+    argv: list[str],
+    tty: bool,
+    expected: bool,
+):
+    """`reflex deploy` resolves --interactive the way every cloud command does.
+
+    A deploy off a TTY prompts for a project, a provider and a browser login,
+    so inheriting the shared default is what keeps it from hanging in CI.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        driven: The stubbed hosting CLI deploy.
+        argv: The arguments passed on the command line.
+        tty: Whether stdout is a terminal.
+        expected: The interactive value the command should resolve to.
+    """
+    mocker.patch("reflex_cli.utils.output.stdout_is_tty", return_value=tty)
+
+    result = click.testing.CliRunner().invoke(deploy, argv)
+
+    assert result.exit_code == 0, result.output
+    assert driven.call_args.kwargs["interactive"] is expected
+
+
+@pytest.mark.usefixtures("driven")
+def test_deploy_off_a_terminal_does_not_check_requirements(mocker: MockFixture):
+    """The requirements check prompts, so it goes with the prompts.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    mocker.patch("reflex_cli.utils.output.stdout_is_tty", return_value=False)
+    check = mocker.patch("reflex_cli.utils.dependency.check_requirements")
+
+    result = click.testing.CliRunner().invoke(deploy, [])
+
+    assert result.exit_code == 0, result.output
+    check.assert_not_called()
