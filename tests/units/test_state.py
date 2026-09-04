@@ -5319,3 +5319,18 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+def test_get_delta_skips_dirty_names_without_attached_substates() -> None:
+    """A dirty substate name with no attached instance is skipped, not a KeyError.
+
+    Under selective cleaning a prior flush can preserve another writer's dirt,
+    and a later redis fetch of the handler's slice restores the parent's
+    dirty_substates naming a substate that was not fetched. The dirt lives in
+    the unfetched substate's own record; the partial tree's delta walk must
+    pass over it the way _clean always has.
+    """
+    root = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    root._clean()
+    root.dirty_substates.add("not___an___attached____substate")
+    assert root.get_delta() == {}

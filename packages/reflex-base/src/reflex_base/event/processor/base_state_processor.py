@@ -211,22 +211,50 @@ async def chain_updates(
         root_state: The root state of the app, no delta emitted if omitted.
     """
     from reflex.event import Event
+    from reflex.state import _recording_resolution_dirt, _resolve_delta
 
     ctx = EventContext.get()
 
     if root_state is not None:
         # Emit deltas first, so any frontend events are processed with the
-        # latest state. The clean deliberately runs after resolution: the
-        # SharedState fan-out captures its dirty vars at clean time, and
-        # resolving the delta is what re-marks linked vars through the patch
-        # machinery, so cleaning earlier would fan out a stale set (see
-        # tests/integration/test_linked_state.py).
-        try:
-            delta = await root_state._get_resolved_delta()
-            if delta:
-                await ctx.emit_delta(delta)
-        finally:
-            root_state._clean()
+        # latest state. The clean clears exactly what this flush published:
+        # the dirty snapshot plus whatever resolution itself dirtied (the
+        # SharedState patch machinery reached through computed vars records
+        # into the ledger), so the fan-out capture stays complete while a
+        # concurrent writer's dirt survives for the next harvest instead of
+        # being discarded by a clean that never snapshotted it.
+        delta = root_state.get_delta()
+        if not delta or not any(
+            inspect.iscoroutine(value)
+            for subdelta in delta.values()
+            for value in subdelta.values()
+        ):
+            # A coroutine-free resolution never yields the loop, so nothing
+            # can interleave with this flush before the emit; the selective
+            # machinery below would record and subtract nothing. Take the
+            # plain path the sync pipeline has always had.
+            try:
+                if delta:
+                    await ctx.emit_delta(delta)
+            finally:
+                root_state._clean()
+        else:
+            # The flush suspends while resolving, which is the window the
+            # selective clean exists for: snapshot what this flush publishes,
+            # record what resolution itself dirties, and clean exactly that
+            # union, so a concurrent writer's dirt survives for the next
+            # harvest instead of being discarded by a clean that never
+            # snapshotted it.
+            flushed = root_state._snapshot_dirty_vars()
+            try:
+                with _recording_resolution_dirt(flushed_by_resolution := {}):
+                    delta = await _resolve_delta(delta)
+                for state_name, var_names in flushed_by_resolution.items():
+                    flushed.setdefault(state_name, set()).update(var_names)
+                if delta:
+                    await ctx.emit_delta(delta)
+            finally:
+                root_state._clean_flushed(flushed)
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(

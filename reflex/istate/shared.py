@@ -153,6 +153,27 @@ class SharedStateBaseInternal(State):
         super()._clean()
 
     @_override_base_method
+    def _clean_flushed(self, flushed: dict[str, set[str]]) -> None:
+        """Selective clean that still captures this flush's fan-out seed.
+
+        The capture mirrors ``_clean``: what this event published for this
+        state, which under a selective clean is exactly its slice of
+        ``flushed``, including resolution-created dirt from the ledger. A
+        concurrent writer's dirt is neither captured nor cleared.
+
+        Args:
+            flushed: Mapping of full state name to the var names the flush
+                snapshotted or created during resolution.
+        """
+        mine = self.dirty_vars & flushed.get(self.get_full_name(), set())
+        if (
+            previous_dirty_vars := getattr(self, "_previous_dirty_vars", None)
+        ) is not None and mine:
+            previous_dirty_vars.clear()
+            previous_dirty_vars.update(mine)
+        super()._clean_flushed(flushed)
+
+    @_override_base_method
     def _mark_dirty(self):
         """Override BaseState._mark_dirty to avoid marking certain vars as dirty.
 

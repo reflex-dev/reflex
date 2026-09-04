@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import contextlib
+import contextvars
 import copy
 import dataclasses
 import functools
@@ -277,6 +278,43 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # coroutine and then omitted post-hoc. Compared by identity (the object itself is
 # the contract); never serialized into a delta sent to the client.
 _DROP_FROM_DELTA: Final = object()
+
+
+_RESOLUTION_DIRT: contextvars.ContextVar[dict[str, set[str]] | None] = (
+    contextvars.ContextVar("reflex_resolution_dirt", default=None)
+)
+
+# Count of open recording contexts, so the per-dirty-mark fast path is a plain
+# global check instead of a contextvar lookup while no flush is resolving.
+_RESOLUTION_RECORDING_DEPTH = 0
+
+
+@contextlib.contextmanager
+def _recording_resolution_dirt(ledger: dict[str, set[str]]) -> Iterator[None]:
+    """Record vars dirtied by the current task tree into the ledger.
+
+    Delta resolution is not a pure read: computed vars reach ``get_state``,
+    which drives machinery (e.g. the SharedState patch) that marks vars
+    dirty. Contextvars are task-local and inherited by tasks created during
+    resolution, so writes made by the resolving task tree land in the ledger
+    while concurrent events' writes, made from tasks created elsewhere, do
+    not. That distinction is what lets a flush clean exactly what it
+    published and preserve everything else.
+
+    Args:
+        ledger: Mapping of full state name to var names, filled in place.
+
+    Yields:
+        None.
+    """
+    global _RESOLUTION_RECORDING_DEPTH
+    token = _RESOLUTION_DIRT.set(ledger)
+    _RESOLUTION_RECORDING_DEPTH += 1
+    try:
+        yield
+    finally:
+        _RESOLUTION_RECORDING_DEPTH -= 1
+        _RESOLUTION_DIRT.reset(token)
 
 
 async def _resolve_delta(delta: Delta) -> Delta:
@@ -1609,7 +1647,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         if name in self.backend_vars:
             self._backend_vars.__setitem__(name, value)
-            self.dirty_vars.add(name)
+            self._record_dirty_var(name)
             self._mark_dirty()
             return
 
@@ -1642,12 +1680,12 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Add the var to the dirty list.
         if name in self.base_vars:
-            self.dirty_vars.add(name)
+            self._record_dirty_var(name)
             self._mark_dirty()
 
         # For now, handle router_data updates as a special case
         if name == constants.ROUTER_DATA:
-            self.dirty_vars.add(name)
+            self._record_dirty_var(name)
             self._mark_dirty()
 
     def reset(self):
@@ -1909,7 +1947,7 @@ class BaseState(EvenMoreBasicBaseState):
                     defining_state = self._get_root_state().get_substate(
                         tuple(state_name.split("."))
                     )
-                defining_state.dirty_vars.add(cvar)
+                defining_state._record_dirty_var(cvar)
                 actual_var = defining_state.computed_vars.get(cvar)
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=defining_state)
@@ -1982,10 +2020,16 @@ class BaseState(EvenMoreBasicBaseState):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
-        # Recursively find the substate deltas.
+        # Recursively find the substate deltas. A dirty name without an
+        # attached substate is legitimate under selective cleaning: a prior
+        # flush preserved another writer's dirt, the tree was then fetched
+        # partially (redis fetches the handler's slice), and the dirt lives in
+        # the unfetched substate's own record until an event fetches it. It
+        # cannot contribute to this delta, so skip it, as _clean always has.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
-            delta.update(substates[substate].get_delta())
+            if (substate_instance := substates.get(substate)) is not None:
+                delta.update(substate_instance.get_delta())
 
         # Return the delta.
         return delta
@@ -1997,6 +2041,79 @@ class BaseState(EvenMoreBasicBaseState):
             The resolved delta for the state.
         """
         return await _resolve_delta(self.get_delta())
+
+    def _record_dirty_var(self, name: str) -> None:
+        """Mark one var dirty, recording it when delta resolution is active.
+
+        The single choke point for "a var became dirty", so a flush can tell
+        its own resolution-created dirt apart from concurrent writers. Known
+        boundary: dirt is name-only, so a concurrent rewrite of a var already
+        in a flush's snapshot, landing during that flush's resolution, is
+        still cleaned with it; distinguishing that needs per-var write
+        versions. Unreachable while every flush holds the token lock, which
+        all current callers do.
+
+        Args:
+            name: The var name to mark dirty on this state.
+        """
+        self.dirty_vars.add(name)
+        if _RESOLUTION_RECORDING_DEPTH:
+            self._note_resolution_dirt(name)
+
+    def _note_resolution_dirt(self, name: str) -> None:
+        """Record one var into the active flush's resolution ledger.
+
+        The cold half of ``_record_dirty_var``: reached only while a flush is
+        resolving, so the hot path pays one set-add and one falsy global
+        check.
+
+        Args:
+            name: The var name that became dirty during resolution.
+        """
+        if (ledger := _RESOLUTION_DIRT.get()) is not None:
+            ledger.setdefault(self.get_full_name(), set()).add(name)
+
+    def _snapshot_dirty_vars(self) -> dict[str, set[str]]:
+        """The dirty var names per state, for the flush that just snapshotted.
+
+        Walked over the same states ``get_delta`` visits, and including
+        backend vars, which never reach a delta but are captured for the
+        SharedState fan-out and must be cleaned once flushed.
+
+        Returns:
+            Mapping of full state name to a copy of its dirty var names.
+        """
+        snapshot: dict[str, set[str]] = {}
+        if self.dirty_vars:
+            snapshot[self.get_full_name()] = set(self.dirty_vars)
+        for substate_name in self.dirty_substates.union(self._always_dirty_substates):
+            substate = self.substates.get(substate_name)
+            if substate is not None:
+                snapshot.update(substate._snapshot_dirty_vars())
+        return snapshot
+
+    def _clean_flushed(self, flushed: dict[str, set[str]]) -> None:
+        """Clear exactly the dirty vars a flush published, keeping the rest.
+
+        Unlike ``_clean``, a var dirtied by a concurrent writer after the
+        flush's snapshot survives for the next harvest instead of being
+        discarded by a clean that never saw it.
+
+        Args:
+            flushed: Mapping of full state name to the var names the flush
+                snapshotted or created during resolution.
+        """
+        self._update_was_touched()
+        for substate_name in tuple(
+            self.dirty_substates.union(self._always_dirty_substates)
+        ):
+            substate = self.substates.get(substate_name)
+            if substate is None:
+                continue
+            substate._clean_flushed(flushed)
+            if not substate.dirty_vars and not substate.dirty_substates:
+                self.dirty_substates.discard(substate_name)
+        self.dirty_vars -= flushed.get(self.get_full_name(), set())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""

@@ -745,3 +745,72 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+async def test_chain_updates_keeps_writes_made_during_delta_resolution(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """chain_updates must not clean a write it never snapshotted.
+
+    The snapshot and the clean happen in one step, before the resolved delta
+    is awaited or emitted, so a concurrent write landing during resolution
+    stays dirty for the next harvest even if a caller ever runs chain_updates
+    without holding the state lock.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    from reflex_base.event.processor.base_state_processor import chain_updates
+
+    resolving = asyncio.Event()
+    release = asyncio.Event()
+    hold_resolution = [False]
+
+    class MidResolveState(State):
+        victim: str = ""
+
+        @rx.var(cache=False)
+        async def window(self) -> int:
+            if hold_resolution[0]:
+                resolving.set()
+                await release.wait()
+            return 0
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    EventContext.set(root_ctx.fork(token=token))
+    state_manager = root_ctx.state_manager
+
+    try:
+        root = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
+        substate = await root.get_state(MidResolveState)
+        root._clean()
+
+        hold_resolution[0] = True
+        flush = asyncio.ensure_future(
+            chain_updates(None, root_state=root, handler_name="unlocked_flush")
+        )
+        await resolving.wait()
+        substate.victim = "written"
+        hold_resolution[0] = False
+        release.set()
+        await flush
+
+        assert "victim" in substate.dirty_vars, (
+            "the write made during delta resolution was cleaned away"
+        )
+        await chain_updates(None, root_state=root, handler_name="second_flush")
+    finally:
+        State._always_dirty_substates.discard(MidResolveState.get_name())
+
+    state_name = MidResolveState.get_full_name()
+    victim_key = "victim" + FIELD_MARKER
+    assert any(
+        d.get(state_name, {}).get(victim_key) == "written" for _, d in emitted_deltas
+    ), f"the surviving write never reached a delta: {emitted_deltas}"
