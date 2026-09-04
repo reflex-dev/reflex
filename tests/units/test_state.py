@@ -4431,6 +4431,13 @@ class Obj(Base):
     f: Callable
 
 
+# TODO: drop the xfail once the dill release fixing
+# https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
+@pytest.mark.xfail(
+    sys.version_info >= (3, 15),
+    reason="dill <= 0.4.1 uses code.co_lnotab, removed in Python 3.15",
+    raises=StateSerializationError,
+)
 def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 

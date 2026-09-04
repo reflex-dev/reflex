@@ -1,5 +1,7 @@
 """Integration tests for var operations."""
 
+import os
+import sys
 from collections.abc import Generator
 from typing import TypeVar
 
@@ -151,6 +153,12 @@ def driver(dynamic_components: AppHarness):
         driver.quit()
 
 
+# TODO: drop the skip once the dill release fixing
+# https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
+@pytest.mark.skipif(
+    sys.version_info >= (3, 15) and bool(os.environ.get("REFLEX_REDIS_URL")),
+    reason="dill <= 0.4.1 cannot serialize functions on Python 3.15",
+)
 def test_dynamic_components(driver, dynamic_components: AppHarness):
     """Test that the var operations produce the right results.
 

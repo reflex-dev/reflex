@@ -1,0 +1,1 @@
+Lazy imports now cache resolved attributes on the package, so repeated access is a plain attribute lookup instead of a `__getattr__` round-trip. On Python 3.15+, lazy loading delegates to the interpreter's native lazy imports (PEP 810).

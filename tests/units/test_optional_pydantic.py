@@ -49,8 +49,11 @@ comp = rx.text(S.val)
 assert "val" in str(comp.render())
 
 assert serializers.serialize(datetime.datetime(2026, 1, 2, 3, 4, 5)) == "2026-01-02 03:04:05"
+# __module__ may be a non-str descriptor, e.g. on wrapt's pure-python
+# ObjectProxy subclasses.
 assert not any(
-    getattr(cls, "__module__", "").startswith("pydantic")
+    isinstance(mod := getattr(cls, "__module__", None), str)
+    and mod.startswith("pydantic")
     for cls in serializers.SERIALIZERS
 )
 

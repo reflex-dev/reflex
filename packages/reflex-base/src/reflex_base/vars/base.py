@@ -17,7 +17,7 @@ import uuid
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
 from typing import (
@@ -44,7 +44,7 @@ from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import exceptions, imports, serializers, types
-from reflex_base.utils.compat import annotations_from_namespace
+from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
@@ -3488,16 +3488,16 @@ class Field(Generic[FIELD_TYPE]):
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE | None
+        default: FIELD_TYPE | MISSING_TYPE | None
         default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: bool = True,
         annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
-        | _MISSING_TYPE = MISSING,
+        | MISSING_TYPE = MISSING,
         source_field: Field | None = None,
     ) -> None:
         """Initialize the field.
@@ -3682,7 +3682,7 @@ class Field(Generic[FIELD_TYPE]):
 
 @overload
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     is_var: Literal[False],
     default_factory: Callable[[], FIELD_TYPE] | None = None,
@@ -3691,7 +3691,7 @@ def field(
 
 @overload
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_var: Literal[True] = True,
@@ -3699,7 +3699,7 @@ def field(
 
 
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_var: bool = True,
