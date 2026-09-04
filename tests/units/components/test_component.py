@@ -523,6 +523,63 @@ def test_get_imports_includes_components_in_props():
     })
 
 
+@pytest.mark.parametrize(
+    "bad_library",
+    [
+        "react-router-dom",
+        "react-router-dom@7.18.2",
+        "react-router-dom/server",
+        "react-router-dom@7.18.2/server",
+    ],
+)
+def test_get_imports_rejects_react_router_dom_library(bad_library: str):
+    """Test that a library resolving to react-router-dom raises a pointered error.
+
+    React Router 8 removed the react-router-dom package, so installing it would
+    silently pull in a second, unpinned React Router 7 copy that breaks prod builds.
+
+    Args:
+        bad_library: A library string that resolves to the removed package.
+    """
+
+    class BadDomLink(Component):
+        library = bad_library
+        tag = "Link"
+
+    with pytest.raises(ValueError, match=r"`BadDomLink`.*react-router-dom"):
+        BadDomLink.create()._get_all_imports()
+
+
+def test_get_imports_rejects_react_router_dom_lib_dependency():
+    """Test that a lib_dependencies entry of react-router-dom raises the same error."""
+
+    class BadDepLink(Component):
+        library = "react-router"
+        tag = "Link"
+        lib_dependencies = ["react-router-dom"]
+
+    with pytest.raises(ValueError, match=r"`BadDepLink`.*react-router-dom"):
+        BadDepLink.create()._get_all_imports()
+
+
+@pytest.mark.parametrize(
+    "good_library",
+    ["react-router", "react-router/dom", "react-router-dom-fork"],
+)
+def test_get_imports_allows_react_router_libraries(good_library: str):
+    """Test that react-router and unrelated similarly named libraries still work.
+
+    Args:
+        good_library: A library string that must not be rejected.
+    """
+
+    class GoodLink(Component):
+        library = good_library
+        tag = "Link"
+
+    assert good_library in GoodLink.create()._get_all_imports()
+
+
 def test_get_custom_code(component1: Component, component2: Component):
     """Test getting the custom code of a component.
 

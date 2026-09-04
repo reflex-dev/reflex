@@ -18,7 +18,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@0.1.14"
+    library = "@radix-ui/react-form@0.1.16"
 
 
 class FormRoot(FormComponent, HTMLForm):

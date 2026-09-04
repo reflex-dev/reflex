@@ -360,7 +360,40 @@ def _is_user_descriptor(value: Any) -> bool:
 
 all_base_state_classes: dict[str, None] = {}
 
+# Instance bookkeeping fields and framework methods read on every event. They
+# bypass the var-resolution logic below, so nothing stored in `_backend_vars`
+# (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
+# may appear here. A subclass that defines one of these names itself (as a var
+# or an event handler) drops it from its own `_fast_attr_names`.
+_FRAMEWORK_ATTR_NAMES = frozenset({
+    "dirty_vars",
+    "dirty_substates",
+    "parent_state",
+    "substates",
+    "_backend_vars",
+    "_was_touched",
+    "get_fields",
+    "get_skip_vars",
+    "get_name",
+    "get_full_name",
+    "get_substate",
+    "get_value",
+    "get_delta",
+    "get_state",
+    "_get_resolved_delta",
+    "_get_root_state",
+    "_get_state_from_cache",
+    "_mark_dirty",
+    "_mark_dirty_computed_vars",
+    "_expired_computed_vars",
+    "_dirty_computed_vars",
+    "_clean",
+    "_update_was_touched",
+    "_get_was_touched",
+})
+
 CLASS_VAR_NAMES = frozenset({
+    "_fast_attr_names",
     "vars",
     "base_vars",
     "computed_vars",
@@ -410,6 +443,14 @@ class BaseState(EvenMoreBasicBaseState):
 
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
+
+    # Framework attributes this class reads through the fast path; a subclass
+    # that defines one of these names itself drops it (see __init_subclass__).
+    _fast_attr_names: ClassVar[frozenset[str]] = _FRAMEWORK_ATTR_NAMES
+
+    # Computed vars on this class that expire on an interval; recomputed with
+    # the dependency dicts, i.e. at class creation and after any var is added.
+    _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -721,7 +762,38 @@ class BaseState(EvenMoreBasicBaseState):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
+        cls._prune_fast_attr_names()
+
         all_base_state_classes[cls.get_full_name()] = None
+
+    @classmethod
+    def _prune_fast_attr_names(cls) -> None:
+        """Recompute which framework attribute names this state tree may fast-path.
+
+        A name the state defines (as a var, a backend var, an event handler or
+        a marked method override) must keep going through the full lookup in
+        ``_get_attribute``. The set is rebuilt from the parent's current set
+        minus this class's own names, then recomputed for every substate, so a
+        var or handler registered after class creation (dynamic route args,
+        ``add_var``, ...) drops the name for the whole subtree that inherits it.
+        """
+        parent_state = cls.get_parent_state()
+        inherited = (
+            parent_state._fast_attr_names
+            if parent_state is not None
+            else _FRAMEWORK_ATTR_NAMES
+        )
+        cls._fast_attr_names = inherited - (
+            _FRAMEWORK_ATTR_NAMES
+            & (
+                set(cls.__dict__)
+                | set(cls.vars)
+                | set(cls.backend_vars)
+                | set(cls.event_handlers)
+            )
+        )
+        for substate_class in cls.get_substates():
+            substate_class._prune_fast_attr_names()
 
     @classmethod
     def _add_event_handler(
@@ -738,6 +810,7 @@ class BaseState(EvenMoreBasicBaseState):
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        cls._prune_fast_attr_names()
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -813,7 +886,7 @@ class BaseState(EvenMoreBasicBaseState):
 
             if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 logger.warning(
-                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -894,6 +967,11 @@ class BaseState(EvenMoreBasicBaseState):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
+        cls._interval_computed_var_names = frozenset(
+            name
+            for name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        )
         for cvar_name, cvar in cls.computed_vars.items():
             if not cvar._cache:
                 # Do not perform dep calculation when cache=False (these are always dirty).
@@ -1211,6 +1289,7 @@ class BaseState(EvenMoreBasicBaseState):
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
+        cls._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1340,6 +1419,7 @@ class BaseState(EvenMoreBasicBaseState):
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
+        cls._prune_fast_attr_names()
 
     @classmethod
     def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
@@ -1441,8 +1521,18 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The value of the var.
         """
-        # Fast path for dunder
-        if name.startswith("__") or name in CLASS_VAR_NAMES:
+        # Fast path for dunder, class-level tracking dicts, and the
+        # framework's own instance bookkeeping and methods.
+        if (
+            name.startswith("__")
+            or name in CLASS_VAR_NAMES
+            or (
+                # Global set first: a user var must not pay the per-class
+                # lookup just to be rejected by it.
+                name in _FRAMEWORK_ATTR_NAMES
+                and name in super().__getattribute__("_fast_attr_names")
+            )
+        ):
             return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
@@ -1543,7 +1633,7 @@ class BaseState(EvenMoreBasicBaseState):
             field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 logger.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
@@ -1835,10 +1925,14 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             Set of computed vars to include in the delta.
         """
+        # Only computed vars declared with an interval can expire; the class
+        # keeps that subset so this stays O(interval vars), not O(all vars).
+        computed_vars = self.computed_vars
+        # __class__, not type(): a StateProxy reports the wrapped state's class.
         return {
             cvar
-            for cvar, cvar_obj in self.computed_vars.items()
-            if cvar_obj.needs_update(instance=self)
+            for cvar in self.__class__._interval_computed_var_names
+            if computed_vars[cvar].needs_update(instance=self)
         }
 
     def _dirty_computed_vars(

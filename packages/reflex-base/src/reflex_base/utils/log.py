@@ -29,6 +29,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
 from typing import TYPE_CHECKING, cast
@@ -335,27 +336,95 @@ def _log_file_path() -> Path:
 def _file_handler() -> logging.FileHandler:
     """Create the full-logging file handler.
 
+    The file is truncated up front and the handler opened in append mode:
+    appended writes land atomically at the end of the file, and a closed
+    handler reopens on the next record — the stdlib refuses to reopen only
+    ``mode="w"`` handlers. Both matter in granian workers, whose post-fork
+    ``logging.config.dictConfig`` closes every fork-inherited handler.
+
     Returns:
         A file handler writing every record with markup stripped.
     """
-    handler = logging.FileHandler(_log_file_path(), mode="w", encoding="utf-8")
+    path = _log_file_path()
+    path.write_bytes(b"")
+    handler = logging.FileHandler(path, mode="a", encoding="utf-8")
     handler.setFormatter(
         _FileFormatter("[{asctime}] {levelname}: {message}", style="{")
     )
     return handler
 
 
-def log_file_stream() -> TextIO:
-    """Open (once) and return the stream of the full-logging file.
+@contextlib.contextmanager
+def log_file_stream() -> Generator[TextIO]:
+    """Return the live stream of the full-logging file, reopening if needed.
 
-    The legacy ``console`` file writer renders through this same stream, so a
-    single file holds every record no matter which API produced it.
+    An external ``logging.config.dictConfig`` (granian runs one in each
+    worker process) closes every existing handler; reopen the file in append
+    mode rather than handing writers a dead stream.
 
-    Returns:
+    Yields:
         The writable stream of the full-logging file.
     """
-    # The handler opens eagerly (delay=False), so its stream is never None.
-    return cast("TextIO", _file_handler().stream)
+    handler = _file_handler()
+    handler.acquire()
+    try:
+        stream = handler.stream
+        if stream is None:
+            # FileHandler._open is private stdlib API, but it is the only way
+            # to reopen the file with the handler's own mode/encoding, and
+            # FileHandler.emit itself reopens a closed handler the same way.
+            stream = handler.stream = handler._open()
+        yield cast("TextIO", stream)
+    finally:
+        handler.release()
+
+
+class _LogFileStreamProxy:
+    """Writable file-like object always targeting the live log-file stream.
+
+    Long-lived writers (the legacy console file writer) hold this proxy
+    instead of a raw stream, so they stay valid when an external logging
+    re-config closes the file handler and the pipeline reopens it.
+    """
+
+    __slots__ = ()
+
+    def write(self, text: str) -> int:
+        """Write to the current log-file stream.
+
+        Args:
+            text: The text to write.
+
+        Returns:
+            The number of characters written.
+        """
+        with log_file_stream() as stream:
+            return stream.write(text)
+
+    def flush(self):
+        """Flush the current log-file stream."""
+        with log_file_stream() as stream:
+            stream.flush()
+
+    def isatty(self) -> bool:
+        """Report that the log file is not a terminal.
+
+        Returns:
+            False.
+        """
+        return False
+
+
+_LOG_FILE_PROXY = _LogFileStreamProxy()
+
+
+def log_file_proxy() -> TextIO:
+    """Return a stable writable proxy for the full-logging file.
+
+    Returns:
+        A file-like object resolving the live stream on every write.
+    """
+    return cast("TextIO", _LOG_FILE_PROXY)
 
 
 @once
