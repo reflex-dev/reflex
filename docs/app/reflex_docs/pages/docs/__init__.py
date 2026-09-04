@@ -359,6 +359,7 @@ def make_docpage(
     title: str,
     doc_virtual: str,
     render_fn,
+    actual_path: str,
     description: str | None = None,
     image: str | None = None,
 ):
@@ -367,9 +368,13 @@ def make_docpage(
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title, description=description, image=image)(
-        render_fn
-    )
+    return docpage(
+        set_path=route,
+        t=title,
+        description=description,
+        image=image,
+        source_path=actual_path,
+    )(render_fn)
 
 
 CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
@@ -389,7 +394,7 @@ def handle_changelog_doc(doc: str, actual_path: str, resolved: ResolvedDoc):
         toc = [(level, text) for level, text in toc if level <= 2]
         return ((toc, source), body)
 
-    return make_docpage(resolved.route, resolved.display_title, doc, comp)
+    return make_docpage(resolved.route, resolved.display_title, doc, comp, actual_path)
 
 
 def handle_library_doc(
@@ -486,6 +491,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
         resolved.display_title,
         virtual_doc,
         comp,
+        actual_path,
         description=description,
         image=image,
     )
