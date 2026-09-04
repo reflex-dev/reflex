@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from collections.abc import Iterable, Mapping
@@ -270,12 +271,33 @@ def theme_template(theme: str):
     return f"""export default {theme}"""
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class InternalEventNames:
+    """Wire names the generated context module uses to reach framework handlers.
+
+    Resolved by the compiler under the active name resolver so the frontend
+    keeps working when names are rewritten (e.g. minified).
+
+    Attributes:
+        main_state_name: Name of the framework root ``State``.
+        on_load_internal: Full event name of ``on_load_internal``.
+        update_vars_internal: Full event name of ``update_vars_internal``.
+        handle_frontend_exception: Full event name of ``handle_frontend_exception``.
+    """
+
+    main_state_name: str
+    on_load_internal: str
+    update_vars_internal: str
+    handle_frontend_exception: str
+
+
 def context_template(
     *,
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     state_name: str | None = None,
+    internal_events: InternalEventNames | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
 ):
@@ -284,6 +306,7 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         state_name: The name of the state.
+        internal_events: Resolved framework event names; required with ``state_name``.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -293,7 +316,14 @@ def context_template(
 
     Returns:
         Rendered context file content as string.
+
+    Raises:
+        ValueError: If ``state_name`` is given without ``internal_events``.
     """
+    if state_name is not None and internal_events is None:
+        msg = "internal_events is required when state_name is given"
+        raise ValueError(msg)
+
     initial_state = initial_state or {}
     state_contexts_str = "".join([
         f"{format_state_name(state_name)}: createContext(null),"
@@ -313,7 +343,11 @@ def context_template(
         rf"""
 export const state_name = "{state_name}"
 
-export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
+export const main_state_name = "{internal_events.main_state_name}"
+
+export const update_vars_internal = "{internal_events.update_vars_internal}"
+
+export const handle_frontend_exception = "{internal_events.handle_frontend_exception}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -325,7 +359,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
+                '{internal_events.update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -333,7 +367,7 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+    internal_events.push(ReflexEvent('{internal_events.on_load_internal}'));
 
     return internal_events;
 }}
@@ -344,11 +378,15 @@ export const initialEvents = () => [
     ...onLoadInternalEvent()
 ]
     """
-        if state_name
+        if state_name and internal_events
         else """
 export const state_name = undefined
 
-export const exception_state_name = undefined
+export const main_state_name = undefined
+
+export const update_vars_internal = undefined
+
+export const handle_frontend_exception = undefined
 
 export const onLoadInternalEvent = () => []
 
