@@ -98,8 +98,13 @@ def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
         Whether the text is wrapped.
     """
     close = get_close_char(open, close)
-    if not (text.startswith(open) and text.endswith(close)):
+    if len(text) < 2 or not (text.startswith(open) and text.endswith(close)):
         return False
+
+    # Identical delimiters (e.g. quotes or backticks) cannot nest, so the text
+    # is wrapped only when the delimiter does not reappear inside the content.
+    if open == close:
+        return open not in text[1:-1]
 
     depth = 0
     for ch in text[:-1]:

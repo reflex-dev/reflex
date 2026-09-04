@@ -171,6 +171,11 @@ def test_get_close_char(input: str, output: str):
         ("{wrap", "{", False),
         ("{wrap}", "(", False),
         ("(wrap)", "(", True),
+        # Identical delimiters (quotes/backticks) that cannot nest.
+        ("`wrap`", "`", True),
+        ('"wrap"', '"', True),
+        ("`a`b`", "`", False),
+        ("`", "`", False),
     ],
 )
 def test_is_wrapped(text: str, open: str, expected: bool):
