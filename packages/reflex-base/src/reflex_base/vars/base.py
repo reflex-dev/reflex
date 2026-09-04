@@ -3736,6 +3736,57 @@ def field(
     )
 
 
+def _linearize_bases(bases: tuple[type, ...]) -> list[type]:
+    """Order the bases the way the class being created will resolve attributes.
+
+    The class does not exist yet, so its `__mro__` cannot be read; this is the
+    C3 merge `type` itself will run. A hierarchy `type` would reject linearizes
+    to a prefix here, and the class creation that follows raises for it.
+
+    Args:
+        bases: The bases of the class being created.
+
+    Returns:
+        The bases and their ancestors in method resolution order.
+    """
+    sequences = [list(base.__mro__) for base in bases]
+    sequences.append(list(bases))
+    order: list[type] = []
+    while True:
+        sequences = [sequence for sequence in sequences if sequence]
+        if not sequences:
+            return order
+        # compared by identity, as `type.mro()` does: a metaclass may define __eq__
+        tails = [klass for sequence in sequences for klass in sequence[1:]]
+        for sequence in sequences:
+            head = sequence[0]
+            if not any(head is klass for klass in tails):
+                break
+        else:
+            # No valid head: `type.__new__` will reject these bases.
+            return order
+        order.append(head)
+        for sequence in sequences:
+            if sequence[0] is head:
+                del sequence[0]
+
+
+def _inherited_value(lookup_order: list[type], name: str) -> Any:
+    """Look up an inherited class attribute without running descriptors.
+
+    Args:
+        lookup_order: The bases in method resolution order.
+        name: The attribute name to look up.
+
+    Returns:
+        The value the created class would resolve `name` to, or MISSING.
+    """
+    for klass in lookup_order:
+        if name in klass.__dict__:
+            return klass.__dict__[name]
+    return MISSING
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
@@ -3828,11 +3879,21 @@ class BaseStateMeta(ABCMeta):
 
             own_fields[key] = new_value
 
+        lookup_order = _linearize_bases(bases)
+
         for key, annotation in resolved_annotations.items():
             value = namespace.get(key, MISSING)
 
             if types.is_classvar(annotation):
                 # If the annotation is a classvar, skip it.
+                continue
+
+            declared = (
+                value if value is not MISSING else _inherited_value(lookup_order, key)
+            )
+            if isinstance(declared, property):
+                # A (hybrid) property under an annotated name stays a descriptor,
+                # here or on a base; a field would shadow it with a stored value.
                 continue
 
             if value is MISSING:

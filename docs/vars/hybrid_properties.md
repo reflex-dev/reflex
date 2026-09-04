@@ -74,7 +74,8 @@ value can only be produced on the server.
 
 By default a hybrid property reuses the **same code** on the frontend and backend. When
 the two should differ, register a frontend-only implementation with `@<name>.var`. The
-decorated function receives the state class and returns a [Var](/docs/vars/base-vars):
+function receives the state class and returns a [Var](/docs/vars/base-vars); declaring it
+a `classmethod` types that first parameter as the class:
 
 ```python demo exec id=hybrid_greeting
 class GreetState(rx.State):
@@ -90,6 +91,7 @@ class GreetState(rx.State):
         return f"Hello, {self.name}!" if self.name else "Hello!"
 
     @greeting.var
+    @classmethod
     def greeting(cls) -> rx.Var[str]:
         # Frontend (Var) implementation.
         return rx.cond(cls.name, f"Hello, {cls.name}!", "Hello!")
@@ -102,10 +104,56 @@ def hybrid_greeting_example():
     )
 ```
 
+Repeating the property's name keeps its type visible when you access it on the class. If
+you would rather not shadow the declaration, give the function a name of its own — the
+result binds back to the property it was created from, and the extra name is removed from
+the class:
+
+```python
+    @greeting.var
+    @classmethod
+    def _greeting_var(cls) -> rx.Var[str]:
+        return rx.cond(cls.name, f"Hello, {cls.name}!", "Hello!")
+```
+
+What decides between the two is whether the attribute keeps the **function's own name**.
+Assigning the result elsewhere (`short = greeting.var(fn)`) forks an independent property
+under that name instead of binding back to `greeting` — unless `fn` happens to be named
+`short` too, which is indistinguishable from the decorator form.
+
 Because the frontend expression is built only from data that reaches the client, a hybrid
 property's frontend logic may reference regular vars but **not backend-only vars** (those
 prefixed with `_`). Reading a backend var while building the frontend value raises an
 error — produce such values on the server with a computed var instead.
+
+A var function may also return `None` to declare that the property has **no** frontend
+value on that class, for example when it depends on configuration the class does not
+enable. Class-level access then yields `None` instead of a var, and reaching the property
+through an object var raises an error.
+
+## Setters and Deleters
+
+Like a plain property, a hybrid property accepts a `setter` and a `deleter`. They are
+**backend-only** — the frontend value is derived from other vars, so there is nothing to
+assign to on the client:
+
+```python
+class NameState(rx.State):
+    first_name: str = "Jane"
+    last_name: str = "Doe"
+
+    @hybrid_property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+    @full_name.setter
+    def _set_full_name(self, value: str):
+        self.first_name, self.last_name = value.split(" ", 1)
+```
+
+Inside an event handler, `self.full_name = "Ada Lovelace"` runs that setter, which updates
+`first_name` and `last_name` — and those, being real vars, are what the frontend re-renders
+from.
 
 ## Nested Objects
 

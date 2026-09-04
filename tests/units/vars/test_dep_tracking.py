@@ -472,7 +472,7 @@ def test_hybrid_property_with_custom_var_dependencies():
             return "yes" if self.last_name else "no"
 
         @has_last_name.var
-        def has_last_name(cls) -> Var[str]:
+        def _has_last_name_var(cls) -> Var[str]:
             # Reference an unrelated field here to confirm the tracker uses fget, not this.
             return cls.unrelated  # pyright: ignore[reportReturnType]
 
