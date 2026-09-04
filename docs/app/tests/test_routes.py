@@ -196,6 +196,40 @@ def test_docpage_footer_issue_link_names_the_public_docs_url():
     assert "Issue%20with%20/vars/base-vars/" not in rendered
 
 
+# Prose links are plain anchors, so they keep the /docs prefix that python-block
+# links must omit.
+_MARKDOWN_DOCS_LINK = re.compile(r"\]\((/docs/[^)\s#]*)")
+
+
+def test_markdown_docs_links_resolve_to_real_routes(routes_fixture):
+    """Every `](/docs/...)` link in the docs markdown must hit a registered route.
+
+    `test_doc_links.py` checks prose links far more thoroughly, off the markdown
+    AST — but only against a sitemap that has to be built first, so it is marked
+    `xfail(run=False)` when the sitemap is missing. `docs_tests.yml` runs pytest
+    without building, and `integration_tests.yml` — the one workflow that builds
+    and passes `--runxfail` — sets `paths-ignore: ["**/*.md"]`. A markdown-only PR
+    therefore triggers neither. This check needs no build, so it is the one that
+    runs on a docs-only change.
+    """
+    known = {route.path.rstrip("/") for route in routes_fixture if route.path}
+
+    broken: dict[str, list[str]] = {}
+    for virtual, actual in _doc_markdown_files():
+        text = Path(actual).read_text(encoding="utf-8")
+        # Links inside ```python blocks are covered by the tests above.
+        prose = _PYTHON_BLOCK.sub("", text)
+        bad = [
+            link
+            for link in _MARKDOWN_DOCS_LINK.findall(prose)
+            if link.removeprefix("/docs").rstrip("/") not in known
+        ]
+        if bad:
+            broken[virtual] = sorted(set(bad))
+
+    assert broken == {}, f"Markdown links point at routes that do not exist: {broken}"
+
+
 def test_docs_do_not_link_to_retired_demo_apps():
     """Docs must not point readers at demo deployments that no longer exist.
 
