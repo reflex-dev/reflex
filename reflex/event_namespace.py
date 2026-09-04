@@ -132,7 +132,9 @@ class BaseEventNamespace(ABC):
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
         else:
-            logger.warning(f"No token provided in connection for session {sid}")
+            # A Reflex client always sends a token; the transport closes the
+            # session, so a warning per hostile connect would only flood logs.
+            logger.debug(f"No token provided in connection for session {sid}.")
 
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             logger.warning(
