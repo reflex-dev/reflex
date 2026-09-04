@@ -1,6 +1,7 @@
 """Tests for the environment module."""
 
 import enum
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -543,19 +544,19 @@ class TestUtilityFunctions:
             mock_load_dotenv.assert_any_call(file2, override=True)
 
     @patch("reflex_base.environment.load_dotenv", None)
-    @patch("reflex_base.utils.console")
-    def test_load_dotenv_from_files_without_dotenv(self, mock_console):
+    def test_load_dotenv_from_files_without_dotenv(self, caplog):
         """Test _load_dotenv_from_files when dotenv is not available.
 
         Args:
-            mock_console: Mock for the console object.
+            caplog: Pytest log capture fixture.
         """
         with tempfile.TemporaryDirectory() as temp_dir:
             file1 = Path(temp_dir) / "file1.env"
             file1.touch()
 
             _load_dotenv_from_files([file1])
-            mock_console.error.assert_called_once()
+            errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+            assert len(errors) == 1
 
     def test_load_dotenv_from_files_empty_list(self):
         """Test _load_dotenv_from_files with empty file list."""

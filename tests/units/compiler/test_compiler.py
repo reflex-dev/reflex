@@ -1387,3 +1387,177 @@ def test_register_plugin_routes_preserves_component_source_module():
     compiler._register_plugin_routes(app, [ComponentPlugin()])
 
     assert app._unevaluated_pages["component-page"]._source_module == __name__
+
+
+@pytest.mark.parametrize("disable_owner_stacks", [True, False])
+def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
+    """The owner-stack pin is emitted only when asked for, and only for the browser.
+
+    The snippet mutates shared React internals, so it must never run in the
+    server renderer, and it must disappear entirely when owner stacks are
+    requested (REFLEX_REACT_OWNER_STACKS=1) or in production builds.
+
+    Args:
+        disable_owner_stacks: Whether the pin should be emitted.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        disable_react_owner_stacks=disable_owner_stacks,
+    )
+
+    if not disable_owner_stacks:
+        assert "recentlyCreatedOwnerStacks" not in rendered
+        # React is only imported for the pin; without it the import is dead weight.
+        assert not rendered.startswith("import React,")
+        return
+
+    assert "recentlyCreatedOwnerStacks" in rendered
+    assert rendered.startswith("import React,")
+    # Browser-only: the guard must wrap the mutation, not merely precede it.
+    pin_at = rendered.index("recentlyCreatedOwnerStacks")
+    guard_at = rendered.index('typeof window !== "undefined"')
+    assert guard_at < pin_at
+    assert "Object.defineProperty" in rendered
+    # The documented escape hatch must be discoverable from the generated code.
+    assert "REFLEX_REACT_OWNER_STACKS" in rendered
+    # The trade-off must be stated where a reader of the output will see it.
+    assert "captureOwnerStack" in rendered
+
+
+def test_context_template_names_contexts_for_devtools():
+    """Every context in the generated module carries a ``displayName``.
+
+    React DevTools labels a provider from its context's ``displayName``;
+    without one the whole provider stack renders as ``Context.Provider``.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {},
+            "reflex___state____state.demo_state": {},
+        },
+        state_name="reflex___state____state",
+    )
+
+    for context_name in (
+        "ColorModeContext",
+        "UploadFilesContext",
+        "DispatchContext",
+        "EventLoopContext",
+    ):
+        assert f'{context_name}.displayName = "{context_name}";' in rendered
+
+    # State contexts are named for the Python state they carry, using the
+    # dotted state name rather than the mangled JS identifier.
+    assert (
+        "StateContexts.reflex___state____state.displayName = "
+        '"StateContext(reflex___state____state)";' in rendered
+    )
+    assert (
+        "StateContexts.reflex___state____state__demo_state.displayName = "
+        '"StateContext(reflex___state____state.demo_state)";' in rendered
+    )
+
+
+def test_context_template_client_side_component_is_named():
+    """``ClientSide`` returns a named component, not an anonymous arrow."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(is_dev_mode=True, default_color_mode='"light"')
+
+    assert "function ClientSideComponent({ children, ...props })" in rendered
+    assert (
+        "ClientSideComponent.displayName = name ? `ClientSide(${name})` : "
+        '"ClientSide";' in rendered
+    )
+    assert "return ClientSideComponent;" in rendered
+
+
+def _render_page_template(route: str = "test/[dynamic]") -> str:
+    """Render the page template for ``route``.
+
+    Args:
+        route: The route to compile the page for.
+
+    Returns:
+        The rendered page module source.
+    """
+    from reflex_base.compiler.templates import page_template
+
+    return page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+        route=route,
+    )
+
+
+def test_page_template_display_name_carries_the_route():
+    """Every page compiles to ``Component``; its route is in the display name."""
+    assert (
+        'Component.displayName = "Component(test/[dynamic])";'
+        in _render_page_template()
+    )
+
+
+def test_page_template_without_a_route_omits_the_display_name():
+    """``route`` is optional so out-of-tree callers of the shipped template work.
+
+    ``page_template`` is a public symbol in ``reflex-base``; a downstream
+    compiler plugin that predates the parameter must keep working. Without a
+    route there is no name worth showing, so the assignment is skipped entirely
+    rather than emitting a contentless ``Component()`` label.
+    """
+    from reflex_base.compiler.templates import page_template
+
+    rendered = page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+    )
+
+    assert "displayName" not in rendered
+    assert "export default Component;" in rendered
+
+
+def test_page_template_exports_the_component_binding_separately():
+    """The page component is declared and named before it is exported.
+
+    React Router rewrites an exported function *declaration* into a function
+    *expression* wrapped in ``UNSAFE_withComponentProps``
+    (``decorateComponentExportsWithProps``), which leaves no module-scope
+    binding behind. A trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads,
+    breaking every page. Exporting the identifier keeps the declaration intact.
+    """
+    rendered = _render_page_template()
+
+    assert "export default function Component" not in rendered
+    assert "\nfunction Component() {" in rendered
+    assert rendered.index("Component.displayName") < rendered.index(
+        "export default Component;"
+    )
+
+
+def test_compile_page_passes_its_route_to_the_template():
+    """The route reaches the template through the legacy page compile path."""
+    _, code = compiler.compile_page("about", rx.el.div("hi"))
+
+    assert 'Component.displayName = "Component(about)";' in code
+
+
+def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
+    """A client-only component passes its tag through to the wrapper's name."""
+    from reflex_components_plotly.plotly import Plotly
+
+    assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')

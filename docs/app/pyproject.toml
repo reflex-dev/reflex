@@ -14,7 +14,7 @@ dependencies = [
     "python-frontmatter",
     "reflex",
     "reflex-docgen",
-    "reflex-enterprise>=0.9.3",
+    "reflex-enterprise>=0.9.4",
     "reflex-hosting-cli",
     "reflex-pyplot",
     "reflex-integrations-docs",

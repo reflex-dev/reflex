@@ -240,9 +240,7 @@ def model_registry() -> Generator[type[ModelRegistry], None, None]:
     ModelRegistry._metadata = None
 
 
-@pytest_asyncio.fixture(
-    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
-)
+@pytest_asyncio.fixture(loop_scope="function", params=["in_process", "disk", "redis"])
 async def state_manager(
     request: pytest.FixtureRequest, mock_root_event_context: EventContext
 ) -> AsyncGenerator[StateManager, None]:
@@ -255,8 +253,13 @@ async def state_manager(
     Yields:
         A state manager instance
     """
-    state_manager = StateManager.create()
     if request.param == "redis":
+        # Only construct the configured manager for the redis param. When
+        # REFLEX_REDIS_URL is set, `StateManager.create()` returns a live
+        # StateManagerRedis that starts a `_lock_task`, so building one for the
+        # other params would orphan that task: it is replaced below and never
+        # closed, and then blocks event-loop teardown.
+        state_manager = StateManager.create()
         if not isinstance(state_manager, StateManagerRedis):
             state_manager = StateManagerRedis(redis=mock_redis())
     elif request.param == "disk":

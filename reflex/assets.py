@@ -2,17 +2,22 @@
 
 import hashlib
 import inspect
+import logging
 import time
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
-from reflex_base.utils import console
+
+logger = logging.getLogger(__name__)
 
 _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
+_MAX_LINK_ATTEMPTS = 3
+_LINK_RETRY_DELAY = 0.01
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -133,7 +138,7 @@ def _short_content_hash(path: Path) -> str:
         if digest == _content_digest(path):
             break
     else:
-        console.warn(
+        logger.warning(
             f"{path} was modified {_MAX_HASH_ATTEMPTS} times while calculating hash."
         )
         return str(time.time())
@@ -197,6 +202,82 @@ def remove_stale_external_asset_symlinks():
     for dirpath in sorted(external_dir.rglob("*"), reverse=True):
         if dirpath.is_dir() and not dirpath.is_symlink() and not any(dirpath.iterdir()):
             dirpath.rmdir()
+
+
+def _links_to(dst_file: Path, src_file: Path) -> bool:
+    """Check whether dst_file is already a symlink to src_file.
+
+    Args:
+        dst_file: The path to inspect.
+        src_file: The asset the symlink should point at.
+
+    Returns:
+        Whether dst_file is a symlink resolving to src_file.
+    """
+    try:
+        if not dst_file.is_symlink():
+            return False
+        resolved = dst_file.resolve()
+    except (OSError, RuntimeError):
+        # An unresolvable destination, such as the symlink loop a crashed or
+        # racing writer can leave behind, which Python below 3.13 reports as
+        # RuntimeError. It is not the link we want either way, so replace it.
+        return False
+    # The source is the caller's to validate, so its errors are not caught
+    # here: replacing the destination on a bad source would destroy a good
+    # link on the way to failing anyway.
+    return resolved == src_file.resolve()
+
+
+def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
+    """Point dst_file at src_file with a symlink, regardless of what is there.
+
+    Several processes routinely compile into the same assets/external/
+    directory at once: pytest-xdist workers, parallel builds, or containers
+    sharing a bind mount. Linking in place would be check-then-act, so the link
+    is built under a unique temporary name in the destination directory and
+    renamed over dst_file instead, which is one atomic replace on POSIX and
+    leaves no window to interleave with. Whichever process wins the race,
+    dst_file is a symlink to src_file once this returns.
+
+    Windows is the exception: replacing a destination that another process is
+    itself replacing is denied rather than serialised, so the rename is retried
+    there, conceding as soon as the other process turns out to have linked the
+    same asset.
+
+    Args:
+        dst_file: The symlink to create in the app's external assets directory.
+        src_file: The asset file the symlink should point at.
+
+    Raises:
+        PermissionError: If the destination could not be replaced.
+    """
+    if _links_to(dst_file, src_file):
+        # Already correct: leave it alone so file watchers see no change.
+        return
+
+    # The staged name deliberately does not derive from the asset name: that
+    # would have to be truncated to fit the filesystem's limit on a path
+    # component, and cutting a name to a byte budget without splitting a
+    # character is more machinery than a transient name is worth.
+    tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
+    try:
+        tmp_file.symlink_to(src_file)
+        for attempt in range(_MAX_LINK_ATTEMPTS):
+            try:
+                tmp_file.replace(dst_file)
+            except PermissionError:  # noqa: PERF203  # bounded, and dwarfed by the syscall
+                if _links_to(dst_file, src_file):
+                    # The process that denied us wanted the same link.
+                    return
+                if attempt == _MAX_LINK_ATTEMPTS - 1:
+                    raise
+                time.sleep(_LINK_RETRY_DELAY * (attempt + 1))
+            else:
+                return
+    finally:
+        # A no-op once the rename succeeded, and the cleanup if it did not.
+        tmp_file.unlink(missing_ok=True)
 
 
 def asset(
@@ -283,17 +364,7 @@ def asset(
         asset_folder = Path.cwd() / assets / external / subfolder
         asset_folder.mkdir(parents=True, exist_ok=True)
 
-        dst_file = asset_folder / path
-
-        if not dst_file.exists() and (
-            not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
-        ):
-            try:
-                dst_file.symlink_to(src_file_shared)
-            except FileExistsError:
-                # This happens when Simon builds the app on a bind mount in a docker container.
-                dst_file.unlink()
-                dst_file.symlink_to(src_file_shared)
+        _link_shared_asset(asset_folder / path, src_file_shared)
 
     return _versioned_asset_path(
         f"/{external}/{subfolder}/{path}",

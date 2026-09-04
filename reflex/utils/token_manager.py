@@ -5,17 +5,20 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import logging
 import pickle
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from reflex.istate.manager.redis import enable_keyspace_notifications
 from reflex.state import StateUpdate
-from reflex.utils import console, prerequisites
+from reflex.utils import prerequisites
 from reflex.utils.tasks import ensure_task
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -77,6 +80,17 @@ class TokenManager(ABC):
         """
         for token in self.token_to_socket:
             yield token
+
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket.
+        """
+        return token in self.token_to_socket
 
     @abstractmethod
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
@@ -232,27 +246,34 @@ class RedisTokenManager(LocalTokenManager):
             cursor=cursor, match=self._get_redis_key("*")
         ):
             cursor = int(scan_result[0])
-            for key in scan_result[1]:
+            for key in cast("list[bytes]", scan_result[1]):
                 yield key.decode().replace(self._token_socket_record_prefix, "")
             if not cursor:
                 break
 
-    async def _handle_socket_record_del(
-        self, token: str, expired: bool = False
-    ) -> None:
+    async def _handle_socket_record_del(self, token: str) -> None:
         """Handle deletion of a socket record from Redis.
+
+        Disconnects pop the local mapping before touching redis, so a
+        self-owned record still present locally was created by a newer link
+        and refers to a live socket; the deletion is an expiration or an
+        outdated notification, and the record is re-stored to keep it alive.
+        A cached foreign record is dropped and refetched on demand.
 
         Args:
             token: The client token whose record was deleted.
-            expired: Whether the deletion was due to expiration.
         """
-        if (
-            socket_record := self.token_to_socket.pop(token, None)
-        ) is not None and socket_record.instance_id == self.instance_id:
-            self.sid_to_token.pop(socket_record.sid, None)
-            if expired:
-                # Keep the record alive as long as this process is alive and not deleted.
-                await self.link_token_to_sid(token, socket_record.sid)
+        if (socket_record := self.token_to_socket.get(token)) is None:
+            return
+        if socket_record.instance_id == self.instance_id:
+            # Restore only if the key is still absent: a newer record (a
+            # relink here or a claim by another instance) must win.
+            if not await self._store_socket_record(token, socket_record, nx=True):
+                # Adopt the newer record without waiting for its set
+                # notification, which may be lost across pubsub reconnects.
+                await self._get_token_owner(token, refresh=True)
+        else:
+            self.token_to_socket.pop(token, None)
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
@@ -274,10 +295,7 @@ class RedisTokenManager(LocalTokenManager):
 
                     event = message["data"].decode()
                     if event in ("del", "expired", "evicted"):
-                        await self._handle_socket_record_del(
-                            token,
-                            expired=(event == "expired"),
-                        )
+                        await self._handle_socket_record_del(token)
                     elif event == "set":
                         await self._get_token_owner(token, refresh=True)
 
@@ -315,14 +333,13 @@ class RedisTokenManager(LocalTokenManager):
         try:
             token_exists_in_redis = await self.redis.exists(redis_key)
         except Exception as e:
-            console.error(f"Redis error checking token existence: {e}")
+            logger.error(f"Redis error checking token existence: {e}")
             return await super().link_token_to_sid(token, sid)
 
         new_token = None
         if token_exists_in_redis:
             # Duplicate exists somewhere - generate new token
             token = new_token = _get_new_token()
-            redis_key = self._get_redis_key(new_token)
 
         # Store in local dicts
         socket_record = self.token_to_socket[token] = SocketRecord(
@@ -330,17 +347,35 @@ class RedisTokenManager(LocalTokenManager):
         )
         self.sid_to_token[sid] = token
 
-        # Store in Redis if possible
-        try:
-            await self.redis.set(
-                redis_key,
-                pickle.dumps(socket_record),
-                ex=self.token_expiration,
-            )
-        except Exception as e:
-            console.error(f"Redis error storing token: {e}")
+        await self._store_socket_record(token, socket_record)
         # Return the new token if one was generated
         return new_token
+
+    async def _store_socket_record(
+        self, token: str, socket_record: SocketRecord, nx: bool = False
+    ) -> bool:
+        """Store a socket record in Redis, logging errors instead of raising.
+
+        Args:
+            token: The client token.
+            socket_record: The record to store.
+            nx: Only store the record if the key does not already exist.
+
+        Returns:
+            True if the record was stored, False if rejected (nx) or on error.
+        """
+        try:
+            return bool(
+                await self.redis.set(
+                    self._get_redis_key(token),
+                    pickle.dumps(socket_record),
+                    ex=self.token_expiration,
+                    nx=nx,
+                )
+            )
+        except Exception as e:
+            logger.error(f"Redis error storing token: {e}")
+            return False
 
     async def disconnect_token(self, token: str, sid: str) -> None:
         """Clean up token mapping when client disconnects.
@@ -355,15 +390,16 @@ class RedisTokenManager(LocalTokenManager):
             and socket_record.sid == sid
             and socket_record.instance_id == self.instance_id
         ):
-            # Clean up Redis
+            # Drop the local mapping before the redis round-trip so the
+            # locally-owned fast paths stop treating the token as connected
+            # while the delete is in flight.
+            await super().disconnect_token(token, sid)
+
             redis_key = self._get_redis_key(token)
             try:
                 await self.redis.delete(redis_key)
             except Exception as e:
-                console.error(f"Redis error deleting token: {e}")
-
-            # Clean up local dicts (always do this)
-            await super().disconnect_token(token, sid)
+                logger.error(f"Redis error deleting token: {e}")
 
     @staticmethod
     def _get_lost_and_found_key(instance_id: str) -> str:
@@ -428,17 +464,81 @@ class RedisTokenManager(LocalTokenManager):
         ):
             return socket_record.instance_id
 
-        redis_key = self._get_redis_key(token)
         try:
-            record_pkl = await self.redis.get(redis_key)
-            if record_pkl:
-                socket_record = pickle.loads(record_pkl)
-                self.token_to_socket[token] = socket_record
-                self.sid_to_token[socket_record.sid] = token
-                return socket_record.instance_id
+            socket_record = await self._fetch_socket_record(token)
         except Exception as e:
-            console.error(f"Redis error getting token owner: {e}")
-        return None
+            logger.error(f"Redis error getting token owner: {e}")
+            return None
+        return socket_record.instance_id if socket_record is not None else None
+
+    async def _fetch_socket_record(self, token: str) -> SocketRecord | None:
+        """Fetch the socket record for a token from redis and cache it.
+
+        Redis errors propagate to the caller so it can distinguish a lookup
+        failure from an absent record. This instance is authoritative for its
+        own sockets: a record claiming this instance without a live local
+        link is a stale leftover of a disconnected socket (its delete is
+        still in flight or failed) and is treated as absent.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            The refreshed socket record, or None if the token has no live socket.
+        """
+        record_pkl = cast(
+            "bytes | None", await self.redis.get(self._get_redis_key(token))
+        )
+        if not record_pkl:
+            return None
+        socket_record = pickle.loads(record_pkl)
+        # Stale leftover of one of this instance's own disconnected sockets.
+        if (
+            socket_record.instance_id == self.instance_id
+            and self.sid_to_token.get(socket_record.sid) != token
+        ):
+            return None
+        # Drop the reverse mapping of a superseded record (client moved sids).
+        if (
+            (previous := self.token_to_socket.get(token)) is not None
+            and previous.sid != socket_record.sid
+            and self.sid_to_token.get(previous.sid) == token
+        ):
+            self.sid_to_token.pop(previous.sid, None)
+        self.token_to_socket[token] = socket_record
+        self.sid_to_token[socket_record.sid] = token
+        return socket_record
+
+    async def is_token_connected(self, token: str) -> bool:
+        """Whether the token has a connected client socket on any instance.
+
+        A record owned by this instance is authoritative. A cached record
+        from another instance may be stale, so it is refreshed from redis
+        (dropped if the client is gone) and trusted as-is if the refresh fails.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True if the token has a connected socket on any instance.
+        """
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and socket_record.instance_id == self.instance_id:
+            return True
+        try:
+            if await self._fetch_socket_record(token) is not None:
+                return True
+        except Exception as e:
+            logger.warning(f"Redis error checking token connection: {e}")
+            return socket_record is not None
+        if (
+            socket_record is not None
+            and self.token_to_socket.get(token) is socket_record
+        ):
+            self.token_to_socket.pop(token, None)
+            self.sid_to_token.pop(socket_record.sid, None)
+        return False
 
     async def emit_lost_and_found(
         self,
@@ -465,7 +565,7 @@ class RedisTokenManager(LocalTokenManager):
                 pickle.dumps(record),
             )
         except Exception as e:
-            console.error(f"Redis error publishing lost and found delta: {e}")
+            logger.error(f"Redis error publishing lost and found delta: {e}")
         else:
             return True
         return False

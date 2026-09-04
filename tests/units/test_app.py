@@ -6,6 +6,7 @@ import contextvars
 import functools
 import io
 import json
+import logging
 import re
 import unittest.mock
 import uuid
@@ -27,7 +28,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console, exceptions, format, memo_paths
+from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
@@ -370,17 +371,16 @@ def index():
     ],
 )
 def test_add_the_same_page(
-    mocker: MockerFixture, app: App, first_page, second_page, route
+    caplog: pytest.LogCaptureFixture, app: App, first_page, second_page, route
 ):
     app.add_page(first_page, route=route)
-    mock_object = mocker.Mock()
-    mocker.patch.object(
-        console,
-        "warn",
-        mock_object,
-    )
     app.add_page(second_page, route="/" + route.strip("/") if route else None)
-    assert mock_object.call_count == 1
+    warnings = [
+        r
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(warnings) == 1
 
 
 @pytest.mark.parametrize(
@@ -446,7 +446,7 @@ def test_initialize_with_custom_admin_dashboard(
     from starlette_admin.contrib.sqla.admin import Admin
 
     custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
+    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
     assert app.admin_dash.admin is not None
@@ -2443,33 +2443,49 @@ def test_component_from_import_path_resolves_nested_module():
     assert isinstance(component.children[0], Button)
 
 
-def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_invalid_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """An unresolvable path should be logged and return None instead of raising."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     component = _component_from_import_path(
         "nonexistent_module.does_not_exist", "hydrate_fallback"
     )
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
-def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_non_callable_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """A path resolving to a non-callable attribute should return None."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     # ``reflex.constants`` is a module, not a callable returning a component.
     component = _component_from_import_path("reflex.constants", "hydrate_fallback")
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
 def test_compile_with_radix_component_auto_enables_radix_plugin(
@@ -4034,23 +4050,33 @@ def frontend_errors(event_namespace: EventNamespace) -> list[str]:
 
 
 @pytest.fixture
-def client_error_console(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
-    """Capture messages logged through the console helpers.
+def client_error_console() -> Generator[dict[str, list[str]], None, None]:
+    """Capture messages logged through the app's logger, keyed by level.
 
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-
-    Returns:
+    Yields:
         Captured messages keyed by log level.
     """
     captured: dict[str, list[str]] = {"error": [], "warn": [], "debug": []}
-    for level in captured:
-        monkeypatch.setattr(
-            console,
-            level,
-            lambda msg, _level=level, **kwargs: captured[_level].append(msg),
-        )
-    return captured
+    level_keys = {
+        logging.ERROR: "error",
+        logging.WARNING: "warn",
+        logging.DEBUG: "debug",
+    }
+
+    class _CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord):
+            key = level_keys.get(record.levelno)
+            if key is not None:
+                captured[key].append(record.getMessage())
+
+    app_logger = logging.getLogger("reflex.app")
+    handler = _CaptureHandler(level=logging.DEBUG)
+    previous_level = app_logger.level
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.DEBUG)
+    yield captured
+    app_logger.removeHandler(handler)
+    app_logger.setLevel(previous_level)
 
 
 @pytest.mark.asyncio
@@ -4116,6 +4142,32 @@ async def test_client_error_malformed_payload_is_ignored(
     """
     await event_namespace.on_client_error("known_sid", payload)
     assert not frontend_errors
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sid", ["known_sid", "unknown_sid"])
+async def test_client_error_no_argument_emit_is_ignored(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+    sid: str,
+):
+    """A payload-less client_error emit is dropped like any malformed payload.
+
+    python-socketio dispatches ``emit("client_error")`` without a payload as
+    ``on_client_error(sid)``, so a missing ``data`` argument must not raise a
+    TypeError before the anti-abuse guards run.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+        sid: The Socket.IO session id to report from.
+    """
+    await event_namespace.on_client_error(sid)
+    assert not frontend_errors
+    assert not client_error_console["error"]
+    assert not client_error_console["warn"]
 
 
 @pytest.mark.asyncio
@@ -4257,3 +4309,38 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+@pytest.mark.parametrize("compile_raises", [False, True])
+def test_compile_releases_memo_naming_caches(
+    mocker: MockerFixture, compile_raises: bool
+):
+    """``App._compile`` must release the memo-naming caches on every path.
+
+    The CLI and export paths reach ``_compile`` through
+    ``prerequisites.get_compiled_app`` and never touch ``App.__call__``, so the
+    release has to sit in the compile lifecycle -- and in a ``finally``, so a
+    failed compile does not leave the caches behind either.
+    """
+    from reflex_base.utils.deterministic_hash import (
+        _hash_str_encodings,
+        clear_hash_caches,
+    )
+
+    app = App()
+
+    def fake_compile_app(*_args: Any, **_kwargs: Any) -> bool:
+        # Stand in for the naming work a real compile does.
+        _hash_str_encodings["probe"] = b"probe"
+        if compile_raises:
+            msg = "compile blew up"
+            raise RuntimeError(msg)
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=fake_compile_app)
+    clear_hash_caches()
+
+    with pytest.raises(RuntimeError) if compile_raises else contextlib.nullcontext():
+        app._compile()
+
+    assert not _hash_str_encodings

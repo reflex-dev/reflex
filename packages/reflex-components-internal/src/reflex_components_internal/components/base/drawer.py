@@ -44,7 +44,7 @@ class DrawerBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the drawer component."""
+        """The import variable for the drawer component."""
         return ImportVar(tag="Drawer", package_path="", install=False)
 
 

@@ -17,6 +17,7 @@ const ThemeContext = createContext({
   resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
   setTheme: () => {},
 });
+ThemeContext.displayName = "ThemeContext";
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
