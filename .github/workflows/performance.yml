@@ -16,6 +16,9 @@ env:
   NODE_OPTIONS: "--max_old_space_size=8192"
   APP_HARNESS_HEADLESS: 1
   PYTHONUNBUFFERED: 1
+  # Randomized string hashing shifts dict probe sequences run to run, which the
+  # instrumented benchmarks can pick up as drift unrelated to the code change.
+  PYTHONHASHSEED: 0
 
 jobs:
   benchmarks:

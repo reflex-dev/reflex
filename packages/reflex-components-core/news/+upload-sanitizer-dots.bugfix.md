@@ -1,1 +1,0 @@
-Upload filenames whose segments contain nothing but dots and spaces (e.g. `".."`, `"./../."`, `".. "`) now sanitize to the fallback name `upload` instead of returning the bare segment. Such names pointed the saved path outside the upload directory — directly on POSIX, and via Win32's trailing dot/space trimming on Windows — and crashed the upload handler with a 500.

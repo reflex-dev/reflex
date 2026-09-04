@@ -516,12 +516,17 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     if isinstance(cls, TypeAliasTypes):
         return resolve_type_alias(cls.__value__)
     if is_union(cls):
+        # Rebuild the union only when a member actually resolved, so the
+        # common alias-free case allocates nothing.
+        resolved_args = None
         args = get_args(cls)
-        resolved_args = tuple(resolve_type_alias(arg) for arg in args)
-        if any(
-            resolved is not arg
-            for resolved, arg in zip(resolved_args, args, strict=True)
-        ):
+        for index, arg in enumerate(args):
+            resolved = resolve_type_alias(arg)
+            if resolved is not arg:
+                if resolved_args is None:
+                    resolved_args = list(args)
+                resolved_args[index] = resolved
+        if resolved_args is not None:
             return unionize(*resolved_args)
     return cls
 
@@ -892,8 +897,6 @@ def _isinstance(
 
     origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
-    args = _get_args_cached(cls) if origin is not None else ()
-
     if origin is None:
         # cls is a typed dict
         if is_typeddict(cls):
@@ -912,7 +915,23 @@ def _isinstance(
             return isinstance(obj, (float, int))
 
         # cls is a simple class
-        return isinstance(obj, cls)
+        try:
+            return isinstance(obj, cls)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``isinstance``; unwrap it
+            # and re-dispatch. Alias members of a union resolve in the
+            # per-member recursion of the union branch above.
+            if isinstance(cls, TypeAliasTypes):
+                return _isinstance(
+                    obj,
+                    resolve_type_alias(cls),
+                    nested=nested,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
+            raise
+
+    args = _get_args_cached(cls)
 
     if not args:
         if treat_mutable_obj_as_immutable:
@@ -1004,7 +1023,22 @@ def _isinstance(
             obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
         )
 
-    return isinstance(obj, get_base_class(cls))
+    try:
+        return isinstance(obj, get_base_class(cls))
+    except TypeError:
+        # A subscripted PEP 695 type alias keeps the alias as its origin, so it
+        # matches none of the branches above and get_base_class hands the
+        # opaque alias back; unwrap it and re-dispatch. Checked lazily here so
+        # alias-free generic checks pay nothing.
+        if isinstance(origin, TypeAliasTypes):
+            return _isinstance(
+                obj,
+                resolve_type_alias(cls),
+                nested=nested,
+                treat_var_as_type=treat_var_as_type,
+                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+            )
+        raise
 
 
 def is_dataframe(value: type) -> bool:
@@ -1231,7 +1265,22 @@ def typehint_issubclass(
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        try:
+            return issubclass(possible_subclass, possible_superclass)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``issubclass``; unwrap it
+            # and re-dispatch.
+            if isinstance(possible_subclass, TypeAliasTypes) or isinstance(
+                possible_superclass, TypeAliasTypes
+            ):
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    resolve_type_alias(possible_superclass),
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
+            raise
 
     if treat_literals_as_union_of_types and is_literal(possible_superclass):
         args = get_args(possible_superclass)
@@ -1271,6 +1320,18 @@ def typehint_issubclass(
 
     if accepted_type_origin is Union:
         if provided_type_origin is not Union:
+            if isinstance(provided_type_origin or possible_subclass, TypeAliasTypes):
+                # A PEP 695 type alias — bare (checked via the hint itself
+                # when the origin is None) or subscripted (the alias is the
+                # origin) — must unwrap before the member-wise comparison so
+                # an alias of a union is compared with union semantics.
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    possible_superclass,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
             return any(
                 typehint_issubclass(
                     possible_subclass,
@@ -1295,6 +1356,16 @@ def typehint_issubclass(
             for provided_arg in provided_args
         )
     if provided_type_origin is Union:
+        if isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+            # Same as above, mirrored: the union members must compare against
+            # the alias's resolved value, not the opaque alias.
+            return typehint_issubclass(
+                possible_subclass,
+                resolve_type_alias(possible_superclass),
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
         return all(
             typehint_issubclass(
                 provided_arg,
@@ -1304,6 +1375,19 @@ def typehint_issubclass(
                 treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
             )
             for provided_arg in provided_args
+        )
+
+    if isinstance(
+        provided_type_origin or possible_subclass, TypeAliasTypes
+    ) or isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+        # A PEP 695 type alias on either side is opaque to the origin
+        # comparison below, so unwrap it and re-dispatch.
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
         )
 
     provided_type_origin = provided_type_origin or possible_subclass
