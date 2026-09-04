@@ -155,41 +155,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-<<<<<<< HEAD
-  detect:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      packages: ${{ steps.detect.outputs.packages }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - id: detect
-        env:
-          hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
-          reflex_base: ${{ inputs.reflex_base }}
-          reflex_components_code: ${{ inputs.reflex_components_code }}
-          reflex_components_core: ${{ inputs.reflex_components_core }}
-          reflex_components_dataeditor: ${{ inputs.reflex_components_dataeditor }}
-          reflex_components_gridjs: ${{ inputs.reflex_components_gridjs }}
-          reflex_components_lucide: ${{ inputs.reflex_components_lucide }}
-          reflex_components_markdown: ${{ inputs.reflex_components_markdown }}
-          reflex_components_moment: ${{ inputs.reflex_components_moment }}
-          reflex_components_plotly: ${{ inputs.reflex_components_plotly }}
-          reflex_components_radix: ${{ inputs.reflex_components_radix }}
-          reflex_components_react_player: ${{ inputs.reflex_components_react_player }}
-          reflex_components_recharts: ${{ inputs.reflex_components_recharts }}
-          reflex_components_sonner: ${{ inputs.reflex_components_sonner }}
-          reflex_docgen: ${{ inputs.reflex_docgen }}
-          reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
-          reflex_i18n: ${{ inputs.reflex_i18n }}
-          reflex_release: ${{ inputs.reflex_release }}
-        run: bash .github/scripts/dispatch_release/detect.sh
-
-=======
->>>>>>> upstream/main
   materialize:
     runs-on: ubuntu-latest
     permissions:
@@ -229,6 +194,7 @@ jobs:
             ${{ inputs.reflex_components_sonner && 'reflex-components-sonner' || '' }}
             ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
+            ${{ inputs.reflex_i18n && 'reflex-i18n' || '' }}
             ${{ inputs.reflex_release && 'reflex-release' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan

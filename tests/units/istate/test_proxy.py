@@ -5,13 +5,8 @@ import contextvars
 import dataclasses
 import pickle
 from asyncio import CancelledError
-<<<<<<< HEAD
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any
-=======
-from contextlib import asynccontextmanager
 from typing import Any, ClassVar
->>>>>>> upstream/main
 
 import pytest
 from reflex_base.event.context import EventContext
@@ -721,7 +716,6 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
         assert state.registry.entries == {"a": [1, 2]}
 
 
-<<<<<<< HEAD
 _ambient_lang = contextvars.ContextVar("test_proxy_ambient_lang", default="unset")
 
 
@@ -789,7 +783,8 @@ async def test_proxy_aexit_resolves_delta_in_event_scope(
         if name.startswith("scoped")
     ]
     assert scoped_values == ["de"]
-=======
+
+
 @dataclasses.dataclass(frozen=True)
 class FrozenTaggedModel:
     """A frozen dataclass for dataclass-protocol tests."""
@@ -1053,4 +1048,3 @@ def test_fast_path_prunes_names_registered_after_class_creation():
         assert "get_delta" not in cls._fast_attr_names
         assert "get_state" not in cls._fast_attr_names
         assert "dirty_vars" in cls._fast_attr_names
->>>>>>> upstream/main

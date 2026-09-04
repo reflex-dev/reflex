@@ -468,37 +468,15 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
-<<<<<<< HEAD
-        async with event_scope(root_state):
-=======
         handler_error: BaseException | None = None
         try:
->>>>>>> upstream/main
-            await process_event(
-                handler=registered_handler.handler,
-                state=proxy,
-                payload=event.payload,
-                root_state=None,
-            )
-<<<<<<< HEAD
-        if not proxy._self_entered_context:
-            # A handler that never entered `async with self` emitted nothing,
-            # but every background event used to flush a delta (refreshing
-            # uncached computed vars, and any dirty vars the preamble left,
-            # like router_data). Preserve that, under the lock this time.
-            async with ctx.state_manager.modify_state_with_links(
-                BaseStateToken(
-                    ident=ctx.token,
-                    cls=registered_handler.states[0],
-                ),
-                event=event,
-            ) as flush_state:
-                await chain_updates(
-                    None,
-                    root_state=flush_state._get_root_state(),
-                    handler_name=registered_handler.handler.fn.__qualname__,
+            async with event_scope(root_state):
+                await process_event(
+                    handler=registered_handler.handler,
+                    state=proxy,
+                    payload=event.payload,
+                    root_state=None,
                 )
-=======
         except BaseException as ex:
             handler_error = ex
             raise
@@ -533,7 +511,6 @@ class BaseStateEventProcessor(EventProcessor):
                         "Error flushing delta after background handler "
                         f"{registered_handler.handler.fn.__qualname__} raised:"
                     )
->>>>>>> upstream/main
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
