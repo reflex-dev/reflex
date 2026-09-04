@@ -20,8 +20,8 @@ pattern-prefix = "reflex-components-react-player-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Include uncommitted pyi stubs generated for this package.
+artifacts = ["/src/**/*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [

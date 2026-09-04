@@ -585,6 +585,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
+                # Handlers here only parse and enqueue (or emit a pong), so run
+                # them inline on the socket's receive loop instead of paying a
+                # task creation and a loop hop per incoming message.
+                async_handlers=False,
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -1409,22 +1413,29 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
+        replaced_new_route = replace_brackets_with_keywords(new_route)
         for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
                     return route, r, nr
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
         return None
 
     def _setup_admin_dash(self):
@@ -1445,8 +1456,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
+            # The first positional argument is `engine` before starlette-admin
+            # 1.0 and `session_provider` (which still accepts an Engine) after,
+            # so pass it positionally to support both.
             admin = admin_dash.admin or Admin(
-                engine=get_engine(),
+                get_engine(),
                 title="Reflex Admin Dashboard",
                 logo_url="https://reflex.dev/Reflex.svg",
             )
@@ -1671,32 +1685,43 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
-            try:
-                did_real_compile = compiler.compile_app(
+        ctx = TelemetryContext.start(trigger=trigger)
+        try:
+            if ctx is None:
+                compiler.compile_app(
                     self,
                     prerender_routes=prerender_routes,
                     dry_run=dry_run,
                     use_rich=use_rich,
                 )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
-            finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                return
+
+            with ctx:
+                did_real_compile = False
+                try:
+                    did_real_compile = compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                except Exception as exc:
+                    ctx.set_exception(exc)
+                    did_real_compile = True
+                    raise
+                finally:
+                    if did_real_compile:
+                        telemetry_accounting.record_compile(self, ctx)
+        finally:
+            # Auto-memoization named every wrapper it will ever name during the
+            # compile, so its encoding caches are dead weight from here. This is
+            # the single funnel every compile goes through -- the CLI and export
+            # paths reach it via ``get_compiled_app`` and never touch
+            # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+            # from leaving them behind.
+            clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -2180,7 +2205,7 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-    async def on_client_error(self, sid: str, data: Any):
+    async def on_client_error(self, sid: str, data: Any = None):
         """Handle errors reported by the frontend.
 
         This is a dedicated socket event rather than a state event
@@ -2198,7 +2223,10 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
-            data: The error data from the client.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard below
+                then drops it without raising.
         """
         if not isinstance(data, dict):
             logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")

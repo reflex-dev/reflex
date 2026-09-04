@@ -101,6 +101,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       - name: Validate against changelog, branch rules and existing tags
         id: prepare
@@ -130,6 +131,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       - name: Pin lockstep siblings to exact versions
         env:
@@ -205,6 +207,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       # One artifact per build job — a platform matrix uploads one per leg —
       # merged into a single dist/. The `--` in the pattern is what keeps a
@@ -357,8 +360,14 @@ jobs:
           fi
           echo "pypi environment protection rules: $rules (prevent_self_review: $self_review)"
 
+      # This job deliberately never checks the repository out, so setup-uv
+      # runs against an empty directory: its cache key would hash nothing and
+      # its empty-workdir check would warn, once each per released package. It
+      # installs no dependencies either — `uv publish` only uploads the files
+      # the approval covered — so there is nothing to cache.
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_NO_CHECKOUT@@
 
       - name: Download built artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -396,6 +405,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       # The same artifact the approval covered: the release notes and the
       # checksum manifest of exactly what was uploaded.

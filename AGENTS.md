@@ -20,7 +20,8 @@ uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
 uv run pyright reflex tests                                      # type check
 uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; *.dev pins resolve from the local workspace, all other deps from PyPI)
-uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # publish gate: fail if pkg (default: all) declares an unpublishable *.dev dependency pin
+uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg (default: all) declares an unpublishable *.dev dependency pin (the publish workflow runs the same gate via `reflex-release check-dev-pins`)
+uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
 ```
@@ -90,6 +91,30 @@ Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. 
 
 When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `pyi_hashes.json` (not `.pyi` files). If the diff removes many modules, run `uv sync`, delete `.pyi_generator_last_run`, and regenerate.
 
+## Changelog fragments
+
+User-facing changes need a news fragment in the `news/` directory of each
+package they touch (the repo root's `news/` for `reflex`), named
+`<PR number>.<type>.md`, or `+<slug>.<type>.md` before the PR number is known.
+Types: `breaking`, `deprecation`, `feature`, `bugfix`, `performance`, `docs`,
+`misc`.
+
+Write for external downstream users, not for reviewers. Every entry links to
+its PR, so motivation, narrative, and implementation details belong in the PR
+and the commit message — a reader who wants them will follow the link. Keep the
+fragment to a sentence or two saying what changed and what it means for a user:
+
+> Reduce published wheel and sdist size by removing misplaced generated artifacts.
+
+Brevity is about the narrative, not the substance: whatever is genuinely useful
+downstream belongs in the fragment. A brief usage example for a new feature, or
+the before/after of converting deprecated usage to the supported style, earns
+its place. Once it runs past a few sentences and a small code block, it is
+documentation — write it under `docs/` and let the fragment link there.
+
+CI requires a fragment for every package whose source the PR touches; the
+`skip-changelog` label waives it for changes that are genuinely not user-facing.
+
 ## Breaking changes and deprecation
 
 Reflex has downstream users — don't break them. Provide a fallback path during deprecation.
@@ -127,4 +152,5 @@ Before submitting:
 3. `uv run pyright reflex tests` passes
 4. `pyi_hashes.json` updated if components changed
 5. Documentation updated if user-facing behavior changed
-6. Deprecation warnings added if breaking changes introduced
+6. News fragment added for user-facing changes
+7. Deprecation warnings added if breaking changes introduced

@@ -1,3 +1,28 @@
+## v0.1.71 (2026-08-28)
+
+### Breaking Changes
+
+- `REFLEX_ACCESS_TOKEN` now takes precedence over the token stored by `reflex login`. Previously the stored token won and the environment variable was consulted only when no token was stored, so exporting it to run a script against a different account had no effect on a machine that had ever logged in — silently, and with no way to tell which credential was in use. Exporting the variable is an explicit choice for that invocation; the config file is ambient state left behind by an earlier login. This changes behavior only when both are present and differ. `reflex cloud whoami` reports which source is in use. ([#6918](https://github.com/reflex-dev/reflex/issues/6918))
+
+### Features
+
+- Added `reflex cloud whoami` and `reflex cloud token`. `whoami` reports the account, org, tier and token source that the CLI is authenticating as, resolving the token against the control plane without ever starting a browser login and without printing the token — it shows a non-reversible fingerprint instead, so two machines can be compared without anyone sharing a secret. `reflex cloud token` takes exactly one of `--print`, `--set TOKEN` or `--clear`: `--print` writes the raw token to stdout for capture (`export REFLEX_ACCESS_TOKEN=$(reflex cloud token --print)`), `--set` validates the token with the control plane before storing it and leaves the previous one in place if it is rejected, and `--clear` removes the stored token, noting when `REFLEX_ACCESS_TOKEN` remains set and will take over. ([#6918](https://github.com/reflex-dev/reflex/issues/6918))
+- On the deploy that first lands an app on GCP, `--hostname` now doubles as the app's Cloud Run service name, so the service in the customer's console reads like the app's URL instead of `app-<uuid>`. A hostname the service-name grammar refuses (leading digit, over 49 characters, or the reserved `app-<uuid>` shape) is skipped with a note and the server generates a name from the app name; later GCP deploys never send one, since the name is pinned to the live service. ([#6937](https://github.com/reflex-dev/reflex/issues/6937))
+- `reflex deploy` uploads a build's two archives straight to storage, concurrently and with a progress bar for each, instead of relaying them through the control plane. ([#6938](https://github.com/reflex-dev/reflex/issues/6938))
+- `reflex cloud deploy` now reports why a deploy failed instead of exiting on a status string: the recorded reason, whether the failure was in your app or on Reflex's side, and the end of the build log when that is what explains it. ([#6948](https://github.com/reflex-dev/reflex/issues/6948))
+
+### Bug Fixes
+
+- The hosting config file (`hosting_v1.json`) is now written atomically. `save_token_to_config` and `delete_token_from_config` opened it with mode `"w"`, truncating it before writing, so a failed write — a full disk, an I/O error, an interrupted process — left an empty file and destroyed the stored access token and selected project. Neither helper reports write failures to the caller (`save_token_to_config` logs a warning, `delete_token_from_config` only a debug message), so this was easy to miss. Both now serialize to a temporary file alongside the target and move it into place, leaving the existing credentials untouched when a write fails. A config that exists but cannot be read is no longer treated as empty either, so `delete_token_from_config` leaves a malformed file alone instead of replacing it; `save_token_to_config` still starts fresh from one, so a corrupt config cannot block re-authenticating. This also covers `reflex login` and `reflex logout`, which share these helpers. ([#6918](https://github.com/reflex-dev/reflex/issues/6918))
+- Fix for older reflex versions
+
+### Miscellaneous
+
+- The hosting CLI's logging goes through standard python `logging`. On reflex 0.9 and up it shares the `reflex-base` console and `LogLevel`; on earlier reflex, where `reflex-base` is not installed, the CLI renders the same output itself. Debug output renders purple (was blue), errors go to stderr (was stdout), and success messages are hidden at `--loglevel warning`. ([#6866](https://github.com/reflex-dev/reflex/issues/6866))
+- `reflex cloud token --set` accepts the token on stdin — pass `-`, or omit the value entirely — so live credentials need not appear in shell history or the process list. When stdin is a terminal it prompts without echoing. `reflex cloud whoami` writes its output directly rather than through the shared console, which applies rich markup and wraps to the terminal width: identifiers now print in full instead of being truncated to fit, and `--json` stays on one line so it can be piped. ([#6918](https://github.com/reflex-dev/reflex/issues/6918))
+- The `reflex deploy` command implementation now lives here, in `reflex_cli.v2.deploy`. The package no longer imports the `reflex` framework at module scope, so it stays importable on its own. ([#6924](https://github.com/reflex-dev/reflex/issues/6924))
+
+
 ## v0.1.70 (2026-08-18)
 
 ### Deprecations

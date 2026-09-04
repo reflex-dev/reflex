@@ -5,8 +5,13 @@ import contextvars
 import dataclasses
 import pickle
 from asyncio import CancelledError
+<<<<<<< HEAD
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any
+=======
+from contextlib import asynccontextmanager
+from typing import Any, ClassVar
+>>>>>>> upstream/main
 
 import pytest
 from reflex_base.event.context import EventContext
@@ -716,6 +721,7 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
         assert state.registry.entries == {"a": [1, 2]}
 
 
+<<<<<<< HEAD
 _ambient_lang = contextvars.ContextVar("test_proxy_ambient_lang", default="unset")
 
 
@@ -783,3 +789,268 @@ async def test_proxy_aexit_resolves_delta_in_event_scope(
         if name.startswith("scoped")
     ]
     assert scoped_values == ["de"]
+=======
+@dataclasses.dataclass(frozen=True)
+class FrozenTaggedModel:
+    """A frozen dataclass for dataclass-protocol tests."""
+
+    tag: str = "a"
+
+
+@dataclasses.dataclass(match_args=False)
+class UnmatchableModel:
+    """A dataclass declared without `__match_args__`."""
+
+    tag: str = "a"
+
+
+@dataclasses.dataclass(slots=True)
+class SlottedModel:
+    """A slots dataclass, whose layout must not leak onto the proxy class."""
+
+    tag: str = "default"
+    ls: list[int] = dataclasses.field(default_factory=list)
+
+
+def _dataclass_proxy(model: Any) -> Any:
+    """Build a proxy for a dataclass value held by a state field.
+
+    Args:
+        model: The dataclass instance to proxy.
+
+    Returns:
+        The MutableProxy wrapping the model.
+    """
+    return MutableProxy(model, DataclassMutableProxyState(), "dc")
+
+
+@pytest.mark.parametrize(
+    ("model", "frozen"),
+    [
+        (TaggedModel(ls=[{"tag": 1}]), False),
+        (FrozenTaggedModel(), True),
+        (SlottedModel(), False),
+    ],
+)
+def test_dataclass_proxy_class_carries_dataclass_metadata(
+    model: Any, frozen: bool
+) -> None:
+    """The proxy class synthesized per dataclass type exposes its metadata."""
+    proxy_cls = type(_dataclass_proxy(model))
+    model_cls = type(model)
+
+    assert proxy_cls is not model_cls
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert dataclasses.fields(proxy_cls) == dataclasses.fields(model_cls)
+    assert proxy_cls.__dataclass_params__ is model_cls.__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__dataclass_params__.frozen is frozen  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__match_args__ == model_cls.__match_args__  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_dataclass_proxy_class_omits_absent_metadata() -> None:
+    """Metadata the wrapped dataclass was declared without is not invented."""
+    proxy_cls = type(_dataclass_proxy(UnmatchableModel()))
+
+    assert not hasattr(UnmatchableModel, "__match_args__")
+    assert not hasattr(proxy_cls, "__match_args__")
+
+
+def test_dataclass_proxy_class_copies_no_behavior() -> None:
+    """Only metadata is copied: everything else resolves through the wrapped object."""
+    model = SlottedModel(tag="instance", ls=[1])
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    for attr in (
+        "__init__",
+        "__repr__",
+        "__eq__",
+        "__setattr__",
+        "__delattr__",
+        "__slots__",
+        "tag",
+    ):
+        assert attr not in vars(proxy_cls)
+
+    assert proxy.tag == "instance"
+    assert dataclasses.asdict(proxy) == {"tag": "instance", "ls": [1]}
+
+    proxy.ls.append(2)
+    assert model.ls == [1, 2]
+
+    proxy.tag = "mutated"
+    assert model.tag == "mutated"
+
+
+@dataclasses.dataclass
+class DunderFieldModel:
+    """A dataclass whose field names collide with the copied metadata."""
+
+    __match_args__: tuple[str, ...] = ()
+    __dataclass_params__: int = 0
+
+
+def test_dataclass_proxy_class_never_shadows_a_field() -> None:
+    """A field named like copied metadata keeps its instance value through the proxy."""
+    model = DunderFieldModel(__match_args__=("live",), __dataclass_params__=7)
+    proxy = _dataclass_proxy(model)
+
+    assert "__match_args__" not in vars(type(proxy))
+    assert "__dataclass_params__" not in vars(type(proxy))
+    assert proxy.__match_args__ == ("live",)
+    assert proxy.__dataclass_params__ == 7
+    assert dataclasses.asdict(proxy) == dataclasses.asdict(model)
+
+
+@dataclasses.dataclass
+class DunderClassVarModel:
+    """A dataclass declaring the copied metadata names as class-level entries."""
+
+    __match_args__: ClassVar[tuple[str, ...]] = ("custom",)
+    __dataclass_fields__: ClassVar[dict[str, Any]] = {}
+    other: int = 0
+
+
+@dataclasses.dataclass
+class DunderInitVarModel:
+    """A dataclass declaring a copied metadata name as an InitVar."""
+
+    __match_args__: dataclasses.InitVar[tuple[str, ...]] = ("initvar",)
+    other: int = 0
+
+    def __post_init__(self, __match_args__: tuple[str, ...]) -> None:
+        """Accept the InitVar.
+
+        Args:
+            __match_args__: The InitVar value, unused.
+        """
+
+
+@pytest.mark.parametrize(
+    ("model", "match_args"),
+    [
+        (DunderClassVarModel(other=1), ("custom",)),
+        (DunderInitVarModel(other=1), ("initvar",)),
+    ],
+)
+def test_dataclass_proxy_class_copies_class_level_pseudo_fields(
+    model: Any, match_args: tuple[str, ...]
+) -> None:
+    """ClassVar and InitVar entries keep their value on the class, so they are copied."""
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert proxy_cls.__match_args__ == match_args  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy.__match_args__ == match_args
+    assert dataclasses.asdict(proxy) == {"other": 1}
+
+
+def test_frozen_dataclass_proxy_rejects_mutation() -> None:
+    """A frozen dataclass stays frozen through its proxy."""
+    proxy = _dataclass_proxy(FrozenTaggedModel())
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        proxy.tag = "b"
+
+
+def test_interval_computed_vars_resolve_through_state_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Marking dirty through a StateProxy resolves the class cache on the wrapped state.
+
+    `_expired_computed_vars` caches the interval-var names per class; looked up
+    via `type(self)` that would hit the proxy class and fail.
+
+    Args:
+        attached_mock_event_context: The attached mock event context fixture.
+    """
+    import datetime
+
+    from reflex.state import State
+    from reflex.vars.base import computed_var
+
+    class IntervalState(State):
+        base: int = 0
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            return self.base
+
+    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    proxy = StateProxy(state)
+    assert proxy._expired_computed_vars() == {"timed"}
+    assert IntervalState._interval_computed_var_names == frozenset({"timed"})
+
+
+def test_fast_path_skips_names_a_subclass_defines():
+    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+
+    The fast path bypasses var resolution, so it must not apply to a name the
+    state itself defines (here a marked override of a BaseState method, and a
+    backend var named like a framework method). The class is a detached root
+    (not a substate of ``State``) so the shadowed method never reaches the
+    framework paths that other tests exercise on the shared state tree.
+    """
+    from reflex.state import BaseState
+
+    def get_value(self, key: str):
+        return f"shadow:{key}"
+
+    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+
+    ShadowState = type(
+        "ShadowState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__qualname__": "ShadowState",
+            "__annotations__": {"_get_was_touched": int},
+            "_get_was_touched": 7,
+            "get_value": get_value,
+        },
+    )
+    assert "get_value" in BaseState._fast_attr_names
+    assert "get_value" not in ShadowState._fast_attr_names
+    assert "_get_was_touched" not in ShadowState._fast_attr_names
+    assert "dirty_vars" in ShadowState._fast_attr_names
+    state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.get_value("k") == "shadow:k"
+    assert state._get_was_touched == 7
+
+
+def test_fast_path_prunes_names_registered_after_class_creation():
+    """Vars and handlers added after class creation also leave the fast path."""
+    from reflex_base.constants import RouteArgType
+
+    from reflex.state import BaseState
+
+    DynamicState = type(
+        "DynamicState",
+        (BaseState,),
+        {"__module__": __name__, "__qualname__": "DynamicState"},
+    )
+    DynamicSubState = type(
+        "DynamicSubState",
+        (DynamicState,),
+        {"__module__": __name__, "__qualname__": "DynamicSubState"},
+    )
+    DynamicGrandChild = type(
+        "DynamicGrandChild",
+        (DynamicSubState,),
+        {"__module__": __name__, "__qualname__": "DynamicGrandChild"},
+    )
+    tree = (DynamicState, DynamicSubState, DynamicGrandChild)
+    for cls in tree:
+        assert {"get_value", "get_delta", "get_state"} <= cls._fast_attr_names
+
+    DynamicState.setup_dynamic_args({"get_value": RouteArgType.SINGLE})
+    DynamicState._add_event_handler("get_delta", lambda self: None)
+    DynamicState.add_var("get_state", int, 0)
+    # Registered on the root and inherited down the tree, so pruned everywhere.
+    for cls in tree:
+        assert "get_value" not in cls._fast_attr_names
+        assert "get_delta" not in cls._fast_attr_names
+        assert "get_state" not in cls._fast_attr_names
+        assert "dirty_vars" in cls._fast_attr_names
+>>>>>>> upstream/main
