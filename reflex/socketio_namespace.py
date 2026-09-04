@@ -185,6 +185,10 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
             json=_SOCKET_JSON_CODEC,
             allow_upgrades=False,
             transports=["polling" if config.transport == "polling" else "websocket"],
+            # Handlers here only parse and enqueue (or emit a pong), so run
+            # them inline on the socket's receive loop instead of paying a
+            # task creation and a loop hop per incoming message.
+            async_handlers=False,
         )
     elif getattr(app.sio, "async_mode", "") != "asgi":
         msg = f"Custom `sio` must use `async_mode='asgi'`, not '{app.sio.async_mode}'."
