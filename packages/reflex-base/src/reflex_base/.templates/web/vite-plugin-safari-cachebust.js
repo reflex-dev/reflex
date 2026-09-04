@@ -55,12 +55,16 @@ function isSafari(ua) {
 }
 
 /**
- * Escapes a string for literal use inside a RegExp
- * @param {string} text - The text to escape
- * @returns {string} The escaped text
+ * Checks whether the text at the given offset already carries the cache-bust param
+ * @param {string} text - The text to inspect
+ * @param {number} offset - The index just past an href occurrence
+ * @returns {boolean} True if the param follows
  */
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function hasTsParam(text, offset) {
+  const sep = text[offset];
+  return (
+    (sep === "?" || sep === "&") && text.startsWith(`${tsParam}=`, offset + 1)
+  );
 }
 
 /**
@@ -74,7 +78,7 @@ function escapeRegExp(text) {
  * @returns {{push(text: string, flush: boolean): string, count: number}} The rewriter
  */
 function createRewriter(timestamp) {
-  /** @type {Map<string, {re: RegExp, replacement: string}>} */
+  /** @type {Map<string, string>} href -> href with the cache-bust param */
   const replacements = new Map();
   let pending = "";
 
@@ -91,11 +95,10 @@ function createRewriter(timestamp) {
       ) {
         continue;
       }
-      replacements.set(href, {
-        // Skip occurrences that already carry the param (held-back text is rescanned).
-        re: new RegExp(`${escapeRegExp(href)}(?![?&]${tsParam}=)`, "g"),
-        replacement: `${href}${href.includes("?") ? "&" : "?"}${tsParam}=${timestamp}`,
-      });
+      replacements.set(
+        href,
+        `${href}${href.includes("?") ? "&" : "?"}${tsParam}=${timestamp}`,
+      );
     }
   }
 
@@ -137,9 +140,11 @@ function createRewriter(timestamp) {
     push(text, flush) {
       text = pending + text;
       discover(text);
-      for (const { re, replacement } of replacements.values()) {
-        // A function replacer keeps "$" in hrefs from being read as a pattern.
-        text = text.replace(re, () => replacement);
+      for (const [href, replacement] of replacements) {
+        // Held-back text is rescanned, so skip occurrences already rewritten.
+        text = text.replaceAll(href, (match, offset, whole) =>
+          hasTsParam(whole, offset + match.length) ? match : replacement,
+        );
       }
       const cut = flush ? text.length : cutIndex(text);
       pending = text.slice(cut);
