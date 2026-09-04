@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from pytest_mock import MockFixture
 from reflex_base.utils.log import SUCCESS
 from reflex_cli import constants
-from reflex_cli.utils import hosting
+from reflex_cli.utils import console, hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.v2.auth import token_fingerprint
 from reflex_cli.v2.deployments import hosting_cli
@@ -108,6 +108,30 @@ def test_whoami_json_output_is_exact(mocker: MockFixture):
     assert result.exit_code == 0
     assert len(result.output.splitlines()) == 1
     assert json.loads(result.output)["email"] == wide["email"]
+
+
+def test_whoami_json_reserves_stdout_for_the_document(mocker: MockFixture):
+    """A log line emitted while `--json` is active never joins the document.
+
+    `whoami` reads its identity through the shared option now, so the
+    reservation every other cloud command gets applies here too.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("valid_token", hosting.TokenSource.CONFIG),
+    )
+
+    def _validate(_token: str) -> dict:
+        console.print("a message for a person")
+        return dict(VALIDATED_INFO)
+
+    mocker.patch("reflex_cli.utils.hosting.validate_token", side_effect=_validate)
+
+    result = runner.invoke(hosting_cli, ["whoami", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["email"] == VALIDATED_INFO["email"]
+    assert "a message for a person" in result.stderr
 
 
 def test_whoami_prefers_the_token_option(mocker: MockFixture):

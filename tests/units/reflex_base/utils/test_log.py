@@ -754,3 +754,52 @@ def test_deprecate_json_location_is_user_frame(monkeypatch, capsys):
     path, _, lineno = location.rpartition(":")
     assert Path(path).name == Path(__file__).name
     assert lineno.isdigit()
+
+
+def test_reserve_stdout_moves_log_records_to_stderr(capsys):
+    """While stdout is reserved, log records render to stderr instead."""
+    log.reserve_stdout()
+    logger.info("progress")
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert "progress" in err
+
+
+def test_reserve_stdout_moves_console_output_to_stderr(capsys):
+    """Console prints, tables and rules follow the log records."""
+    log.reserve_stdout()
+    console.print("a message")
+    console.print_table([["one"]], headers=["col"])
+    console.rule("a rule")
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert "a message" in err
+    assert "one" in err
+    assert "a rule" in err
+
+
+def test_reserve_stdout_moves_json_records_to_stderr(monkeypatch, capsys):
+    """JSON log records move too: they are still messages, not the document."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    log.reserve_stdout()
+    logger.info("progress")
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert json.loads(err)["message"] == "progress"
+
+
+def test_releasing_the_reservation_restores_stdout(capsys):
+    """Human-readable output goes back to stdout once the document is done."""
+    log.reserve_stdout()
+    log.reserve_stdout(False)
+    logger.info("progress")
+    out, _ = capsys.readouterr()
+    assert "progress" in out
+
+
+def test_reset_releases_the_reservation():
+    """Teardown cannot leave a later command writing to the wrong stream."""
+    log.reserve_stdout()
+    log._reset()
+    assert log.is_stdout_reserved() is False

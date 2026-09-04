@@ -1,3 +1,4 @@
+import json
 import logging
 import tempfile
 from pathlib import Path
@@ -102,8 +103,6 @@ def test_get_secrets_json_output(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     app_id = "app_id"
 
     args = ["secrets", "list", app_id, "--json"]
@@ -116,10 +115,10 @@ def test_get_secrets_json_output(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with({
+    assert json.loads(result.stdout) == {
         "secret_key_1": "value1",
         "secret_key_2": "value2",
-    })
+    }
     assert result.exit_code == 0, result.output
 
 
@@ -295,3 +294,102 @@ def test_update_secrets_invalid_env_format(mocker: MockFixture):
 
     assert result.exit_code == 1
     assert "Invalid env format: should be <key>=<value>." in result.stdout
+
+
+def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
+    """Patch the client lookup and return the client it hands back.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The authenticated client every command under test will receive.
+    """
+    client = hosting.AuthenticatedClient(token="fake-token", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+    return client
+
+
+def test_update_secrets_json_output(mocker: MockFixture):
+    """An update reports the names it wrote, never the values."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.update_secrets")
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "secrets",
+            "update",
+            "app123",
+            "--env",
+            "B=2",
+            "--env",
+            "A=1",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "updated": ["A", "B"],
+        "rebooted": False,
+    }
+    assert "1" not in json.dumps(json.loads(result.stdout)["updated"])
+
+
+def test_update_secrets_json_output_keeps_warnings_off_stdout(
+    mocker: MockFixture, tmp_path: Path
+):
+    """A warning raised on the way through does not break the document.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: A temporary directory to hold the env file.
+    """
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.update_secrets")
+    envfile = tmp_path / ".env"
+    envfile.write_text("A=1\n")
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "secrets",
+            "update",
+            "app123",
+            "--envfile",
+            str(envfile),
+            "--env",
+            "B=2",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "updated": ["A"],
+        "rebooted": False,
+    }
+    assert "--envfile is set; ignoring --env" in result.stderr
+
+
+def test_delete_secret_json_output(mocker: MockFixture):
+    """Deleting a secret reports the key it removed."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.delete_secret", return_value="deleted")
+
+    result = runner.invoke(
+        hosting_cli, ["secrets", "delete", "app123", "MY_KEY", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "key": "MY_KEY",
+        "deleted": True,
+        "rebooted": False,
+    }

@@ -34,6 +34,17 @@ from reflex_base.utils.decorator import once
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
 
+
+def _human_console() -> Console:
+    """Get the console human-readable output renders to.
+
+    Returns:
+        The stderr console while stdout is reserved for a machine-readable
+        document, the stdout one otherwise.
+    """
+    return _console_stderr if _log.is_stdout_reserved() else _console
+
+
 # Deprecated features who's warning has been printed.
 _EMITTED_DEPRECATION_WARNINGS = set()
 
@@ -108,7 +119,7 @@ def print(msg: str, *, dedupe: bool = False, level: str = "info", **kwargs):
         if msg in _EMITTED_PRINTS:
             return
         _EMITTED_PRINTS.add(msg)
-    _console.print(msg, **kwargs)
+    _human_console().print(msg, **kwargs)
 
 
 def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwargs):
@@ -250,7 +261,7 @@ def log(msg: str, *, dedupe: bool = False, **kwargs):
         if _log.is_json_mode():
             _log.emit_json_print(msg)
         else:
-            _console.log(msg, **kwargs)
+            _human_console().log(msg, **kwargs)
     if should_use_log_file_console():
         print_to_log_file(msg, **kwargs)
 
@@ -264,7 +275,7 @@ def rule(title: str, **kwargs):
     """
     if _log.is_json_mode():
         return
-    _console.rule(title, **kwargs)
+    _human_console().rule(title, **kwargs)
 
 
 def warn(msg: str, *, dedupe: bool = False, **kwargs):
@@ -459,8 +470,15 @@ def ask(
     Returns:
         A string with the user input.
     """
+    # A prompt is human output like any other, and the one that must not land
+    # on a reserved stdout: it blocks, so a caller parsing the document reads
+    # the question as data and never answers it.
     return Prompt.ask(
-        question, choices=choices, default=default, show_choices=show_choices
+        question,
+        choices=choices,
+        default=default,
+        show_choices=show_choices,
+        console=_human_console(),
     )
 
 
@@ -494,7 +512,7 @@ def print_table(
     for row in tabular_data:
         table.add_row(*row)
 
-    _console.print(table)
+    _human_console().print(table)
 
 
 def progress():
@@ -507,7 +525,10 @@ def progress():
         *Progress.get_default_columns()[:-1],
         MofNCompleteColumn(),
         TimeElapsedColumn(),
-        disable=_log.is_json_mode(),
+        # A bar is decoration, and it redraws in place: there is nowhere to
+        # put it in a machine-readable stream, and nothing to draw it over
+        # once stdout belongs to a document.
+        disable=_log.is_json_mode() or _log.is_stdout_reserved(),
     )
 
 
@@ -523,7 +544,7 @@ def status(*args, **kwargs):
     """
     if _log.is_json_mode():
         return _log._quiet_console.status(*args, **kwargs)
-    return _console.status(*args, **kwargs)
+    return _human_console().status(*args, **kwargs)
 
 
 @contextlib.contextmanager
