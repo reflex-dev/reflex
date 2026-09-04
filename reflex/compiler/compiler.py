@@ -35,7 +35,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import format_event_handler, to_title_case
 from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
@@ -48,7 +48,14 @@ from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.state import BaseState, code_uses_state_contexts
+from reflex.state import (
+    BaseState,
+    FrontendEventExceptionState,
+    OnLoadInternalState,
+    State,
+    UpdateVarsInternalState,
+    code_uses_state_contexts,
+)
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -203,6 +210,28 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
+def _internal_event_names() -> templates.InternalEventNames:
+    """Resolve the framework event names the context module dispatches.
+
+    Returns:
+        The names under the active name resolver.
+    """
+    # ``@event(...)`` types the attribute as an EventCallback; the registry
+    # holds the EventHandler the class rewrote it into.
+    return templates.InternalEventNames(
+        main_state_name=State.get_name(),
+        on_load_internal=format_event_handler(
+            OnLoadInternalState.event_handlers["on_load_internal"]
+        ),
+        update_vars_internal=format_event_handler(
+            UpdateVarsInternalState.update_vars_internal
+        ),
+        handle_frontend_exception=format_event_handler(
+            FrontendEventExceptionState.handle_frontend_exception
+        ),
+    )
+
+
 def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
@@ -222,6 +251,7 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
         templates.context_template(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
+            internal_events=_internal_event_names(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,

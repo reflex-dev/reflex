@@ -1396,6 +1396,37 @@ class TestMinifyLookupCLI:
         assert "is both a substate id and an event handler id" in text_result.output
         assert "AmbiguousParentState.increment" in text_result.output
 
+    def test_lookup_accepts_unminified_segments(self, temp_minify_json, cli_runner):
+        """States and events minify independently, so either half may be unminified."""
+        from reflex.reflex import cli
+
+        class MixedModeState(State):
+            def increment(self):
+                pass
+
+        state_path = get_state_full_path(MixedModeState)
+        _install_config(
+            states={state_path: "b"},
+            events={state_path: {"increment": "c"}},
+            include_state_root=True,
+        )
+        default_name = RegistrationContext.default_state_name(MixedModeState)
+
+        # Only events minified: the state keeps its default name on the wire.
+        result = cli_runner.invoke(
+            cli, ["minify", "lookup", "--json", f"{State.get_name()}.{default_name}.c"]
+        )
+        assert result.exit_code == 0, result.output
+        assert [(e["kind"], e["class"]) for e in json.loads(result.output)] == [
+            ("state", "MixedModeState"),
+            ("event", "MixedModeState"),
+        ]
+
+        # Only states minified: the handler keeps its Python name.
+        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.increment"])
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.output)[1]["handler"] == "increment"
+
     def test_lookup_handler_id_only_matches_final_segment(
         self, temp_minify_json, cli_runner
     ):

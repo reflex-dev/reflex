@@ -1433,7 +1433,7 @@ def test_context_template_names_contexts_for_devtools():
     React DevTools labels a provider from its context's ``displayName``;
     without one the whole provider stack renders as ``Context.Provider``.
     """
-    from reflex_base.compiler.templates import context_template
+    from reflex_base.compiler.templates import InternalEventNames, context_template
 
     rendered = context_template(
         is_dev_mode=True,
@@ -1443,7 +1443,16 @@ def test_context_template_names_contexts_for_devtools():
             "reflex___state____state.demo_state": {},
         },
         state_name="reflex___state____state",
+        internal_events=InternalEventNames(
+            main_state_name="reflex___state____state",
+            on_load_internal="reflex___state____state.a.b",
+            update_vars_internal="reflex___state____state.c.d",
+            handle_frontend_exception="reflex___state____state.e.f",
+        ),
     )
+    assert "ReflexEvent('reflex___state____state.a.b')" in rendered
+    assert "'reflex___state____state.c.d'" in rendered
+    assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
 
     for context_name in (
         "ColorModeContext",
@@ -1463,6 +1472,18 @@ def test_context_template_names_contexts_for_devtools():
         "StateContexts.reflex___state____state__demo_state.displayName = "
         '"StateContext(reflex___state____state.demo_state)";' in rendered
     )
+
+
+def test_context_template_requires_internal_events_with_state():
+    """A stateful context without resolved framework event names is refused."""
+    from reflex_base.compiler.templates import context_template
+
+    with pytest.raises(ValueError, match="internal_events"):
+        context_template(
+            is_dev_mode=True,
+            default_color_mode='"light"',
+            state_name="reflex___state____state",
+        )
 
 
 def test_context_template_client_side_component_is_named():

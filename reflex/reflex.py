@@ -1187,10 +1187,14 @@ def minify_lookup(output_json: bool, minified_path: str):
 
     Walks the state tree from the root to resolve each segment. The final
     segment may also be an event handler id of the state resolved so far, so
-    an event name copied from the frontend resolves to its handler. The root
-    state's own name is optional, so both 'a.bU' and the full name seen in
-    the frontend ('reflex___state____state.a.bU') resolve the same way.
+    an event name copied from the frontend resolves to its handler. States and
+    events minify independently, so every segment also matches its unminified
+    name. The root state's own name is optional, so both 'a.bU' and the full
+    name seen in the frontend ('reflex___state____state.a.bU') resolve the
+    same way.
     """
+    from reflex_base.registry import RegistrationContext
+
     from reflex.minify import collect_all_states, get_state_full_path, get_state_module
     from reflex.state import State
 
@@ -1215,17 +1219,22 @@ def minify_lookup(output_json: bool, minified_path: str):
     last_index = len(parts) - 1
 
     for index, part in enumerate(parts):
-        # Find the child of the previous match whose minified id is ``part``.
+        # Find the child of the previous match whose minified id or default
+        # name is ``part``.
         found = next(
             (
                 c
                 for c in current.get_substates()
-                if path_to_id.get(get_state_full_path(c)) == part
+                if part
+                in (
+                    path_to_id.get(get_state_full_path(c)),
+                    RegistrationContext.default_state_name(c),
+                )
             ),
             None,
         )
-        # An event name copied from the frontend ends in a handler id of the
-        # state resolved so far, not in a substate id.
+        # An event name copied from the frontend ends in a handler id (or the
+        # handler's own name) of the state resolved so far, not a substate id.
         handler = None
         current_path = get_state_full_path(current)
         if index == last_index:
@@ -1235,7 +1244,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                     for name, event_id in config["events"].get(current_path, {}).items()
                     if event_id == part
                 ),
-                None,
+                part if part in current.event_handlers else None,
             )
         if found is None and handler is None:
             kind = "state or event handler" if index == last_index else "state"
