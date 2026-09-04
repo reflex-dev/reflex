@@ -1,6 +1,7 @@
 """rx.match."""
 
 import textwrap
+from collections.abc import Iterator
 from typing import Any, cast
 
 from reflex_base.components.component import BaseComponent, Component, field
@@ -310,13 +311,46 @@ class Match(Component):
         """
         return dict(self._render())
 
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component, including the case conditions.
+
+        The per-case condition Vars live in ``match_cases``, which is not a
+        JavaScript property, so the base implementation does not surface them.
+        Yield them here so the hooks they require are emitted -- in particular
+        the ``useContext`` binding for a state Var referenced only in a case
+        condition. Without this, the compiled ``switch`` references the
+        substate context variable without ever binding it, raising
+        ``ReferenceError: Can't find variable`` at render time.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each Var referenced by the component, plus the case conditions.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        for conditions, _ in self.match_cases:
+            yield from conditions
+
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.
 
         Returns:
             The import dict.
         """
-        var_data = VarData.merge(self.cond._get_all_var_data())
+        var_data = VarData.merge(
+            self.cond._get_all_var_data(),
+            *[
+                condition._get_all_var_data()
+                for conditions, _ in self.match_cases
+                for condition in conditions
+            ],
+        )
         return var_data.old_school_imports() if var_data else {}
 
 
