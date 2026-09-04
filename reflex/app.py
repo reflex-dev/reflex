@@ -1024,8 +1024,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title or constants.Page404.TITLE
-            description = description or constants.Page404.DESCRIPTION
+            title = title if title is not None else constants.Page404.TITLE
+            description = (
+                description
+                if description is not None
+                else constants.Page404.DESCRIPTION
+            )
             image = image or constants.Page404.IMAGE
         else:
             if component is None:

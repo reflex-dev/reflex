@@ -821,10 +821,10 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
 
 def add_meta(
     page: Component,
-    title: str,
+    title: str | Var,
     image: str,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -843,7 +843,7 @@ def add_meta(
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if description is not None:
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 

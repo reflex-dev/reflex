@@ -5,7 +5,7 @@ from pytest_mock import MockerFixture
 from reflex_base.config import get_config
 from reflex_base.registry import RegistrationContext
 
-from reflex import text
+from reflex import State, text
 from reflex.page import page
 
 
@@ -25,6 +25,27 @@ def test_page_decorator(clean_registration_context: RegistrationContext):
     assert len(clean_registration_context.decorated_pages) == 1
     _, page_data = clean_registration_context.decorated_pages[0]
     assert page_data == {}
+
+
+def test_page_decorator_accepts_state_metadata(
+    clean_registration_context: RegistrationContext,
+):
+    """State Vars should be preserved as page metadata without bool evaluation."""
+
+    class PageState(State):
+        title: str = "Dynamic title"
+        description: str = "Dynamic description"
+
+    def foo_():
+        return text("foo")
+
+    assert clean_registration_context.decorated_pages == []
+    page(title=PageState.title, description=PageState.description)(foo_)
+
+    assert len(clean_registration_context.decorated_pages) == 1
+    _, page_data = clean_registration_context.decorated_pages[0]
+    assert page_data["title"] is PageState.title
+    assert page_data["description"] is PageState.description
 
 
 def test_page_decorator_with_kwargs(
