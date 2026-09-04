@@ -77,7 +77,7 @@ def _run_plugin(
             ],
             check=True,
             capture_output=True,
-            text=True,
+            encoding="utf-8",
         ).stdout
     )
 
@@ -163,6 +163,37 @@ def test_streams_and_rewrites_across_chunk_boundaries(tmp_path: Path):
     assert result["writes"][0] == "<!doctype html><head>"
     assert "<div>content</div>" in result["writes"][1]
     assert result["end"] == ""
+
+
+def test_hrefs_that_prefix_each_other(tmp_path: Path):
+    """An href that is a prefix of another is not rewritten inside the longer one.
+
+    The document is also cut right where the longer href's query begins, so
+    the shorter match at the chunk end must wait for the continuation.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    chunks = [
+        (
+            '<link rel="modulepreload" href="/a.js">'
+            '<link rel="modulepreload" href="/a.jsx">'
+            '<link rel="modulepreload" href="/a.js?v=1">'
+            '<script>import("/a.js"); import("/a.jsx"); import("/a.js'
+        ),
+        '?v=1")</script>',
+    ]
+    body = _body(_run_plugin([("string", c) for c in chunks], tmp_path))
+    ts = re.search(r"__reflex_ts=(\d+)", body)
+    assert ts is not None
+    ts = ts.group(1)
+    assert body == (
+        f'<link rel="modulepreload" href="/a.js?__reflex_ts={ts}">'
+        f'<link rel="modulepreload" href="/a.jsx?__reflex_ts={ts}">'
+        f'<link rel="modulepreload" href="/a.js?v=1&__reflex_ts={ts}">'
+        f'<script>import("/a.js?__reflex_ts={ts}"); import("/a.jsx?__reflex_ts={ts}");'
+        f' import("/a.js?v=1&__reflex_ts={ts}")</script>'
+    )
 
 
 def test_href_with_query_and_external_links(tmp_path: Path):

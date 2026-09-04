@@ -55,25 +55,13 @@ function isSafari(ua) {
 }
 
 /**
- * Checks whether the text at the given offset already carries the cache-bust param
- * @param {string} text - The text to inspect
- * @param {number} offset - The index just past an href occurrence
- * @returns {boolean} True if the param follows
- */
-function hasTsParam(text, offset) {
-  const sep = text[offset];
-  return (
-    (sep === "?" || sep === "&") && text.startsWith(`${tsParam}=`, offset + 1)
-  );
-}
-
-/**
  * Creates a streaming rewriter for one HTML response.
  *
  * Hrefs are discovered from modulepreload <link> tags and every later
  * occurrence (e.g. the ESM imports in the trailing inline script) is rewritten
  * as well. Text is emitted as soon as it arrives; only a possibly-partial
- * <link> tag or href at the end of a chunk is held back until the next chunk.
+ * <link> tag or href at the end of a chunk is held back, unrewritten, until
+ * the next chunk.
  * @param {number} timestamp - The cache-bust value for this response
  * @returns {{push(text: string, flush: boolean): string, count: number}} The rewriter
  */
@@ -88,13 +76,7 @@ function createRewriter(timestamp) {
    */
   function discover(text) {
     for (const [, href] of text.matchAll(linkTagRe)) {
-      if (
-        replacements.has(href) ||
-        /^(https?:)?\/\//.test(href) ||
-        href.includes(`${tsParam}=`)
-      ) {
-        continue;
-      }
+      if (replacements.has(href) || /^(https?:)?\/\//.test(href)) continue;
       replacements.set(
         href,
         `${href}${href.includes("?") ? "&" : "?"}${tsParam}=${timestamp}`,
@@ -103,8 +85,27 @@ function createRewriter(timestamp) {
   }
 
   /**
+   * Checks whether a longer known href starts at the offset of a match.
+   *
+   * Such an occurrence belongs to the longer href (e.g. "/a.jsx" or
+   * "/a.js?v=1" when "/a.js" matched) and must be rewritten only once.
+   * @param {string} text - The text being rewritten
+   * @param {number} offset - The index where the shorter href matched
+   * @param {string} href - The matched href
+   * @returns {boolean} True if a longer href starts at the offset
+   */
+  function hasLongerHrefAt(text, offset, href) {
+    for (const other of replacements.keys()) {
+      if (other.length > href.length && text.startsWith(other, offset)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Finds how much of the end of the text must wait for the next chunk
-   * @param {string} text - The rewritten text
+   * @param {string} text - The raw text
    * @returns {number} The index at which the held-back tail starts
    */
   function cutIndex(text) {
@@ -140,15 +141,15 @@ function createRewriter(timestamp) {
     push(text, flush) {
       text = pending + text;
       discover(text);
-      for (const [href, replacement] of replacements) {
-        // Held-back text is rescanned, so skip occurrences already rewritten.
-        text = text.replaceAll(href, (match, offset, whole) =>
-          hasTsParam(whole, offset + match.length) ? match : replacement,
-        );
-      }
       const cut = flush ? text.length : cutIndex(text);
       pending = text.slice(cut);
-      return text.slice(0, cut);
+      text = text.slice(0, cut);
+      for (const [href, replacement] of replacements) {
+        text = text.replaceAll(href, (match, offset, whole) =>
+          hasLongerHrefAt(whole, offset, href) ? match : replacement,
+        );
+      }
+      return text;
     },
     get count() {
       return replacements.size;
@@ -206,7 +207,11 @@ function createSafariMiddleware() {
      * @returns {string} The decoded text
      */
     const decode = (chunk) =>
-      typeof chunk === "string" ? chunk : chunk ? decoder.write(chunk) : "";
+      typeof chunk === "string"
+        ? decoder.end() + chunk
+        : chunk
+          ? decoder.write(chunk)
+          : "";
 
     /**
      * Extracts the optional completion callback from write/end arguments
