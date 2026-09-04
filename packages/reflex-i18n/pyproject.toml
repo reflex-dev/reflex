@@ -9,8 +9,8 @@ maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
   # TODO: Bump to the released versions before publishing.
-  "reflex-base >= 0.9.7.dev0",
-  "reflex >= 0.9.7.dev0",
+  "reflex-base >= 0.9.10.post2.dev0",
+  "reflex >= 0.9.10.post2.dev0",
   "babel >= 2.14.0,<3.0",
 ]
 
