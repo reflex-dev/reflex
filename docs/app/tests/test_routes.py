@@ -85,7 +85,9 @@ def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
     """Root-site footer links should not inherit the /docs router basename."""
     from reflex_docs.templates.docpage.docpage import docpage_footer
 
-    rendered = docpage_footer.__wrapped__(rx.Var.create("/test")).render()
+    rendered = docpage_footer.__wrapped__(
+        rx.Var.create("/test"), rx.Var.create("https://example.com/edit")
+    ).render()
 
     def find_link(node: dict) -> dict | None:
         if any(child.get("contents") == f'"{label}"' for child in node["children"]):
@@ -99,6 +101,82 @@ def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
     assert link is not None
     assert link["name"] == '"a"'
     assert f'href:"{href}"' in link["props"]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (
+            "docs/getting_started/introduction.md",
+            "https://github.com/reflex-dev/reflex/edit/main/docs/getting_started/introduction.md",
+        ),
+        (
+            "docs/library/forms/input-ll.md",
+            "https://github.com/reflex-dev/reflex/edit/main/docs/library/forms/input-ll.md",
+        ),
+        (
+            "CHANGELOG.md",
+            "https://github.com/reflex-dev/reflex/edit/main/CHANGELOG.md",
+        ),
+        (
+            "docs/app/reflex_docs/pages/docs/env_vars.py",
+            "https://github.com/reflex-dev/reflex/edit/main/docs/app/reflex_docs/pages/docs/env_vars.py",
+        ),
+    ],
+)
+def test_github_edit_url_points_at_repo_source(source: str, expected: str):
+    """The footer edit link must target the actual source file of the page."""
+    from reflex_docs.templates.docpage.docpage import REPO_ROOT, github_edit_url
+
+    assert (REPO_ROOT / source).is_file()
+    assert github_edit_url(str(REPO_ROOT / source)) == expected
+
+
+@pytest.mark.parametrize("use_venv", [False, True])
+def test_github_edit_url_falls_back_outside_repo(tmp_path, use_venv: bool):
+    """Sources outside the checkout or installed into the venv link to the docs tree."""
+    import sys
+
+    from reflex_docs.templates.docpage.docpage import github_edit_url
+
+    outside = (Path(sys.prefix) if use_venv else tmp_path) / "some_package" / "page.md"
+
+    assert github_edit_url(str(outside)) == (
+        "https://github.com/reflex-dev/reflex/tree/main/docs"
+    )
+
+
+def test_github_edit_url_without_source():
+    """Pages with no known source file link to the docs tree."""
+    from reflex_docs.templates.docpage.docpage import github_edit_url
+
+    assert (
+        github_edit_url(None) == "https://github.com/reflex-dev/reflex/tree/main/docs"
+    )
+
+
+def test_markdown_doc_routes_edit_their_own_source(routes_fixture):
+    """Every markdown-backed route's footer edit link is its real source file."""
+    import sys
+
+    from reflex_docs.pages.docs import doc_markdown_sources
+    from reflex_docs.templates.docpage.docpage import REPO_ROOT, doc_edit_hrefs
+
+    edit_prefix = "https://github.com/reflex-dev/reflex/edit/main/"
+    venv = Path(sys.prefix).resolve()
+    for route, actual in doc_markdown_sources.items():
+        if route.endswith("-ll"):
+            # Low-level sources are served for the copy button, not as routes.
+            continue
+        actual_path = Path(actual).resolve()
+        if not actual_path.is_relative_to(REPO_ROOT) or actual_path.is_relative_to(
+            venv
+        ):
+            # Docs shipped inside installed packages are not editable on GitHub.
+            continue
+        assert doc_edit_hrefs.get(route) == (
+            edit_prefix + actual_path.relative_to(REPO_ROOT).as_posix()
+        ), route
 
 
 def _doc_markdown_files():
@@ -188,7 +266,9 @@ def test_docpage_footer_issue_link_names_the_public_docs_url():
     from reflex_docs.templates.docpage.docpage import DOCS_PROD_BASE, docpage_footer
 
     rendered = str(
-        docpage_footer.__wrapped__(rx.Var.create("/vars/base-vars/")).render()
+        docpage_footer.__wrapped__(
+            rx.Var.create("/vars/base-vars/"), rx.Var.create("https://example.com")
+        ).render()
     )
 
     assert f"{DOCS_PROD_BASE}/vars/base-vars/" in rendered
