@@ -723,6 +723,12 @@ class EnvironmentVariables:
     # Whether to force a full reload on changes.
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
 
+    # Serve React's production build under the Vite dev server (experimental).
+    REFLEX_DEV_PROD_REACT: EnvVar[bool] = env_var(False)
+
+    # Pre-transform all route modules when the Vite dev server starts (experimental).
+    REFLEX_VITE_WARMUP_ROUTES: EnvVar[bool] = env_var(False)
+
     # Whether to enable Rolldown's experimental HMR.
     VITE_EXPERIMENTAL_HMR: EnvVar[bool] = env_var(False)
 
