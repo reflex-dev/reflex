@@ -9,8 +9,7 @@ from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import Form as HTMLForm
-
-from reflex_components_radix.themes.components.text_field import TextFieldRoot
+from reflex_components_core.el.elements.forms import Input as HTMLInput
 
 from .base import RadixPrimitiveComponentWithClassName
 
@@ -101,14 +100,16 @@ class FormControl(FormComponent):
 
         Raises:
             ValueError: If the number of children is greater than 1.
-            TypeError: If a child exists but it is not a TextFieldInput.
+            TypeError: If a child exists but it is not an input.
         """
         if len(children) > 1:
             msg = f"FormControl can only have at most one child, got {len(children)} children"
             raise ValueError(msg)
         for child in children:
-            if not isinstance(child, (TextFieldRoot, DebounceInput)):
-                msg = "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
+            # TextFieldRoot subclasses the plain input element, so this still
+            # accepts it. A hidden `rx.input` renders as the plain element.
+            if not isinstance(child, (HTMLInput, DebounceInput)):
+                msg = "Only input components and DebounceInput are allowed as children of FormControl"
                 raise TypeError(msg)
         return super().create(*children, **props)
 
