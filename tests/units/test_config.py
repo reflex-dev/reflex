@@ -191,6 +191,28 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
 
 
 @pytest.mark.parametrize(
+    "frontend_path", ["/..", "..", "/../other", "/app/../other", "app/.."]
+)
+def test_frontend_path_rejects_parent_segments(
+    base_config_values: dict[str, Any], frontend_path: str
+):
+    """A ``..`` segment would move the production build outside its output directory.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path containing a parent-directory segment.
+    """
+    with pytest.raises(ConfigError, match=r"must not contain '\.\.' segments"):
+        rx.Config(**base_config_values, frontend_path=frontend_path)
+
+
+def test_frontend_path_allows_dotted_names(base_config_values: dict[str, Any]):
+    """Only a bare ``..`` segment is traversal; names merely containing dots are fine."""
+    config = rx.Config(**base_config_values, frontend_path="v1.2/..app/.hidden")
+    assert config.frontend_path == "/v1.2/..app/.hidden"
+
+
+@pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
         (

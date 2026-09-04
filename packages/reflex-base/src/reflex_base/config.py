@@ -583,9 +583,20 @@ class Config(BaseConfig):
         self.frontend_compression_formats = normalized
 
     def _normalize_paths(self):
-        """Ensure frontend and backend paths start with a slash if provided."""
+        """Ensure frontend and backend paths start with a slash if provided.
+
+        Raises:
+            ConfigError: If frontend_path contains a ``..`` segment.
+        """
         if self.frontend_path and not self.frontend_path.startswith("/"):
             self.frontend_path = f"/{self.frontend_path}"
+        # frontend_path also names the directory below the build output that the
+        # built frontend is relocated into, so ".." would escape that directory.
+        if ".." in self.frontend_path.split("/"):
+            msg = (
+                f"frontend_path {self.frontend_path!r} must not contain '..' segments."
+            )
+            raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
