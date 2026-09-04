@@ -27,13 +27,14 @@ from reflex.utils.misc import run_in_thread
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class QueueItem(Generic[TOKEN_TYPE]):
     """An item in the write queue."""
 
     token: StateToken[TOKEN_TYPE]
     state: TOKEN_TYPE
     timestamp: float
+    force_write: bool = False
 
 
 @dataclasses.dataclass
@@ -207,17 +208,22 @@ class StateManagerDisk(StateManager):
         return cast(TOKEN_TYPE, state)
 
     async def set_state_for_substate(
-        self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE
+        self,
+        token: StateToken[TOKEN_TYPE],
+        substate: TOKEN_TYPE,
+        force_write: bool = False,
     ):
         """Set the state for a substate.
 
         Args:
             token: The token used to identify the state object.
             substate: The substate to set.
+            force_write: Whether to persist the state regardless of its touched status.
         """
         substate_token = token.with_cls(type(substate))
 
-        if token.get_and_reset_touched_state(substate):
+        should_write = token.get_and_reset_touched_state(substate)
+        if force_write or should_write:
             pickle_state = token.serialize(substate)
             if pickle_state:
                 if not self.states_directory.exists():
@@ -228,7 +234,9 @@ class StateManagerDisk(StateManager):
 
         if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
             for substate_substate in substate.substates.values():
-                await self.set_state_for_substate(token, substate_substate)
+                await self.set_state_for_substate(
+                    token, substate_substate, force_write=force_write
+                )
 
     async def _process_write_queue_delay(self):
         """Wait for the debounce period before processing the write queue again."""
@@ -275,7 +283,9 @@ class StateManagerDisk(StateManager):
                 for item in items_to_write:
                     token = item.token
                     await self.set_state_for_substate(
-                        token, self._write_queue.pop(token).state
+                        token,
+                        self._write_queue.pop(token).state,
+                        force_write=item.force_write,
                     )
                 # Check for expired states to purge.
                 for cache_key, last_touched in list(self._token_last_touched.items()):
@@ -307,6 +317,7 @@ class StateManagerDisk(StateManager):
             await self.set_state_for_substate(
                 item.token,
                 item.state,
+                force_write=item.force_write,
             )
         logger.debug(
             f"StateManagerDisk._flush_write_queue: Finished writing {n_outstanding_items} items"
@@ -337,18 +348,28 @@ class StateManagerDisk(StateManager):
             state: The state to set.
             context: The state modification context.
         """
-        token = self._coerce_token(token)
+        token = cast(StateToken[TOKEN_TYPE], self._coerce_token(token))
+        force_write = isinstance(token, BaseStateToken) and (
+            self.states.get(token.cache_key) is not state
+        )
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
-            if token not in self._write_queue:
+            self.states[token.cache_key] = state
+            queued_item = self._write_queue.get(token)
+            if queued_item is None:
                 self._write_queue[token] = QueueItem(
                     token=token,
                     state=state,
                     timestamp=time.time(),
+                    force_write=force_write,
                 )
+            else:
+                queued_item.state = state
+                queued_item.force_write |= force_write
         else:
             # Immediate write to disk.
-            await self.set_state_for_substate(token, state)
+            await self.set_state_for_substate(token, state, force_write=force_write)
+            self.states[token.cache_key] = state
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 

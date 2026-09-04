@@ -48,9 +48,16 @@ from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
-from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
+from reflex.state import (
+    BaseState,
+    ImmutableStateError,
+    MutableProxy,
+    OnLoadInternalState,
+    RouterData,
+    State,
+)
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
@@ -4423,6 +4430,80 @@ async def test_state_manager_disk_close_resets_write_queue_task():
     await state_manager.close()
 
     assert state_manager._write_queue_task is None
+
+
+@pytest.mark.asyncio
+async def test_state_manager_disk_debounced_set_state_flushes_latest_non_base_state(
+    tmp_path, monkeypatch
+):
+    """Test that debounced non-BaseState writes flush the latest queued value."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=60)
+    token = StateToken(ident="client", cls=int)
+
+    await state_manager.set_state(token, 1)
+    first_item = state_manager._write_queue[token]
+    await state_manager.set_state(token, 2)
+
+    assert state_manager._write_queue[token] is first_item
+    assert first_item.state == 2
+
+    await state_manager.close()
+
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    assert await fresh_state_manager.get_state(token) == 2
+
+    await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_state_manager_disk_set_state_updates_cache_for_arbitrary_instance(
+    tmp_path, monkeypatch, write_debounce_seconds
+):
+    """Test that set_state replaces a cached state with the supplied instance."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = StateToken(ident="client", cls=dict)
+    cached_state = await state_manager.get_state(token)
+    state = {"value": 2}
+
+    assert state is not cached_state
+
+    await state_manager.set_state(token, state)
+
+    assert state_manager.states[token.cache_key] is state
+    if write_debounce_seconds > 0:
+        assert state_manager._write_queue[token].state is state
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_state_manager_disk_set_state_persists_untouched_base_state(
+    tmp_path,
+    monkeypatch,
+    write_debounce_seconds,
+    test_state: TestState,
+):
+    """Test that explicitly supplied untouched BaseState values are persisted."""
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = BaseStateToken(ident="client", cls=TestState)
+    state = test_state
+    object.__setattr__(state, "num2", 9.5)
+    state.dirty_vars.clear()
+    state._was_touched = False
+
+    await state_manager.set_state(token, state)
+    await state_manager.close()
+
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert isinstance(persisted_state, TestState)
+    assert math.isclose(persisted_state.num2, 9.5)
+    await fresh_state_manager.close()
 
 
 class Obj(Base):
