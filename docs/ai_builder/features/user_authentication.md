@@ -165,6 +165,7 @@ rx.hstack(rx.avatar(src=User.picture), rx.text(User.name))
 ```python
 from reflex_enterprise.auth import User
 
+
 @rxe.event
 async def add_note(self, form_data: dict):
     user = await User.current() or {}
