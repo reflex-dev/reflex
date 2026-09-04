@@ -1,0 +1,9 @@
+Task,Start,Duration,Resource
+Task 1,1/1/2016,50,A
+Task 2,2/20/2016,25,B
+Task 3,1/1/2016,100,C
+Task 4,4/10/2016,60,C
+Task 5,6/9/2016,30,C
+Task 6,4/10/2016,150,A
+Task 7,9/7/2016,80,B
+Task 8,11/26/2016,10,B

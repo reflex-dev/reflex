@@ -247,7 +247,7 @@ class TestRedisTokenManager:
             return
 
         @asynccontextmanager
-        async def pubsub():  # noqa: RUF029
+        async def pubsub():
             pubsub_mock = AsyncMock()
             pubsub_mock.listen = listen
             yield pubsub_mock
@@ -265,7 +265,7 @@ class TestRedisTokenManager:
         Returns:
             RedisTokenManager instance for testing.
         """
-        with patch("reflex.config.get_config") as mock_get_config:
+        with patch("reflex_base.config.get_config") as mock_get_config:
             mock_config = Mock()
             mock_config.redis_token_expiration = 3600
             mock_get_config.return_value = mock_config
@@ -303,6 +303,7 @@ class TestRedisTokenManager:
             f"token_manager_socket_record_{token}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=False,
         )
         assert manager.token_to_socket[token].sid == sid
         assert manager.sid_to_token[sid] == token
@@ -350,6 +351,7 @@ class TestRedisTokenManager:
             f"token_manager_socket_record_{result}",
             pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
+            nx=False,
         )
         assert manager.token_to_sid[result] == sid
         assert manager.sid_to_token[sid] == result
@@ -427,6 +429,121 @@ class TestRedisTokenManager:
 
         mock_redis.delete.assert_not_called()
 
+    async def test_disconnect_token_clears_local_before_redis_delete(
+        self, manager, mock_redis
+    ):
+        """Local mappings are dropped before the redis delete round-trip starts."""
+        token, sid = "token1", "sid1"
+        manager.token_to_socket[token] = SocketRecord(
+            instance_id=manager.instance_id, sid=sid
+        )
+        manager.sid_to_token[sid] = token
+
+        cached_at_delete = {}
+
+        def delete(key):
+            cached_at_delete["token"] = token in manager.token_to_socket
+            cached_at_delete["sid"] = sid in manager.sid_to_token
+
+        mock_redis.delete.side_effect = delete
+
+        await manager.disconnect_token(token, sid)
+
+        mock_redis.delete.assert_called_once_with(
+            f"token_manager_socket_record_{token}"
+        )
+        assert cached_at_delete == {"token": False, "sid": False}
+
+    async def test_is_token_connected_ignores_stale_own_record(
+        self, manager, mock_redis
+    ):
+        """A redis record claiming this instance without a live local link is stale."""
+        stale = SocketRecord(instance_id=manager.instance_id, sid="sid1")
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(stale))
+
+        assert not await manager.is_token_connected("token1")
+        assert "token1" not in manager.token_to_socket
+        assert "sid1" not in manager.sid_to_token
+
+    async def test_fetch_socket_record_own_record_with_live_link(
+        self, manager, mock_redis
+    ):
+        """A redis record claiming this instance with a live local link is cached."""
+        record = SocketRecord(instance_id=manager.instance_id, sid="sid1")
+        manager.sid_to_token["sid1"] = "token1"
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(record))
+
+        assert await manager._fetch_socket_record("token1") == record
+        assert manager.token_to_socket["token1"] == record
+
+    async def test_socket_record_del_keeps_live_local_mapping(
+        self, manager, mock_redis
+    ):
+        """A late redis del notification must not drop a live local mapping."""
+        token, sid = "token1", "sid2"
+        record = SocketRecord(instance_id=manager.instance_id, sid=sid)
+        manager.token_to_socket[token] = record
+        manager.sid_to_token[sid] = token
+
+        await manager._handle_socket_record_del(token)
+
+        assert manager.token_to_socket[token] == record
+        assert manager.sid_to_token[sid] == token
+        mock_redis.set.assert_called_once_with(
+            f"token_manager_socket_record_{token}",
+            pickle.dumps(record),
+            ex=3600,
+            nx=True,
+        )
+
+    async def test_socket_record_del_adopts_newer_record_when_restore_loses(
+        self, manager, mock_redis
+    ):
+        """A rejected NX restore adopts the newer redis record immediately."""
+        token, sid = "token1", "sid1"
+        stale = SocketRecord(instance_id=manager.instance_id, sid=sid)
+        manager.token_to_socket[token] = stale
+        manager.sid_to_token[sid] = token
+        newer = SocketRecord(instance_id="other-instance", sid="sid2")
+        mock_redis.set.return_value = None
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(newer))
+
+        await manager._handle_socket_record_del(token)
+
+        assert manager.token_to_socket[token] == newer
+        assert manager.sid_to_token["sid2"] == token
+        assert sid not in manager.sid_to_token
+
+    async def test_socket_record_del_drops_foreign_cache(self, manager, mock_redis):
+        """A del notification drops a cached foreign record."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="other-instance", sid="sid9"
+        )
+
+        await manager._handle_socket_record_del("token1")
+
+        assert "token1" not in manager.token_to_socket
+        mock_redis.set.assert_not_called()
+
+    async def test_is_token_connected_after_late_disconnect_notification(
+        self, manager, mock_redis
+    ):
+        """A late del notification for a relinked token must not break delivery."""
+        token = "token1"
+        mock_redis.exists.return_value = False
+        await manager.link_token_to_sid(token, "sid1")
+        # Old socket disconnects; the client relinks before the notification arrives.
+        await manager.disconnect_token(token, "sid1")
+        await manager.link_token_to_sid(token, "sid2")
+        # The keyspace notification for the old delete arrives late.
+        await manager._handle_socket_record_del(token)
+
+        record = manager.token_to_socket.get(token)
+        mock_redis.get = AsyncMock(
+            return_value=pickle.dumps(record) if record else None
+        )
+        assert await manager.is_token_connected(token)
+
     async def test_disconnect_token_redis_error(self, manager, mock_redis):
         """Test disconnect continues with local cleanup even if Redis fails.
 
@@ -477,6 +594,55 @@ class TestRedisTokenManager:
             assert result is None
             mock_super.assert_called_once()
 
+    async def test_is_token_connected_locally_owned(self, manager, mock_redis):
+        """A locally owned socket record is authoritative, without a redis lookup."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id=manager.instance_id, sid="sid1"
+        )
+
+        assert await manager.is_token_connected("token1")
+        mock_redis.get.assert_not_called()
+
+    async def test_is_token_connected_stale_foreign_record(self, manager, mock_redis):
+        """A cached foreign record is refreshed from redis and dropped when gone."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="other-instance", sid="sid1"
+        )
+        manager.sid_to_token["sid1"] = "token1"
+        mock_redis.get = AsyncMock(return_value=None)
+
+        assert not await manager.is_token_connected("token1")
+        assert "token1" not in manager.token_to_socket
+        assert "sid1" not in manager.sid_to_token
+
+    async def test_is_token_connected_foreign_record_moved(self, manager, mock_redis):
+        """A cached foreign record and its sid mapping are replaced on a move."""
+        manager.token_to_socket["token1"] = SocketRecord(
+            instance_id="old-instance", sid="sid1"
+        )
+        manager.sid_to_token["sid1"] = "token1"
+        new_record = SocketRecord(instance_id="new-instance", sid="sid2")
+        mock_redis.get = AsyncMock(return_value=pickle.dumps(new_record))
+
+        assert await manager.is_token_connected("token1")
+        assert manager.token_to_socket["token1"] == new_record
+        assert "sid1" not in manager.sid_to_token
+        assert manager.sid_to_token["sid2"] == "token1"
+
+    async def test_is_token_connected_redis_error_trusts_cache(
+        self, manager, mock_redis
+    ):
+        """A redis failure preserves and trusts the cached foreign record."""
+        record = SocketRecord(instance_id="other-instance", sid="sid1")
+        manager.token_to_socket["token1"] = record
+        manager.sid_to_token["sid1"] = "token1"
+        mock_redis.get = AsyncMock(side_effect=Exception("Redis down"))
+
+        assert await manager.is_token_connected("token1")
+        assert not await manager.is_token_connected("unknown-token")
+        assert manager.token_to_socket["token1"] == record
+        assert manager.sid_to_token["sid1"] == "token1"
+
     def test_inheritance_from_local_manager(self, manager):
         """Test RedisTokenManager inherits from LocalTokenManager.
 
@@ -486,6 +652,35 @@ class TestRedisTokenManager:
         assert isinstance(manager, LocalTokenManager)
         assert hasattr(manager, "token_to_sid")
         assert hasattr(manager, "sid_to_token")
+
+    async def test_close_cancels_tasks_and_closes_redis(self, manager, mock_redis):
+        """Test close cancels background pub/sub tasks and closes the Redis client.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        manager._ensure_socket_record_task()
+        task = manager._socket_record_task
+        assert task is not None
+
+        await manager.close()
+
+        assert task.cancelled()
+        assert manager._socket_record_task is None
+        assert manager._lost_and_found_task is None
+        mock_redis.aclose.assert_awaited_once()
+
+    async def test_close_without_tasks(self, manager, mock_redis):
+        """Test close works when no background tasks were started.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+            mock_redis: Mock Redis client fixture.
+        """
+        await manager.close()
+
+        mock_redis.aclose.assert_awaited_once()
 
 
 @pytest.fixture
@@ -616,6 +811,41 @@ async def _wait_for_call_count_positive(mock: Mock, timeout: float = 5.0):
     deadline = time.monotonic() + timeout
     while mock.call_count == 0 and time.monotonic() < deadline:  # noqa: ASYNC110
         await asyncio.sleep(0.1)
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_restore_does_not_clobber_new_owner(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """A late keep-alive restore must not overwrite another instance's record.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    event_namespace2 = event_namespace_factory()
+
+    manager1 = event_namespace1._token_manager
+    manager2 = event_namespace2._token_manager
+    assert isinstance(manager1, RedisTokenManager)
+    assert isinstance(manager2, RedisTokenManager)
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    # Stop the live subscriber so the deletion notification is handled manually.
+    assert manager1._socket_record_task is not None
+    manager1._socket_record_task.cancel()
+    # The record expires and another instance claims the token.
+    await manager1.redis.delete(manager1._get_redis_key("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token1"))
+    # The first instance processes the expiration notification late.
+    await manager1._handle_socket_record_del("token1")
+
+    assert await manager2._get_token_owner("token1", refresh=True) == (
+        manager2.instance_id
+    )
+    # The losing restore adopted the newer record locally.
+    assert manager1.token_to_socket["token1"].instance_id == manager2.instance_id
 
 
 @pytest.mark.usefixtures("redis_url")

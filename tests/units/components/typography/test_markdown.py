@@ -1,7 +1,7 @@
 import pytest
+from reflex_components_markdown.markdown import Markdown
 
 import reflex as rx
-from reflex.components.markdown.markdown import Markdown
 
 
 @pytest.mark.parametrize(

@@ -1,3 +1,4 @@
+import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
@@ -8,15 +9,16 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
+from reflex_base import constants
+from reflex_base.event import EventHandler
+from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
+from reflex_base.vars.base import Var
 
-from reflex import constants
 from reflex.environment import environment
-from reflex.event import EventHandler
+from reflex.plugins import RadixThemesPlugin
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
-from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
-from reflex.vars.base import Var
 
 
 class ExampleTestState(BaseState):
@@ -283,8 +285,8 @@ def test_is_backend_base_variable(
         (float, int | float, True),
         (str, int | float, False),
         (list[int], list[int], True),
-        (list[int], list[float], True),
-        (int | float, int | float, False),
+        (list[int], list[float], False),
+        (int | float, int | float, True),
         (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
@@ -296,7 +298,7 @@ def test_is_backend_base_variable(
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
-    assert types._issubclass(cls, cls_check) == expected
+    assert types.typehint_issubclass(cls, cls_check) == expected
 
 
 @pytest.mark.parametrize("cls", [Literal["test", 1], Literal[1, "test"]])
@@ -361,6 +363,11 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
+    # The default template must declare RadixThemesPlugin explicitly. The blank
+    # app renders Radix Themes components, so without an explicit plugin the
+    # compiler falls back to implicit enablement and emits a deprecation warning
+    # on the first `reflex run` of a freshly scaffolded app (issue #6483).
+    assert any(isinstance(plugin, RadixThemesPlugin) for plugin in config.plugins)
 
 
 class DataFrame:
@@ -419,6 +426,272 @@ def test_initialize_non_existent_gitignore(
         line.strip() for line in gitignore_file.open().read().splitlines() if line
     ]
     assert set(file_content) - expected == set()
+
+
+def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
+    """Test that AGENTS.md is fetched and a CLAUDE.md bridge is created when absent."""
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    response = mocker.Mock()
+    response.text = "# canonical agents"
+    get = mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file, url="http://x/AGENTS.md"
+    )
+
+    get.assert_called_once_with("http://x/AGENTS.md", timeout=5)
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "# canonical agents\n"
+        f"{constants.AgentsMd.END_MARKER}\n"
+    )
+    assert claude_file.read_text() == "@AGENTS.md\n"
+
+
+def test_initialize_agents_md_prepends_to_unmanaged_existing(tmp_path, mocker):
+    """Test that the managed section is prepended to an existing file without markers."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("custom content\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
+
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "custom content\n"
+    )
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        f"user notes\n{constants.AgentsMd.END_MARKER}\nstale\n{constants.AgentsMd.BEGIN_MARKER}\nmore notes\n",
+        f"user notes\n{constants.AgentsMd.BEGIN_MARKER}\nunclosed\n",
+        f"user notes\n{constants.AgentsMd.END_MARKER}\norphaned\n",
+    ],
+)
+def test_initialize_agents_md_repairs_malformed_markers(tmp_path, mocker, malformed):
+    """Test that out-of-order or unpaired markers are dropped and the section prepended.
+
+    Args:
+        tmp_path: pytest temporary directory fixture.
+        mocker: pytest-mock fixture.
+        malformed: An AGENTS.md body with an invalid marker arrangement.
+    """
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(malformed)
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
+
+    content = agents_file.read_text()
+    managed = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    assert content.startswith(managed + "\n")
+    rest = content.removeprefix(managed)
+    assert constants.AgentsMd.BEGIN_MARKER not in rest
+    assert constants.AgentsMd.END_MARKER not in rest
+    assert "user notes" in rest
+
+
+def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
+    """Test that only the marked section is refreshed, preserving user content."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(
+        "# my project notes\n\n"
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "old canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "more user notes\n"
+    )
+    response = mocker.Mock()
+    response.text = "new canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
+
+    assert agents_file.read_text() == (
+        "# my project notes\n\n"
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "new canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "more user notes\n"
+    )
+
+
+def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker, caplog):
+    """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
+    import httpx
+
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert not agents_file.exists()
+    assert not claude_file.exists()
+
+
+def test_initialize_agents_md_skips_bridge_when_claude_imports_agents(tmp_path, mocker):
+    """Test that a CLAUDE.md importing AGENTS.md is left untouched."""
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("@AGENTS.md\n\n# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.read_text() == "@AGENTS.md\n\n# my claude notes\n"
+    assert "canonical content" in agents_file.read_text()
+
+
+def test_initialize_agents_md_targets_claude_without_import(tmp_path, mocker):
+    """Test that the managed section goes into a CLAUDE.md lacking the import."""
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "# my claude notes\n"
+    )
+    assert not agents_file.exists()
+
+
+def test_initialize_agents_md_targets_both_when_agents_exists(tmp_path, mocker):
+    """Test that both files are managed when CLAUDE.md lacks the import but AGENTS.md exists."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "old content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "# agents notes\n"
+    )
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    managed = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    assert agents_file.read_text() == f"{managed}\n\n# agents notes\n"
+    assert claude_file.read_text() == f"{managed}\n\n# my claude notes\n"
+
+
+def test_initialize_agents_md_handles_symlinked_claude(tmp_path, mocker):
+    """Test that a CLAUDE.md symlinked to AGENTS.md is managed as one file."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("shared notes\n")
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.symlink_to(agents_file)
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.is_symlink()
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "shared notes\n"
+    )
+    assert claude_file.read_text() == agents_file.read_text()
+
+
+def test_initialize_requirements_txt_skips_when_pyproject_exists(tmp_path):
+    """Test that pyproject-based apps do not get a requirements.txt file."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_file.write_text('[project]\nname = "existing-app"\n')
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert not requirements_file.exists()
+
+
+def test_initialize_requirements_txt_appends_reflex_to_existing_requirements(tmp_path):
+    """Test that legacy requirements.txt projects keep working without pyproject.toml."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text("sqlmodel==0.0.37\n")
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert not pyproject_file.exists()
+    assert requirements_file.read_text().endswith(
+        f"\nreflex=={constants.Reflex.VERSION}"
+    )
+
+
+def test_initialize_requirements_txt_preserves_existing_requirements(tmp_path):
+    """Test that existing requirements.txt projects do not get a second manifest."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_text = f"reflex=={constants.Reflex.VERSION}\nredis==7.3.0\n"
+    requirements_file.write_text(requirements_text)
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert requirements_file.read_text() == requirements_text
+    assert not pyproject_file.exists()
 
 
 def test_validate_app_name(tmp_path, mocker: MockerFixture):
@@ -514,7 +787,7 @@ def test_output_system_info(mocker: MockerFixture):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex_base.utils.log._log_level", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 
@@ -549,3 +822,194 @@ def test_is_prod_mode() -> None:
     assert utils_exec.is_prod_mode()
     environment.REFLEX_ENV_MODE.set(None)
     assert not utils_exec.is_prod_mode()
+
+
+def test_preview_env_is_not_prod_mode() -> None:
+    """Preview is a development mode, so is_prod_mode must stay False."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.PREVIEW)
+    try:
+        assert not utils_exec.is_prod_mode()
+    finally:
+        environment.REFLEX_ENV_MODE.set(None)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("dev", constants.Env.DEV),
+        ("preview", constants.Env.PREVIEW),
+        ("prod", constants.Env.PROD),
+    ],
+)
+def test_env_enum_roundtrip(value: str, expected: constants.Env) -> None:
+    """Each env string maps to the matching Env member (used by the run CLI)."""
+    assert constants.Env(value) is expected
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_vite_config_template_minify(minify: bool) -> None:
+    """The vite config template emits the requested build.minify value."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        minify=minify,
+    )
+    expected = "true" if minify else "false"
+    assert f"minify: {expected}," in config
+    # CSS minification follows the JS minify flag.
+    assert f"cssMinify: {expected}," in config
+
+
+def test_vite_config_template_valid_rolldown_options() -> None:
+    """The vite config only emits options accepted by rolldown-vite.
+
+    rolldown-vite rejects `rollupOptions.jsx` ("Invalid input options") and
+    deprecates `output.advancedChunks` in favor of `output.codeSplitting`
+    (same shape), so the template must emit neither legacy option while
+    keeping the reflex-env chunk group.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "jsx: {}" not in config
+    assert "advancedChunks" not in config
+    assert "codeSplitting: {" in config
+    assert 'name: "reflex-env",' in config
+
+
+def test_vite_config_template_pins_preview_host() -> None:
+    """The vite config pins the preview server to an IPv4 loopback address.
+
+    react-router prerenders by fetching pages from a `vite preview` server;
+    without a pinned host, the bound socket and the fetched `localhost` URL
+    can resolve to different address families and refuse the connection.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "preview: {" in config
+    assert 'host: "127.0.0.1",' in config
+
+
+def test_vite_config_template_imports_plugin_with_extension() -> None:
+    """Local plugin imports carry a file extension.
+
+    Vite's native config loader (planned to become the default) cannot resolve
+    extensionless relative imports and warns about them today.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert 'from "./vite-plugin-safari-cachebust.js"' in config
+
+
+def test_vite_config_template_filters_react_dom_server_resolve_hook() -> None:
+    """The react-dom/server resolveId hook declares a hook filter.
+
+    Without a filter, rolldown calls the hook for every import in the module
+    graph, which dominates build time on large apps.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "filter: { id: /react-dom\\/server/ }," in config
+    assert "handler(source, importer) {" in config
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_compile_vite_config_reads_minify_env(
+    minify: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """_compile_vite_config threads the VITE_MINIFY env var into the template."""
+    monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
+    config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
+    assert f"minify: {'true' if minify else 'false'}," in config
+
+
+@pytest.mark.parametrize("prod_react", [True, False])
+def test_vite_config_template_prod_react(prod_react: bool) -> None:
+    """REFLEX_DEV_PROD_REACT swaps the browser's prebundled React for production.
+
+    The swap lives in an optimizer-only plugin (never `resolve.alias`, which
+    would stop Vite externalizing React for SSR), compiles JSX with the non-dev
+    runtime, and changes the optimizer cache key via a define.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=prod_react,
+        experimental_hmr=False,
+        sourcemap=False,
+        prod_react=prod_react,
+    )
+    markers = (
+        "function prodReactPrebundle() {",
+        "plugins: [prodReactPrebundle()],",
+        'transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": \'"1"\' } },',
+        "jsx: { development: false },",
+        '"react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),',
+        'packageRoot("scheduler", path.join(reactDomRoot, "package.json"))',
+    )
+    for marker in markers:
+        assert (marker in config) is prod_react, marker
+    assert "customResolver" not in config
+    assert ("[fullReload()]" in config) is prod_react
+
+
+@pytest.mark.parametrize("warmup_routes", [True, False])
+def test_vite_config_template_warmup_routes(warmup_routes: bool) -> None:
+    """REFLEX_VITE_WARMUP_ROUTES pre-transforms route modules at server start."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        warmup_routes=warmup_routes,
+    )
+    assert ('clientFiles: ["./app/routes/**/*.jsx"],' in config) is warmup_routes
+
+
+def test_compile_vite_config_prod_react_forces_full_reload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Production React cannot be hot-patched, so the env var also forces full reloads."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_DEV_PROD_REACT.name, "true")
+    config = frontend_skeleton._compile_vite_config(get_config())
+    assert "plugins: [prodReactPrebundle()]," in config
+    assert "[fullReload()]" in config

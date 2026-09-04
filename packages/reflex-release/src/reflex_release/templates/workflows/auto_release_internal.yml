@@ -1,0 +1,69 @@
+@@HEADER@@
+name: Auto-release internal packages
+
+# Internal packages (no changelog, patch-bump versioning) release on every push
+# to @@MAIN_BRANCH@@ that touches them. Publishing goes through publish.yml
+# with no explicit version: the next patch version is computed from the newest
+# tag inside the per-package publish concurrency group, and the tag is only
+# pushed after a successful upload. Like every publish, the upload itself waits
+# for approval by the pypi environment's required reviewers.
+
+on:
+  push:
+    branches: ["@@MAIN_BRANCH@@"]
+    paths:
+@@INTERNAL_PATHS@@
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Internal package to release"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      # The whole pushed range has to be reachable: the paths filter above
+      # matches every commit in the push, so detection must diff the same range
+      # rather than only the last commit.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - id: detect
+        env:
+          DISPATCH_PACKAGE: ${{ inputs.package }}
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.event.after }}
+        shell: bash
+        run: @@CLI@@ detect-internal
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.packages != '[]'
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    # Holds the per-package publish lock for the whole called run, so
+    # back-to-back pushes compute and publish strictly one version at a time.
+    concurrency:
+      group: publish-${{ matrix.package }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      actions: @@ACTIONS_PERMISSION@@
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}

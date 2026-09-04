@@ -1,0 +1,258 @@
+import reflex as rx
+from reflex.utils.format import to_snake_case, to_title_case
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+
+from reflex_docs.pages.docs.metadata import truncate_meta_description
+from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
+
+
+def get_display_name(name: str) -> str:
+    normalized = to_snake_case(name)
+    if normalized == "html":
+        return "HTML"
+    if normalized == "svg":
+        return "SVG"
+    return to_title_case(normalized, sep=" ")
+
+
+HTML_COMPONENT_ORDER = {
+    "html": 0,
+    "text": 1,
+    "layout": 2,
+    "forms": 3,
+    "media": 4,
+    "tables": 5,
+    "svg": 6,
+}
+
+HTML_CARD_PREVIEWS = {
+    "html": ("layout", "box"),
+    "text": ("typography", "text"),
+    "layout": ("layout", "grid"),
+    "forms": ("forms", "input"),
+    "media": ("media", "image"),
+    "tables": ("tables-and-data-grids", "table"),
+    "svg": ("data-display", "icon"),
+}
+
+
+def get_components_for_category(category: str, components: list) -> list:
+    if to_snake_case(category) != "html":
+        return components
+    return sorted(
+        components,
+        key=lambda component: HTML_COMPONENT_ORDER.get(
+            to_snake_case(component[0]), len(HTML_COMPONENT_ORDER)
+        ),
+    )
+
+
+def get_preview_asset(name: str, section: str) -> tuple[str, str]:
+    if to_snake_case(section) == "html":
+        return HTML_CARD_PREVIEWS.get(to_snake_case(name), ("layout", "box"))
+    return section.lower(), name.lower()
+
+
+def component_card(name: str, link: str, section: str) -> rx.Component:
+    preview_section, preview_name = get_preview_asset(name, section)
+    return rx.link(
+        rx.box(
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
+                loading="lazy",
+                alt=f"Image preview of {name}",
+                class_name="object-contain object-center h-full w-full dark:hidden",
+            ),
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
+                loading="lazy",
+                alt=f"Image preview of {name}",
+                class_name="object-contain object-center h-full w-full dark:block hidden",
+            ),
+            rx.box(
+                rx.text(
+                    get_display_name(name),
+                    class_name="truncate font-base text-secondary-12",
+                ),
+                rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
+                class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
+            ),
+            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-secondary-2 hover:bg-secondary-3 transition-bg border-secondary-5",
+        ),
+        href=link,
+    )
+
+
+def get_component_list(component_type: str = "core"):
+    from reflex_docs.pages.docs import component_list, graphing_components
+
+    if component_type == "core":
+        return component_list
+    elif component_type == "graphing":
+        return graphing_components
+    else:
+        raise ValueError(f"Unknown component type: {component_type}")
+
+
+def create_previews(
+    path: str,
+    description: str,
+    component_category: str,
+    prefix: str = "",
+    type: str = "core",
+):
+    meta_description = truncate_meta_description(description)
+
+    @docpage(
+        right_sidebar=False,
+        set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
+        page_title=f"{get_display_name(component_category)} Component Library · Reflex Docs",
+        description=meta_description,
+    )
+    def page() -> rx.Component:
+        from reflex_docs.templates.docpage.sidebar.sidebar_items import (
+            get_component_link,
+        )
+
+        component_list = get_component_list(type)
+        return rx.box(
+            rx.box(
+                h1_comp(text=get_display_name(component_category)),
+                text_comp_2(
+                    text=description,
+                ),
+                class_name="flex flex-col w-full",
+            ),
+            rx.box(
+                *[
+                    component_card(
+                        name=component[0],
+                        link=get_component_link(
+                            component_category,
+                            component,
+                            prefix.strip("/") + "/" if prefix.strip("/") else "",
+                        ),
+                        section=component_category,
+                    )
+                    for component in get_components_for_category(
+                        component_category, component_list[component_category]
+                    )
+                ],
+                class_name="gap-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+            ),
+            class_name="flex flex-col h-full mb-10",
+        )
+
+    return page
+
+
+# Core Components
+# Notes:
+# - For the component_category, each word is capitalized and separated by a dash. Example: Data-Display
+# - The path is used to match the name of the component's images folder inside "assets/components_previews/".
+# - The svgs files are snake_case. Example: data_editor.svg
+core_components_dict = {
+    "data-display": {
+        "path": "data-display",
+        "description": "Tools to show information clearly. These include ways to highlight important details, show user pictures, display lists, indicate progress, and organize data neatly.",
+        "component_category": "Data-Display",
+    },
+    "disclosure": {
+        "path": "disclosure",
+        "description": "Components for revealing or hiding content, such as tabs and accordions. These are useful for creating expandable sections, organizing information, and improving user interface navigation.",
+        "component_category": "Disclosure",
+    },
+    "dynamic_rendering": {
+        "path": "dynamic-rendering",
+        "description": "Components that help with dynamic rendering, such as conditional rendering and dynamic components. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "Dynamic-Rendering",
+    },
+    "forms": {
+        "path": "forms",
+        "description": "Components for collecting user input, such as text fields, checkboxes, and radio buttons. These are useful for creating interactive forms and user input.",
+        "component_category": "Forms",
+    },
+    "html": {
+        "path": "html",
+        "description": "Low-level HTML elements exposed through the rx.el namespace. These are useful when you need native browser elements with direct styling control.",
+        "component_category": "Html",
+    },
+    "layout": {
+        "path": "layout",
+        "description": "Components that help with layout, such as containers, grids, and spacing. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "Layout",
+    },
+    "media": {
+        "path": "media",
+        "description": "Components that help with media, such as images, videos, and audio. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "Media",
+    },
+    "other": {
+        "path": "other",
+        "description": "Miscellaneous components that don't fit into other categories, such as clipboard, script, skeleton, and theme. These components provide additional functionality and customization options for your application.",
+        "component_category": "Other",
+    },
+    "overlays": {
+        "path": "overlay",
+        "description": "Components that help with overlays, such as modals, popovers, and tooltips. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "Overlay",
+    },
+    "tables_and_data_grids": {
+        "path": "tables-and-data-grids",
+        "description": "Build tables and data grids in Python with Reflex. Includes a composable table, a searchable and sortable data table for pandas DataFrames, and an editable data grid — perfect for dashboards and data apps, all in pure Python.",
+        "component_category": "Tables-And-Data-Grids",
+    },
+    "typography": {
+        "path": "typography",
+        "description": "Components that help with typography, such as headings, paragraphs, and lists. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "Typography",
+    },
+    "state": {
+        "path": "state",
+        "description": "Components that help with state, such as state variables, state hooks, and state management. These are useful for creating responsive and interactive user interfaces.",
+        "component_category": "State",
+    },
+}
+
+library_previews = [
+    create_previews(
+        path=value["path"],
+        description=value["description"],
+        component_category=value["component_category"],
+        type="core",
+    )
+    for key, value in core_components_dict.items()
+]
+
+# Graphing Components
+graphing_components_dict = {
+    "charts": {
+        "path": "charts",
+        "description": "Create interactive charts and graphs in Python with Reflex. Build bar, line, area, pie, scatter, radar, and more chart types on top of Recharts for data visualization — all in pure Python, no JavaScript.",
+        "component_category": "Charts",
+    },
+    "general": {
+        "path": "general",
+        "description": "General-purpose graphing components — axes, legends, tooltips, grids, and more — for customizing your Python charts and data visualizations in Reflex. Combine them to build clear, interactive charts in pure Python.",
+        "component_category": "General",
+    },
+    "other-charts": {
+        "path": "other-charts",
+        "description": "Additional Python charting options in Reflex, including Plotly and Matplotlib (pyplot). Render interactive Plotly Express figures and any Matplotlib plot in your web app — all in pure Python.",
+        "component_category": "Other-Charts",
+    },
+}
+
+graphing_previews = [
+    create_previews(
+        path=value["path"],
+        description=value["description"],
+        component_category=value["component_category"],
+        prefix="/graphing",
+        type="graphing",
+    )
+    for key, value in graphing_components_dict.items()
+]
+
+
+components_previews_pages = library_previews + graphing_previews

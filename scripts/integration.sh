@@ -11,7 +11,11 @@ export PYTHONUNBUFFERED=1
 
 env_mode=$1
 shift
-check_ports=${1:-3000 8000}
+if [ "$env_mode" = "prod" ]; then
+  check_ports=${1:-3000}
+else
+  check_ports=${1:-3000 8000}
+fi
 shift
 
 # Start the server in the background
@@ -21,7 +25,6 @@ reflex run --loglevel debug --env "$env_mode" "$@" & pid=$!
 # Within the context of this bash, $pid_in_bash is what we need to pass to "kill" on exit
 # This is true on all platforms.
 pid_in_bash=$pid
-trap "kill -INT $pid_in_bash ||:" EXIT
 
 echo "Started server with PID $pid"
 
@@ -29,9 +32,23 @@ echo "Started server with PID $pid"
 popd
 
 # In Windows, our Python script below needs to work with the WINPID
+is_windows=false
 if [ -f /proc/$pid/winpid ]; then
-  pid=$(cat /proc/$pid/winpid)
-  echo "Windows detected, passing winpid $pid to port waiter"
+  winpid=$(cat /proc/$pid/winpid)
+  is_windows=true
+  echo "Windows detected, passing winpid $winpid to port waiter"
+  pid=$winpid
 fi
+
+cleanup() {
+  if [ "$is_windows" = true ]; then
+    # Use taskkill to kill the entire process tree on Windows,
+    # so that reflex.exe and child processes release their file locks.
+    taskkill //F //T //PID $winpid 2>/dev/null ||:
+  else
+    kill -INT $pid_in_bash ||:
+  fi
+}
+trap cleanup EXIT
 
 python scripts/wait_for_listening_port.py $check_ports --timeout=900 --server-pid "$pid"

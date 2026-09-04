@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from reflex_base.components.component import evaluate_style_namespaces
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import ReflexError
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
 
 import reflex as rx
 from reflex import style
-from reflex.components.component import evaluate_style_namespaces
-from reflex.style import Style
-from reflex.utils.exceptions import ReflexError
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
 
 style_var = rx.Var.create({"height": "42px"})
 

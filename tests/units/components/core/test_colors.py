@@ -1,10 +1,10 @@
 import pytest
+from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.base import LiteralVar
+from reflex_components_code.code import CodeBlock
 
 import reflex as rx
-from reflex.components.datadisplay.code import CodeBlock
-from reflex.constants.colors import Color
-from reflex.constants.state import FIELD_MARKER
-from reflex.vars.base import LiteralVar
 
 
 class ColorState(rx.State):
@@ -37,19 +37,19 @@ color_with_fstring = rx.color(
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),
-            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string ? __to_string.toString() : \'\')({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(
                 rx.color(ColorState.color, ColorState.shade, ColorState.alpha)
             ),
-            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+({color_state_name!s}.alpha{FIELD_MARKER} ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+({color_state_name!s}.alpha{FIELD_MARKER} ? "a" : "")+(((__to_string) => __to_string ? __to_string.toString() : \'\')({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(color_with_fstring),
-            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string ? __to_string.toString() : \'\')({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
@@ -59,7 +59,7 @@ color_with_fstring = rx.color(
                     ColorState.shade,
                 )
             ),
-            f'("var(--"+({color_state_name!s}.color_part{FIELD_MARKER}+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
+            f'("var(--"+({color_state_name!s}.color_part{FIELD_MARKER}+"ato")+"-"+(((__to_string) => __to_string ? __to_string.toString() : \'\')({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (

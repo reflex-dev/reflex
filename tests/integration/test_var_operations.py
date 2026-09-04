@@ -12,11 +12,13 @@ def VarOperations():
     """App with var operations."""
     from typing import TypedDict
 
-    import reflex as rx
-    from reflex.vars.base import LiteralVar
-    from reflex.vars.sequence import ArrayVar
+    import pydantic
+    from reflex_base.vars.base import LiteralVar
+    from reflex_base.vars.sequence import ArrayVar
 
-    class Object(rx.Base):
+    import reflex as rx
+
+    class Object(pydantic.BaseModel):
         name: str = "hello"
         optional_none: str | None = None
         optional_str: str | None = "hello"
@@ -29,6 +31,7 @@ def VarOperations():
         int_var1: rx.Field[int] = rx.field(10)
         int_var2: rx.Field[int] = rx.field(5)
         int_var3: rx.Field[int] = rx.field(7)
+        match_selector: rx.Field[int] = rx.field(2)
         float_var1: rx.Field[float] = rx.field(10.5)
         float_var2: rx.Field[float] = rx.field(5.5)
         long_float: rx.Field[float] = rx.field(13212312312.1231231)
@@ -44,6 +47,9 @@ def VarOperations():
         str_var2: rx.Field[str] = rx.field("second")
         str_var3: rx.Field[str] = rx.field("ThIrD")
         str_var4: rx.Field[str] = rx.field("a long string")
+        str_var5: rx.Field[str] = rx.field(" spaced ")
+        str_var6: rx.Field[str] = rx.field("-^[a]^-stripped-^[a]^-")
+        strip_chars: rx.Field[str] = rx.field("-^[]a")
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
@@ -56,12 +62,14 @@ def VarOperations():
     app = rx.App()
 
     @rx.memo
-    def memo_comp(list1: list[int], int_var1: int, id: str):
+    def memo_comp(
+        list1: rx.Var[list[int]], int_var1: rx.Var[int], id: rx.Var[str]
+    ) -> rx.Component:
         return rx.text(list1, int_var1, id=id)
 
     @rx.memo
-    def memo_comp_nested(int_var2: int, id: str):
-        return memo_comp(list1=[3, 4], int_var1=int_var2, id=id)
+    def memo_comp_nested(int_var2: rx.Var[int], id: rx.Var[str]) -> rx.Component:
+        return memo_comp(list1=rx.Var.create([3, 4]), int_var1=int_var2, id=id)
 
     @app.add_page
     def index():
@@ -560,6 +568,24 @@ def VarOperations():
             rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
             rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
             rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
+            rx.text(VarOperationState.str_var5.strip().to_string(), id="str_strip"),
+            rx.text(VarOperationState.str_var5.lstrip().to_string(), id="str_lstrip"),
+            rx.text(VarOperationState.str_var5.rstrip().to_string(), id="str_rstrip"),
+            rx.text(VarOperationState.str_var6.strip("-^[]a"), id="str_strip_chars"),
+            rx.text(VarOperationState.str_var6.lstrip("-^[]a"), id="str_lstrip_chars"),
+            rx.text(VarOperationState.str_var6.rstrip("-^[]a"), id="str_rstrip_chars"),
+            rx.text(
+                VarOperationState.str_var6.strip(VarOperationState.strip_chars),
+                id="str_strip_chars_var",
+            ),
+            rx.text(
+                VarOperationState.str_var6.lstrip(VarOperationState.strip_chars),
+                id="str_lstrip_chars_var",
+            ),
+            rx.text(
+                VarOperationState.str_var6.rstrip(VarOperationState.strip_chars),
+                id="str_rstrip_chars_var",
+            ),
             rx.text(VarOperationState.list3.join(""), id="list_join"),
             rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
             # Index from an op var
@@ -576,6 +602,68 @@ def VarOperations():
             rx.text(ArrayVar.range(2, 10, 2).join(","), id="list_join_range2"),
             rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),
             rx.text(ArrayVar.range(0, 3).join(","), id="list_join_range4"),
+            rx.text(
+                ArrayVar.range(1, 5).map(lambda x: x * 2).to_string(),
+                id="list_map",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),
+                id="list_foreach_alias",
+            ),
+            rx.text(
+                LiteralVar
+                .create([0, 1, "", "hello", [], [1], {}, {"key": 1}])
+                .filter()
+                .to_string(),
+                id="list_filter_truthiness",
+            ),
+            rx.text(
+                ArrayVar.range(1, 6).filter(lambda x: x % 2 == 0).to_string(),
+                id="list_filter_predicate",
+            ),
+            rx.text(
+                ArrayVar.range(1, 6).filter(lambda x: x % 3).to_string(),
+                id="list_filter_nonbool_predicate",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).reduce(lambda acc, x: acc + x),  # noqa: FURB118
+                id="list_reduce",
+            ),
+            rx.text(
+                ArrayVar.range(1, 5).reduce(
+                    lambda acc, x: acc + x,  # noqa: FURB118
+                    100,
+                ),
+                id="list_reduce_initial",
+            ),
+            rx.text(
+                LiteralVar.create(["a", "b", "c"]).reduce(
+                    lambda acc, x: acc + x  # noqa: FURB118
+                ),
+                id="list_reduce_str",
+            ),
+            rx.text(
+                LiteralVar
+                .create([[1, 2], [3], [4, 5]])
+                .flat_map(lambda x: x)
+                .to_string(),
+                id="list_flat_map",
+            ),
+            rx.text(
+                LiteralVar.create(["ab", "cd"]).flat_map(lambda x: x).to_string(),
+                id="list_flat_map_str",
+            ),
+            rx.text(
+                ArrayVar.range(1, 4).flat_map(lambda x: [x, x * 10]).to_string(),
+                id="list_flat_map_fn",
+            ),
+            rx.text(
+                LiteralVar
+                .create([{"a": 1}, {"b": 2}])
+                .flat_map(lambda x: x)
+                .to_string(),
+                id="list_flat_map_dict",
+            ),
             rx.box(
                 # Test that foreach works with various non-array inputs without throwing
                 rx.foreach(
@@ -631,13 +719,13 @@ def VarOperations():
                 id="foreach_list_arg2",
             ),
             memo_comp(
-                list1=VarOperationState.list1,
+                list1=VarOperationState.list1.to(list[int]),
                 int_var1=VarOperationState.int_var1,
-                id="memo_comp",
+                id=rx.Var.create("memo_comp"),
             ),
             memo_comp_nested(
                 int_var2=VarOperationState.int_var2,
-                id="memo_comp_nested",
+                id=rx.Var.create("memo_comp_nested"),
             ),
             # length
             rx.box(
@@ -657,6 +745,17 @@ def VarOperations():
                     rx.foreach(VarOperationState.list3, lambda choice: rx.text(choice)),
                 ),
                 id="foreach_in_match",
+            ),
+            # stateful component branches in a match
+            rx.box(
+                rx.match(
+                    VarOperationState.match_selector,
+                    (0, rx.text(VarOperationState.int_var1 + 1)),
+                    (1, rx.text(VarOperationState.int_var2 + 2)),
+                    (2, rx.text(VarOperationState.str_var1.upper())),
+                    rx.text(VarOperationState.list3.length()),
+                ),
+                id="stateful_match_three_cases",
             ),
             # Literal range var in a foreach
             rx.box(rx.foreach(range(42, 80, 27), rx.text.span), id="range_in_foreach1"),
@@ -922,6 +1021,15 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_lower", "third"),
         ("str_upper", "THIRD"),
         ("str_split", '["a","long","string"]'),
+        ("str_strip", '"spaced"'),
+        ("str_lstrip", '"spaced "'),
+        ("str_rstrip", '" spaced"'),
+        ("str_strip_chars", "stripped"),
+        ("str_lstrip_chars", "stripped-^[a]^-"),
+        ("str_rstrip_chars", "-^[a]^-stripped"),
+        ("str_strip_chars_var", "stripped"),
+        ("str_lstrip_chars_var", "stripped-^[a]^-"),
+        ("str_rstrip_chars_var", "-^[a]^-stripped"),
         # str, int
         ("str_mult_int", "firstfirstfirstfirstfirst"),
         ("str_and_int", "5"),
@@ -957,6 +1065,18 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_join_range2", "2,4,6,8"),
         ("list_join_range3", "5,4,3,2,1"),
         ("list_join_range4", "0,1,2"),
+        ("list_map", "[2,4,6,8]"),
+        ("list_foreach_alias", "[2,4,6,8]"),
+        ("list_filter_truthiness", '[1,"hello",[1],{"key":1}]'),
+        ("list_filter_predicate", "[2,4]"),
+        ("list_filter_nonbool_predicate", "[1,2,4,5]"),
+        ("list_reduce", "10"),
+        ("list_reduce_initial", "110"),
+        ("list_reduce_str", "abc"),
+        ("list_flat_map", "[1,2,3,4,5]"),
+        ("list_flat_map_str", '["a","b","c","d"]'),
+        ("list_flat_map_fn", "[1,10,2,20,3,30]"),
+        ("list_flat_map_dict", '["a","b"]'),
         # list, int
         ("list_mult_int", "[1,2,1,2,1,2,1,2,1,2]"),
         ("list_or_int", "[1,2]"),
@@ -991,6 +1111,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("obj_length", "3"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
+        # stateful branch components in a match
+        ("stateful_match_three_cases", "FIRST"),
         # literal range in a foreach
         ("range_in_foreach1", "4269"),
         ("range_in_foreach2", "42454851545760636669727578"),

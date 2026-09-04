@@ -3,15 +3,16 @@
 from collections.abc import Generator
 
 import pytest
+from reflex_components_lucide.icon import LUCIDE_ICON_LIST
 from selenium.webdriver.common.by import By
 
-from reflex.components.lucide.icon import LUCIDE_ICON_LIST
 from reflex.testing import AppHarness, WebDriver
 
 
 def Icons():
+    from reflex_components_lucide.icon import LUCIDE_ICON_LIST
+
     import reflex as rx
-    from reflex.components.lucide.icon import LUCIDE_ICON_LIST
 
     app = rx.App()
 

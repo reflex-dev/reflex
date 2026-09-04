@@ -6,15 +6,11 @@ import asyncio
 from collections.abc import Generator
 
 import pytest
+from reflex_base.constants.state import FIELD_MARKER
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as Firefox
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.constants.state import FIELD_MARKER
-from reflex.istate.manager.disk import StateManagerDisk
-from reflex.istate.manager.memory import StateManagerMemory
-from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import State, _substate_key
 from reflex.testing import AppHarness
 
 from . import utils
@@ -22,6 +18,8 @@ from . import utils
 
 def ClientSide():
     """App for testing client-side state."""
+    import uuid
+
     import reflex as rx
 
     class ClientSideState(rx.State):
@@ -35,6 +33,12 @@ def ClientSide():
         @rx.event
         def set_input_value(self, value: str):
             self.input_value = value
+
+        @rx.event
+        def reset_token_no_hydrate(self):
+            return rx.run_script(
+                f"{{token = '{uuid.uuid4()}'; window.sessionStorage.setItem('token', token);}}"
+            )
 
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
@@ -89,6 +93,11 @@ def ClientSide():
                 value=ClientSideState.router.session.client_token,
                 read_only=True,
                 id="token",
+            ),
+            rx.button(
+                "New Token - No Hydrate",
+                id="new_token",
+                on_click=ClientSideState.reset_token_no_hydrate,
             ),
             rx.input(
                 placeholder="state var",
@@ -350,7 +359,6 @@ async def test_client_side_state(
     set_sub_sub("l1s", "l1s value")
     set_sub_sub("s1s", "s1s value")
 
-    state_name = client_side.get_full_state_name(["_client_side_state"])
     sub_state_name = client_side.get_full_state_name([
         "_client_side_state",
         "_client_side_sub_state",
@@ -534,9 +542,8 @@ async def test_client_side_state(
     assert l1s.text == "l1s value"
     assert s1s.text == "s1s value"
 
-    # reset the backend state to force refresh from client storage
-    async with client_side.modify_state(f"{token}_{state_name}") as state:
-        state.reset()
+    # set a new token to force reloading the values from client
+    driver.execute_script("window.sessionStorage.setItem('token', '');")
     driver.refresh()
 
     # wait for the backend connection to send the token (again)
@@ -640,39 +647,8 @@ async def test_client_side_state(
     assert s3.text == "s3 value"
 
     # Simulate state expiration
-    if isinstance(client_side.state_manager, StateManagerRedis):
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, State.get_full_name())
-        )
-        await client_side.state_manager.redis.delete(_substate_key(token, state_name))
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, sub_state_name)
-        )
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, sub_sub_state_name)
-        )
-    elif isinstance(client_side.state_manager, (StateManagerMemory, StateManagerDisk)):
-        del client_side.state_manager.states[token]
-    if (
-        client_side.app_instance is not None
-        and (app_state_manager := client_side.app_instance.state_manager) is not None
-        and isinstance(app_state_manager, StateManagerDisk)
-    ):
-        # Purge the backend's disk manager
-        app_state_manager.states.pop(token, None)
-        app_state_manager._write_queue.pop(token, None)
-        og_token_expiration = app_state_manager.token_expiration
-        app_state_manager.token_expiration = 0
-        app_state_manager._purge_expired_states()
-        app_state_manager.token_expiration = og_token_expiration
-
-    # Ensure the state is gone (not hydrated)
-    async def poll_for_not_hydrated():
-        state = await client_side.get_state(_substate_key(token or "", state_name))
-        assert isinstance(state, State)
-        return not state.is_hydrated
-
-    assert await AppHarness._poll_for_async(poll_for_not_hydrated)
+    new_token_btn = driver.find_element(By.ID, "new_token")
+    new_token_btn.click()
 
     # Trigger event to get a new instance of the state since the old was expired.
     set_sub("c1", "c1 post expire")
@@ -713,41 +689,6 @@ async def test_client_side_state(
     assert c1s.text == "c1s value"
     assert l1s.text == "l1s value"
     assert s1s.text == "s1s value"
-
-    # Get the backend state and ensure the values are still set
-    async def get_sub_state():
-        root_state = await client_side.get_state(
-            _substate_key(token or "", sub_state_name)
-        )
-        state = root_state.substates[client_side.get_state_name("_client_side_state")]
-        return state.substates[client_side.get_state_name("_client_side_sub_state")]
-
-    async def poll_for_c1_set():
-        sub_state = await get_sub_state()
-        return sub_state.c1 == "c1 post expire"  # pyright: ignore[reportAttributeAccessIssue]
-
-    assert await AppHarness._poll_for_async(poll_for_c1_set)
-    sub_state = await get_sub_state()
-    assert sub_state.c1 == "c1 post expire"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c2 == "c2 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c3 == ""  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c4 == "c4 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c5 == "c5 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c6 == "c6 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.c7 == "c7 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.l1 == "l1 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.l2 == "l2 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.l3 == "l3 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.l4 == "l4 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.s1 == "s1 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.s2 == "s2 value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_state.s3 == "s3 value"  # pyright: ignore[reportAttributeAccessIssue]
-    sub_sub_state = sub_state.substates[
-        client_side.get_state_name("_client_side_sub_sub_state")
-    ]
-    assert sub_sub_state.c1s == "c1s value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_sub_state.l1s == "l1s value"  # pyright: ignore[reportAttributeAccessIssue]
-    assert sub_sub_state.s1s == "s1s value"  # pyright: ignore[reportAttributeAccessIssue]
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()

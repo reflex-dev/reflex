@@ -4,11 +4,13 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from reflex_base.constants.state import FIELD_MARKER
 
 import reflex as rx
-from reflex.constants.state import FIELD_MARKER
+from reflex.istate.manager import StateManager
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import BaseState, StateManager, _substate_key
+from reflex.istate.manager.token import BaseStateToken
+from reflex.state import BaseState
 
 
 class Root(BaseState):
@@ -212,7 +214,7 @@ ALWAYS_COMPUTED_DICT_KEYS = [
 ]
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis(
     app_module_mock,
 ) -> AsyncGenerator[StateManager, None]:
@@ -371,7 +373,9 @@ async def test_get_state_tree(
         exp_root_substates: The expected substates of the root state.
         exp_root_dict_keys: The expected keys of the root state dict.
     """
-    state = await state_manager_redis.get_state(_substate_key(token, substate_cls))
+    state = await state_manager_redis.get_state(
+        BaseStateToken(ident=token, cls=substate_cls)
+    )
     assert isinstance(state, Root)
     assert sorted(state.substates) == sorted(exp_root_substates)
 

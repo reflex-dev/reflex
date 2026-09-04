@@ -1,14 +1,14 @@
 import re
 
 import pytest
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.exceptions import MatchTypeError
+from reflex_base.vars.base import Var
+from reflex_components_core.core.match import Match
 
 import reflex as rx
-from reflex.components.component import Component
-from reflex.components.core.match import Match
-from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
-from reflex.utils.exceptions import MatchTypeError
-from reflex.vars.base import Var
 
 
 class MatchState(BaseState):
@@ -141,7 +141,7 @@ def test_match_on_component_without_default():
     """Test that matching cases with return values as components returns a Fragment
     as the default case if not provided.
     """
-    from reflex.components.base.fragment import Fragment
+    from reflex_components_core.base.fragment import Fragment
 
     match_case_tuples = (
         (1, rx.text("first value")),
@@ -249,7 +249,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-                "<class 'reflex.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>"
+                "<class 'reflex_base.vars.sequence.LiteralStringVar'> is not <class 'reflex_base.components.component.BaseComponent'>"
             ),
         ),
         (
@@ -264,7 +264,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
-                "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>"
+                "of type <class 'reflex_components_radix.themes.typography.text.Text'> is not <class 'reflex_base.vars.base.Var'>"
             ),
         ),
     ],

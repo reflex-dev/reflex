@@ -2,27 +2,35 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import zipfile
 from pathlib import Path, PosixPath
 
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from reflex_base import constants
+from reflex_base.config import get_config
 
-from reflex import constants
-from reflex.config import get_config
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
+
+logger = logging.getLogger(__name__)
 
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
+    config = get_config()
+    env: dict[str, object] = {
+        **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        "TRANSPORT": config.transport,
+        "TEST_MODE": is_in_app_harness(),
+    }
+    for plugin in config.plugins:
+        contribution = plugin.update_env_json()
+        if contribution:
+            env.update(contribution)
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {
-            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TRANSPORT": get_config().transport,
-            "TEST_MODE": is_in_app_harness(),
-        },
+        env,
     )
 
 
@@ -101,18 +109,14 @@ def _zip(
                 if file.name not in files_to_exclude
             ]
     # Create a progress bar for zipping the component.
-    progress = Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
+    progress = console.progress()
     task = progress.add_task(
         f"Zipping {component_name.value}:", total=len(files_to_zip)
     )
 
     with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in files_to_zip:
-            console.debug(f"{target}: {file}", progress=progress)
+            logger.debug(f"{target}: {file}", extra={"progress": progress})
             progress.advance(task)
             zipf.write(file, Path(file).relative_to(root_directory))
 
@@ -179,12 +183,49 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             if index_html.exists():
                 target = directory / (child.name + ".html")
                 if not target.exists():
-                    console.debug(f"Copying {index_html} to {target}")
+                    logger.debug(f"Copying {index_html} to {target}")
                     path_ops.cp(index_html, target)
                 else:
-                    console.debug(f"Skipping {index_html}, already exists at {target}")
+                    logger.debug(f"Skipping {index_html}, already exists at {target}")
             # Recursively call this function for the child directory.
             _duplicate_index_html_to_parent_directory(child)
+
+
+def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
+    """Run the shared frontend compressor against the final static output tree.
+
+    Args:
+        directory: The static output directory.
+        formats: The configured frontend compression formats.
+
+    Raises:
+        SystemExit: If no JavaScript runtime is available or compression fails.
+    """
+    if not formats:
+        return
+
+    web_dir = prerequisites.get_web_dir().resolve()
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        logger.error("Node.js or Bun is required to compress the exported frontend.")
+        raise SystemExit(1)
+
+    result = processes.new_process(
+        [
+            runtime,
+            web_dir / "compress-static.js",
+            directory.resolve(),
+            *formats,
+        ],
+        cwd=web_dir,
+        shell=constants.IS_WINDOWS,
+        run=True,
+    )
+    if result.returncode != 0:
+        logger.error(
+            "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
+        )
+        raise SystemExit(1)
 
 
 def build():
@@ -222,33 +263,40 @@ def build():
     processes.show_progress("Creating Production Build", process, checkpoints)
     process.wait()
     if process.returncode != 0:
-        console.error(
+        logger.error(
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
-    _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
+    config = get_config()
+    static_dir = wdir / constants.Dirs.STATIC
 
-    spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
+    _duplicate_index_html_to_parent_directory(static_dir)
+
+    for plugin in config.plugins:
+        plugin.post_build(static_dir=static_dir)
+
+    spa_fallback = static_dir / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():
-        spa_fallback = wdir / constants.Dirs.STATIC / "index.html"
+        spa_fallback = static_dir / "index.html"
 
     if spa_fallback.exists():
-        path_ops.cp(
-            spa_fallback,
-            wdir / constants.Dirs.STATIC / "404.html",
-        )
+        path_ops.cp(spa_fallback, static_dir / "404.html")
 
-    config = get_config()
+    _compress_static_output(
+        static_dir,
+        tuple(config.frontend_compression_formats),
+    )
 
     if frontend_path := config.frontend_path.strip("/"):
+        # Create a subdirectory that matches the configured frontend_path.
         frontend_path = PosixPath(frontend_path)
         first_part = frontend_path.parts[0]
-        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+        for child in list(static_dir.iterdir()):
             if child.is_dir() and child.name == first_part:
                 continue
             path_ops.mv(
                 child,
-                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+                static_dir / frontend_path / child.name,
             )
 
 

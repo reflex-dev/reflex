@@ -1,23 +1,28 @@
 """Test states for mutable vars."""
 
-import reflex as rx
+import pytest
+
 from reflex.state import BaseState
 
+pytest.importorskip("pydantic")
 
-class OtherBase(rx.Base):
-    """A Base model with a str field."""
-
-    bar: str = ""
+import pydantic
 
 
-class CustomVar(rx.Base):
-    """A Base model with multiple fields."""
+class OtherBase(pydantic.BaseModel):
+    """A BaseModel with a str field."""
 
-    foo: str = ""
-    array: list[str] = []
-    hashmap: dict[str, str] = {}
-    test_set: set[str] = set()
-    custom: OtherBase = OtherBase()
+    bar: str = pydantic.Field(default="")
+
+
+class CustomVar(pydantic.BaseModel):
+    """A BaseModel with multiple fields."""
+
+    foo: str = pydantic.Field(default="")
+    array: list[str] = pydantic.Field(default_factory=list)
+    hashmap: dict[str, str] = pydantic.Field(default_factory=dict)
+    test_set: set[str] = pydantic.Field(default_factory=set)
+    custom: OtherBase = pydantic.Field(default_factory=OtherBase)
 
 
 class MutableTestState(BaseState):

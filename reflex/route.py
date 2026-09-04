@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from collections.abc import Callable
 
-from reflex import constants
-from reflex.config import get_config
+from reflex_base import constants
+from reflex_base.config import get_config
 
 
 def verify_route_validity(route: str) -> None:
@@ -172,7 +173,9 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
             # Match a single optional segment (/slug or nothing)
             regex_parts.append(r"(/[^/]+)?")
         elif part == constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT:
-            regex_parts.append(".*")
+            # The frontend compiles this to React Router's `*`, which matches the
+            # route and its descendants only, so the segment separator is required.
+            regex_parts.append("(/.*)?")
         else:
             regex_parts.append(re.escape("/" + part))
     # Join the regex parts and compile the regex
@@ -203,18 +206,19 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         for keyworded_route, original_route in sorted_routes_by_specificity
     ]
 
-    def get_route(path: str) -> str | None:
-        """Get the first matching route for a given path.
+    @functools.lru_cache(maxsize=4096)
+    def match_route(path: str, frontend_path: str) -> str | None:
+        """Match a path against the routes.
 
         Args:
             path: The path to match against the routes.
+            frontend_path: The configured frontend path prefix to strip.
 
         Returns:
             The first matching route, or None if no match is found.
         """
-        config = get_config()
-        if config.frontend_path:
-            path = path.removeprefix(config.frontend_path)
+        if frontend_path:
+            path = path.removeprefix(frontend_path)
         path = "/" + path.removeprefix("/").removesuffix("/")
         if path == "/index":
             path = "/"
@@ -222,5 +226,20 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
             if regex.fullmatch(path):
                 return original_route
         return None
+
+    def get_route(path: str) -> str | None:
+        """Get the first route matching a path.
+
+        Memoized per (path, frontend_path): matching is a linear regex scan
+        over every route, paid on every event otherwise, and the config's
+        frontend path can change on reload.
+
+        Args:
+            path: The path to match against the routes.
+
+        Returns:
+            The first matching route, or None if no match is found.
+        """
+        return match_route(path, get_config().frontend_path)
 
     return get_route

@@ -1,13 +1,17 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
+import asyncio
+import contextlib
 import pickle
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator, Iterator
 
 import pytest
+import pytest_asyncio
+from redis.asyncio import Redis
+from reflex_base import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from reflex import constants
 from reflex.environment import environment
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.testing import AppHarness, WebDriver
@@ -93,6 +97,40 @@ def connection_banner(
         yield harness
 
 
+@contextlib.contextmanager
+def browser_offline(driver: WebDriver) -> Iterator[None]:
+    """Context manager that takes the browser offline via CDP and restores it on exit.
+
+    Args:
+        driver: Selenium WebDriver instance (must support execute_cdp_cmd).
+
+    Yields:
+        None
+    """
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": True,
+            "downloadThroughput": -1,
+            "uploadThroughput": -1,
+            "latency": 0,
+        },
+    )
+    try:
+        yield
+    finally:
+        driver.execute_cdp_cmd(
+            "Network.emulateNetworkConditions",
+            {
+                "offline": False,
+                "downloadThroughput": -1,
+                "uploadThroughput": -1,
+                "latency": 0,
+            },
+        )
+
+
 CONNECTION_ERROR_XPATH = "//*[ contains(text(), 'Cannot connect to server') ]"
 
 
@@ -147,12 +185,38 @@ def _assert_token(connection_banner, driver) -> str:
     return ss.get("token")
 
 
+@pytest_asyncio.fixture
+async def redis(
+    connection_banner: AppHarness,
+) -> AsyncGenerator[Redis | None]:
+    """Get the Redis instance from the StateManagerRedis used in the connection_banner test.
+
+    Args:
+        connection_banner: AppHarness instance.
+
+    Yields:
+        A Redis instance or None if the StateManager is not Redis.
+    """
+    from reflex.utils.prerequisites import get_redis
+
+    redis = None
+    if (app := connection_banner.app_instance) is not None and isinstance(
+        app.state_manager, StateManagerRedis
+    ):
+        redis = get_redis()
+    yield redis
+    if redis is not None:
+        with contextlib.suppress(Exception, asyncio.CancelledError):
+            await redis.aclose()
+
+
 @pytest.mark.asyncio
-async def test_connection_banner(connection_banner: AppHarness):
+async def test_connection_banner(connection_banner: AppHarness, redis: Redis | None):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
         connection_banner: AppHarness instance.
+        redis: Redis instance used by the app, or None if not using Redis.
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
@@ -165,11 +229,9 @@ async def test_connection_banner(connection_banner: AppHarness):
     app_token_manager = connection_banner.token_manager()
     assert token in app_token_manager.token_to_sid
     sid_before = app_token_manager.token_to_sid[token]
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
+    if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await connection_banner.state_manager.redis.get(
-            app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
@@ -181,42 +243,28 @@ async def test_connection_banner(connection_banner: AppHarness):
     increment_button.click()
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
-    # Start an long event before killing the backend, to mark event_processing=true
+    # Start a long event before blocking the network, to mark event_processing=true
     delay_button.click()
 
-    # Get the backend port
-    backend_port = connection_banner._poll_for_servers().getsockname()[1]
+    with browser_offline(driver):
+        # Error modal should now be displayed
+        AppHarness.expect(lambda: has_error_modal(driver))
 
-    # Kill the backend
-    connection_banner.backend.should_exit = True
-    if connection_banner.backend_thread is not None:
-        connection_banner.backend_thread.join()
+        # The token association should be removed once the websocket closes on the server.
+        assert connection_banner._poll_for(
+            lambda: token not in app_token_manager.token_to_sid
+        )
+        if redis is not None:
+            assert isinstance(app_token_manager, RedisTokenManager)
+            assert await redis.get(app_token_manager._get_redis_key(token)) is None
 
-    # Error modal should now be displayed
-    AppHarness.expect(lambda: has_error_modal(driver))
-
-    # The token association should have been removed when the server exited.
-    assert token not in app_token_manager.token_to_sid
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
-        assert isinstance(app_token_manager, RedisTokenManager)
+        # Increment the counter while disconnected
+        increment_button.click()
         assert (
-            await connection_banner.state_manager.redis.get(
-                app_token_manager._get_redis_key(token)
-            )
-            is None
+            connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
         )
 
-    # Increment the counter with backend down
-    increment_button.click()
-    assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
-
-    # Bring the backend back up
-    connection_banner._start_backend(port=backend_port)
-
-    # Create a new StateManager to avoid async loop affinity issues w/ redis
-    await connection_banner._reset_backend_state_manager()
-
-    # Banner should be gone now
+    # Banner should be gone now (network restored on context manager exit)
     AppHarness.expect(lambda: not has_error_modal(driver))
 
     # After reconnecting, the token association should be re-established.
@@ -224,11 +272,9 @@ async def test_connection_banner(connection_banner: AppHarness):
     # Make sure the new connection has a different websocket sid.
     sid_after = app_token_manager.token_to_sid[token]
     assert sid_before != sid_after
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
+    if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await connection_banner.state_manager.redis.get(
-            app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
         )
 

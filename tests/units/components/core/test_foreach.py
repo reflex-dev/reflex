@@ -1,24 +1,26 @@
-import pytest
+from dataclasses import dataclass
 
-import reflex as rx
-from reflex import el
-from reflex.base import Base
-from reflex.components.component import Component
-from reflex.components.core.foreach import (
+import pytest
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.number import NumberVar
+from reflex_base.vars.sequence import ArrayVar
+from reflex_components_core.core.foreach import (
     Foreach,
     ForeachRenderError,
     ForeachVarError,
     foreach,
 )
-from reflex.components.radix.themes.layout.box import box
-from reflex.components.radix.themes.typography.text import text
-from reflex.constants.state import FIELD_MARKER
+from reflex_components_radix.themes.layout.box import box
+from reflex_components_radix.themes.typography.text import text
+
+import reflex as rx
+from reflex import el
 from reflex.state import BaseState, ComponentState
-from reflex.vars.number import NumberVar
-from reflex.vars.sequence import ArrayVar
 
 
-class ForEachTag(Base):
+@dataclass
+class ForEachTag:
     """A tag for testing the ForEach component."""
 
     name: str = ""
