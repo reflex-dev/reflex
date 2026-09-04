@@ -1,0 +1,1 @@
+Attribute probes on vars (e.g. `inspect.iscoroutinefunction` via `unittest.mock`) no longer trigger ForwardRef resolution of unrelated annotations, silencing spurious "Failed to resolve ForwardRefs" warnings and avoiding `NameError` under PEP 649 lazy annotations on Python 3.14.
