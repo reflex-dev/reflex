@@ -120,6 +120,14 @@ class DependencyTracker:
     _get_var_value_positions: dis.Positions | None = dataclasses.field(default=None)
     _last_import_name: str | None = dataclasses.field(default=None)
 
+    # A module loaded by the previous instruction, so `pkg.mod.helper` can be
+    # resolved attribute by attribute (a code object has no globals of its own).
+    _attr_base: ModuleType | None = dataclasses.field(default=None)
+    # Globals and closure of the enclosing function when ``func`` is a nested
+    # code object (comprehension, lambda), which carries neither itself.
+    _globals: dict[str, Any] | None = dataclasses.field(default=None)
+    _closure: dict[str, Any] | None = dataclasses.field(default=None)
+
     INVALID_NAMES: ClassVar[list[str]] = ["parent_state", "substates", "get_substate"]
 
     def __post_init__(self):
@@ -201,6 +209,10 @@ class DependencyTracker:
         if not self.top_of_stack:
             return
         target_obj = self.get_tracked_local(self.top_of_stack)
+        if isinstance(target_obj, ModuleType):
+            # `mod.helper` on an inline-imported module.
+            self._load_module_attr(target_obj, instruction.argval)
+            return
         try:
             target_state = assert_base_state(target_obj, local_name=self.top_of_stack)
         except VarValueError:
@@ -237,6 +249,17 @@ class DependencyTracker:
                 instruction.argval
             )
 
+    def _load_module_attr(self, module: ModuleType, name: str) -> None:
+        """Resolve an attribute of a module; detect helpers, follow submodules.
+
+        Args:
+            module: The module on top of the stack.
+            name: The attribute being loaded.
+        """
+        obj = getattr(module, name, None)
+        self._add_implicit_dependency(obj)
+        self._attr_base = obj if isinstance(obj, ModuleType) else None
+
     def _add_implicit_dependency(self, obj: object) -> None:
         """Record an implied dependency if ``obj`` is a registered function.
 
@@ -266,7 +289,7 @@ class DependencyTracker:
             The var names and values in the globals of the function.
         """
         if isinstance(self.func, CodeType):
-            return {}
+            return self._globals or {}
         return self.func.__globals__  # pyright: ignore[reportAttributeAccessIssue]
 
     def _get_closure(self) -> dict[str, Any]:
@@ -276,7 +299,7 @@ class DependencyTracker:
             The var names and values in the closure of the function.
         """
         if isinstance(self.func, CodeType):
-            return {}
+            return self._closure or {}
         return {
             var_name: get_cell_value(cell)
             for var_name, cell in zip(
@@ -445,6 +468,8 @@ class DependencyTracker:
         define comprehensions or nested functions that may reference "self".
         """
         for instruction in dis.get_instructions(self.func):
+            # Only the instruction right after a module load continues its chain.
+            attr_base, self._attr_base = self._attr_base, None
             if self.scan_status == ScanStatus.GETTING_STATE:
                 self.handle_getting_state(instruction)
             elif self.scan_status == ScanStatus.GETTING_STATE_POST_AWAIT:
@@ -492,6 +517,13 @@ class DependencyTracker:
             ):
                 self.load_attr_or_method(instruction)
                 self.top_of_stack = None
+            elif attr_base is not None and instruction.opname in (
+                "LOAD_ATTR",
+                "LOAD_METHOD",
+            ):
+                # `pkg.mod.helper(...)`: walk the attribute chain off a module
+                # so a module-qualified helper reference is detected too.
+                self._load_module_attr(attr_base, instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):
@@ -502,6 +534,8 @@ class DependencyTracker:
                         func=instruction.argval,
                         state_cls=self.state_cls,
                         tracked_locals=self.tracked_locals,
+                        _globals=self._get_globals(),
+                        _closure=self._get_closure(),
                     )
                 )
             elif (
@@ -509,18 +543,19 @@ class DependencyTracker:
                 and self.scan_status == ScanStatus.SCANNING
             ):
                 # A referenced global may be a function that implies a
-                # dependency (e.g. a gettext helper reading the active locale).
-                self._add_implicit_dependency(
-                    self._get_globals().get(instruction.argval)
-                )
+                # dependency (e.g. a gettext helper reading the active locale),
+                # or a module such a helper is then loaded from.
+                obj = self._get_globals().get(instruction.argval)
+                self._add_implicit_dependency(obj)
+                self._attr_base = obj if isinstance(obj, ModuleType) else None
             elif (
                 instruction.opname == "LOAD_DEREF"
                 and self.scan_status == ScanStatus.SCANNING
             ):
-                # Same as above for a closure-captured function reference.
-                self._add_implicit_dependency(
-                    self._get_closure().get(instruction.argval)
-                )
+                # Same as above for a closure-captured reference.
+                obj = self._get_closure().get(instruction.argval)
+                self._add_implicit_dependency(obj)
+                self._attr_base = obj if isinstance(obj, ModuleType) else None
             elif instruction.opname == "IMPORT_NAME":
                 if instruction.argval is None:
                     continue

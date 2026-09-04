@@ -49,6 +49,9 @@ class MessageKey(NamedTuple):
 
 
 _collected: dict[MessageKey, None] = {}
+# (context, message) -> plural. gettext keys entries by msgctxt + msgid, so
+# one msgid cannot carry both a singular and a plural (or two plurals).
+_plural_by_msgid: dict[tuple[str | None, str], str | None] = {}
 
 
 def register(key: MessageKey) -> None:
@@ -56,7 +59,19 @@ def register(key: MessageKey) -> None:
 
     Args:
         key: The message to record.
+
+    Raises:
+        ValueError: If the same msgid (and context) was already registered
+            with a different plural form.
     """
+    previous = _plural_by_msgid.setdefault((key.context, key.message), key.plural)
+    if previous != key.plural:
+        msg = (
+            f"Message {key.message!r} is used both with plural {previous!r} and "
+            f"{key.plural!r}; gettext keys catalog entries by msgid, so a message "
+            "must be either singular or plural. Disambiguate with context=."
+        )
+        raise ValueError(msg)
     _collected[key] = None
 
 
@@ -72,3 +87,4 @@ def collected_messages() -> tuple[MessageKey, ...]:
 def clear_messages() -> None:
     """Clear the registry. Only intended for tests."""
     _collected.clear()
+    _plural_by_msgid.clear()

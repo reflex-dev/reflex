@@ -83,6 +83,14 @@ def test_t_deduplicates_messages():
     assert collected_messages() == (MessageKey("Hello", None, None),)
 
 
+def test_t_rejects_singular_and_plural_of_same_message():
+    t("item")
+    with pytest.raises(ValueError, match="either singular or plural"):
+        t("item", plural="items", count=1)
+    # A context makes it a distinct gettext entry.
+    t("item", plural="items", count=1, context="cart")
+
+
 def test_t_in_fstring_keeps_var_data():
     var = LiteralVar.create(f"{t('Hello')} world")
     var_data = var._get_all_var_data()

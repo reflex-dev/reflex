@@ -86,7 +86,7 @@ def compile_catalog_module(
         if translation is None:
             missing.append(key)
             continue
-        entries.append(f"  {json.dumps(key.catalog_key)}: {json.dumps(translation)},")
+        entries.append(f"  [{json.dumps(key.catalog_key)}, {json.dumps(translation)}],")
     if missing and not is_default_locale:
         missing_list = "\n".join(f"  {key.message!r}" for key in missing[:10])
         more = f"\n  ... and {len(missing) - 10} more" if len(missing) > 10 else ""
@@ -95,10 +95,12 @@ def compile_catalog_module(
             f"(falling back to the default locale):\n{missing_list}{more}"
         )
     messages_body = "\n".join(entries)
+    # A Map, not an object literal: a message named like a prototype member
+    # ("constructor", "__proto__") must miss rather than resolve to one.
     return (
         f"{_GENERATED_HEADER}"
         f"export const plural = (n) => Number({_plural_expr_js(catalog, locale)});\n"
-        f"export const messages = {{\n{messages_body}\n}};\n"
+        f"export const messages = new Map([\n{messages_body}\n]);\n"
     )
 
 

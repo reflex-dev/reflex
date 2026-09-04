@@ -204,8 +204,9 @@ def negotiate_locale(
                 quality = float(params.strip()[2:])
             except ValueError:
                 quality = 0.0
-        if quality <= 0.0:
-            # q=0 means "not acceptable" (RFC 7231 §5.3.1); exclude it.
+        if not 0.0 < quality <= 1.0:
+            # q=0 means "not acceptable" (RFC 7231 §5.3.1); anything outside
+            # 0..1 (or NaN) is malformed. Exclude both.
             continue
         # Sort by quality descending, then by original order for ties.
         ranked.append((-quality, index, tag))
@@ -327,7 +328,7 @@ def format_number(
         from babel import numbers
 
         return numbers.format_compact_decimal(
-            float(number),
+            number,
             locale=_babel_locale(),
             fraction_digits=max_fraction_digits or 0,
         )

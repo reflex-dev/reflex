@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 try:
     from reflex_i18n import (
+        LOCALE_COOKIE_NAME,
         I18nConfig,
         I18nPlugin,
         PathPrefixRouting,
@@ -56,6 +57,7 @@ _ = gettext
 # as rx.i18n.date/.time/.datetime but excluded from `import *` so they cannot
 # shadow the stdlib names.
 __all__ = [
+    "LOCALE_COOKIE_NAME",
     "I18nConfig",
     "I18nPlugin",
     "I18nState",

@@ -35,8 +35,8 @@ def test_compile_index_module():
 def test_compile_catalog_includes_used_messages():
     used = [MessageKey("Hello {name}!"), MessageKey("Open", context="menu")]
     module = compile_catalog_module(_catalog(), used, "de", is_default_locale=False)
-    assert '"Hello {name}!": "Hallo {name}!"' in module
-    assert '"menu\\u0004Open": "\\u00d6ffnen"' in module
+    assert '["Hello {name}!", "Hallo {name}!"]' in module
+    assert '["menu\\u0004Open", "\\u00d6ffnen"]' in module
     assert "export const plural = (n) => Number((n != 1));" in module
 
 
@@ -51,14 +51,14 @@ def test_compile_catalog_tree_shakes_unused():
 def test_compile_catalog_plural_entry_is_array():
     used = [MessageKey("{count} item", "{count} items")]
     module = compile_catalog_module(_catalog(), used, "de", is_default_locale=False)
-    assert '"{count} item": ["{count} Artikel", "{count} Artikel"]' in module
+    assert '["{count} item", ["{count} Artikel", "{count} Artikel"]]' in module
 
 
 def test_compile_catalog_omits_untranslated():
     used = [MessageKey("Untranslated")]
     module = compile_catalog_module(_catalog(), used, "de", is_default_locale=False)
     assert "Untranslated" not in module
-    assert "export const messages = {\n\n};" in module
+    assert "export const messages = new Map([\n\n]);" in module
 
 
 def test_compile_catalog_no_catalog_falls_back():

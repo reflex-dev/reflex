@@ -1048,3 +1048,34 @@ def test_fast_path_prunes_names_registered_after_class_creation():
         assert "get_delta" not in cls._fast_attr_names
         assert "get_state" not in cls._fast_attr_names
         assert "dirty_vars" in cls._fast_attr_names
+
+
+@pytest.mark.asyncio
+async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
+    token: str,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """A failing event-scope provider must not leave the root state dirty."""
+    from reflex_base.event.processor import scope
+
+    async def provider(root_state):  # noqa: RUF029 - providers are awaited
+        msg = "scope failed"
+        raise RuntimeError(msg)
+
+    state_manager = attached_mock_event_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ScopedProxyState)
+    ) as state:
+        proxy = StateProxy(await state.get_state(ScopedProxyState))
+    root_state = proxy.__wrapped__._get_root_state()
+
+    scope.register_event_scope_provider(provider)
+    try:
+        with pytest.raises(RuntimeError, match="scope failed"):
+            async with proxy:
+                proxy.lang = "de"
+    finally:
+        scope._providers.remove(provider)
+
+    assert not root_state.dirty_vars
+    assert not root_state.dirty_substates

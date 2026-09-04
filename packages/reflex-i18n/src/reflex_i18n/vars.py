@@ -66,7 +66,8 @@ def t(
 
     Raises:
         TypeError: If message or plural is not a literal string.
-        ValueError: If only one of ``plural`` and ``count`` is given.
+        ValueError: If only one of ``plural`` and ``count`` is given, or the
+            message was already used with a different plural form.
         RuntimeError: If no I18nPlugin is configured.
     """
     if get_active_i18n_config() is None:

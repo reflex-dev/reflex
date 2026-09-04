@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
 # Cookie persisting the user's chosen locale; read by both the client
 # runtime and the server-side locale resolution.
 LOCALE_COOKIE_NAME = "reflex_locale"
+
+# A BCP 47-shaped tag: alphabetic language, optional alphanumeric subtags.
+# Locales double as URL path segments and JS catalog identifiers.
+_LOCALE_RE = re.compile(r"^[A-Za-z]{2,8}(?:[-_][A-Za-z0-9]{1,8})*$")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -40,13 +45,20 @@ class I18nConfig:
                 ``{locale}.po`` catalogs.
 
         Raises:
-            ValueError: If no locales are given or the default locale is not
-                among them.
+            ValueError: If no locales are given, a locale is not a language
+                tag, or the default locale is not among them.
         """
         locales_tuple = tuple(locales)
         if not locales_tuple:
             msg = "I18nConfig.locales must contain at least one locale."
             raise ValueError(msg)
+        for locale in locales_tuple:
+            if not _LOCALE_RE.match(locale):
+                msg = (
+                    f"Invalid locale {locale!r}: expected a language tag such as "
+                    "'en', 'pt-BR' or 'zh-Hant'."
+                )
+                raise ValueError(msg)
         if default_locale not in locales_tuple:
             msg = (
                 f"I18nConfig.default_locale {default_locale!r} must be one of "

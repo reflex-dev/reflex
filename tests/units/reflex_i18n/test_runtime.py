@@ -1,6 +1,7 @@
 """Tests for server-side gettext translation of dynamic content."""
 
 import datetime
+import decimal
 from pathlib import Path
 
 import pytest
@@ -137,6 +138,12 @@ def test_negotiate_locale_ignores_wildcard():
     assert negotiate_locale("*", ["en", "de"], "en") == "en"
 
 
+@pytest.mark.parametrize("quality", ["q=2", "q=inf", "q=nan", "q=-1", "q=x"])
+def test_negotiate_locale_ignores_malformed_quality(quality: str):
+    # A malformed q-value (RFC 7231 allows 0..1) must not promote its tag.
+    assert negotiate_locale(f"de;{quality},fr;q=0.5", ["en", "de", "fr"], "en") == "fr"
+
+
 def test_negotiate_locale_excludes_q0():
     # q=0 means "not acceptable" (RFC 7231): de must not be matched even though
     # it is supported, and negotiation falls back to the default.
@@ -162,6 +169,13 @@ def test_format_number_compact():
     with use_locale("en"):
         assert format_number(1200000, compact=True) == "1M"
         assert format_number(1200000, compact=True, max_fraction_digits=1) == "1.2M"
+        # Decimals are formatted as-is, not via float.
+        assert (
+            format_number(
+                decimal.Decimal("1234567.891"), compact=True, max_fraction_digits=1
+            )
+            == "1.2M"
+        )
 
 
 def test_format_decimal_is_format_number():

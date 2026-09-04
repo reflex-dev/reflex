@@ -62,7 +62,7 @@ def test_plugin_emits_index_and_locale_modules(tmp_path: Path, monkeypatch):
     outputs = dict(plugin._compile_catalogs())
     assert set(outputs) == {"i18n/index.js", "i18n/en.js", "i18n/de.js"}
     assert '"de": () => import("$/i18n/de.js")' in outputs["i18n/index.js"]
-    assert '"Hello": "Hallo"' in outputs["i18n/de.js"]
+    assert '["Hello", "Hallo"]' in outputs["i18n/de.js"]
     # The default (source) locale needs no translation entry.
     assert '"Hello"' not in outputs["i18n/en.js"]
 

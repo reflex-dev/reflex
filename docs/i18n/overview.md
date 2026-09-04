@@ -84,6 +84,10 @@ def cart_label():
     return rx.text(rx.t("{count} item", plural="{count} items", count=CartState.items))
 ```
 
+A message is either singular or plural: gettext keys catalog entries by their
+msgid, so using the same text both with and without `plural` raises an error.
+Give one of them a `context` (below) if you need both.
+
 ### Disambiguating with context
 
 When the same source text needs different translations in different places,

@@ -226,9 +226,11 @@ class StateProxy(wrapt.ObjectProxy):
                 # Re-derive the ambient event scope (e.g. i18n locale) from
                 # the state the handler just changed: computed vars are
                 # recomputed during delta resolution.
-                async with event_scope(root_state):
-                    delta = await root_state._get_resolved_delta()
-                root_state._clean()
+                try:
+                    async with event_scope(root_state):
+                        delta = await root_state._get_resolved_delta()
+                finally:
+                    root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
                     ctx = EventContext.get()

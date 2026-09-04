@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useHref, useLocation, useNavigate } from "react-router";
 
 import {
   cookieName,
@@ -273,7 +273,7 @@ export function useTranslation() {
 
   const t_ = useCallback(
     (key, params) => {
-      const message = catalog?.messages[key] ?? stripContext(key);
+      const message = catalog?.messages.get(key) ?? stripContext(key);
       return interpolate(message, params);
     },
     [catalog],
@@ -281,7 +281,7 @@ export function useTranslation() {
 
   const tp_ = useCallback(
     (key, pluralMessage, count, params) => {
-      const entry = catalog?.messages[key];
+      const entry = catalog?.messages.get(key);
       // Uncataloged messages fall back to the two source strings, picked by
       // the DEFAULT locale's plural rule (they are written in that language).
       const message = Array.isArray(entry)
@@ -341,18 +341,25 @@ const absoluteUrl = (path) => {
   return base ? base + path : path;
 };
 
+// React Router paths (useLocation, navigate) are relative to the router
+// basename (Reflex's `frontend_path`); raw <a>/<link> hrefs are not, so they
+// need the basename prepended. useHref("/") is the basename with a trailing "/".
+const useBasename = () => useHref("/").replace(/\/$/, "");
+
 // Emit reciprocal <link rel="alternate" hreflang> + canonical for the current
 // route. Rendered as an app-wrap so it applies to every page; React hoists the
 // links into <head> and they prerender into the static HTML.
 export function HreflangLinks({ children }) {
   const { pathname } = useLocation();
+  const basename = useBasename();
   const base = delocalizePath(pathname);
+  const href = (locale) => absoluteUrl(basename + localizePath(base, locale));
   const links = locales.map((locale) =>
     createElement("link", {
       key: locale,
       rel: "alternate",
       hrefLang: locale,
-      href: absoluteUrl(localizePath(base, locale)),
+      href: href(locale),
     }),
   );
   links.push(
@@ -360,7 +367,7 @@ export function HreflangLinks({ children }) {
       key: "x-default",
       rel: "alternate",
       hrefLang: "x-default",
-      href: absoluteUrl(localizePath(base, defaultLocale)),
+      href: href(defaultLocale),
     }),
     createElement("link", {
       key: "canonical",
@@ -368,9 +375,7 @@ export function HreflangLinks({ children }) {
       // The localized URL for the page's own locale: identical to pathname
       // except for an unprefixed page when every locale is prefixed, whose
       // canonical is its default-locale address.
-      href: absoluteUrl(
-        localizePath(base, pathLocale(pathname) ?? defaultLocale),
-      ),
+      href: href(pathLocale(pathname) ?? defaultLocale),
     }),
   );
   // This is an app-wrap: render the links AND pass the app content through.
@@ -381,6 +386,7 @@ export function HreflangLinks({ children }) {
 // locale (so crawlers follow them and the URL stays the source of truth).
 export function LanguageSwitcher(props) {
   const { pathname } = useLocation();
+  const basename = useBasename();
   const base = delocalizePath(pathname);
   const active = locales.find(
     (locale) => localizePath(base, locale) === pathname,
@@ -393,7 +399,7 @@ export function LanguageSwitcher(props) {
         "a",
         {
           key: locale,
-          href: localizePath(base, locale),
+          href: basename + localizePath(base, locale),
           hrefLang: locale,
           "aria-current": locale === active ? "true" : undefined,
         },

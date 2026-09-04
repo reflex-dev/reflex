@@ -1,6 +1,7 @@
 """Tests for implicit computed-var dependencies (dep_tracking registry)."""
 
 import pytest
+import reflex_i18n
 from reflex_base.vars.dep_tracking import (
     _implicit_dependency_providers,
     register_implicit_dependency,
@@ -196,3 +197,64 @@ def test_combined_load_helper_gains_locale_dependency():
         objclass=CombinedLoadState
     )
     assert first_deps.get(i18n_name) == {"locale"}
+
+
+def test_module_qualified_helper_gains_locale_dependency():
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((reflex_i18n.format_number,), lambda: I18nState.locale)
+
+    class QualifiedState(rx.State):
+        amount: float = 0.0
+
+        @rx.var
+        def via_global_module(self) -> str:
+            # `reflex_i18n` is a module global of this test module.
+            return reflex_i18n.format_number(self.amount)
+
+        @rx.var
+        def via_closure_module_chain(self) -> str:
+            # `rx` is closure-captured; `.i18n` is a submodule attribute.
+            return rx.i18n.format_number(self.amount)
+
+        @rx.var
+        def via_inline_import(self) -> str:
+            import reflex_i18n as i18n
+
+            return i18n.format_number(self.amount)
+
+    i18n_name = I18nState.get_full_name()
+    for name in ("via_global_module", "via_closure_module_chain", "via_inline_import"):
+        deps = QualifiedState.computed_vars[name]._deps(objclass=QualifiedState)
+        assert deps.get(i18n_name) == {"locale"}, name
+        assert "amount" in deps[QualifiedState.get_full_name()], name
+
+
+def test_nested_function_helper_gains_locale_dependency():
+    from reflex_i18n import gettext as _
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((_,), lambda: I18nState.locale)
+
+    class NestedState(rx.State):
+        tags: list[str] = []
+
+        @rx.var
+        def via_lambda_closure(self) -> str:
+            # `_` reaches the lambda through the getter's closure.
+            return ", ".join(map(lambda tag: _(tag), self.tags))  # noqa: C417
+
+        @rx.var
+        def via_lambda_global(self) -> str:
+            # The lambda's own globals are the enclosing function's.
+            return ", ".join(map(lambda tag: reflex_i18n.gettext(tag), self.tags))  # noqa: C417
+
+    i18n_name = I18nState.get_full_name()
+    for name in ("via_lambda_closure", "via_lambda_global"):
+        deps = NestedState.computed_vars[name]._deps(objclass=NestedState)
+        assert deps.get(i18n_name) == {"locale"}, name
+        assert "tags" in deps[NestedState.get_full_name()], name
