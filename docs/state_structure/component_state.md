@@ -12,8 +12,18 @@ instance of a component, rather than existing globally in the app. A Component S
 [Event Handlers](/docs/events/events-overview),
 and is useful for creating reusable components which operate independently of each other.
 
+Use `ComponentState` when several explicitly created instances of one reusable widget need independent mutable State.
+For page or workflow data, prefer a feature-owned class that directly inherits from `rx.State`. For reusable UI that
+does not need independent mutable State, prefer a component function that accepts values and event handlers.
+
+See [Scaling State](/docs/state-structure/scaling-state#componentstate-owns-a-component-instance) for the complete
+decision guide and the recommended pattern for dynamic collections.
+
 ```md alert warning
 # ComponentState cannot be used inside `rx.foreach()` as it will only create one state instance for all elements in the loop. Each iteration of the foreach will share the same state, which may lead to unexpected behavior.
+
+Keep the selected item, editing identifier, or draft values in the owning page or feature State when rendering a
+dynamic collection. Render each item with a stateless component function.
 ```
 
 ## Using ComponentState

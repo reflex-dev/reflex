@@ -18,7 +18,7 @@ def skills_summary_cards() -> rx.Component:
         _summary_card(
             "Docs",
             "Current Reflex guidance",
-            "Point agents to the right Reflex docs for state, vars, components, routing, styling, deployment, and more.",
+            "Point agents to the right Reflex docs for state architecture, large-app structure, vars, components, routing, styling, deployment, and more.",
         ),
         _summary_card(
             "Setup",
@@ -52,6 +52,7 @@ skills_summary_cards()
 Use Reflex Agent Skills when you want an AI assistant to follow Reflex-specific workflows instead of relying only on general training data. They are especially useful when an assistant needs to:
 
 - Build or edit a Reflex app.
+- Plan or refactor State boundaries in a large, multi-page app.
 - Set up a new Python environment.
 - Decide which Reflex docs apply to the task.
 - Compile, run, restart, or debug a local Reflex server.
@@ -166,6 +167,16 @@ The `reflex-docs` skill gives the assistant a Reflex-specific reference map and 
 
 It also reminds the assistant to prefer current Reflex documentation over pre-trained knowledge when there is a conflict.
 
+### Large Apps
+
+When using the docs skill for a large or multi-page app, give the assistant these pages before it creates new State inheritance or reorganizes modules:
+
+1. [Scaling State](/docs/state-structure/scaling-state/)
+2. [Project Structure (Advanced)](/docs/advanced-onboarding/code-structure/)
+3. [State Structure](/docs/state-structure/overview/)
+
+This sequence gives the assistant the architecture decision guide first, followed by the module-layout and State API details needed to apply it.
+
 
 ## Setup
 
@@ -253,7 +264,8 @@ Using `-sTCP:LISTEN` helps the assistant target the server process instead of br
 1. Open your Reflex project in an agent-enabled editor.
 2. Ask for the feature, bug fix, or refactor you want.
 3. The assistant should load `reflex-docs` when it sees Reflex code.
-4. For local verification, the assistant should compile the app with `reflex compile --dry` or run it with the process-management workflow.
+4. For a multi-page app or substantial State refactor, the assistant should read [Scaling State](/docs/state-structure/scaling-state/) and its linked structure guides before changing architecture.
+5. For local verification, the assistant should compile the app with `reflex compile --dry` or run it with the process-management workflow.
 
 
 ## Debugging

@@ -13,6 +13,10 @@ The main app module is responsible for importing all other modules that make up 
 
 As applications scale, effective organization is crucial. This is achieved by breaking the application down into smaller, manageable modules and organizing them into logical packages that avoid circular dependencies.
 
+The examples below use page and component packages to introduce the mechanics. For a larger application, prefer
+feature packages that keep each page or workflow close to its State, events, components, services, and tests. See
+[Scaling State](/docs/state-structure/scaling-state) for the recommended feature layout and State ownership rules.
+
 In the following documentation there will be an app with an `app_name` of `example_big_app`. The main module would be `example_big_app/example_big_app.py`.
 
 In the [Putting it all together](#putting-it-all-together) section there is a visual of the project folder structure to help follow along with the examples below.
@@ -31,10 +35,11 @@ import reflex as rx
 from ..state import AuthState
 
 
-class LoginState(AuthState):
+class LoginState(rx.State):
     @rx.event
-    def handle_submit(self, form_data):
-        self.logged_in = authenticate(form_data["username"], form_data["password"])
+    async def handle_submit(self, form_data):
+        auth = await self.get_state(AuthState)
+        auth.logged_in = authenticate(form_data["username"], form_data["password"])
 
 
 def login_field(name: str, **input_props):
@@ -98,6 +103,9 @@ The `@template` decorator should appear below the `@rx.page` decorator and above
 Most pages will use State in some capacity. You should avoid adding vars to a
 shared state that will only be used in a single page. Instead, define a new
 subclass of `rx.State` and keep it in the same module as the page.
+
+As the page grows, its page function and State may move into separate modules inside the same feature package. Keep
+the State directly under `rx.State` unless a parent-child loading relationship is intentional.
 
 ### Accessing other States
 
@@ -210,8 +218,9 @@ module should not import other modules in the app.
 The primary mechanism for reusing components in Reflex is to define a function that returns
 the component, then simply call it where that functionality is needed.
 
-Component functions typically should not take any State classes as arguments, but prefer
-to import the needed state and access the vars on the class directly.
+A component used only inside one feature may import and bind directly to that feature's State.
+A component shared between features should accept the values and event handlers it needs rather
+than importing or accepting an application State class.
 
 ### Memoize Functions for Improved Performance
 

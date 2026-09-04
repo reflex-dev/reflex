@@ -20,3 +20,11 @@ def test_cross_reference_excluded_from_prev_next_chain():
     prev, next_ = get_prev_next("/enterprise/auth/overview/")
     assert prev is not None and prev.link == "/enterprise/event-handler-api/"
     assert next_ is not None and next_.link == "/enterprise/auth/secure-by-default/"
+
+
+def test_scaling_state_is_last_in_state_structure():
+    """Scaling State closes the State Structure sidebar section."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import backend
+
+    state_structure = next(item for item in backend if item.names == "State Structure")
+    assert state_structure.children[-1].names == "Scaling State"

@@ -35,6 +35,14 @@ LLMS_TXT_INTRO = """\
 
 > Reflex is a Python framework for building full-stack web apps. Use this index to find agent-readable Markdown docs, or see [llms-full.txt]({llms_full_txt_url}) for the complete docs in one file.
 
+## Large App Architecture
+
+For multi-page apps or apps with substantial state, read these guides before choosing module and State boundaries:
+
+1. [Scaling State]({scaling_state_url})
+2. [Project Structure (Advanced)]({code_structure_url})
+3. [State Structure]({state_structure_url})
+
 ## Docs
 """
 
@@ -45,15 +53,23 @@ Source: {docs_home_url}
 This file stitches together the full Reflex documentation as Markdown for AI agents and LLM indexing.
 
 For a navigable index with links to individual docs pages, see [llms.txt]({llms_txt_url}).
+
+For multi-page apps or apps with substantial state, start with [Scaling State]({scaling_state_url}), then review [Project Structure (Advanced)]({code_structure_url}) and [State Structure]({state_structure_url}) before choosing module and State boundaries.
 """
 
 MARKDOWN_DIRECTIVE = (
     "> For AI agents: the complete documentation index is at "
     "[llms.txt]({llms_txt_url}). Markdown versions are available by appending "
-    "`.md` or sending `Accept: text/markdown`."
+    "`.md` or sending `Accept: text/markdown`. For large or multi-page apps, "
+    "start with [Scaling State]({scaling_state_url})."
 )
 PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
+PUBLIC_SCALING_STATE_URL = "https://reflex.dev/docs/state-structure/scaling-state.md"
 PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
+
+SCALING_STATE_DOC_PATH = Path("state-structure/scaling-state.md")
+CODE_STRUCTURE_DOC_PATH = Path("advanced-onboarding/code-structure.md")
+STATE_STRUCTURE_DOC_PATH = Path("state-structure/overview.md")
 
 
 @dataclass(frozen=True)
@@ -271,7 +287,10 @@ def _markdown_directive() -> str:
     Returns:
         The markdown blockquote directive.
     """
-    return MARKDOWN_DIRECTIVE.format(llms_txt_url=PUBLIC_LLMS_TXT_URL).strip()
+    return MARKDOWN_DIRECTIVE.format(
+        llms_txt_url=PUBLIC_LLMS_TXT_URL,
+        scaling_state_url=PUBLIC_SCALING_STATE_URL,
+    ).strip()
 
 
 def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
@@ -741,6 +760,9 @@ def generate_llms_txt(
     lines = [
         LLMS_TXT_INTRO.format(
             llms_full_txt_url=_llms_url_for_path(Path("llms-full.txt")),
+            scaling_state_url=_llms_url_for_path(SCALING_STATE_DOC_PATH),
+            code_structure_url=_llms_url_for_path(CODE_STRUCTURE_DOC_PATH),
+            state_structure_url=_llms_url_for_path(STATE_STRUCTURE_DOC_PATH),
         ).strip(),
         "",
     ]
@@ -773,6 +795,9 @@ def generate_llms_full_txt(
         LLMS_FULL_INTRO.format(
             docs_home_url=_docs_home_url(),
             llms_txt_url=_llms_url_for_path(Path("llms.txt")),
+            scaling_state_url=_llms_url_for_path(SCALING_STATE_DOC_PATH),
+            code_structure_url=_llms_url_for_path(CODE_STRUCTURE_DOC_PATH),
+            state_structure_url=_llms_url_for_path(STATE_STRUCTURE_DOC_PATH),
         ).strip(),
         "",
     ]
