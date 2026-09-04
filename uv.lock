@@ -4119,10 +4119,14 @@ name = "reflex-components-recharts"
 source = { editable = "packages/reflex-components-recharts" }
 dependencies = [
     { name = "reflex-base" },
+    { name = "reflex-components-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
 
 [[package]]
 name = "reflex-components-sonner"

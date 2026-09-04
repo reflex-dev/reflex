@@ -78,3 +78,37 @@ def factorial(value: NumberVar):
 
 Use `js_expression` to pass explicit JavaScript expressions; in the `multiply_array_values` example, we pass in a JavaScript expression that calculates the product of all elements in an array called `a` by using the reduce method to multiply each element with the accumulated result, starting from an initial value of 1.
 Later, we leverage `rx.cond` in the' factorial' function, we instantiate an array using the `range` function, and pass this array to `multiply_array_values`.
+
+## Hook Vars
+
+Some values only exist on the frontend and are exposed through React hooks.
+`rx.vars.use_hook_var()` binds the return value of a no-argument hook to a unique variable name and returns it as a `Var`.
+The hook call and the import of the hook are automatically included in any component that uses the var, so the value reflects the context of the component it is rendered in.
+
+```py
+chart_width = rx.vars.use_hook_var(
+    library="recharts@3.8.1",
+    hook="useChartWidth",
+    _var_type=int | None,
+)
+```
+
+A component using `chart_width` will import `useChartWidth` from `recharts` and render `const <unique_name> = useChartWidth();` in its body, so `chart_width` can be used like any other `Var[int | None]`.
+
+For the common case of React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` containing a stable unique id for the rendered component.
+This is useful for linking SVG elements to `defs` such as gradients or filters:
+
+```py
+def gradient_rect() -> rx.Component:
+    gradient_id = rx.vars.use_id()
+    return rx.el.svg(
+        rx.el.svg.linear_gradient(
+            rx.el.svg.stop(offset="0%", stop_color="gold"),
+            rx.el.svg.stop(offset="100%", stop_color="tomato"),
+            id=gradient_id,
+        ),
+        rx.el.svg.rect(fill=f"url(#{gradient_id})", width=64, height=64),
+        width=64,
+        height=64,
+    )
+```
