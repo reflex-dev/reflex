@@ -53,7 +53,7 @@ class I18nConfig:
             msg = "I18nConfig.locales must contain at least one locale."
             raise ValueError(msg)
         for locale in locales_tuple:
-            if not _LOCALE_RE.match(locale):
+            if not _LOCALE_RE.fullmatch(locale):
                 msg = (
                     f"Invalid locale {locale!r}: expected a language tag such as "
                     "'en', 'pt-BR' or 'zh-Hant'."

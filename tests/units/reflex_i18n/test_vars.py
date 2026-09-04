@@ -83,6 +83,14 @@ def test_t_deduplicates_messages():
     assert collected_messages() == (MessageKey("Hello", None, None),)
 
 
+def test_t_empty_context_is_no_context():
+    t("Hello", context="")
+    t("Hello")
+    assert collected_messages() == (MessageKey("Hello", None, None),)
+    with pytest.raises(ValueError, match="either singular or plural"):
+        t("Hello", plural="Hellos", count=1, context="")
+
+
 def test_t_rejects_singular_and_plural_of_same_message():
     t("item")
     with pytest.raises(ValueError, match="either singular or plural"):

@@ -91,7 +91,8 @@ def t(
         msg = "rx.t() requires count and plural to be passed together."
         raise ValueError(msg)
 
-    key = MessageKey(message=message, plural=plural, context=context)
+    # An empty context is no context (gettext has no empty msgctxt).
+    key = MessageKey(message=message, plural=plural, context=context or None)
     register(key)
 
     if plural is not None:

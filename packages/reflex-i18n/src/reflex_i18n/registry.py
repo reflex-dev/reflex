@@ -6,9 +6,9 @@ the compiler emits per-locale catalog modules containing only these entries
 (tree-shaking) and the extraction tooling turns them into ``.pot`` entries.
 
 The registry is intentionally never reset between compiles: components built
-at module import time register before the compiler runs, and a fresh process
-(any prod compile) starts empty anyway. In dev hot-reload this can retain
-stale entries, which only makes dev catalogs slightly larger.
+at module import time register before the compiler runs, and every compile
+happens in a fresh process anyway (a dev hot reload boots a new backend
+worker), so entries never outlive the source they were collected from.
 """
 
 from __future__ import annotations

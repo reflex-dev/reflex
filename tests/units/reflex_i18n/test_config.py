@@ -27,7 +27,7 @@ def test_config_default_locale_must_be_supported():
         I18nConfig(locales=["en", "de"], default_locale="fr")
 
 
-@pytest.mark.parametrize("locale", ["123", "e", "en/US", "en US", "", "de-"])
+@pytest.mark.parametrize("locale", ["123", "e", "en/US", "en US", "", "de-", "en\n"])
 def test_config_rejects_invalid_locale(locale: str):
     with pytest.raises(ValueError, match="Invalid locale"):
         I18nConfig(locales=["en", locale])
