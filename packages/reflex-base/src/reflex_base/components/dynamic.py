@@ -71,8 +71,16 @@ def get_cdn_url(lib: str) -> str:
 
 def reset_bundled_libraries() -> None:
     """Reset the bundled library registry to its default values."""
-    bundled = RegistrationContext.ensure_context().bundled_libraries
-    bundled[:] = _default_bundled_libraries()
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = _default_bundled_libraries()
+    context._explicit_bundled_libraries.clear()
+
+
+def _reset_bundled_libraries_for_compile() -> None:
+    """Reset derived libraries while preserving explicit registrations."""
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = _default_bundled_libraries()
+    context.bundled_libraries.extend(context._explicit_bundled_libraries)
 
 
 def bundle_library(component: Union["Component", str]):
@@ -84,14 +92,42 @@ def bundle_library(component: Union["Component", str]):
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    bundled = RegistrationContext.ensure_context().bundled_libraries
+    _bundle_library(component, explicit=True)
+
+
+def _bundle_library(
+    component: Union["Component", str], *, explicit: bool = False
+) -> None:
+    """Register a library for the current compile.
+
+    Args:
+        component: The component or library to bundle.
+        explicit: Whether this is an application-level registration that should
+            survive compiler resets.
+
+    Raises:
+        DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
+    """
+    context = RegistrationContext.ensure_context()
+    bundled = context.bundled_libraries
     if isinstance(component, str):
-        bundled.append(format_library_name(component))
+        library = format_library_name(component)
+        bundled.append(library)
+        if explicit:
+            context._explicit_bundled_libraries.append(library)
         return
     if component.library is None:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled.append(format_library_name(component.library))
+    library = format_library_name(component.library)
+    bundled.append(library)
+    if explicit:
+        context._explicit_bundled_libraries.append(library)
+
+
+_BUNDLED_IMPORT_LIB = "lib"
+_BUNDLED_IMPORT_DEFAULT = "default"
+_BUNDLED_IMPORT_REST = "rest"
 
 
 def load_dynamic_serializer():
@@ -138,6 +174,7 @@ def load_dynamic_serializer():
         compiler._apply_common_imports(component_imports)
 
         imports = {}
+        bundled_subpath_imports: set[str] = set()
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             if (
@@ -148,9 +185,46 @@ def load_dynamic_serializer():
                 imports[get_cdn_url(lib)] = names
             else:
                 imports[lib] = names
+                if formatted_lib_name in libs_in_window:
+                    for name in names:
+                        if name.package_path in {"/", ""}:
+                            continue
+                        import_path = formatted_lib_name + name.package_path
+                        _bundle_library(import_path)
+                        bundled_subpath_imports.add(import_path)
+
+        compiled_imports = utils.compile_imports(imports)
+        bundled_subpath_rewrites = {}
+        for module in compiled_imports:
+            if module[_BUNDLED_IMPORT_LIB] not in bundled_subpath_imports:
+                continue
+
+            window_library = f"window.__reflex['{module[_BUNDLED_IMPORT_LIB]}']"
+            statements = []
+            if module[_BUNDLED_IMPORT_DEFAULT]:
+                statements.append(
+                    f"const {module[_BUNDLED_IMPORT_DEFAULT]} = "
+                    f"{window_library}.default"
+                )
+
+            named_imports = []
+            for imported_name in module[_BUNDLED_IMPORT_REST]:
+                if imported_name.startswith("* as "):
+                    statements.append(
+                        f"const {imported_name.removeprefix('* as ')} = {window_library}"
+                    )
+                else:
+                    named_imports.append(imported_name.replace(" as ", ": "))
+            if named_imports:
+                statements.append(
+                    f"const {{{','.join(named_imports)}}} = {window_library}"
+                )
+
+            if statements:
+                bundled_subpath_rewrites[module["lib"]] = "\n".join(statements)
 
         module_code_lines = templates.dynamic_components_module_template(
-            imports=utils.compile_imports(imports),
+            imports=compiled_imports,
             memoized_code="\n".join(rendered_components),
         ).splitlines()
 
@@ -166,6 +240,14 @@ def load_dynamic_serializer():
                         + "]"
                     )
                 else:
+                    subpath_rewritten = False
+                    for import_path, replacement in bundled_subpath_rewrites.items():
+                        if line.endswith(f'from "{import_path}"'):
+                            module_code_lines[ix] = replacement
+                            subpath_rewritten = True
+                            break
+                    if subpath_rewritten:
+                        continue
                     for lib in libs_in_window:
                         if f'from "{lib}"' in line:
                             module_code_lines[ix] = (

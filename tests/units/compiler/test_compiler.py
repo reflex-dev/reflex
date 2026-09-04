@@ -476,6 +476,55 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
+def test_compile_app_preserves_user_bundled_libraries(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Frontend compilation should retain explicit bundle registrations."""
+
+    class StopCompile(Exception):
+        """Stop after bundled libraries are prepared."""
+
+    with RegistrationContext() as registration_context:
+        bundle_library("lucide-react")
+        registration_context.bundled_libraries.append("stale-plugin")
+        app = rx.App()
+        config = rx.Config(app_name="testing", plugins=[])
+
+        mocker.patch.object(app, "_apply_decorated_pages")
+        mocker.patch.object(app, "_should_compile", return_value=True)
+        mocker.patch.object(compiler, "get_config", return_value=config)
+        mocker.patch.object(
+            compiler.prerequisites, "get_backend_dir", return_value=tmp_path
+        )
+        mocker.patch.object(compiler, "_register_plugin_routes")
+        mocker.patch.object(
+            compiler,
+            "_resolve_radix_themes_plugin",
+            return_value=([], mocker.Mock()),
+        )
+        mocker.patch.object(compiler, "CompileContext", side_effect=StopCompile)
+
+        with pytest.raises(StopCompile):
+            compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert "lucide-react" in registration_context.bundled_libraries
+        assert "stale-plugin" not in registration_context.bundled_libraries
+
+
+def test_compile_app_root_uses_unique_window_library_aliases():
+    """Bundled library aliases should remain unique after normalization."""
+    with RegistrationContext():
+        bundle_library("foo.bar")
+        bundle_library("foo_bar")
+
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert 'import * as foo_bar from "foo.bar";' in code
+    assert 'import * as foo_bar_2 from "foo_bar";' in code
+    assert '"foo.bar": foo_bar' in code
+    assert '"foo_bar": foo_bar_2' in code
+
+
 def test_compile_contexts_has_default_color_mode_context():
     """ColorModeContext should have a safe fallback value without Radix."""
     _, code = compiler.compile_contexts(None, None)

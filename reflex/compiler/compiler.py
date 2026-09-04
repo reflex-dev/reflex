@@ -130,7 +130,42 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
+
+
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build unique aliases for libraries exposed through ``window.__reflex``.
+
+    Returns:
+        Library aliases paired with their original package names.
+    """
+    used_aliases: set[str] = set()
+    seen_libraries: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+
+    for library in RegistrationContext.ensure_context().bundled_libraries:
+        if library in seen_libraries:
+            continue
+        seen_libraries.add(library)
+
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+
+    return window_libraries
 
 
 def _compile_app(
@@ -146,12 +181,7 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    window_libraries = [
-        (_normalize_library_name(name), name)
-        for name in RegistrationContext.ensure_context().bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -160,7 +190,7 @@ def _compile_app(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
@@ -1164,7 +1194,10 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1206,14 +1239,14 @@ def compile_app(
         app,
         config.plugins,
     )
-    reset_bundled_libraries()
+    _reset_bundled_libraries_for_compile()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
+            _bundle_library(dependency)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
