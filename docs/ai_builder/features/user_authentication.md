@@ -153,6 +153,7 @@ Ask the agent for what you want and it will wire this up. Where you read the ide
 **To show it**, the common claims are Vars on `User`, usable anywhere in a component:
 
 ```python
+import reflex as rx
 from reflex_enterprise.auth import User
 
 rx.hstack(rx.avatar(src=User.picture), rx.text(User.name))
@@ -163,6 +164,7 @@ rx.hstack(rx.avatar(src=User.picture), rx.text(User.name))
 **To act on it**, `await User.current()` returns the claims as a dictionary inside an event handler, or `None` when nobody is signed in:
 
 ```python
+import reflex_enterprise as rxe
 from reflex_enterprise.auth import User
 
 
