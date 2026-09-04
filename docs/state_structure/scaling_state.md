@@ -45,7 +45,6 @@ support_app/
 │   ├── tickets/
 │   │   ├── page.py
 │   │   ├── state.py
-│   │   ├── events.py
 │   │   ├── service.py
 │   │   ├── components.py
 │   │   └── tests/
@@ -57,8 +56,7 @@ support_app/
 
 This layout keeps the code that changes together close together:
 
-- `state.py` owns the feature's Vars, computed vars, and small event handlers.
-- `events.py` may contain decentralized handlers when the handler set becomes large.
+- `state.py` owns the feature's Vars, computed vars, and event handlers.
 - `service.py` contains database queries, external API calls, and business logic that does not need to be reactive.
 - `components.py` binds feature-local UI to the feature State.
 - `shared/components` contains reusable UI that accepts values and event handlers rather than importing a feature State.
