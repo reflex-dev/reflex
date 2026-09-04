@@ -18,6 +18,7 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
+from reflex_base.event.processor.scope import event_scope
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
@@ -216,13 +217,17 @@ async def chain_updates(
 
     if root_state is not None:
         # Emit deltas first, so any frontend events are processed with the
-        # latest state. The clean deliberately runs after resolution: the
+        # latest state. Enter the event scope again here (after the handler
+        # ran): a provider may derive its context from state the handler just
+        # changed (e.g. the locale), and computed vars are recomputed during
+        # delta resolution. The clean deliberately runs after resolution: the
         # SharedState fan-out captures its dirty vars at clean time, and
         # resolving the delta is what re-marks linked vars through the patch
         # machinery, so cleaning earlier would fan out a stale set (see
         # tests/integration/test_linked_state.py).
         try:
-            delta = await root_state._get_resolved_delta()
+            async with event_scope(root_state):
+                delta = await root_state._get_resolved_delta()
             if delta:
                 await ctx.emit_delta(delta)
         finally:
@@ -438,18 +443,22 @@ class BaseStateEventProcessor(EventProcessor):
             substate = await state.get_state(event.state_cls)
             root_state = state._get_root_state()
 
-            if needs_to_rehydrate:
-                await self._rehydrate(root_state)
+            # Enter any per-event ambient context (e.g. i18n locale) around
+            # handler execution. A no-op unless a feature registered a scope
+            # provider, so apps without one pay effectively nothing.
+            async with event_scope(root_state):
+                if needs_to_rehydrate:
+                    await self._rehydrate(root_state)
 
-            # Process non-background events while holding the lock.
-            if not registered_handler.handler.is_background:
-                await process_event(
-                    handler=registered_handler.handler,
-                    payload=event.payload,
-                    state=substate,
-                    root_state=root_state,
-                )
-                return
+                # Process non-background events while holding the lock.
+                if not registered_handler.handler.is_background:
+                    await process_event(
+                        handler=registered_handler.handler,
+                        payload=event.payload,
+                        state=substate,
+                        root_state=root_state,
+                    )
+                    return
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)
@@ -461,12 +470,13 @@ class BaseStateEventProcessor(EventProcessor):
         proxy = StateProxy(substate)
         handler_error: BaseException | None = None
         try:
-            await process_event(
-                handler=registered_handler.handler,
-                state=proxy,
-                payload=event.payload,
-                root_state=None,
-            )
+            async with event_scope(root_state):
+                await process_event(
+                    handler=registered_handler.handler,
+                    state=proxy,
+                    payload=event.payload,
+                    root_state=None,
+                )
         except BaseException as ex:
             handler_error = ex
             raise

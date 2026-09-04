@@ -1239,6 +1239,27 @@ class App(MiddlewareMixin, LifespanMixin):
                 has_app_page=has_app_page,
             )
 
+        # Second pass: let plugins derive pages from the app's registered pages
+        # (e.g. one localized route per locale). Shares the same staged
+        # registrar; the ``pages`` snapshot is app pages only (register_route
+        # contributions are staged, not yet in _unevaluated_pages), so plugins
+        # never fan out each other's contributions.
+        expand_pages = tuple(self._unevaluated_pages.values())
+        for index, (plugin, class_name) in enumerate(
+            zip(plugins, class_names, strict=True)
+        ):
+            plugin_name = (
+                f"{class_name} (plugins[{index}])"
+                if class_name in duplicated
+                else class_name
+            )
+            plugin.expand_routes(
+                app_type=type(self),
+                add_page=make_add_page(plugin_name),
+                has_app_page=has_app_page,
+                pages=expand_pages,
+            )
+
         # This state assignment is only required for tests using the
         # deprecated state kwarg for App.
         state = self._state or State

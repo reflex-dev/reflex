@@ -218,9 +218,19 @@ class StateProxy(wrapt.ObjectProxy):
             return
         try:
             if self._self_mutable and self._self_actx is not None:
+                # Inline to avoid a circular import through the processor
+                # package init.
+                from reflex_base.event.processor.scope import event_scope
+
                 root_state = self.__wrapped__._get_root_state()
-                delta = await root_state._get_resolved_delta()
-                root_state._clean()
+                # Re-derive the ambient event scope (e.g. i18n locale) from
+                # the state the handler just changed: computed vars are
+                # recomputed during delta resolution.
+                try:
+                    async with event_scope(root_state):
+                        delta = await root_state._get_resolved_delta()
+                finally:
+                    root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
                     ctx = EventContext.get()

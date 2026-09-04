@@ -214,6 +214,16 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "upload_files_chunk",
         "window_alert",
     ],
+    "i18n": [
+        "I18nConfig",
+        "I18nPlugin",
+        "I18nState",
+        "gettext",
+        "ngettext",
+        "pgettext",
+        "set_locale",
+        "t",
+    ],
     "istate.storage": [
         "Cookie",
         "LocalStorage",
@@ -251,6 +261,7 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "i18n",
     "plugins",
 }
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
