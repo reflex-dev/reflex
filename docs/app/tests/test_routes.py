@@ -1,6 +1,8 @@
 """Integration tests for all routes in Reflex."""
 
+import re
 from collections import Counter
+from pathlib import Path
 
 import pytest
 import reflex as rx
@@ -97,3 +99,131 @@ def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
     assert link is not None
     assert link["name"] == '"a"'
     assert f'href:"{href}"' in link["props"]
+
+
+def _doc_markdown_files():
+    """Every markdown file that backs a docs route, as (virtual, actual) pairs."""
+    from reflex_docs.pages.docs import all_docs
+
+    return sorted(all_docs.items())
+
+
+# Link strings handed to `rx.link(href=...)`, `rx.redirect(...)` and friends inside
+# ```python blocks are resolved by React Router, which prepends the `/docs`
+# basename. Writing `/docs/...` there produces `/docs/docs/...`, which 404s.
+_ROUTER_LINK_IN_PYTHON_BLOCK = re.compile(r"\"(/docs/[^\"]*)\"")
+_PYTHON_BLOCK = re.compile(r"^```python[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
+
+
+def test_python_block_links_do_not_repeat_docs_basename():
+    """Router links inside ```python blocks must be relative to the /docs basename.
+
+    `rx.link(href="/docs/x")` renders a ReactRouterLink whose `to` is joined with
+    the router basename, yielding `/docs/docs/x`. The href must be written `/x`.
+    """
+    offenders: dict[str, list[str]] = {}
+    for virtual, actual in _doc_markdown_files():
+        text = Path(actual).read_text(encoding="utf-8")
+        bad = [
+            link
+            for block in _PYTHON_BLOCK.findall(text)
+            for link in _ROUTER_LINK_IN_PYTHON_BLOCK.findall(block)
+        ]
+        if bad:
+            offenders[virtual] = sorted(set(bad))
+
+    assert offenders == {}, (
+        "Router links inside ```python blocks must omit the /docs basename "
+        f"(they render as /docs/docs/...): {offenders}"
+    )
+
+
+# Router links that survive the basename check still have to name a real page.
+# Any absolute path literal counts: docs pages pass them to `href=`, to
+# `rx.redirect(...)`, and as bare entries in link tables.
+_ROUTER_LINK = re.compile(r"\"(/[^\"\s]*)\"")
+
+
+def test_python_block_links_resolve_to_real_routes(routes_fixture):
+    """Router links inside ```python blocks must name a registered docs route.
+
+    Only links whose first segment is a real docs section are checked, so example
+    app routes (`/login`, `/dashboard`, ...) stay out of scope.
+    """
+    known = {route.path.rstrip("/") for route in routes_fixture if route.path}
+    sections = {path.split("/")[1] for path in known if path.count("/") > 1}
+
+    def is_broken(link: str) -> bool:
+        path = link.split("#")[0].rstrip("/")
+        segments = path.split("/")
+        if len(segments) < 3:
+            return False
+        return segments[1] in sections and path not in known
+
+    broken: dict[str, list[str]] = {}
+    for virtual, actual in _doc_markdown_files():
+        text = Path(actual).read_text(encoding="utf-8")
+        bad = [
+            link
+            for block in _PYTHON_BLOCK.findall(text)
+            for link in _ROUTER_LINK.findall(block)
+            if is_broken(link)
+        ]
+        if bad:
+            broken[virtual] = sorted(set(bad))
+
+    assert broken == {}, f"Router links point at routes that do not exist: {broken}"
+
+
+# Markdown links are rendered as plain anchors, so they keep the /docs prefix.
+_MARKDOWN_DOCS_LINK = re.compile(r"\]\((/docs/[^)\s#]*)")
+
+
+def test_markdown_docs_links_resolve_to_real_routes(routes_fixture):
+    """Every `](/docs/...)` link in the docs markdown must hit a registered route."""
+    known = {route.path.rstrip("/") for route in routes_fixture if route.path}
+
+    broken: dict[str, list[str]] = {}
+    for virtual, actual in _doc_markdown_files():
+        text = Path(actual).read_text(encoding="utf-8")
+        # Ignore links inside ```python blocks; those are covered by the test above.
+        prose = _PYTHON_BLOCK.sub("", text)
+        bad = [
+            link
+            for link in _MARKDOWN_DOCS_LINK.findall(prose)
+            if link.removeprefix("/docs").rstrip("/") not in known
+        ]
+        if bad:
+            broken[virtual] = sorted(set(bad))
+
+    assert broken == {}, f"Markdown links point at routes that do not exist: {broken}"
+
+
+def test_docpage_footer_issue_link_names_the_public_docs_url():
+    """The `Raise an issue` link must report the real page URL, not the app path."""
+    from reflex_docs.templates.docpage.docpage import DOCS_PROD_BASE, docpage_footer
+
+    rendered = str(
+        docpage_footer.__wrapped__(rx.Var.create("/vars/base-vars/")).render()
+    )
+
+    assert f"{DOCS_PROD_BASE}/vars/base-vars/" in rendered
+    # The bare app-relative path would name a URL that 404s.
+    assert "Issue%20with%20/vars/base-vars/" not in rendered
+
+
+def test_docs_do_not_link_to_retired_demo_apps():
+    """Docs must not point readers at demo deployments that no longer exist.
+
+    These `*.reflex.run` demos were taken down; the links 404ed for readers.
+    """
+    retired = ("aggrid.reflex.run", "map.reflex.run", "customer-data-app.reflex.run")
+
+    offenders: dict[str, list[str]] = {}
+    for virtual, actual in _doc_markdown_files():
+        text = Path(actual).read_text(encoding="utf-8")
+        found = [host for host in retired if host in text]
+        if found:
+            offenders[virtual] = found
+
+    assert offenders == {}, f"Docs link to retired demo apps: {offenders}"

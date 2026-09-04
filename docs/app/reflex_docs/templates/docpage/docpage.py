@@ -122,6 +122,9 @@ def ask_ai_chat() -> rx.Component:
     )
 
 
+DOCS_PROD_BASE = "https://reflex.dev/docs"
+
+
 @rx.memo
 def docpage_footer(path: rx.Var[str]) -> rx.Component:
     """Render the shared official footer for a Reflex docs route."""
@@ -130,14 +133,13 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
             "https://github.com/reflex-dev/reflex/issues/new"
             "?template=documentation.md"
             "&labels=documentation"
-            f"&title=Issue with reflex.dev{path}"
-            f"&body=Path: {path}%0A%0A"
+            f"&title=Issue%20with%20{DOCS_PROD_BASE}{path}"
+            f"&body=Path:%20{DOCS_PROD_BASE}{path}%0A%0A"
         ),
         edit_href=f"https://github.com/reflex-dev/reflex/blob/main/docs{path}.md",
     )
 
 
-DOCS_PROD_BASE = "https://reflex.dev/docs"
 LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
