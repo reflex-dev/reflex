@@ -266,6 +266,56 @@ def reset_disk_state_manager():
             path.unlink()
 
 
+_LOCKED_ROOT_MINT = object()
+
+
+@dataclasses.dataclass(frozen=True)
+class LockedRoot:
+    """Proof that the holder acquired the token state lock for this root.
+
+    Delta work (snapshot, resolve, emit, clean) on a shared state tree is only
+    safe while the token lock is held; a bare ``BaseState`` carries no record
+    of that. Functions that flush deltas accept this wrapper instead, so an
+    unlocked flush is unrepresentable rather than a code-review catch.
+
+    Only ``mint_locked_root`` creates instances. Do not construct directly.
+    """
+
+    root: "BaseState"
+    _mint: object = None
+
+    def __post_init__(self):
+        """Refuse construction outside mint_locked_root.
+
+        Raises:
+            TypeError: If constructed without the module-private mint token.
+        """
+        if self._mint is not _LOCKED_ROOT_MINT:
+            msg = (
+                "LockedRoot must be minted via mint_locked_root, from a caller "
+                "that holds the token state lock."
+            )
+            raise TypeError(msg)
+
+
+def mint_locked_root(root: "BaseState") -> LockedRoot:
+    """Assert lock ownership of a root state, making it flushable.
+
+    Call only while the token state lock for this root is held: inside a
+    ``state_manager.modify_state``/``modify_state_with_links`` block, or on a
+    ``StateProxy``'s freshly-fetched root while the proxy is mutable (its
+    ``async with self`` holds the same lock). Every call site is an auditable
+    claim of that precondition.
+
+    Args:
+        root: The root state acquired under the token lock.
+
+    Returns:
+        The lock-ownership wrapper accepted by delta-flushing functions.
+    """
+    return LockedRoot(root=root, _mint=_LOCKED_ROOT_MINT)
+
+
 def get_state_manager() -> StateManager:
     """Get the state manager for the app that is currently running.
 
