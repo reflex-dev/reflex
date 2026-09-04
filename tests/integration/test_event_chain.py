@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 from tests.integration.utils import (
+    click_element,
     poll_assert_event_order,
     poll_assert_relative_event_order,
 )
@@ -622,11 +623,8 @@ def test_event_chain_on_mount(
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url.removesuffix("/") + uri)
 
-    unmount_button = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "unmount")
-    )
     assert_token(event_chain, driver)
-    unmount_button.click()
+    click_element(driver, By.ID, "unmount")
 
     poll_assert_relative_event_order(driver, expected_counts, ordering_rules)
 

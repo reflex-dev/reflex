@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 
-from .utils import poll_assert_event_order, poll_for_navigation
+from .utils import click_element, poll_assert_event_order, poll_for_navigation
 
 
 def DynamicRoute():
@@ -235,24 +235,18 @@ def test_on_load_navigate(
         token: The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
-    link = driver.find_element(By.ID, "link_page_next")
-    assert link
 
     exp_order = [f"/page/[page_id]-{ix}" for ix in range(10)]
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
         with poll_for_navigation(driver):
-            link.click()
+            click_element(driver, By.ID, "link_page_next")
         assert urlsplit(driver.current_url).path == f"/page/{ix}"
 
-        link = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "link_page_next")
-        )
         page_id_input = driver.find_element(By.ID, "page_id")
         raw_path_input = driver.find_element(By.ID, "raw_path")
 
-        assert link
         assert page_id_input
 
         assert dynamic_route.poll_for_value(
@@ -273,9 +267,8 @@ def test_on_load_navigate(
 
     # make sure internal nav still hydrates after redirect
     exp_order += ["/page/[page_id]-11"]
-    link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_page_next")
     poll_assert_event_order(driver, exp_order)
 
     # load same page with a query param and make sure it passes through
@@ -300,9 +293,8 @@ def test_on_load_navigate(
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_missing")
 
     # hit a page that redirects back to dynamic page
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
@@ -330,29 +322,24 @@ def test_on_load_navigate_non_dynamic(
         driver: WebDriver instance.
     """
     assert dynamic_route.app_instance is not None
-    link = driver.find_element(By.ID, "link_page_x")
-    assert link
 
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
-    link = driver.find_element(By.ID, "link_index")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_index")
     assert urlsplit(driver.current_url).path.removesuffix("/") == ""
 
-    link = driver.find_element(By.ID, "link_page_x")
     with poll_for_navigation(driver):
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id", "/static/x-no page id"])
 
     for _ in range(3):
-        link = driver.find_element(By.ID, "link_page_x")
-        link.click()
+        click_element(driver, By.ID, "link_page_x")
         assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     poll_assert_event_order(driver, ["/static/x-no page id"] * 5)
 
@@ -399,19 +386,15 @@ async def test_render_dynamic_arg(
             )
 
     assert_content("0", "")
-    next_page_link = driver.find_element(By.ID, "next-page")
-    assert next_page_link
     with poll_for_navigation(driver):
-        next_page_link.click()
+        click_element(driver, By.ID, "next-page")
     assert (
         driver.current_url.removesuffix("/")
         == f"{frontend_url.removesuffix('/')}/arg/1"
     )
     assert_content("1", "0")
-    next_page_link = driver.find_element(By.ID, "next-page")
-    assert next_page_link
     with poll_for_navigation(driver):
-        next_page_link.click()
+        click_element(driver, By.ID, "next-page")
     assert (
         driver.current_url.removesuffix("/")
         == f"{frontend_url.removesuffix('/')}/arg/2"

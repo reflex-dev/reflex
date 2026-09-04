@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from http.client import HTTPConnection
 from urllib.parse import urlsplit
 
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness
+from reflex.testing import DEFAULT_TIMEOUT, POLL_INTERVAL, AppHarness, TimeoutType
 
 
 def request_raw(
@@ -62,6 +67,45 @@ def poll_for_navigation(
     yield
 
     AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
+
+
+def click_element(
+    driver: WebDriver,
+    by: str,
+    value: str,
+    timeout: TimeoutType = None,
+) -> None:
+    """Locate an element and click it, tolerating the churn of a navigation.
+
+    Client-side navigation swaps the DOM after the URL changes, so an element
+    located right after navigating may not be rendered yet, or may be unmounted
+    before the click is dispatched. Both are retried until `timeout`, since both
+    are raised while locating or validating the element reference, never after
+    the click reaches the browser. Every other error, including an invalid
+    selector or an intercepted click, propagates on the first attempt.
+
+    Args:
+        driver: WebDriver instance.
+        by: Locator strategy, one of the `By` constants.
+        value: Locator value.
+        timeout: How long to keep re-locating the element.
+
+    Raises:
+        TimeoutError: if the element could not be clicked within the timeout.
+    """
+    deadline = time.monotonic() + (
+        DEFAULT_TIMEOUT if timeout is None else float(timeout)
+    )
+    while True:
+        try:
+            driver.find_element(by, value).click()
+        except (NoSuchElementException, StaleElementReferenceException) as exc:
+            if time.monotonic() >= deadline:
+                msg = f"Could not click element {by}={value!r} while polling."
+                raise TimeoutError(msg) from exc
+            time.sleep(POLL_INTERVAL)
+        else:
+            return
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
