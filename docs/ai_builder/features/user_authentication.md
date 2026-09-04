@@ -148,14 +148,32 @@ Signing out of your app clears its own session only. It does not sign the person
 
 ## Read the signed-in user in your app
 
-Ask the agent for what you want and it will wire this up. What is available is the person's identity, which the `reflex-enterprise` `auth_user` object exposes:
+Ask the agent for what you want and it will wire this up. Where you read the identity depends on what you are doing with it.
 
-- `auth_user.email`
-- `auth_user.name`
-- `auth_user.sub` — a stable id for that person, and the right thing to key your own tables on
-- `auth_user.picture`
+**To show it**, the common claims are Vars on `User`, usable anywhere in a component:
+
+```python
+from reflex_enterprise.auth import User
+
+rx.hstack(rx.avatar(src=User.picture), rx.text(User.name))
+```
+
+`User.name`, `User.email`, `User.sub` and `User.picture` are all available.
+
+**To act on it**, `await User.current()` returns the claims as a dictionary inside an event handler, or `None` when nobody is signed in:
+
+```python
+from reflex_enterprise.auth import User
+
+@rxe.event
+async def add_note(self, form_data: dict):
+    user = await User.current() or {}
+    owner = user.get("sub")
+```
 
 Key your data on `sub` rather than on the email address, so a person who changes their address keeps their data.
+
+Any other claim you want to render needs a computed var on an `AuthUserState` subclass. See [Authentication](/docs/enterprise/auth/example-app/) for that and for authorizing handlers.
 
 ```md alert warning
 # Decide what somebody may do in backend code, never in the browser
