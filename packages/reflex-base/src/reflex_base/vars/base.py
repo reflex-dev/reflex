@@ -38,7 +38,6 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
 from typing_extensions import LiteralString, dataclass_transform, override
 
 from reflex_base import constants
@@ -1077,6 +1076,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if var_type is NoReturn:
             return self.to(Any)
 
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
+
         var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
@@ -1480,7 +1483,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     f"access the attribute '{name}'",
                 )
 
-            msg = f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly."
+            msg = f"The State var {self._js_expr} of type {self._var_type} has no attribute '{name}' or may have been annotated wrongly."
             raise VarAttributeError(msg)
 
         def __bool__(self) -> bool:
@@ -2609,7 +2612,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
-                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(

@@ -446,7 +446,7 @@ def test_initialize_with_custom_admin_dashboard(
     from starlette_admin.contrib.sqla.admin import Admin
 
     custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
+    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
     assert app.admin_dash.admin is not None
@@ -4145,6 +4145,32 @@ async def test_client_error_malformed_payload_is_ignored(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("sid", ["known_sid", "unknown_sid"])
+async def test_client_error_no_argument_emit_is_ignored(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+    sid: str,
+):
+    """A payload-less client_error emit is dropped like any malformed payload.
+
+    python-socketio dispatches ``emit("client_error")`` without a payload as
+    ``on_client_error(sid)``, so a missing ``data`` argument must not raise a
+    TypeError before the anti-abuse guards run.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+        sid: The Socket.IO session id to report from.
+    """
+    await event_namespace.on_client_error(sid)
+    assert not frontend_errors
+    assert not client_error_console["error"]
+    assert not client_error_console["warn"]
+
+
+@pytest.mark.asyncio
 async def test_client_error_unknown_sid_does_not_report_error(
     event_namespace: EventNamespace,
     frontend_errors: list[str],
@@ -4283,3 +4309,38 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+@pytest.mark.parametrize("compile_raises", [False, True])
+def test_compile_releases_memo_naming_caches(
+    mocker: MockerFixture, compile_raises: bool
+):
+    """``App._compile`` must release the memo-naming caches on every path.
+
+    The CLI and export paths reach ``_compile`` through
+    ``prerequisites.get_compiled_app`` and never touch ``App.__call__``, so the
+    release has to sit in the compile lifecycle -- and in a ``finally``, so a
+    failed compile does not leave the caches behind either.
+    """
+    from reflex_base.utils.deterministic_hash import (
+        _hash_str_encodings,
+        clear_hash_caches,
+    )
+
+    app = App()
+
+    def fake_compile_app(*_args: Any, **_kwargs: Any) -> bool:
+        # Stand in for the naming work a real compile does.
+        _hash_str_encodings["probe"] = b"probe"
+        if compile_raises:
+            msg = "compile blew up"
+            raise RuntimeError(msg)
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=fake_compile_app)
+    clear_hash_caches()
+
+    with pytest.raises(RuntimeError) if compile_raises else contextlib.nullcontext():
+        app._compile()
+
+    assert not _hash_str_encodings

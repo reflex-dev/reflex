@@ -12,12 +12,10 @@ from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.v2.auth import token_fingerprint
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 

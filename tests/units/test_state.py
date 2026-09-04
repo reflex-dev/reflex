@@ -13,7 +13,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal, TypeVar
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -38,6 +38,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.app import App
@@ -5139,6 +5140,89 @@ def test_descriptor_overrides_inherited_descriptor():
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
 
 
+class OnLoadCancelState(State):
+    """A test state whose on_load handler blocks until cancelled."""
+
+    # Signalling gates, populated per-test with loop-local events.
+    _gates: ClassVar[dict[str, asyncio.Event]] = {}
+
+    @rx.event
+    async def slow_handler(self):
+        """Signal start, then block; signal again if cancelled."""
+        type(self)._gates["started"].set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            type(self)._gates["cancelled"].set()
+            raise
+
+
+async def test_on_load_internal_supersedes_previous_navigation(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A newer navigation cancels the previous unfinished on_load chain (#6593).
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+    """
+    assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
+    assert not State.event_handlers["hydrate"].supersedes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=OnLoadCancelState.slow_handler)
+    app._compile_page("index")
+
+    OnLoadCancelState._gates = {
+        "started": asyncio.Event(),
+        "cancelled": asyncio.Event(),
+    }
+    on_load_internal_name = format.format_event_handler(
+        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+    )
+
+    async with mock_base_state_event_processor as processor:
+        stale = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/",
+                    RouteVar.ORIGIN: "/",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["started"].wait(), timeout=5)
+
+        # Navigate to a page without on_load events (fast path).
+        current = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/other",
+                    RouteVar.ORIGIN: "/other",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["cancelled"].wait(), timeout=5)
+        # The fresh navigation completes without waiting behind the stale chain.
+        await asyncio.wait_for(current.wait_all(), timeout=5)
+        assert stale.done()
+
+
 async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
     """_resolve_delta awaits coroutine values and leaves plain values untouched."""
     from reflex.state import _resolve_delta
@@ -5188,3 +5272,50 @@ async def test_resolve_delta_pops_subdict_when_all_keys_drop():
     }
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+_ALIAS_ITEM = TypeVar("_ALIAS_ITEM")
+NameAlias = TypeAliasType("NameAlias", str)
+KeyAlias = TypeAliasType("KeyAlias", Literal["a", "b"])
+ItemsAlias = TypeAliasType("ItemsAlias", list[_ALIAS_ITEM], type_params=(_ALIAS_ITEM,))  # pyright: ignore[reportGeneralTypeIssues]
+
+
+class AliasAnnotatedState(BaseState):
+    """A state with vars annotated through TypeAliasType (PEP 695 aliases)."""
+
+    name: NameAlias = "x"
+    key: KeyAlias = "a"
+    entries: ItemsAlias[str] = []
+    maybe: KeyAlias | None = None
+
+    @rx.event
+    def assign(self):
+        """Assign a new value to every alias-annotated var."""
+        self.name = "y"
+        self.key = "b"
+        self.entries = ["z"]
+        self.maybe = "a"
+
+
+def test_setattr_alias_annotated_var(mocker: MockerFixture):
+    """Assigning alias-annotated state vars via an event handler works.
+
+    The __setattr__ type guard must resolve TypeAliasType annotations and only
+    log a mismatch instead of raising TypeError from isinstance().
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    error_mock = mocker.patch("reflex.state.logger.error")
+    state = AliasAnnotatedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.assign()
+    assert state.name == "y"
+    assert state.key == "b"
+    assert state.entries == ["z"]
+    assert state.maybe == "a"
+    error_mock.assert_not_called()
+
+    # A mismatched value is logged by the guard, not raised.
+    state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert state.key == 1
+    error_mock.assert_called_once()

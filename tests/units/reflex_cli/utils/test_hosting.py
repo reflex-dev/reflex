@@ -694,6 +694,20 @@ def test_set_app_provider_forwards_connection(mocker: MockerFixture):
     }
 
 
+def test_set_app_provider_forwards_service_name(mocker: MockerFixture):
+    """A requested Cloud Run service name rides along as service_name."""
+    mock_post = mocker.patch(
+        "httpx.post", return_value=_ok(mocker, {"provider": "gcp"})
+    )
+    assert set_app_provider(
+        "app-1", "gcp", _CLIENT, service_name="sales-dashboard"
+    ) == ("gcp")
+    assert mock_post.call_args.kwargs["json"] == {
+        "provider": "gcp",
+        "service_name": "sales-dashboard",
+    }
+
+
 def test_set_app_full_deploy_success(mocker: MockerFixture):
     """The mode change posts to the app's full_deploy endpoint."""
     mock_post = mocker.patch(

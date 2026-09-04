@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from pathlib import Path
 
 import pytest
 from packaging.version import Version
 from reflex_release.actions import ReleaseError
-from reflex_release.config import Config, is_final, load_config
+from reflex_release.config import (
+    DEFAULT_PYTHON_VERSION,
+    DEFAULT_UV_VERSION,
+    Config,
+    is_final,
+    load_config,
+)
+
+from .conftest import write_custom_build, write_lockstep
 
 
 def write_config(repo: Path, body: str) -> None:
@@ -266,11 +275,151 @@ def test_no_lockstep_by_default(config: Config) -> None:
             'root-package = "mypkg"\ndispatch-package-inputs = "maybe"\n',
             "must be one of",
         ),
+        (
+            'root-package = "mypkg"\nuv-version = 12\n',
+            "uv-version must be a string",
+        ),
+        (
+            'root-package = "mypkg"\nnever-publish-packages = ["nope"]\n',
+            "never-publish-packages lists unknown package",
+        ),
+        # A package cannot both never publish and publish on every push.
+        (
+            (
+                'root-package = "mypkg"\ninternal-packages = ["widget-core"]\n'
+                'never-publish-packages = ["widget-core"]\n'
+            ),
+            "listed in both never-publish-packages and internal-packages",
+        ),
+        (
+            (
+                'root-package = "mypkg"\nlatest-release-package = "widget-core"\n'
+                'never-publish-packages = ["widget-core"]\n'
+            ),
+            "has no release to mark",
+        ),
+        # The pins are interpolated into a quoted YAML scalar, so anything that
+        # could end the scalar or open an expression is rejected outright.
+        (
+            'root-package = "mypkg"\nuv-version = \'0.1" # \'\n',
+            "uv-version must be a version or specifier",
+        ),
+        (
+            'root-package = "mypkg"\npython-version = "${{ secrets.X }}"\n',
+            "python-version must be a version or specifier",
+        ),
     ],
 )
 def test_invalid_config(repo: Path, body: str, message: str) -> None:
     write_config(repo, body)
     with pytest.raises(ReleaseError, match=message):
+        load_config(repo)
+
+
+def test_version_pins_default_to_the_tools_own(config: Config) -> None:
+    assert config.uv_version == DEFAULT_UV_VERSION
+    assert config.python_version == DEFAULT_PYTHON_VERSION
+
+
+@pytest.mark.parametrize(
+    "pin", ["0.12.5", "latest", ">=1.2", "3.14", "pypy-3.10", "1.2.*"]
+)
+def test_version_pins_accept_versions_and_specifiers(repo: Path, pin: str) -> None:
+    write_config(repo, f'root-package = "mypkg"\nuv-version = "{pin}"\n')
+    assert load_config(repo).uv_version == pin
+
+
+def test_version_pins_can_be_disabled(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\nuv-version = ""\npython-version = "  "\n',
+    )
+    config = load_config(repo)
+    assert config.uv_version == ""
+    assert config.python_version == ""
+
+
+#: The Config fields in the order they had before uv-version, python-version
+#: and never-publish-packages were added. Config is exported, so its generated
+#: __init__ has a positional contract: a new field goes at the end of the list,
+#: never in the middle, or every caller's arguments shift by one.
+_HISTORICAL_FIELD_ORDER = (
+    "root",
+    "allow_self_review",
+    "cli_command",
+    "dispatch_package_inputs",
+    "news_directory",
+    "changelog_filename",
+    "root_package",
+    "root_source_dirs",
+    "packages_dir",
+    "package_source_subdirs",
+    "release_timezone",
+    "main_branch",
+    "prerelease_branch_prefix",
+    "hotfix_branch_prefix",
+    "release_branch_prefix",
+    "tag_prefix",
+    "latest_release_package",
+    "internal_packages",
+    "changelog_exempt_packages",
+    "post_release_workflow",
+    "lockstep",
+    "custom_build",
+)
+
+
+def test_new_config_fields_are_appended() -> None:
+    names = tuple(field.name for field in dataclasses.fields(Config))
+    assert names[: len(_HISTORICAL_FIELD_ORDER)] == _HISTORICAL_FIELD_ORDER
+
+
+def test_never_published_packages_are_excluded(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'never-publish-packages = ["widget-core"]\n',
+    )
+    config = load_config(repo)
+    assert config.is_never_published("widget-core")
+    assert not config.is_never_published("mypkg")
+    # It is still a package of the repository — just not a releasable one.
+    assert "widget-core" in config.all_packages()
+    # And nothing about it can require a news fragment it has nowhere to put.
+    assert not config.requires_fragments("widget-core")
+    assert config.requires_fragments("mypkg")
+
+
+def test_never_published_packages_cannot_be_lockstep_members(repo: Path) -> None:
+    write_lockstep(repo)
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\nnever-publish-packages = ["widget-core"]',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="never reaches a release"):
+        load_config(repo)
+
+
+def test_never_published_packages_cannot_be_custom_built(repo: Path) -> None:
+    write_custom_build(repo)
+    pyproject = repo / "pyproject.toml"
+    # The sub-package, not the root: the root is latest-release-package by
+    # default, which rejects it one check earlier.
+    pyproject.write_text(
+        pyproject
+        .read_text(encoding="utf-8")
+        .replace('packages = ["mypkg"]', 'packages = ["widget-core"]')
+        .replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\nnever-publish-packages = ["widget-core"]',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="never reaches a release"):
         load_config(repo)
 
 

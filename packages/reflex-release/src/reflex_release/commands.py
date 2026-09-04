@@ -12,6 +12,7 @@ import json
 import os
 import re
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 from packaging.version import InvalidVersion, Version
@@ -33,6 +34,13 @@ from .changelog import (
     parse_sections,
 )
 from .config import POST_RELEASE_INPUTS, POST_RELEASE_WORKFLOW_KEY, Config, is_final
+from .devpins import (
+    LOCK_FILE,
+    blocker_advice,
+    blocking_pins,
+    describe_blockers,
+    upgrade_dev_pins,
+)
 from .discovery import (
     alpha_train_packages,
     associate_orphan_fragments,
@@ -51,6 +59,7 @@ from .gitutil import (
     changed_files,
     commit_exists,
     configure_bot_identity,
+    gh_capture,
     gh_output,
     gh_run,
     git,
@@ -62,7 +71,7 @@ from .gitutil import (
     remote_branch_exists,
     tag_exists,
 )
-from .versions import ACTIONS, next_version, release_date_today
+from .versions import ACTIONS, FINAL_ACTIONS, next_version, release_date_today
 
 #: Filename of the scaffolded workflow that publishes untagged changelog versions.
 RELEASE_WORKFLOW = "release_from_changelog.yml"
@@ -71,6 +80,19 @@ RELEASE_WORKFLOW = "release_from_changelog.yml"
 SKIP_CHANGELOG_LABEL = "skip-changelog"
 
 _PACKAGE_SELECTION_SPLIT = re.compile(r"[\s,]+")
+
+#: The release fields read back after a release is created (or found already
+#: created), to prove the thing ``post-release`` is about to be pointed at is
+#: the release this run published. Asked for and read from one place, so a
+#: field can never be verified without having been requested.
+_RELEASE_FIELDS = ("tagName", "name", "isDraft", "isPrerelease", "assets")
+
+#: Markers in gh's stderr for a release that is not there. Matched widely — a
+#: bare 404 counts — because a phrasing this list misses would stop every
+#: ordinary release; what makes the wide match safe is that a not-found is
+#: only believed once the repository itself has been read (see
+#: :func:`_reads_as_absent`).
+_NO_RELEASE_STDERR = ("release not found", "404")
 
 
 def _is_null_sha(sha: str) -> bool:
@@ -238,6 +260,62 @@ def cmd_detect(config: Config, ref_name: str) -> None:
         fail("lockstep invariant violated; no package was published")
 
 
+def _drop_unpublishable_pins(
+    config: Config, packages: list[str], action: str, explicit: bool
+) -> tuple[list[str], list[str]]:
+    """Hold back packages whose dependency pins no published version satisfies.
+
+    Materialization lifts a ``*.dev`` (and, for a final version, a prerelease)
+    dependency floor to the earliest published version that satisfies it. A
+    floor nothing published satisfies has nowhere to go, so the package is not
+    releasable yet — releasing it would either publish an uninstallable pin or
+    stop at the publish-time gate with the changelog already bumped.
+
+    A lockstep group is held back whole: its members only ever release together.
+
+    Args:
+        config: The repository configuration.
+        packages: The selected packages, lockstep groups already expanded.
+        action: The release action being planned.
+        explicit: Whether the selection was made by hand. An explicit selection
+            that cannot be released is an error; an auto-selected package is
+            simply left out of the batch.
+
+    Returns:
+        The releasable packages and the human-readable reasons the others were
+        held back.
+    """
+    blocked = blocking_pins(
+        config, packages, allow_prereleases=action not in FINAL_ACTIONS
+    )
+    if not blocked:
+        return packages, []
+
+    reasons = describe_blockers(blocked)
+    if explicit:
+        listing = "\n".join(f"  {line}" for line in reasons)
+        fail(
+            "the selected package(s) declare dependency pins that no published "
+            f"version satisfies:\n{listing}\n\n{blocker_advice(blocked)}"
+        )
+
+    held = {
+        member
+        for package in blocked
+        for member in (package, *config.lockstep_partners(package))
+    }
+    for line in reasons:
+        notice(f"held back from this release — {line}")
+    remaining = [package for package in packages if package not in held]
+    if not remaining:
+        fail(
+            "every auto-selected package declares a dependency pin that no "
+            "published version satisfies:\n"
+            + "\n".join(f"  {line}" for line in reasons)
+        )
+    return remaining, reasons
+
+
 def cmd_plan(config: Config, action: str, selection: str) -> None:
     """Plan the next version for each selected package.
 
@@ -245,7 +323,8 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
     ``$GITHUB_OUTPUT``. An empty selection auto-detects the packages to release:
     those with pending news fragments — or, for ``release-from-prerelease``,
     those whose changelog is topped by an alpha (their fragments are already
-    consumed).
+    consumed). A package whose dependency pins no published version satisfies is
+    not eligible either way (see :func:`_drop_unpublishable_pins`).
 
     Args:
         config: The repository configuration.
@@ -262,6 +341,11 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
             fail(
                 f"{package} is an internal package: it releases by patch-bumping "
                 "its newest tag, not from a changelog"
+            )
+        if config.is_never_published(package):
+            fail(
+                f"{package} is listed in never-publish-packages: this repository "
+                "builds it but does not release it"
             )
 
     how = "explicit"
@@ -284,6 +368,10 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
             for partner in config.lockstep_partners(package)
             if partner not in packages
         )
+
+    packages, disqualified = _drop_unpublishable_pins(
+        config, packages, action, explicit=how == "explicit"
+    )
 
     releases: list[dict[str, str]] = []
     for package in packages:
@@ -322,6 +410,16 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
                 for r in releases
             ],
         ),
+        *(
+            [
+                "",
+                "### Held back",
+                "",
+                *(f"- {line}" for line in disqualified),
+            ]
+            if disqualified
+            else []
+        ),
     ])
     write_outputs(releases=json.dumps(releases))
 
@@ -329,10 +427,19 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
 def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     """Write the planned versions into the changelogs via towncrier.
 
+    Also lifts every dependency pin the release cannot ship — a ``*.dev`` floor,
+    or a prerelease floor when the release is final — to the earliest published
+    version that satisfies it, and re-locks the repository, so the release
+    carries pins that resolve instead of failing the publish-time gate.
+
     Orphan fragments are first named after the pull request that added them, so
     the entries towncrier writes carry a link. For ``release-from-prerelease``,
     collapses the alpha sections of each changelog into the single final-version
     section after building it.
+
+    Writes ``repinned`` (a JSON array of the paths the pin upgrade rewrote) to
+    ``$GITHUB_OUTPUT``, which is what the delivery step stages beside the
+    changelogs — it runs as a separate process and cannot otherwise know.
 
     Args:
         config: The repository configuration.
@@ -342,6 +449,22 @@ def cmd_materialize(config: Config, action: str, releases_json: str) -> None:
     releases: list[dict[str, str]] = json.loads(releases_json)
     if not releases:
         fail("nothing to materialize: the release plan is empty")
+
+    # Before towncrier: a pin that cannot be lifted stops the release while the
+    # news fragments it would have consumed are still on disk.
+    repinned = upgrade_dev_pins(
+        config,
+        [release["package"] for release in releases],
+        allow_prereleases=action not in FINAL_ACTIONS,
+    )
+    write_outputs(repinned=json.dumps(repinned))
+    if repinned:
+        write_summary([
+            "## Dependency pins lifted",
+            "",
+            *(f"- `{path}`" for path in repinned),
+        ])
+
     collapse = action == "release-from-prerelease"
     categories = category_order(config) if collapse else []
     heading_format = title_format(config)
@@ -385,6 +508,14 @@ def cmd_prepare_publish(
         ref_name: The branch being published from.
     """
     config.require_known(package)
+    # Checked before anything else: this is the last gate a manual dispatch of
+    # the publish workflow passes through, and the only one for a package no
+    # release selection would ever have offered.
+    if config.is_never_published(package):
+        fail(
+            f"{package} is listed in never-publish-packages: this repository "
+            "builds it but does not release it"
+        )
     raw_version = raw_version.strip().removeprefix("v")
     path = config.changelog_path(package)
 
@@ -499,7 +630,7 @@ def cmd_pin_lockstep(config: Config, package: str, version: str) -> None:
     config.require_known(package)
     targets = config.exact_pin_targets(package)
     if not targets:
-        notice(f"{package} has no exact-pin lockstep siblings; nothing to do.")
+        echo(f"{package} has no exact-pin lockstep siblings; nothing to do.")
         return
     pyproject = config.package_path(package) / "pyproject.toml"
     for target in targets:
@@ -731,20 +862,39 @@ def _release_summary(releases: list[dict[str, str]]) -> str:
     return ", ".join(f"{r['package']}@{r['next']}" for r in releases)
 
 
-def _commit_changelogs(
-    config: Config, releases: list[dict[str, str]], message: str
+def _repinned_paths(repinned_json: str) -> list[str]:
+    """Parse the ``repinned`` output of :func:`cmd_materialize`.
+
+    Args:
+        repinned_json: The JSON array of rewritten paths, or an empty string
+            when the pin upgrade rewrote nothing.
+
+    Returns:
+        The repo-relative paths.
+    """
+    return json.loads(repinned_json) if repinned_json.strip() else []
+
+
+def _commit_materialized(
+    config: Config,
+    releases: list[dict[str, str]],
+    repinned: list[str],
+    message: str,
 ) -> None:
-    """Stage and commit the changelogs materialized for a release.
+    """Stage and commit everything materialization wrote for a release.
 
     Args:
         config: The repository configuration.
         releases: The releases that were materialized.
+        repinned: The paths the pin upgrade rewrote, from :func:`cmd_materialize`.
         message: The commit message.
     """
     configure_bot_identity(config.root)
-    # Only the changelogs of the packages being released, so nothing else in the
-    # worktree can ride along in the release commit. towncrier has already
-    # staged the deletion of every fragment it consumed.
+    # Exactly what materialization wrote: the changelogs of the packages being
+    # released, and the files the pin upgrade reported rewriting. Nothing else
+    # in the worktree can ride along in the release commit — a package's
+    # pyproject.toml is staged only when a pin in it actually moved. towncrier
+    # has already staged the deletion of every fragment it consumed.
     changelogs = [
         path.relative_to(config.root).as_posix()
         for path in (config.changelog_path(r["package"]) for r in releases)
@@ -752,14 +902,37 @@ def _commit_changelogs(
     ]
     if not changelogs:
         fail("materialization produced no changelog; nothing to release")
-    git_run(["add", "--", *changelogs], config.root)
+    git_run(["add", "--", *changelogs, *repinned], config.root)
     if not git(["diff", "--cached", "--name-only"], config.root).strip():
         fail("materialization produced no changes; nothing to release")
+
+    # A lifted pin that does not reach the commit is the failure this whole
+    # feature exists to remove, arriving later and with more to unwind: the
+    # branch would go out with the old pin and die at the publish-time gate. It
+    # happens when the workflow predates the `repinned` output, so name that.
+    owned = {
+        LOCK_FILE,
+        *(f"{config.path_prefix(r['package'])}pyproject.toml" for r in releases),
+    }
+    if stranded := sorted(
+        owned.intersection(git(["diff", "--name-only"], config.root).split())
+    ):
+        fail(
+            f"materialization left {', '.join(stranded)} modified but unstaged. "
+            "If the scaffolded workflow predates the `repinned` output of "
+            "`materialize`, re-run `reflex-release sync` and dispatch again; "
+            "otherwise the working tree holds changes materialization did not "
+            "make, and a release must not carry them."
+        )
     git_run(["commit", "-m", message], config.root)
 
 
 def cmd_open_release_pr(
-    config: Config, action: str, ref_name: str, releases_json: str
+    config: Config,
+    action: str,
+    ref_name: str,
+    releases_json: str,
+    repinned_json: str,
 ) -> None:
     """Commit the materialized changelogs and open the release pull request.
 
@@ -768,8 +941,10 @@ def cmd_open_release_pr(
         action: The release action that was materialized.
         ref_name: The branch the workflow was dispatched on.
         releases_json: The ``releases`` JSON emitted by :func:`cmd_plan`.
+        repinned_json: The ``repinned`` JSON emitted by :func:`cmd_materialize`.
     """
     releases: list[dict[str, str]] = json.loads(releases_json)
+    repinned = _repinned_paths(repinned_json)
     run_id = os.environ.get("GITHUB_RUN_ID", "manual")
     # Final versions publish from the main branch — except hotfix trains, which
     # publish directly from their own branch, so the PR targets it instead.
@@ -811,8 +986,8 @@ def cmd_open_release_pr(
     body_file = Path(os.environ.get("RUNNER_TEMP", ".")) / "release_pr_body.md"
     body_file.write_text(body, encoding="utf-8")
 
-    _commit_changelogs(
-        config, releases, f"Materialize changelogs for {summary} ({action})"
+    _commit_materialized(
+        config, releases, repinned, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
@@ -861,7 +1036,11 @@ def cmd_open_release_pr(
 
 
 def cmd_push_prerelease(
-    config: Config, action: str, ref_name: str, releases_json: str
+    config: Config,
+    action: str,
+    ref_name: str,
+    releases_json: str,
+    repinned_json: str,
 ) -> None:
     """Commit the materialized changelogs and push the prerelease branch.
 
@@ -870,8 +1049,10 @@ def cmd_push_prerelease(
         action: The release action that was materialized.
         ref_name: The branch the workflow was dispatched on.
         releases_json: The ``releases`` JSON emitted by :func:`cmd_plan`.
+        repinned_json: The ``repinned`` JSON emitted by :func:`cmd_materialize`.
     """
     releases: list[dict[str, str]] = json.loads(releases_json)
+    repinned = _repinned_paths(repinned_json)
     run_id = os.environ.get("GITHUB_RUN_ID", "manual")
     summary = _release_summary(releases)
 
@@ -891,8 +1072,8 @@ def cmd_push_prerelease(
         if remote_branch_exists(config.root, branch):
             branch = f"{branch}-{run_id}"
 
-    _commit_changelogs(
-        config, releases, f"Materialize changelogs for {summary} ({action})"
+    _commit_materialized(
+        config, releases, repinned, f"Materialize changelogs for {summary} ({action})"
     )
     git_push(f"HEAD:refs/heads/{branch}", config.root)
 
@@ -938,6 +1119,204 @@ def cmd_push_tag(config: Config, tag: str) -> None:
     git_push(f"refs/tags/{tag}", config.root)
 
 
+def _reads_as_absent(config: Config, stderr: str) -> bool:
+    """Decide whether a failed release read means the tag has no release.
+
+    gh answers "there is no such release" and "GitHub could not be asked" the
+    same way: a non-zero exit and a message. A not-found is only evidence that
+    the release is absent if GitHub could be reached and this repository read
+    at all, so that is established rather than inferred from the wording — a
+    404 for a repository that is missing, renamed or beyond the token's reach
+    says nothing about the release.
+
+    Args:
+        config: The repository configuration.
+        stderr: What gh wrote to stderr.
+
+    Returns:
+        Whether the tag can be treated as having no release.
+    """
+    lowered = stderr.lower()
+    if not any(marker in lowered for marker in _NO_RELEASE_STDERR):
+        return False
+    # One extra call, and only on the path where a release is about to be
+    # created anyway: if the repository reads back, the not-found was about the
+    # release rather than about reaching GitHub.
+    returncode, _, _ = gh_capture(["repo", "view", "--json", "name"], config.root)
+    return returncode == 0
+
+
+def _release_view(config: Config, tag: str) -> dict[str, Any] | None:
+    """Read a GitHub release's metadata and asset list.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag the release points at.
+
+    Returns:
+        The parsed ``gh release view`` payload, or None when the tag has no
+        release.
+    """
+    # A probe, not an action: keep its output (and its "not found" stderr on the
+    # normal path) out of the job log.
+    returncode, payload, stderr = gh_capture(
+        ["release", "view", tag, "--json", ",".join(_RELEASE_FIELDS)], config.root
+    )
+    if returncode != 0:
+        # A tag with no release and a GitHub that could not be reached both
+        # exit non-zero. Only the first means there is nothing there; reading
+        # the second as "no release" would create a release over one that
+        # exists, or report a release that was just made as missing.
+        if _reads_as_absent(config, stderr):
+            return None
+        fail(
+            f"could not read the GitHub release for {tag}: gh exited "
+            f"{returncode} saying {stderr or '(nothing)'}. Nothing is known "
+            "about the release either way, so re-run this job once gh can "
+            "reach GitHub."
+        )
+    try:
+        release = json.loads(payload)
+    except json.JSONDecodeError:
+        fail(f"gh reported release metadata for {tag} that is not JSON: {payload!r}")
+    # The shape is established once, here, so everything downstream can read the
+    # payload as the release it claims to be rather than re-checking it. Each
+    # miss is a diagnostic failure: a TypeError traceback out of a job that has
+    # already published a version says nothing about what went wrong.
+    if not isinstance(release, dict):
+        fail(
+            f"gh reported release metadata for {tag} that is not an object: {payload!r}"
+        )
+    if missing := [field for field in _RELEASE_FIELDS if field not in release]:
+        fail(
+            f"the release metadata gh reported for {tag} carries no "
+            f"{', '.join(missing)}, so the release cannot be verified"
+        )
+    assets = release["assets"]
+    if not isinstance(assets, list) or not all(
+        isinstance(asset, dict) for asset in assets
+    ):
+        fail(
+            f"the release metadata gh reported for {tag} lists its assets as "
+            f"{assets!r} rather than as a list of assets, so what the release "
+            "carries cannot be verified"
+        )
+    return release
+
+
+def _metadata_problems(
+    release: dict[str, Any], tag: str, title: str, prerelease: bool
+) -> list[str]:
+    """List the ways a GitHub release disagrees with what was published.
+
+    Args:
+        release: A ``gh release view`` payload.
+        tag: The tag the release has to point at.
+        title: The title the release has to carry.
+        prerelease: Whether the release has to be flagged as a prerelease.
+
+    Returns:
+        Human-readable problems, empty when the release matches.
+    """
+    # The "Latest" marker is deliberately not checked: it belongs to the
+    # repository rather than to one release, so a release published since this
+    # one legitimately holds it.
+    problems = []
+    if (tag_name := release["tagName"]) != tag:
+        problems.append(f"it points at tag {tag_name!r} rather than {tag!r}")
+    if release["isDraft"]:
+        problems.append("it is still a draft, so the version is not released")
+    if (is_prerelease := bool(release["isPrerelease"])) != prerelease:
+        problems.append(
+            f"it is marked prerelease={is_prerelease} rather than "
+            f"prerelease={prerelease}"
+        )
+    if (name := release["name"]) != title:
+        problems.append(f"it is titled {name!r} rather than {title!r}")
+    return problems
+
+
+def _checksum_asset_problem(
+    release: dict[str, Any], checksums_path: Path
+) -> str | None:
+    """Return why a release does not carry this run's checksum manifest, if so.
+
+    Args:
+        release: A ``gh release view`` payload.
+        checksums_path: The local manifest of everything that was uploaded.
+
+    Returns:
+        A human-readable problem, or None when the release carries exactly this
+        manifest.
+    """
+    name = checksums_path.name
+    asset = next(
+        (asset for asset in release["assets"] if asset.get("name") == name), None
+    )
+    if asset is None:
+        return f"the {name} manifest is not attached to it"
+    if (state := asset.get("state")) != "uploaded":
+        return f"its {name} asset is in state {state!r} rather than 'uploaded'"
+    if (size := asset.get("size")) != (expected := checksums_path.stat().st_size):
+        return f"its {name} asset is {size} bytes rather than {expected}"
+    return None
+
+
+def _accept_existing_release(
+    config: Config,
+    tag: str,
+    title: str,
+    prerelease: bool,
+    checksums_path: Path,
+    release: dict[str, Any],
+) -> None:
+    """Accept a release an earlier attempt left behind, or fail loudly.
+
+    A re-run stands down for an existing release only once that release is the
+    one this run would have created: on this tag, published rather than drafted,
+    flagged the same way and carrying the manifest of exactly what was uploaded.
+    The one partial state a re-run can finish by itself is a missing or stale
+    manifest — an attempt that died during the asset upload — so that is
+    uploaded again; anything else is a release nobody here made, and the tag is
+    not handed on until a human has looked at it.
+
+    Args:
+        config: The repository configuration.
+        tag: The tag the release points at.
+        title: The title this run would have given the release.
+        prerelease: Whether this run would have flagged it as a prerelease.
+        checksums_path: The ``sha256sum`` manifest of everything that was
+            uploaded.
+        release: The existing release's ``gh release view`` payload.
+    """
+    if problems := _metadata_problems(release, tag, title, prerelease):
+        fail(
+            f"a GitHub release already exists for {tag}, but {'; '.join(problems)}. "
+            "It is not the release this publish would have created, so it is not "
+            "handed to the post-release workflow: inspect it, then either fix it "
+            "or delete it and re-run this job."
+        )
+    if checksums_path.is_file() and (
+        problem := _checksum_asset_problem(release, checksums_path)
+    ):
+        notice(f"release {tag} exists but {problem}; attaching it now")
+        gh_run(
+            ["release", "upload", tag, str(checksums_path), "--clobber"], config.root
+        )
+        reread = _release_view(config, tag)
+        problem = (
+            "there is no release on the tag"
+            if reread is None
+            else _checksum_asset_problem(reread, checksums_path)
+        )
+        if problem:
+            fail(
+                f"attached the checksum manifest to the release for {tag}, but "
+                f"reading it back found that {problem}"
+            )
+    echo(f"Release {tag} already matches this publish; skipping (safe re-run).")
+
+
 def cmd_create_release(
     config: Config,
     tag: str,
@@ -949,6 +1328,11 @@ def cmd_create_release(
     checksums_path: Path,
 ) -> None:
     """Create the GitHub release for a published version.
+
+    The release is read back once it exists: the next step hands the tag to the
+    post-release workflow, which publishes docs and images against a release it
+    trusts to be complete, so a release that is a draft, flagged the wrong way
+    or missing the checksum manifest stops the job here instead.
 
     Args:
         config: The repository configuration.
@@ -962,14 +1346,15 @@ def cmd_create_release(
             uploaded, attached to the release so the record of what a version
             contains outlives the workflow artifact it was built as.
     """
-    # A probe, not an action: keep its output (and its "not found" stderr on the
-    # normal path) out of the job log.
-    if gh_output(["release", "view", tag, "--json", "name"], config.root, check=False):
-        echo(f"Release {tag} already exists; skipping (safe re-run).")
-        return
     # The root package is the repository, so its tag already names the release
     # unambiguously; only a sub-package needs to say which package it is.
     title = tag if package == config.root_package else f"{package}@{version}"
+    existing = _release_view(config, tag)
+    if existing is not None:
+        _accept_existing_release(
+            config, tag, title, prerelease, checksums_path, existing
+        )
+        return
     args = [
         "release",
         "create",
@@ -991,6 +1376,27 @@ def cmd_create_release(
         notice(f"no checksum manifest at {checksums_path}; releasing without one")
     gh_run(args, config.root)
 
+    # gh's exit status covers the request it made, not the state GitHub was
+    # left in — a release whose asset upload failed is still a release — so what
+    # the next step hands on is proven from GitHub's own copy of it.
+    release = _release_view(config, tag)
+    if release is None:
+        fail(
+            f"gh created the release for {tag}, but reading it back found no "
+            f"release on the tag; check {tag} on the releases page before the "
+            "post-release workflow is pointed at it"
+        )
+    if problems := _metadata_problems(release, tag, title, prerelease):
+        fail(
+            f"the GitHub release created for {tag} is not the one that was "
+            f"asked for: {'; '.join(problems)}"
+        )
+    if checksums_path.is_file() and (
+        problem := _checksum_asset_problem(release, checksums_path)
+    ):
+        fail(f"the GitHub release created for {tag} is incomplete: {problem}")
+    echo(f"Release {tag} created and verified as {title!r}.")
+
 
 def cmd_post_release(config: Config, tag: str, package: str, version: str) -> None:
     """Dispatch the configured post-release workflow for a published tag.
@@ -1008,7 +1414,7 @@ def cmd_post_release(config: Config, tag: str, package: str, version: str) -> No
     """
     workflow = config.post_release_workflow
     if workflow is None:
-        notice(f"no {POST_RELEASE_WORKFLOW_KEY} is configured; nothing to dispatch.")
+        echo(f"no {POST_RELEASE_WORKFLOW_KEY} is configured; nothing to dispatch.")
         return
     # An unset environment variable reaches here as an empty string, and GitHub
     # accepts a dispatch carrying empty inputs — the run would go green having

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 from reflex_release import commands
@@ -43,6 +44,27 @@ def make_internal(repo: Path, package: str) -> Config:
         pyproject.read_text(encoding="utf-8").replace(
             'packages-dir = "packages"',
             f'packages-dir = "packages"\ninternal-packages = ["{package}"]',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def make_never_published(repo: Path, package: str) -> Config:
+    """Mark a package as never published and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``never-publish-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\nnever-publish-packages = ["{package}"]',
         ),
         encoding="utf-8",
     )
@@ -227,6 +249,36 @@ def test_plan_rejects_internal_packages(
         commands.cmd_plan(reloaded, "release-minor", "widget-core")
 
 
+def test_plan_rejects_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_plan(reloaded, "release-minor", "widget-core")
+
+
+def test_prepare_publish_refuses_never_published_packages(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A manual publish dispatch is the only way to reach one, so it must fail.
+
+    No release selection offers a never-published package and changelog
+    detection skips it, which leaves typing it into the publish workflow's
+    package field — refused here, in the first unprivileged job, rather than at
+    verify-dist after a build.
+    """
+    reloaded = make_never_published(repo, "widget-core")
+    with pytest.raises(ReleaseError, match="never-publish-packages"):
+        commands.cmd_prepare_publish(reloaded, "widget-core", "1.0.0", "main")
+
+
+def test_packages_omits_never_published_packages(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture
+) -> None:
+    commands.cmd_packages(make_never_published(repo, "widget-core"))
+    assert capsys.readouterr().out.split() == ["mypkg"]
+
+
 def test_materialize_writes_the_changelog(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
@@ -348,7 +400,7 @@ def test_materialize_writes_an_empty_entry_for_a_lockstep_partner(
     assert outputs()["any"] == "true"
 
 
-def test_commit_changelogs_leaves_unrelated_work_alone(
+def test_commit_materialized_leaves_unrelated_work_alone(
     config: Config, repo: Path
 ) -> None:
     """A release commit carries the changelogs and nothing a human was mid-way through."""
@@ -360,8 +412,8 @@ def test_commit_changelogs_leaves_unrelated_work_alone(
     set_changelog(config, "widget-core", "## v0.9.0 (2026-01-01)\n\nNot mine.\n")
     fragment(config, "widget-core", "3.bugfix.md")
 
-    commands._commit_changelogs(
-        config, [{"package": "mypkg", "next": "1.0.0"}], "Materialize changelogs"
+    commands._commit_materialized(
+        config, [{"package": "mypkg", "next": "1.0.0"}], [], "Materialize changelogs"
     )
 
     assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
@@ -381,9 +433,10 @@ def test_release_commit_removes_the_fragments_it_consumed(
     commands.cmd_plan(config, "release-minor", "widget-core")
     commands.cmd_materialize(config, "release-minor", outputs()["releases"])
 
-    commands._commit_changelogs(
+    commands._commit_materialized(
         config,
         [{"package": "widget-core", "next": "0.1.0"}],
+        [],
         "Materialize changelogs",
     )
 
@@ -780,7 +833,7 @@ def test_push_prerelease_summary_links_the_branch(
     config: Config, dispatched: pytest.MonkeyPatch, summary: Callable[[], str]
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     branch = next(
@@ -803,7 +856,7 @@ def test_push_prerelease_annotates_the_branch_url(
     capsys: pytest.CaptureFixture,
 ) -> None:
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     notices = [
         line
@@ -819,7 +872,7 @@ def test_dispatch_summaries_degrade_outside_actions(
 ) -> None:
     dispatched.delenv("GITHUB_REPOSITORY")
     commands.cmd_push_prerelease(
-        config, "new-prerelease-minor", "main", json.dumps(PLAN)
+        config, "new-prerelease-minor", "main", json.dumps(PLAN), ""
     )
     text = summary()
     assert "](" not in text
@@ -834,7 +887,7 @@ def test_open_release_pr_summary_links_the_pull_request(
 ) -> None:
     url = "https://github.example.com/acme/widgets/pull/42"
     dispatched.setattr(commands, "gh_output", lambda *args, **kwargs: url)
-    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN))
+    commands.cmd_open_release_pr(config, "release-minor", "main", json.dumps(PLAN), "")
     text = summary()
     assert f"Pull request: [#42]({url})" in text
     assert "/tree/release/release-minor-" in text
@@ -842,11 +895,150 @@ def test_open_release_pr_summary_links_the_pull_request(
     assert f"::notice::release pull request opened: {url}" in capsys.readouterr().out
 
 
+#: The ``gh release create`` flags that consume the argument after them, so a
+#: fake gh can tell an option value from an asset to attach.
+_VALUED_FLAGS = frozenset({"--title", "--notes-file", "--target"})
+
+
+def release_payload(
+    tag: str,
+    title: str,
+    assets: Sequence[Path | dict[str, Any]] = (),
+    **overrides: Any,
+) -> str:
+    """Render the ``gh release view`` payload of a released version.
+
+    Args:
+        tag: The tag the release points at.
+        title: The release title.
+        assets: Files attached to the release — a path is rendered as the asset
+            GitHub reports for it, a dict is used as the asset entry itself, to
+            model an upload that did not finish.
+        **overrides: Fields to replace, to model a partial or stale release.
+
+    Returns:
+        The JSON ``gh release view --json`` would print.
+    """
+    payload: dict[str, Any] = {
+        "tagName": tag,
+        "name": title,
+        "isDraft": False,
+        "isPrerelease": False,
+        "assets": [
+            asset
+            if isinstance(asset, dict)
+            else {
+                "name": asset.name,
+                "state": "uploaded",
+                "size": asset.stat().st_size,
+            }
+            for asset in assets
+        ],
+    }
+    return json.dumps(payload | overrides)
+
+
+def created_release_payload(create_args: list[str]) -> str:
+    """Render the release a ``gh release create`` invocation would leave behind.
+
+    Args:
+        create_args: The arguments of the ``gh release create`` call.
+
+    Returns:
+        The JSON ``gh release view --json`` would print for it.
+    """
+    title = ""
+    assets: list[Path] = []
+    index = 3
+    while index < len(create_args):
+        arg = create_args[index]
+        if arg in _VALUED_FLAGS:
+            if arg == "--title":
+                title = create_args[index + 1]
+            index += 2
+            continue
+        if not arg.startswith("--"):
+            assets.append(Path(arg))
+        index += 1
+    return release_payload(
+        create_args[2],
+        title,
+        assets,
+        isPrerelease="--prerelease" in create_args,
+    )
+
+
+#: What gh reports for a tag that simply has no release.
+GH_NO_RELEASE = (1, "", "release not found")
+
+#: The same answer phrased as the bare HTTP status, as gh reports it when the
+#: release lookup itself is what 404s.
+GH_NO_RELEASE_404 = (
+    1,
+    "",
+    "gh: Not Found (HTTP 404) (https://api.github.com/repos/acme/widgets/releases/tags/v0.2.1)",
+)
+
+#: What gh reports when it could not ask GitHub at all.
+GH_UNREACHABLE = (1, "", "HTTP 503: Service Unavailable (https://api.github.com)")
+
+
+def gh_found(payload: str) -> tuple[int, str, str]:
+    """Render what gh reports for a release it read successfully.
+
+    Args:
+        payload: The ``gh release view --json`` output.
+
+    Returns:
+        The exit status, stdout and stderr of that read.
+    """
+    return (0, payload, "")
+
+
+#: What gh reports for a repository it read without trouble.
+GH_REPO_READS = (0, '{"name": "widgets"}', "")
+
+#: What gh reports for a repository it could not read at all.
+GH_REPO_UNREADABLE = (1, "", "gh: Not Found (HTTP 404)")
+
+
+def stub_gh(
+    monkeypatch: pytest.MonkeyPatch,
+    reads: list[tuple[int, str, str]],
+    repo: tuple[int, str, str] = GH_REPO_READS,
+) -> list[list[str]]:
+    """Stub the two gh helpers the release commands use.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        reads: What ``gh release view`` reports, in order; the last entry
+            answers every further read.
+        repo: What the ``gh repo view`` probe reports — the check that a
+            not-found is about the release and not about reaching GitHub.
+
+    Returns:
+        The list every ``gh`` command that is run is appended to.
+    """
+    calls: list[list[str]] = []
+    queued = iter(reads[:-1])
+
+    def capture(args: list[str], *rest: object, **kwargs: object):
+        if args[:2] == ["repo", "view"]:
+            return repo
+        return next(queued, reads[-1])
+
+    monkeypatch.setattr(commands, "gh_capture", capture)
+    monkeypatch.setattr(
+        commands, "gh_run", lambda args, *rest, **kwargs: calls.append(args) or 0
+    )
+    return calls
+
+
 @pytest.fixture
 def release_args(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[], list[str]]:
-    """Capture the ``gh release create`` arguments instead of running gh.
+    """Fake gh for a first release: no release yet, then the one just created.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
@@ -855,7 +1047,16 @@ def release_args(
         A callable returning the arguments of the last ``gh`` invocation.
     """
     captured: list[list[str]] = []
-    monkeypatch.setattr(commands, "gh_output", lambda *args, **kwargs: "")
+
+    def view(args: list[str], *rest: object, **kwargs: object) -> tuple[int, str, str]:
+        if args[:2] == ["repo", "view"]:
+            return GH_REPO_READS
+        creates = [call for call in captured if call[:2] == ["release", "create"]]
+        if not creates:
+            return GH_NO_RELEASE
+        return gh_found(created_release_payload(creates[-1]))
+
+    monkeypatch.setattr(commands, "gh_capture", view)
     monkeypatch.setattr(
         commands, "gh_run", lambda args, *rest, **kwargs: captured.append(args) or 0
     )
@@ -930,6 +1131,294 @@ def test_create_release_without_a_manifest_still_releases(
     assert str(checksums) not in release_args()
 
 
+def test_create_release_reports_the_verified_release(
+    config: Config,
+    tmp_path: Path,
+    release_args: Callable[[], list[str]],
+    capsys: pytest.CaptureFixture,
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert "Release v0.2.1 created and verified" in capsys.readouterr().out
+
+
+def test_create_release_fails_when_the_release_cannot_be_read_back(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A zero exit from gh is not proof of the release GitHub actually holds."""
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [GH_NO_RELEASE])
+    with pytest.raises(ReleaseError, match="reading it back found no release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+def test_create_release_rejects_unparseable_release_metadata(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found("not json")])
+    with pytest.raises(ReleaseError, match="that is not JSON"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({"isDraft": True}, "still a draft"),
+        ({"isPrerelease": True}, "prerelease=True rather than prerelease=False"),
+        ({"name": "v0.2.0"}, "titled 'v0.2.0' rather than 'v0.2.1'"),
+        ({"tagName": "v0.2.0"}, "points at tag 'v0.2.0'"),
+    ],
+)
+def test_create_release_rejects_a_release_that_is_not_the_one_asked_for(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, Any],
+    expected: str,
+) -> None:
+    """The next step hands this tag on, so a mismatch stops the job here."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found(created)])
+    with pytest.raises(
+        ReleaseError, match="is not the one that was asked for"
+    ) as raised:
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert expected in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    ("assets", "expected"),
+    [
+        ([], "manifest is not attached"),
+        ([{"name": "SHA256SUMS", "state": "new", "size": 42}], "state 'new'"),
+        ([{"name": "SHA256SUMS", "state": "uploaded", "size": 7}], "7 bytes rather"),
+    ],
+)
+def test_create_release_rejects_an_incomplete_checksum_asset(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    assets: list[dict[str, Any]],
+    expected: str,
+) -> None:
+    """A release without the manifest of what was uploaded is not a record of it."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", assets=assets)
+    stub_gh(monkeypatch, [GH_NO_RELEASE, gh_found(created)])
+    with pytest.raises(ReleaseError, match=rf"is incomplete: .*{expected}"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+def test_create_release_skips_a_matching_existing_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """The safe re-run: the release is already exactly the one this run makes."""
+    notes, checksums = release_inputs(tmp_path)
+    existing = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [gh_found(existing)])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == []
+    assert "already matches this publish" in capsys.readouterr().out
+
+
+def test_create_release_attaches_a_manifest_an_earlier_attempt_left_off(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An attempt that died during the asset upload is finished, not accepted."""
+    notes, checksums = release_inputs(tmp_path)
+    partial = release_payload("v0.2.1", "v0.2.1")
+    repaired = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [gh_found(partial), gh_found(repaired)])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == [["release", "upload", "v0.2.1", str(checksums), "--clobber"]]
+
+
+def test_create_release_fails_when_attaching_the_manifest_does_not_take(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [gh_found(release_payload("v0.2.1", "v0.2.1"))])
+    with pytest.raises(ReleaseError, match="reading it back found that"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"isDraft": True}, {"isPrerelease": True}, {"name": "something else"}],
+)
+def test_create_release_refuses_to_reuse_a_stale_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, Any],
+) -> None:
+    """A release nobody here made must not be handed on as this publish's."""
+    notes, checksums = release_inputs(tmp_path)
+    existing = release_payload("v0.2.1", "v0.2.1", [checksums], **overrides)
+    calls = stub_gh(monkeypatch, [gh_found(existing)])
+    with pytest.raises(ReleaseError, match=r"already exists for v0\.2\.1"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
+
+
+def test_create_release_reuses_a_release_without_a_local_manifest(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Nothing to attach and nothing to verify: the metadata is the whole check."""
+    notes, checksums = release_inputs(tmp_path)
+    checksums.unlink()
+    calls = stub_gh(monkeypatch, [gh_found(release_payload("v0.2.1", "v0.2.1"))])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls == []
+
+
+@pytest.mark.parametrize("absent", [GH_NO_RELEASE, GH_NO_RELEASE_404])
+def test_create_release_creates_when_gh_says_there_is_no_release(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    absent: tuple[int, str, str],
+) -> None:
+    """Either phrasing of "no release" has to reach the create, not a failure."""
+    notes, checksums = release_inputs(tmp_path)
+    created = release_payload("v0.2.1", "v0.2.1", [checksums])
+    calls = stub_gh(monkeypatch, [absent, gh_found(created)])
+    commands.cmd_create_release(
+        config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+    )
+    assert calls[0][:3] == ["release", "create", "v0.2.1"]
+
+
+@pytest.mark.parametrize("absent", [GH_NO_RELEASE, GH_NO_RELEASE_404])
+def test_create_release_will_not_believe_a_not_found_it_cannot_corroborate(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    absent: tuple[int, str, str],
+) -> None:
+    """A 404 from an unreachable repository says nothing about the release."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [absent], repo=GH_REPO_UNREADABLE)
+    with pytest.raises(ReleaseError, match="could not read the GitHub release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
+
+
+def test_create_release_fails_when_reading_the_created_release_fails(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A gh that could not reach GitHub has not said the release is absent."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [GH_NO_RELEASE, GH_UNREACHABLE])
+    with pytest.raises(ReleaseError, match="could not read the GitHub release"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls[0][:2] == ["release", "create"]
+
+
+def test_create_release_does_not_create_over_an_unreadable_release(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Treating an unreadable release as absent would release over it."""
+    notes, checksums = release_inputs(tmp_path)
+    calls = stub_gh(monkeypatch, [GH_UNREACHABLE])
+    with pytest.raises(ReleaseError, match="re-run this job once gh can reach"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+    assert calls == []
+
+
+def malformed_assets_payload(assets: Any) -> str:
+    """Render a release payload whose assets are not a list of assets.
+
+    Args:
+        assets: The malformed value to report as the release's assets.
+
+    Returns:
+        The JSON ``gh release view --json`` would print for it.
+    """
+    return json.dumps({
+        "tagName": "v0.2.1",
+        "name": "v0.2.1",
+        "isDraft": False,
+        "isPrerelease": False,
+        "assets": assets,
+    })
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ("null", "is not an object"),
+        ("[]", "is not an object"),
+        (malformed_assets_payload(None), "rather than as a list of assets"),
+        (malformed_assets_payload([None]), "rather than as a list of assets"),
+        (malformed_assets_payload(["SHA256SUMS"]), "rather than as a list of assets"),
+    ],
+)
+def test_create_release_rejects_metadata_of_the_wrong_shape(
+    config: Config,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: str,
+    expected: str,
+) -> None:
+    """A shape gh should never send has to read as a diagnostic, not a traceback."""
+    notes, checksums = release_inputs(tmp_path)
+    stub_gh(monkeypatch, [gh_found(payload)])
+    with pytest.raises(ReleaseError, match=expected):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
+def test_create_release_rejects_metadata_missing_a_requested_field(
+    config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A field that was asked for but not answered must not read as a mismatch."""
+    notes, checksums = release_inputs(tmp_path)
+    payload = json.loads(release_payload("v0.2.1", "v0.2.1", [checksums]))
+    del payload["isDraft"]
+    stub_gh(monkeypatch, [gh_found(json.dumps(payload))])
+    with pytest.raises(ReleaseError, match="carries no isDraft"):
+        commands.cmd_create_release(
+            config, "v0.2.1", "mypkg", "0.2.1", False, True, notes, checksums
+        )
+
+
 def test_post_release_without_a_configured_workflow_does_nothing(
     config: Config, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
@@ -939,7 +1428,37 @@ def test_post_release_without_a_configured_workflow_does_nothing(
     )
     commands.cmd_post_release(config, "v1.2.3", "mypkg", "1.2.3")
     assert captured == []
-    assert "no post-release-workflow is configured" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "no post-release-workflow is configured" in out
+    assert "::notice::" not in out
+
+
+def test_pin_lockstep_pins_the_sibling_to_the_exact_version(
+    config: Config, repo: Path
+) -> None:
+    write_lockstep(repo)
+    commands.cmd_pin_lockstep(load_config(repo), "mypkg", "1.2.3")
+    assert '"widget-core == 1.2.3"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_pin_lockstep_without_siblings_does_not_annotate_the_run(
+    config: Config, repo: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A step that no-ops has nothing an approver needs to be shown.
+
+    Every package outside an exact-pin lockstep group runs this step, so an
+    annotation here is one "nothing to do" line per package on the summary of
+    every release batch.
+    """
+    commands.cmd_pin_lockstep(config, "mypkg", "1.2.3")
+    out = capsys.readouterr().out
+    assert "mypkg has no exact-pin lockstep siblings" in out
+    assert "::notice::" not in out
+    assert "widget-core >= 0.1.0" in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_post_release_dispatches_the_workflow_on_the_tag(
@@ -1004,3 +1523,151 @@ def test_post_release_rejects_an_unknown_package(
     monkeypatch.setattr(commands, "gh_run", lambda *args, **kwargs: 0)
     with pytest.raises(ReleaseError, match="unknown package"):
         commands.cmd_post_release(reloaded, "v1.2.3", "ghost", "1.2.3")
+
+
+def dev_pin(repo: Path, requirement: str) -> Config:
+    """Replace the root package's dependency and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        requirement: The requirement string to declare instead.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            '"widget-core >= 0.1.0"', f'"{requirement}"'
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_plan_holds_back_an_auto_selected_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs, summary: Callable[[], str]
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    commands.cmd_plan(reloaded, "release-minor", "")
+    # The dependency can still be released; only its dependent is held back.
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["widget-core"]
+    assert "### Held back" in summary()
+
+
+def test_plan_rejects_an_explicit_unsatisfiable_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 9.9.9.dev1")
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+
+
+def test_plan_holds_back_a_whole_lockstep_group(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Members only ever release together, so one blocker holds back the group."""
+    write_lockstep(repo)
+    # Not the lockstep sibling, which pin-lockstep rewrites at build time.
+    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
+    fragment(reloaded, "widget-core", "2.feature.md")
+    with pytest.raises(ReleaseError, match="every auto-selected package"):
+        commands.cmd_plan(reloaded, "release-minor", "")
+
+
+def test_plan_accepts_a_pin_a_prerelease_can_satisfy(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0a1")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    # A final version cannot take the alpha; the alpha train can.
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_plan(reloaded, "new-prerelease-minor", "mypkg")
+    assert [r["package"] for r in json.loads(outputs()["releases"])] == ["mypkg"]
+
+
+def test_materialize_lifts_the_dev_pin_it_can_resolve(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "4.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+
+    assert '"widget-core >= 0.2.0"' in (repo / "pyproject.toml").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_release_commit_carries_the_lifted_pins(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "5.feature.md", "Something.")
+    commit_all(repo)
+
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    # The commit runs as its own process, so materialize hands it the paths.
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
+    commands._commit_materialized(
+        reloaded,
+        [{"package": "mypkg", "next": "0.1.0"}],
+        json.loads(outputs()["repinned"]),
+        "Materialize",
+    )
+
+    assert sorted(git(repo, "show", "--name-only", "--format=", "HEAD").split()) == [
+        "CHANGELOG.md",
+        "news/5.feature.md",
+        "pyproject.toml",
+    ]
+
+
+def test_release_commit_stages_no_pyproject_when_no_pin_moved(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Only what the pin upgrade actually rewrote is staged beside the changelogs."""
+    fragment(config, "mypkg", "6.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(config, "release-minor", "mypkg")
+    commands.cmd_materialize(config, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == []
+
+    commands._commit_materialized(
+        config, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
+    )
+
+    assert (
+        "pyproject.toml"
+        not in git(repo, "show", "--name-only", "--format=", "HEAD").split()
+    )
+
+
+def test_release_commit_refuses_to_strand_a_lifted_pin(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A workflow that predates the `repinned` output would otherwise commit the
+    changelog bump with the old pin, and die at the publish-time gate.
+    """
+    reloaded = dev_pin(repo, "widget-core >= 0.2.0.dev1")
+    git(repo, "tag", "widget-core-v0.2.0")
+    fragment(reloaded, "mypkg", "7.feature.md", "Something.")
+    commit_all(repo)
+    commands.cmd_plan(reloaded, "release-minor", "mypkg")
+    commands.cmd_materialize(reloaded, "release-minor", outputs()["releases"])
+    assert json.loads(outputs()["repinned"]) == ["pyproject.toml"]
+
+    # The delivery step of an un-synced workflow passes nothing through.
+    with pytest.raises(ReleaseError, match="modified but unstaged"):
+        commands._commit_materialized(
+            reloaded, [{"package": "mypkg", "next": "0.1.0"}], [], "Materialize"
+        )
