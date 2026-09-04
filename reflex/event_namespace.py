@@ -129,16 +129,18 @@ class BaseEventNamespace(ABC):
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(query_string)
         token_list = query_params.get("token", [])
-        if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
-        else:
+        if not token_list:
             # A Reflex client always sends a token; the transport closes the
             # session, so a warning per hostile connect would only flood logs.
             logger.debug(f"No token provided in connection for session {sid}.")
-
+            return
+        await self.link_token_to_sid(sid, token_list[0])
+        # Only report the version for linked sessions; the value is
+        # client-controlled, so sanitize it before it reaches the logs.
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             logger.warning(
-                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+                f"Frontend version {format.sanitize_client_log_value(subprotocol)} "
+                f"for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
     def handle_disconnect(self, sid: str) -> asyncio.Task | None:
@@ -218,28 +220,18 @@ class BaseEventNamespace(ABC):
             )
             return
 
-        fields = data
-
-        if isinstance(fields, str):
-            logger.warning(
-                "Received event data as a string. This generally should not happen and may indicate a bug."
-                f" Event data: {fields}"
-            )
-            try:
-                fields = json.loads(fields)
-            except json.JSONDecodeError as ex:
-                msg = f"Failed to deserialize event data: {fields}."
-                raise exceptions.EventDeserializationError(msg) from ex
-
-        if not isinstance(fields, dict):
-            msg = f"Event data must be a dictionary, but received {fields} of type {type(fields)}."
+        # Both transports JSON-decode the frame, so a Reflex client's event
+        # arrives as a dict; anything else (including a JSON-encoded string)
+        # is rejected rather than logged per frame.
+        if not isinstance(data, dict):
+            msg = f"Event data must be a dictionary, but received {data} of type {type(data)}."
             raise exceptions.EventDeserializationError(msg)
 
         try:
             # Get the event.
-            event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+            event = Event(**{k: v for k, v in data.items() if k in _EVENT_FIELDS})
         except (TypeError, ValueError) as ex:
-            msg = f"Failed to deserialize event data: {fields}."
+            msg = f"Failed to deserialize event data: {data}."
             raise exceptions.EventDeserializationError(msg) from ex
 
         # The dataclass does not validate field types.

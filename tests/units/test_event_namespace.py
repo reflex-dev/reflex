@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -202,6 +203,8 @@ async def test_malformed_frame_closes_connection(
     [
         None,
         "not an event",
+        # A JSON-encoded event is still a string, not an event.
+        json.dumps({"name": "state.on_click", "payload": {}, "router_data": {}}),
         42,
         {"name": 123, "payload": {}, "router_data": {}},
         {"name": "x", "payload": "nope", "router_data": {}},
@@ -209,16 +212,23 @@ async def test_malformed_frame_closes_connection(
     ],
 )
 async def test_undeserializable_event_closes_connection(
-    namespace: WebsocketEventNamespace, payload: object
+    namespace: WebsocketEventNamespace,
+    mock_app: Mock,
+    payload: object,
+    caplog: pytest.LogCaptureFixture,
 ):
-    """An event frame that fails deserialization closes with 1002."""
+    """An event frame that fails deserialization closes with 1002 and no warning."""
     websocket = FakeWebSocket()
     websocket.feed(["event", payload], ["ping"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
 
     assert websocket.close_code == 1002
     assert ["ping", "pong"] not in websocket.sent
+    mock_app.event_processor.enqueue.assert_not_awaited()
+    # Client-controlled input must not write above debug level.
+    assert all(record.levelno <= logging.DEBUG for record in caplog.records)
 
 
 @pytest.mark.asyncio
@@ -228,8 +238,6 @@ async def test_handler_error_keeps_connection(
     caplog: pytest.LogCaptureFixture,
 ):
     """A server-side handler failure is logged and the connection survives."""
-    import logging
-
     mock_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
     websocket = FakeWebSocket()
     websocket.feed(
@@ -250,15 +258,42 @@ async def test_handler_error_keeps_connection(
 
 
 @pytest.mark.asyncio
-async def test_tokenless_connection_rejected(namespace: WebsocketEventNamespace):
-    """A connection without a token closes with 1008 (policy violation)."""
-    websocket = FakeWebSocket(query_string=b"")
+async def test_tokenless_connection_rejected(
+    namespace: WebsocketEventNamespace, caplog: pytest.LogCaptureFixture
+):
+    """A connection without a token closes with 1008 and logs nothing above debug.
+
+    The version mismatch is not reported either: it is client-controlled and
+    the session is rejected anyway, so warning would only let anonymous
+    connects flood the logs.
+    """
+    websocket = FakeWebSocket(query_string=b"", subprotocols=["0.0.1"])
     websocket.feed(["ping"])
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
     await _drain_tasks()
 
     assert websocket.close_code == 1008
     assert ["ping", "pong"] not in websocket.sent
+    assert all(record.levelno <= logging.DEBUG for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_version_mismatch_warns_for_linked_session(
+    namespace: WebsocketEventNamespace, caplog: pytest.LogCaptureFixture
+):
+    """A linked session with a stale frontend gets one sanitized warning."""
+    websocket = FakeWebSocket(subprotocols=["0.0.1\x1b[31m"])
+    websocket.feed()
+    with caplog.at_level(logging.WARNING, logger="reflex.event_namespace"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "0.0.1" in warnings[0]
+    assert "does not match the backend version" in warnings[0]
+    assert "\x1b" not in warnings[0]
 
 
 @pytest.mark.asyncio
@@ -378,8 +413,6 @@ async def test_emit_to_unknown_sid_does_not_raise(
     A client disconnecting mid-event is routine, so nothing above DEBUG may be
     logged.
     """
-    import logging
-
     with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
         await namespace.emit("event", {"delta": {}}, to="gone")
     assert all(record.levelno <= logging.DEBUG for record in caplog.records)
